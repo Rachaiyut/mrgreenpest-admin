@@ -25,7 +25,6 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             react: ['react', 'react-dom'],
             antd: ['antd'],
-            recharts: ['recharts']
           }
         }
       }

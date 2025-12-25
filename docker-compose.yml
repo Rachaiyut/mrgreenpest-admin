@@ -1,0 +1,21 @@
+name: mrgreenpest-dev
+services:
+  # React Frontend Application (Production)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - API_BASE_URL=https://lawmai.knacx.dev/api
+    image: mrgreenpest-dev:latest
+    container_name: mrgreenpest-dev
+    ports:
+      - "4100:80"
+    restart: unless-stopped
+    networks:
+      - mrgreenpest-dev-network
+
+networks:
+  mrgreenpest-dev-network:
+    driver: bridge
