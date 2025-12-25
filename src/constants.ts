@@ -307,7 +307,7 @@ export const MOCK_INVOICES: Invoice[] = [
   { id: 'inv-010', quotationId: 'QT670007-1', customerId: 'C0001', customerName: 'ห้างแกรนด์เซ็นทรัล', issuedAt: '2024-10-07', dueAt: '2024-11-06', status: Status.Paid, total: 35000 },
   { id: 'inv-011', quotationId: 'QT670006-1', customerId: 'C0009', customerName: 'คุณมินตรา M.', issuedAt: '2024-09-17', dueAt: '2024-10-17', status: Status.Sent, total: 15000 },
   { id: 'inv-012', customerId: 'C0004', customerName: 'คุณพลอย P.', issuedAt: '2024-11-01', dueAt: '2024-12-01', status: Status.Overdue, total: 8000 },
-  { id: 'inv-013', contractId: 'CON-7', customerId: 'C0001', customerName: 'ห้างแกรนด์เซ็นทรัล', issuedAt: '2024-11-01', dueAt: '2024-12-01', status: Status.Sent, total: 5000 },
+  { id: 'inv-013', customerId: 'C0001', customerName: 'ห้างแกรนด์เซ็นทรัล', issuedAt: '2024-11-01', dueAt: '2024-12-01', status: Status.Sent, total: 5000 },
 ];
 
 export const MOCK_RECEIPTS: Receipt[] = [

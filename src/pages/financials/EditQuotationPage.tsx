@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import type { FC, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { FormField, Input, Select, Button } from '../../components/common/FormControls';
 import { Quotation, Status } from '../../types';
@@ -9,7 +10,7 @@ interface EditQuotationPageProps {
     onUpdateQuotation: (quotation: Quotation) => void;
 }
 
-export const EditQuotationPage: React.FC<EditQuotationPageProps> = ({ quotations, onUpdateQuotation }) => {
+export const EditQuotationPage: FC<EditQuotationPageProps> = ({ quotations, onUpdateQuotation }) => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
@@ -35,12 +36,12 @@ export const EditQuotationPage: React.FC<EditQuotationPageProps> = ({ quotations
         }
     }, [id, quotations, navigate, isReviseMode]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSave = (e: React.FormEvent) => {
+    const handleSave = (e: FormEvent) => {
         e.preventDefault();
         if (quotation) {
             const updatedData: Quotation = {
@@ -54,7 +55,7 @@ export const EditQuotationPage: React.FC<EditQuotationPageProps> = ({ quotations
         }
     };
 
-    const revisionHistory = React.useMemo(() => {
+    const revisionHistory = useMemo(() => {
         if (!quotation) return [];
         const baseId = quotation.id.split('-')[0];
         return quotations

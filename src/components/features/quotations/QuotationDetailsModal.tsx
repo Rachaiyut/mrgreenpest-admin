@@ -1,6 +1,7 @@
-import React from 'react';
+import { useMemo } from 'react';
+import type { FC } from 'react';
 import { Modal } from '../../common/Modal';
-import { Quotation, InstallmentPlan } from '../../../types';
+import { Quotation, InstallmentPlan, Status } from '../../../types';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../constants';
 import { SectionTitle, DetailsList, DetailsItem } from '../../common/FormControls';
@@ -13,8 +14,8 @@ interface QuotationDetailsModalProps {
   onCreateInvoice?: (installment: InstallmentPlan) => void;
 }
 
-export const QuotationDetailsModal: React.FC<QuotationDetailsModalProps> = ({ isOpen, onClose, quotation, allQuotations = [], onCreateInvoice }) => {
-  const revisionHistory = React.useMemo(() => {
+export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({ isOpen, onClose, quotation, allQuotations = [], onCreateInvoice }) => {
+  const revisionHistory = useMemo(() => {
     if (!quotation || !allQuotations) return [];
     const baseId = quotation.id.split('-')[0];
     return allQuotations
@@ -81,7 +82,7 @@ export const QuotationDetailsModal: React.FC<QuotationDetailsModalProps> = ({ is
                         <StatusBadge status={inst.status} />
                       </td>
                       <td className="px-3 py-2 text-sm text-center">
-                        {inst.status === 'รอดำเนินการ' || inst.status === 'Pending' ? (
+                        {inst.status === Status.Pending ? (
                           <button
                             onClick={() => onCreateInvoice && onCreateInvoice(inst)}
                             className="text-primary hover:text-primary-dark text-xs font-medium underline"

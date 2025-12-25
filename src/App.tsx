@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { useState, useCallback, useEffect } from 'react';
+ import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+ import type { FC, Dispatch, SetStateAction } from 'react';
 import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import { CreateQuotationPage } from './pages/financials/CreateQuotationPage';
 import { EditQuotationPage } from './pages/financials/EditQuotationPage';
@@ -10,43 +10,43 @@ import { Page, Assessment, FieldJob, Status, Customer, Contract, Quotation, Prod
 // FIX: The MOCK data constants were not all exported from constants.ts. They will be added and exported now.
 import { MOCK_USERS, MOCK_WAREHOUSES, MOCK_SUPPLIERS, MOCK_CATEGORIES, MOCK_USER_WALLETS, MOCK_CUSTOMERS, MOCK_RETURN_TO_SUPPLIERS } from './constants';
 import { MOCK_ASSESSMENTS, MOCK_FIELD_JOBS, MOCK_CONTRACTS, MOCK_QUOTATIONS, MOCK_PRODUCTS, MOCK_GOODS_RECEIPTS, MOCK_WITHDRAWALS, MOCK_TRANSFERS, MOCK_STOCK_ADJUSTMENTS, MOCK_PRODUCT_RETURNS, MOCK_INVOICES, MOCK_RECEIPTS } from './constants';
-const Dashboard = React.lazy(() => import('./pages/dashboard'));
-const Customers = React.lazy(() => import('./pages/customers'));
-const Assessments = React.lazy(() => import('./pages/assessments'));
-const FieldOperations = React.lazy(() => import('./pages/field-operations'));
-const Financials = React.lazy(() => import('./pages/financials'));
-const Inventory = React.lazy(() => import('./pages/inventory/products'));
-const Users = React.lazy(() => import('./pages/users'));
-const Warehouse = React.lazy(() => import('./pages/warehouse'));
-const GoodsReceipt = React.lazy(() => import('./pages/inventory/goods-receipt'));
-const Suppliers = React.lazy(() => import('./pages/suppliers'));
-const Withdrawals = React.lazy(() => import('./pages/inventory/withdrawals'));
-const Transfers = React.lazy(() => import('./pages/inventory/transfers'));
-const StockAdjustment = React.lazy(() => import('./pages/inventory/stock-adjustment'));
-const Returns = React.lazy(() => import('./pages/inventory/returns'));
-const ReturnToSupplier = React.lazy(() => import('./pages/inventory/return-to-supplier'));
-const Packages = React.lazy(() => import('./pages/packages'));
-const Categories = React.lazy(() => import('./pages/categories'));
-const Reports = React.lazy(() => import('./pages/reports'));
-const TotalIncome = React.lazy(() => import('./pages/reports/TotalIncomePage'));
-const TaxInvoiceIncome = React.lazy(() => import('./pages/reports/TaxInvoiceIncomePage'));
-const MonthlySales = React.lazy(() => import('./pages/reports/MonthlySalesPage'));
-const SalesSummary = React.lazy(() => import('./pages/reports/SalesSummaryPage'));
-const IndirectExpenses = React.lazy(() => import('./pages/reports/IndirectExpensesPage'));
-const DailyCash = React.lazy(() => import('./pages/reports/DailyCashPage'));
-const DirectExpenses = React.lazy(() => import('./pages/reports/DirectExpensesPage'));
-const Notifications = React.lazy(() => import('./pages/notifications'));
-const Login = React.lazy(() => import('./pages/login'));
+ const Dashboard = lazy(() => import('./pages/dashboard'));
+ const Customers = lazy(() => import('./pages/customers'));
+ const Assessments = lazy(() => import('./pages/assessments'));
+ const FieldOperations = lazy(() => import('./pages/field-operations'));
+ const Financials = lazy(() => import('./pages/financials'));
+ const Inventory = lazy(() => import('./pages/inventory/products'));
+ const Users = lazy(() => import('./pages/users'));
+ const Warehouse = lazy(() => import('./pages/warehouse'));
+ const GoodsReceipt = lazy(() => import('./pages/inventory/goods-receipt'));
+ const Suppliers = lazy(() => import('./pages/suppliers'));
+ const Withdrawals = lazy(() => import('./pages/inventory/withdrawals'));
+ const Transfers = lazy(() => import('./pages/inventory/transfers'));
+ const StockAdjustment = lazy(() => import('./pages/inventory/stock-adjustment'));
+ const Returns = lazy(() => import('./pages/inventory/returns'));
+ const ReturnToSupplier = lazy(() => import('./pages/inventory/return-to-supplier'));
+ const Packages = lazy(() => import('./pages/packages'));
+ const Categories = lazy(() => import('./pages/categories'));
+ const Reports = lazy(() => import('./pages/reports'));
+ const TotalIncome = lazy(() => import('./pages/reports/TotalIncomePage'));
+ const TaxInvoiceIncome = lazy(() => import('./pages/reports/TaxInvoiceIncomePage'));
+ const MonthlySales = lazy(() => import('./pages/reports/MonthlySalesPage'));
+ const SalesSummary = lazy(() => import('./pages/reports/SalesSummaryPage'));
+ const IndirectExpenses = lazy(() => import('./pages/reports/IndirectExpensesPage'));
+ const DailyCash = lazy(() => import('./pages/reports/DailyCashPage'));
+ const DirectExpenses = lazy(() => import('./pages/reports/DirectExpensesPage'));
+ const Notifications = lazy(() => import('./pages/notifications'));
+ const Login = lazy(() => import('./pages/login'));
 
 
-const UnderDevelopment: React.FC<{ title: string }> = ({ title }) => (
+ const UnderDevelopment: FC<{ title: string }> = ({ title }) => (
   <div className="p-8">
     <h1 className="text-3xl font-bold text-slate-800">{title}</h1>
     <p className="mt-2 text-slate-600">ส่วนนี้กำลังอยู่ในระหว่างการพัฒนา</p>
   </div>
 );
 
-const App: React.FC = () => {
+ const App: FC = () => {
   const PAGE_PATH: Record<Page, string> = {
     Dashboard: 'dashboard',
     'ลูกค้า': 'customers',
@@ -179,17 +179,17 @@ const App: React.FC = () => {
   });
 
   // --- Handler Functions ---
-  const createHandler = <T extends { id: string }>(setter: React.Dispatch<React.SetStateAction<T[]>>, prefix: string, padLength: number = 4) => (data: Omit<T, 'id'>) => {
+   const createHandler = <T extends { id: string }>(setter: Dispatch<SetStateAction<T[]>>, prefix: string, padLength: number = 4) => (data: Omit<T, 'id'>) => {
     const thaiYearLastTwoDigits = (new Date().getFullYear() + 543).toString().slice(-2);
     const id = `${prefix.toUpperCase()}${prefix.includes('GR') || prefix.includes('SR') || prefix.includes('IT') || prefix.includes('SA') || prefix.includes('RT') ? thaiYearLastTwoDigits : ''}-${String(Date.now()).slice(-6)}`;
     setter(prev => [...prev, { ...data, id } as T]);
   };
 
-  const updateHandler = <T extends { id: string }>(setter: React.Dispatch<React.SetStateAction<T[]>>) => (updatedItem: T) => {
+   const updateHandler = <T extends { id: string }>(setter: Dispatch<SetStateAction<T[]>>) => (updatedItem: T) => {
     setter(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
   };
 
-  const deleteHandler = <T extends { id: string }>(setter: React.Dispatch<React.SetStateAction<T[]>>) => (id: string) => {
+   const deleteHandler = <T extends { id: string }>(setter: Dispatch<SetStateAction<T[]>>) => (id: string) => {
     setter(prev => prev.filter(item => item.id !== id));
   };
   const adjustStock = useCallback((warehouseId: string, productId: string, delta: number) => {
@@ -755,7 +755,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) return <React.Suspense fallback={<div className="p-8"><p className="text-slate-600">กำลังโหลด...</p></div>}><Login onLogin={handleLogin} /></React.Suspense>;
+   if (!isAuthenticated) return <Suspense fallback={<div className="p-8"><p className="text-slate-600">กำลังโหลด...</p></div>}><Login onLogin={handleLogin} /></Suspense>;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-100">
@@ -764,7 +764,7 @@ const App: React.FC = () => {
         <Header toggleSidebar={toggleSidebarState} onLogout={handleLogout} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <React.Suspense fallback={<div className="p-8"><p className="text-slate-600">กำลังโหลด...</p></div>}>
+             <Suspense fallback={<div className="p-8"><p className="text-slate-600">กำลังโหลด...</p></div>}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={
@@ -821,7 +821,7 @@ const App: React.FC = () => {
                 <Route path="/reports/direct-expenses" element={<DirectExpenses />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
-            </React.Suspense>
+             </Suspense>
           </div>
         </main>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FormField, Input, Select, Button } from '../../components/common/FormControls';
 import { Invoice, Status, Customer, Quotation } from '../../types';
@@ -11,7 +11,9 @@ interface EditInvoicePageProps {
     onUpdateInvoice: (invoice: Invoice) => void;
 }
 
-export const EditInvoicePage: React.FC<EditInvoicePageProps> = ({ invoices, customers, quotations, onUpdateInvoice }) => {
+import type { FC } from 'react';
+
+export const EditInvoicePage: FC<EditInvoicePageProps> = ({ invoices, customers, quotations, onUpdateInvoice }) => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
 
@@ -19,7 +21,7 @@ export const EditInvoicePage: React.FC<EditInvoicePageProps> = ({ invoices, cust
     const [invoice, setInvoice] = useState<Invoice | null>(null);
 
     // Map for quick customer lookup
-    const customerMap = React.useMemo(() => new Map((customers || []).map(c => [c.id, c.name])), [customers]);
+    const customerMap = useMemo(() => new Map((customers || []).map(c => [c.id, c.name])), [customers]);
 
     useEffect(() => {
         const found = invoices.find(i => i.id === id);

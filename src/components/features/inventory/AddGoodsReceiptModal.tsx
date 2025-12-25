@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import type { FC, FormEvent, MouseEvent } from 'react';
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
@@ -22,7 +23,7 @@ interface LineItem {
     quantityReceived: number;
 }
 
-export const AddGoodsReceiptModal: React.FC<AddGoodsReceiptModalProps> = ({ isOpen, onClose, onCreateReceipt, receipts, warehouses, suppliers, products }) => {
+export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({ isOpen, onClose, onCreateReceipt, receipts, warehouses, suppliers, products }) => {
     const [items, setItems] = useState<LineItem[]>([]);
     const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -90,14 +91,14 @@ export const AddGoodsReceiptModal: React.FC<AddGoodsReceiptModalProps> = ({ isOp
         };
     };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         onCreateReceipt(createReceiptObject(Status.PendingApproval, formData));
         onClose();
     };
     
-    const handleSaveDraft = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const handleSaveDraft = (e: MouseEvent<HTMLButtonElement>) => {
         if (!formRef.current) return;
         const formData = new FormData(formRef.current);
         onCreateReceipt(createReceiptObject(Status.Draft, formData));
@@ -107,7 +108,7 @@ export const AddGoodsReceiptModal: React.FC<AddGoodsReceiptModalProps> = ({ isOp
     const existingProductIds = useMemo(() => items.map(item => item.productId), [items]);
 
     return (
-        <React.Fragment>
+        <Fragment>
             <Modal 
                 isOpen={isOpen} 
                 onClose={onClose} 
@@ -226,6 +227,6 @@ export const AddGoodsReceiptModal: React.FC<AddGoodsReceiptModalProps> = ({ isOp
                 existingProductIds={existingProductIds}
                 products={products}
             />
-        </React.Fragment>
+        </Fragment>
     );
 };

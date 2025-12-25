@@ -52,6 +52,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({ isOpen, onCl
         endDate: endDate,
         servicePackage: servicePackage,
         status: status,
+        totalAmount: selectedQuotation.total,
     };
   }
 

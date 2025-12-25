@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import type { FC, FormEvent } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input } from '../../common/FormControls';
 
@@ -54,7 +55,7 @@ const isActionDisabled = (item: string, action: string): boolean => {
 };
 
 
-export const AddRoleModal: React.FC<AddRoleModalProps> = ({ isOpen, onClose }) => {
+export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose }) => {
     const initialPermissions = useMemo(() => {
         return allPermissionItems.reduce((acc, item) => {
             acc[item] = PERMISSION_ACTIONS.reduce((itemAcc, action) => {
@@ -110,7 +111,7 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({ isOpen, onClose }) =
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         console.log("Saving role with permissions:", permissions);
         onClose();
@@ -169,7 +170,7 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({ isOpen, onClose }) =
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
                             {PERMISSION_GROUPS.map(group => (
-                                <React.Fragment key={group.groupName}>
+                                <Fragment key={group.groupName}>
                                     <tr>
                                         <td colSpan={PERMISSION_ACTIONS.length + 2} className="px-4 py-2 bg-slate-100 font-semibold text-slate-800">
                                             {group.groupName}
@@ -206,7 +207,7 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({ isOpen, onClose }) =
                                             </tr>
                                         );
                                     })}
-                                </React.Fragment>
+                                </Fragment>
                             ))}
                         </tbody>
                     </table>

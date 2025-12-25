@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 // FIX: The NavigationItem type is defined in `types.ts`, not `constants.ts`. This change corrects the import path.
 import { Page, NavigationItem } from '../../types';
@@ -12,7 +13,7 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, toggleSidebar }) => {
+export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, toggleSidebar }) => {
   const PAGE_PATH: Record<Page, string> = {
     Dashboard: 'dashboard',
     'ลูกค้า': 'customers',
@@ -45,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onPageChange, isO
     'รายงาน': 'reports',
   };
   const getHref = (page: Page) => `/${PAGE_PATH[page]}`;
-  const getActiveGroup = React.useCallback(() => {
+  const getActiveGroup = useCallback(() => {
     const activeGroup = NAVIGATION_ITEMS.find(item =>
       item.type === 'group' && item.subItems.some(sub => sub.name === currentPage)
     );

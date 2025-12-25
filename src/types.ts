@@ -1,5 +1,5 @@
 
-import React from 'react';
+import type { FC } from 'react';
 
 export type Page =
   | 'Dashboard'
@@ -317,14 +317,14 @@ export interface Receipt {
 export interface NavLink {
   type: 'link';
   name: Page;
-  icon: React.FC<any>;
+  icon: FC<any>;
 }
 
 export interface NavGroup {
   type: 'group';
   name: string;
-  icon: React.FC<any>;
-  subItems: { name: Page; icon?: React.FC<any> }[];
+  icon: FC<any>;
+  subItems: { name: Page; icon?: FC<any> }[];
 }
 
 export type NavigationItem = NavLink | NavGroup;

@@ -1,4 +1,5 @@
-import React from 'react';
+import type { FC } from 'react';
+import { Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { UserRole } from '../../../types';
@@ -60,7 +61,7 @@ const isActionNotApplicable = (item: string, action: string): boolean => {
     return false;
 };
 
-export const RoleDetailsModal: React.FC<RoleDetailsModalProps> = ({ isOpen, onClose, role }) => {
+export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({ isOpen, onClose, role }) => {
   if (!isOpen || !role) return null;
 
   const rolePermissions = MOCK_ROLE_PERMISSIONS[role] || [];
@@ -92,7 +93,7 @@ export const RoleDetailsModal: React.FC<RoleDetailsModalProps> = ({ isOpen, onCl
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                     {PERMISSION_GROUPS.map(group => (
-                        <React.Fragment key={group.groupName}>
+                        <Fragment key={group.groupName}>
                             <tr>
                                 <td colSpan={PERMISSION_ACTIONS.length + 1} className="px-4 py-2 bg-slate-100 font-semibold text-slate-800">
                                     {group.groupName}
@@ -121,7 +122,7 @@ export const RoleDetailsModal: React.FC<RoleDetailsModalProps> = ({ isOpen, onCl
                                     })}
                                 </tr>
                             ))}
-                        </React.Fragment>
+                        </Fragment>
                     ))}
                 </tbody>
             </table>

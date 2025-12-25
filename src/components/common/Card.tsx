@@ -1,20 +1,21 @@
 
 
-import React from 'react';
+import { forwardRef } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 
 // FIX: Extend React.HTMLAttributes to allow passing standard HTML attributes like 'id'.
 // This resolves type errors when using props not explicitly defined in CardProps.
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
   title?: string;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
   className?: string;
 }
 
 // Fix: Converted Card to a forwardRef component to allow passing a ref.
 // This is necessary for components like `Customers.tsx` that need a reference to the card element for DOM interactions.
 // FIX: Added '...rest' to props and spread it on the root div to pass through attributes like 'id'.
-export const Card = React.forwardRef<HTMLDivElement, CardProps>(({ children, className = '', title, actions, ...rest }, ref) => {
+export const Card = forwardRef<HTMLDivElement, CardProps>(({ children, className = '', title, actions, ...rest }, ref) => {
   // When a card contains a full-width element like a table, `!p-0` is passed in className.
   // This check prevents the inner div from adding its own padding in that case, fixing a layout bug.
   const hasPadding = !className.includes('!p-0');
