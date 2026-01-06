@@ -29,8 +29,8 @@ export const formatThaiDateTime = (isoString: string | undefined): string => {
 export const NAVIGATION_ITEMS: NavigationItem[] = [
   { type: 'link', name: 'Dashboard', icon: NewDashboardIcon },
   { type: 'link', name: 'ลูกค้า', icon: NewCustomerIcon },
-  { type: 'link', name: 'ใบประเมิน', icon: NewAssessmentIcon },
-  { type: 'link', name: 'ภาคสนาม', icon: NewFieldOpsIcon },
+  // { type: 'link', name: 'ใบประเมิน', icon: NewAssessmentIcon },
+  // { type: 'link', name: 'ภาคสนาม', icon: NewFieldOpsIcon },
   {
     type: 'group',
     name: 'การเงินและบัญชี',
