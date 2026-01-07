@@ -2,127 +2,146 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MagnifyingGlassIcon } from '../../assets/icons/Icons'; // Assuming you have this icon
 
 interface Option {
-    value: string;
-    label: string;
-    description?: string;
+  value: string;
+  label: string;
+  description?: string;
 }
 
 interface SearchableSelectProps {
-    options: Option[];
-    value: string;
-    onChange: (value: string) => void;
-    placeholder?: string;
-    label?: string;
-    required?: boolean;
-    name?: string;
-    className?: string;
+  options: Option[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  label?: string;
+  required?: boolean;
+  name?: string;
+  className?: string;
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
-    options,
-    value,
-    onChange,
-    placeholder = 'Select...',
-    label,
-    required = false,
-    name,
-    className
+  options,
+  value,
+  onChange,
+  placeholder = 'Select...',
+  label,
+  required = false,
+  name,
+  className,
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-    const selectedOption = options.find(o => o.value === value);
+  const selectedOption = options.find((o) => o.value === value);
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-    useEffect(() => {
-        if (!isOpen) {
-            // Reset search when closed, but keep it empty if we want to show all initially
-            // or maybe don't reset. Let's reset to allow fresh search.
-            setSearch('');
-        }
-    }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset search when closed, but keep it empty if we want to show all initially
+      // or maybe don't reset. Let's reset to allow fresh search.
+      setSearch('');
+    }
+  }, [isOpen]);
 
+  const filteredOptions = options.filter(
+    (option) =>
+      option.label.toLowerCase().includes(search.toLowerCase()) ||
+      (option.description &&
+        option.description.toLowerCase().includes(search.toLowerCase()))
+  );
 
-    const filteredOptions = options.filter(option =>
-        option.label.toLowerCase().includes(search.toLowerCase()) ||
-        (option.description && option.description.toLowerCase().includes(search.toLowerCase()))
-    );
-
-    return (
-        <div className={`relative ${className}`} ref={wrapperRef}>
-            {label && (
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                    {label} {required && <span className="text-red-500">*</span>}
-                </label>
-            )}
-            <div
-                className="relative cursor-pointer"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <div className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white min-h-[38px] ${!selectedOption && 'text-slate-400'}`}>
-                    {selectedOption ? selectedOption.label : placeholder}
-                </div>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fillRule="evenodd" d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z" clipRule="evenodd" />
-                    </svg>
-                </div>
-            </div>
-
-            {isOpen && (
-                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                    <div className="sticky top-0 z-10 bg-white px-2 py-1.5 border-b border-gray-100">
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                                <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />
-                            </div>
-                            <input
-                                type="text"
-                                className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
-                                placeholder="ค้นหา..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                onClick={(e) => e.stopPropagation()}
-                                autoFocus
-                            />
-                        </div>
-                    </div>
-                    {filteredOptions.length > 0 ? (
-                        filteredOptions.map((option) => (
-                            <div
-                                key={option.value}
-                                className={`relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-slate-100 ${option.value === value ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-900'}`}
-                                onClick={() => {
-                                    onChange(option.value);
-                                    setIsOpen(false);
-                                }}
-                            >
-                                <span className="block truncate">{option.label}</span>
-                                {option.description && (
-                                    <span className="block truncate text-xs text-slate-500">{option.description}</span>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <div className="py-2 pl-3 pr-9 text-slate-500 italic">ไม่พบข้อมูล</div>
-                    )}
-                </div>
-            )}
-            {/* Hidden input for form submission if needed */}
-            <input type="hidden" name={name} value={value} required={required} />
+  return (
+    <div className={`relative ${className}`} ref={wrapperRef}>
+      {label && (
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+      )}
+      <div
+        className="relative cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div
+          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white min-h-[38px] ${!selectedOption && 'text-slate-400'}`}
+        >
+          {selectedOption ? selectedOption.label : placeholder}
         </div>
-    );
+        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <svg
+            className="h-5 w-5 text-gray-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 3a.75.75 0 01.55.24l3.25 3.5a.75.75 0 11-1.1 1.02L10 4.852 7.3 7.76a.75.75 0 01-1.1-1.02l3.25-3.5A.75.75 0 0110 3zm-3.76 9.2a.75.75 0 011.06.04l2.7 2.908 2.7-2.908a.75.75 0 111.1 1.02l-3.25 3.5a.75.75 0 01-1.1 0l-3.25-3.5a.75.75 0 01.04-1.06z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+          <div className="sticky top-0 z-10 bg-white px-2 py-1.5 border-b border-gray-100">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                placeholder="ค้นหา..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                autoFocus
+              />
+            </div>
+          </div>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <div
+                key={option.value}
+                className={`relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-slate-100 ${option.value === value ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-900'}`}
+                onClick={() => {
+                  onChange(option.value);
+                  setIsOpen(false);
+                }}
+              >
+                <span className="block truncate">{option.label}</span>
+                {option.description && (
+                  <span className="block truncate text-xs text-slate-500">
+                    {option.description}
+                  </span>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="py-2 pl-3 pr-9 text-slate-500 italic">
+              ไม่พบข้อมูล
+            </div>
+          )}
+        </div>
+      )}
+      {/* Hidden input for form submission if needed */}
+      <input type="hidden" name={name} value={value} required={required} />
+    </div>
+  );
 };

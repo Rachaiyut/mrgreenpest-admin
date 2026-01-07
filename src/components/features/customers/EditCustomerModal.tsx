@@ -1,274 +1,500 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Textarea, Select, Button } from '../../common/FormControls';
+import {
+  FormField,
+  Input,
+  Textarea,
+  Select,
+  Button,
+} from '../../common/FormControls';
 import { Customer, Status } from '../../../types';
 
 interface EditCustomerModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    customer: Customer | null;
-    onUpdateCustomer: (updatedCustomer: Customer) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  customer: Customer | null;
+  onUpdateCustomer: (updatedCustomer: Customer) => void;
 }
 
 // Define a type for the flat form state
 type FlatCustomerFormData = Omit<Partial<Customer>, 'address'> & {
-    'address-street'?: string;
-    'address-soi'?: string;
-    'address-road'?: string;
-    'address-subdistrict'?: string;
-    'address-district'?: string;
-    'address-province'?: string;
-    'address-postalcode'?: string;
-    'address-country'?: string;
-    'address-zone'?: string;
-    'address-group'?: string;
-    'address-roadLine'?: string;
-    'address-sequence'?: string;
-    phone3?: string;
-    phone4?: string;
-    phone5?: string;
+  'address-street'?: string;
+  'address-soi'?: string;
+  'address-road'?: string;
+  'address-subdistrict'?: string;
+  'address-district'?: string;
+  'address-province'?: string;
+  'address-postalcode'?: string;
+  'address-country'?: string;
+  'address-zone'?: string;
+  'address-group'?: string;
+  'address-roadLine'?: string;
+  'address-sequence'?: string;
+  phone3?: string;
+  phone4?: string;
+  phone5?: string;
 };
 
-export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({ isOpen, onClose, customer, onUpdateCustomer }) => {
-    const [formData, setFormData] = useState<FlatCustomerFormData>({});
+export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
+  isOpen,
+  onClose,
+  customer,
+  onUpdateCustomer,
+}) => {
+  const [formData, setFormData] = useState<FlatCustomerFormData>({});
 
-    useEffect(() => {
-        if (customer) {
-            const [p3, p4, p5] = customer.additionalPhones || [];
-            setFormData({
-                ...customer,
-                'address-street': customer.address.street,
-                'address-soi': customer.address.soi,
-                'address-road': customer.address.road,
-                'address-subdistrict': customer.address.subdistrict,
-                'address-district': customer.address.district,
-                'address-province': customer.address.province,
-                'address-postalcode': customer.address.postalcode,
-                'address-country': customer.address.country,
-                'address-zone': customer.address.zone,
-                'address-group': customer.address.group,
-                'address-roadLine': customer.address.roadLine,
-                'address-sequence': customer.address.sequence,
-                phone3: p3,
-                phone4: p4,
-                phone5: p5,
-            });
-        }
-    }, [customer]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleTypeChange = (type: 'บุคคลธรรมดา' | 'นิติบุคคล') => {
-        setFormData(prev => ({ ...prev, type: type }));
+  useEffect(() => {
+    if (customer) {
+      const [p3, p4, p5] = customer.additionalPhones || [];
+      setFormData({
+        ...customer,
+        'address-street': customer.address.street,
+        'address-soi': customer.address.soi,
+        'address-road': customer.address.road,
+        'address-subdistrict': customer.address.subdistrict,
+        'address-district': customer.address.district,
+        'address-province': customer.address.province,
+        'address-postalcode': customer.address.postalcode,
+        'address-country': customer.address.country,
+        'address-zone': customer.address.zone,
+        'address-group': customer.address.group,
+        'address-roadLine': customer.address.roadLine,
+        'address-sequence': customer.address.sequence,
+        phone3: p3,
+        phone4: p4,
+        phone5: p5,
+      });
     }
+  }, [customer]);
 
-    const handleSave = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (customer) {
-            const requiredFields = ['name', 'phone', 'address-street', 'address-subdistrict', 'address-district', 'address-province', 'address-postalcode'];
-            // Check taxId manually since it's not in the requiredFields array for loop but is now required
-            if (!formData.taxId) {
-                alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (เลขประจำตัวผู้เสียภาษี)');
-                return;
-            }
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-            for (const field of requiredFields) {
-                if (!formData[field as keyof FlatCustomerFormData]) {
-                    alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
-                    return;
-                }
-            }
+  const handleTypeChange = (type: 'บุคคลธรรมดา' | 'นิติบุคคล') => {
+    setFormData((prev) => ({ ...prev, type: type }));
+  };
 
-            const updatedData: Customer = {
-                ...customer,
-                ...formData,
-                name: formData.name || customer.name,
-                type: formData.type || customer.type,
-                contactPerson: formData.contactPerson || customer.contactPerson,
-                email: formData.email || customer.email,
-                phone: formData.phone || customer.phone,
-                additionalPhones: [
-                    formData.phone3,
-                    formData.phone4,
-                    formData.phone5
-                ].filter(Boolean) as string[],
-                address: {
-                    street: formData['address-street'] || '',
-                    soi: formData['address-soi'] || undefined,
-                    road: formData['address-road'] || undefined,
-                    subdistrict: formData['address-subdistrict'] || '',
-                    district: formData['address-district'] || '',
-                    province: formData['address-province'] || '',
-                    postalcode: formData['address-postalcode'] || '',
-                    country: formData['address-country'] || '',
-                    zone: formData['address-zone'] || undefined,
-                    group: formData['address-group'] || undefined,
-                    roadLine: formData['address-roadLine'] || undefined,
-                    sequence: formData['address-sequence'] || undefined,
-                },
-                taxId: formData.taxId as string,
-                status: Status.Approved,
-            };
-            onUpdateCustomer(updatedData);
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (customer) {
+      const requiredFields = [
+        'name',
+        'phone',
+        'address-street',
+        'address-subdistrict',
+        'address-district',
+        'address-province',
+        'address-postalcode',
+      ];
+      // Check taxId manually since it's not in the requiredFields array for loop but is now required
+      if (!formData.taxId) {
+        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (เลขประจำตัวผู้เสียภาษี)');
+        return;
+      }
+
+      for (const field of requiredFields) {
+        if (!formData[field as keyof FlatCustomerFormData]) {
+          alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+          return;
         }
-        onClose();
-    };
+      }
 
+      const updatedData: Customer = {
+        ...customer,
+        ...formData,
+        name: formData.name || customer.name,
+        type: formData.type || customer.type,
+        contactPerson: formData.contactPerson || customer.contactPerson,
+        email: formData.email || customer.email,
+        phone: formData.phone || customer.phone,
+        additionalPhones: [
+          formData.phone3,
+          formData.phone4,
+          formData.phone5,
+        ].filter(Boolean) as string[],
+        address: {
+          street: formData['address-street'] || '',
+          soi: formData['address-soi'] || undefined,
+          road: formData['address-road'] || undefined,
+          subdistrict: formData['address-subdistrict'] || '',
+          district: formData['address-district'] || '',
+          province: formData['address-province'] || '',
+          postalcode: formData['address-postalcode'] || '',
+          country: formData['address-country'] || '',
+          zone: formData['address-zone'] || undefined,
+          group: formData['address-group'] || undefined,
+          roadLine: formData['address-roadLine'] || undefined,
+          sequence: formData['address-sequence'] || undefined,
+        },
+        taxId: formData.taxId as string,
+        status: Status.Approved,
+      };
+      onUpdateCustomer(updatedData);
+    }
+    onClose();
+  };
 
-    if (!customer) return null;
+  if (!customer) return null;
 
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="แก้ไขข้อมูลลูกค้า"
-            size="2xl"
-            footer={
-                <div className="flex gap-2">
-                    <Button type="button" onClick={onClose} className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300" variant="outline">
-                        ยกเลิก
-                    </Button>
-                    <Button type="submit" form="edit-customer-form" className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm" variant="primary">
-                        บันทึกการเปลี่ยนแปลง
-                    </Button>
-                </div>
-            }
-        >
-            <form id="edit-customer-form" onSubmit={handleSave} className="space-y-4">
-                <FormField label="ประเภทลูกค้า">
-                    <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-                        <label className="relative flex-1 cursor-pointer">
-                            <input type="radio" name="customerTypeRadio" value="บุคคลธรรมดา" className="sr-only peer" checked={formData.type === 'บุคคลธรรมดา'} onChange={() => handleTypeChange('บุคคลธรรมดา')} />
-                            <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บุคคลธรรมดา</span>
-                        </label>
-                        <label className="relative flex-1 cursor-pointer">
-                            <input type="radio" name="customerTypeRadio" value="นิติบุคคล" className="sr-only peer" checked={formData.type === 'นิติบุคคล'} onChange={() => handleTypeChange('นิติบุคคล')} />
-                            <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">นิติบุคคล</span>
-                        </label>
-                    </div>
-                </FormField>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="แก้ไขข้อมูลลูกค้า"
+      size="2xl"
+      footer={
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={onClose}
+            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
+            variant="outline"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="submit"
+            form="edit-customer-form"
+            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+            variant="primary"
+          >
+            บันทึกการเปลี่ยนแปลง
+          </Button>
+        </div>
+      }
+    >
+      <form id="edit-customer-form" onSubmit={handleSave} className="space-y-4">
+        <FormField label="ประเภทลูกค้า">
+          <div className="flex rounded-lg bg-slate-100 p-1 w-full">
+            <label className="relative flex-1 cursor-pointer">
+              <input
+                type="radio"
+                name="customerTypeRadio"
+                value="บุคคลธรรมดา"
+                className="sr-only peer"
+                checked={formData.type === 'บุคคลธรรมดา'}
+                onChange={() => handleTypeChange('บุคคลธรรมดา')}
+              />
+              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                บุคคลธรรมดา
+              </span>
+            </label>
+            <label className="relative flex-1 cursor-pointer">
+              <input
+                type="radio"
+                name="customerTypeRadio"
+                value="นิติบุคคล"
+                className="sr-only peer"
+                checked={formData.type === 'นิติบุคคล'}
+                onChange={() => handleTypeChange('นิติบุคคล')}
+              />
+              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                นิติบุคคล
+              </span>
+            </label>
+          </div>
+        </FormField>
 
-                {formData.type === 'บุคคลธรรมดา' ? (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField label="ชื่อ-นามสกุล" htmlFor="name">
-                                <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
-                            </FormField>
-                            <FormField label="ชื่อเล่น" htmlFor="nickname">
-                                <Input id="nickname" name="nickname" type="text" value={formData.nickname || ''} onChange={handleChange} />
-                            </FormField>
-                        </div>
-                        <FormField label="เพศ" htmlFor="gender">
-                            <Select id="gender" name="gender" value={formData.gender || 'ไม่ระบุ'} onChange={handleChange}>
-                                <option>ไม่ระบุ</option>
-                                <option>ชาย</option>
-                                <option>หญิง</option>
-                            </Select>
-                        </FormField>
-                    </>
-                ) : (
-                    <>
-                        <FormField label="ชื่อบริษัท" htmlFor="name">
-                            <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
-                        </FormField>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField label="ชื่อผู้ติดต่อ" htmlFor="contactPerson">
-                                <Input id="contactPerson" name="contactPerson" type="text" value={formData.contactPerson || ''} onChange={handleChange} />
-                            </FormField>
-                            <FormField label="เบอร์ผู้ติดต่อ" htmlFor="contactPersonPhone">
-                                <Input id="contactPersonPhone" name="contactPersonPhone" type="tel" value={formData.contactPersonPhone || ''} onChange={handleChange} pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                            </FormField>
-                        </div>
-                    </>
-                )}
+        {formData.type === 'บุคคลธรรมดา' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อ-นามสกุล" htmlFor="name">
+                <Input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name || ''}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
+              <FormField label="ชื่อเล่น" htmlFor="nickname">
+                <Input
+                  id="nickname"
+                  name="nickname"
+                  type="text"
+                  value={formData.nickname || ''}
+                  onChange={handleChange}
+                />
+              </FormField>
+            </div>
+            <FormField label="เพศ" htmlFor="gender">
+              <Select
+                id="gender"
+                name="gender"
+                value={formData.gender || 'ไม่ระบุ'}
+                onChange={handleChange}
+              >
+                <option>ไม่ระบุ</option>
+                <option>ชาย</option>
+                <option>หญิง</option>
+              </Select>
+            </FormField>
+          </>
+        ) : (
+          <>
+            <FormField label="ชื่อบริษัท" htmlFor="name">
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name || ''}
+                onChange={handleChange}
+                required
+              />
+            </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อผู้ติดต่อ" htmlFor="contactPerson">
+                <Input
+                  id="contactPerson"
+                  name="contactPerson"
+                  type="text"
+                  value={formData.contactPerson || ''}
+                  onChange={handleChange}
+                />
+              </FormField>
+              <FormField label="เบอร์ผู้ติดต่อ" htmlFor="contactPersonPhone">
+                <Input
+                  id="contactPersonPhone"
+                  name="contactPersonPhone"
+                  type="tel"
+                  value={formData.contactPersonPhone || ''}
+                  onChange={handleChange}
+                  pattern="[0-9\+\-\(\) ]*"
+                  title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+                  maxLength={20}
+                />
+              </FormField>
+            </div>
+          </>
+        )}
 
-                <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
-                    <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} required />
-                </FormField>
+        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
+          <Input
+            name="taxId"
+            type="text"
+            value={formData.taxId || ''}
+            onChange={handleChange}
+            required
+          />
+        </FormField>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="โทรศัพท์ (หลัก)" htmlFor="phone">
-                        <Input name="phone" type="tel" value={formData.phone || ''} onChange={handleChange} required pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
-                        <Input name="mobilePhone" type="tel" value={formData.mobilePhone || ''} onChange={handleChange} pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="อีเมล" htmlFor="email">
-                        <Input name="email" type="email" value={formData.email || ''} onChange={handleChange} />
-                    </FormField>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField label="โทรศัพท์ (หลัก)" htmlFor="phone">
+            <Input
+              name="phone"
+              type="tel"
+              value={formData.phone || ''}
+              onChange={handleChange}
+              required
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
+            <Input
+              name="mobilePhone"
+              type="tel"
+              value={formData.mobilePhone || ''}
+              onChange={handleChange}
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="อีเมล" htmlFor="email">
+            <Input
+              name="email"
+              type="email"
+              value={formData.email || ''}
+              onChange={handleChange}
+            />
+          </FormField>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="เบอร์โทรศัพท์ 3 (เพิ่มเติม)" htmlFor="phone3">
-                        <Input name="phone3" type="tel" value={formData.phone3 || ''} onChange={handleChange} pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์โทรศัพท์ 4 (เพิ่มเติม)" htmlFor="phone4">
-                        <Input name="phone4" type="tel" value={formData.phone4 || ''} onChange={handleChange} pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์โทรศัพท์ 5 (เพิ่มเติม)" htmlFor="phone5">
-                        <Input name="phone5" type="tel" value={formData.phone5 || ''} onChange={handleChange} pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField label="เบอร์โทรศัพท์ 3 (เพิ่มเติม)" htmlFor="phone3">
+            <Input
+              name="phone3"
+              type="tel"
+              value={formData.phone3 || ''}
+              onChange={handleChange}
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์โทรศัพท์ 4 (เพิ่มเติม)" htmlFor="phone4">
+            <Input
+              name="phone4"
+              type="tel"
+              value={formData.phone4 || ''}
+              onChange={handleChange}
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์โทรศัพท์ 5 (เพิ่มเติม)" htmlFor="phone5">
+            <Input
+              name="phone5"
+              type="tel"
+              value={formData.phone5 || ''}
+              onChange={handleChange}
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+        </div>
 
-                <FormField label="บ้านเลขที่" htmlFor="address-street">
-                    <Textarea id="address-street" name="address-street" value={formData['address-street'] || ''} onChange={handleChange} required />
-                </FormField>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="ซอย" htmlFor="address-soi">
-                        <Input id="address-soi" name="address-soi" type="text" value={formData['address-soi'] || ''} onChange={handleChange} />
-                    </FormField>
-                    <FormField label="ถนน" htmlFor="address-road">
-                        <Input id="address-road" name="address-road" type="text" value={formData['address-road'] || ''} onChange={handleChange} />
-                    </FormField>
-                </div>
+        <FormField label="บ้านเลขที่" htmlFor="address-street">
+          <Textarea
+            id="address-street"
+            name="address-street"
+            value={formData['address-street'] || ''}
+            onChange={handleChange}
+            required
+          />
+        </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="ซอย" htmlFor="address-soi">
+            <Input
+              id="address-soi"
+              name="address-soi"
+              type="text"
+              value={formData['address-soi'] || ''}
+              onChange={handleChange}
+            />
+          </FormField>
+          <FormField label="ถนน" htmlFor="address-road">
+            <Input
+              id="address-road"
+              name="address-road"
+              type="text"
+              value={formData['address-road'] || ''}
+              onChange={handleChange}
+            />
+          </FormField>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
-                        <Input id="address-subdistrict" name="address-subdistrict" type="text" value={formData['address-subdistrict'] || ''} onChange={handleChange} required />
-                    </FormField>
-                    <FormField label="เขต/อำเภอ" htmlFor="address-district">
-                        <Input id="address-district" name="address-district" type="text" value={formData['address-district'] || ''} onChange={handleChange} required />
-                    </FormField>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
+            <Input
+              id="address-subdistrict"
+              name="address-subdistrict"
+              type="text"
+              value={formData['address-subdistrict'] || ''}
+              onChange={handleChange}
+              required
+            />
+          </FormField>
+          <FormField label="เขต/อำเภอ" htmlFor="address-district">
+            <Input
+              id="address-district"
+              name="address-district"
+              type="text"
+              value={formData['address-district'] || ''}
+              onChange={handleChange}
+              required
+            />
+          </FormField>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="จังหวัด" htmlFor="address-province">
-                        <Input id="address-province" name="address-province" type="text" value={formData['address-province'] || ''} onChange={handleChange} required />
-                    </FormField>
-                    <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
-                        <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} required />
-                    </FormField>
-                </div>
-                <FormField label="ประเทศ" htmlFor="address-country">
-                    <Input id="address-country" name="address-country" type="text" value={formData['address-country'] || ''} onChange={handleChange} required />
-                </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="จังหวัด" htmlFor="address-province">
+            <Input
+              id="address-province"
+              name="address-province"
+              type="text"
+              value={formData['address-province'] || ''}
+              onChange={handleChange}
+              required
+            />
+          </FormField>
+          <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
+            <Input
+              id="address-postalcode"
+              name="address-postalcode"
+              type="text"
+              value={formData['address-postalcode'] || ''}
+              onChange={handleChange}
+              required
+            />
+          </FormField>
+        </div>
+        <FormField label="ประเทศ" htmlFor="address-country">
+          <Input
+            id="address-country"
+            name="address-country"
+            type="text"
+            value={formData['address-country'] || ''}
+            onChange={handleChange}
+            required
+          />
+        </FormField>
 
-                <div className="pt-4 mt-4 border-t">
-                    <h3 className="text-base font-semibold text-slate-800 mb-2">กลุ่มเส้นทาง/พื้นที่บริการ</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <FormField label="เขต (พื้นที่บริการ)" htmlFor="address-zone">
-                            <Input id="address-zone" name="address-zone" type="text" value={formData['address-zone'] || ''} onChange={handleChange} />
-                        </FormField>
-                        <FormField label="Group" htmlFor="address-group">
-                            <Input id="address-group" name="address-group" type="text" value={formData['address-group'] || ''} onChange={handleChange} />
-                        </FormField>
-                        <FormField label="สายถนนที่" htmlFor="address-roadLine">
-                            <Input id="address-roadLine" name="address-roadLine" type="text" value={formData['address-roadLine'] || ''} onChange={handleChange} />
-                        </FormField>
-                        <FormField label="ลำดับที่" htmlFor="address-sequence">
-                            <Input id="address-sequence" name="address-sequence" type="text" value={formData['address-sequence'] || ''} onChange={handleChange} />
-                        </FormField>
-                    </div>
-                </div>
+        <div className="pt-4 mt-4 border-t">
+          <h3 className="text-base font-semibold text-slate-800 mb-2">
+            กลุ่มเส้นทาง/พื้นที่บริการ
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <FormField label="เขต (พื้นที่บริการ)" htmlFor="address-zone">
+              <Input
+                id="address-zone"
+                name="address-zone"
+                type="text"
+                value={formData['address-zone'] || ''}
+                onChange={handleChange}
+              />
+            </FormField>
+            <FormField label="Group" htmlFor="address-group">
+              <Input
+                id="address-group"
+                name="address-group"
+                type="text"
+                value={formData['address-group'] || ''}
+                onChange={handleChange}
+              />
+            </FormField>
+            <FormField label="สายถนนที่" htmlFor="address-roadLine">
+              <Input
+                id="address-roadLine"
+                name="address-roadLine"
+                type="text"
+                value={formData['address-roadLine'] || ''}
+                onChange={handleChange}
+              />
+            </FormField>
+            <FormField label="ลำดับที่" htmlFor="address-sequence">
+              <Input
+                id="address-sequence"
+                name="address-sequence"
+                type="text"
+                value={formData['address-sequence'] || ''}
+                onChange={handleChange}
+              />
+            </FormField>
+          </div>
+        </div>
 
-                <FormField label="Link Google Map" htmlFor="googleMapLink">
-                    <Input name="googleMapLink" type="url" value={formData.googleMapLink || ''} onChange={handleChange} placeholder="https://maps.app.goo.gl/..." />
-                </FormField>
-
-            </form>
-        </Modal>
-    );
+        <FormField label="Link Google Map" htmlFor="googleMapLink">
+          <Input
+            name="googleMapLink"
+            type="url"
+            value={formData.googleMapLink || ''}
+            onChange={handleChange}
+            placeholder="https://maps.app.goo.gl/..."
+          />
+        </FormField>
+      </form>
+    </Modal>
+  );
 };

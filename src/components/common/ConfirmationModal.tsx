@@ -52,9 +52,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         </div>
       }
     >
-      <div className="text-slate-600">
-        {message}
-      </div>
+      <div className="text-slate-600">{message}</div>
     </Modal>
   );
 };

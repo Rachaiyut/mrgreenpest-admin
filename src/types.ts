@@ -1,4 +1,3 @@
-
 import type { FC } from 'react';
 
 export type Page =
@@ -311,8 +310,6 @@ export interface Receipt {
   amount: number;
   paymentMethod: string;
 }
-
-
 
 export interface NavLink {
   type: 'link';

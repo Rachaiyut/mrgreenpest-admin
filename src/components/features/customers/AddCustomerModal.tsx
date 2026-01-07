@@ -1,229 +1,372 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Textarea, Button } from '../../common/FormControls';
+import {
+  FormField,
+  Input,
+  Select,
+  Textarea,
+  Button,
+} from '../../common/FormControls';
 import { Customer, Status } from '../../../types';
 
 interface AddCustomerModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onCreateCustomer: (customerData: Omit<Customer, 'id'>) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateCustomer: (customerData: Omit<Customer, 'id'>) => void;
 }
 
-export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({ isOpen, onClose, onCreateCustomer }) => {
-    const [customerType, setCustomerType] = useState<'บุคคลธรรมดา' | 'นิติบุคคล'>('บุคคลธรรมดา');
-    const formRef = useRef<HTMLFormElement>(null);
+export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
+  isOpen,
+  onClose,
+  onCreateCustomer,
+}) => {
+  const [customerType, setCustomerType] = useState<'บุคคลธรรมดา' | 'นิติบุคคล'>(
+    'บุคคลธรรมดา'
+  );
+  const formRef = useRef<HTMLFormElement>(null);
 
-    useEffect(() => {
-        if (isOpen) {
-            setCustomerType('บุคคลธรรมดา');
-            formRef.current?.reset();
-        }
-    }, [isOpen]);
+  useEffect(() => {
+    if (isOpen) {
+      setCustomerType('บุคคลธรรมดา');
+      formRef.current?.reset();
+    }
+  }, [isOpen]);
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
 
-        const requiredFields = ['name', 'phone', 'address-street', 'address-subdistrict', 'address-district', 'address-province', 'address-postalcode', 'taxId'];
-        if (customerType === 'นิติบุคคล') {
-            requiredFields.push('contactPerson', 'contactPersonPhone');
-        }
+    const requiredFields = [
+      'name',
+      'phone',
+      'address-street',
+      'address-subdistrict',
+      'address-district',
+      'address-province',
+      'address-postalcode',
+      'taxId',
+    ];
+    if (customerType === 'นิติบุคคล') {
+      requiredFields.push('contactPerson', 'contactPersonPhone');
+    }
 
-        for (const field of requiredFields) {
-            if (!data[field]) {
-                alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
-                return;
-            }
-        }
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        return;
+      }
+    }
 
-        const newCustomer: Omit<Customer, 'id'> = {
-            name: data.name as string,
-            nickname: data.nickname as string | undefined,
-            type: customerType,
-            contactPerson: data.contactPerson as string || data.name as string,
-            contactPersonPhone: data.contactPersonPhone as string | undefined,
-            gender: data.gender as 'ชาย' | 'หญิง' | 'ไม่ระบุ' | undefined,
-            email: data.email as string,
-            phone: data.phone as string,
-            mobilePhone: data.mobilePhone as string | undefined,
-            additionalPhones: [
-                data.phone3 as string,
-                data.phone4 as string,
-                data.phone5 as string
-            ].filter(Boolean),
-            address: {
-                street: data['address-street'] as string,
-                soi: data['address-soi'] as string | undefined,
-                road: data['address-road'] as string | undefined,
-                subdistrict: data['address-subdistrict'] as string,
-                district: data['address-district'] as string,
-                province: data['address-province'] as string,
-                postalcode: data['address-postalcode'] as string,
-                country: data['address-country'] as string,
-                zone: data['address-zone'] as string | undefined,
-                group: data['address-group'] as string | undefined,
-                roadLine: data['address-roadLine'] as string | undefined,
-                sequence: data['address-sequence'] as string | undefined,
-            },
-            taxId: data.taxId as string,
-            createdAt: new Date().toISOString(),
-            googleMapLink: data.googleMapLink as string | undefined,
-            status: Status.Approved,
-        };
-
-        onCreateCustomer(newCustomer);
-        onClose();
+    const newCustomer: Omit<Customer, 'id'> = {
+      name: data.name as string,
+      nickname: data.nickname as string | undefined,
+      type: customerType,
+      contactPerson: (data.contactPerson as string) || (data.name as string),
+      contactPersonPhone: data.contactPersonPhone as string | undefined,
+      gender: data.gender as 'ชาย' | 'หญิง' | 'ไม่ระบุ' | undefined,
+      email: data.email as string,
+      phone: data.phone as string,
+      mobilePhone: data.mobilePhone as string | undefined,
+      additionalPhones: [
+        data.phone3 as string,
+        data.phone4 as string,
+        data.phone5 as string,
+      ].filter(Boolean),
+      address: {
+        street: data['address-street'] as string,
+        soi: data['address-soi'] as string | undefined,
+        road: data['address-road'] as string | undefined,
+        subdistrict: data['address-subdistrict'] as string,
+        district: data['address-district'] as string,
+        province: data['address-province'] as string,
+        postalcode: data['address-postalcode'] as string,
+        country: data['address-country'] as string,
+        zone: data['address-zone'] as string | undefined,
+        group: data['address-group'] as string | undefined,
+        roadLine: data['address-roadLine'] as string | undefined,
+        sequence: data['address-sequence'] as string | undefined,
+      },
+      taxId: data.taxId as string,
+      createdAt: new Date().toISOString(),
+      googleMapLink: data.googleMapLink as string | undefined,
+      status: Status.Approved,
     };
 
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="สร้างลูกค้าใหม่"
-            footer={
-                <div className="flex gap-2">
-                    <Button type="button" onClick={onClose} className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300" variant="outline">
-                        ยกเลิก
-                    </Button>
-                    <Button type="submit" form="add-customer-form" className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm" variant="primary">
-                        บันทึก
-                    </Button>
-                </div>
-            }
-        >
-            <form id="add-customer-form" ref={formRef} onSubmit={handleSubmit} className="space-y-4">
-                <FormField label="ประเภทลูกค้า">
-                    <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-                        <label className="relative flex-1 cursor-pointer">
-                            <input type="radio" name="customerTypeRadio" value="บุคคลธรรมดา" className="sr-only peer" checked={customerType === 'บุคคลธรรมดา'} onChange={() => setCustomerType('บุคคลธรรมดา')} />
-                            <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บุคคลธรรมดา</span>
-                        </label>
-                        <label className="relative flex-1 cursor-pointer">
-                            <input type="radio" name="customerTypeRadio" value="นิติบุคคล" className="sr-only peer" checked={customerType === 'นิติบุคคล'} onChange={() => setCustomerType('นิติบุคคล')} />
-                            <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">นิติบุคคล</span>
-                        </label>
-                    </div>
-                </FormField>
+    onCreateCustomer(newCustomer);
+    onClose();
+  };
 
-                {customerType === 'บุคคลธรรมดา' ? (
-                    <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField label="ชื่อ-นามสกุล" htmlFor="name">
-                                <Input id="name" name="name" type="text" required />
-                            </FormField>
-                            <FormField label="ชื่อเล่น" htmlFor="nickname">
-                                <Input id="nickname" name="nickname" type="text" />
-                            </FormField>
-                        </div>
-                        <FormField label="เพศ" htmlFor="gender">
-                            <Select id="gender" name="gender">
-                                <option>ไม่ระบุ</option>
-                                <option>ชาย</option>
-                                <option>หญิง</option>
-                            </Select>
-                        </FormField>
-                    </>
-                ) : (
-                    <>
-                        <FormField label="ชื่อบริษัท" htmlFor="name">
-                            <Input id="name" name="name" type="text" required />
-                        </FormField>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField label="ชื่อผู้ติดต่อ" htmlFor="contact-person">
-                                <Input id="contact-person" name="contactPerson" type="text" required />
-                            </FormField>
-                            <FormField label="เบอร์ผู้ติดต่อ" htmlFor="contact-person-phone">
-                                <Input id="contact-person-phone" name="contactPersonPhone" type="tel" pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} required />
-                            </FormField>
-                        </div>
-                    </>
-                )}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="สร้างลูกค้าใหม่"
+      footer={
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={onClose}
+            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
+            variant="outline"
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="submit"
+            form="add-customer-form"
+            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+            variant="primary"
+          >
+            บันทึก
+          </Button>
+        </div>
+      }
+    >
+      <form
+        id="add-customer-form"
+        ref={formRef}
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
+        <FormField label="ประเภทลูกค้า">
+          <div className="flex rounded-lg bg-slate-100 p-1 w-full">
+            <label className="relative flex-1 cursor-pointer">
+              <input
+                type="radio"
+                name="customerTypeRadio"
+                value="บุคคลธรรมดา"
+                className="sr-only peer"
+                checked={customerType === 'บุคคลธรรมดา'}
+                onChange={() => setCustomerType('บุคคลธรรมดา')}
+              />
+              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                บุคคลธรรมดา
+              </span>
+            </label>
+            <label className="relative flex-1 cursor-pointer">
+              <input
+                type="radio"
+                name="customerTypeRadio"
+                value="นิติบุคคล"
+                className="sr-only peer"
+                checked={customerType === 'นิติบุคคล'}
+                onChange={() => setCustomerType('นิติบุคคล')}
+              />
+              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                นิติบุคคล
+              </span>
+            </label>
+          </div>
+        </FormField>
 
-                <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax-id">
-                    <Input id="tax-id" name="taxId" type="text" required />
-                </FormField>
+        {customerType === 'บุคคลธรรมดา' ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อ-นามสกุล" htmlFor="name">
+                <Input id="name" name="name" type="text" required />
+              </FormField>
+              <FormField label="ชื่อเล่น" htmlFor="nickname">
+                <Input id="nickname" name="nickname" type="text" />
+              </FormField>
+            </div>
+            <FormField label="เพศ" htmlFor="gender">
+              <Select id="gender" name="gender">
+                <option>ไม่ระบุ</option>
+                <option>ชาย</option>
+                <option>หญิง</option>
+              </Select>
+            </FormField>
+          </>
+        ) : (
+          <>
+            <FormField label="ชื่อบริษัท" htmlFor="name">
+              <Input id="name" name="name" type="text" required />
+            </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อผู้ติดต่อ" htmlFor="contact-person">
+                <Input
+                  id="contact-person"
+                  name="contactPerson"
+                  type="text"
+                  required
+                />
+              </FormField>
+              <FormField label="เบอร์ผู้ติดต่อ" htmlFor="contact-person-phone">
+                <Input
+                  id="contact-person-phone"
+                  name="contactPersonPhone"
+                  type="tel"
+                  pattern="[0-9\+\-\(\) ]*"
+                  title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+                  maxLength={20}
+                  required
+                />
+              </FormField>
+            </div>
+          </>
+        )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="โทรศัพท์ (หลัก)" htmlFor="phone">
-                        <Input id="phone" name="phone" type="tel" required pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
-                        <Input id="mobilePhone" name="mobilePhone" type="tel" pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="อีเมล" htmlFor="email">
-                        <Input id="email" name="email" type="email" />
-                    </FormField>
-                </div>
+        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax-id">
+          <Input id="tax-id" name="taxId" type="text" required />
+        </FormField>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField label="เบอร์โทรศัพท์ 3 (เพิ่มเติม)" htmlFor="phone3">
-                        <Input id="phone3" name="phone3" type="tel" pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์โทรศัพท์ 4 (เพิ่มเติม)" htmlFor="phone4">
-                        <Input id="phone4" name="phone4" type="tel" pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                    <FormField label="เบอร์โทรศัพท์ 5 (เพิ่มเติม)" htmlFor="phone5">
-                        <Input id="phone5" name="phone5" type="tel" pattern="[0-9\+\-\(\) ]*" title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์" maxLength={20} />
-                    </FormField>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField label="โทรศัพท์ (หลัก)" htmlFor="phone">
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
+            <Input
+              id="mobilePhone"
+              name="mobilePhone"
+              type="tel"
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="อีเมล" htmlFor="email">
+            <Input id="email" name="email" type="email" />
+          </FormField>
+        </div>
 
-                <FormField label="บ้านเลขที่" htmlFor="address-street">
-                    <Textarea id="address-street" name="address-street" required />
-                </FormField>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="ซอย" htmlFor="address-soi">
-                        <Input id="address-soi" name="address-soi" type="text" />
-                    </FormField>
-                    <FormField label="ถนน" htmlFor="address-road">
-                        <Input id="address-road" name="address-road" type="text" />
-                    </FormField>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <FormField label="เบอร์โทรศัพท์ 3 (เพิ่มเติม)" htmlFor="phone3">
+            <Input
+              id="phone3"
+              name="phone3"
+              type="tel"
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์โทรศัพท์ 4 (เพิ่มเติม)" htmlFor="phone4">
+            <Input
+              id="phone4"
+              name="phone4"
+              type="tel"
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+          <FormField label="เบอร์โทรศัพท์ 5 (เพิ่มเติม)" htmlFor="phone5">
+            <Input
+              id="phone5"
+              name="phone5"
+              type="tel"
+              pattern="[0-9\+\-\(\) ]*"
+              title="กรุณากรอกเฉพาะตัวเลขและสัญลักษณ์ที่เกี่ยวข้องกับเบอร์โทรศัพท์"
+              maxLength={20}
+            />
+          </FormField>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
-                        <Input id="address-subdistrict" name="address-subdistrict" type="text" required />
-                    </FormField>
-                    <FormField label="เขต/อำเภอ" htmlFor="address-district">
-                        <Input id="address-district" name="address-district" type="text" required />
-                    </FormField>
-                </div>
+        <FormField label="บ้านเลขที่" htmlFor="address-street">
+          <Textarea id="address-street" name="address-street" required />
+        </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="ซอย" htmlFor="address-soi">
+            <Input id="address-soi" name="address-soi" type="text" />
+          </FormField>
+          <FormField label="ถนน" htmlFor="address-road">
+            <Input id="address-road" name="address-road" type="text" />
+          </FormField>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="จังหวัด" htmlFor="address-province">
-                        <Input id="address-province" name="address-province" type="text" required />
-                    </FormField>
-                    <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
-                        <Input id="address-postalcode" name="address-postalcode" type="text" required />
-                    </FormField>
-                </div>
-                <FormField label="ประเทศ" htmlFor="address-country">
-                    <Input id="address-country" name="address-country" type="text" defaultValue="ประเทศไทย" required />
-                </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
+            <Input
+              id="address-subdistrict"
+              name="address-subdistrict"
+              type="text"
+              required
+            />
+          </FormField>
+          <FormField label="เขต/อำเภอ" htmlFor="address-district">
+            <Input
+              id="address-district"
+              name="address-district"
+              type="text"
+              required
+            />
+          </FormField>
+        </div>
 
-                <div className="pt-4 mt-4 border-t">
-                    <h3 className="text-base font-semibold text-slate-800 mb-2">กลุ่มเส้นทาง/พื้นที่บริการ</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <FormField label="เขต (พื้นที่บริการ)" htmlFor="address-zone">
-                            <Input id="address-zone" name="address-zone" type="text" />
-                        </FormField>
-                        <FormField label="Group" htmlFor="address-group">
-                            <Input id="address-group" name="address-group" type="text" />
-                        </FormField>
-                        <FormField label="สายถนนที่" htmlFor="address-roadLine">
-                            <Input id="address-roadLine" name="address-roadLine" type="text" />
-                        </FormField>
-                        <FormField label="ลำดับที่" htmlFor="address-sequence">
-                            <Input id="address-sequence" name="address-sequence" type="text" />
-                        </FormField>
-                    </div>
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="จังหวัด" htmlFor="address-province">
+            <Input
+              id="address-province"
+              name="address-province"
+              type="text"
+              required
+            />
+          </FormField>
+          <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
+            <Input
+              id="address-postalcode"
+              name="address-postalcode"
+              type="text"
+              required
+            />
+          </FormField>
+        </div>
+        <FormField label="ประเทศ" htmlFor="address-country">
+          <Input
+            id="address-country"
+            name="address-country"
+            type="text"
+            defaultValue="ประเทศไทย"
+            required
+          />
+        </FormField>
 
-                <FormField label="Link Google Map" htmlFor="google-map-link">
-                    <Input id="google-map-link" name="googleMapLink" type="url" placeholder="https://maps.app.goo.gl/..." />
-                </FormField>
+        <div className="pt-4 mt-4 border-t">
+          <h3 className="text-base font-semibold text-slate-800 mb-2">
+            กลุ่มเส้นทาง/พื้นที่บริการ
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <FormField label="เขต (พื้นที่บริการ)" htmlFor="address-zone">
+              <Input id="address-zone" name="address-zone" type="text" />
+            </FormField>
+            <FormField label="Group" htmlFor="address-group">
+              <Input id="address-group" name="address-group" type="text" />
+            </FormField>
+            <FormField label="สายถนนที่" htmlFor="address-roadLine">
+              <Input
+                id="address-roadLine"
+                name="address-roadLine"
+                type="text"
+              />
+            </FormField>
+            <FormField label="ลำดับที่" htmlFor="address-sequence">
+              <Input
+                id="address-sequence"
+                name="address-sequence"
+                type="text"
+              />
+            </FormField>
+          </div>
+        </div>
 
-            </form>
-        </Modal>
-    );
+        <FormField label="Link Google Map" htmlFor="google-map-link">
+          <Input
+            id="google-map-link"
+            name="googleMapLink"
+            type="url"
+            placeholder="https://maps.app.goo.gl/..."
+          />
+        </FormField>
+      </form>
+    </Modal>
+  );
 };

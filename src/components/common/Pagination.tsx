@@ -19,9 +19,11 @@ export const Pagination: React.FC<PaginationProps> = ({
   onItemsPerPageChange,
   className = '',
 }) => {
-  const totalPages = itemsPerPage > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
+  const totalPages =
+    itemsPerPage > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
 
-  if (totalItems <= itemsPerPage) { // Hide if there's no need for pagination at all
+  if (totalItems <= itemsPerPage) {
+    // Hide if there's no need for pagination at all
     return null;
   }
 
@@ -37,7 +39,9 @@ export const Pagination: React.FC<PaginationProps> = ({
     }
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
     onItemsPerPageChange(Number(e.target.value));
   };
 
@@ -81,7 +85,9 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className={`flex items-center justify-between px-4 py-3 sm:px-6 bg-white border-t border-slate-200 rounded-b-lg ${className}`}>
+    <div
+      className={`flex items-center justify-between px-4 py-3 sm:px-6 bg-white border-t border-slate-200 rounded-b-lg ${className}`}
+    >
       <div className="flex-1 flex justify-between sm:hidden">
         <Button
           variant="outline"
@@ -103,7 +109,9 @@ export const Pagination: React.FC<PaginationProps> = ({
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-x-4">
           <div className="flex items-center gap-x-2">
-            <label htmlFor="items-per-page" className="text-sm text-slate-700">แสดง:</label>
+            <label htmlFor="items-per-page" className="text-sm text-slate-700">
+              แสดง:
+            </label>
             <select
               id="items-per-page"
               value={itemsPerPage}
@@ -119,13 +127,18 @@ export const Pagination: React.FC<PaginationProps> = ({
           </div>
           {totalItems > 0 && (
             <p className="text-sm text-slate-700">
-              แสดง <span className="font-medium">{startItem}</span> - <span className="font-medium">{endItem}</span> จาก <span className="font-medium">{totalItems}</span>
+              แสดง <span className="font-medium">{startItem}</span> -{' '}
+              <span className="font-medium">{endItem}</span> จาก{' '}
+              <span className="font-medium">{totalItems}</span>
             </p>
           )}
         </div>
         <div>
           {totalPages > 1 && (
-            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            <nav
+              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+              aria-label="Pagination"
+            >
               <button
                 onClick={handlePrevious}
                 disabled={currentPage === 1}
@@ -140,15 +153,19 @@ export const Pagination: React.FC<PaginationProps> = ({
                     key={`${page}-${index}`}
                     onClick={() => onPageChange(page)}
                     aria-current={currentPage === page ? 'page' : undefined}
-                    className={`relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium ${currentPage === page
+                    className={`relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium ${
+                      currentPage === page
                         ? 'z-10 bg-primary/10 border-primary text-primary'
                         : 'bg-white text-slate-500 hover:bg-slate-50'
-                      }`}
+                    }`}
                   >
                     {page}
                   </button>
                 ) : (
-                  <span key={`ellipsis-${index}`} className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700">
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700"
+                  >
                     {page}
                   </span>
                 )

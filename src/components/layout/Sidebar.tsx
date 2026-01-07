@@ -4,7 +4,12 @@ import { Link } from 'react-router-dom';
 // FIX: The NavigationItem type is defined in `types.ts`, not `constants.ts`. This change corrects the import path.
 import { Page, NavigationItem } from '../../types';
 import { NAVIGATION_ITEMS } from '../../constants';
-import { XIcon, ChevronDownIcon, PackageIcon, MenuIcon } from '../../assets/icons/Icons';
+import {
+  XIcon,
+  ChevronDownIcon,
+  PackageIcon,
+  MenuIcon,
+} from '../../assets/icons/Icons';
 
 interface SidebarProps {
   currentPage: Page;
@@ -13,42 +18,49 @@ interface SidebarProps {
   toggleSidebar: () => void;
 }
 
-export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, toggleSidebar }) => {
+export const Sidebar: FC<SidebarProps> = ({
+  currentPage,
+  onPageChange,
+  isOpen,
+  toggleSidebar,
+}) => {
   const PAGE_PATH: Record<Page, string> = {
     Dashboard: 'dashboard',
-    'ลูกค้า': 'customers',
-    'ใบประเมิน': 'assessments',
-    'ภาคสนาม': 'field-operations',
-    'ใบเสนอราคา': 'quotations',
-    'ใบแจ้งหนี้': 'billing',
+    ลูกค้า: 'customers',
+    ใบประเมิน: 'assessments',
+    ภาคสนาม: 'field-operations',
+    ใบเสนอราคา: 'quotations',
+    ใบแจ้งหนี้: 'billing',
     'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
-    'หมวดหมู่': 'categories',
+    หมวดหมู่: 'categories',
     'สินค้า/บริการ': 'inventory',
-    'แพ็กเกจ': 'packages',
-    'คลังสินค้า': 'warehouse',
-    'ผู้จัดจำหน่าย': 'suppliers',
+    แพ็กเกจ: 'packages',
+    คลังสินค้า: 'warehouse',
+    ผู้จัดจำหน่าย: 'suppliers',
     'รายงานรายได้ (รายเดือน)': 'reports/total-income',
     'รายได้ออกใบกำกับ(รายเดือน)': 'reports/tax-invoice-income',
-    'ค่าใช้จ่ายทางอ้อม': 'reports/indirect-expenses',
-    'บัญชีเงินสดรายวัน': 'reports/daily-cash',
-    'ค่าใช้จ่ายทางตรง': 'reports/direct-expenses',
+    ค่าใช้จ่ายทางอ้อม: 'reports/indirect-expenses',
+    บัญชีเงินสดรายวัน: 'reports/daily-cash',
+    ค่าใช้จ่ายทางตรง: 'reports/direct-expenses',
     'ยอดขาย(รายเดือน)': 'reports/monthly-sales',
     'สรุปยอดขาย(รายเดือน)': 'reports/sales-summary',
-    'รับเข้า': 'goods-receipt',
+    รับเข้า: 'goods-receipt',
     'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย': 'withdrawals',
-    'โอนย้าย': 'transfers',
+    โอนย้าย: 'transfers',
     'ปรับปรุง Stock': 'stock-adjustment',
-    'คืนสินค้า': 'returns',
-    'เบิกสินค้าคืนผู้จำหน่าย': 'return-to-supplier',
-    'ผู้ใช้งาน': 'users',
-    'จัดการบทบาท': 'roles',
-    'การแจ้งเตือน': 'notifications',
-    'รายงาน': 'reports',
+    คืนสินค้า: 'returns',
+    เบิกสินค้าคืนผู้จำหน่าย: 'return-to-supplier',
+    ผู้ใช้งาน: 'users',
+    จัดการบทบาท: 'roles',
+    การแจ้งเตือน: 'notifications',
+    รายงาน: 'reports',
   };
   const getHref = (page: Page) => `/${PAGE_PATH[page]}`;
   const getActiveGroup = useCallback(() => {
-    const activeGroup = NAVIGATION_ITEMS.find(item =>
-      item.type === 'group' && item.subItems.some(sub => sub.name === currentPage)
+    const activeGroup = NAVIGATION_ITEMS.find(
+      (item) =>
+        item.type === 'group' &&
+        item.subItems.some((sub) => sub.name === currentPage)
     );
     return activeGroup ? (activeGroup as any).name : '';
   }, [currentPage]);
@@ -56,7 +68,10 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
   const [openGroups, setOpenGroups] = useState<string[]>([getActiveGroup()]);
 
   const [flyoutGroup, setFlyoutGroup] = useState<string | null>(null);
-  const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
+  const [flyoutPos, setFlyoutPos] = useState<{ top: number; left: number }>({
+    top: 0,
+    left: 0,
+  });
   const flyoutRef = useRef<HTMLDivElement | null>(null);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [closeTimer, setCloseTimer] = useState<number | null>(null);
@@ -75,15 +90,12 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
   // This function allows only one group to be open at a time.
   // Clicking an open group closes it. Clicking a closed group opens it and closes any other.
   const toggleGroup = (groupName: string) => {
-    setOpenGroups(prev =>
+    setOpenGroups((prev) =>
       // If the clicked group is already open, close it (by setting an empty array).
       // Otherwise, open it by setting it as the only item in the array.
-      prev.includes(groupName)
-        ? []
-        : [groupName]
+      prev.includes(groupName) ? [] : [groupName]
     );
   };
-
 
   const collapsed = !isOpen; // Desktop: collapsed shows only icons; Mobile: sidebar hidden when not open
 
@@ -158,7 +170,9 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
   const renderNavItem = (item: NavigationItem) => {
     if (item.type === 'group') {
       const isGroupOpen = openGroups.includes(item.name);
-      const isGroupActive = item.subItems.some(sub => sub.name === currentPage);
+      const isGroupActive = item.subItems.some(
+        (sub) => sub.name === currentPage
+      );
 
       return (
         <div key={item.name}>
@@ -185,30 +199,36 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
                 startCloseTimer();
               }
             }}
-            className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${isGroupActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
-              } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
+            className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${
+              isGroupActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
+            } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
             title={collapsed ? item.name : undefined}
           >
             <div className="flex items-center">
-              {item.icon && <item.icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />}
+              {item.icon && (
+                <item.icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
+              )}
               {!collapsed && item.name}
             </div>
             {!collapsed && (
-              <ChevronDownIcon className={`h-5 w-5 transform transition-transform ${isGroupOpen ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon
+                className={`h-5 w-5 transform transition-transform ${isGroupOpen ? 'rotate-180' : ''}`}
+              />
             )}
           </button>
           {!collapsed && isGroupOpen && (
             <div className="pl-6 mt-1 space-y-1 ml-4 border-l-2 border-green-400/30">
-              {item.subItems.map(subItem => {
+              {item.subItems.map((subItem) => {
                 const isActive = currentPage === subItem.name;
                 return (
                   <Link
                     key={subItem.name}
                     to={getHref(subItem.name as Page)}
-                    className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${isActive
-                      ? 'bg-[#08a93d] text-white'
-                      : 'text-white/80 hover:bg-[#08a93d]/80 hover:text-white'
-                      }`}
+                    className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${
+                      isActive
+                        ? 'bg-[#08a93d] text-white'
+                        : 'text-white/80 hover:bg-[#08a93d]/80 hover:text-white'
+                    }`}
                   >
                     {subItem.name}
                   </Link>
@@ -226,13 +246,16 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
       <Link
         key={item.name}
         to={getHref(item.name as Page)}
-        className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-2.5 text-base font-medium rounded-md transition-colors ${isActive
-          ? 'bg-[#08a93d] text-white'
-          : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
-          }`}
+        className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-2.5 text-base font-medium rounded-md transition-colors ${
+          isActive
+            ? 'bg-[#08a93d] text-white'
+            : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
+        }`}
         title={collapsed ? displayName : undefined}
       >
-        {item.icon && <item.icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />}
+        {item.icon && (
+          <item.icon className={`h-5 w-5 ${collapsed ? '' : 'mr-3'}`} />
+        )}
         {!collapsed && displayName}
       </Link>
     );
@@ -246,29 +269,46 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
         onClick={toggleSidebar}
       ></div>
 
-      <aside className={`fixed md:relative top-0 left-0 h-full bg-[#0e6d2e] text-white transform ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-all duration-300 ease-in-out z-30 flex flex-col ${isOpen ? 'w-[300px]' : 'w-[300px] md:w-20'}`}>
-        <div className={`flex items-center justify-between h-16 ${collapsed ? 'px-2' : 'px-4'} border-b border-white/20`}>
+      <aside
+        className={`fixed md:relative top-0 left-0 h-full bg-[#0e6d2e] text-white transform ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-all duration-300 ease-in-out z-30 flex flex-col ${isOpen ? 'w-[300px]' : 'w-[300px] md:w-20'}`}
+      >
+        <div
+          className={`flex items-center justify-between h-16 ${collapsed ? 'px-2' : 'px-4'} border-b border-white/20`}
+        >
           <div className="flex items-center">
             <div>
               {collapsed ? (
-                <h1 className="text-base font-extrabold text-white tracking-wider leading-tight">MG</h1>
+                <h1 className="text-base font-extrabold text-white tracking-wider leading-tight">
+                  MG
+                </h1>
               ) : (
                 <>
-                  <h1 className="text-lg font-extrabold text-white tracking-wider leading-tight">MR. GREEN</h1>
-                  <p className="text-[10px] text-green-200 tracking-widest">PEST CONTROL CO.,LTD</p>
+                  <h1 className="text-lg font-extrabold text-white tracking-wider leading-tight">
+                    MR. GREEN
+                  </h1>
+                  <p className="text-[10px] text-green-200 tracking-widest">
+                    PEST CONTROL CO.,LTD
+                  </p>
                 </>
               )}
             </div>
           </div>
-          <button onClick={toggleSidebar} className="text-slate-300 hover:text-white md:hidden">
+          <button
+            onClick={toggleSidebar}
+            className="text-slate-300 hover:text-white md:hidden"
+          >
             <XIcon className="h-6 w-6" />
           </button>
-          <button onClick={toggleSidebar} className="text-slate-300 hover:text-white hidden md:block">
+          <button
+            onClick={toggleSidebar}
+            className="text-slate-300 hover:text-white hidden md:block"
+          >
             <MenuIcon className="h-6 w-6" />
           </button>
         </div>
 
-        <nav className={`flex-1 ${collapsed ? 'px-2' : 'px-4'} py-6 space-y-2 overflow-y-auto overflow-x-hidden`}
+        <nav
+          className={`flex-1 ${collapsed ? 'px-2' : 'px-4'} py-6 space-y-2 overflow-y-auto overflow-x-hidden`}
         >
           {NAVIGATION_ITEMS.map((item) => renderNavItem(item))}
         </nav>
@@ -276,14 +316,20 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
       {collapsed && flyoutGroup && (
         <div
           ref={flyoutRef}
-          style={{ position: 'fixed', top: flyoutPos.top, left: flyoutPos.left }}
+          style={{
+            position: 'fixed',
+            top: flyoutPos.top,
+            left: flyoutPos.left,
+          }}
           className="z-50 bg-white text-slate-800 shadow-xl rounded-md border border-slate-200 min-w-[220px]"
           onMouseEnter={clearCloseTimer}
           onMouseLeave={startCloseTimer}
         >
           <div className="py-2">
             {(() => {
-              const group = NAVIGATION_ITEMS.find(i => i.type === 'group' && i.name === flyoutGroup);
+              const group = NAVIGATION_ITEMS.find(
+                (i) => i.type === 'group' && i.name === flyoutGroup
+              );
               if (!group || !('subItems' in group)) return null;
               return (group as any).subItems.map((subItem: any) => {
                 const isActive = currentPage === subItem.name;
@@ -291,7 +337,9 @@ export const Sidebar: FC<SidebarProps> = ({ currentPage, onPageChange, isOpen, t
                   <Link
                     key={subItem.name}
                     to={getHref(subItem.name as Page)}
-                    onClick={() => { closeFlyout(); }}
+                    onClick={() => {
+                      closeFlyout();
+                    }}
                     className={`flex items-center w-full px-4 py-2 text-sm ${isActive ? 'bg-slate-100 text-primary' : 'hover:bg-slate-50'}`}
                   >
                     <span className="truncate">{subItem.name}</span>

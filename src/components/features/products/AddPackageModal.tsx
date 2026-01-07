@@ -1,7 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Product, PackageCondition, Category } from '../../../types';
-import { FormField, Input, Textarea, Select, Button } from '../../common/FormControls';
+import {
+  FormField,
+  Input,
+  Textarea,
+  Select,
+  Button,
+} from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface AddPackageModalProps {
@@ -12,193 +18,353 @@ interface AddPackageModalProps {
   categories: Category[];
 }
 
-export const AddPackageModal: React.FC<AddPackageModalProps> = ({ isOpen, onClose, products, onCreatePackage, categories }) => {
-    const [conditions, setConditions] = useState<Partial<Omit<PackageCondition, 'id' | 'type'>>[]>([]);
-    
-    useEffect(() => {
-        if (isOpen) {
-            setConditions([]);
-        }
-    }, [isOpen]);
-    
-    const availableCategories = useMemo(() => categories.filter(c => c.type === 'บริการ'), [categories]);
+export const AddPackageModal: React.FC<AddPackageModalProps> = ({
+  isOpen,
+  onClose,
+  products,
+  onCreatePackage,
+  categories,
+}) => {
+  const [conditions, setConditions] = useState<
+    Partial<Omit<PackageCondition, 'id' | 'type'>>[]
+  >([]);
 
-    const generatedId = useMemo(() => {
-        if (!isOpen) return '';
-        const prefix = 'PK';
-        const relevantProducts = products.filter(p => p.id.startsWith('PK'));
-        const maxId = relevantProducts.reduce((max, p) => {
-            const numPart = p.id.replace('PK', '');
-            if (!numPart) return max;
-            const num = parseInt(numPart, 10);
-            return isNaN(num) ? max : (num > max ? num : max);
-        }, 0);
-        const newIdNumber = maxId + 1;
-        return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
-    }, [isOpen, products]);
+  useEffect(() => {
+    if (isOpen) {
+      setConditions([]);
+    }
+  }, [isOpen]);
 
-    const invalidConditionIndices = useMemo(() => {
-        const indices: number[] = [];
-        conditions.forEach((cond, index) => {
-            if (typeof cond.minPrice === 'number' && typeof cond.firstOfferPriceNoTermites === 'number' && typeof cond.firstOfferPriceWithTermites === 'number' && cond.minPrice > Math.min(cond.firstOfferPriceNoTermites, cond.firstOfferPriceWithTermites)) {
-                indices.push(index);
+  const availableCategories = useMemo(
+    () => categories.filter((c) => c.type === 'บริการ'),
+    [categories]
+  );
+
+  const generatedId = useMemo(() => {
+    if (!isOpen) return '';
+    const prefix = 'PK';
+    const relevantProducts = products.filter((p) => p.id.startsWith('PK'));
+    const maxId = relevantProducts.reduce((max, p) => {
+      const numPart = p.id.replace('PK', '');
+      if (!numPart) return max;
+      const num = parseInt(numPart, 10);
+      return isNaN(num) ? max : num > max ? num : max;
+    }, 0);
+    const newIdNumber = maxId + 1;
+    return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
+  }, [isOpen, products]);
+
+  const invalidConditionIndices = useMemo(() => {
+    const indices: number[] = [];
+    conditions.forEach((cond, index) => {
+      if (
+        typeof cond.minPrice === 'number' &&
+        typeof cond.firstOfferPriceNoTermites === 'number' &&
+        typeof cond.firstOfferPriceWithTermites === 'number' &&
+        cond.minPrice >
+          Math.min(
+            cond.firstOfferPriceNoTermites,
+            cond.firstOfferPriceWithTermites
+          )
+      ) {
+        indices.push(index);
+      }
+    });
+    return indices;
+  }, [conditions]);
+
+  const handleAddCondition = () => {
+    setConditions((prev) => [
+      ...prev,
+      {
+        maxArea: undefined,
+        firstOfferPriceNoTermites: 0,
+        firstOfferPriceWithTermites: 0,
+        minPrice: 0,
+      },
+    ]);
+  };
+
+  const handleConditionChange = (
+    index: number,
+    field: keyof Omit<PackageCondition, 'id'>,
+    value: string
+  ) => {
+    const newConditions = [...conditions];
+    (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
+    setConditions(newConditions);
+  };
+
+  const handleRemoveCondition = (index: number) => {
+    setConditions((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (invalidConditionIndices.length > 0) {
+      alert('กรุณาแก้ไขราคาให้ถูกต้อง: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ');
+      return;
+    }
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    const newPackage: Omit<Product, 'id'> = {
+      name: data['package-name'] as string,
+      type: 'บริการ',
+      categoryId: data['categoryId'] as string,
+      unit: 'แพ็กเกจ',
+      price: 0, // Price is now derived from conditions
+      stock: 9999,
+      lowStockThreshold: 0,
+      warehouse: 'N/A',
+      createdBy: 'ผู้ดูแลระบบ',
+      updatedBy: 'ผู้ดูแลระบบ',
+      numberOfVisits: parseInt(data['package-visits'] as string, 10),
+      contractDuration: data['package-duration'] as string,
+      description: data['package-description'] as string,
+      conditions: conditions.map((c, i) => ({
+        id: `cond-${Date.now()}-${i}`,
+        maxArea: c.maxArea || 0,
+        firstOfferPriceNoTermites: c.firstOfferPriceNoTermites || 0,
+        firstOfferPriceWithTermites: c.firstOfferPriceWithTermites || 0,
+        minPrice: c.minPrice || 0,
+      })),
+    };
+
+    onCreatePackage(newPackage);
+    onClose();
+  };
+
+  const baseInputClasses =
+    'w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none sm:text-sm text-slate-900';
+  const normalInputClasses =
+    'border-slate-300 focus:ring-primary focus:border-primary';
+  const errorInputClasses =
+    'border-red-500 focus:ring-red-500 focus:border-red-500';
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="สร้างแพ็กเกจบริการใหม่"
+      size="3xl"
+      footer={
+        <div className="flex gap-2">
+          <Button type="button" onClick={onClose} variant="secondary">
+            ยกเลิก
+          </Button>
+          <Button
+            type="submit"
+            form="add-package-form"
+            variant="primary"
+            disabled={invalidConditionIndices.length > 0}
+            title={
+              invalidConditionIndices.length > 0
+                ? 'ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ'
+                : ''
             }
-        });
-        return indices;
-    }, [conditions]);
+          >
+            บันทึก
+          </Button>
+        </div>
+      }
+    >
+      <form id="add-package-form" onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="รหัสแพ็กเกจ" htmlFor="package-id">
+            <Input
+              id="package-id"
+              name="package-id"
+              type="text"
+              value={generatedId}
+              readOnly
+              className="bg-slate-100"
+            />
+          </FormField>
+          <FormField label="หมวดหมู่" htmlFor="categoryId">
+            <Select name="categoryId" id="categoryId" required>
+              <option value="">-- เลือกหมวดหมู่ --</option>
+              {availableCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+        </div>
+        <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
+          <Input
+            id="package-name"
+            name="package-name"
+            type="text"
+            required
+            placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)"
+          />
+        </FormField>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="package-visits">
+            <Input
+              id="package-visits"
+              name="package-visits"
+              type="number"
+              required
+              placeholder="เช่น 4"
+            />
+          </FormField>
+          <FormField label="อายุสัญญา" htmlFor="package-duration">
+            <Select id="package-duration" name="package-duration" required>
+              <option>ครั้งเดียว</option>
+              <option>3 เดือน</option>
+              <option>6 เดือน</option>
+              <option>1 ปี</option>
+            </Select>
+          </FormField>
+        </div>
 
-    const handleAddCondition = () => {
-        setConditions(prev => [...prev, { maxArea: undefined, firstOfferPriceNoTermites: 0, firstOfferPriceWithTermites: 0, minPrice: 0 }]);
-    };
-    
-    const handleConditionChange = (index: number, field: keyof Omit<PackageCondition, 'id'>, value: string) => {
-        const newConditions = [...conditions];
-        (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
-        setConditions(newConditions);
-    };
+        <FormField label="หมายเหตุ" htmlFor="package-description">
+          <Textarea
+            id="package-description"
+            name="package-description"
+            rows={3}
+            placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับแพ็กเกจ"
+          />
+        </FormField>
 
-    const handleRemoveCondition = (index: number) => {
-        setConditions(prev => prev.filter((_, i) => i !== index));
-    };
-
-
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (invalidConditionIndices.length > 0) {
-            alert('กรุณาแก้ไขราคาให้ถูกต้อง: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ');
-            return;
-        }
-        const formData = new FormData(e.currentTarget);
-        const data = Object.fromEntries(formData.entries());
-
-        const newPackage: Omit<Product, 'id'> = {
-            name: data['package-name'] as string,
-            type: 'บริการ',
-            categoryId: data['categoryId'] as string,
-            unit: 'แพ็กเกจ',
-            price: 0, // Price is now derived from conditions
-            stock: 9999,
-            lowStockThreshold: 0,
-            warehouse: 'N/A',
-            createdBy: 'ผู้ดูแลระบบ',
-            updatedBy: 'ผู้ดูแลระบบ',
-            numberOfVisits: parseInt(data['package-visits'] as string, 10),
-            contractDuration: data['package-duration'] as string,
-            description: data['package-description'] as string,
-            conditions: conditions.map((c, i) => ({
-                id: `cond-${Date.now()}-${i}`,
-                maxArea: c.maxArea || 0,
-                firstOfferPriceNoTermites: c.firstOfferPriceNoTermites || 0,
-                firstOfferPriceWithTermites: c.firstOfferPriceWithTermites || 0,
-                minPrice: c.minPrice || 0,
-            })),
-        };
-
-        onCreatePackage(newPackage);
-        onClose();
-    };
-    
-    const baseInputClasses = "w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none sm:text-sm text-slate-900";
-    const normalInputClasses = "border-slate-300 focus:ring-primary focus:border-primary";
-    const errorInputClasses = "border-red-500 focus:ring-red-500 focus:border-red-500";
-
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="สร้างแพ็กเกจบริการใหม่"
-            size="3xl"
-            footer={
-                <div className="flex gap-2">
-                    <Button type="button" onClick={onClose} variant="secondary">ยกเลิก</Button>
-                    <Button 
-                        type="submit" 
-                        form="add-package-form" 
-                        variant="primary"
-                        disabled={invalidConditionIndices.length > 0}
-                        title={invalidConditionIndices.length > 0 ? 'ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ' : ''}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-base font-semibold text-slate-800">
+              เงื่อนไขราคา
+            </h4>
+            <button
+              type="button"
+              onClick={handleAddCondition}
+              className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2 px-3 rounded-lg transition-colors text-sm"
+            >
+              <PlusIcon className="h-5 w-5" />
+              เพิ่มเงื่อนไข
+            </button>
+          </div>
+          <div className="overflow-x-auto border border-slate-200 rounded-md">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    พื้นที่ฯ (ตร.ม.)
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    ราคาเสนอ (ไม่มีปลวก)
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    ราคาเสนอ (มีปลวก)
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    ราคาต่ำสุด
+                  </th>
+                  <th className="p-2 w-10"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {conditions.length > 0 ? (
+                  conditions.map((cond, index) => (
+                    <tr
+                      key={index}
+                      className="border-b border-slate-200 last:border-b-0"
                     >
-                        บันทึก
-                    </Button>
-                </div>
-            }
-        >
-            <form id="add-package-form" onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="รหัสแพ็กเกจ" htmlFor="package-id">
-                        <Input id="package-id" name="package-id" type="text" value={generatedId} readOnly className="bg-slate-100" />
-                    </FormField>
-                    <FormField label="หมวดหมู่" htmlFor="categoryId">
-                        <Select name="categoryId" id="categoryId" required>
-                            <option value="">-- เลือกหมวดหมู่ --</option>
-                            {availableCategories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </Select>
-                    </FormField>
-                </div>
-                 <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
-                    <Input id="package-name" name="package-name" type="text" required placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)" />
-                </FormField>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="package-visits">
-                        <Input id="package-visits" name="package-visits" type="number" required placeholder="เช่น 4" />
-                    </FormField>
-                    <FormField label="อายุสัญญา" htmlFor="package-duration">
-                         <Select id="package-duration" name="package-duration" required>
-                            <option>ครั้งเดียว</option>
-                            <option>3 เดือน</option>
-                            <option>6 เดือน</option>
-                            <option>1 ปี</option>
-                         </Select>
-                    </FormField>
-                </div>
-
-                <FormField label="หมายเหตุ" htmlFor="package-description">
-                    <Textarea id="package-description" name="package-description" rows={3} placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับแพ็กเกจ" />
-                </FormField>
-
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-base font-semibold text-slate-800">เงื่อนไขราคา</h4>
-                        <button type="button" onClick={handleAddCondition} className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary font-semibold py-2 px-3 rounded-lg transition-colors text-sm">
-                            <PlusIcon className="h-5 w-5" />
-                            เพิ่มเงื่อนไข
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          value={cond.maxArea || ''}
+                          onChange={(e) =>
+                            handleConditionChange(
+                              index,
+                              'maxArea',
+                              e.target.value
+                            )
+                          }
+                          className={`${baseInputClasses} h-9 ${normalInputClasses}`}
+                          placeholder="เช่น 150"
+                          required
+                        />
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          value={cond.firstOfferPriceNoTermites ?? ''}
+                          onChange={(e) =>
+                            handleConditionChange(
+                              index,
+                              'firstOfferPriceNoTermites',
+                              e.target.value
+                            )
+                          }
+                          className={`${baseInputClasses} h-9 ${normalInputClasses}`}
+                          placeholder="0.00"
+                          step="0.01"
+                          required
+                        />
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          value={cond.firstOfferPriceWithTermites ?? ''}
+                          onChange={(e) =>
+                            handleConditionChange(
+                              index,
+                              'firstOfferPriceWithTermites',
+                              e.target.value
+                            )
+                          }
+                          className={`${baseInputClasses} h-9 ${normalInputClasses}`}
+                          placeholder="0.00"
+                          step="0.01"
+                          required
+                        />
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          value={cond.minPrice ?? ''}
+                          onChange={(e) =>
+                            handleConditionChange(
+                              index,
+                              'minPrice',
+                              e.target.value
+                            )
+                          }
+                          className={`${baseInputClasses} h-9 ${invalidConditionIndices.includes(index) ? errorInputClasses : normalInputClasses}`}
+                          placeholder="0.00"
+                          step="0.01"
+                          required
+                        />
+                      </td>
+                      <td className="p-1 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCondition(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <TrashIcon className="h-5 w-5" />
                         </button>
-                    </div>
-                    <div className="overflow-x-auto border border-slate-200 rounded-md">
-                        <table className="min-w-full text-sm">
-                            <thead className="bg-slate-50">
-                                <tr>
-                                    <th className="p-2 text-left font-medium text-slate-600">พื้นที่ฯ (ตร.ม.)</th>
-                                    <th className="p-2 text-left font-medium text-slate-600">ราคาเสนอ (ไม่มีปลวก)</th>
-                                    <th className="p-2 text-left font-medium text-slate-600">ราคาเสนอ (มีปลวก)</th>
-                                    <th className="p-2 text-left font-medium text-slate-600">ราคาต่ำสุด</th>
-                                    <th className="p-2 w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {conditions.length > 0 ? conditions.map((cond, index) => (
-                                    <tr key={index} className="border-b border-slate-200 last:border-b-0">
-                                        <td className="p-1"><Input type="number" value={cond.maxArea || ''} onChange={e => handleConditionChange(index, 'maxArea', e.target.value)} className={`${baseInputClasses} h-9 ${normalInputClasses}`} placeholder="เช่น 150" required /></td>
-                                        <td className="p-1"><Input type="number" value={cond.firstOfferPriceNoTermites ?? ''} onChange={e => handleConditionChange(index, 'firstOfferPriceNoTermites', e.target.value)} className={`${baseInputClasses} h-9 ${normalInputClasses}`} placeholder="0.00" step="0.01" required /></td>
-                                        <td className="p-1"><Input type="number" value={cond.firstOfferPriceWithTermites ?? ''} onChange={e => handleConditionChange(index, 'firstOfferPriceWithTermites', e.target.value)} className={`${baseInputClasses} h-9 ${normalInputClasses}`} placeholder="0.00" step="0.01" required /></td>
-                                        <td className="p-1"><Input type="number" value={cond.minPrice ?? ''} onChange={e => handleConditionChange(index, 'minPrice', e.target.value)} className={`${baseInputClasses} h-9 ${invalidConditionIndices.includes(index) ? errorInputClasses : normalInputClasses}`} placeholder="0.00" step="0.01" required /></td>
-                                        <td className="p-1 text-center"><button type="button" onClick={() => handleRemoveCondition(index)} className="text-red-500 hover:text-red-700"><TrashIcon className="h-5 w-5" /></button></td>
-                                    </tr>
-                                )) : (
-                                    <tr><td colSpan={5} className="text-center py-6 text-slate-500">ยังไม่มีเงื่อนไข</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                    {invalidConditionIndices.length > 0 && (
-                        <p className="text-sm text-red-600 mt-2">
-                            ข้อผิดพลาด: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ
-                        </p>
-                    )}
-                </div>
-            </form>
-        </Modal>
-    );
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="text-center py-6 text-slate-500">
+                      ยังไม่มีเงื่อนไข
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {invalidConditionIndices.length > 0 && (
+            <p className="text-sm text-red-600 mt-2">
+              ข้อผิดพลาด: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ
+            </p>
+          )}
+        </div>
+      </form>
+    </Modal>
+  );
 };

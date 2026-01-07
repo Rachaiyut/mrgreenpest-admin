@@ -26,7 +26,11 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <Button variant="ghost" className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700" style={{ borderRadius: '9999px' }}>
+          <Button
+            variant="ghost"
+            className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            style={{ borderRadius: '9999px' }}
+          >
             <BellIcon className="h-6 w-6" />
           </Button>
 
@@ -38,8 +42,12 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
                 className="h-9 w-9 rounded-full object-cover"
               />
               <div className="hidden sm:flex flex-col items-start">
-                <span className="text-sm font-medium text-slate-700">{currentUser.name}</span>
-                <span className="text-xs text-slate-500">{currentUser.role}</span>
+                <span className="text-sm font-medium text-slate-700">
+                  {currentUser.name}
+                </span>
+                <span className="text-xs text-slate-500">
+                  {currentUser.role}
+                </span>
               </div>
               <ChevronDownIcon className="hidden sm:block h-4 w-4 text-slate-500" />
             </Button>

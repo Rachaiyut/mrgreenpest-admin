@@ -11,16 +11,16 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react()],
     esbuild: {
-      jsxInject: `import React from 'react'`
+      jsxInject: `import React from 'react'`,
     },
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
     },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
-      }
+      },
     },
     build: {
       rollupOptions: {
@@ -28,9 +28,9 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             react: ['react', 'react-dom'],
             antd: ['antd'],
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   };
 });

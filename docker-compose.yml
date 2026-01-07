@@ -11,7 +11,7 @@ services:
     image: mrgreenpest-dev:latest
     container_name: mrgreenpest-dev
     ports:
-      - "4100:80"
+      - '4100:80'
     restart: unless-stopped
     networks:
       - mrgreenpest-dev-network

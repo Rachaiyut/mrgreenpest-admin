@@ -11,7 +11,14 @@ interface ModalProps {
   size?: 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, size = '2xl' }) => {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  footer,
+  size = '2xl',
+}) => {
   if (!isOpen) return null;
 
   const sizeClasses = {
@@ -26,9 +33,14 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
   const maxWidthClass = sizeClasses[size];
 
-  const renderFooter = footer === undefined ? (
-    <Button variant="primary" type="button" onClick={onClose}>ปิด</Button>
-  ) : footer;
+  const renderFooter =
+    footer === undefined ? (
+      <Button variant="primary" type="button" onClick={onClose}>
+        ปิด
+      </Button>
+    ) : (
+      footer
+    );
 
   return (
     <div
@@ -44,13 +56,16 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-xl font-semibold text-slate-800">{title}</h3>
-          <Button onClick={onClose} className="text-slate-400 hover:text-slate-600 rounded-full p-1" variant="icon" title="ปิด">
+          <Button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 rounded-full p-1"
+            variant="icon"
+            title="ปิด"
+          >
             <XIcon className="h-6 w-6" />
           </Button>
         </div>
-        <div className="p-6 overflow-y-auto">
-          {children}
-        </div>
+        <div className="p-6 overflow-y-auto">{children}</div>
         {renderFooter && (
           <div className="flex justify-end items-center p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg flex-shrink-0">
             {renderFooter}

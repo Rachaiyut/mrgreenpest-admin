@@ -4,10 +4,35 @@ import { Pagination } from '../../components/common/Pagination';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatThaiDate, formatThaiDateTime } from '../../constants';
-import { Product, Warehouse as WarehouseType, GoodsReceipt, Withdrawal, Transfer, StockAdjustment, ProductReturn, FieldJob, Invoice, Receipt, Customer, Status, User, Supplier } from '../../types';
+import {
+  Product,
+  Warehouse as WarehouseType,
+  GoodsReceipt,
+  Withdrawal,
+  Transfer,
+  StockAdjustment,
+  ProductReturn,
+  FieldJob,
+  Invoice,
+  Receipt,
+  Customer,
+  Status,
+  User,
+  Supplier,
+} from '../../types';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 
-type ReportTab = 'สต็อกคงเหลือ' | 'รับเข้า' | 'เบิกสินค้า' | 'โอนย้าย' | 'ปรับปรุง Stock' | 'คืนสินค้า' | 'ภาคสนาม' | 'ใบแจ้งหนี้' | 'ใบเสร็จรับเงิน' | 'ลูกค้า';
+type ReportTab =
+  | 'สต็อกคงเหลือ'
+  | 'รับเข้า'
+  | 'เบิกสินค้า'
+  | 'โอนย้าย'
+  | 'ปรับปรุง Stock'
+  | 'คืนสินค้า'
+  | 'ภาคสนาม'
+  | 'ใบแจ้งหนี้'
+  | 'ใบเสร็จรับเงิน'
+  | 'ลูกค้า';
 
 interface ReportsProps {
   products: Product[];
@@ -26,7 +51,22 @@ interface ReportsProps {
   customers: Customer[];
 }
 
-const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, users, stockMap, goodsReceipts, withdrawals, transfers, stockAdjustments, productReturns, fieldJobs, invoices, receipts, customers }) => {
+const Reports: React.FC<ReportsProps> = ({
+  products,
+  warehouses,
+  suppliers,
+  users,
+  stockMap,
+  goodsReceipts,
+  withdrawals,
+  transfers,
+  stockAdjustments,
+  productReturns,
+  fieldJobs,
+  invoices,
+  receipts,
+  customers,
+}) => {
   const [activeTab, setActiveTab] = useState<ReportTab>('สต็อกคงเหลือ');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,84 +76,108 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
   const [warehouseFilter, setWarehouseFilter] = useState<string>('');
 
   useEffect(() => {
-
     try {
       const def = localStorage.getItem('reportsDefaultTab') as ReportTab | null;
       if (def && tabs.includes(def) && def !== activeTab) setActiveTab(def);
-    } catch { }
-    try { localStorage.removeItem('reportsDefaultTab'); } catch { }
+    } catch {}
+    try {
+      localStorage.removeItem('reportsDefaultTab');
+    } catch {}
   }, []);
 
   const warehouseById = useMemo(() => {
     const m = new Map<string, string>();
-    warehouses.forEach(w => m.set(w.id, w.name));
+    warehouses.forEach((w) => m.set(w.id, w.name));
     return m;
   }, [warehouses]);
 
   const productById = useMemo(() => {
     const m = new Map<string, Product>();
-    products.forEach(p => m.set(p.id, p));
+    products.forEach((p) => m.set(p.id, p));
     return m;
   }, [products]);
 
   const supplierById = useMemo(() => {
     const m = new Map<string, string>();
-    suppliers.forEach(s => m.set(s.id, s.name));
+    suppliers.forEach((s) => m.set(s.id, s.name));
     return m;
   }, [suppliers]);
 
   const userById = useMemo(() => {
     const m = new Map<string, string>();
-    users.forEach(u => m.set(u.id, u.name));
+    users.forEach((u) => m.set(u.id, u.name));
     return m;
   }, [users]);
 
   const stockRows = useMemo(() => {
-    const rows: { warehouse: string; product: string; unit: string; quantity: number; threshold: number; low: boolean; }[] = [];
-    Object.keys(stockMap).forEach(whId => {
+    const rows: {
+      warehouse: string;
+      product: string;
+      unit: string;
+      quantity: number;
+      threshold: number;
+      low: boolean;
+    }[] = [];
+    Object.keys(stockMap).forEach((whId) => {
       const whName = warehouseById.get(whId) || whId;
       const prodMap = stockMap[whId] || {};
-      Object.keys(prodMap).forEach(pid => {
+      Object.keys(prodMap).forEach((pid) => {
         const qty = prodMap[pid] || 0;
         const p = productById.get(pid);
         if (!p) return;
         const threshold = p.lowStockThreshold || 0;
-        rows.push({ warehouse: whName, product: p.name, unit: p.unit, quantity: qty, threshold, low: qty < threshold });
+        rows.push({
+          warehouse: whName,
+          product: p.name,
+          unit: p.unit,
+          quantity: qty,
+          threshold,
+          low: qty < threshold,
+        });
       });
     });
     return rows;
   }, [stockMap, warehouseById, productById]);
 
   const grRows = useMemo(() => {
-    return goodsReceipts.map(gr => ({
+    return goodsReceipts.map((gr) => ({
       id: gr.id,
       warehouse: warehouseById.get(gr.warehouseId) || gr.warehouseId,
-      supplier: gr.supplierId ? (supplierById.get(gr.supplierId) || gr.supplierId) : '-',
+      supplier: gr.supplierId
+        ? supplierById.get(gr.supplierId) || gr.supplierId
+        : '-',
       date: formatThaiDate(gr.createdAt),
       status: gr.status,
       itemsCount: gr.items.length,
       totalQty: gr.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(gr.createdAt || '').getTime()
+      ts: new Date(gr.createdAt || '').getTime(),
     }));
   }, [goodsReceipts, warehouseById, supplierById]);
 
   const wdRows = useMemo(() => {
-    return withdrawals.map(w => ({
+    return withdrawals.map((w) => ({
       id: w.id,
       from: warehouseById.get(w.fromWarehouseId) || w.fromWarehouseId,
-      to: w.toWarehouseId ? (warehouseById.get(w.toWarehouseId) || w.toWarehouseId) : '-',
-      recipient: w.recipientId ? (userById.get(w.recipientId) || w.recipientId) : '-',
+      to: w.toWarehouseId
+        ? warehouseById.get(w.toWarehouseId) || w.toWarehouseId
+        : '-',
+      recipient: w.recipientId
+        ? userById.get(w.recipientId) || w.recipientId
+        : '-',
       date: formatThaiDate(w.createdAt),
       status: w.status,
       itemsCount: w.items.length,
       totalQty: w.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      expensesTotal: (w.expenses || []).reduce((acc, e) => acc + Number(e.amount || 0), 0),
-      ts: new Date(w.createdAt || '').getTime()
+      expensesTotal: (w.expenses || []).reduce(
+        (acc, e) => acc + Number(e.amount || 0),
+        0
+      ),
+      ts: new Date(w.createdAt || '').getTime(),
     }));
   }, [withdrawals, warehouseById, userById]);
 
   const tfRows = useMemo(() => {
-    return transfers.map(t => ({
+    return transfers.map((t) => ({
       id: t.id,
       from: warehouseById.get(t.fromWarehouseId) || t.fromWarehouseId,
       to: warehouseById.get(t.toWarehouseId) || t.toWarehouseId,
@@ -121,24 +185,29 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
       status: t.status,
       itemsCount: t.items.length,
       totalQty: t.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(t.createdAt || '').getTime()
+      ts: new Date(t.createdAt || '').getTime(),
     }));
   }, [transfers, warehouseById]);
 
   const saRows = useMemo(() => {
-    return stockAdjustments.map(a => ({
+    return stockAdjustments.map((a) => ({
       id: a.id,
       warehouse: warehouseById.get(a.warehouseId) || a.warehouseId,
       date: formatThaiDate(a.createdAt),
       status: a.status,
       itemsCount: a.items.length,
-      totalDelta: a.items.reduce((acc, it) => acc + ((Number(it.adjustedQuantity || 0) - Number(it.originalQuantity || 0))), 0),
-      ts: new Date(a.createdAt || '').getTime()
+      totalDelta: a.items.reduce(
+        (acc, it) =>
+          acc +
+          (Number(it.adjustedQuantity || 0) - Number(it.originalQuantity || 0)),
+        0
+      ),
+      ts: new Date(a.createdAt || '').getTime(),
     }));
   }, [stockAdjustments, warehouseById]);
 
   const rtRows = useMemo(() => {
-    return productReturns.map(r => ({
+    return productReturns.map((r) => ({
       id: r.id,
       from: warehouseById.get(r.fromWarehouseId) || r.fromWarehouseId,
       to: warehouseById.get(r.toWarehouseId) || r.toWarehouseId,
@@ -146,52 +215,52 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
       status: r.status,
       itemsCount: r.items.length,
       totalQty: r.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(r.createdAt || '').getTime()
+      ts: new Date(r.createdAt || '').getTime(),
     }));
   }, [productReturns, warehouseById]);
 
   const foRows = useMemo(() => {
     return fieldJobs
-      .filter(j => !!j.serviceReport)
-      .map(j => ({
+      .filter((j) => !!j.serviceReport)
+      .map((j) => ({
         id: j.id,
         customer: j.customerName,
         reportDate: formatThaiDateTime(j.serviceReport?.createdAt),
         status: j.serviceReport?.status || Status.Draft,
-        ts: new Date(j.serviceReport?.createdAt || '').getTime()
+        ts: new Date(j.serviceReport?.createdAt || '').getTime(),
       }));
   }, [fieldJobs]);
 
   const invRows = useMemo(() => {
-    return invoices.map(inv => ({
+    return invoices.map((inv) => ({
       id: inv.id,
       customer: inv.customerName,
       issuedAt: formatThaiDate(inv.issuedAt),
       dueAt: formatThaiDate(inv.dueAt),
       status: inv.status,
       total: inv.total,
-      ts: new Date(inv.issuedAt || '').getTime()
+      ts: new Date(inv.issuedAt || '').getTime(),
     }));
   }, [invoices]);
 
   const recRows = useMemo(() => {
-    return receipts.map(r => ({
+    return receipts.map((r) => ({
       id: r.id,
       invoiceId: r.invoiceId,
       customer: r.customerName,
       paidAt: formatThaiDate(r.paidAt),
       amount: r.amount,
       method: r.paymentMethod,
-      ts: new Date(r.paidAt || '').getTime()
+      ts: new Date(r.paidAt || '').getTime(),
     }));
   }, [receipts]);
 
   const custRows = useMemo(() => {
-    return customers.map(c => ({
+    return customers.map((c) => ({
       id: c.id,
       name: c.name,
       type: c.type,
-      createdAt: formatThaiDate(c.createdAt)
+      createdAt: formatThaiDate(c.createdAt),
     }));
   }, [customers]);
 
@@ -199,20 +268,37 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
 
   const filterRows = (rows: any[], keys: string[]) => {
     if (!normalizedQuery) return rows;
-    return rows.filter(r => keys.some(k => String(r[k] ?? '').toLowerCase().includes(normalizedQuery)));
+    return rows.filter((r) =>
+      keys.some((k) =>
+        String(r[k] ?? '')
+          .toLowerCase()
+          .includes(normalizedQuery)
+      )
+    );
   };
 
   const withinDateRange = (rows: any[]) => {
     if (!startDate && !endDate) return rows;
     const startTs = startDate ? new Date(startDate).getTime() : -Infinity;
-    const endTs = endDate ? new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1 : Infinity;
-    return rows.filter(r => typeof r.ts === 'number' ? (r.ts >= startTs && r.ts <= endTs) : true);
+    const endTs = endDate
+      ? new Date(endDate).getTime() + 24 * 60 * 60 * 1000 - 1
+      : Infinity;
+    return rows.filter((r) =>
+      typeof r.ts === 'number' ? r.ts >= startTs && r.ts <= endTs : true
+    );
   };
 
-  const applyWarehouseFilter = (rows: any[], opt: { from?: boolean; to?: boolean; warehouse?: boolean }) => {
+  const applyWarehouseFilter = (
+    rows: any[],
+    opt: { from?: boolean; to?: boolean; warehouse?: boolean }
+  ) => {
     if (!warehouseFilter) return rows;
-    return rows.filter(r => {
-      if (opt.warehouse && r.warehouse) return r.warehouse === (warehouseById.get(warehouseFilter) || warehouseFilter);
+    return rows.filter((r) => {
+      if (opt.warehouse && r.warehouse)
+        return (
+          r.warehouse ===
+          (warehouseById.get(warehouseFilter) || warehouseFilter)
+        );
       const name = warehouseById.get(warehouseFilter) || warehouseFilter;
       const m1 = opt.from && r.from ? r.from === name : false;
       const m2 = opt.to && r.to ? r.to === name : false;
@@ -225,21 +311,42 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
       case 'สต็อกคงเหลือ':
         return filterRows(stockRows, ['warehouse', 'product']);
       case 'รับเข้า':
-        return applyWarehouseFilter(withinDateRange(filterRows(grRows, ['id', 'warehouse', 'supplier'])), { warehouse: true });
+        return applyWarehouseFilter(
+          withinDateRange(filterRows(grRows, ['id', 'warehouse', 'supplier'])),
+          { warehouse: true }
+        );
       case 'เบิกสินค้า':
-        return applyWarehouseFilter(withinDateRange(filterRows(wdRows, ['id', 'from', 'to', 'recipient'])), { from: true, to: true });
+        return applyWarehouseFilter(
+          withinDateRange(
+            filterRows(wdRows, ['id', 'from', 'to', 'recipient'])
+          ),
+          { from: true, to: true }
+        );
       case 'โอนย้าย':
-        return applyWarehouseFilter(withinDateRange(filterRows(tfRows, ['id', 'from', 'to'])), { from: true, to: true });
+        return applyWarehouseFilter(
+          withinDateRange(filterRows(tfRows, ['id', 'from', 'to'])),
+          { from: true, to: true }
+        );
       case 'ปรับปรุง Stock':
-        return applyWarehouseFilter(withinDateRange(filterRows(saRows, ['id', 'warehouse'])), { warehouse: true });
+        return applyWarehouseFilter(
+          withinDateRange(filterRows(saRows, ['id', 'warehouse'])),
+          { warehouse: true }
+        );
       case 'คืนสินค้า':
-        return applyWarehouseFilter(withinDateRange(filterRows(rtRows, ['id', 'from', 'to'])), { from: true, to: true });
+        return applyWarehouseFilter(
+          withinDateRange(filterRows(rtRows, ['id', 'from', 'to'])),
+          { from: true, to: true }
+        );
       case 'ภาคสนาม':
-        return withinDateRange(filterRows(foRows, ['id', 'customer', 'reportDate']));
+        return withinDateRange(
+          filterRows(foRows, ['id', 'customer', 'reportDate'])
+        );
       case 'ใบแจ้งหนี้':
         return withinDateRange(filterRows(invRows, ['id', 'customer']));
       case 'ใบเสร็จรับเงิน':
-        return withinDateRange(filterRows(recRows, ['id', 'invoiceId', 'customer']));
+        return withinDateRange(
+          filterRows(recRows, ['id', 'invoiceId', 'customer'])
+        );
       case 'ลูกค้า':
         return filterRows(custRows, ['id', 'name', 'type']);
       default:
@@ -249,14 +356,30 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
 
   const allRows = getActiveRows();
   const totalItems = allRows.length;
-  const paginatedRows = allRows.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginatedRows = allRows.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  const tabs: ReportTab[] = ['สต็อกคงเหลือ', 'รับเข้า', 'เบิกสินค้า', 'โอนย้าย', 'ปรับปรุง Stock', 'คืนสินค้า', 'ภาคสนาม', 'ใบแจ้งหนี้', 'ใบเสร็จรับเงิน', 'ลูกค้า'];
+  const tabs: ReportTab[] = [
+    'สต็อกคงเหลือ',
+    'รับเข้า',
+    'เบิกสินค้า',
+    'โอนย้าย',
+    'ปรับปรุง Stock',
+    'คืนสินค้า',
+    'ภาคสนาม',
+    'ใบแจ้งหนี้',
+    'ใบเสร็จรับเงิน',
+    'ลูกค้า',
+  ];
 
   const [isCustDetailsOpen, setIsCustDetailsOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
   const handleViewCustomer = (id: string) => {
-    const cust = customers.find(c => c.id === id) || null;
+    const cust = customers.find((c) => c.id === id) || null;
     setSelectedCustomer(cust);
     setIsCustDetailsOpen(!!cust);
   };
@@ -273,47 +396,179 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
     let dataRows: any[] = [];
     switch (activeTab) {
       case 'สต็อกคงเหลือ':
-        headers = ['คลัง', 'สินค้า', 'หน่วย', 'คงเหลือ', 'เกณฑ์ต่ำสุด', 'สถานะ'];
-        dataRows = rows.map((r: any) => [r.warehouse, r.product, r.unit, r.quantity, r.threshold, r.low ? 'ต่ำกว่ากำหนด' : 'ปกติ']);
+        headers = [
+          'คลัง',
+          'สินค้า',
+          'หน่วย',
+          'คงเหลือ',
+          'เกณฑ์ต่ำสุด',
+          'สถานะ',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.warehouse,
+          r.product,
+          r.unit,
+          r.quantity,
+          r.threshold,
+          r.low ? 'ต่ำกว่ากำหนด' : 'ปกติ',
+        ]);
         break;
       case 'รับเข้า':
-        headers = ['เลขที่รับเข้า', 'คลัง', 'ผู้จัดจำหน่าย', 'วันที่', 'สถานะ', 'จำนวนรายการ', 'รวมจำนวน'];
-        dataRows = rows.map((r: any) => [r.id, r.warehouse, r.supplier, r.date, r.status, r.itemsCount, r.totalQty]);
+        headers = [
+          'เลขที่รับเข้า',
+          'คลัง',
+          'ผู้จัดจำหน่าย',
+          'วันที่',
+          'สถานะ',
+          'จำนวนรายการ',
+          'รวมจำนวน',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.warehouse,
+          r.supplier,
+          r.date,
+          r.status,
+          r.itemsCount,
+          r.totalQty,
+        ]);
         break;
       case 'เบิกสินค้า':
-        headers = ['เลขที่เบิก', 'จากคลัง', 'ไปยัง', 'ผู้รับ', 'วันที่', 'สถานะ', 'จำนวนรายการ', 'รวมจำนวน', 'รวมค่าใช้จ่าย'];
-        dataRows = rows.map((r: any) => [r.id, r.from, r.to, r.recipient, r.date, r.status, r.itemsCount, r.totalQty, r.expensesTotal]);
+        headers = [
+          'เลขที่เบิก',
+          'จากคลัง',
+          'ไปยัง',
+          'ผู้รับ',
+          'วันที่',
+          'สถานะ',
+          'จำนวนรายการ',
+          'รวมจำนวน',
+          'รวมค่าใช้จ่าย',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.from,
+          r.to,
+          r.recipient,
+          r.date,
+          r.status,
+          r.itemsCount,
+          r.totalQty,
+          r.expensesTotal,
+        ]);
         break;
       case 'โอนย้าย':
-        headers = ['เลขที่โอนย้าย', 'จากคลัง', 'ไปยัง', 'วันที่', 'สถานะ', 'จำนวนรายการ', 'รวมจำนวน'];
-        dataRows = rows.map((r: any) => [r.id, r.from, r.to, r.date, r.status, r.itemsCount, r.totalQty]);
+        headers = [
+          'เลขที่โอนย้าย',
+          'จากคลัง',
+          'ไปยัง',
+          'วันที่',
+          'สถานะ',
+          'จำนวนรายการ',
+          'รวมจำนวน',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.from,
+          r.to,
+          r.date,
+          r.status,
+          r.itemsCount,
+          r.totalQty,
+        ]);
         break;
       case 'ปรับปรุง Stock':
-        headers = ['เลขที่ปรับปรุง', 'คลัง', 'วันที่', 'สถานะ', 'จำนวนรายการ', 'ผลรวมปรับปรุง'];
-        dataRows = rows.map((r: any) => [r.id, r.warehouse, r.date, r.status, r.itemsCount, r.totalDelta]);
+        headers = [
+          'เลขที่ปรับปรุง',
+          'คลัง',
+          'วันที่',
+          'สถานะ',
+          'จำนวนรายการ',
+          'ผลรวมปรับปรุง',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.warehouse,
+          r.date,
+          r.status,
+          r.itemsCount,
+          r.totalDelta,
+        ]);
         break;
       case 'คืนสินค้า':
-        headers = ['เลขที่คืน', 'จากคลัง', 'ไปยัง', 'วันที่', 'สถานะ', 'จำนวนรายการ', 'รวมจำนวน'];
-        dataRows = rows.map((r: any) => [r.id, r.from, r.to, r.date, r.status, r.itemsCount, r.totalQty]);
+        headers = [
+          'เลขที่คืน',
+          'จากคลัง',
+          'ไปยัง',
+          'วันที่',
+          'สถานะ',
+          'จำนวนรายการ',
+          'รวมจำนวน',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.from,
+          r.to,
+          r.date,
+          r.status,
+          r.itemsCount,
+          r.totalQty,
+        ]);
         break;
       case 'ภาคสนาม':
         headers = ['รหัสงาน', 'ลูกค้า', 'วันที่รายงาน', 'สถานะ'];
-        dataRows = rows.map((r: any) => [r.id, r.customer, r.reportDate, r.status]);
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.customer,
+          r.reportDate,
+          r.status,
+        ]);
         break;
       case 'ใบแจ้งหนี้':
-        headers = ['เลขที่ใบแจ้งหนี้', 'ลูกค้า', 'วันที่ออก', 'กำหนดชำระ', 'สถานะ', 'ยอดรวม'];
-        dataRows = rows.map((r: any) => [r.id, r.customer, r.issuedAt, r.dueAt, r.status, r.total]);
+        headers = [
+          'เลขที่ใบแจ้งหนี้',
+          'ลูกค้า',
+          'วันที่ออก',
+          'กำหนดชำระ',
+          'สถานะ',
+          'ยอดรวม',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.customer,
+          r.issuedAt,
+          r.dueAt,
+          r.status,
+          r.total,
+        ]);
         break;
       case 'ใบเสร็จรับเงิน':
-        headers = ['เลขที่ใบเสร็จ', 'เลขที่ใบแจ้งหนี้', 'ลูกค้า', 'วันที่ชำระ', 'จำนวนเงิน', 'วิธีชำระ'];
-        dataRows = rows.map((r: any) => [r.id, r.invoiceId, r.customer, r.paidAt, r.amount, r.method]);
+        headers = [
+          'เลขที่ใบเสร็จ',
+          'เลขที่ใบแจ้งหนี้',
+          'ลูกค้า',
+          'วันที่ชำระ',
+          'จำนวนเงิน',
+          'วิธีชำระ',
+        ];
+        dataRows = rows.map((r: any) => [
+          r.id,
+          r.invoiceId,
+          r.customer,
+          r.paidAt,
+          r.amount,
+          r.method,
+        ]);
         break;
       case 'ลูกค้า':
         headers = ['รหัสลูกค้า', 'ชื่อ', 'ประเภท', 'วันที่สร้าง'];
         dataRows = rows.map((r: any) => [r.id, r.name, r.type, r.createdAt]);
         break;
     }
-    const csv = [headers.map(escape).join(','), ...dataRows.map(row => row.map(escape).join(','))].join('\n');
+    const csv = [
+      headers.map(escape).join(','),
+      ...dataRows.map((row) => row.map(escape).join(',')),
+    ].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -332,31 +587,69 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">คลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สินค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">หน่วย</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">คงเหลือ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">เกณฑ์ต่ำสุด</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    คลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สินค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    หน่วย
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    คงเหลือ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    เกณฑ์ต่ำสุด
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={`${r.warehouse}-${r.product}`}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.warehouse}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.product}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.unit}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.quantity}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.threshold}</td>
-                    <td className="px-4 py-3 text-sm">{r.low ? <StatusBadge status={Status.Failed} /> : <StatusBadge status={Status.Approved} />}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.warehouse}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.product}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.unit}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.quantity}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.threshold}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {r.low ? (
+                        <StatusBadge status={Status.Failed} />
+                      ) : (
+                        <StatusBadge status={Status.Approved} />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -368,33 +661,69 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่รับเข้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">คลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ผู้จัดจำหน่าย</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนรายการ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">รวมจำนวน</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่รับเข้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    คลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ผู้จัดจำหน่าย
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนรายการ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    รวมจำนวน
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.warehouse}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.supplier}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.itemsCount}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.totalQty}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.warehouse}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.supplier}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.date}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.itemsCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.totalQty}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -406,37 +735,79 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่เบิก</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">จากคลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ไปยัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ผู้รับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนรายการ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">รวมจำนวน</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">รวมค่าใช้จ่าย</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่เบิก
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    จากคลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ไปยัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ผู้รับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนรายการ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    รวมจำนวน
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    รวมค่าใช้จ่าย
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.from}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.from}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.to}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.recipient}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.itemsCount}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.totalQty}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.expensesTotal.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.recipient}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.date}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.itemsCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.totalQty}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.expensesTotal.toFixed(2)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -448,33 +819,67 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่โอนย้าย</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">จากคลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ไปยัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนรายการ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">รวมจำนวน</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่โอนย้าย
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    จากคลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ไปยัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนรายการ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    รวมจำนวน
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.from}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.from}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.to}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.itemsCount}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.totalQty}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.date}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.itemsCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.totalQty}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -486,31 +891,63 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่ปรับปรุง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">คลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนรายการ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">ผลรวมปรับปรุง</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่ปรับปรุง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    คลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนรายการ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    ผลรวมปรับปรุง
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.warehouse}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.itemsCount}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.totalDelta}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.warehouse}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.date}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.itemsCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.totalDelta}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -522,33 +959,67 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่คืน</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">จากคลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ไปยัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนรายการ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">รวมจำนวน</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่คืน
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    จากคลัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ไปยัง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนรายการ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    รวมจำนวน
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.from}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.from}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.to}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.date}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.itemsCount}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.totalQty}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.date}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.itemsCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.totalQty}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -560,27 +1031,51 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">รหัสงาน</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลูกค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่รายงาน</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    รหัสงาน
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลูกค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่รายงาน
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.customer}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.reportDate}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.customer}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.reportDate}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -592,31 +1087,63 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่ใบแจ้งหนี้</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลูกค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่ออก</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">กำหนดชำระ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">ยอดรวม</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่ใบแจ้งหนี้
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลูกค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่ออก
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    กำหนดชำระ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    สถานะ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    ยอดรวม
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.customer}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.issuedAt}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.dueAt}</td>
-                    <td className="px-4 py-3 text-sm"><StatusBadge status={r.status} /></td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.total.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.customer}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.issuedAt}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.dueAt}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.total.toFixed(2)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -628,31 +1155,63 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่ใบเสร็จ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">เลขที่ใบแจ้งหนี้</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลูกค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่ชำระ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">จำนวนเงิน</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วิธีชำระ</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่ใบเสร็จ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    เลขที่ใบแจ้งหนี้
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลูกค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่ชำระ
+                  </th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                    จำนวนเงิน
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วิธีชำระ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.invoiceId}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.customer}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.paidAt}</td>
-                    <td className="px-4 py-3 text-sm text-slate-900 text-right">{r.amount.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.method}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.invoiceId}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.customer}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.paidAt}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-900 text-right">
+                      {r.amount.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.method}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
         </Card>
       );
     }
@@ -664,32 +1223,67 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">รหัสลูกค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ชื่อลูกค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ประเภท</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">วันที่สร้าง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">จัดการ</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    รหัสลูกค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ชื่อลูกค้า
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    ประเภท
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    วันที่สร้าง
+                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                    จัดการ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-700">{r.type}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">{r.createdAt}</td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-700">
+                      {r.type}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">
+                      {r.createdAt}
+                    </td>
                     <td className="px-4 py-3 text-sm">
-                      <Button onClick={() => handleViewCustomer(r.id)} className="px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold">ดูรายละเอียด</Button>
+                      <Button
+                        onClick={() => handleViewCustomer(r.id)}
+                        className="px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold"
+                      >
+                        ดูรายละเอียด
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <Pagination currentPage={currentPage} itemsPerPage={itemsPerPage} totalItems={totalItems} onPageChange={setCurrentPage} onItemsPerPageChange={setItemsPerPage} />
-          <CustomerDetailsModal isOpen={isCustDetailsOpen} onClose={() => setIsCustDetailsOpen(false)} customer={selectedCustomer} />
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+          <CustomerDetailsModal
+            isOpen={isCustDetailsOpen}
+            onClose={() => setIsCustDetailsOpen(false)}
+            customer={selectedCustomer}
+          />
         </Card>
       );
     }
@@ -699,39 +1293,81 @@ const Reports: React.FC<ReportsProps> = ({ products, warehouses, suppliers, user
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
-
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">รายงาน</h1>
-          <p className="mt-1 text-slate-600">แยกรายงานตามหมวดหมู่และแสดงในรูปแบบตาราง</p>
+          <p className="mt-1 text-slate-600">
+            แยกรายงานตามหมวดหมู่และแสดงในรูปแบบตาราง
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-56">
-            <Input type="search" placeholder="ค้นหา..." value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} />
+            <Input
+              type="search"
+              placeholder="ค้นหา..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
           </div>
           <div className="w-44">
-            <Input type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }} title="ตั้งแต่วันที่" />
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              title="ตั้งแต่วันที่"
+            />
           </div>
           <div className="w-44">
-            <Input type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }} title="ถึงวันที่" />
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              title="ถึงวันที่"
+            />
           </div>
           <div className="w-56">
-            <Select value={warehouseFilter} onChange={(e) => { setWarehouseFilter(e.target.value); setCurrentPage(1); }} title="กรองคลัง">
+            <Select
+              value={warehouseFilter}
+              onChange={(e) => {
+                setWarehouseFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              title="กรองคลัง"
+            >
               <option value="">ทุกคลัง</option>
-              {warehouses.map(wh => (
-                <option key={wh.id} value={wh.id}>{wh.name}</option>
+              {warehouses.map((wh) => (
+                <option key={wh.id} value={wh.id}>
+                  {wh.name}
+                </option>
               ))}
             </Select>
           </div>
-          <Button onClick={exportCsv} className="px-3 py-2 rounded-lg bg-primary text-white font-semibold">ส่งออก CSV</Button>
+          <Button
+            onClick={exportCsv}
+            className="px-3 py-2 rounded-lg bg-primary text-white font-semibold"
+          >
+            ส่งออก CSV
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <Button
             key={tab}
-            onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
+            onClick={() => {
+              setActiveTab(tab);
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium ${activeTab === tab ? 'bg-primary text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}`}
             variant="ghost"
           >
