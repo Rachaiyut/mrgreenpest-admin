@@ -117,14 +117,6 @@ export interface PackageCondition {
   minPrice: number;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  type: 'สินค้า' | 'บริการ';
-  prefix?: string;
-}
-
 export interface Product {
   id: string;
   barcode?: string;

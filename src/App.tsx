@@ -31,7 +31,6 @@ import {
   ProductReturn as ProductReturnType,
   Invoice,
   Receipt,
-  Category,
   UserWallet,
   WalletTransaction,
   ReturnToSupplier as ReturnToSupplierType,
@@ -60,6 +59,7 @@ import {
   MOCK_INVOICES,
   MOCK_RECEIPTS,
 } from './constants';
+import { Category } from './api/master/categories';
 const Dashboard = lazy(() => import('./pages/dashboard'));
 const Customers = lazy(() => import('./pages/customers'));
 const Assessments = lazy(() => import('./pages/assessments'));
@@ -493,7 +493,7 @@ const App: FC = () => {
 
   const createCategory = useCallback((data: Omit<Category, 'id'>) => {
     setCategories((prev) => {
-      const prefix = data.prefix?.toUpperCase() || 'CAT';
+      const prefix = data.name?.toUpperCase() || 'CAT';
       const relevantCategories = prev.filter((c) => c.id.startsWith(prefix));
       const maxId = relevantCategories.reduce((max, c) => {
         const numPart = c.id.replace(prefix, '');
@@ -1005,12 +1005,7 @@ const App: FC = () => {
         );
       case 'หมวดหมู่':
         return (
-          <Categories
-            categories={categories}
-            onCreateCategory={HANDLERS.categories.create}
-            onUpdateCategory={HANDLERS.categories.update}
-            onDeleteCategory={HANDLERS.categories.delete}
-          />
+          <Categories/>
         );
       case 'สินค้า/บริการ':
         return (
@@ -1388,12 +1383,7 @@ const App: FC = () => {
                 <Route
                   path="/categories"
                   element={
-                    <Categories
-                      categories={categories}
-                      onCreateCategory={HANDLERS.categories.create}
-                      onUpdateCategory={HANDLERS.categories.update}
-                      onDeleteCategory={HANDLERS.categories.delete}
-                    />
+                    <Categories/>
                   }
                 />
                 <Route

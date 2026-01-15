@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Card } from '../../components/common/Card';
-import { Category } from '../../types';
 import {
   PlusIcon,
   PencilIcon,
@@ -12,20 +11,12 @@ import { AddCategoryModal } from '../../components/features/products/AddCategory
 import { EditCategoryModal } from '../../components/features/products/EditCategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
+import { getAllcategories, Category } from '@/src/api/master/categories';
+import { ApiResponse } from '@/src/api/type';
 
-interface CategoriesProps {
-  categories: Category[];
-  onCreateCategory: (category: Omit<Category, 'id'>) => void;
-  onUpdateCategory: (category: Category) => void;
-  onDeleteCategory: (categoryId: string) => void;
-}
 
-const Categories: React.FC<CategoriesProps> = ({
-  categories,
-  onCreateCategory,
-  onUpdateCategory,
-  onDeleteCategory,
-}) => {
+const Categories: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
@@ -36,40 +27,18 @@ const Categories: React.FC<CategoriesProps> = ({
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(10);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [totalCategories, setTotalCategories] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<string>('desc');
 
-  const reversedCategories = useMemo(
-    () => [...categories].reverse(),
-    [categories]
-  );
-
-  const filteredCategories = useMemo(() => {
-    const productCategories = reversedCategories.filter(
-      (c) => c.type === 'สินค้า'
-    );
-    if (!searchQuery) {
-      return productCategories;
-    }
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return productCategories.filter(
-      (category) =>
-        category.id.toLowerCase().includes(lowercasedQuery) ||
-        category.name.toLowerCase().includes(lowercasedQuery) ||
-        (category.description &&
-          category.description.toLowerCase().includes(lowercasedQuery))
-    );
-  }, [reversedCategories, searchQuery]);
-
-  const totalItems = filteredCategories.length;
-  const paginatedCategories = filteredCategories.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -90,7 +59,6 @@ const Categories: React.FC<CategoriesProps> = ({
 
   const handleConfirmDelete = () => {
     if (categoryToDelete) {
-      onDeleteCategory(categoryToDelete.id);
     }
     setIsDeleteModalOpen(false);
     setCategoryToDelete(null);
@@ -133,6 +101,32 @@ const Categories: React.FC<CategoriesProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdownId]);
+
+  const fetchCategories = useCallback(async() => {
+      try {
+        setLoading(true);
+        const response = await getAllcategories({
+          page: currentPage,
+          limit: pageSize,
+          search: searchQuery,
+          sort_by: sortBy,
+          sort_order: sortOrder as 'asc' | 'desc'
+        })
+
+        setCategories(response.data)
+        setTotalCategories(response.meta.total);
+      } catch (error) {
+        console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false)
+      }
+
+    }, [currentPage, pageSize, searchQuery, sortBy, sortOrder])
+
+  useEffect(() => {
+    fetchCategories()
+  }, [fetchCategories])
 
   return (
     <>
@@ -199,13 +193,13 @@ const Categories: React.FC<CategoriesProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedCategories.map((category, index) => (
+                {categories.map((category, index) => (
                   <tr key={category.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
+                      {index}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {category.id}
+                      {category.code}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
                       {category.name}
@@ -235,7 +229,7 @@ const Categories: React.FC<CategoriesProps> = ({
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
+              totalItems={totalCategories}
               onPageChange={setCurrentPage}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -285,7 +279,7 @@ const Categories: React.FC<CategoriesProps> = ({
         </div>
       )}
 
-      <AddCategoryModal
+      {/* <AddCategoryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreateCategory={onCreateCategory}
@@ -312,7 +306,7 @@ const Categories: React.FC<CategoriesProps> = ({
         }
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
-      />
+      /> */}
     </>
   );
 };
