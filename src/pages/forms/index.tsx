@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { ContractForm } from '../../components/file/contract';
 import { QuotationForm } from '../../components/file/quotation';
+import { OfficialQuotationForm } from '../../components/file/official-quotation';
+import { InvoiceForm } from '../../components/file/invoice';
+import { ReceiptForm } from '../../components/file/receipt';
 import { ServiceReportForm } from '../../components/file/service-report';
 
 const FormsPage: React.FC = () => {
@@ -13,13 +16,22 @@ const FormsPage: React.FC = () => {
     { key: 'service-report', label: 'รายงานบริการ' },
     { key: 'assessment', label: 'ใบประเมิน' },
   ];
-  const [activeTab, setActiveTab] = useState<string>('contract');
+  const [activeTab, setActiveTab] = useState<string>('receipt');
 
   const renderTabContent = () => {
     if (activeTab === 'contract') {
       return <ContractForm />;
     }
     if (activeTab === 'quotation') {
+      return <OfficialQuotationForm />;
+    }
+    if (activeTab === 'invoice') {
+      return <InvoiceForm />;
+    }
+    if (activeTab === 'receipt') {
+      return <ReceiptForm />;
+    }
+    if (activeTab === 'assessment') {
       return <QuotationForm />;
     }
     if (activeTab === 'service-report') {
