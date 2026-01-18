@@ -95,6 +95,7 @@ const DailyCash = lazy(() => import('./pages/reports/DailyCashPage'));
 const DirectExpenses = lazy(() => import('./pages/reports/DirectExpensesPage'));
 const Notifications = lazy(() => import('./pages/notifications'));
 const Login = lazy(() => import('./pages/login'));
+const Forms = lazy(() => import('./pages/forms'));
 
 const UnderDevelopment: FC<{ title: string }> = ({ title }) => (
   <div className="p-8">
@@ -112,6 +113,7 @@ const App: FC = () => {
     ใบเสนอราคา: 'quotations',
     ใบแจ้งหนี้: 'billing',
     'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
+    ฟอร์ม: 'forms',
     หมวดหมู่: 'categories',
     'สินค้า/บริการ': 'inventory',
     แพ็กเกจ: 'packages',
@@ -161,6 +163,7 @@ const App: FC = () => {
     else if (location.pathname.startsWith('/receipts'))
       currentPage = 'ใบกำกับภาษี/ใบเสร็จรับเงิน';
     else if (location.pathname.startsWith('/customers')) currentPage = 'ลูกค้า';
+    else if (location.pathname.startsWith('/forms')) currentPage = 'ฟอร์ม';
   }
 
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -1236,6 +1239,7 @@ const App: FC = () => {
                   path="/"
                   element={<Navigate to="/dashboard" replace />}
                 />
+                <Route path="/forms" element={<Forms />} />
                 <Route
                   path="/dashboard"
                   element={

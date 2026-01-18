@@ -32,6 +32,7 @@ export const Sidebar: FC<SidebarProps> = ({
     ใบเสนอราคา: 'quotations',
     ใบแจ้งหนี้: 'billing',
     'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
+    ฟอร์ม: 'forms',
     หมวดหมู่: 'categories',
     'สินค้า/บริการ': 'inventory',
     แพ็กเกจ: 'packages',
