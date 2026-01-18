@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { ContractForm } from '../../components/file/contract';
+import { QuotationForm } from '../../components/file/quotation';
 import { ServiceReportForm } from '../../components/file/service-report';
 
 const FormsPage: React.FC = () => {
@@ -17,6 +18,9 @@ const FormsPage: React.FC = () => {
   const renderTabContent = () => {
     if (activeTab === 'contract') {
       return <ContractForm />;
+    }
+    if (activeTab === 'quotation') {
+      return <QuotationForm />;
     }
     if (activeTab === 'service-report') {
       return <ServiceReportForm />;
