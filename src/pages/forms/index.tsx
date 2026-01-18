@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { ContractForm } from '../../components/file/contract';
+import { ServiceReportForm } from '../../components/file/service-report';
 
 const FormsPage: React.FC = () => {
   const tabs = [
@@ -16,6 +17,9 @@ const FormsPage: React.FC = () => {
   const renderTabContent = () => {
     if (activeTab === 'contract') {
       return <ContractForm />;
+    }
+    if (activeTab === 'service-report') {
+      return <ServiceReportForm />;
     }
     return (
       <div
