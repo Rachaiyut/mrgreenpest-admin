@@ -1,15 +1,25 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router-dom';
-// FIX: The NavigationItem type is defined in `types.ts`, not `constants.ts`. This change corrects the import path.
-import { Page, NavigationItem } from '../../types';
-import { NAVIGATION_ITEMS } from '../../constants';
+
+// Constant
+import { NAVIGATION_ITEMS } from '../../../libs/common/constant/navigate';
+import { PAGE_PATH } from '../../../libs/common/constant/route.';
+
+// Enum
+import { Role } from '../../../libs/common/enum/role.enum';
+
+// Type
+import { Page } from '@/libs/common/type/page';
+import { NavigationItem } from '@/libs/common/type/nav';
+
 import {
   XIcon,
   ChevronDownIcon,
   PackageIcon,
   MenuIcon,
 } from '../../assets/icons/Icons';
+import { ILOCAL_STORAGE } from '@/libs/common/interface/api/auth.interface';
 
 interface SidebarProps {
   currentPage: Page;
@@ -24,47 +34,58 @@ export const Sidebar: FC<SidebarProps> = ({
   isOpen,
   toggleSidebar,
 }) => {
-  const PAGE_PATH: Record<Page, string> = {
-    Dashboard: 'dashboard',
-    ลูกค้า: 'customers',
-    ใบประเมิน: 'assessments',
-    ภาคสนาม: 'field-operations',
-    ใบเสนอราคา: 'quotations',
-    ใบแจ้งหนี้: 'billing',
-    'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
-    ฟอร์ม: 'forms',
-    หมวดหมู่: 'categories',
-    'สินค้า/บริการ': 'inventory',
-    แพ็กเกจ: 'packages',
-    คลังสินค้า: 'warehouse',
-    ผู้จัดจำหน่าย: 'suppliers',
-    'รายงานรายได้ (รายเดือน)': 'reports/total-income',
-    'รายได้ออกใบกำกับ(รายเดือน)': 'reports/tax-invoice-income',
-    ค่าใช้จ่ายทางอ้อม: 'reports/indirect-expenses',
-    บัญชีเงินสดรายวัน: 'reports/daily-cash',
-    ค่าใช้จ่ายทางตรง: 'reports/direct-expenses',
-    'ยอดขาย(รายเดือน)': 'reports/monthly-sales',
-    'สรุปยอดขาย(รายเดือน)': 'reports/sales-summary',
-    รับเข้า: 'goods-receipt',
-    'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย': 'withdrawals',
-    โอนย้าย: 'transfers',
-    'ปรับปรุง Stock': 'stock-adjustment',
-    คืนสินค้า: 'returns',
-    เบิกสินค้าคืนผู้จำหน่าย: 'return-to-supplier',
-    ผู้ใช้งาน: 'users',
-    จัดการบทบาท: 'roles',
-    การแจ้งเตือน: 'notifications',
-    รายงาน: 'reports',
-  };
+  const [userRole, setUserRole] = useState<Role | null>(() => {
+    try {
+      const userProfileStr = localStorage.getItem(ILOCAL_STORAGE.USER_PROFILE);
+      if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr);
+        return userProfile.role as Role;
+      }
+    } catch (error) {
+      console.error('Error parsing user profile:', error);
+    }
+    return null;
+  });
+
+  const filteredNavigationItems = useMemo(() => {
+    if (!userRole) return [];
+
+    return NAVIGATION_ITEMS.reduce<NavigationItem[]>((acc, item) => {
+      if (item.roles && !item.roles.includes(userRole)) {
+        return acc;
+      }
+
+      if (item.type === 'group') {
+        const visibleSubItems = item.subItems.filter(
+          (sub) => !sub.roles || sub.roles.includes(userRole)
+        );
+
+        if (visibleSubItems.length === 0) {
+          return acc;
+        }
+
+        acc.push({
+          ...item,
+          subItems: visibleSubItems,
+        });
+      } else {
+        // It's a link, and we passed the role check
+        acc.push(item);
+      }
+
+      return acc;
+    }, []);
+  }, [userRole]);
+
   const getHref = (page: Page) => `/${PAGE_PATH[page]}`;
   const getActiveGroup = useCallback(() => {
-    const activeGroup = NAVIGATION_ITEMS.find(
+    const activeGroup = filteredNavigationItems.find(
       (item) =>
         item.type === 'group' &&
         item.subItems.some((sub) => sub.name === currentPage)
     );
     return activeGroup ? (activeGroup as any).name : '';
-  }, [currentPage]);
+  }, [currentPage, filteredNavigationItems]);
 
   const [openGroups, setOpenGroups] = useState<string[]>([getActiveGroup()]);
 
@@ -311,7 +332,7 @@ export const Sidebar: FC<SidebarProps> = ({
         <nav
           className={`flex-1 ${collapsed ? 'px-2' : 'px-4'} py-6 space-y-2 overflow-y-auto overflow-x-hidden`}
         >
-          {NAVIGATION_ITEMS.map((item) => renderNavItem(item))}
+          {filteredNavigationItems.map((item) => renderNavItem(item))}
         </nav>
       </aside>
       {collapsed && flyoutGroup && (
@@ -328,7 +349,7 @@ export const Sidebar: FC<SidebarProps> = ({
         >
           <div className="py-2">
             {(() => {
-              const group = NAVIGATION_ITEMS.find(
+              const group = filteredNavigationItems.find(
                 (i) => i.type === 'group' && i.name === flyoutGroup
               );
               if (!group || !('subItems' in group)) return null;

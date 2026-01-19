@@ -1,6 +1,15 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Card } from '../../components/common/Card';
-import { Customer, Contract, Quotation } from '../../types';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
+
+// Interface
+import { ICustomer } from '@libs/common/interface/api/customer.interface';
+
+// Icon
 import {
   PlusIcon,
   EyeIcon,
@@ -9,13 +18,12 @@ import {
   PencilIcon,
   ClipboardDocumentListIcon,
   TrashIcon,
-  ManageIcon,
   ViewColumnsIcon,
   ListBulletIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  UserIcon,
 } from '../../assets/icons/Icons';
+
+// Component
+import { Card } from '../../components/common/Card';
 import { AddCustomerModal } from '../../components/features/customers/AddCustomerModal';
 import { Pagination } from '../../components/common/Pagination';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
@@ -23,238 +31,22 @@ import { EditCustomerModal } from '../../components/features/customers/EditCusto
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
 import { Input, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { formatThaiDate } from '../../constants';
+import CustomerCardView from './CustomerCardView';
+import CustomerListView from './CustomerListView';
 
-const calculateDuration = (startDate: string) => {
-  if (!startDate) return '-';
-  const start = new Date(startDate);
-  const now = new Date();
+// Api
+import { Customer } from '@libs/api/customer';
 
-  // Calculate difference in milliseconds
-  const diffTime = Math.abs(now.getTime() - start.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 30) {
-    return `${diffDays} วัน`;
-  }
-
-  let years = now.getFullYear() - start.getFullYear();
-  let months = now.getMonth() - start.getMonth();
-
-  if (months < 0) {
-    years--;
-    months += 12;
-  }
-
-  if (years > 0) {
-    return `${years} ปี ${months > 0 ? `${months} เดือน` : ''}`;
-  }
-  return `${months} เดือน`;
-};
-
-const CustomerListView: React.FC<{
-  customers: Customer[];
-  handleDropdownToggle: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    customerId: string
-  ) => void;
-  currentPage: number;
-  itemsPerPage: number;
-}> = ({ customers, handleDropdownToggle, currentPage, itemsPerPage }) => (
-  <div className="overflow-x-auto">
-    <table className="min-w-full divide-y divide-slate-200">
-      <thead className="bg-slate-50">
-        <tr>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            ลำดับ
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            รหัสลูกค้า
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            ชื่อ-นามสกุล
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            ชื่อเล่น
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            เบอร์โทรศัพท์
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            ประเภทลูกค้า
-          </th>
-          <th
-            scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
-          >
-            ระยะเวลา
-          </th>
-          <th scope="col" className="relative px-6 py-3">
-            <span className="sr-only">จัดการ</span>
-          </th>
-        </tr>
-      </thead>
-      <tbody className="bg-white divide-y divide-slate-200">
-        {customers.map((customer, index) => (
-          <tr key={customer.id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {(currentPage - 1) * itemsPerPage + index + 1}
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-              {customer.id}
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap">
-              <div className="text-sm font-medium text-slate-900">
-                {customer.name}
-              </div>
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {customer.nickname || '-'}
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {customer.phone}
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {customer.type}
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                {calculateDuration(customer.createdAt)}
-              </span>
-            </td>
-            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-              <div className="inline-block text-left">
-                <Button
-                  data-customer-id={customer.id}
-                  onClick={(e) => handleDropdownToggle(e, customer.id)}
-                  variant="icon"
-                  title="ตัวเลือก"
-                >
-                  <span className="sr-only">Open options</span>
-                  <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                </Button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
-
-const CustomerCardView: React.FC<{
-  customers: Customer[];
-  handleDropdownToggle: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    customerId: string
-  ) => void;
-}> = ({ customers, handleDropdownToggle }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-    {customers.map((customer) => (
-      <Card key={customer.id} className="flex flex-col justify-between">
-        <div>
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800 leading-tight">
-                {customer.name}
-              </h3>
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${customer.type === 'นิติบุคคล' ? 'bg-sky-100 text-sky-800' : 'bg-lime-100 text-lime-800'}`}
-              >
-                {customer.type}
-              </span>
-            </div>
-            <div className="relative">
-              <Button
-                data-customer-id={customer.id}
-                onClick={(e) => handleDropdownToggle(e, customer.id)}
-                variant="icon"
-                className="-mr-2 -mt-1"
-                title="ตัวเลือก"
-              >
-                <span className="sr-only">Open options</span>
-                <ManageIcon className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-          <div className="space-y-3 text-sm text-slate-600">
-            <div className="flex items-center">
-              <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-              <span>{customer.contactPerson}</span>
-            </div>
-            <div className="flex items-center">
-              <EnvelopeIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-              <a
-                href={`mailto:${customer.email}`}
-                className="hover:text-primary truncate"
-              >
-                {customer.email}
-              </a>
-            </div>
-            <div className="flex items-center">
-              <PhoneIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-              <a href={`tel:${customer.phone}`} className="hover:text-primary">
-                {customer.phone}
-              </a>
-            </div>
-          </div>
-        </div>
-        {customer.contractUntil && (
-          <div className="mt-4 pt-4 border-t border-slate-200 text-xs">
-            <p className="text-slate-500">
-              <span className="font-semibold">สัญญาถึง:</span>{' '}
-              {formatThaiDate(customer.contractUntil)}
-            </p>
-          </div>
-        )}
-      </Card>
-    ))}
-  </div>
-);
-
-interface CustomersProps {
-  customers: Customer[];
-  onCreateCustomer: (customerData: Omit<Customer, 'id'>) => void;
-  onUpdateCustomer: (updatedCustomer: Customer) => void;
-  onDeleteCustomer: (customerId: string) => void;
-  contracts: Contract[];
-  quotations: Quotation[];
-  onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
-  onCreateJob?: (jobData: any) => void; // Added
-}
-
-const Customers: React.FC<CustomersProps> = ({
-  customers,
-  onCreateCustomer,
-  onUpdateCustomer,
-  onDeleteCustomer,
-  contracts,
-  quotations,
-  onCreateContract,
-  onCreateJob,
-}) => {
+const Customers: React.FC = () => {
+  const [customers, setCustomers] = useState<ICustomer[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sortBy, setSortBy] = useState<string>('id');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [totalCustomers, setTotalCustomers] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
-  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
+  const [customerToEdit, setCustomerToEdit] = useState<ICustomer | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -263,14 +55,14 @@ const Customers: React.FC<CustomersProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'list' | 'card'>('list');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(
     null
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
+  const [customerToDelete, setCustomerToDelete] = useState<ICustomer | null>(
     null
   );
 
@@ -283,29 +75,7 @@ const Customers: React.FC<CustomersProps> = ({
     if (!searchQuery) {
       return reversedCustomers;
     }
-    const lowercasedQuery = searchQuery.toLowerCase();
-
-    // Find customer IDs from contracts that match the search query
-    const customerIdsFromContracts = contracts
-      .filter((contract) => contract.id.toLowerCase().includes(lowercasedQuery))
-      .map((contract) => contract.customerId);
-
-    const customerIdSet = new Set(customerIdsFromContracts);
-
-    return reversedCustomers.filter(
-      (customer) =>
-        // Match from contract ID
-        customerIdSet.has(customer.id) ||
-        // Match from customer fields
-        customer.id.toLowerCase().includes(lowercasedQuery) ||
-        customer.name.toLowerCase().includes(lowercasedQuery) ||
-        (customer.nickname &&
-          customer.nickname.toLowerCase().includes(lowercasedQuery)) ||
-        customer.phone
-          .replace(/[^0-9]/g, '')
-          .includes(lowercasedQuery.replace(/[^0-9]/g, ''))
-    );
-  }, [reversedCustomers, searchQuery, contracts]);
+  }, [reversedCustomers, searchQuery]);
 
   const totalItems = filteredCustomers.length;
   const paginatedCustomers = filteredCustomers.slice(
@@ -318,27 +88,52 @@ const Customers: React.FC<CustomersProps> = ({
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (customer: Customer) => {
+  const handleViewDetails = (customer: ICustomer) => {
     setSelectedCustomer(customer);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (customer: Customer) => {
+  const handleEdit = (customer: ICustomer) => {
     setCustomerToEdit(customer);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (customer: Customer) => {
+  const handleDelete = (customer: ICustomer) => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleConfirmDelete = () => {
+  const handleCreateCustomer = async (customerData: Omit<ICustomer, 'id'>) => {
+    try {
+      await Customer.createCustomer(customerData);
+      fetchCustomers(); // Refresh the list
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error creating customer:', error);
+    }
+  };
+
+  const handleUpdateCustomer = async (updatedCustomer: ICustomer) => {
+    try {
+      await Customer.updateCustomer(updatedCustomer.id, updatedCustomer);
+      fetchCustomers(); // Refresh the list
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating customer:', error);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
     if (customerToDelete) {
-      onDeleteCustomer(customerToDelete.id);
+      try {
+        await Customer.deleteCustomer(customerToDelete.id);
+        fetchCustomers(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting customer:', error);
+      }
     }
     setIsDeleteModalOpen(false);
     setCustomerToDelete(null);
@@ -390,6 +185,29 @@ const Customers: React.FC<CustomersProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdownId]);
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await Customer.getCustomers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
+      setCustomers(response.data);
+      setTotalCustomers(response.meta.total);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchQuery, sortBy, sortOrder]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   return (
     <>
@@ -523,11 +341,10 @@ const Customers: React.FC<CustomersProps> = ({
           </div>
         </div>
       )}
-
       <AddCustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onCreateCustomer={onCreateCustomer}
+        onCreateCustomer={handleCreateCustomer}
       />
       <CustomerDetailsModal
         isOpen={isDetailsModalOpen}
@@ -538,9 +355,9 @@ const Customers: React.FC<CustomersProps> = ({
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         customer={customerToEdit}
-        onUpdateCustomer={onUpdateCustomer}
+        onUpdateCustomer={handleUpdateCustomer}
       />
-      <CustomerContractsListModal
+      {/* <CustomerContractsListModal
         isOpen={isContractsModalOpen}
         onClose={() => setIsContractsModalOpen(false)}
         customer={selectedCustomer}
@@ -548,7 +365,7 @@ const Customers: React.FC<CustomersProps> = ({
         quotations={quotations}
         onCreateContract={onCreateContract}
         onCreateJob={onCreateJob}
-      />
+      /> */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

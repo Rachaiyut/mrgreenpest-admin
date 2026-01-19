@@ -10,7 +10,6 @@ import {
   Quotation,
   Invoice,
   Receipt,
-  NavigationItem,
   Warehouse,
   GoodsReceipt,
   Supplier,
@@ -19,7 +18,6 @@ import {
   StockAdjustment,
   ProductReturn,
   Contract,
-  Category,
   UserWallet,
   ReturnToSupplier,
 } from './types';
@@ -39,6 +37,7 @@ import {
   BookOpenIcon,
   BellIcon,
 } from './assets/icons/Icons';
+import { NavigationItem } from '@/libs/common/type/nav';
 
 // FIX: Add and export date formatting utility functions.
 export const formatThaiDate = (isoString: string | undefined): string => {
@@ -687,38 +686,6 @@ export const MOCK_WAREHOUSES: Warehouse[] = [
     model: 'Navara',
     color: 'แดง',
     withdrawalLimits: {},
-  },
-];
-
-export const MOCK_CATEGORIES: Category[] = [
-  {
-    id: 'CH001',
-    name: 'สารเคมี',
-    description: 'หมวดหมู่สำหรับสารเคมีต่างๆ',
-    type: 'สินค้า',
-    prefix: 'CH',
-  },
-  // FIX: Incomplete object literal. Completed with reasonable data.
-  {
-    id: 'MAT001',
-    name: 'อุปกรณ์',
-    description: 'อุปกรณ์ที่ใช้ในการบริการ',
-    type: 'สินค้า',
-    prefix: 'MAT',
-  },
-  {
-    id: 'SV001',
-    name: 'บริการกำจัดปลวก',
-    description: 'บริการเกี่ยวกับปลวก',
-    type: 'บริการ',
-    prefix: 'SV',
-  },
-  {
-    id: 'SV002',
-    name: 'บริการกำจัดทั่วไป',
-    description: 'บริการกำจัด มด หนู แมลงสาบ',
-    type: 'บริการ',
-    prefix: 'SV',
   },
 ];
 

@@ -8,10 +8,12 @@ import {
   DetailsItem,
 } from '../../common/FormControls';
 
+import { ICustomer } from '@/libs/common/interface/api/customer.interface';
+
 interface CustomerDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: Customer | null;
+  customer: ICustomer | null;
 }
 
 export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
@@ -25,7 +27,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดลูกค้า: ${customer.name}`}
+      title={`รายละเอียดลูกค้า: ${customer.first_name} ${customer.last_name}`}
       size="3xl"
     >
       <div className="space-y-6 text-sm">
@@ -36,25 +38,25 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.id}
             </DetailsItem>
             <DetailsItem label="ชื่อลูกค้า" valueClassName="font-semibold">
-              {customer.name} {customer.nickname && `(${customer.nickname})`}
+              {customer.first_name} {customer.nickname && `(${customer.nickname})`}
             </DetailsItem>
-            <DetailsItem label="ประเภท">{customer.type}</DetailsItem>
-            {customer.taxId && (
+            <DetailsItem label="ประเภท">{customer.customer_type}</DetailsItem>
+            {customer.tax_id && (
               <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
-                {customer.taxId}
+                {customer.tax_id}
               </DetailsItem>
             )}
             <DetailsItem label="วันที่สร้าง">
-              {formatThaiDate(customer.createdAt)}
+              {formatThaiDate(customer.created_at)}
             </DetailsItem>
-            {customer.contractUntil && (
+            {/* {customer.contractUntil && (
               <DetailsItem
                 label="สัญญาบริการถึงวันที่"
                 valueClassName="font-bold text-primary"
               >
                 {formatThaiDate(customer.contractUntil)}
               </DetailsItem>
-            )}
+            )} */}
           </DetailsList>
         </div>
         <hr />
@@ -62,14 +64,14 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           <SectionTitle>ข้อมูลการติดต่อ</SectionTitle>
           <DetailsList cols={2}>
             <DetailsItem label="ผู้ติดต่อ">
-              {customer.contactPerson}
+              {customer.phone}
             </DetailsItem>
             <DetailsItem label="เบอร์โทรศัพท์ (หลัก)">
               {customer.phone}
             </DetailsItem>
-            {customer.mobilePhone && (
+            {customer.phone && (
               <DetailsItem label="เบอร์มือถือ">
-                {customer.mobilePhone}
+                {customer.phone}
               </DetailsItem>
             )}
             {customer.additionalPhones?.map((phone, index) => (
@@ -88,11 +90,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           <SectionTitle>ข้อมูลที่อยู่</SectionTitle>
           <DetailsList cols={3}>
             <DetailsItem label="บ้านเลขที่">
-              {customer.address.street || '-'}
+              {customer.address_house_no || '-'}
             </DetailsItem>
-            <DetailsItem label="ซอย">{customer.address.soi || '-'}</DetailsItem>
+            <DetailsItem label="ซอย">{customer.address_house_no || '-'}</DetailsItem>
             <DetailsItem label="ถนน">
-              {customer.address.road || '-'}
+              {customer.country || '-'}
             </DetailsItem>
             <DetailsItem label="แขวง/ตำบล">
               {customer.address.subdistrict || '-'}
@@ -127,18 +129,18 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             </DetailsItem>
           </DetailsList>
         </div>
-        {customer.googleMapLink && (
+        {customer.google_map_link && (
           <div className="pt-4 border-t">
             <SectionTitle>ตำแหน่ง</SectionTitle>
             <DetailsList>
               <DetailsItem label="Link Google Map">
                 <a
-                  href={customer.googleMapLink}
+                  href={customer.google_map_link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline truncate block"
                 >
-                  {customer.googleMapLink}
+                  {customer.google_map_link}
                 </a>
               </DetailsItem>
             </DetailsList>

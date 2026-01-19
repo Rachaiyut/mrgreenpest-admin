@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
-import { Category } from '../../../types';
+import { ICategory } from '@/libs/common/interface/api/category.interface';
 
 interface EditCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  category: Category | null;
-  onUpdateCategory: (category: Category) => void;
-  categories: Category[];
+  category: ICategory | null;
+  onUpdateCategory: (category: ICategory) => void;
+  categories: ICategory[];
 }
 
 export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
@@ -18,7 +18,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
   onUpdateCategory,
   categories,
 }) => {
-  const [formData, setFormData] = useState<Partial<Category>>({});
+  const [formData, setFormData] = useState<Partial<ICategory>>({});
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -29,13 +29,13 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
   }, [category]);
 
   useEffect(() => {
-    if (!formData.prefix || !category) {
+    if (!formData.code || !category) {
       setError('');
       return;
     }
-    const upperPrefix = formData.prefix.toUpperCase();
+    const upperPrefix = formData.code.toUpperCase();
     const prefixExists = categories.some(
-      (c) => c.id !== category.id && c.prefix?.toUpperCase() === upperPrefix
+      (c) => c.id !== category.id && c.code?.toUpperCase() === upperPrefix
     );
 
     if (prefixExists) {
@@ -43,7 +43,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
     } else {
       setError('');
     }
-  }, [formData.prefix, category, categories]);
+  }, [formData.code, category, categories]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -66,7 +66,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
       return;
     }
     if (category) {
-      onUpdateCategory({ ...category, ...formData } as Category);
+      onUpdateCategory({ ...category, ...formData } as ICategory);
     }
     onClose();
   };
@@ -92,7 +92,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
             type="submit"
             form="edit-category-form"
             className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
-            disabled={!!error || !formData.prefix}
+            disabled={!!error || !formData.code}
             title={error || ''}
           >
             บันทึกการเปลี่ยนแปลง
@@ -121,7 +121,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
             name="prefix"
             id="prefix"
             type="text"
-            value={formData.prefix || ''}
+            value={formData.code || ''}
             onChange={handleChange}
             maxLength={3}
             required

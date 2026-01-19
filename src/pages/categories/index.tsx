@@ -1,25 +1,38 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Card } from '../../components/common/Card';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
+
+// Interface
+import { ICategory } from '@libs/common/interface/api/category.interface';
+
+// API
+import { Category } from '@libs/api/category.tsx';
+
+// Icon
 import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
   ManageIcon,
 } from '../../assets/icons/Icons';
+
+// Component
+import { Card } from '../../components/common/Card';
+import { Input, Button } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
 import { AddCategoryModal } from '../../components/features/products/AddCategoryModal';
 import { EditCategoryModal } from '../../components/features/products/EditCategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Input, Button } from '../../components/common/FormControls';
-import { getAllcategories, Category } from '@/src/api/master/categories';
-import { ApiResponse } from '@/src/api/type';
-
 
 const Categories: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<ICategory | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -30,7 +43,7 @@ const Categories: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+  const [categoryToDelete, setCategoryToDelete] = useState<ICategory | null>(
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
@@ -39,30 +52,83 @@ const Categories: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
+    const fetchCategories = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await Category.getCategories({
+        page: currentPage,
+        limit: pageSize,
+        search: searchQuery,
+        sort_by: sortBy,
+        sort_order: sortOrder as 'asc' | 'desc',
+      });
+
+      setCategories(response.data);
+      setTotalCategories(response.meta.total);
+    } catch (error) {
+      console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, searchQuery, sortBy, sortOrder]);
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
     setCurrentPage(1);
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: ICategory) => {
     setCategoryToEdit(category);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (category: Category) => {
+  const handleDelete = (category: ICategory) => {
     setCategoryToDelete(category);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (categoryToDelete) {
+      try {
+        await Category.deleteCategory(categoryToDelete.id);
+        fetchCategories(); // Refresh the list
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
     }
     setIsDeleteModalOpen(false);
     setCategoryToDelete(null);
   };
+
+  const onCreateCategory = useCallback(
+    async (newCategory: Partial<ICategory>) => {
+      try {
+        await Category.createCategory(newCategory);
+        fetchCategories(); // Refresh the list
+        setIsAddModalOpen(false);
+      } catch (error) {
+        console.error('Error creating category:', error);
+        // You might want to show an error message to the user
+      }
+    },
+    [fetchCategories]
+  );
+
+  const onUpdateCategory = useCallback(
+    async (id: string, updatedCategory: Partial<ICategory>) => {
+      try {
+        await Category.updateCategory(id, updatedCategory);
+        fetchCategories(); // Refresh the list
+        setIsEditModalOpen(false);
+      } catch (error) {
+        console.error('Error updating category:', error);
+      }
+    },
+    [fetchCategories, setIsEditModalOpen]
+  );
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -102,31 +168,9 @@ const Categories: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const fetchCategories = useCallback(async() => {
-      try {
-        setLoading(true);
-        const response = await getAllcategories({
-          page: currentPage,
-          limit: pageSize,
-          search: searchQuery,
-          sort_by: sortBy,
-          sort_order: sortOrder as 'asc' | 'desc'
-        })
-
-        setCategories(response.data)
-        setTotalCategories(response.meta.total);
-      } catch (error) {
-        console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false)
-      }
-
-    }, [currentPage, pageSize, searchQuery, sortBy, sortOrder])
-
   useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
+    fetchCategories();
+  }, [fetchCategories]);
 
   return (
     <>
@@ -196,7 +240,7 @@ const Categories: React.FC = () => {
                 {categories.map((category, index) => (
                   <tr key={category.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {index}
+                      {index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {category.code}
@@ -279,7 +323,7 @@ const Categories: React.FC = () => {
         </div>
       )}
 
-      {/* <AddCategoryModal
+      <AddCategoryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreateCategory={onCreateCategory}
@@ -306,7 +350,7 @@ const Categories: React.FC = () => {
         }
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
-      /> */}
+      />
     </>
   );
 };
