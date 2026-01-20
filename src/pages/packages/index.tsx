@@ -13,9 +13,9 @@ import {
   EyeIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
-import { AddPackageModal } from '../../components/features/products/AddPackageModal';
-import { EditPackageModal } from '../../components/features/products/EditPackageModal';
-import { PackageDetailsModal } from '../../components/features/products/PackageDetailsModal';
+import { AddPackageModal } from '../../components/features/package/AddPackageModal';
+import { EditPackageModal } from '../../components/features/package/EditPackageModal';
+import { PackageDetailsModal } from '../../components/features/package/PackageDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
 

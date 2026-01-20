@@ -1,50 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
+
+// Icon
 import { PhotoIcon } from '../../../assets/icons/Icons';
-import { Product, Category } from '@/src/libs/common/interface/entity/app.interface';
+
+// Enum
 import { CategoryType } from '@/src/libs/common/enum/category.enum';
 
-interface AddProductModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreateProduct: (product: Omit<Product, 'id'>) => void;
-  products: Product[];
-  categories: Category[];
-}
+// Interface
+import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { IUnit } from '@/src/libs/common/interface/entity/unit.interface';
 
-export const AddProductModal: React.FC<AddProductModalProps> = ({
+// Prop
+import { IAddProductModalProps } from '@/src/libs/common/interface/prop/product/add-product';
+
+// API
+import { Product as ProductApi } from '@/src/libs/api/product';
+
+export const AddProductModal: React.FC<IAddProductModalProps> = ({
   isOpen,
   onClose,
-  onCreateProduct,
-  products,
+  onSuccess,
   categories,
+  units
 }) => {
-  const [productType, setProductType] = useState<'สินค้า' | 'บริการ'>('สินค้า');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<CategoryType>(CategoryType.PRODUCT);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const availableCategories = useMemo(() => {
-    const targetType =
-      productType === 'สินค้า' ? CategoryType.PRODUCT : CategoryType.SERVICE;
-    return categories.filter((c) => c.type === targetType);
-  }, [categories, productType]);
-
-  const generatedId = useMemo(() => {
-    if (!isOpen) return '';
-    const prefix = productType === 'สินค้า' ? 'PROD-' : 'SERV-';
-    const relevantProducts = products.filter((p) => p.id.startsWith(prefix));
-    const maxId = relevantProducts.reduce((max, p) => {
-      const num = parseInt(p.id.split('-')[1], 10);
-      return num > max ? num : max;
-    }, 0);
-    const newIdNumber = maxId + 1;
-    return `${prefix}${String(newIdNumber).padStart(3, '0')}`;
-  }, [isOpen, productType, products]);
+  const filteredCategories = useMemo(() => {
+    return categories.filter((category) => category.type === selectedType);
+  }, [categories, selectedType]);
 
   useEffect(() => {
     if (!isOpen) {
-      setProductType('สินค้า');
       setImagePreview(null);
+      setSelectedType(CategoryType.PRODUCT);
     }
   }, [isOpen]);
 
@@ -55,38 +48,36 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const newProduct: Omit<Product, 'id'> = {
-      barcode: data.barcode as string | undefined,
-      name: data['product-name'] as string,
-      type: productType,
-      categoryId: data.categoryId as string,
-      unit: productType === 'สินค้า' ? (data.unit as string) : 'แพ็กเกจ',
-      price: parseFloat(data.price as string),
-      costPrice:
-        productType === 'สินค้า' && data.costPrice
-          ? parseFloat(data.costPrice as string)
-          : undefined,
-      fdaRegNo:
-        productType === 'สินค้า'
-          ? (data.fdaRegNo as string | undefined)
-          : undefined,
-      stock: productType === 'สินค้า' ? 0 : 9999, // default value
-      lowStockThreshold:
-        productType === 'สินค้า'
-          ? parseInt(data['low-stock-threshold'] as string, 10)
-          : 0,
-      warehouse: productType === 'สินค้า' ? 'คลังหลัก' : 'N/A', // default value
-      createdBy: 'ผู้ดูแลระบบ', // Mock user
-      updatedBy: 'ผู้ดูแลระบบ', // Mock user
-    };
+    setIsSubmitting(true);
+    try {
+      const newProduct: Partial<IProduct> = {
+        barcode: (data.barcode as string) || '',
+        name: data['product-name'] as string,
+        category_id: data.categoryId as string,
+        cost_price: (data.costPrice as string) || '0',
+        fda_number: (data.fdaRegNo as string) || '',
+        min_stock: Number(data['low-stock-threshold']) || 0,
+        unit_id: data.unit as string,
+        price: Number(data.price) || 0,
+        type: selectedType,
+        description: data.description as string
+      };
 
-    onCreateProduct(newProduct);
-    onClose();
+      await ProductApi.createProduct(newProduct);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Failed to create product:", error);
+      alert("Failed to create product");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,16 +91,28 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
+            disabled={isSubmitting}
+            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 disabled:opacity-50"
           >
             ยกเลิก
           </button>
           <button
             type="submit"
             form="add-product-form"
-            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+            disabled={isSubmitting}
+            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:opacity-50 flex items-center gap-2"
           >
-            บันทึก
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>กำลังบันทึก...</span>
+              </>
+            ) : (
+              <span>บันทึก</span>
+            )}
           </button>
         </div>
       }
@@ -143,7 +146,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                         className="sr-only"
                         accept="image/png, image/jpeg"
                         onChange={handleImageChange}
-                        required={!imagePreview}
+                      // required={!imagePreview}
                       />
                     </label>
                   </div>
@@ -161,10 +164,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                   <input
                     type="radio"
                     name="productType"
-                    value="สินค้า"
+                    value={CategoryType.PRODUCT}
                     className="sr-only peer"
-                    checked={productType === 'สินค้า'}
-                    onChange={() => setProductType('สินค้า')}
+                    checked={selectedType === CategoryType.PRODUCT}
+                    onChange={() => setSelectedType(CategoryType.PRODUCT)}
                   />
                   <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                     สินค้า
@@ -174,10 +177,10 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                   <input
                     type="radio"
                     name="productType"
-                    value="บริการ"
+                    value={CategoryType.SERVICE}
                     className="sr-only peer"
-                    checked={productType === 'บริการ'}
-                    onChange={() => setProductType('บริการ')}
+                    checked={selectedType === CategoryType.SERVICE}
+                    onChange={() => setSelectedType(CategoryType.SERVICE)}
                   />
                   <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                     บริการ
@@ -185,41 +188,32 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
                 </label>
               </div>
             </FormField>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="รหัสสินค้า/บริการ" htmlFor="product-id">
-                <Input
-                  id="product-id"
-                  type="text"
-                  value={generatedId}
-                  readOnly
-                  className="bg-slate-100"
-                />
-              </FormField>
+            <div className="grid grid-cols-1">
               <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
                 <Input
                   name="barcode"
                   id="barcode"
                   type="text"
-                  disabled={productType === 'บริการ'}
+                  disabled={selectedType === CategoryType.SERVICE}
                 />
               </FormField>
             </div>
-            <FormField label="ชื่อสินค้า/บริการ" htmlFor="product-name">
-              <Input
-                name="product-name"
-                id="product-name"
-                type="text"
-                required
-              />
-            </FormField>
           </div>
         </div>
+        <FormField label="ชื่อสินค้า/บริการ" htmlFor="product-name">
+          <Input
+            name="product-name"
+            id="product-name"
+            type="text"
+            required
+          />
+        </FormField>
         <FormField label="หมวดหมู่" htmlFor="categoryId">
           <Select name="categoryId" id="categoryId" required>
             <option value="">-- เลือกหมวดหมู่ --</option>
-            {availableCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
+            {filteredCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
               </option>
             ))}
           </Select>
@@ -228,73 +222,42 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
           <Textarea name="description" id="description" rows={3} />
         </FormField>
 
-        {productType === 'สินค้า' ? (
+        {selectedType === CategoryType.PRODUCT && 
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="หน่วย" htmlFor="unit">
-                <Input
-                  name="unit"
-                  id="unit"
-                  type="text"
-                  required
-                  placeholder="เช่น ขวด, ชิ้น"
-                />
+                <Select name="unit" id="unit" required>
+                  <option value="">-- เลือกหน่วย --</option>
+                  {units.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.name}
+                    </option>
+                  ))}
+                </Select>
               </FormField>
+
               <FormField label="ราคาขาย/หน่วย" htmlFor="price">
-                <Input
-                  name="price"
-                  id="price"
-                  type="number"
-                  required
-                  placeholder="0.00"
-                  step="0.01"
-                  defaultValue="0.00"
-                />
+                <Input name="price" id="price" type="number" required placeholder="0.00" step="0.01" defaultValue="0.00" />
               </FormField>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ราคาต้นทุน" htmlFor="cost-price">
-                <Input
-                  name="costPrice"
-                  id="cost-price"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  defaultValue="0.00"
-                />
+                <Input name="costPrice" id="cost-price" type="number" placeholder="0.00" step="0.01" defaultValue="0.00" />
               </FormField>
-              <FormField
-                label="กำหนดสต็อกขั้นต่ำ"
-                htmlFor="low-stock-threshold"
-              >
-                <Input
-                  name="low-stock-threshold"
-                  id="low-stock-threshold"
-                  type="number"
-                  placeholder="เช่น 10"
-                  required
-                />
+
+              <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="low-stock-threshold">
+                <Input name="low-stock-threshold" id="low-stock-threshold" type="number" placeholder="เช่น 10" required />
               </FormField>
             </div>
+
             <div className="border-t pt-4 space-y-4">
               <FormField label="เลขทะเบียน อย." htmlFor="fda-reg-no">
                 <Input name="fdaRegNo" id="fda-reg-no" type="text" />
               </FormField>
             </div>
           </>
-        ) : (
-          <FormField label="ราคาบริการ" htmlFor="price">
-            <Input
-              name="price"
-              id="price"
-              type="number"
-              required
-              placeholder="0.00"
-              step="0.01"
-              defaultValue="0.00"
-            />
-          </FormField>
-        )}
+        }
       </form>
     </Modal>
   );

@@ -32,7 +32,7 @@ const Warehouse = lazy(() => import('../../pages/warehouse'));
 const GoodsReceipt = lazy(
   () => import('../../pages/inventory/goods-receipt')
 );
-const Suppliers = lazy(() => import('../../pages/suppliers'));
+const Suppliers = lazy(() => import('../../pages/suppliers/Supplier'));
 const Withdrawals = lazy(() => import('../../pages/inventory/withdrawals'));
 const Transfers = lazy(() => import('../../pages/inventory/transfers'));
 const StockAdjustment = lazy(

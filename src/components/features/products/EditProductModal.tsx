@@ -7,16 +7,17 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Product, Category } from '@/src/libs/common/interface/entity/app.interface';
-import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: Product | null;
-  onUpdateProduct: (product: Product) => void;
-  categories: Category[];
+  product: IProduct | null;
+  onUpdateProduct: (product: IProduct) => void;
+  categories: ICategory[];
 }
 
 export const EditProductModal: React.FC<EditProductModalProps> = ({
@@ -26,14 +27,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   onUpdateProduct,
   categories,
 }) => {
-  const [formData, setFormData] = useState<Partial<Product>>({});
+  const [formData, setFormData] = useState<Partial<IProduct>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  const availableCategories = useMemo(() => {
-    const targetType =
-      formData.type === 'สินค้า' ? CategoryType.PRODUCT : CategoryType.SERVICE;
-    return categories.filter((c) => c.type === targetType);
-  }, [categories, formData.type]);
 
   useEffect(() => {
     if (product) {
@@ -51,8 +46,8 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type: 'สินค้า' | 'บริการ') => {
-    setFormData((prev) => ({ ...prev, type: type, categoryId: '' })); // Reset category when type changes
+  const handleTypeChange = (type: CategoryType) => {
+    setFormData((prev) => ({ ...prev, type: type, category_id: '' }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,7 +60,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (product) {
-      onUpdateProduct({ ...product, ...formData } as Product);
+      onUpdateProduct({ ...product, ...formData } as IProduct);
     }
     onClose();
   };
@@ -147,10 +142,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   <input
                     type="radio"
                     name="productTypeRadioEdit"
-                    value="สินค้า"
+                    value={CategoryType.PRODUCT}
                     className="sr-only peer"
-                    checked={formData.type === 'สินค้า'}
-                    onChange={() => handleTypeChange('สินค้า')}
+                    checked={formData.type === CategoryType.PRODUCT}
+                    onChange={() => handleTypeChange(CategoryType.PRODUCT)}
                   />
                   <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                     สินค้า
@@ -160,10 +155,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                   <input
                     type="radio"
                     name="productTypeRadioEdit"
-                    value="บริการ"
+                    value={CategoryType.SERVICE}
                     className="sr-only peer"
-                    checked={formData.type === 'บริการ'}
-                    onChange={() => handleTypeChange('บริการ')}
+                    checked={formData.type === CategoryType.SERVICE}
+                    onChange={() => handleTypeChange(CategoryType.SERVICE)}
                   />
                   <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                     บริการ
@@ -171,51 +166,37 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
                 </label>
               </div>
             </FormField>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="รหัสสินค้า/บริการ" htmlFor="id">
-                <Input
-                  name="id"
-                  type="text"
-                  value={formData.id || ''}
-                  readOnly
-                  className="bg-slate-100"
-                />
-              </FormField>
+            <div className="grid grid-cols-1 gap-4">
               <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
                 <Input
                   name="barcode"
                   type="text"
                   value={formData.barcode || ''}
                   onChange={handleChange}
-                  disabled={formData.type === 'บริการ'}
+                  disabled={formData.type === CategoryType.SERVICE}
                 />
               </FormField>
             </div>
-            <FormField label="ชื่อสินค้า/บริการ" htmlFor="name">
-              <Input
-                name="name"
-                type="text"
-                value={formData.name || ''}
-                onChange={handleChange}
-                required
-              />
-            </FormField>
           </div>
         </div>
+        <FormField label="ชื่อสินค้า/บริการ" htmlFor="name">
+          <Input
+            name="name"
+            type="text"
+            value={formData.name || ''}
+            onChange={handleChange}
+            required
+          />
+        </FormField>
         <FormField label="หมวดหมู่" htmlFor="categoryId">
           <Select
-            name="categoryId"
+            name="category_id"
             id="categoryId"
-            value={formData.categoryId || ''}
+            value={formData.category_id || ''}
             onChange={handleChange}
             required
           >
             <option value="">-- เลือกหมวดหมู่ --</option>
-            {availableCategories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
           </Select>
         </FormField>
         <FormField label="รายละเอียด" htmlFor="description">
@@ -231,7 +212,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             <Input
               name="unit"
               type="text"
-              value={formData.unit || ''}
+              value={typeof formData.unit === 'string' ? formData.unit : formData.unit?.name || ''}
               onChange={handleChange}
               required
             />
@@ -248,23 +229,23 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             />
           </FormField>
         </div>
-        {formData.type === 'สินค้า' && (
+        {formData.type === CategoryType.PRODUCT && (
           <>
             <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="lowStockThreshold">
               <Input
-                name="lowStockThreshold"
+                name="min_stock"
                 type="number"
-                value={formData.lowStockThreshold || ''}
+                value={formData.min_stock || ''}
                 onChange={handleChange}
                 required
               />
             </FormField>
             <FormField label="เลขทะเบียน อย." htmlFor="fdaRegNo">
               <Input
-                name="fdaRegNo"
+                name="fda_number"
                 id="fdaRegNo"
                 type="text"
-                value={formData.fdaRegNo || ''}
+                value={formData.fda_number || ''}
                 onChange={handleChange}
               />
             </FormField>

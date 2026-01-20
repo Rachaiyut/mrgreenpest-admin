@@ -1,14 +1,17 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
-import { Supplier } from '@/src/libs/common/interface/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
+
+// Interface
+import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+import { SupplierType } from '@/src/libs/common/enum/customer.enum';
 
 interface AddSupplierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateSupplier: (supplier: Omit<Supplier, 'id'>) => void;
-  suppliers: Supplier[];
+  onCreateSupplier: (supplier: Omit<ISupplier, 'id'>) => void;
+  suppliers: ISupplier[];
 }
 
 export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
@@ -75,13 +78,13 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       return;
     }
 
-    const newSupplier: Omit<Supplier, 'id'> = {
-      name: data['supplier-name'] as string,
-      type: supplierType,
-      taxId: data['tax-id'] as string | undefined,
-      contactPerson: data['contact-person'] as string | undefined,
-      phones: phones.filter((p) => p.trim() !== ''),
+    const newSupplier: Partial<Omit<ISupplier, 'id'>> = {
+      contact_name: data['supplier-name'] as string,
+      type: supplierType as SupplierType,
+      tax_id: data['tax-id'] as string | undefined,
+      phone: data.phone as string,
       email: data['email'] as string,
+      company_name: ''
     };
 
     onCreateSupplier(newSupplier);

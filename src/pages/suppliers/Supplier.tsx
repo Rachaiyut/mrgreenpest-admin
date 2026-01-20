@@ -1,6 +1,14 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+
+// Components
 import { Card } from '../../components/common/Card';
-import { Supplier } from '../../types';
+
+// Interface
+import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+
+// Api
+import { Supplier as SupplierApi } from '@/src/libs/api/supplier';
+
 import {
   PlusIcon,
   EyeIcon,
@@ -15,65 +23,33 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { EditSupplierModal } from '../../components/features/suppliers/EditSupplierModal';
 
-// FIX: Define props interface
-interface SuppliersProps {
-  suppliers: Supplier[];
-  onCreateSupplier: (supplier: Omit<Supplier, 'id'>) => void;
-  onUpdateSupplier: (supplier: Supplier) => void;
-  onDeleteSupplier: (supplierId: string) => void;
-}
+const Suppliers: React.FC = () => {
+  const [suppliers, setSuppliers] = useState<ISupplier[]>([])
+  const [loading, setLoading] = useState<boolean>(false)
 
-const Suppliers: React.FC<SuppliersProps> = ({
-  suppliers,
-  onCreateSupplier,
-  onUpdateSupplier,
-  onDeleteSupplier,
-}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
+  const [supplierToEdit, setSupplierToEdit] = useState<ISupplier | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+  const [selectedSupplier, setSelectedSupplier] = useState<ISupplier | null>(
     null
   );
-  const [searchQuery, setSearchQuery] = useState('');
+
   const [typeFilter, setTypeFilter] = useState('all');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
+  const [supplierToDelete, setSupplierToDelete] = useState<ISupplier | null>(
     null
-  );
-
-  const reversedSuppliers = useMemo(
-    () => [...suppliers].reverse(),
-    [suppliers]
-  );
-
-  const filteredSuppliers = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return reversedSuppliers.filter((supplier) => {
-      const matchesType = typeFilter === 'all' || supplier.type === typeFilter;
-      const matchesSearch =
-        !searchQuery ||
-        supplier.id.toLowerCase().includes(lowercasedQuery) ||
-        supplier.name.toLowerCase().includes(lowercasedQuery) ||
-        (supplier.taxId &&
-          supplier.taxId.toLowerCase().includes(lowercasedQuery));
-      return matchesType && matchesSearch;
-    });
-  }, [reversedSuppliers, searchQuery, typeFilter]);
-
-  const totalItems = filteredSuppliers.length;
-  const paginatedSuppliers = filteredSuppliers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
   );
 
   const handleItemsPerPageChange = (size: number) => {
@@ -81,19 +57,19 @@ const Suppliers: React.FC<SuppliersProps> = ({
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (supplier: Supplier) => {
+  const handleViewDetails = (supplier: ISupplier) => {
     setSelectedSupplier(supplier);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (supplier: Supplier) => {
+  const handleEdit = (supplier: ISupplier) => {
     setSupplierToEdit(supplier);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (supplier: Supplier) => {
+  const handleDelete = (supplier: ISupplier) => {
     setSupplierToDelete(supplier);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
@@ -130,6 +106,38 @@ const Suppliers: React.FC<SuppliersProps> = ({
     }
   };
 
+  const fetchSupplier = useCallback(async () => {
+      setLoading(true);
+      try {
+        const response = await SupplierApi.getSuppliers({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: searchQuery,
+          sort_by: 'created_at',
+          sort_order: 'desc'
+        });
+        setSuppliers(response.data);
+        setTotalItems(response.meta?.total || response.data.length);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, [currentPage, itemsPerPage, searchQuery]);
+  
+
+  const onUpdateSupplier = async (supplier: ISupplier) => {
+      try {
+        const { id, ...data } = supplier;
+        await SupplierApi.updateSupplier(id, data);
+        fetchSupplier();
+        setIsEditModalOpen(false);
+      } catch (error) {
+        console.error('Failed to update product:', error);
+        alert('Failed to update product');
+      }
+    };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!openDropdownId) return;
@@ -150,6 +158,10 @@ const Suppliers: React.FC<SuppliersProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdownId]);
+
+    useEffect(() => {
+      fetchSupplier();
+    }, [fetchSupplier]);
 
   return (
     <>
@@ -253,28 +265,28 @@ const Suppliers: React.FC<SuppliersProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedSuppliers.map((supplier, index) => (
+                {suppliers.map((supplier, index) => (
                   <tr key={supplier.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {supplier.id}
+                      {supplier.code}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                      {supplier.name}
+                      {supplier.contact_name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {supplier.type}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {supplier.taxId || '-'}
+                      {supplier.tax_id || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {supplier.contactPerson || '-'}
+                      {supplier.contact_name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {supplier.phones[0]}
+                      {supplier.phone}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {supplier.email}
@@ -357,23 +369,22 @@ const Suppliers: React.FC<SuppliersProps> = ({
           </div>
         </div>
       )}
-
+{/* 
       <AddSupplierModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onCreateSupplier={onCreateSupplier}
         suppliers={suppliers}
       />
       <EditSupplierModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        supplier={supplierToEdit}
+        supplier={suppliers}
         onUpdateSupplier={onUpdateSupplier}
       />
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
-        supplier={selectedSupplier}
+        supplier={suppliers}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -383,13 +394,13 @@ const Suppliers: React.FC<SuppliersProps> = ({
         message={
           <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบผู้จัดจำหน่าย{' '}
-            <strong>{supplierToDelete?.name}</strong>?
+            <strong>{supplierToDelete?.id}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
-      />
+      /> */}
     </>
   );
 };

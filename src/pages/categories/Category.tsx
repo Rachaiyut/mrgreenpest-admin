@@ -24,8 +24,7 @@ import {
 import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
-import { AddCategoryModal } from '../../components/features/products/AddCategoryModal';
-import { EditCategoryModal } from '../../components/features/products/EditCategoryModal';
+import { AddCategoryModal } from '../../components/features/category/AddCategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Categories: React.FC = () => {
@@ -48,11 +47,11 @@ const Categories: React.FC = () => {
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [totalCategories, setTotalCategories] = useState<number>(0);
+  const [totalCategories, setTotalCategories] = useState<number>(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
-    const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       const response = await Category.getCategories({
@@ -62,10 +61,8 @@ const Categories: React.FC = () => {
         sort_by: sortBy,
         sort_order: sortOrder as 'asc' | 'desc',
       });
-
-      console.log("res", response)
-
       setCategories(response.data);
+      
       setTotalCategories(response.meta.total);
     } catch (error) {
       console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
@@ -122,7 +119,7 @@ const Categories: React.FC = () => {
     async (id: string, updatedCategory: Partial<ICategory>) => {
       try {
         await Category.updateCategory(id, updatedCategory);
-        fetchCategories(); // Refresh the list
+        fetchCategories();
         setIsEditModalOpen(false);
       } catch (error) {
         console.error('Error updating category:', error);
@@ -232,9 +229,6 @@ const Categories: React.FC = () => {
                   >
                     รายละเอียด
                   </th>
-                  <th scope="col" className="relative px-4 py-2.5">
-                    <span className="sr-only">จัดการ</span>
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -252,19 +246,7 @@ const Categories: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-sm">
                       {category.description || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="inline-block text-left">
-                        <Button
-                          data-category-id={category.id}
-                          onClick={(e) => handleDropdownToggle(e, category.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
-                      </div>
-                    </td>
+                    
                   </tr>
                 ))}
               </tbody>
@@ -282,76 +264,6 @@ const Categories: React.FC = () => {
         </Card>
       </div>
 
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                const cat = categories.find((c) => c.id === openDropdownId);
-                if (cat) handleEdit(cat);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-            >
-              <PencilIcon className="mr-3 h-5 w-5" />
-              <span>แก้ไข</span>
-            </a>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                const cat = categories.find((c) => c.id === openDropdownId);
-                if (cat) handleDelete(cat);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-            >
-              <TrashIcon className="mr-3 h-5 w-5" />
-              <span>ลบ</span>
-            </a>
-          </div>
-        </div>
-      )}
-
-      <AddCategoryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreateCategory={onCreateCategory}
-        categories={categories}
-      />
-      <EditCategoryModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        category={categoryToEdit}
-        onUpdateCategory={onUpdateCategory}
-        categories={categories}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบหมวดหมู่"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่{' '}
-            <strong>{categoryToDelete?.name}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
-      />
     </>
   );
 };

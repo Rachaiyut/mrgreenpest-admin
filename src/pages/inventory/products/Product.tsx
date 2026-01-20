@@ -13,23 +13,31 @@ import { CategoryType } from '@/src/libs/common/enum/category.enum';
 // Interface
 import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
 import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { IUnit } from '@/src/libs/common/interface/entity/unit.interface';
 
 // API
 import { Product as ProductApi } from '@/src/libs/api/product';
 import { Category as CategoryApi } from '@/src/libs/api/category';
+import { Unit as UnitApi } from '@/src/libs/api/unit';
 
-import { AddProductModal } from '../../../components/features/products/AddProductModal';
 import { Pagination } from '../../../components/common/Pagination';
-import { EditProductModal } from '../../../components/features/products/EditProductModal';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Input, Button } from '../../../components/common/FormControls';
+import { AddProductModal } from '@/src/components/features/products/AddProductModal';
+import { EditProductModal } from '@/src/components/features/products/EditProductModal';
+import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const [units, setUnits] = useState<IUnit[]>([]);
   const [loading, setLoading] = useState(false);
-  
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -37,21 +45,26 @@ const Product: React.FC = () => {
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState<IProduct | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<IProduct | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({ limit: 1000 }); // Fetch all for dropdown/map
+      const response = await CategoryApi.getCategories({ limit: 100 });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchUnits = async () => {
+    try {
+      const response = await UnitApi.getUnit({ limit: 100 });
+      setUnits(response.data);
+    } catch (error) {
+      console.error('Failed to fetch units:', error);
     }
   };
 
@@ -74,51 +87,38 @@ const Product: React.FC = () => {
     }
   }, [currentPage, itemsPerPage, searchQuery]);
 
+
   useEffect(() => {
     fetchCategories();
+    fetchUnits();
   }, []);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const onCreateProduct = async (data: Partial<IProduct>) => {
+  const onUpdateProduct = async (product: IProduct) => {
     try {
-        await ProductApi.createProduct(data);
-        fetchProducts();
-        setIsAddModalOpen(false);
+      const { id, ...data } = product;
+      await ProductApi.updateProduct(id, data);
+      fetchProducts();
+      setIsEditModalOpen(false);
+      setProductToEdit(null);
     } catch (error) {
-        console.error('Failed to create product:', error);
-        alert('Failed to create product');
-    }
-  };
-
-  const onUpdateProduct = async (id: string, data: Partial<IProduct>) => {
-    try {
-        await ProductApi.updateProduct(id, data);
-        fetchProducts();
-        setIsEditModalOpen(false);
-        setProductToEdit(null);
-    } catch (error) {
-        console.error('Failed to update product:', error);
-        alert('Failed to update product');
+      console.error('Failed to update product:', error);
+      alert('Failed to update product');
     }
   };
 
   const onDeleteProduct = async (id: string) => {
     try {
-        await ProductApi.deleteProduct(id);
-        fetchProducts();
+      await ProductApi.deleteProduct(id);
+      fetchProducts();
     } catch (error) {
-        console.error('Failed to delete product:', error);
-        alert('Failed to delete product');
+      console.error('Failed to delete product:', error);
+      alert('Failed to delete product');
     }
   };
-
-  const categoryMap = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.name])),
-    [categories]
-  );
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -299,7 +299,7 @@ const Product: React.FC = () => {
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {product.id}
+                      {product.code}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.barcode || '-'}
@@ -308,10 +308,10 @@ const Product: React.FC = () => {
                       {product.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {categoryMap.get(product.category_id) || '-'}
+                      {product.category.type || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.category?.type || '-'}
+                      {product.category.name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       ฿
@@ -320,13 +320,11 @@ const Product: React.FC = () => {
                     <td
                       className={`px-4 py-3 whitespace-nowrap text-sm `}
                     >
-                       {/* TODO: Check stock logic */}
+                      {/* TODO: Check stock logic */}
                       {product.category?.type === CategoryType.PRODUCT ? 'สินค้า' : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.category?.type === CategoryType.PRODUCT
-                        ? product.min_stock
-                        : '-'}
+                      {product.min_stock}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.unit?.name || '-'}
@@ -407,12 +405,13 @@ const Product: React.FC = () => {
           </div>
         </div>
       )}
+
       <AddProductModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateProduct={onCreateProduct}
-        products={products}
+        onSuccess={fetchProducts}
         categories={categories}
+        units={units}
       />
       <EditProductModal
         isOpen={isEditModalOpen}

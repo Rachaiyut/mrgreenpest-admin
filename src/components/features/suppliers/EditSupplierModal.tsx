@@ -4,10 +4,13 @@ import { FormField, Input } from '../../common/FormControls';
 import { Supplier } from '@/src/libs/common/interface/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
+// Interface
+import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+
 interface EditSupplierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  supplier: Supplier | null;
+  supplier: ISupplier | null;
   onUpdateSupplier: (supplier: Supplier) => void;
 }
 
