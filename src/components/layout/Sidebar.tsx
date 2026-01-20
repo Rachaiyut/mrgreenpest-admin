@@ -3,15 +3,15 @@ import type { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 // Constant
-import { NAVIGATION_ITEMS } from '../../../libs/common/constant/navigate';
-import { PAGE_PATH } from '../../../libs/common/constant/route.';
+import { NAVIGATION_ITEMS } from '../../libs/common/constant/navigate';
+import { PAGE_PATH } from '../../libs/common/constant/route.';
 
 // Enum
-import { Role } from '../../../libs/common/enum/role.enum';
+import { Role } from '../../libs/common/enum/role.enum';
 
 // Type
-import { Page } from '@/libs/common/type/page';
-import { NavigationItem } from '@/libs/common/type/nav';
+import { Page } from '@/src/libs/common/type/page';
+import { NavigationItem } from '@/src/libs/common/type/nav';
 
 import {
   XIcon,
@@ -19,7 +19,7 @@ import {
   PackageIcon,
   MenuIcon,
 } from '../../assets/icons/Icons';
-import { ILOCAL_STORAGE } from '@/libs/common/interface/api/auth.interface';
+import { ILOCAL_STORAGE } from '@/src/libs/common/interface/entity/auth.interface';
 
 interface SidebarProps {
   currentPage: Page;

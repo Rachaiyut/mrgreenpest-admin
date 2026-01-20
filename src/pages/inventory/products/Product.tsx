@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Card } from '../../../components/common/Card';
 import {
   PlusIcon,
@@ -6,29 +6,30 @@ import {
   PencilIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
+
+// Enum
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
+
+// Interface
+import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+
+// API
+import { Product as ProductApi } from '@/src/libs/api/product';
+import { Category as CategoryApi } from '@/src/libs/api/category';
+
 import { AddProductModal } from '../../../components/features/products/AddProductModal';
 import { Pagination } from '../../../components/common/Pagination';
-import { Product, Category } from '../../../types';
 import { EditProductModal } from '../../../components/features/products/EditProductModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
-// FIX: Define props interface to accept data and handlers from App.tsx
-interface InventoryProps {
-  products: Product[];
-  onCreateProduct: (product: Omit<Product, 'id'>) => void;
-  onUpdateProduct: (product: Product) => void;
-  onDeleteProduct: (productId: string) => void;
-  categories: Category[];
-}
 
-const Inventory: React.FC<InventoryProps> = ({
-  products,
-  onCreateProduct,
-  onUpdateProduct,
-  onDeleteProduct,
-  categories,
-}) => {
+const Product: React.FC = () => {
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -38,38 +39,85 @@ const Inventory: React.FC<InventoryProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToEdit, setProductToEdit] = useState<IProduct | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToDelete, setProductToDelete] = useState<IProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const reversedProducts = useMemo(
-    () => [...products].reverse().filter((p) => !p.id.startsWith('PK')),
-    [products]
-  );
+  const fetchCategories = async () => {
+    try {
+      const response = await CategoryApi.getCategories({ limit: 1000 }); // Fetch all for dropdown/map
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await ProductApi.getProducts({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery,
+        sort_by: 'created_at',
+        sort_order: 'desc'
+      });
+      setProducts(response.data);
+      setTotalItems(response.meta?.total || response.data.length);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchQuery]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const onCreateProduct = async (data: Partial<IProduct>) => {
+    try {
+        await ProductApi.createProduct(data);
+        fetchProducts();
+        setIsAddModalOpen(false);
+    } catch (error) {
+        console.error('Failed to create product:', error);
+        alert('Failed to create product');
+    }
+  };
+
+  const onUpdateProduct = async (id: string, data: Partial<IProduct>) => {
+    try {
+        await ProductApi.updateProduct(id, data);
+        fetchProducts();
+        setIsEditModalOpen(false);
+        setProductToEdit(null);
+    } catch (error) {
+        console.error('Failed to update product:', error);
+        alert('Failed to update product');
+    }
+  };
+
+  const onDeleteProduct = async (id: string) => {
+    try {
+        await ProductApi.deleteProduct(id);
+        fetchProducts();
+    } catch (error) {
+        console.error('Failed to delete product:', error);
+        alert('Failed to delete product');
+    }
+  };
 
   const categoryMap = useMemo(
     () => new Map(categories.map((c) => [c.id, c.name])),
     [categories]
-  );
-
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery) {
-      return reversedProducts;
-    }
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return reversedProducts.filter(
-      (product) =>
-        product.id.toLowerCase().includes(lowercasedQuery) ||
-        product.name.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [reversedProducts, searchQuery]);
-
-  const totalItems = filteredProducts.length;
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
   );
 
   const handleItemsPerPageChange = (size: number) => {
@@ -120,13 +168,13 @@ const Inventory: React.FC<InventoryProps> = ({
     };
   }, [openDropdownId]);
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: IProduct) => {
     setProductToEdit(product);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (product: Product) => {
+  const handleDelete = (product: IProduct) => {
     setProductToDelete(product);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
@@ -245,7 +293,7 @@ const Inventory: React.FC<InventoryProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedProducts.map((product, index) => (
+                {products.map((product, index) => (
                   <tr key={product.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -260,33 +308,31 @@ const Inventory: React.FC<InventoryProps> = ({
                       {product.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {categoryMap.get(product.categoryId) || '-'}
+                      {categoryMap.get(product.category_id) || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.type}
+                      {product.category?.type || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       ฿
-                      {product.price.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {Number(product.cost_price).toLocaleString()}
                     </td>
                     <td
-                      className={`px-4 py-3 whitespace-nowrap text-sm ${product.type === 'สินค้า' && product.stock < product.lowStockThreshold ? 'text-red-600 font-bold' : 'text-slate-500'}`}
+                      className={`px-4 py-3 whitespace-nowrap text-sm `}
                     >
-                      {product.type === 'สินค้า' ? product.stock : '-'}
+                       {/* TODO: Check stock logic */}
+                      {product.category?.type === CategoryType.PRODUCT ? 'สินค้า' : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.type === 'สินค้า'
-                        ? product.lowStockThreshold
+                      {product.category?.type === CategoryType.PRODUCT
+                        ? product.min_stock
                         : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.unit}
+                      {product.unit?.name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.createdBy}
+                      {product.created_by}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
@@ -394,4 +440,4 @@ const Inventory: React.FC<InventoryProps> = ({
   );
 };
 
-export default Inventory;
+export default Product;

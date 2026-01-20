@@ -37,7 +37,7 @@ import {
   BookOpenIcon,
   BellIcon,
 } from './assets/icons/Icons';
-import { NavigationItem } from '@/libs/common/type/nav';
+import { NavigationItem } from '@/src/libs/common/type/nav';
 
 // FIX: Add and export date formatting utility functions.
 export const formatThaiDate = (isoString: string | undefined): string => {

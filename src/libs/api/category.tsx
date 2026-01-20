@@ -2,10 +2,10 @@
 import {
   IBaseQuery,
   IBaseResponseArray,
-} from '../common/interface/api/base.interface';
+} from '../common/interface/entity/base.interface';
 
 // Interface
-import { ICategory } from '../common/interface/api/category.interface';
+import { ICategory } from '../common/interface/entity/category.interface';
 
 // Service
 import { AuthService } from './auth';

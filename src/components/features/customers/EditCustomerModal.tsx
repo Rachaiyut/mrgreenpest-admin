@@ -12,7 +12,7 @@ import { Customer, Status } from '../../../types';
 interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: Customer | null;
+  customer: ICustomer | null;
   onUpdateCustomer: (updatedCustomer: Customer) => void;
 }
 

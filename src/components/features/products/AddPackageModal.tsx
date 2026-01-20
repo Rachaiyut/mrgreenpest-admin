@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { Product, PackageCondition, Category } from '../../../types';
+import { IProduct, IPackageCondition } from '@/src/libs/common/interface/entity/product.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
 import {
   FormField,
   Input,
@@ -13,9 +15,9 @@ import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 interface AddPackageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: Product[];
-  onCreatePackage: (product: Omit<Product, 'id'>) => void;
-  categories: Category[];
+  products: IProduct[];
+  onCreatePackage: (product: Partial<IProduct>) => void;
+  categories: ICategory[];
 }
 
 export const AddPackageModal: React.FC<AddPackageModalProps> = ({
@@ -26,7 +28,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
   categories,
 }) => {
   const [conditions, setConditions] = useState<
-    Partial<Omit<PackageCondition, 'id' | 'type'>>[]
+    Partial<Omit<IPackageCondition, 'id'>>[]
   >([]);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
   }, [isOpen]);
 
   const availableCategories = useMemo(
-    () => categories.filter((c) => c.type === 'บริการ'),
+    () => categories.filter((c) => c.type === CategoryType.SERVICE),
     [categories]
   );
 
@@ -58,13 +60,13 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
       if (
-        typeof cond.minPrice === 'number' &&
-        typeof cond.firstOfferPriceNoTermites === 'number' &&
-        typeof cond.firstOfferPriceWithTermites === 'number' &&
-        cond.minPrice >
+        typeof cond.min_price === 'number' &&
+        typeof cond.first_offer_price_no_termites === 'number' &&
+        typeof cond.first_offer_price_with_termites === 'number' &&
+        cond.min_price >
           Math.min(
-            cond.firstOfferPriceNoTermites,
-            cond.firstOfferPriceWithTermites
+            cond.first_offer_price_no_termites,
+            cond.first_offer_price_with_termites
           )
       ) {
         indices.push(index);
@@ -77,17 +79,17 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     setConditions((prev) => [
       ...prev,
       {
-        maxArea: undefined,
-        firstOfferPriceNoTermites: 0,
-        firstOfferPriceWithTermites: 0,
-        minPrice: 0,
+        max_area: undefined,
+        first_offer_price_no_termites: 0,
+        first_offer_price_with_termites: 0,
+        min_price: 0,
       },
     ]);
   };
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackageCondition, 'id'>,
+    field: keyof Omit<IPackageCondition, 'id'>,
     value: string
   ) => {
     const newConditions = [...conditions];
@@ -108,26 +110,20 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const newPackage: Omit<Product, 'id'> = {
+    const newPackage: Partial<IProduct> = {
       name: data['package-name'] as string,
-      type: 'บริการ',
-      categoryId: data['categoryId'] as string,
-      unit: 'แพ็กเกจ',
-      price: 0, // Price is now derived from conditions
-      stock: 9999,
-      lowStockThreshold: 0,
-      warehouse: 'N/A',
-      createdBy: 'ผู้ดูแลระบบ',
-      updatedBy: 'ผู้ดูแลระบบ',
-      numberOfVisits: parseInt(data['package-visits'] as string, 10),
-      contractDuration: data['package-duration'] as string,
-      description: data['package-description'] as string,
+      category_id: data['categoryId'] as string,
+      min_stock: 0,
+      created_by: 'ผู้ดูแลระบบ', // Should be handled by backend or auth context
+      number_of_visits: parseInt(data['package-visits'] as string, 10),
+      contract_duration: data['package-duration'] as string,
+      // description: data['package-description'] as string, // IProduct doesn't have description yet? Add it if needed.
       conditions: conditions.map((c, i) => ({
         id: `cond-${Date.now()}-${i}`,
-        maxArea: c.maxArea || 0,
-        firstOfferPriceNoTermites: c.firstOfferPriceNoTermites || 0,
-        firstOfferPriceWithTermites: c.firstOfferPriceWithTermites || 0,
-        minPrice: c.minPrice || 0,
+        max_area: c.max_area || 0,
+        first_offer_price_no_termites: c.first_offer_price_no_termites || 0,
+        first_offer_price_with_termites: c.first_offer_price_with_termites || 0,
+        min_price: c.min_price || 0,
       })),
     };
 
@@ -273,11 +269,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.maxArea || ''}
+                          value={cond.max_area || ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'maxArea',
+                              'max_area',
                               e.target.value
                             )
                           }
@@ -289,11 +285,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.firstOfferPriceNoTermites ?? ''}
+                          value={cond.first_offer_price_no_termites ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'firstOfferPriceNoTermites',
+                              'first_offer_price_no_termites',
                               e.target.value
                             )
                           }
@@ -306,11 +302,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.firstOfferPriceWithTermites ?? ''}
+                          value={cond.first_offer_price_with_termites ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'firstOfferPriceWithTermites',
+                              'first_offer_price_with_termites',
                               e.target.value
                             )
                           }
@@ -323,11 +319,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.minPrice ?? ''}
+                          value={cond.min_price ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'minPrice',
+                              'min_price',
                               e.target.value
                             )
                           }

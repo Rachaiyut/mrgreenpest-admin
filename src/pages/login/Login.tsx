@@ -4,9 +4,9 @@ import { FormField, Input, Button } from '../../components/common/FormControls';
 import { useNavigate } from 'react-router-dom';
 
 // Interface
-import { ILoginPayload } from '../../../libs/common/interface/api/auth.interface';
-import { ILoginProps } from '../../../libs/common/interface/prop/auth/login.props';
-import { Auth } from '../../../libs/api/auth';
+import { ILoginPayload } from '@/src/libs/common/interface/entity/auth.interface';
+import { ILoginProps } from '@/src/libs/common/interface/prop/login.props';
+import { Auth } from '@/src/libs/api/auth';
 
 const Login: React.FC<ILoginProps> = ({ onLogin }) => {
   const [citizenId, setCitizenId] = useState('');

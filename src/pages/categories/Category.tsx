@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 
 // Interface
-import { ICategory } from '@libs/common/interface/api/category.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
 
 // API
-import { Category } from '@libs/api/category.tsx';
+import { Category } from '@/src/libs/api/category';
 
 // Icon
 import {
@@ -63,6 +63,8 @@ const Categories: React.FC = () => {
         sort_order: sortOrder as 'asc' | 'desc',
       });
 
+      console.log("res", response)
+
       setCategories(response.data);
       setTotalCategories(response.meta.total);
     } catch (error) {
@@ -111,7 +113,6 @@ const Categories: React.FC = () => {
         setIsAddModalOpen(false);
       } catch (error) {
         console.error('Error creating category:', error);
-        // You might want to show an error message to the user
       }
     },
     [fetchCategories]

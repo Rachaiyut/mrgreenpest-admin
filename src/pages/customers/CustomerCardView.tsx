@@ -1,7 +1,11 @@
 import { Button, Card } from "antd";
 
+
+// Enum
+import { CustomerType } from "@/src/libs/common/enum/customer.enum";
+
 // Interface
-import { ICustomer } from "../../../libs/common/interface/api/customer.interface";
+import { ICustomer } from "@/src/libs/common/interface/entity/customer.interface";
 
 // Icon
 import {
@@ -10,7 +14,6 @@ import {
   EnvelopeIcon,
   UserIcon,
 } from '../../assets/icons/Icons';
-import { CustomerType } from "@/libs/common/enum/customer.enum";
 
 
 const CustomerCardView: React.FC<{

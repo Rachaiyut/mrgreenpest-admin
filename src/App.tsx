@@ -2,16 +2,16 @@ import { useState, useCallback, useEffect } from 'react';
 import type { FC, Dispatch, SetStateAction } from 'react';
 
 // Base
-import { ILOCAL_STORAGE } from '../libs/common/interface/api/auth.interface';
+import { ILOCAL_STORAGE } from './libs/common/interface/entity/auth.interface';
 
 // Router
-import { AppRouter } from '../libs/router/router';
+import { AppRouter } from './libs/router/router';
 
 // Type
 import { Assessment, FieldJob, Status, Customer, Contract, Quotation, Product, User, Warehouse as WarehouseType, Supplier, GoodsReceipt as GoodsReceiptType, Withdrawal as WithdrawalType, Transfer as TransferType, StockAdjustment as StockAdjustmentType, ProductReturn as ProductReturnType, Invoice, Receipt, UserWallet, WalletTransaction, ReturnToSupplier as ReturnToSupplierType } from './types';
 
 // Service
-import { Auth } from '../libs/api/auth';
+import { Auth } from './libs/api/auth';
 
 // MOCK data
 import { MOCK_USERS, MOCK_WAREHOUSES, MOCK_SUPPLIERS, MOCK_CATEGORIES, MOCK_USER_WALLETS, MOCK_CUSTOMERS, MOCK_RETURN_TO_SUPPLIERS } from './constants';

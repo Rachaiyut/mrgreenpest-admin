@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 
 // Interface
-import { ICustomer } from '@libs/common/interface/api/customer.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
 
 // Icon
 import {
@@ -23,6 +23,8 @@ import {
 } from '../../assets/icons/Icons';
 
 // Component
+import CustomerCardView from './CustomerCardView';
+import CustomerListView from './CustomerListView';
 import { Card } from '../../components/common/Card';
 import { AddCustomerModal } from '../../components/features/customers/AddCustomerModal';
 import { Pagination } from '../../components/common/Pagination';
@@ -31,11 +33,9 @@ import { EditCustomerModal } from '../../components/features/customers/EditCusto
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
 import { Input, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import CustomerCardView from './CustomerCardView';
-import CustomerListView from './CustomerListView';
 
 // Api
-import { Customer } from '@libs/api/customer';
+import { Customer } from '@/src/libs/api/customer';
 
 const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<ICustomer[]>([]);
@@ -374,7 +374,7 @@ const Customers: React.FC = () => {
         message={
           <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบลูกค้า{' '}
-            <strong>{customerToDelete?.name}</strong>?
+            <strong>{customerToDelete?.id}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }

@@ -11,61 +11,61 @@ import {
 import { PAGE_PATH } from '../common/constant/route.';
 
 // Components
-import { Sidebar } from '../../src/components/layout/Sidebar';
-import { Header } from '../../src/components/layout/Header';
-import { CreateQuotationPage } from '../../src/pages/financials/CreateQuotationPage';
-import { EditQuotationPage } from '../../src/pages/financials/EditQuotationPage';
-import { EditInvoicePage } from '../../src/pages/financials/EditInvoicePage';
+import { Sidebar } from '../../components/layout/Sidebar';
+import { Header } from '../../components/layout/Header';
+import { CreateQuotationPage } from '../../pages/financials/CreateQuotationPage';
+import { EditQuotationPage } from '../../pages/financials/EditQuotationPage';
+import { EditInvoicePage } from '../../pages/financials/EditInvoicePage';
 
 // Types
-import { Page } from '../../src/types';
+import { Page } from '../../types';
 
 // Lazy Imports
-const Dashboard = lazy(() => import('../../src/pages/dashboard'));
-const Customers = lazy(() => import('../../src/pages/customers/Customer'));
-const Assessments = lazy(() => import('../../src/pages/assessments'));
-const FieldOperations = lazy(() => import('../../src/pages/field-operations'));
-const Financials = lazy(() => import('../../src/pages/financials'));
-const Inventory = lazy(() => import('../../src/pages/inventory/products'));
-const Users = lazy(() => import('../../src/pages/users'));
-const Warehouse = lazy(() => import('../../src/pages/warehouse'));
+const Dashboard = lazy(() => import('../../pages/dashboard'));
+const Customers = lazy(() => import('../../pages/customers/Customer'));
+const Assessments = lazy(() => import('../../pages/assessments'));
+const FieldOperations = lazy(() => import('../../pages/field-operations'));
+const Financials = lazy(() => import('../../pages/financials'));
+const Inventory = lazy(() => import('../../pages/inventory/products/Product'));
+const Users = lazy(() => import('../../pages/users'));
+const Warehouse = lazy(() => import('../../pages/warehouse'));
 const GoodsReceipt = lazy(
-  () => import('../../src/pages/inventory/goods-receipt')
+  () => import('../../pages/inventory/goods-receipt')
 );
-const Suppliers = lazy(() => import('../../src/pages/suppliers'));
-const Withdrawals = lazy(() => import('../../src/pages/inventory/withdrawals'));
-const Transfers = lazy(() => import('../../src/pages/inventory/transfers'));
+const Suppliers = lazy(() => import('../../pages/suppliers'));
+const Withdrawals = lazy(() => import('../../pages/inventory/withdrawals'));
+const Transfers = lazy(() => import('../../pages/inventory/transfers'));
 const StockAdjustment = lazy(
-  () => import('../../src/pages/inventory/stock-adjustment')
+  () => import('../../pages/inventory/stock-adjustment')
 );
-const Returns = lazy(() => import('../../src/pages/inventory/returns'));
+const Returns = lazy(() => import('../../pages/inventory/returns'));
 const ReturnToSupplier = lazy(
-  () => import('../../src/pages/inventory/return-to-supplier')
+  () => import('../../pages/inventory/return-to-supplier')
 );
-const Packages = lazy(() => import('../../src/pages/packages'));
-const Categories = lazy(() => import('../../src/pages/categories'));
-const Reports = lazy(() => import('../../src/pages/reports'));
+const Packages = lazy(() => import('../../pages/packages'));
+const Categories = lazy(() => import('../../pages/categories/Category'));
+const Reports = lazy(() => import('../../pages/reports'));
 const TotalIncome = lazy(
-  () => import('../../src/pages/reports/TotalIncomePage')
+  () => import('../../pages/reports/TotalIncomePage')
 );
 const TaxInvoiceIncome = lazy(
-  () => import('../../src/pages/reports/TaxInvoiceIncomePage')
+  () => import('../../pages/reports/TaxInvoiceIncomePage')
 );
 const MonthlySales = lazy(
-  () => import('../../src/pages/reports/MonthlySalesPage')
+  () => import('../../pages/reports/MonthlySalesPage')
 );
 const SalesSummary = lazy(
-  () => import('../../src/pages/reports/SalesSummaryPage')
+  () => import('../../pages/reports/SalesSummaryPage')
 );
 const IndirectExpenses = lazy(
-  () => import('../../src/pages/reports/IndirectExpensesPage')
+  () => import('../../pages/reports/IndirectExpensesPage')
 );
-const DailyCash = lazy(() => import('../../src/pages/reports/DailyCashPage'));
+const DailyCash = lazy(() => import('../../pages/reports/DailyCashPage'));
 const DirectExpenses = lazy(
-  () => import('../../src/pages/reports/DirectExpensesPage')
+  () => import('../../pages/reports/DirectExpensesPage')
 );
-const Notifications = lazy(() => import('../../src/pages/notifications'));
-const Login = lazy(() => import('../../src/pages/login/Login'));
+const Notifications = lazy(() => import('../../pages/notifications'));
+const Login = lazy(() => import('../../pages/login/Login'));
 
 interface AppRouterProps {
   isAuthenticated: boolean;
@@ -345,28 +345,8 @@ export const AppRouter = ({
                   }
                 />
                 <Route path="/categories" element={<Categories />} />
-                <Route
-                  path="/inventory"
-                  element={
-                    <Inventory
-                      products={products}
-                      onCreateProduct={handlers.products.create}
-                      onUpdateProduct={handlers.products.update}
-                      onDeleteProduct={handlers.products.delete}
-                    />
-                  }
-                />
-                <Route
-                  path="/packages"
-                  element={
-                    <Packages
-                      products={products}
-                      onCreatePackage={handlers.packages.create}
-                      onUpdatePackage={handlers.packages.update}
-                      onDeletePackage={handlers.packages.delete}
-                    />
-                  }
-                />
+                <Route path="/inventory" element={<Inventory />} />
+                <Route path="/packages" element={<Packages />} />
                 <Route
                   path="/warehouse"
                   element={

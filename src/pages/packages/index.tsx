@@ -1,6 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Card } from '../../components/common/Card';
-import { Product, Category } from '../../types';
+import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { Product as ProductApi } from '@/src/libs/api/product';
+import { Category as CategoryApi } from '@/src/libs/api/category';
 import {
   PlusIcon,
   ManageIcon,
@@ -15,25 +19,14 @@ import { PackageDetailsModal } from '../../components/features/products/PackageD
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
 
-interface PackagesProps {
-  products: Product[];
-  onCreatePackage: (pkg: Omit<Product, 'id'>) => void;
-  onUpdatePackage: (pkg: Product) => void;
-  onDeletePackage: (pkgId: string) => void;
-  categories: Category[];
-}
-
-const Packages: React.FC<PackagesProps> = ({
-  products,
-  onCreatePackage,
-  onUpdatePackage,
-  onDeletePackage,
-  categories,
-}) => {
+const Packages: React.FC = () => {
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<Product | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<IProduct | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -43,11 +36,52 @@ const Packages: React.FC<PackagesProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [packageToDelete, setPackageToDelete] = useState<Product | null>(null);
+  const [packageToDelete, setPackageToDelete] = useState<IProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await CategoryApi.getCategories({ limit: 1000 });
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
+  const fetchPackages = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Fetch all products for now and filter for packages (starts with PK)
+      // Ideally backend should support filtering by type or code prefix
+      const response = await ProductApi.getProducts({
+        page: 1, // Fetch all to filter client side if needed, or implement search
+        limit: 1000, 
+        search: searchQuery,
+      });
+      
+      // Filter for packages (ID starts with PK)
+      // Note: If backend pagination is strict, this might be issue. 
+      // Assuming for now we can fetch a reasonable amount or backend supports search properly.
+      const allProducts = response.data;
+      const packageList = allProducts.filter(p => p.id.startsWith('PK'));
+      
+      setProducts(allProducts); // Keep all products for ID generation in Modal
+      setTotalItems(packageList.length);
+    } catch (error) {
+      console.error('Failed to fetch packages:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchPackages();
+  }, [fetchPackages]);
 
   const packages = useMemo(
-    () => [...products].reverse().filter((p) => p.id.startsWith('PK')),
+    () => products.filter((p) => p.id.startsWith('PK')).reverse(),
     [products]
   );
 
@@ -65,12 +99,11 @@ const Packages: React.FC<PackagesProps> = ({
       (pkg) =>
         pkg.id.toLowerCase().includes(lowercasedQuery) ||
         pkg.name.toLowerCase().includes(lowercasedQuery) ||
-        (pkg.numberOfVisits &&
-          pkg.numberOfVisits.toString().includes(lowercasedQuery))
+        (pkg.number_of_visits &&
+          pkg.number_of_visits.toString().includes(lowercasedQuery))
     );
   }, [packages, searchQuery]);
 
-  const totalItems = filteredPackages.length;
   const paginatedPackages = filteredPackages.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -81,22 +114,53 @@ const Packages: React.FC<PackagesProps> = ({
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (pkg: Product) => {
+  const handleViewDetails = (pkg: IProduct) => {
     setSelectedPackage(pkg);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (pkg: Product) => {
+  const handleEdit = (pkg: IProduct) => {
     setSelectedPackage(pkg);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (pkg: Product) => {
+  const handleDelete = (pkg: IProduct) => {
     setPackageToDelete(pkg);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
+  };
+
+  const onCreatePackage = async (data: Partial<IProduct>) => {
+    try {
+      await ProductApi.createProduct(data);
+      fetchPackages();
+    } catch (error) {
+      console.error('Failed to create package:', error);
+      alert('Failed to create package');
+    }
+  };
+
+  const onUpdatePackage = async (id: string, data: Partial<IProduct>) => {
+    try {
+      await ProductApi.updateProduct(id, data);
+      fetchPackages();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update package:', error);
+      alert('Failed to update package');
+    }
+  };
+
+  const onDeletePackage = async (id: string) => {
+    try {
+      await ProductApi.deleteProduct(id);
+      fetchPackages();
+    } catch (error) {
+      console.error('Failed to delete package:', error);
+      alert('Failed to delete package');
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -230,14 +294,15 @@ const Packages: React.FC<PackagesProps> = ({
                       {pkg.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {categoryMap.get(pkg.categoryId) || '-'}
+                      {categoryMap.get(pkg.category_id) || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
-                      {pkg.numberOfVisits ? `${pkg.numberOfVisits} ครั้ง` : '-'}
+                      {pkg.number_of_visits ? `${pkg.number_of_visits} ครั้ง` : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
-                      {pkg.price > 0
-                        ? `฿${pkg.price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                       {/* TODO: Handle price range or min price display */}
+                      {pkg.conditions && pkg.conditions.length > 0
+                        ? `เริ่มต้น ฿${Math.min(...pkg.conditions.map(c => c.min_price)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
@@ -262,7 +327,7 @@ const Packages: React.FC<PackagesProps> = ({
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
+              totalItems={filteredPackages.length}
               onPageChange={setCurrentPage}
               onItemsPerPageChange={handleItemsPerPageChange}
             />

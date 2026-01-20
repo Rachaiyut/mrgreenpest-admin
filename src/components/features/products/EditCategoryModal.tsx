@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
-import { ICategory } from '@/libs/common/interface/api/category.interface';
+import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
 
 interface EditCategoryModalProps {
   isOpen: boolean;

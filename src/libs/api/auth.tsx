@@ -3,13 +3,13 @@ import { AxiosInstance } from 'axios';
 import { API_CONFIG } from '../common/config/api.config';
 
 // Interface
-import { IBaseResponse } from '../common/interface/api/base.interface';
+import { IBaseResponse } from '../common/interface/entity/base.interface';
 import {
   IAuthUser,
   ILOCAL_STORAGE,
   ILoginPayload,
   ILoginResponse,
-} from '../common/interface/api/auth.interface';
+} from '../common/interface/entity/auth.interface';
 
 // Base
 import { BaseHttpClient } from './base';

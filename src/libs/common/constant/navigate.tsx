@@ -18,7 +18,7 @@ import {
   NewUsersIcon,
   BellIcon,
   BookOpenIcon,
-} from '../../../src/assets/icons/Icons';
+} from '../../../assets/icons/Icons';
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
   { type: 'link', name: 'Dashboard', icon: NewDashboardIcon },

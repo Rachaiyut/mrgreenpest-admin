@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { Product, PackageCondition, Category } from '../../../types';
+import { IProduct, IPackageCondition } from '../../../libs/common/interface/entity/product.interface';
+import { ICategory } from '../../../libs/common/interface/entity/category.interface';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface EditPackageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pkg: Product | null;
-  onUpdatePackage: (pkg: Product) => void;
-  categories: Category[];
+  pkg: IProduct | null;
+  onUpdatePackage: (pkg: IProduct) => void;
+  categories: ICategory[];
 }
 
 export const EditPackageModal: React.FC<EditPackageModalProps> = ({
@@ -19,8 +20,8 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
   onUpdatePackage,
   categories,
 }) => {
-  const [formData, setFormData] = useState<Partial<Product>>({});
-  const [conditions, setConditions] = useState<Partial<PackageCondition>[]>([]);
+  const [formData, setFormData] = useState<Partial<IProduct>>({});
+  const [conditions, setConditions] = useState<Partial<IPackageCondition>[]>([]);
 
   const availableCategories = useMemo(
     () => categories.filter((c) => c.type === 'บริการ'),
@@ -38,13 +39,13 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
       if (
-        typeof cond.minPrice === 'number' &&
-        typeof cond.firstOfferPriceNoTermites === 'number' &&
-        typeof cond.firstOfferPriceWithTermites === 'number' &&
-        cond.minPrice >
+        typeof cond.min_price === 'number' &&
+        typeof cond.first_offer_price_no_termites === 'number' &&
+        typeof cond.first_offer_price_with_termites === 'number' &&
+        cond.min_price >
           Math.min(
-            cond.firstOfferPriceNoTermites,
-            cond.firstOfferPriceWithTermites
+            cond.first_offer_price_no_termites,
+            cond.first_offer_price_with_termites
           )
       ) {
         indices.push(index);
@@ -59,7 +60,9 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     >
   ) => {
     const { name, value } = e.target;
-    const isNumberField = ['price', 'numberOfVisits'].includes(name);
+    // Map camelCase names from inputs to snake_case state if needed, or update inputs to use snake_case
+    // Let's update inputs to use snake_case
+    const isNumberField = ['number_of_visits'].includes(name);
     setFormData((prev) => ({
       ...prev,
       [name]: isNumberField ? parseFloat(value) : value,
@@ -71,17 +74,17 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
       ...prev,
       {
         id: `new-${Date.now()}`,
-        maxArea: undefined,
-        firstOfferPriceNoTermites: 0,
-        firstOfferPriceWithTermites: 0,
-        minPrice: 0,
+        max_area: undefined,
+        first_offer_price_no_termites: 0,
+        first_offer_price_with_termites: 0,
+        min_price: 0,
       },
     ]);
   };
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackageCondition, 'id'>,
+    field: keyof Omit<IPackageCondition, 'id'>,
     value: string
   ) => {
     const newConditions = [...conditions];
@@ -101,23 +104,23 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     }
 
     if (pkg) {
-      const updatedPackageData: Product = {
+      const updatedPackageData: IProduct = {
         ...pkg,
         ...formData,
         name: formData.name || pkg.name,
-        categoryId: formData.categoryId || pkg.categoryId,
-        numberOfVisits:
-          typeof formData.numberOfVisits === 'number'
-            ? formData.numberOfVisits
-            : pkg.numberOfVisits,
-        contractDuration: formData.contractDuration || pkg.contractDuration,
-        updatedBy: 'ผู้ดูแลระบบ', // Mock user
+        category_id: formData.category_id || pkg.category_id,
+        number_of_visits:
+          typeof formData.number_of_visits === 'number'
+            ? formData.number_of_visits
+            : pkg.number_of_visits,
+        contract_duration: formData.contract_duration || pkg.contract_duration,
+        // updated_by: 'ผู้ดูแลระบบ', // removed as not in interface
         conditions: conditions.map((c) => ({
           id: c.id || `cond-${Date.now()}-${Math.random()}`,
-          maxArea: c.maxArea || 0,
-          firstOfferPriceNoTermites: c.firstOfferPriceNoTermites || 0,
-          firstOfferPriceWithTermites: c.firstOfferPriceWithTermites || 0,
-          minPrice: c.minPrice || 0,
+          max_area: c.max_area || 0,
+          first_offer_price_no_termites: c.first_offer_price_no_termites || 0,
+          first_offer_price_with_termites: c.first_offer_price_with_termites || 0,
+          min_price: c.min_price || 0,
         })),
       };
       onUpdatePackage(updatedPackageData);
@@ -183,9 +186,9 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           </FormField>
           <FormField label="หมวดหมู่" htmlFor="categoryId">
             <Select
-              name="categoryId"
+              name="category_id"
               id="categoryId"
-              value={formData.categoryId || ''}
+              value={formData.category_id || ''}
               onChange={handleChange}
               required
             >
@@ -213,9 +216,9 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="numberOfVisits">
             <Input
               id="numberOfVisits"
-              name="numberOfVisits"
+              name="number_of_visits"
               type="number"
-              value={formData.numberOfVisits || ''}
+              value={formData.number_of_visits || ''}
               onChange={handleChange}
               required
               placeholder="เช่น 4"
@@ -224,8 +227,8 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           <FormField label="อายุสัญญา" htmlFor="contractDuration">
             <Select
               id="contractDuration"
-              name="contractDuration"
-              value={formData.contractDuration || ''}
+              name="contract_duration"
+              value={formData.contract_duration || ''}
               onChange={handleChange}
               required
             >
@@ -289,11 +292,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.maxArea || ''}
+                          value={cond.max_area || ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'maxArea',
+                              'max_area',
                               e.target.value
                             )
                           }
@@ -305,11 +308,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.firstOfferPriceNoTermites ?? ''}
+                          value={cond.first_offer_price_no_termites ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'firstOfferPriceNoTermites',
+                              'first_offer_price_no_termites',
                               e.target.value
                             )
                           }
@@ -322,11 +325,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.firstOfferPriceWithTermites ?? ''}
+                          value={cond.first_offer_price_with_termites ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'firstOfferPriceWithTermites',
+                              'first_offer_price_with_termites',
                               e.target.value
                             )
                           }
@@ -339,11 +342,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.minPrice ?? ''}
+                          value={cond.min_price ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'minPrice',
+                              'min_price',
                               e.target.value
                             )
                           }
