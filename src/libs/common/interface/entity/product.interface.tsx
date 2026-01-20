@@ -3,6 +3,14 @@ import { ICategory } from "./category.interface"
 import { IUnit } from "./unit.interface"
 import { CategoryType } from "../../enum/category.enum"
 
+export interface IPackageCondition {
+    id: string;
+    max_area: number;
+    first_offer_price_no_termites: number;
+    first_offer_price_with_termites: number;
+    min_price: number;
+}
+
 export interface IProduct {
     id: string
     category_id: string,
@@ -19,4 +27,8 @@ export interface IProduct {
     created_by: string,
     category: Partial<ICategory>,
     unit:  Partial<IUnit>
+    
+    number_of_visits?: number;
+    contract_duration?: string;
+    conditions?: IPackageCondition[];
 }
