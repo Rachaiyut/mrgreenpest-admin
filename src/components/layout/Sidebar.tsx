@@ -6,12 +6,9 @@ import { Link } from 'react-router-dom';
 import { NAVIGATION_ITEMS } from '../../libs/common/constant/navigate';
 import { PAGE_PATH } from '../../libs/common/constant/route.';
 
-// Enum
 import { Role } from '../../libs/common/enum/role.enum';
-
-// Type
-import { Page } from '@/src/libs/common/type/page';
-import { NavigationItem } from '@/src/libs/common/type/nav';
+import { Page } from '@/src/libs/router/page';
+import { NavigationItem } from '@/src/libs/common/interface/entity/nav.interface';
 
 import {
   XIcon,

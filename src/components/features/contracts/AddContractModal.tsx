@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
-import { Customer, Quotation, Contract, Status } from '../../../types';
+import {
+  Customer,
+  Quotation,
+  Contract,
+  Status,
+} from '@/src/libs/common/interface/entity/app.interface';
 
 interface AddContractModalProps {
   isOpen: boolean;

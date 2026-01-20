@@ -9,7 +9,7 @@ import {
   AssessmentItem,
   PackageCondition,
   AssessmentWorkArea,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { MOCK_CUSTOMERS } from '../../../constants';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';

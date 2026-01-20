@@ -8,7 +8,7 @@ import {
   Receipt,
   Status,
   Customer,
-} from '../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDate } from '../../constants';
 
 interface NotificationsProps {

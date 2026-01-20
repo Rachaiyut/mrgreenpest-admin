@@ -23,7 +23,7 @@ import {
   FieldJob,
   Customer,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';

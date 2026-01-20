@@ -6,7 +6,12 @@ import {
   Select,
   Button,
 } from '../../components/common/FormControls';
-import { Invoice, Status, Customer, Quotation } from '../../types';
+import {
+  Invoice,
+  Status,
+  Customer,
+  Quotation,
+} from '@/src/libs/common/interface/entity/app.interface';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
 
 interface EditInvoicePageProps {

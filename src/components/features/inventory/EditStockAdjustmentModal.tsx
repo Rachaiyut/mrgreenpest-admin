@@ -7,14 +7,14 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { Warehouse as WarehouseType } from '../../../types';
+import { Warehouse as WarehouseType } from '@/src/libs/common/interface/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Product,
   StockAdjustment as StockAdjustmentType,
   StockAdjustmentItem,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 
 interface EditableAdjustmentItem extends Omit<
   StockAdjustmentItem,

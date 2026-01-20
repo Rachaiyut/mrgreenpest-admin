@@ -4,7 +4,7 @@ import {
   ProductReturn,
   Warehouse as WarehouseType,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDate } from '../../../constants';
 
 interface ReturnDetailsModalProps {

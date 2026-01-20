@@ -7,7 +7,8 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Product, Category } from '../../../types';
+import { Product, Category } from '@/src/libs/common/interface/entity/app.interface';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 
 interface EditProductModalProps {
@@ -28,10 +29,11 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const [formData, setFormData] = useState<Partial<Product>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const availableCategories = useMemo(
-    () => categories.filter((c) => c.type === formData.type),
-    [categories, formData.type]
-  );
+  const availableCategories = useMemo(() => {
+    const targetType =
+      formData.type === 'สินค้า' ? CategoryType.PRODUCT : CategoryType.SERVICE;
+    return categories.filter((c) => c.type === targetType);
+  }, [categories, formData.type]);
 
   useEffect(() => {
     if (product) {

@@ -19,7 +19,10 @@ import {
   Status,
   User,
   Supplier,
-} from '../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+import { CustomerType } from '@/src/libs/common/enum/customer.enum';
+import { Status as BaseStatus } from '@/src/libs/common/enum/base.enum';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 
 type ReportTab =
@@ -375,13 +378,43 @@ const Reports: React.FC<ReportsProps> = ({
   ];
 
   const [isCustDetailsOpen, setIsCustDetailsOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(
     null
   );
   const handleViewCustomer = (id: string) => {
-    const cust = customers.find((c) => c.id === id) || null;
-    setSelectedCustomer(cust);
-    setIsCustDetailsOpen(!!cust);
+    const cust = customers.find((c) => c.id === id);
+    if (!cust) {
+      setSelectedCustomer(null);
+      setIsCustDetailsOpen(false);
+      return;
+    }
+
+    const mapped: ICustomer = {
+      id: cust.id,
+      created_at: cust.createdAt,
+      updated_at: cust.createdAt,
+      country: cust.address.country,
+      status: BaseStatus.ACTIVE,
+      customer_type:
+        cust.type === 'บุคคลธรรมดา'
+          ? CustomerType.INDIVIDUAL
+          : CustomerType.CORPORATE,
+      first_name: cust.name,
+      last_name: '',
+      nickname: cust.nickname ?? '',
+      tax_id: cust.taxId,
+      phone: cust.phone,
+      email: cust.email ?? '',
+      address_house_no: cust.address.street,
+      sub_district: cust.address.subdistrict,
+      district: cust.address.district,
+      province: cust.address.province,
+      postal_code: cust.address.postalcode,
+      google_map_link: cust.googleMapLink,
+    };
+
+    setSelectedCustomer(mapped);
+    setIsCustDetailsOpen(true);
   };
 
   const exportCsv = () => {

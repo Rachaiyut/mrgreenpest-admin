@@ -10,14 +10,14 @@ import {
 import {
   Assessment,
   Status,
-  UserRole,
   FieldJob,
   Customer,
   Contract,
   FieldJobWorkArea,
   User,
   Product,
-} from '../../../types';
+  UserRole,
+} from '@/src/libs/common/interface/entity/app.interface';
 import {
   MOCK_WAREHOUSES,
   MOCK_CUSTOMERS,

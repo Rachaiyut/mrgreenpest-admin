@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Textarea, Button } from '../../common/FormControls';
-import { FieldJob } from '../../../types';
+import { FieldJob } from '@/src/libs/common/interface/entity/app.interface';
 
 interface CancelJobModalProps {
   isOpen: boolean;

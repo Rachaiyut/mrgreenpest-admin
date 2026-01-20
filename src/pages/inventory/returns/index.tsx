@@ -15,7 +15,7 @@ import {
   ProductReturn as ReturnType,
   Warehouse as WarehouseType,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { ReturnDetailsModal } from '../../../components/features/inventory/ReturnDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { EditReturnModal } from '../../../components/features/inventory/EditReturnModal';

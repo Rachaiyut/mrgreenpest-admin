@@ -11,7 +11,7 @@ import {
   FieldJob,
   Customer,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 

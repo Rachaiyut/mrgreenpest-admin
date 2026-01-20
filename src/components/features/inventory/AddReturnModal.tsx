@@ -9,7 +9,7 @@ import {
   Status,
   Warehouse as WarehouseType,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 
 interface AddReturnModalProps {
   isOpen: boolean;

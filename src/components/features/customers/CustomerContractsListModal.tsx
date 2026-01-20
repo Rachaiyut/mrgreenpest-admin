@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { Customer, Contract, Quotation } from '../../../types';
+import { Customer, Contract, Quotation } from '@/src/libs/common/interface/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { PlusIcon } from '../../../assets/icons/Icons';
 import { AddContractModal } from '../contracts/AddContractModal';

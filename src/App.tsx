@@ -8,7 +8,28 @@ import { ILOCAL_STORAGE } from './libs/common/interface/entity/auth.interface';
 import { AppRouter } from './libs/router/router';
 
 // Type
-import { Assessment, FieldJob, Status, Customer, Contract, Quotation, Product, User, Warehouse as WarehouseType, Supplier, GoodsReceipt as GoodsReceiptType, Withdrawal as WithdrawalType, Transfer as TransferType, StockAdjustment as StockAdjustmentType, ProductReturn as ProductReturnType, Invoice, Receipt, UserWallet, WalletTransaction, ReturnToSupplier as ReturnToSupplierType } from './types';
+import {
+  Assessment,
+  FieldJob,
+  Status,
+  Customer,
+  Contract,
+  Quotation,
+  Product,
+  User,
+  Warehouse as WarehouseType,
+  Supplier,
+  GoodsReceipt as GoodsReceiptType,
+  Withdrawal as WithdrawalType,
+  Transfer as TransferType,
+  StockAdjustment as StockAdjustmentType,
+  ProductReturn as ProductReturnType,
+  Invoice,
+  Receipt,
+  UserWallet,
+  WalletTransaction,
+  ReturnToSupplier as ReturnToSupplierType,
+} from '@/src/libs/common/interface/entity/app.interface';
 
 // Service
 import { Auth } from './libs/api/auth';

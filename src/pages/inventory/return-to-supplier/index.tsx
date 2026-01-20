@@ -17,7 +17,7 @@ import {
   Warehouse as WarehouseType,
   Supplier,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { ReturnToSupplierDetailsModal } from '../../../components/features/inventory/ReturnToSupplierDetailsModal';
 import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';

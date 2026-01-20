@@ -1,5 +1,5 @@
 import React from 'react';
-import { Status } from '../../types';
+import { Status } from '@/src/libs/common/interface/entity/app.interface';
 
 interface StatusBadgeProps {
   status: Status;

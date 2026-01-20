@@ -14,7 +14,11 @@ import {
 import { Button, Input, Select } from '../../components/common/FormControls';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
 import { WarehouseDetailsModal } from '../../components/features/warehouses/WarehouseDetailsModal';
-import { Warehouse as WarehouseType, Product, Status } from '../../types';
+import {
+  Warehouse as WarehouseType,
+  Product,
+  Status,
+} from '@/src/libs/common/interface/entity/app.interface';
 import { Pagination } from '../../components/common/Pagination';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { EditWarehouseModal } from '../../components/features/warehouses/EditWarehouseModal';

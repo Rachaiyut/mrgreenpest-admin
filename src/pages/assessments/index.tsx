@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { Status, Assessment, Product } from '../../types';
+import { Status, Assessment, Product } from '@/src/libs/common/interface/entity/app.interface';
 import {
   PlusIcon,
   ListBulletIcon,

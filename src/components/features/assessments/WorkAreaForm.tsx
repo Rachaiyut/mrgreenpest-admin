@@ -2,7 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FormField, Input, Select } from '../../common/FormControls';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
-import { AssessmentWorkArea, Product, AssessmentItem } from '../../../types';
+import {
+  AssessmentWorkArea,
+  Product,
+  AssessmentItem,
+} from '@/src/libs/common/interface/entity/app.interface';
 
 const SERVICE_TYPES = [
   'กำจัดปลวก',

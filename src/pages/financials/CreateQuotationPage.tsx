@@ -12,7 +12,7 @@ import {
   Assessment,
   Status,
   InstallmentPlan,
-} from '../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { MOCK_PRODUCTS } from '../../constants';
 import { LeftArrowIcon, PlusIcon, TrashIcon } from '../../assets/icons/Icons';
 

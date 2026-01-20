@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { UserRole } from '../../../types';
+import { UserRole } from '@/src/libs/common/interface/entity/app.interface';
 
 interface RoleDetailsModalProps {
   isOpen: boolean;

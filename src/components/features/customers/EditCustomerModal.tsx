@@ -7,12 +7,12 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Customer, Status } from '../../../types';
+import { Customer, Status } from '@/src/libs/common/interface/entity/app.interface';
 
 interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: ICustomer | null;
+  customer: Customer | null;
   onUpdateCustomer: (updatedCustomer: Customer) => void;
 }
 

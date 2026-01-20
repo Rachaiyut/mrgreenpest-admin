@@ -1,6 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { User, UserWallet, WalletTransaction } from '../../../types';
+import {
+  User,
+  UserWallet,
+  WalletTransaction,
+} from '@/src/libs/common/interface/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { formatThaiDateTime } from '../../../constants';
 import { PlusIcon } from '../../../assets/icons/Icons';

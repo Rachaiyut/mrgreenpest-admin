@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { Supplier } from '../../../types';
+import { Supplier } from '@/src/libs/common/interface/entity/app.interface';
 import {
   SectionTitle,
   DetailsList,

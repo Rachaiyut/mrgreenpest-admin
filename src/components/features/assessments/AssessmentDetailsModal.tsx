@@ -1,7 +1,10 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { Assessment, AssessmentWorkArea } from '../../../types';
+import {
+  Assessment,
+  AssessmentWorkArea,
+} from '@/src/libs/common/interface/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { MOCK_PRODUCTS, formatThaiDate } from '../../../constants';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';

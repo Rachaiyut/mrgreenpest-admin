@@ -8,5 +8,12 @@ export interface ICategory extends IBase {
   name: string;
   description: string;
   code: string;
-  type?: CategoryType
+  type?: CategoryType;
+  prefix?: string;
 }
+
+export type Category = Omit<ICategory, 'created_at' | 'updated_at' | 'code'> & {
+  created_at?: string;
+  updated_at?: string;
+  code?: string;
+};

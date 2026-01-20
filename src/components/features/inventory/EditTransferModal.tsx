@@ -7,10 +7,10 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { Warehouse as WarehouseType, Product } from '../../../types';
+import { Warehouse as WarehouseType, Product } from '@/src/libs/common/interface/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
-import { Transfer as TransferType, Status, TransferItem } from '../../../types';
+import { Transfer as TransferType, Status, TransferItem } from '@/src/libs/common/interface/entity/app.interface';
 
 interface EditTransferModalProps {
   isOpen: boolean;

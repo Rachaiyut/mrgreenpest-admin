@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
 import { Modal } from '../../common/Modal';
-import { Quotation, InstallmentPlan, Status } from '../../../types';
+import { Quotation, InstallmentPlan, Status } from '@/src/libs/common/interface/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../constants';
 import {

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Quotation, Assessment, FieldJob, Status } from '../../types';
+import { Quotation, Assessment, FieldJob, Status } from '@/src/libs/common/interface/entity/app.interface';
 import {
   ChartPieIcon,
   ArrowTrendingUpIcon,

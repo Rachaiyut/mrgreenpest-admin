@@ -15,7 +15,7 @@ import {
   Status,
   Warehouse as WarehouseType,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { AddTransferModal } from '../../../components/features/inventory/AddTransferModal';
 import { TransferDetailsModal } from '../../../components/features/inventory/TransferDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';

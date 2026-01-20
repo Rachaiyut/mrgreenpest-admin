@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Quotation, Assessment, User, Status } from '../../types';
+import { Quotation, Assessment, User, Status } from '@/src/libs/common/interface/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
 interface MonthlySalesPageProps {

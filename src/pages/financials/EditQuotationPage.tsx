@@ -7,7 +7,7 @@ import {
   Select,
   Button,
 } from '../../components/common/FormControls';
-import { Quotation, Status } from '../../types';
+import { Quotation, Status } from '@/src/libs/common/interface/entity/app.interface';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
 
 interface EditQuotationPageProps {

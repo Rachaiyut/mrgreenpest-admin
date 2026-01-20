@@ -18,7 +18,7 @@ import { EditQuotationPage } from '../../pages/financials/EditQuotationPage';
 import { EditInvoicePage } from '../../pages/financials/EditInvoicePage';
 
 // Types
-import { Page } from '../../types';
+import { Page } from '../router/page';
 
 // Lazy Imports
 const Dashboard = lazy(() => import('../../pages/dashboard'));

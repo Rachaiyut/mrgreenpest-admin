@@ -7,7 +7,7 @@ import {
   UserRole,
   FieldJobWorkArea,
   User,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { MOCK_WAREHOUSES } from '../../../constants';
 import { RefreshIcon } from '../../../assets/icons/Icons';
 

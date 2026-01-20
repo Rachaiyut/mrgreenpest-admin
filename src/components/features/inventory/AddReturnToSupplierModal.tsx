@@ -11,7 +11,7 @@ import {
   Warehouse as WarehouseType,
   Supplier,
   Product,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 
 interface AddReturnToSupplierModalProps {
   isOpen: boolean;

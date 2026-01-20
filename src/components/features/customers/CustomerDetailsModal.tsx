@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { Customer } from '../../../types';
+import { Customer } from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDate } from '../../../constants';
 import {
   SectionTitle,

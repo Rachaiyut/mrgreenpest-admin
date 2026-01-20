@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
-import { Category } from '../../../types';
+import { Category } from '@/src/libs/common/interface/entity/app.interface';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
@@ -72,7 +73,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     const newCategory: Omit<Category, 'id'> = {
       name: data['category-name'] as string,
       description: data.description as string | undefined,
-      type: 'สินค้า',
+      type: CategoryType.PRODUCT,
       prefix: data.prefix as string,
     };
 

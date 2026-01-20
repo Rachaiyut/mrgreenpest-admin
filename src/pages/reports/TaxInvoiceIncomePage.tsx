@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Invoice, Receipt, Customer } from '../../types';
+import { Invoice, Receipt, Customer } from '@/src/libs/common/interface/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
 interface TaxInvoiceIncomePageProps {

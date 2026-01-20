@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { Customer } from '../../../types';
+import { Customer } from '@/src/libs/common/interface/entity/app.interface';
 
 interface CustomerSelectionModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { FieldJob, Assessment } from '../../../types';
+import { FieldJob, Assessment } from '@/src/libs/common/interface/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
 import { MOCK_WAREHOUSES, formatThaiDate } from '../../../constants';

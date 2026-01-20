@@ -15,7 +15,7 @@ import {
   StockAdjustment as StockAdjustmentType,
   Status,
   Warehouse as WarehouseType,
-} from '../../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 
 interface AddStockAdjustmentModalProps {
   isOpen: boolean;

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
-import { Product, Category } from '../../../types';
+import { Product, Category } from '@/src/libs/common/interface/entity/app.interface';
+import { CategoryType } from '@/src/libs/common/enum/category.enum';
 
 interface AddProductModalProps {
   isOpen: boolean;
@@ -22,10 +23,11 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({
   const [productType, setProductType] = useState<'สินค้า' | 'บริการ'>('สินค้า');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const availableCategories = useMemo(
-    () => categories.filter((c) => c.type === productType),
-    [categories, productType]
-  );
+  const availableCategories = useMemo(() => {
+    const targetType =
+      productType === 'สินค้า' ? CategoryType.PRODUCT : CategoryType.SERVICE;
+    return categories.filter((c) => c.type === targetType);
+  }, [categories, productType]);
 
   const generatedId = useMemo(() => {
     if (!isOpen) return '';

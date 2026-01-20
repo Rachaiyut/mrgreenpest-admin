@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
-import { Supplier } from '../../../types';
+import { Supplier } from '@/src/libs/common/interface/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface AddSupplierModalProps {

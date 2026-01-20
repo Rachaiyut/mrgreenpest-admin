@@ -7,7 +7,7 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { Customer, Status } from '../../../types';
+import { Customer, Status } from '@/src/libs/common/interface/entity/app.interface';
 
 interface AddCustomerModalProps {
   isOpen: boolean;

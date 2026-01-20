@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
-import { User, UserRole, UserWallet, WalletTransaction } from '../../types';
+import {
+  User,
+  UserRole,
+  UserWallet,
+  WalletTransaction,
+} from '@/src/libs/common/interface/entity/app.interface';
 import {
   PlusIcon,
   ShieldCheckIcon,

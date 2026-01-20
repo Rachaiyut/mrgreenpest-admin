@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { FormField, Textarea, Button } from './FormControls';
-import { Status } from '../../types';
+import { Status } from '@/src/libs/common/interface/entity/app.interface';
 
 interface ApprovableItem {
   id: string;

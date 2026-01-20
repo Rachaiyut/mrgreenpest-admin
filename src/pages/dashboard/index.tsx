@@ -28,7 +28,7 @@ import {
   Transfer,
   StockAdjustment,
   ProductReturn,
-} from '../../types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDateTime } from '../../constants';
 import { Select, Button } from '../../components/common/FormControls';
 

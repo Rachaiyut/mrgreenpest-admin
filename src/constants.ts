@@ -20,7 +20,7 @@ import {
   Contract,
   UserWallet,
   ReturnToSupplier,
-} from './types';
+} from '@/src/libs/common/interface/entity/app.interface';
 import {
   CurrencyDollarIcon,
   DocumentTextIcon,

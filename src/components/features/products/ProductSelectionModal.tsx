@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { MOCK_PRODUCTS } from '../../../constants';
-import { Product } from '../../../types';
+import { Product } from '@/src/libs/common/interface/entity/app.interface';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
