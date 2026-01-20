@@ -52,6 +52,17 @@ const Suppliers: React.FC = () => {
     null
   );
 
+  const onDeleteSupplier = async (id: string) => {
+      try {
+        await SupplierApi.deleteSupplier(id);
+        fetchSupplier();
+      } catch (error) {
+        console.error('Failed to delete product:', error);
+        alert('Failed to delete product');
+      }
+    };
+  
+
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
     setCurrentPage(1);
@@ -369,22 +380,22 @@ const Suppliers: React.FC = () => {
           </div>
         </div>
       )}
-{/* 
+
       <AddSupplierModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         suppliers={suppliers}
       />
-      <EditSupplierModal
+      {/* <EditSupplierModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         supplier={suppliers}
         onUpdateSupplier={onUpdateSupplier}
-      />
+      /> */}
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
-        supplier={suppliers}
+        supplier={selectedSupplier}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -400,7 +411,7 @@ const Suppliers: React.FC = () => {
         }
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
-      /> */}
+      />
     </>
   );
 };
