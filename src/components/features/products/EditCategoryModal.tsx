@@ -7,7 +7,7 @@ interface EditCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: ICategory | null;
-  onUpdateCategory: (category: ICategory) => void;
+  onUpdateCategory: (id: string, category: Partial<ICategory>) => void;
   categories: ICategory[];
 }
 
@@ -66,7 +66,7 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
       return;
     }
     if (category) {
-      onUpdateCategory({ ...category, ...formData } as ICategory);
+      onUpdateCategory({ ...category, ...formData } as Partial<ICategory>);
     }
     onClose();
   };

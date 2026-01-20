@@ -48,11 +48,11 @@ const Categories: React.FC = () => {
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [totalCategories, setTotalCategories] = useState<number>(0);
+  const [totalCategories, setTotalCategories] = useState<number>(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<string>('desc');
 
-    const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
       const response = await Category.getCategories({
@@ -62,10 +62,8 @@ const Categories: React.FC = () => {
         sort_by: sortBy,
         sort_order: sortOrder as 'asc' | 'desc',
       });
-
-      console.log("res", response)
-
       setCategories(response.data);
+      
       setTotalCategories(response.meta.total);
     } catch (error) {
       console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
@@ -122,7 +120,7 @@ const Categories: React.FC = () => {
     async (id: string, updatedCategory: Partial<ICategory>) => {
       try {
         await Category.updateCategory(id, updatedCategory);
-        fetchCategories(); // Refresh the list
+        fetchCategories();
         setIsEditModalOpen(false);
       } catch (error) {
         console.error('Error updating category:', error);
