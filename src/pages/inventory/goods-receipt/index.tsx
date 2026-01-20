@@ -23,26 +23,27 @@ import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
+import { useData } from '../../../../contexts/DataContext';
+
 // FIX: Define props interface
 interface GoodsReceiptProps {
-  receipts: GoodsReceiptType[];
   onCreateReceipt: (receipt: Omit<GoodsReceiptType, 'id'>) => void;
   onUpdateReceipt: (receipt: GoodsReceiptType) => void;
   onDeleteReceipt: (receiptId: string) => void;
-  warehouses: WarehouseType[];
-  suppliers: Supplier[];
-  products: Product[];
 }
 
 const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
-  receipts,
   onCreateReceipt,
   onUpdateReceipt,
   onDeleteReceipt,
-  warehouses,
-  suppliers,
-  products,
 }) => {
+  const {
+    receipts,
+    warehouses,
+    suppliers,
+    products,
+  } = useData();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);

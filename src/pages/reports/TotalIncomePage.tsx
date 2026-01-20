@@ -3,11 +3,9 @@ import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 import { Invoice, Receipt, Customer } from '@/src/libs/common/interface/entity/app.interface';
 
-interface TotalIncomePageProps {
-  invoices: Invoice[];
-  receipts: Receipt[];
-  customers: Customer[];
-}
+import { useData } from '../../contexts/DataContext';
+
+interface TotalIncomePageProps {}
 
 interface IncomeRecord {
   id: string;
@@ -28,11 +26,9 @@ interface IncomeRecord {
   isVerified: boolean;
 }
 
-const TotalIncomePage: React.FC<TotalIncomePageProps> = ({
-  invoices,
-  receipts,
-  customers,
-}) => {
+const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
+  const { invoices, receipts, customers } = useData();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()

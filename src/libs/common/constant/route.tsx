@@ -1,5 +1,5 @@
 // Type
-import { Page } from "../type/page";
+import { Page } from '../../router/page';
 
 export const PAGE_PATH: Record<Page, string> = {
   Dashboard: 'dashboard',

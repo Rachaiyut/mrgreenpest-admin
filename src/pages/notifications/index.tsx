@@ -11,21 +11,19 @@ import {
 } from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDate } from '../../constants';
 
-interface NotificationsProps {
-  contracts: Contract[];
-  jobs: FieldJob[];
-  invoices: Invoice[];
-  receipts: Receipt[];
-  customers: Customer[];
-}
+import { useData } from '../../contexts/DataContext';
 
-const Notifications: React.FC<NotificationsProps> = ({
-  contracts,
-  jobs,
-  invoices,
-  receipts,
-  customers,
-}) => {
+interface NotificationsProps {}
+
+const Notifications: React.FC<NotificationsProps> = () => {
+  const {
+    contracts,
+    fieldJobs: jobs,
+    invoices,
+    receipts,
+    customers,
+  } = useData();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
     'ทั้งหมด' | 'ใกล้หมดสัญญา' | 'ใกล้กำหนดตรวจ' | 'ค้างชำระ'

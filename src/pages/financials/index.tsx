@@ -27,17 +27,13 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 
+import { useData } from '../../contexts/DataContext';
+
 type FinancialTab = 'ใบเสนอราคา' | 'ใบแจ้งหนี้' | 'ใบกำกับภาษี/ใบเสร็จรับเงิน';
 
 // FIX: Add missing props to the interface
 interface FinancialsProps {
   defaultTab: FinancialTab;
-  quotations?: Quotation[];
-  invoices?: Invoice[];
-  receipts?: Receipt[];
-  customers?: Customer[];
-  assessments?: Assessment[];
-
   onCreateQuotation?: (
     data: Omit<Quotation, 'id'>,
     assessmentId?: string
@@ -78,15 +74,10 @@ const pageDetails: Record<
 
 const Financials: React.FC<FinancialsProps> = ({
   defaultTab,
-  quotations,
-  invoices,
-  receipts,
   onCreateQuotation,
   onUpdateQuotation,
   onDeleteQuotation,
   onReviseQuotation,
-  customers,
-  assessments,
   onCreateInvoice,
   onUpdateInvoice,
   onDeleteInvoice,
@@ -94,6 +85,7 @@ const Financials: React.FC<FinancialsProps> = ({
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
+  const { quotations, invoices, receipts, customers, assessments } = useData();
   const navigate = useNavigate();
   const { title, subtitle, buttonText } =
     pageDetails[defaultTab] || pageDetails['ใบเสนอราคา'];

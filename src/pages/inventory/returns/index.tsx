@@ -21,26 +21,25 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { EditReturnModal } from '../../../components/features/inventory/EditReturnModal';
 import { Input } from '../../../components/common/FormControls';
 
-// FIX: Define props interface
+import { useData } from '../../../contexts/DataContext';
+
 interface ReturnsProps {
-  returns: ReturnType[];
   onCreateReturn: (data: Omit<ReturnType, 'id'>) => void;
   onUpdateReturn: (updatedItem: ReturnType) => void;
   onDeleteReturn: (id: string) => void;
-  warehouses: WarehouseType[];
-  products: Product[];
-  stockMap: Record<string, Record<string, number>>;
 }
 
 const Returns: React.FC<ReturnsProps> = ({
-  returns,
   onCreateReturn,
   onUpdateReturn,
   onDeleteReturn,
-  warehouses,
-  products,
-  stockMap,
 }) => {
+  const {
+    productReturns: returns,
+    warehouses,
+    products,
+    warehouseStocks: stockMap,
+  } = useData();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);

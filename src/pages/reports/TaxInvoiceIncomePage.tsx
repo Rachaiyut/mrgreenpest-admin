@@ -2,17 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { Invoice, Receipt, Customer } from '@/src/libs/common/interface/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
-interface TaxInvoiceIncomePageProps {
-  invoices: Invoice[];
-  receipts: Receipt[];
-  customers: Customer[];
-}
+import { useData } from '../../contexts/DataContext';
 
-const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = ({
-  invoices,
-  receipts,
-  customers,
-}) => {
+interface TaxInvoiceIncomePageProps {}
+
+const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
+  const { invoices, receipts, customers } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()

@@ -22,26 +22,25 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { EditTransferModal } from '../../../components/features/inventory/EditTransferModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
-// FIX: Define props interface
+import { useData } from '../../../contexts/DataContext';
+
 interface TransfersProps {
-  transfers: TransferType[];
   onCreateTransfer: (data: Omit<TransferType, 'id'>) => void;
   onUpdateTransfer: (updatedItem: TransferType) => void;
   onDeleteTransfer: (id: string) => void;
-  warehouses: WarehouseType[];
-  products: Product[];
-  stockMap: Record<string, Record<string, number>>;
 }
 
 const Transfers: React.FC<TransfersProps> = ({
-  transfers,
   onCreateTransfer,
   onUpdateTransfer,
   onDeleteTransfer,
-  warehouses,
-  products,
-  stockMap,
 }) => {
+  const {
+    transfers,
+    warehouses,
+    products,
+    warehouseStocks: stockMap,
+  } = useData();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);

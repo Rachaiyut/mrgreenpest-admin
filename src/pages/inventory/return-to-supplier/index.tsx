@@ -23,25 +23,26 @@ import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
+import { useData } from '../../../../contexts/DataContext';
+
 interface ReturnToSupplierProps {
-  returns: ReturnToSupplier[];
   onCreateReturn: (data: Omit<ReturnToSupplier, 'id'>) => void;
   onUpdateReturn: (data: ReturnToSupplier) => void;
   onDeleteReturn: (id: string) => void;
-  warehouses: WarehouseType[];
-  suppliers: Supplier[];
-  products: Product[];
 }
 
 const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
-  returns,
   onCreateReturn,
   onUpdateReturn,
   onDeleteReturn,
-  warehouses,
-  suppliers,
-  products,
 }) => {
+  const {
+    returnToSuppliers: returns,
+    warehouses,
+    suppliers,
+    products,
+  } = useData();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);

@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { Customer } from '@/src/libs/common/interface/entity/app.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
 
 interface CustomerSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (customerIds: string[]) => void;
-  customers: Customer[];
+  customers: ICustomer[];
   initialSelectedIds: string[];
 }
 
@@ -32,10 +32,10 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
     () =>
       customers.filter((c) => {
         const lowercasedQuery = searchTerm.toLowerCase();
+        const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
         return (
-          c.name.toLowerCase().includes(lowercasedQuery) ||
+          fullName.includes(lowercasedQuery) ||
           c.id.toLowerCase().includes(lowercasedQuery) ||
-          c.contactPerson.toLowerCase().includes(lowercasedQuery) ||
           c.phone.toLowerCase().includes(lowercasedQuery)
         );
       }),
@@ -151,16 +151,16 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
                     {customer.id}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    {customer.name}
+                    {customer.first_name} {customer.last_name}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    {customer.contactPerson}
+                    {/* Contact Person not available */}-
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                     {customer.phone}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                    {customer.type}
+                    {customer.customer_type}
                   </td>
                 </tr>
               ))}

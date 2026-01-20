@@ -56,26 +56,6 @@ export interface Address {
   sequence?: string;
 }
 
-export interface Customer {
-  id: string;
-  name: string;
-  nickname?: string;
-  type: 'บุคคลธรรมดา' | 'นิติบุคคล';
-  contactPerson: string;
-  contactPersonPhone?: string;
-  gender?: 'ชาย' | 'หญิง' | 'ไม่ระบุ';
-  email?: string;
-  phone: string;
-  mobilePhone?: string;
-  additionalPhones?: string[];
-  address: Address;
-  taxId: string;
-  createdAt: string;
-  contractUntil?: string;
-  googleMapLink?: string;
-  status?: Status;
-}
-
 export interface PackageCondition {
   id: string;
   maxArea: number;

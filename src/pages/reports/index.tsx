@@ -25,6 +25,8 @@ import { CustomerType } from '@/src/libs/common/enum/customer.enum';
 import { Status as BaseStatus } from '@/src/libs/common/enum/base.enum';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 
+import { useData } from '../../contexts/DataContext';
+
 type ReportTab =
   | 'สต็อกคงเหลือ'
   | 'รับเข้า'
@@ -37,39 +39,26 @@ type ReportTab =
   | 'ใบเสร็จรับเงิน'
   | 'ลูกค้า';
 
-interface ReportsProps {
-  products: Product[];
-  warehouses: WarehouseType[];
-  suppliers: Supplier[];
-  users: User[];
-  stockMap: Record<string, Record<string, number>>;
-  goodsReceipts: GoodsReceipt[];
-  withdrawals: Withdrawal[];
-  transfers: Transfer[];
-  stockAdjustments: StockAdjustment[];
-  productReturns: ProductReturn[];
-  fieldJobs: FieldJob[];
-  invoices: Invoice[];
-  receipts: Receipt[];
-  customers: Customer[];
-}
+interface ReportsProps {}
 
-const Reports: React.FC<ReportsProps> = ({
-  products,
-  warehouses,
-  suppliers,
-  users,
-  stockMap,
-  goodsReceipts,
-  withdrawals,
-  transfers,
-  stockAdjustments,
-  productReturns,
-  fieldJobs,
-  invoices,
-  receipts,
-  customers,
-}) => {
+const Reports: React.FC<ReportsProps> = () => {
+  const {
+    products,
+    warehouses,
+    suppliers,
+    users,
+    warehouseStocks: stockMap,
+    goodsReceipts,
+    withdrawals,
+    transfers,
+    stockAdjustments,
+    productReturns,
+    fieldJobs,
+    invoices,
+    receipts,
+    customers,
+  } = useData();
+
   const [activeTab, setActiveTab] = useState<ReportTab>('สต็อกคงเหลือ');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);

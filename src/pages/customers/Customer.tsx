@@ -9,6 +9,12 @@ import React, {
 // Interface
 import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
 
+// Context
+import { useData } from '../../contexts/DataContext';
+
+// Api
+import { Customer } from '@/src/libs/api/customer';
+
 // Icon
 import {
   PlusIcon,
@@ -34,15 +40,14 @@ import { CustomerContractsListModal } from '../../components/features/customers/
 import { Input, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
-// Api
-import { Customer } from '@/src/libs/api/customer';
-
 const Customers: React.FC = () => {
+  const { contracts, quotations, handlers } = useData();
   const [customers, setCustomers] = useState<ICustomer[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [sortBy, setSortBy] = useState<string>('id');
+  const [totalItems, setTotalItems] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [totalCustomers, setTotalCustomers] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
@@ -66,22 +71,31 @@ const Customers: React.FC = () => {
     null
   );
 
-  const reversedCustomers = useMemo(
-    () => [...customers].reverse(),
-    [customers]
-  );
+  const onCreateContract = handlers.contracts.create;
+  const onCreateJob = handlers.fieldJobs.create;
 
-  const filteredCustomers = useMemo(() => {
-    if (!searchQuery) {
-      return reversedCustomers;
+  const fetchCustomers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await Customer.getCustomers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      });
+      setCustomers(response.data);
+      setTotalItems(response.meta.total);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [reversedCustomers, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, sortBy, sortOrder]);
 
-  const totalItems = filteredCustomers.length;
-  const paginatedCustomers = filteredCustomers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -109,8 +123,8 @@ const Customers: React.FC = () => {
   const handleCreateCustomer = async (customerData: Omit<ICustomer, 'id'>) => {
     try {
       await Customer.createCustomer(customerData);
-      fetchCustomers(); // Refresh the list
       setIsModalOpen(false);
+      fetchCustomers();
     } catch (error) {
       console.error('Error creating customer:', error);
     }
@@ -119,8 +133,8 @@ const Customers: React.FC = () => {
   const handleUpdateCustomer = async (updatedCustomer: ICustomer) => {
     try {
       await Customer.updateCustomer(updatedCustomer.id, updatedCustomer);
-      fetchCustomers(); // Refresh the list
       setIsEditModalOpen(false);
+      fetchCustomers();
     } catch (error) {
       console.error('Error updating customer:', error);
     }
@@ -130,13 +144,13 @@ const Customers: React.FC = () => {
     if (customerToDelete) {
       try {
         await Customer.deleteCustomer(customerToDelete.id);
-        fetchCustomers(); // Refresh the list
+        setIsDeleteModalOpen(false);
+        setCustomerToDelete(null);
+        fetchCustomers();
       } catch (error) {
         console.error('Error deleting customer:', error);
       }
     }
-    setIsDeleteModalOpen(false);
-    setCustomerToDelete(null);
   };
 
   const actions = [
@@ -185,29 +199,6 @@ const Customers: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [openDropdownId]);
-
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await Customer.getCustomers({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchQuery,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-      });
-      setCustomers(response.data);
-      setTotalCustomers(response.meta.total);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, itemsPerPage, searchQuery, sortBy, sortOrder]);
-
-  useEffect(() => {
-    fetchCustomers();
-  }, [fetchCustomers]);
 
   return (
     <>
@@ -258,7 +249,7 @@ const Customers: React.FC = () => {
         {view === 'list' ? (
           <Card className="!p-0">
             <CustomerListView
-              customers={paginatedCustomers}
+              customers={customers}
               handleDropdownToggle={handleDropdownToggle}
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -274,7 +265,7 @@ const Customers: React.FC = () => {
         ) : (
           <>
             <CustomerCardView
-              customers={paginatedCustomers}
+              customers={customers}
               handleDropdownToggle={handleDropdownToggle}
             />
             <Pagination
@@ -357,7 +348,7 @@ const Customers: React.FC = () => {
         customer={customerToEdit}
         onUpdateCustomer={handleUpdateCustomer}
       />
-      {/* <CustomerContractsListModal
+      <CustomerContractsListModal
         isOpen={isContractsModalOpen}
         onClose={() => setIsContractsModalOpen(false)}
         customer={selectedCustomer}
@@ -365,7 +356,7 @@ const Customers: React.FC = () => {
         quotations={quotations}
         onCreateContract={onCreateContract}
         onCreateJob={onCreateJob}
-      /> */}
+      />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

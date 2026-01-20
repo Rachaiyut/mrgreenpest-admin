@@ -2,16 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import {
-  Customer,
   Quotation,
   Contract,
   Status,
 } from '@/src/libs/common/interface/entity/app.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
 
 interface AddContractModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: Customer;
+  customer: ICustomer;
   quotations: Quotation[];
   onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
 }
@@ -48,9 +48,17 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
       setStartDate(new Date().toISOString().substring(0, 10));
       setEndDate('');
       setServicePackage('');
-      const fullAddress = customer.address
-        ? `${customer.address.street}, ${customer.address.subdistrict}, ${customer.address.district}, ${customer.address.province} ${customer.address.postalcode}`
-        : '';
+      // ICustomer address construction
+      const fullAddress = [
+        customer.address_house_no,
+        customer.sub_district,
+        customer.district,
+        customer.province,
+        customer.postal_code,
+      ]
+        .filter(Boolean)
+        .join(', ');
+
       setAddress(fullAddress);
     }
   }, [isOpen, customer]);
@@ -61,7 +69,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
     if (!selectedQuotation) return null;
     return {
       customerId: customer.id,
-      customerName: customer.name,
+      customerName: `${customer.first_name} ${customer.last_name}`.trim(),
       quotationId: selectedQuotation.id,
       address: address,
       startDate: startDate,
@@ -174,10 +182,10 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
           />
         </FormField>
 
-        {customer.googleMapLink && (
+        {customer.google_map_link && (
           <FormField label="Link Google Map" htmlFor="google-map-link-display">
             <a
-              href={customer.googleMapLink}
+              href={customer.google_map_link}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline truncate block mt-1 text-sm p-2 bg-slate-50 rounded-md"

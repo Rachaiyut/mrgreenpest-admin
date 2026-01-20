@@ -7,17 +7,25 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Customer, Status } from '@/src/libs/common/interface/entity/app.interface';
+import { Status } from '@/src/libs/common/interface/entity/app.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+import { CustomerType } from '@/src/libs/common/enum/customer.enum';
 
 interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: Customer | null;
-  onUpdateCustomer: (updatedCustomer: Customer) => void;
+  customer: ICustomer | null;
+  onUpdateCustomer: (updatedCustomer: ICustomer) => void;
 }
 
 // Define a type for the flat form state
-type FlatCustomerFormData = Omit<Partial<Customer>, 'address'> & {
+type FlatCustomerFormData = Partial<ICustomer> & {
+  name?: string;
+  type?: 'บุคคลธรรมดา' | 'นิติบุคคล';
+  contactPerson?: string;
+  contactPersonPhone?: string;
+  gender?: string;
+  mobilePhone?: string;
   'address-street'?: string;
   'address-soi'?: string;
   'address-road'?: string;
@@ -45,24 +53,19 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 
   useEffect(() => {
     if (customer) {
-      const [p3, p4, p5] = customer.additionalPhones || [];
       setFormData({
         ...customer,
-        'address-street': customer.address.street,
-        'address-soi': customer.address.soi,
-        'address-road': customer.address.road,
-        'address-subdistrict': customer.address.subdistrict,
-        'address-district': customer.address.district,
-        'address-province': customer.address.province,
-        'address-postalcode': customer.address.postalcode,
-        'address-country': customer.address.country,
-        'address-zone': customer.address.zone,
-        'address-group': customer.address.group,
-        'address-roadLine': customer.address.roadLine,
-        'address-sequence': customer.address.sequence,
-        phone3: p3,
-        phone4: p4,
-        phone5: p5,
+        name: customer.first_name + (customer.last_name ? ` ${customer.last_name}` : ''),
+        type: customer.customer_type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา',
+        'address-street': customer.address_house_no,
+        'address-subdistrict': customer.sub_district,
+        'address-district': customer.district,
+        'address-province': customer.province,
+        'address-postalcode': customer.postal_code,
+        'address-country': customer.country,
+        // Map other fields if they exist in ICustomer or extended interface
+        googleMapLink: customer.google_map_link,
+        taxId: customer.tax_id,
       });
     }
   }, [customer]);
@@ -105,34 +108,35 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         }
       }
 
-      const updatedData: Customer = {
+      let firstName = formData.name || '';
+      let lastName = '';
+      
+      if (formData.type === 'บุคคลธรรมดา') {
+         const parts = firstName.trim().split(/\s+/);
+         if (parts.length > 1) {
+           firstName = parts[0];
+           lastName = parts.slice(1).join(' ');
+         }
+      }
+
+      const updatedData: ICustomer = {
         ...customer,
-        ...formData,
-        name: formData.name || customer.name,
-        type: formData.type || customer.type,
-        contactPerson: formData.contactPerson || customer.contactPerson,
-        email: formData.email || customer.email,
-        phone: formData.phone || customer.phone,
-        additionalPhones: [
-          formData.phone3,
-          formData.phone4,
-          formData.phone5,
-        ].filter(Boolean) as string[],
-        address: {
-          street: formData['address-street'] || '',
-          soi: formData['address-soi'] || undefined,
-          road: formData['address-road'] || undefined,
-          subdistrict: formData['address-subdistrict'] || '',
-          district: formData['address-district'] || '',
-          province: formData['address-province'] || '',
-          postalcode: formData['address-postalcode'] || '',
-          country: formData['address-country'] || '',
-          zone: formData['address-zone'] || undefined,
-          group: formData['address-group'] || undefined,
-          roadLine: formData['address-roadLine'] || undefined,
-          sequence: formData['address-sequence'] || undefined,
-        },
-        taxId: formData.taxId as string,
+        first_name: firstName,
+        last_name: lastName,
+        customer_type: formData.type === 'นิติบุคคล' ? CustomerType.CORPORATE : CustomerType.INDIVIDUAL,
+        nickname: formData.nickname || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        
+        address_house_no: formData['address-street'] || '',
+        sub_district: formData['address-subdistrict'] || '',
+        district: formData['address-district'] || '',
+        province: formData['address-province'] || '',
+        postal_code: formData['address-postalcode'] || '',
+        country: formData['address-country'] || 'ประเทศไทย',
+        
+        tax_id: formData.taxId,
+        google_map_link: formData.googleMapLink,
         status: Status.Approved,
       };
       onUpdateCustomer(updatedData);

@@ -45,14 +45,13 @@ const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
   );
 };
 
-// FIX: Define props interface for Users component
+import { useData } from '../../contexts/DataContext';
+
 interface UsersProps {
-  users: User[];
   onCreateUser: (user: Omit<User, 'id'>) => void;
   onUpdateUser: (user: User) => void;
   onDeleteUser: (userId: string) => void;
   defaultView?: 'users' | 'roles';
-  userWallets: UserWallet[];
   onCreateWalletTransaction: (
     userId: string,
     transactionData: Omit<WalletTransaction, 'id'>
@@ -60,14 +59,13 @@ interface UsersProps {
 }
 
 const Users: React.FC<UsersProps> = ({
-  users,
   onCreateUser,
   onUpdateUser,
   onDeleteUser,
   defaultView = 'users',
-  userWallets,
   onCreateWalletTransaction,
 }) => {
+  const { users, userWallets } = useData();
   const [view, setView] = useState<'users' | 'roles'>(defaultView);
   const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);

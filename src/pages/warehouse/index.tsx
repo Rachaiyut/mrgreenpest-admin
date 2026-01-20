@@ -25,9 +25,9 @@ import { EditWarehouseModal } from '../../components/features/warehouses/EditWar
 import { SetWithdrawalLimitModal } from '../../components/features/warehouses/SetWithdrawalLimitModal';
 import { StatusBadge } from '../../components/common/StatusBadge';
 
+import { useData } from '../../contexts/DataContext';
+
 interface WarehouseProps {
-  warehouses: WarehouseType[];
-  products: Product[];
   onCreateWarehouse: (data: Omit<WarehouseType, 'id'>) => void;
   onUpdateWarehouse: (warehouse: WarehouseType) => void;
   onDeleteWarehouse: (id: string) => void;
@@ -35,18 +35,15 @@ interface WarehouseProps {
     warehouseId: string,
     limits: { [productId: string]: number }
   ) => void;
-  stockMap?: Record<string, Record<string, number>>;
 }
 
 const Warehouse: React.FC<WarehouseProps> = ({
-  warehouses,
-  products,
   onCreateWarehouse,
   onUpdateWarehouse,
   onDeleteWarehouse,
   onUpdateWarehouseLimits,
-  stockMap = {},
 }) => {
+  const { warehouses, products, warehouseStocks: stockMap } = useData();
   // State
   const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>(
     'all'

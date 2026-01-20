@@ -1,16 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Quotation, Assessment, FieldJob, Status } from '@/src/libs/common/interface/entity/app.interface';
+import {
+  Quotation,
+  Assessment,
+  FieldJob,
+  Status,
+} from '@/src/libs/common/interface/entity/app.interface';
 import {
   ChartPieIcon,
   ArrowTrendingUpIcon,
   ClipboardDocumentListIcon,
 } from '../../assets/icons/Icons';
 
-interface SalesSummaryPageProps {
-  quotations: Quotation[];
-  assessments: Assessment[];
-  fieldJobs: FieldJob[];
-}
+import { useData } from '../../contexts/DataContext';
+
+interface SalesSummaryPageProps {}
 
 const SALES_PERSONS = [
   'คุณยุทธนา',
@@ -32,11 +35,9 @@ const SALES_PERSONS = [
   'พี่ศักดิ์',
 ];
 
-const SalesSummaryPage: React.FC<SalesSummaryPageProps> = ({
-  quotations,
-  assessments,
-  fieldJobs,
-}) => {
+const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
+  const { quotations, assessments, fieldJobs } = useData();
+
   // 1. Standard State
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(

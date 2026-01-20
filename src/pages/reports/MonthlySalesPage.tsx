@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react';
-import { Quotation, Assessment, User, Status } from '@/src/libs/common/interface/entity/app.interface';
+import {
+  Quotation,
+  Assessment,
+  User,
+  Status,
+} from '@/src/libs/common/interface/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
-interface MonthlySalesPageProps {
-  quotations: Quotation[];
-  assessments: Assessment[];
-  users: User[];
-}
+import { useData } from '../../contexts/DataContext';
 
-const MonthlySalesPage: React.FC<MonthlySalesPageProps> = ({
-  quotations,
-  assessments,
-  users,
-}) => {
+interface MonthlySalesPageProps {}
+
+const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
+  const { quotations, assessments, users } = useData();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()

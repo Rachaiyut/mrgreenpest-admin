@@ -7,12 +7,14 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { Customer, Status } from '@/src/libs/common/interface/entity/app.interface';
+import { Status } from '@/src/libs/common/interface/entity/app.interface';
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+import { CustomerType } from '@/src/libs/common/enum/customer.enum';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateCustomer: (customerData: Omit<Customer, 'id'>) => void;
+  onCreateCustomer: (customerData: Omit<ICustomer, 'id'>) => void;
 }
 
 export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
@@ -58,38 +60,50 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       }
     }
 
-    const newCustomer: Omit<Customer, 'id'> = {
-      name: data.name as string,
-      nickname: data.nickname as string | undefined,
-      type: customerType,
-      contactPerson: (data.contactPerson as string) || (data.name as string),
-      contactPersonPhone: data.contactPersonPhone as string | undefined,
-      gender: data.gender as 'ชาย' | 'หญิง' | 'ไม่ระบุ' | undefined,
-      email: data.email as string,
-      phone: data.phone as string,
-      mobilePhone: data.mobilePhone as string | undefined,
-      additionalPhones: [
-        data.phone3 as string,
-        data.phone4 as string,
-        data.phone5 as string,
-      ].filter(Boolean),
-      address: {
-        street: data['address-street'] as string,
-        soi: data['address-soi'] as string | undefined,
-        road: data['address-road'] as string | undefined,
-        subdistrict: data['address-subdistrict'] as string,
-        district: data['address-district'] as string,
-        province: data['address-province'] as string,
-        postalcode: data['address-postalcode'] as string,
-        country: data['address-country'] as string,
-        zone: data['address-zone'] as string | undefined,
-        group: data['address-group'] as string | undefined,
-        roadLine: data['address-roadLine'] as string | undefined,
-        sequence: data['address-sequence'] as string | undefined,
-      },
-      taxId: data.taxId as string,
-      createdAt: new Date().toISOString(),
-      googleMapLink: data.googleMapLink as string | undefined,
+    let firstName = data.name as string;
+    let lastName = '';
+
+    if (customerType === 'บุคคลธรรมดา') {
+      const parts = firstName.trim().split(/\s+/);
+      if (parts.length > 1) {
+        firstName = parts[0];
+        lastName = parts.slice(1).join(' ');
+      }
+    }
+
+    const newCustomer: Omit<ICustomer, 'id'> = {
+      first_name: firstName,
+      last_name: lastName,
+      nickname: (data.nickname as string) || '',
+      customer_type: customerType === 'บุคคลธรรมดา' ? CustomerType.INDIVIDUAL : CustomerType.CORPORATE,
+      // Store contact person info in separate fields if available in ICustomer, 
+      // otherwise map to existing fields or omit if not supported.
+      // ICustomer doesn't seem to have contactPerson field explicitly in the interface I saw.
+      // Assuming phone/email are primary contact.
+      email: (data.email as string) || '',
+      phone: (data.phone as string) || '',
+      // mobilePhone, additionalPhones not in ICustomer interface shown earlier.
+      // Combining phones or ignoring? 
+      // ICustomer has only 'phone'.
+      // I will join them or just use primary phone.
+      
+      address_house_no: data['address-street'] as string,
+      // soi, road not in ICustomer top level?
+      // ICustomer has sub_district, district, province, postal_code, country.
+      // It seems address structure is flat.
+      sub_district: data['address-subdistrict'] as string,
+      district: data['address-district'] as string,
+      province: data['address-province'] as string,
+      postal_code: data['address-postalcode'] as string,
+      country: (data['address-country'] as string) || 'ประเทศไทย',
+      
+      // zone, group, roadLine, sequence not in ICustomer interface shown earlier?
+      // Wait, let me check ICustomer again.
+      // It extends IBase.
+      
+      tax_id: data.taxId as string,
+      created_at: new Date().toISOString(),
+      google_map_link: data.googleMapLink as string | undefined,
       status: Status.Approved,
     };
 

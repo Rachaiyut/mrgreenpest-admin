@@ -29,33 +29,31 @@ import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 
+import { useData } from '../../../contexts/DataContext';
+
 interface WithdrawalsProps {
-  withdrawals: WithdrawalType[];
   onCreateWithdrawal: (data: Omit<WithdrawalType, 'id'>) => void;
   onUpdateWithdrawal: (updatedItem: WithdrawalType) => void;
   onDeleteWithdrawal: (id: string) => void;
-  users: User[];
-  warehouses: WarehouseType[];
-  jobs: FieldJob[];
-  customers: Customer[];
-  currentUser: User;
-  products: Product[];
-  stockMap: Record<string, Record<string, number>>;
 }
 
 const Withdrawals: React.FC<WithdrawalsProps> = ({
-  withdrawals,
   onCreateWithdrawal,
   onUpdateWithdrawal,
   onDeleteWithdrawal,
-  users,
-  warehouses,
-  jobs,
-  customers,
-  currentUser,
-  products,
-  stockMap,
 }) => {
+  const {
+    withdrawals,
+    users,
+    warehouses,
+    fieldJobs: jobs,
+    customers,
+    products,
+    warehouseStocks: stockMap,
+  } = useData();
+
+  const currentUser = users[0]; // Mock user for now
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);

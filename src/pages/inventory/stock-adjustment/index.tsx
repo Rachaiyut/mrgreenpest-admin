@@ -21,26 +21,27 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { EditStockAdjustmentModal } from '../../../components/features/inventory/EditStockAdjustmentModal';
 import { Input } from '../../../components/common/FormControls';
 
+import { useData } from '../../../../contexts/DataContext';
+
 // FIX: Define props interface
 interface StockAdjustmentProps {
-  adjustments: StockAdjustmentType[];
   onCreateAdjustment: (data: Omit<StockAdjustmentType, 'id'>) => void;
   onUpdateAdjustment: (updatedItem: StockAdjustmentType) => void;
   onDeleteAdjustment: (id: string) => void;
-  warehouses: WarehouseType[];
-  products: Product[];
-  stockMap: Record<string, Record<string, number>>;
 }
 
 const StockAdjustment: React.FC<StockAdjustmentProps> = ({
-  adjustments,
   onCreateAdjustment,
   onUpdateAdjustment,
   onDeleteAdjustment,
-  warehouses,
-  products,
-  stockMap,
 }) => {
+  const {
+    stockAdjustments: adjustments,
+    warehouses,
+    products,
+    warehouseStocks: stockMap,
+  } = useData();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { Customer } from '@/src/libs/common/interface/entity/app.interface';
 import { formatThaiDate } from '../../../constants';
 import {
   SectionTitle,
@@ -38,7 +37,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.id}
             </DetailsItem>
             <DetailsItem label="ชื่อลูกค้า" valueClassName="font-semibold">
-              {customer.first_name} {customer.nickname && `(${customer.nickname})`}
+              {customer.first_name} {customer.last_name} {customer.nickname && `(${customer.nickname})`}
             </DetailsItem>
             <DetailsItem label="ประเภท">{customer.customer_type}</DetailsItem>
             {customer.tax_id && (
@@ -49,39 +48,25 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             <DetailsItem label="วันที่สร้าง">
               {formatThaiDate(customer.created_at)}
             </DetailsItem>
-            {/* {customer.contractUntil && (
-              <DetailsItem
-                label="สัญญาบริการถึงวันที่"
-                valueClassName="font-bold text-primary"
-              >
-                {formatThaiDate(customer.contractUntil)}
-              </DetailsItem>
-            )} */}
           </DetailsList>
         </div>
         <hr />
         <div>
           <SectionTitle>ข้อมูลการติดต่อ</SectionTitle>
           <DetailsList cols={2}>
-            <DetailsItem label="ผู้ติดต่อ">
-              {customer.phone}
-            </DetailsItem>
+            {/* Contact Person field not available in ICustomer */}
+            {/* <DetailsItem label="ผู้ติดต่อ">
+              {customer.contactPerson || '-'}
+            </DetailsItem> */}
             <DetailsItem label="เบอร์โทรศัพท์ (หลัก)">
               {customer.phone}
             </DetailsItem>
-            {customer.phone && (
+            {/* Mobile phone field not available in ICustomer */}
+            {/* {customer.phone && (
               <DetailsItem label="เบอร์มือถือ">
                 {customer.phone}
               </DetailsItem>
-            )}
-            {customer.additionalPhones?.map((phone, index) => (
-              <DetailsItem
-                key={index}
-                label={`เบอร์โทรศัพท์ ${index + 3} (เพิ่มเติม)`}
-              >
-                {phone}
-              </DetailsItem>
-            ))}
+            )} */}
             <DetailsItem label="อีเมล">{customer.email}</DetailsItem>
           </DetailsList>
         </div>
@@ -92,25 +77,27 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             <DetailsItem label="บ้านเลขที่">
               {customer.address_house_no || '-'}
             </DetailsItem>
-            <DetailsItem label="ซอย">{customer.address_house_no || '-'}</DetailsItem>
+            {/* Soi/Road not in ICustomer */}
+            {/* <DetailsItem label="ซอย">{customer.address_house_no || '-'}</DetailsItem>
             <DetailsItem label="ถนน">
               {customer.country || '-'}
-            </DetailsItem>
+            </DetailsItem> */}
             <DetailsItem label="แขวง/ตำบล">
-              {customer.address.subdistrict || '-'}
+              {customer.sub_district || '-'}
             </DetailsItem>
             <DetailsItem label="เขต/อำเภอ">
-              {customer.address.district || '-'}
+              {customer.district || '-'}
             </DetailsItem>
             <DetailsItem label="จังหวัด">
-              {customer.address.province || '-'}
+              {customer.province || '-'}
             </DetailsItem>
             <DetailsItem label="รหัสไปรษณีย์">
-              {customer.address.postalcode || '-'}
+              {customer.postal_code || '-'}
             </DetailsItem>
           </DetailsList>
         </div>
-        <div>
+        {/* Zone/Group fields not in ICustomer */}
+        {/* <div>
           <SectionTitle className="mt-4 border-t pt-4">
             กลุ่มเส้นทาง/พื้นที่บริการ
           </SectionTitle>
@@ -128,7 +115,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.address.sequence || '-'}
             </DetailsItem>
           </DetailsList>
-        </div>
+        </div> */}
         {customer.google_map_link && (
           <div className="pt-4 border-t">
             <SectionTitle>ตำแหน่ง</SectionTitle>

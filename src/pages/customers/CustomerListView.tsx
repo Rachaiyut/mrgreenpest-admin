@@ -1,7 +1,7 @@
 import { Button } from 'antd';
 
 // Interface
-import { ICustomer } from '../../../libs/common/interface/api/customer.interface'
+import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
 
 // Icon
 import { ManageIcon } from '../../assets/icons/Icons';

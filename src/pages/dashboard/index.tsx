@@ -151,43 +151,32 @@ const SimpleAreaChart = ({
   );
 };
 
-interface DashboardProps {
-  users: User[];
-  assessments: Assessment[];
-  fieldJobs: FieldJob[];
-  invoices: Invoice[];
-  receipts: Receipt[];
-  products: Product[];
-  contracts: Contract[];
-  customers: Customer[];
-  goodsReceipts: GoodsReceipt[];
-  withdrawals: Withdrawal[];
-  transfers: Transfer[];
-  stockAdjustments: StockAdjustment[];
-  productReturns: ProductReturn[];
-  onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
-  onCreateJob: (jobData: Omit<FieldJob, 'id'>, assessmentId?: string) => void;
-  onNavigateToReports?: (tab: string) => void;
-}
+import { useData } from '../../contexts/DataContext';
 
-const Dashboard: React.FC<DashboardProps> = ({
-  users,
-  assessments,
-  fieldJobs,
-  invoices,
-  receipts,
-  products,
-  contracts,
-  customers,
-  goodsReceipts,
-  withdrawals,
-  transfers,
-  stockAdjustments,
-  productReturns,
-  onCreateAssessment,
-  onCreateJob,
-  onNavigateToReports,
-}) => {
+interface DashboardProps {}
+
+const Dashboard: React.FC<DashboardProps> = () => {
+  const {
+    users,
+    assessments,
+    fieldJobs,
+    invoices,
+    receipts,
+    products,
+    contracts,
+    customers,
+    goodsReceipts,
+    withdrawals,
+    transfers,
+    stockAdjustments,
+    productReturns,
+    handlers,
+  } = useData();
+  
+  const onCreateAssessment = handlers.assessments.create;
+  const onCreateJob = handlers.fieldJobs.create;
+  // onNavigateToReports is optional and wasn't passed in router anyway, so we can ignore or implement navigation logic if needed.
+
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [range, setRange] = useState<'today' | '7d' | 'month' | 'quarter'>(
