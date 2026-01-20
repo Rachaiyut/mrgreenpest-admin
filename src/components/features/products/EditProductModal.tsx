@@ -9,6 +9,7 @@ import {
 } from '../../common/FormControls';
 import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
 import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { IUnit } from '@/src/libs/common/interface/entity/unit.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { CategoryType } from '@/src/libs/common/enum/category.enum';
 
@@ -18,6 +19,7 @@ interface EditProductModalProps {
   product: IProduct | null;
   onUpdateProduct: (product: IProduct) => void;
   categories: ICategory[];
+  units: IUnit[];
 }
 
 export const EditProductModal: React.FC<EditProductModalProps> = ({
@@ -26,6 +28,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   product,
   onUpdateProduct,
   categories,
+  units,
 }) => {
   const [formData, setFormData] = useState<Partial<IProduct>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -36,6 +39,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setImagePreview(null); // Reset preview, can be enhanced to show existing image
     }
   }, [product]);
+
+  const filteredCategories = useMemo(() => {
+    return categories.filter((category) => category.type === formData.type);
+  }, [categories, formData.type]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -197,6 +204,11 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
             required
           >
             <option value="">-- เลือกหมวดหมู่ --</option>
+            {filteredCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
           </Select>
         </FormField>
         <FormField label="รายละเอียด" htmlFor="description">
@@ -209,13 +221,20 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         </FormField>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="หน่วย" htmlFor="unit">
-            <Input
-              name="unit"
-              type="text"
-              value={typeof formData.unit === 'string' ? formData.unit : formData.unit?.name || ''}
+            <Select
+              name="unit_id"
+              id="unit"
+              value={formData.unit_id || ''}
               onChange={handleChange}
               required
-            />
+            >
+              <option value="">-- เลือกหน่วย --</option>
+              {units.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </option>
+              ))}
+            </Select>
           </FormField>
           <FormField label="ราคา/หน่วย" htmlFor="price">
             <Input
@@ -231,15 +250,29 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         </div>
         {formData.type === CategoryType.PRODUCT && (
           <>
-            <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="lowStockThreshold">
-              <Input
-                name="min_stock"
-                type="number"
-                value={formData.min_stock || ''}
-                onChange={handleChange}
-                required
-              />
-            </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ราคาต้นทุน" htmlFor="cost-price">
+                <Input
+                  name="cost_price"
+                  id="cost-price"
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  value={formData.cost_price || ''}
+                  onChange={handleChange}
+                />
+              </FormField>
+
+              <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="lowStockThreshold">
+                <Input
+                  name="min_stock"
+                  type="number"
+                  value={formData.min_stock || ''}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
+            </div>
             <FormField label="เลขทะเบียน อย." htmlFor="fdaRegNo">
               <Input
                 name="fda_number"

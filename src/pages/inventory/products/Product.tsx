@@ -419,6 +419,7 @@ const Product: React.FC = () => {
         product={productToEdit}
         onUpdateProduct={onUpdateProduct}
         categories={categories}
+        units={units}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
