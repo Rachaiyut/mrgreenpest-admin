@@ -21,7 +21,7 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { EditStockAdjustmentModal } from '../../../components/features/inventory/EditStockAdjustmentModal';
 import { Input } from '../../../components/common/FormControls';
 
-import { useData } from '../../../../contexts/DataContext';
+import { useData } from '../../../contexts/DataContext';
 
 // FIX: Define props interface
 interface StockAdjustmentProps {

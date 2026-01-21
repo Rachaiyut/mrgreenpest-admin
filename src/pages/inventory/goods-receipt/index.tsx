@@ -23,7 +23,7 @@ import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
-import { useData } from '../../../../contexts/DataContext';
+import { useData } from '../../../contexts/DataContext';
 
 // FIX: Define props interface
 interface GoodsReceiptProps {
@@ -37,12 +37,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const {
-    receipts,
-    warehouses,
-    suppliers,
-    products,
-  } = useData();
+  const { receipts, warehouses, suppliers, products } = useData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);

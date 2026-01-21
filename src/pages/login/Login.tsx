@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card } from '../../components/common/Card';
-import { FormField, Input, Button } from '../../components/common/FormControls';
+import { Card, Form, Input, Button, Checkbox, message } from 'antd';
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 // Interface
@@ -9,39 +9,34 @@ import { ILoginProps } from '@/src/types/prop/login.props';
 import { Auth } from '@/src/api/auth';
 
 const Login: React.FC<ILoginProps> = ({ onLogin }) => {
-  const [citizenId, setCitizenId] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [form] = Form.useForm();
 
   useEffect(() => {
     try {
       const remembered = localStorage.getItem('rememberedCitizenId') || '';
       const rememberFlag = localStorage.getItem('rememberMe') === 'true';
       if (rememberFlag && remembered) {
-        setCitizenId(remembered);
-        setRemember(true);
+        form.setFieldsValue({
+          citizenId: remembered,
+          remember: true,
+        });
       }
     } catch {}
-  }, []);
+  }, [form]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!citizenId.trim() || !password.trim()) {
-      alert('กรุณากรอกรหัสบัตรประชาชนและรหัสผ่าน');
-      return;
-    }
-
+  const onFinish = async (values: any) => {
+    const { citizenId, password, remember } = values;
     setLoading(true);
     try {
       const payload: ILoginPayload = {
         citizen_id: citizenId,
         password: password,
       };
-      
+
       const response = await Auth.login(payload);
-      
+
       if (response.access_token) {
         if (remember) {
           localStorage.setItem('rememberMe', 'true');
@@ -50,16 +45,19 @@ const Login: React.FC<ILoginProps> = ({ onLogin }) => {
           localStorage.removeItem('rememberMe');
           localStorage.removeItem('rememberedCitizenId');
         }
-        
+
         onLogin(citizenId, remember);
         navigate('/');
       } else {
-        alert('เข้าสู่ระบบไม่สำเร็จ: ไม่ได้รับ Token');
+        message.error('เข้าสู่ระบบไม่สำเร็จ: ไม่ได้รับ Token');
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      const message = error.response?.data?.message || error.message || 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
-      alert(message);
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+      message.error(msg);
     } finally {
       setLoading(false);
     }
@@ -69,55 +67,80 @@ const Login: React.FC<ILoginProps> = ({ onLogin }) => {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex items-center justify-center bg-primary/5">
         <div className="text-center px-8">
-          <img src="/LOGO-GO mrgreen.png" alt="Mr. GREEN PEST CONTROL CO., LTD." className="mx-auto max-h-52 sm:max-h-64" />
+          <img
+            src="/LOGO-GO mrgreen.png"
+            alt="Mr. GREEN PEST CONTROL CO., LTD."
+            className="mx-auto max-h-52 sm:max-h-64"
+          />
         </div>
       </div>
-      <div className="flex items-center justify-center p-6 sm:p-8">
+      <div className="flex items-center justify-center p-6 sm:p-8 bg-gray-50">
         <div className="w-full max-w-md">
-          <Card>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="shadow-lg border-0">
+            <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-slate-800">เข้าสู่ระบบ</h2>
-              <FormField label="รหัสบัตรประชาชน" htmlFor="citizenId">
-                <Input 
-                  id="citizenId" 
-                  type="text" 
-                  value={citizenId} 
-                  onChange={(e) => setCitizenId(e.target.value)} 
-                  placeholder="กรอกรหัสบัตรประชาชน" 
-                  required 
-                  disabled={loading}
-                />
-              </FormField>
-              <FormField label="รหัสผ่าน" htmlFor="password">
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  placeholder="กรอกรหัสผ่าน" 
-                  required 
-                  disabled={loading}
-                />
-              </FormField>
-              <div className="flex items-center gap-2">
-                <Input 
-                  id="remember" 
-                  type="checkbox" 
-                  checked={remember} 
-                  onChange={(e) => setRemember(e.target.checked)} 
-                  disabled={loading}
-                />
-                <label htmlFor="remember" className="text-sm text-slate-700">จดจำการเข้าสู่ระบบ</label>
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full py-2.5 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={loading}
+              <p className="text-slate-500 mt-2">
+                กรุณากรอกข้อมูลเพื่อเข้าใช้งานระบบ
+              </p>
+            </div>
+
+            <Form
+              form={form}
+              name="login"
+              onFinish={onFinish}
+              layout="vertical"
+              size="large"
+              initialValues={{ remember: false }}
+            >
+              <Form.Item
+                name="citizenId"
+                label="รหัสบัตรประชาชน"
+                rules={[
+                  {
+                    required: true,
+                    message: 'กรุณากรอกรหัสบัตรประชาชน',
+                  },
+                ]}
               >
-                {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-              </Button>
-            </form>
+                <Input
+                  prefix={<UserOutlined className="text-slate-400" />}
+                  placeholder="กรอกรหัสบัตรประชาชน"
+                />
+              </Form.Item>
+
+              <Form.Item
+                name="password"
+                label="รหัสผ่าน"
+                rules={[{ required: true, message: 'กรุณากรอกรหัสผ่าน' }]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined className="text-slate-400" />}
+                  placeholder="กรอกรหัสผ่าน"
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Form.Item name="remember" valuePropName="checked" noStyle>
+                  <Checkbox>จดจำฉันไว้ในระบบ</Checkbox>
+                </Form.Item>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="w-full h-10 text-base"
+                  loading={loading}
+                >
+                  เข้าสู่ระบบ
+                </Button>
+              </Form.Item>
+            </Form>
           </Card>
+          <div className="mt-8 text-center text-sm text-slate-500">
+            &copy; {new Date().getFullYear()} Mr. Green Pest Control Co., Ltd.
+            All rights reserved.
+          </div>
         </div>
       </div>
     </div>

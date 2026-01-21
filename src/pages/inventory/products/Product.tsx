@@ -16,8 +16,8 @@ import { ICategory } from '@/src/types/entity/category.interface';
 import { IUnit } from '@/src/types/entity/unit.interface';
 
 // API
-import { ProductApi  } from '@/src/api/product';
-import { Category as CategoryApi } from '@/src/api/category';
+import { ProductApi } from '@/src/api/product';
+import { CategoryApi } from '@/src/api/category';
 import { Unit as UnitApi } from '@/src/api/unit';
 
 import { Pagination } from '../../../components/common/Pagination';

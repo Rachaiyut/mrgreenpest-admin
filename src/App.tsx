@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { FC } from 'react';
+import { ConfigProvider } from 'antd';
+import { StyleProvider } from '@ant-design/cssinjs';
 
 // Base
 import { ILOCAL_STORAGE } from '@/src/types/entity/auth.interface';
@@ -18,7 +20,9 @@ const App: FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
       return !!localStorage.getItem(ILOCAL_STORAGE.USER_TOKEN);
-    } catch { return false; }
+    } catch {
+      return false;
+    }
   });
 
   const handleLogin = useCallback((username: string, remember: boolean) => {
@@ -29,30 +33,39 @@ const App: FC = () => {
         localStorage.removeItem('rememberMe');
         localStorage.removeItem('rememberedUsername');
       }
-    } catch { }
+    } catch {}
   }, []);
 
   const handleLogout = useCallback(async () => {
     try {
       await Auth.logout();
     } catch {}
-    
+
     setIsAuthenticated(false);
     try {
       localStorage.removeItem(ILOCAL_STORAGE.USER_TOKEN);
       localStorage.removeItem(ILOCAL_STORAGE.USER_PROFILE);
       localStorage.removeItem('isAuthenticated');
-    } catch { }
+    } catch {}
   }, []);
 
   return (
-    <DataProvider>
-      <AppRouter
-        isAuthenticated={isAuthenticated}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-      />
-    </DataProvider>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: '#08a93d',
+          fontFamily: '"Noto Sans Thai", sans-serif',
+        },
+      }}
+    >
+      <DataProvider>
+        <AppRouter
+          isAuthenticated={isAuthenticated}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
+      </DataProvider>
+    </ConfigProvider>
   );
 };
 

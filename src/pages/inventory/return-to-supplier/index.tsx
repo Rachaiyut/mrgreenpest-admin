@@ -23,7 +23,7 @@ import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
-import { useData } from '../../../../contexts/DataContext';
+import { useData } from '../../../contexts/DataContext';
 
 interface ReturnToSupplierProps {
   onCreateReturn: (data: Omit<ReturnToSupplier, 'id'>) => void;
