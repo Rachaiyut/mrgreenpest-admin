@@ -15,7 +15,7 @@ import {
   StockAdjustment as StockAdjustmentType,
   Warehouse as WarehouseType,
   Product,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import { StockAdjustmentDetailsModal } from '../../../components/features/inventory/StockAdjustmentDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { EditStockAdjustmentModal } from '../../../components/features/inventory/EditStockAdjustmentModal';

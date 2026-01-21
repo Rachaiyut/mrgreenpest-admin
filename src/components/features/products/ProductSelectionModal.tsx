@@ -1,15 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { MOCK_PRODUCTS } from '../../../constants';
-import { Product } from '@/src/libs/common/interface/entity/app.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { CategoryType } from '@/src/types/enums/category.enum';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddProducts: (productIds: string[]) => void;
   existingProductIds: string[];
-  products?: Product[];
+  products: Product[];
 }
 
 export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
@@ -22,7 +22,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  const productSource = products || MOCK_PRODUCTS;
+  const productSource = products;
 
   useEffect(() => {
     if (isOpen) {
@@ -35,7 +35,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     () =>
       productSource.filter(
         (p) =>
-          p.type === 'สินค้า' &&
+          p.type === CategoryType.PRODUCT &&
           !existingProductIds.includes(p.id) &&
           (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             p.id.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -150,7 +150,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     {product.name}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                    {product.unit}
+                    {product.unit?.name || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
                     ฿

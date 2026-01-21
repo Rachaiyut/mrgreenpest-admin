@@ -12,8 +12,9 @@ import {
   Assessment,
   Status,
   InstallmentPlan,
-} from '@/src/libs/common/interface/entity/app.interface';
-import { MOCK_PRODUCTS } from '../../constants';
+  Product,
+} from '@/src/types/entity/app.interface';
+import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
 import { LeftArrowIcon, PlusIcon, TrashIcon } from '../../assets/icons/Icons';
 
 interface CreateQuotationPageProps {
@@ -23,12 +24,14 @@ interface CreateQuotationPageProps {
   ) => void;
   customers: Customer[];
   assessments: Assessment[];
+  products: Product[];
 }
 
 export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
   onCreateQuotation,
   customers,
   assessments,
+  products,
 }) => {
   const navigate = useNavigate();
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -50,32 +53,33 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
       percentage: 50,
       amount: 0,
       description: 'มัดจำงวดแรก',
-      dueDate: '',
+      due_date: '',
     },
     {
       term: 2,
       percentage: 50,
       amount: 0,
       description: 'ชำระส่วนที่เหลือเมื่อเสร็จงาน',
-      dueDate: '',
+      due_date: '',
     },
   ]);
 
   const productMap = useMemo(
-    () => new Map(MOCK_PRODUCTS.map((p) => [p.id, p])),
-    []
+    () => new Map(products.map((p) => [p.id, p])),
+    [products]
   );
 
   const customerName = useMemo(() => {
-    return customers.find((c) => c.id === selectedCustomerId)?.name || '';
+    const c = customers.find((c) => c.id === selectedCustomerId);
+    return c ? `${c.first_name} ${c.last_name}` : '';
   }, [selectedCustomerId, customers]);
 
   const availableAssessmentsForCustomer = useMemo(() => {
     if (!selectedCustomerId) return [];
     return assessments.filter(
       (a) =>
-        a.customerId === selectedCustomerId &&
-        (a.status === Status.Completed || a.status === Status.Converted)
+        a.customer_id === selectedCustomerId &&
+        a.status === AsessmentStatus.Completed
     );
   }, [assessments, selectedCustomerId]);
 
@@ -95,12 +99,12 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
 
   useEffect(() => {
     if (selectedAssessment) {
-      setTotal(selectedAssessment.totalEstimatedCost);
-      setGoogleMapLink(selectedAssessment.googleMapLink || '');
+      setTotal(selectedAssessment.total_estimated_cost);
+      setGoogleMapLink(selectedAssessment.google_map_link || '');
     } else {
       const customer = customers.find((c) => c.id === selectedCustomerId);
       setTotal('');
-      setGoogleMapLink(customer?.googleMapLink || '');
+      setGoogleMapLink(customer?.google_map_link || '');
     }
   }, [selectedAssessment, selectedCustomerId, customers]);
 
@@ -154,7 +158,7 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
         percentage: 0,
         amount: 0,
         description: '',
-        dueDate: '',
+        due_date: '',
       },
     ]);
   };
@@ -189,15 +193,15 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
     }
 
     const newQuotation: Omit<Quotation, 'id'> = {
-      customerId: selectedCustomerId,
-      customerName: customerName,
-      createdAt: createdAt,
-      expiresAt: expiresAt,
+      customer_id: selectedCustomerId,
+      customer_name: customerName,
+      created_at: createdAt,
+      expires_at: expiresAt,
       status: Status.Draft,
       total: Number(total),
-      googleMapLink: googleMapLink,
+      google_map_link: googleMapLink,
       revision: 1,
-      paymentTerms:
+      payment_terms:
         paymentMode === 'full' ? 'ชำระเต็มจำนวน' : 'แบ่งชำระเป็นงวด',
       installments:
         paymentMode === 'installments'
@@ -239,7 +243,7 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
                   <option value="">-- เลือกลูกค้า --</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name}
+                      {c.first_name} {c.last_name}
                     </option>
                   ))}
                 </Select>
@@ -259,7 +263,7 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
                     {availableAssessmentsForCustomer.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.id} - ยอดรวม: ฿
-                        {a.totalEstimatedCost.toLocaleString('th-TH', {
+                        {a.total_estimated_cost.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                         })}
                       </option>
@@ -439,7 +443,7 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
                 รายละเอียดใบประเมิน: {selectedAssessment.id}
               </h4>
               <div className="space-y-3">
-                {selectedAssessment.workAreas.map((area, index) => (
+                {selectedAssessment.work_areas.map((area, index) => (
                   <div key={area.id} className="p-3 border bg-white rounded-md">
                     <div className="flex justify-between items-start">
                       <p className="font-semibold text-primary">
@@ -447,13 +451,13 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
                       </p>
                       <p className="font-bold text-slate-700">
                         ฿
-                        {area.estimatedCost.toLocaleString('th-TH', {
+                        {area.estimated_cost.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                         })}
                       </p>
                     </div>
                     <p className="text-xs text-slate-600 mt-1">
-                      บริการ: {area.serviceType.join(', ')}
+                      บริการ: {area.service_type.join(', ')}
                     </p>
                   </div>
                 ))}
@@ -479,3 +483,5 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
     </div>
   );
 };
+
+export default CreateQuotationPage;

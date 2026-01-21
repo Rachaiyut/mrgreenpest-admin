@@ -7,13 +7,13 @@ import React, {
 } from 'react';
 
 // Interface
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 
 // Context
 import { useData } from '../../contexts/DataContext';
 
 // Api
-import { Customer } from '@/src/libs/api/customer';
+import { CustomerApi } from '@/src/api/customer';
 
 // Icon
 import {
@@ -42,7 +42,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Customers: React.FC = () => {
   const { contracts, quotations, handlers } = useData();
-  const [customers, setCustomers] = useState<ICustomer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
 
@@ -51,7 +51,7 @@ const Customers: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
-  const [customerToEdit, setCustomerToEdit] = useState<ICustomer | null>(null);
+  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -60,24 +60,24 @@ const Customers: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<'list' | 'card'>('list');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<ICustomer | null>(
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null
   );
 
-  const onCreateContract = handlers.contracts.create;
-  const onCreateJob = handlers.fieldJobs.create;
+  // const onCreateContract = handlers.contracts.create;
+  // const onCreateJob = handlers.fieldJobs.create;
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await Customer.getCustomers({
+      const response = await CustomerApi.getCustomers({
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
@@ -102,27 +102,27 @@ const Customers: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (customer: ICustomer) => {
+  const handleViewDetails = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (customer: ICustomer) => {
+  const handleEdit = (customer: Customer) => {
     setCustomerToEdit(customer);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (customer: ICustomer) => {
+  const handleDelete = (customer: Customer) => {
     setCustomerToDelete(customer);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleCreateCustomer = async (customerData: Omit<ICustomer, 'id'>) => {
+  const handleCreateCustomer = async (customerData: Omit<Customer, 'id'>) => {
     try {
-      await Customer.createCustomer(customerData);
+      await CustomerApi.createCustomer(customerData);
       setIsModalOpen(false);
       fetchCustomers();
     } catch (error) {
@@ -130,9 +130,9 @@ const Customers: React.FC = () => {
     }
   };
 
-  const handleUpdateCustomer = async (updatedCustomer: ICustomer) => {
+  const handleUpdateCustomer = async (updatedCustomer: Customer) => {
     try {
-      await Customer.updateCustomer(updatedCustomer.id, updatedCustomer);
+      await CustomerApi.updateCustomer(updatedCustomer.id, updatedCustomer);
       setIsEditModalOpen(false);
       fetchCustomers();
     } catch (error) {
@@ -143,7 +143,7 @@ const Customers: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (customerToDelete) {
       try {
-        await Customer.deleteCustomer(customerToDelete.id);
+        await CustomerApi.deleteCustomer(customerToDelete.id);
         setIsDeleteModalOpen(false);
         setCustomerToDelete(null);
         fetchCustomers();
@@ -354,8 +354,8 @@ const Customers: React.FC = () => {
         customer={selectedCustomer}
         contracts={contracts}
         quotations={quotations}
-        onCreateContract={onCreateContract}
-        onCreateJob={onCreateJob}
+        onCreateContract={() => {}}
+        onCreateJob={() => {}}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

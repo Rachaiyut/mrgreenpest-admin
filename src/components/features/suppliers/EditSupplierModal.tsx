@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
-import { Supplier } from '@/src/libs/common/interface/entity/app.interface';
+import { Supplier } from '@/src/types/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 // Interface
-import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+import { ISupplier } from '@/src/types/entity/supplier.interface';
 
 interface EditSupplierModalProps {
   isOpen: boolean;

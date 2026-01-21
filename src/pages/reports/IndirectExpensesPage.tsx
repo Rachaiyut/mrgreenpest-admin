@@ -1,115 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
-
-// Mock Data Types for Indirect Expenses
-interface ExpenseItem {
-  id: string;
-  category: string;
-  item: string;
-  amount: number;
-  type: 'Fixed' | 'Variable';
-  wallet: string;
-  date: string;
-}
-
-const MOCK_EXPENSES: ExpenseItem[] = [
-  {
-    id: '1',
-    category: 'ค่าสาธารณูปโภค',
-    item: 'ค่าไฟฟ้า',
-    amount: 4500,
-    type: 'Fixed',
-    wallet: 'กระเป๋า admin',
-    date: '2025-12-05',
-  },
-  {
-    id: '2',
-    category: 'ค่าสาธารณูปโภค',
-    item: 'ค่าน้ำประปา',
-    amount: 350,
-    type: 'Fixed',
-    wallet: 'กระเป๋า admin',
-    date: '2025-12-05',
-  },
-  {
-    id: '3',
-    category: 'ค่าสาธารณูปโภค',
-    item: 'ค่าอินเทอร์เน็ต',
-    amount: 799,
-    type: 'Fixed',
-    wallet: 'กระเป๋าหัวหน้าadmin',
-    date: '2025-12-05',
-  },
-  {
-    id: '4',
-    category: 'ค่าเช่า',
-    item: 'ค่าเช่าสำนักงาน',
-    amount: 15000,
-    type: 'Fixed',
-    wallet: 'กระเป๋า CFO',
-    date: '2025-12-01',
-  },
-  {
-    id: '5',
-    category: 'เงินเดือน',
-    item: 'เงินเดือนพนักงาน',
-    amount: 120000,
-    type: 'Fixed',
-    wallet: 'กระเป๋า CEO',
-    date: '2025-12-25',
-  },
-  {
-    id: '6',
-    category: 'ค่าเดินทาง',
-    item: 'ค่าน้ำมัน',
-    amount: 2500,
-    type: 'Variable',
-    wallet: 'กระเป๋าหัวหน้าทีม1',
-    date: '2025-12-10',
-  },
-  {
-    id: '7',
-    category: 'วัสดุสำนักงาน',
-    item: 'กระดาษ A4',
-    amount: 500,
-    type: 'Variable',
-    wallet: 'กระเป๋า admin',
-    date: '2025-12-12',
-  },
-  {
-    id: '8',
-    category: 'ค่ารับรอง',
-    item: 'เลี้ยงลูกค้า',
-    amount: 3000,
-    type: 'Variable',
-    wallet: 'กระเป๋า CEO',
-    date: '2025-12-15',
-  },
-  {
-    id: '9',
-    category: 'ค่าซ่อมบำรุง',
-    item: 'ซ่อมแอร์',
-    amount: 1200,
-    type: 'Variable',
-    wallet: 'กระเป๋า COO',
-    date: '2025-12-20',
-  },
-  {
-    id: '10',
-    category: 'เบ็ดเตล็ด',
-    item: 'เครื่องดื่ม',
-    amount: 300,
-    type: 'Variable',
-    wallet: 'กระเป๋า Truewallet',
-    date: '2025-12-22',
-  },
-];
+import { IndirectExpense } from '@/src/types/entity/financial.interface';
+import { IndirectExpenseApi } from '@/src/api/indirect-expense';
 
 const IndirectExpensesPage: React.FC = () => {
+  const [expenses, setExpenses] = useState<IndirectExpense[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        setIsLoading(true);
+        const res = await IndirectExpenseApi.getAll();
+        setExpenses(res.data || []);
+      } catch (error) {
+        console.error('Failed to fetch expenses', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchExpenses();
+  }, []);
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
@@ -132,7 +47,7 @@ const IndirectExpensesPage: React.FC = () => {
 
   // Filter Logic
   const filteredExpenses = useMemo(() => {
-    return MOCK_EXPENSES.filter((exp) => {
+    return expenses.filter((exp) => {
       const d = new Date(exp.date);
       const matchesDate =
         d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;

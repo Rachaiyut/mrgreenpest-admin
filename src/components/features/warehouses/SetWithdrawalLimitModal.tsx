@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input } from '../../common/FormControls';
-import { Warehouse, Product } from '@/src/libs/common/interface/entity/app.interface';
+import { Warehouse, Product } from '@/src/types/entity/app.interface';
 
 interface SetWithdrawalLimitModalProps {
   isOpen: boolean;

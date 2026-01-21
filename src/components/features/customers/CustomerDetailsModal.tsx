@@ -7,7 +7,7 @@ import {
   DetailsItem,
 } from '../../common/FormControls';
 
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+import { ICustomer } from '@/src/types/entity/customer.interface';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;

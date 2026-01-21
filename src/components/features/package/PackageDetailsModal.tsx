@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { Product } from '@/src/libs/common/interface/entity/app.interface';
+import { Product } from '@/src/types/entity/app.interface';
 
 interface PackageDetailsModalProps {
   isOpen: boolean;

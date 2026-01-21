@@ -7,7 +7,7 @@ import {
 } from '../../common/FormControls';
 
 // Interface
-import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+import { ISupplier } from '@/src/types/entity/supplier.interface';
 
 interface SupplierDetailsModalProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
-import { Invoice, Receipt, Customer } from '@/src/libs/common/interface/entity/app.interface';
+import { Invoice, Receipt, Customer } from '@/src/types/entity/app.interface';
 
 import { useData } from '../../contexts/DataContext';
 
@@ -55,18 +55,18 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
   const data = useMemo(() => {
     // Map Receipts to IncomeRecords
     const records: IncomeRecord[] = receipts.map((receipt) => {
-      const invoice = invoices.find((inv) => inv.id === receipt.invoiceId);
-      const customer = customers.find((cus) => cus.id === receipt.customerId);
+      const invoice = invoices.find((inv) => inv.id === receipt.invoice_id);
+      const customer = customers.find((cus) => cus.id === receipt.customer_id);
 
       const totalPaidForInvoice = receipts
-        .filter((r) => r.invoiceId === receipt.invoiceId)
+        .filter((r) => r.invoice_id === receipt.invoice_id)
         .reduce((sum, r) => sum + r.amount, 0);
 
       const invoiceTotal = invoice ? invoice.total : 0;
       const outstanding = Math.max(0, invoiceTotal - totalPaidForInvoice);
       const isPaidFull = outstanding === 0;
 
-      const paidDate = new Date(receipt.paidAt);
+      const paidDate = new Date(receipt.paid_at);
       const formattedDate = paidDate.toLocaleDateString('th-TH', {
         year: 'numeric',
         month: '2-digit',
@@ -78,7 +78,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
         customerCode: customer ? customer.id : 'N/A',
         date: formattedDate,
         rawDate: paidDate,
-        customerName: receipt.customerName,
+        customerName: receipt.customer_name,
         invoiceName: invoice ? invoice.id : 'Unknown Invoice',
         installment: '1/1',
         totalServiceFee: invoiceTotal,
@@ -86,10 +86,10 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
         actualReceived: receipt.amount,
         outstanding: outstanding,
         nextPaymentDue: isPaidFull ? '-' : 'TBD',
-        paymentChannel: receipt.paymentMethod || 'Transfer',
+        paymentChannel: receipt.payment_method || 'Transfer',
         fee: 0,
         withholdingTax: 0,
-        isVerified: receipt.amount === receipt.amount, // Simplified logic
+        isVerified: true, 
       };
     });
 
@@ -109,81 +109,8 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
     });
   }, [invoices, receipts, customers, searchTerm, selectedMonth, selectedYear]);
 
-  // Fallback Mock Data Logic if no real data
-  const displayData = useMemo(() => {
-    if (receipts.length > 0) return data;
-
-    const mocks = [
-      {
-        id: '1',
-        customerCode: 'CUS001',
-        date: '01/12/2025',
-        rawDate: new Date(2025, 11, 1),
-        customerName: 'บริษัท เอ บี ซี จำกัด',
-        invoiceName: 'INV-2025-001',
-        installment: '1/12',
-        totalServiceFee: 12000,
-        paidAmount: 1000,
-        actualReceived: 970,
-        outstanding: 11000,
-        nextPaymentDue: '01/01/2026',
-        paymentChannel: 'ธนาคารกสิกรไทย',
-        fee: 0,
-        withholdingTax: 30,
-        isVerified: true,
-      },
-      {
-        id: '2',
-        customerCode: 'CUS002',
-        date: '05/12/2025',
-        rawDate: new Date(2025, 11, 5),
-        customerName: 'คุณสมชาย ใจดี',
-        invoiceName: 'INV-2025-002',
-        installment: 'Full',
-        totalServiceFee: 5000,
-        paidAmount: 5000,
-        actualReceived: 5000,
-        outstanding: 0,
-        nextPaymentDue: '-',
-        paymentChannel: 'เงินสด',
-        fee: 0,
-        withholdingTax: 0,
-        isVerified: true,
-      },
-      {
-        id: '3',
-        customerCode: 'CUS003',
-        date: '10/12/2025',
-        rawDate: new Date(2025, 11, 10),
-        customerName: 'หจก. มีชัย',
-        invoiceName: 'INV-2025-003',
-        installment: '1/3',
-        totalServiceFee: 15000,
-        paidAmount: 5000,
-        actualReceived: 4500,
-        outstanding: 10000,
-        nextPaymentDue: '10/01/2026',
-        paymentChannel: 'โอนเงิน',
-        fee: 0,
-        withholdingTax: 0,
-        isVerified: false,
-      },
-    ];
-
-    return mocks.filter((record) => {
-      const matchesSearch =
-        record.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.invoiceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.customerCode.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const recordDate = record.rawDate;
-      const matchesDate =
-        recordDate.getMonth() === selectedMonth &&
-        recordDate.getFullYear() === selectedYear;
-
-      return matchesSearch && matchesDate;
-    });
-  }, [data, receipts.length, searchTerm, selectedMonth, selectedYear]);
+  // Use real data
+  const displayData = data;
 
   return (
     <div className="space-y-6 animate-fade-in text-nowrap pb-20">

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { Transfer, Warehouse as WarehouseType, Product } from '@/src/libs/common/interface/entity/app.interface';
+import { Transfer, Warehouse as WarehouseType, Product } from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../../constants';
 
 interface TransferDetailsModalProps {

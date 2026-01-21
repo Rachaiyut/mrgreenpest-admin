@@ -1,93 +1,21 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
+import { WalletTransaction } from '@/src/types/entity/financial.interface';
+import { WalletTransactionApi } from '@/src/api/wallet-transaction';
 
-interface CashTransaction {
-  id: string;
-  date: string; // YYYY-MM-DD
-  category: string;
-  item: string;
+interface CashTransaction extends WalletTransaction {
   income: number;
   expense: number;
   wallet: string;
+  item: string;
+  category: string;
+  balance: number;
 }
 
-const MOCK_TRANSACTIONS: CashTransaction[] = [
-  {
-    id: '1',
-    date: '2025-12-01',
-    category: 'ยอดยกมา',
-    item: 'ยอดยกมาต้นเดือน',
-    income: 50000,
-    expense: 0,
-    wallet: 'กระเป๋า admin',
-  },
-  {
-    id: '2',
-    date: '2025-12-02',
-    category: 'รายได้บริการ',
-    item: 'ค่าบริการกำจัดปลวก คุณสมชาย',
-    income: 3500,
-    expense: 0,
-    wallet: 'กระเป๋า admin',
-  },
-  {
-    id: '3',
-    date: '2025-12-03',
-    category: 'ค่าใช้จ่ายดำเนินงาน',
-    item: 'เติมน้ำมันรถทะเบียน 1กก-1234',
-    income: 0,
-    expense: 1200,
-    wallet: 'กระเป๋าหัวหน้าทีม1',
-  },
-  {
-    id: '4',
-    date: '2025-12-04',
-    category: 'เบิกเงินสดย่อย',
-    item: 'โอนเงินเข้ากระเป๋าลูกทีม1',
-    income: 0,
-    expense: 2000,
-    wallet: 'กระเป๋า admin',
-  },
-  {
-    id: '5',
-    date: '2025-12-04',
-    category: 'รับเงินสดย่อย',
-    item: 'รับเงินโอนจาก admin',
-    income: 2000,
-    expense: 0,
-    wallet: 'กระเป๋าลูกทีม1',
-  },
-  {
-    id: '6',
-    date: '2025-12-05',
-    category: 'ค่าวัสดุสิ้นเปลือง',
-    item: 'ซื้อน้ำยาเคมี',
-    income: 0,
-    expense: 4500,
-    wallet: 'กระเป๋า CFO',
-  },
-  {
-    id: '7',
-    date: '2025-12-06',
-    category: 'รายได้บริการ',
-    item: 'ค่าบริการรายปี โรงแรม A',
-    income: 12000,
-    expense: 0,
-    wallet: 'กระเป๋า CEO',
-  },
-  {
-    id: '8',
-    date: '2025-12-07',
-    category: 'ค่ารับรอง',
-    item: 'เลี้ยงลูกค้า',
-    income: 0,
-    expense: 1500,
-    wallet: 'กระเป๋า CEO',
-  },
-];
-
 const DailyCashPage: React.FC = () => {
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
@@ -95,6 +23,21 @@ const DailyCashPage: React.FC = () => {
     new Date().getFullYear()
   );
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        setIsLoading(true);
+        const res = await WalletTransactionApi.getAll();
+        setTransactions(res.data || []);
+      } catch (error) {
+        console.error('Failed to fetch transactions', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTransactions();
+  }, []);
 
   const thaiMonths = [
     'มกราคม',
@@ -113,14 +56,13 @@ const DailyCashPage: React.FC = () => {
 
   const processedData = useMemo(() => {
     // Filter first
-    const filtered = MOCK_TRANSACTIONS.filter((t) => {
+    const filtered = transactions.filter((t) => {
       const d = new Date(t.date);
       const matchMonth = d.getMonth() === selectedMonth;
       const matchYear = d.getFullYear() === selectedYear;
       const matchSearch =
-        t.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.wallet.toLowerCase().includes(searchTerm.toLowerCase());
+        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (t.walletName || '').toLowerCase().includes(searchTerm.toLowerCase());
       return matchMonth && matchYear && matchSearch;
     });
 
@@ -132,13 +74,20 @@ const DailyCashPage: React.FC = () => {
     // Calculate running balance
     let currentBalance = 0;
     return filtered.map((item) => {
-      currentBalance = currentBalance + item.income - item.expense;
+      const income = item.type === 'รายรับ' ? item.amount : 0;
+      const expense = item.type === 'รายจ่าย' ? item.amount : 0;
+      currentBalance = currentBalance + income - expense;
       return {
         ...item,
+        income,
+        expense,
         balance: currentBalance,
+        item: item.description,
+        category: item.type, // Or some other logic
+        wallet: item.walletName || 'N/A',
       };
     });
-  }, [selectedMonth, selectedYear, searchTerm]);
+  }, [selectedMonth, selectedYear, searchTerm, transactions]);
 
   const totalIncome = processedData.reduce((sum, item) => sum + item.income, 0);
   const totalExpense = processedData.reduce(

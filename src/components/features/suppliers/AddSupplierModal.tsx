@@ -4,8 +4,8 @@ import { FormField, Input } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 // Interface
-import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
-import { SupplierType } from '@/src/libs/common/enum/customer.enum';
+import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { SupplierType } from '@/src/types/enums/customer.enum';
 
 interface AddSupplierModalProps {
   isOpen: boolean;

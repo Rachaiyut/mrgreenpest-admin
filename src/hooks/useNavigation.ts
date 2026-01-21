@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { NAVIGATION_ITEMS } from '../libs/common/constant/navigate';
-import { NavigationItem } from '../libs/common/type/nav';
+import { NavigationItem } from '@/src/types/nav';
 import { useUserRole } from './useUserRole';
+import { NAVIGATION_ITEMS } from '../constants';
 
 export const useNavigation = () => {
   const userRole = useUserRole();

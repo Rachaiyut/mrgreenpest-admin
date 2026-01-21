@@ -7,8 +7,8 @@ import {
   UserRole,
   FieldJobWorkArea,
   User,
-} from '@/src/libs/common/interface/entity/app.interface';
-import { MOCK_WAREHOUSES } from '../../../constants';
+  Warehouse,
+} from '@/src/types/entity/app.interface';
 import { RefreshIcon } from '../../../assets/icons/Icons';
 
 // A component to manage a single work area within the job form
@@ -75,6 +75,7 @@ interface EditJobModalProps {
   onUpdateJob: (job: FieldJob) => void;
   jobs: FieldJob[];
   users: User[];
+  warehouses: Warehouse[];
 }
 
 export const EditJobModal: React.FC<EditJobModalProps> = ({
@@ -84,6 +85,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   onUpdateJob,
   jobs,
   users,
+  warehouses,
 }) => {
   const [formData, setFormData] = useState<Partial<FieldJob>>({});
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
@@ -100,8 +102,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const technicians = users.filter((u) => u.role === UserRole.Technician);
   const vehicleWarehouses = useMemo(
-    () => MOCK_WAREHOUSES.filter((w) => w.type === 'รถ'),
-    []
+    () => warehouses.filter((w) => w.type === 'รถ'),
+    [warehouses]
   );
 
   const bookedSlots = useMemo(() => {

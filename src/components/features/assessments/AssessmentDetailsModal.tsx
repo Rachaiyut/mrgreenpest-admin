@@ -4,22 +4,24 @@ import { Button } from '../../common/FormControls';
 import {
   Assessment,
   AssessmentWorkArea,
-} from '@/src/libs/common/interface/entity/app.interface';
+  Product,
+} from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
-import { MOCK_PRODUCTS, formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../constants';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   assessment: Assessment | null;
+  products: Product[];
 }
 
-const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea }> = ({ area }) => {
-  const productMap = new Map(MOCK_PRODUCTS.map((p) => [p.id, p]));
-  const selectedPackage = MOCK_PRODUCTS.find((p) => p.id === area.packageId);
+const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea; products: Product[] }> = ({ area, products }) => {
+  const productMap = new Map(products.map((p) => [p.id, p]));
+  const selectedPackage = products.find((p) => p.id === area.package_id);
   const selectedCondition = selectedPackage?.conditions?.find(
-    (c) => c.id === area.selectedConditionId
+    (c) => c.id === area.selected_condition_id
   );
 
   return (
@@ -28,28 +30,28 @@ const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea }> = ({ area }) => {
       <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
         <div>
           <dt className="font-medium text-slate-500">ประเภทสิ่งปลูกสร้าง</dt>
-          <dd className="mt-1 text-slate-900">{area.buildingType || '-'}</dd>
+          <dd className="mt-1 text-slate-900">{area.building_type || '-'}</dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">พื้นที่ (ตร.ม.)</dt>
-          <dd className="mt-1 text-slate-900">{area.areaSize}</dd>
+          <dd className="mt-1 text-slate-900">{area.area_size}</dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">ประเภทบริการ</dt>
-          <dd className="mt-1 text-slate-900">{area.serviceType.join(', ')}</dd>
+          <dd className="mt-1 text-slate-900">{area.service_type.join(', ')}</dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.serviceSystem || '-'}</dd>
+          <dd className="mt-1 text-slate-900">{area.service_system || '-'}</dd>
         </div>
       </dl>
 
-      {(area.packageId || (area.items && area.items.length > 0)) && (
+      {(area.package_id || (area.items && area.items.length > 0)) && (
         <div className="pt-4 border-t">
           <h6 className="font-semibold text-slate-700 mb-2">
             รายการและราคาสำหรับพื้นที่นี้
           </h6>
-          {area.packageId && selectedPackage && (
+          {area.package_id && selectedPackage && (
             <div className="mb-2">
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
                 <div>
@@ -62,7 +64,7 @@ const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea }> = ({ area }) => {
                   <dt className="font-medium text-slate-500">เงื่อนไข</dt>
                   <dd className="mt-1 text-slate-900">
                     {selectedCondition
-                      ? `ไม่เกิน ${selectedCondition.maxArea} ตร.ม.`
+                      ? `ไม่เกิน ${selectedCondition.max_area} ตร.ม.`
                       : '-'}
                   </dd>
                 </div>
@@ -91,7 +93,7 @@ const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea }> = ({ area }) => {
                 </thead>
                 <tbody>
                   {area.items.map((item, index) => {
-                    const product = productMap.get(item.productId);
+                    const product = productMap.get(item.product_id);
                     return (
                       <tr
                         key={index}
@@ -129,10 +131,10 @@ const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea }> = ({ area }) => {
       )}
       <div className="text-right font-semibold text-slate-800 pt-2 border-t">
         ยอดรวมพื้นที่นี้: ฿
-        {area.estimatedCost.toLocaleString('th-TH', {
+        {/* {area.estimatedCost.toLocaleString('th-TH', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })}
+        })} */}
       </div>
     </div>
   );
@@ -142,6 +144,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
   isOpen,
   onClose,
   assessment,
+  products,
 }) => {
   if (!isOpen || !assessment) return null;
 
@@ -157,7 +160,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             ยอดรวมทั้งหมด:{' '}
             <span className="text-primary">
               ฿
-              {assessment.totalEstimatedCost.toLocaleString('th-TH', {
+              {assessment.total_estimated_cost.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -184,7 +187,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">ลูกค้า</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {assessment.customerName}
+                {assessment.customer_name}
               </dd>
             </div>
             <div>
@@ -196,13 +199,13 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(assessment.createdAt)}
+                {formatThaiDate(assessment.created_at)}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">วันที่นัดหมาย</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(assessment.scheduledAt)}
+                {formatThaiDate(assessment.scheduled_at)}
               </dd>
             </div>
             <div>
@@ -210,16 +213,16 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
                 เงื่อนไขการชำระเงิน
               </dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.paymentConditions || '-'}
+                {assessment.payment_conditions || '-'}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{assessment.createdBy}</dd>
+              <dd className="mt-1 text-slate-900">{assessment.created_by}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้แก้ไขล่าสุด</dt>
-              <dd className="mt-1 text-slate-900">{assessment.updatedBy}</dd>
+              <dd className="mt-1 text-slate-900">{assessment.updated_by}</dd>
             </div>
           </dl>
         </div>
@@ -256,23 +259,23 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">รหัสไปรษณีย์</dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.postalCode || '-'}
+                {assessment.postal_code || '-'}
               </dd>
             </div>
           </dl>
-          {assessment.googleMapLink && (
+          {assessment.google_map_link && (
             <dl className="mt-4">
               <div>
                 <dt className="font-medium text-slate-500">Link Google Map</dt>
                 <dd className="mt-1 text-slate-900">
                   <a
-                    href={assessment.googleMapLink}
+                    href={assessment.google_map_link}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-primary hover:underline truncate"
                   >
                     <GoogleMapIcon className="h-4 w-4" />
-                    <span>{assessment.googleMapLink}</span>
+                    <span>{assessment.google_map_link}</span>
                   </a>
                 </dd>
               </div>
@@ -297,7 +300,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">สายถนนที่</dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.roadLine || '-'}
+                {assessment.road_line || '-'}
               </dd>
             </div>
             <div>
@@ -314,8 +317,8 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             รายละเอียดพื้นที่ประเมิน
           </h4>
           <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
-            {assessment.workAreas.map((area) => (
-              <WorkAreaDetails key={area.id} area={area} />
+            {assessment.work_areas.map((area) => (
+              <WorkAreaDetails key={area.id} area={area} products={products} />
             ))}
           </div>
         </div>

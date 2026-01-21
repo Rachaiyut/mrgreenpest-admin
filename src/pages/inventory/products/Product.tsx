@@ -8,17 +8,17 @@ import {
 } from '../../../assets/icons/Icons';
 
 // Enum
-import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { CategoryType } from '@/src/types/enums/category.enum';
 
 // Interface
-import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
-import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
-import { IUnit } from '@/src/libs/common/interface/entity/unit.interface';
+import { Product as IProduct } from '@/src/types/entity/product.interface';
+import { ICategory } from '@/src/types/entity/category.interface';
+import { IUnit } from '@/src/types/entity/unit.interface';
 
 // API
-import { Product as ProductApi } from '@/src/libs/api/product';
-import { Category as CategoryApi } from '@/src/libs/api/category';
-import { Unit as UnitApi } from '@/src/libs/api/unit';
+import { ProductApi  } from '@/src/api/product';
+import { Category as CategoryApi } from '@/src/api/category';
+import { Unit as UnitApi } from '@/src/api/unit';
 
 import { Pagination } from '../../../components/common/Pagination';
 import { Input, Button } from '../../../components/common/FormControls';

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { MOCK_USERS } from '../../constants';
-import { BellIcon, MenuIcon, ChevronDownIcon } from '../../assets/icons/Icons';
+import React from 'react';
+import { BellIcon, MenuIcon, ChevronDownIcon } from '@/src/assets/icons/Icons';
 import { Button } from '../common/FormControls';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -9,7 +9,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
-  const currentUser = MOCK_USERS[17]; // Assume admin is logged in
+  const currentUser = useCurrentUser();
 
   return (
     <header className="bg-white shadow-sm z-10">
@@ -34,25 +34,27 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
             <BellIcon className="h-6 w-6" />
           </Button>
 
-          <div className="relative">
-            <Button variant="ghost" className="flex items-center space-x-2">
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.name}
-                className="h-9 w-9 rounded-full object-cover"
-              />
-              <div className="hidden sm:flex flex-col items-start">
-                <span className="text-sm font-medium text-slate-700">
-                  {currentUser.name}
-                </span>
-                <span className="text-xs text-slate-500">
-                  {currentUser.role}
-                </span>
-              </div>
-              <ChevronDownIcon className="hidden sm:block h-4 w-4 text-slate-500" />
-            </Button>
-            {/* Dropdown menu can be added here */}
-          </div>
+          {currentUser && (
+            <div className="relative">
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <img
+                  src={'https://ui-avatars.com/api/?name=' + currentUser.name}
+                  alt={currentUser.name}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+                <div className="hidden sm:flex flex-col items-start">
+                  <span className="text-sm font-medium text-slate-700">
+                    {currentUser.name}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {currentUser.role}
+                  </span>
+                </div>
+                <ChevronDownIcon className="hidden sm:block h-4 w-4 text-slate-500" />
+              </Button>
+              {/* Dropdown menu can be added here */}
+            </div>
+          )}
 
           {onLogout && (
             <Button

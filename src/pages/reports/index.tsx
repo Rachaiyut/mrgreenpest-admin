@@ -19,10 +19,10 @@ import {
   Status,
   User,
   Supplier,
-} from '@/src/libs/common/interface/entity/app.interface';
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
-import { CustomerType } from '@/src/libs/common/enum/customer.enum';
-import { Status as BaseStatus } from '@/src/libs/common/enum/base.enum';
+} from '@/src/types/entity/app.interface';
+import { ICustomer } from '@/src/types/entity/customer.interface';
+import { CustomerType } from '@/src/types/enums/customer.enum';
+import { Status as BaseStatus } from '@/src/types/enums/base.enum';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 
 import { useData } from '../../contexts/DataContext';

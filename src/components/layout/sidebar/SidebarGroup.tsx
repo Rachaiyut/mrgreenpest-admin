@@ -1,9 +1,10 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
-import { PAGE_PATH } from '../../../libs/common/constant/route';
-import { NavGroup } from '../../../libs/common/interface/entity/nav.interface';
-import { Page } from '../../../libs/router/page';
+
 import { ChevronDownIcon } from '../../../assets/icons/Icons';
+import { Page } from '../../../router/page';
+import { PAGE_PATH } from '@/src/config/route';
+import { NavGroup } from '@/src/types/entity/nav.interface';
 
 interface SidebarGroupProps {
   item: NavGroup;

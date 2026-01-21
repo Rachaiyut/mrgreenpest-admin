@@ -7,7 +7,7 @@ import {
   Select,
   Button,
 } from '../../components/common/FormControls';
-import { Quotation, Status } from '@/src/libs/common/interface/entity/app.interface';
+import { Quotation, Status } from '@/src/types/entity/app.interface';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
 
 interface EditQuotationPageProps {
@@ -34,11 +34,11 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
       setFormData({
         ...found,
         status: isReviseMode ? Status.Revise : found.status,
-        createdAt: found.createdAt
-          ? new Date(found.createdAt).toISOString().substring(0, 10)
+        created_at: found.created_at
+          ? new Date(found.created_at).toISOString().substring(0, 10)
           : '',
-        expiresAt: found.expiresAt
-          ? new Date(found.expiresAt).toISOString().substring(0, 10)
+        expires_at: found.expires_at
+          ? new Date(found.expires_at).toISOString().substring(0, 10)
           : '',
       });
     } else if (id) {
@@ -109,18 +109,18 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
                 <Input
                   id="customerName"
                   type="text"
-                  value={formData.customerName || ''}
+                  value={formData.customer_name || ''}
                   readOnly
                   className="bg-slate-100"
                 />
               </FormField>
 
-              {formData.assessmentId && (
+              {formData.assessment_id && (
                 <FormField label="อ้างอิงใบประเมิน" htmlFor="assessmentId">
                   <Input
                     id="assessmentId"
                     type="text"
-                    value={formData.assessmentId}
+                    value={formData.assessment_id}
                     readOnly
                     className="bg-slate-100"
                   />
@@ -131,9 +131,9 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
                 <FormField label="วันที่สร้าง" htmlFor="createdAt">
                   <Input
                     id="createdAt"
-                    name="createdAt"
+                    name="created_at"
                     type="date"
-                    value={formData.createdAt || ''}
+                    value={formData.created_at || ''}
                     onChange={handleChange}
                     required
                     readOnly={!isReviseMode}
@@ -143,9 +143,9 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
                 <FormField label="หมดอายุวันที่" htmlFor="expiresAt">
                   <Input
                     id="expiresAt"
-                    name="expiresAt"
+                    name="expires_at"
                     type="date"
-                    value={formData.expiresAt || ''}
+                    value={formData.expires_at || ''}
                     onChange={handleChange}
                     required
                     readOnly={!isReviseMode}
@@ -157,9 +157,9 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
               <FormField label="Link Google Map" htmlFor="googleMapLink">
                 <Input
                   id="googleMapLink"
-                  name="googleMapLink"
+                  name="google_map_link"
                   type="url"
-                  value={formData.googleMapLink || ''}
+                  value={formData.google_map_link || ''}
                   onChange={handleChange}
                   placeholder="https://maps.app.goo.gl/..."
                   readOnly={!isReviseMode}
@@ -266,7 +266,7 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
                               {item.id}
                             </p>
                             <p className="text-xs text-slate-500">
-                              {new Date(item.createdAt).toLocaleDateString(
+                              {new Date(item.created_at).toLocaleDateString(
                                 'th-TH'
                               )}
                             </p>
@@ -291,3 +291,5 @@ export const EditQuotationPage: FC<EditQuotationPageProps> = ({
     </div>
   );
 };
+
+export default EditQuotationPage;

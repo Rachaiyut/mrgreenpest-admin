@@ -7,17 +7,17 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
-import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
-import { IUnit } from '@/src/libs/common/interface/entity/unit.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { ICategory } from '@/src/types/entity/category.interface';
+import { IUnit } from '@/src/types/entity/unit.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';
-import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { CategoryType } from '@/src/types/enums/category.enum';
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  product: IProduct | null;
-  onUpdateProduct: (product: IProduct) => void;
+  product: Product | null;
+  onUpdateProduct: (product: Product) => void;
   categories: ICategory[];
   units: IUnit[];
 }
@@ -30,7 +30,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   categories,
   units,
 }) => {
-  const [formData, setFormData] = useState<Partial<IProduct>>({});
+  const [formData, setFormData] = useState<Partial<Product>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (product) {
-      onUpdateProduct({ ...product, ...formData } as IProduct);
+      onUpdateProduct({ ...product, ...formData } as Product);
     }
     onClose();
   };

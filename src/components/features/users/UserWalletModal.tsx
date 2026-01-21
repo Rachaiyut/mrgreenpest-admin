@@ -4,7 +4,7 @@ import {
   User,
   UserWallet,
   WalletTransaction,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { formatThaiDateTime } from '../../../constants';
 import { PlusIcon } from '../../../assets/icons/Icons';

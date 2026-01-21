@@ -40,7 +40,7 @@ interface FinancialsProps {
   ) => void;
   onUpdateQuotation?: (updated: Quotation) => void;
   onDeleteQuotation?: (id: string) => void;
-  onReviseQuotation?: (quotation: Quotation) => void;
+  onReviseQuotation?: (id: string) => void;
 
   onCreateInvoice?: (data: Omit<Invoice, 'id'>) => void;
   onUpdateInvoice?: (updated: Invoice) => void;
@@ -141,7 +141,7 @@ const Financials: React.FC<FinancialsProps> = ({
   );
 
   const customerMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, c.name])),
+    () => new Map((customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])),
     [customers]
   );
 
@@ -149,7 +149,7 @@ const Financials: React.FC<FinancialsProps> = ({
   const [receiptItemsPerPage, setReceiptItemsPerPage] = useState(10);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<
-    'ทั้งหมด' | Status
+    'ทั้งหมด' | InvoiceStatus
   >('ทั้งหมด');
 
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -211,9 +211,7 @@ const Financials: React.FC<FinancialsProps> = ({
     const custPhoneMap = new Map(
       (customers || []).map((c) => [
         c.id,
-        [c.phone, c.mobilePhone, ...(c.additionalPhones || [])]
-          .filter(Boolean)
-          .join(''),
+        [c.phone].filter(Boolean).join(''),
       ])
     );
 
@@ -222,10 +220,10 @@ const Financials: React.FC<FinancialsProps> = ({
     // 1. Search (ID, Name, Phone)
     if (q) {
       result = result.filter((item) => {
-        const phone = custPhoneMap.get(item.customerId) || '';
+        const phone = custPhoneMap.get(item.customer_id) || '';
         return (
           item.id.toLowerCase().includes(q) ||
-          item.customerName.toLowerCase().includes(q) ||
+          item.customer_name.toLowerCase().includes(q) ||
           phone.includes(q)
         );
       });
@@ -239,7 +237,7 @@ const Financials: React.FC<FinancialsProps> = ({
     // 3. Date Filter
     if (start || end) {
       result = result.filter((item) => {
-        const d = new Date(item.createdAt);
+        const d = new Date(item.created_at);
         return (!start || d >= start) && (!end || d <= end);
       });
     }
@@ -291,9 +289,7 @@ const Financials: React.FC<FinancialsProps> = ({
     const custPhoneMap = new Map(
       (customers || []).map((c) => [
         c.id,
-        [c.phone, c.mobilePhone, ...(c.additionalPhones || [])]
-          .filter(Boolean)
-          .join(''),
+        [c.phone].filter(Boolean).join(''),
       ])
     );
 
@@ -302,10 +298,10 @@ const Financials: React.FC<FinancialsProps> = ({
     // 1. Search
     if (q) {
       result = result.filter((item) => {
-        const phone = custPhoneMap.get(item.customerId) || '';
+        const phone = custPhoneMap.get(item.customer_id) || '';
         return (
           item.id.toLowerCase().includes(q) ||
-          item.customerName.toLowerCase().includes(q) ||
+          item.customer_name.toLowerCase().includes(q) ||
           phone.includes(q)
         );
       });
@@ -313,13 +309,13 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // 2. Status Filter
     if (invoiceStatusFilter !== 'ทั้งหมด') {
-      result = result.filter((i) => i.status === invoiceStatusFilter);
+      result = result.filter((i) => (i.status as unknown as Status) === invoiceStatusFilter);
     }
 
     // 3. Date Filter (using issuedAt)
     if (start || end) {
       result = result.filter((item) => {
-        const d = new Date(item.issuedAt);
+        const d = new Date(item.issued_at);
         return (!start || d >= start) && (!end || d <= end);
       });
     }
@@ -352,7 +348,7 @@ const Financials: React.FC<FinancialsProps> = ({
 
   const receiptData = receipts || [];
   const receiptPaymentMethods = useMemo(
-    () => Array.from(new Set(receiptData.map((r) => r.paymentMethod))),
+    () => Array.from(new Set(receiptData.map((r) => r.payment_method))),
     [receiptData]
   );
   const filteredReceipts = useMemo(() => {
@@ -365,9 +361,7 @@ const Financials: React.FC<FinancialsProps> = ({
     const custPhoneMap = new Map(
       (customers || []).map((c) => [
         c.id,
-        [c.phone, c.mobilePhone, ...(c.additionalPhones || [])]
-          .filter(Boolean)
-          .join(''),
+        [c.phone].filter(Boolean).join(''),
       ])
     );
 
@@ -376,10 +370,10 @@ const Financials: React.FC<FinancialsProps> = ({
     // 1. Search
     if (q) {
       result = result.filter((r) => {
-        const phone = custPhoneMap.get(r.customerId) || '';
+        const phone = custPhoneMap.get(r.customer_id) || '';
         return (
           r.id.toLowerCase().includes(q) ||
-          r.customerName.toLowerCase().includes(q) ||
+          r.customer_name.toLowerCase().includes(q) ||
           phone.includes(q)
         );
       });
@@ -388,14 +382,14 @@ const Financials: React.FC<FinancialsProps> = ({
     // 2. Payment Method Filter
     if (receiptPaymentMethodFilter !== 'ทั้งหมด') {
       result = result.filter(
-        (r) => r.paymentMethod === receiptPaymentMethodFilter
+        (r) => r.payment_method === receiptPaymentMethodFilter
       );
     }
 
     // 3. Date Filter (using paidAt)
     if (start || end) {
       result = result.filter((item) => {
-        const d = new Date(item.paidAt);
+        const d = new Date(item.paid_at);
         return (!start || d >= start) && (!end || d <= end);
       });
     }
@@ -569,15 +563,15 @@ const Financials: React.FC<FinancialsProps> = ({
 
   const handleCreateInvoiceFromInstallment = (installment: InstallmentPlan) => {
     if (!selectedQuotation) return;
-    setInvoiceFormCustomerId(selectedQuotation.customerId);
+    setInvoiceFormCustomerId(selectedQuotation.customer_id);
     setInvoiceFormQuotationId(selectedQuotation.id);
     setInvoiceFormTotal(installment.amount);
     setInvoiceFormInstallmentId(installment.id);
     setInvoiceFormTerm(installment.term);
     setInvoiceFormStatus(Status.Pending);
 
-    const d = installment.dueDate ? new Date(installment.dueDate) : new Date();
-    if (!installment.dueDate) d.setDate(d.getDate() + 30);
+    const d = installment.due_date ? new Date(installment.due_date) : new Date();
+    if (!installment.due_date) d.setDate(d.getDate() + 30);
     setInvoiceFormDueAt(d.toISOString().slice(0, 10));
 
     setIsDetailsModalOpen(false);
@@ -686,7 +680,7 @@ const Financials: React.FC<FinancialsProps> = ({
                 <tbody className="bg-white divide-y divide-slate-200">
                   {paginatedQuotations.map((q, index) => {
                     const customer = customers?.find(
-                      (c) => c.id === q.customerId
+                      (c) => c.id === q.customer_id
                     );
                     return (
                       <tr key={q.id}>
@@ -699,16 +693,16 @@ const Financials: React.FC<FinancialsProps> = ({
                           {q.id}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">
-                          {q.customerName}
+                          {q.customer_name}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">
                           {customer?.phone || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">
-                          {q.assessmentId || '-'}
+                          {q.assessment_id || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-500">
-                          {formatThaiDate(q.createdAt)}
+                          {formatThaiDate(q.created_at)}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <StatusBadge status={q.status} />
@@ -841,7 +835,7 @@ const Financials: React.FC<FinancialsProps> = ({
                   <tbody className="bg-white divide-y divide-slate-200">
                     {paginatedInvoices.map((i, index) => {
                       const customer = customers?.find(
-                        (c) => c.id === i.customerId
+                        (c) => c.id === i.customer_id
                       );
                       return (
                         <tr key={i.id}>
@@ -860,7 +854,7 @@ const Financials: React.FC<FinancialsProps> = ({
                             {i.id}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {i.customerName}
+                            {i.customer_name}
                             {i.term && (
                               <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                                 งวดที่ {i.term}
@@ -871,7 +865,7 @@ const Financials: React.FC<FinancialsProps> = ({
                             {customer?.phone || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {formatThaiDate(i.dueAt)}
+                            {formatThaiDate(i.due_at)}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <StatusBadge status={i.status} />
@@ -1032,19 +1026,19 @@ const Financials: React.FC<FinancialsProps> = ({
                             {r.id}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {r.customerName}
+                            {r.customer_name}
                             <div className="text-xs text-slate-400 mt-0.5">
-                              Ref: {r.invoiceId}
+                              Ref: {r.invoice_id}
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
                             {customer?.phone || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {formatThaiDate(r.paidAt)}
+                            {formatThaiDate(r.paid_at)}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {r.paymentMethod}
+                            {r.payment_method}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
                             ฿
@@ -1240,12 +1234,12 @@ const Financials: React.FC<FinancialsProps> = ({
               onClick={() => {
                 if (!onCreateReceipt) return;
                 const payload: Omit<Receipt, 'id'> = {
-                  invoiceId: receiptFormInvoiceId,
-                  customerId: receiptFormCustomerId,
-                  customerName: receiptFormCustomerName,
-                  paidAt: receiptFormPaidAt,
+                  invoice_id: receiptFormInvoiceId,
+                  customer_id: receiptFormCustomerId,
+                  customer_name: receiptFormCustomerName,
+                  paid_at: receiptFormPaidAt,
                   amount: receiptFormAmount,
-                  paymentMethod: receiptFormPaymentMethod,
+                  payment_method: receiptFormPaymentMethod,
                 };
                 onCreateReceipt(payload);
                 setIsAddReceiptModalOpen(false);
@@ -1274,8 +1268,8 @@ const Financials: React.FC<FinancialsProps> = ({
                 setReceiptFormInvoiceId(id);
                 const inv = (invoices || []).find((x) => x.id === id);
                 if (inv) {
-                  setReceiptFormCustomerId(inv.customerId);
-                  setReceiptFormCustomerName(inv.customerName);
+                  setReceiptFormCustomerId(inv.customer_id);
+                  setReceiptFormCustomerName(inv.customer_name);
                   setReceiptFormAmount(inv.total || 0);
                 }
               }}
@@ -1283,7 +1277,7 @@ const Financials: React.FC<FinancialsProps> = ({
               <option value="">เลือกใบแจ้งหนี้</option>
               {(invoices || []).map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.id} — {i.customerName}
+                  {i.id} — {i.customer_name}
                 </option>
               ))}
             </Select>
@@ -1461,25 +1455,25 @@ const Financials: React.FC<FinancialsProps> = ({
               <div>
                 <div className="text-sm text-slate-600">ลูกค้า</div>
                 <div className="text-sm text-slate-800">
-                  {selectedInvoice.customerName}
+                  {selectedInvoice.customer_name}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-600">อ้างอิงใบเสนอราคา</div>
                 <div className="text-sm text-slate-800">
-                  {selectedInvoice.quotationId || '-'}
+                  {selectedInvoice.quotation_id || '-'}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-600">วันที่ออก</div>
                 <div className="text-sm text-slate-800">
-                  {formatThaiDate(selectedInvoice.issuedAt)}
+                  {formatThaiDate(selectedInvoice.issued_at)}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-600">วันครบกำหนด</div>
                 <div className="text-sm text-slate-800">
-                  {formatThaiDate(selectedInvoice.dueAt)}
+                  {formatThaiDate(selectedInvoice.due_at)}
                 </div>
               </div>
               <div>
@@ -1538,20 +1532,20 @@ const Financials: React.FC<FinancialsProps> = ({
             <div>
               <div className="text-sm text-slate-600">ลูกค้า</div>
               <Select
-                value={selectedInvoice.customerId}
+                value={selectedInvoice.customer_id}
                 onChange={(e) =>
                   setSelectedInvoice({
                     ...selectedInvoice,
-                    customerId: e.target.value,
-                    customerName:
+                    customer_id: e.target.value,
+                    customer_name:
                       customerMap.get(e.target.value) ||
-                      selectedInvoice.customerName,
+                      selectedInvoice.customer_name,
                   })
                 }
               >
                 {(customers || []).map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.first_name} {c.last_name}
                   </option>
                 ))}
               </Select>
@@ -1559,11 +1553,11 @@ const Financials: React.FC<FinancialsProps> = ({
             <div>
               <div className="text-sm text-slate-600">อ้างอิงใบเสนอราคา</div>
               <Select
-                value={selectedInvoice.quotationId || ''}
+                value={selectedInvoice.quotation_id || ''}
                 onChange={(e) =>
                   setSelectedInvoice({
                     ...selectedInvoice,
-                    quotationId: e.target.value || undefined,
+                    quotation_id: e.target.value || undefined,
                   })
                 }
               >
@@ -1579,11 +1573,11 @@ const Financials: React.FC<FinancialsProps> = ({
               <div className="text-sm text-slate-600">วันที่ออก</div>
               <Input
                 type="date"
-                value={selectedInvoice.issuedAt}
+                value={selectedInvoice.issued_at}
                 onChange={(e) =>
                   setSelectedInvoice({
                     ...selectedInvoice,
-                    issuedAt: e.target.value,
+                    issued_at: e.target.value,
                   })
                 }
               />
@@ -1592,11 +1586,11 @@ const Financials: React.FC<FinancialsProps> = ({
               <div className="text-sm text-slate-600">วันครบกำหนด</div>
               <Input
                 type="date"
-                value={selectedInvoice.dueAt}
+                value={selectedInvoice.due_at}
                 onChange={(e) =>
                   setSelectedInvoice({
                     ...selectedInvoice,
-                    dueAt: e.target.value,
+                    due_at: e.target.value,
                   })
                 }
               />

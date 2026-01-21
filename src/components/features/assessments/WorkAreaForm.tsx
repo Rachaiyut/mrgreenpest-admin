@@ -4,9 +4,9 @@ import { ProductSelectionModal } from '../../features/products/ProductSelectionM
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import {
   AssessmentWorkArea,
-  Product,
   AssessmentItem,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/assessment.interface';
+import { Product } from '@/src/types/entity/product.interface';
 
 const SERVICE_TYPES = [
   'กำจัดปลวก',
@@ -49,57 +49,54 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   const sortedConditions = useMemo(() => {
     if (!selectedPackage) return [];
     return [...(selectedPackage.conditions || [])].sort(
-      (a, b) => a.maxArea - b.maxArea
+      (a, b) => a.max_area - b.max_area
     );
   }, [selectedPackage]);
 
   const selectedCondition = useMemo(() => {
-    if (!selectedPackage || !area.areaSize) return null;
-    // Logic to find condition based on exact match of maxArea (since we use it as the value for radio)
-    // or finding the range if manually entered (though radio enforces exact match usually)
-    return sortedConditions.find((c) => c.maxArea === area.areaSize) || null;
-  }, [selectedPackage, area.areaSize, sortedConditions]);
+    if (!selectedPackage || !area.area_size) return null;
+    return sortedConditions.find((c) => c.max_area >= area.area_size!) || null;
+  }, [selectedPackage, area.area_size, sortedConditions]);
 
   // Auto-calculate price when Area (condition) changes
   useEffect(() => {
-    if (selectedPackage && area.areaSize) {
+    if (selectedPackage && area.area_size) {
       const condition = sortedConditions.find(
-        (c) => c.maxArea === area.areaSize
+        (c) => c.max_area >= area.area_size!
       );
       if (condition) {
-        const hasTermites = (area.serviceType || []).includes('กำจัดปลวก');
+        const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
         const priceToUse = hasTermites
-          ? condition.firstOfferPriceWithTermites
-          : condition.firstOfferPriceNoTermites;
+          ? condition.first_offer_price_with_termites
+          : condition.first_offer_price_no_termites;
 
-        // Update only if price is different to avoid infinite loops
-        if (area.packagePrice !== priceToUse) {
-          onAreaChange(index, { ...area, packagePrice: priceToUse });
+        if (area.package_price !== priceToUse) {
+          onAreaChange(index, { ...area, package_price: priceToUse });
         }
       }
     }
-  }, [area.areaSize, selectedPackage, area.serviceType, sortedConditions]);
+  }, [area.area_size, selectedPackage, area.service_type, sortedConditions]);
 
   const isPriceInvalid = useMemo(() => {
-    if (!selectedCondition || typeof area.packagePrice !== 'number')
+    if (!selectedCondition || typeof area.package_price !== 'number')
       return false;
-    return area.packagePrice < selectedCondition.minPrice;
-  }, [selectedCondition, area.packagePrice]);
+    return area.package_price < selectedCondition.min_price;
+  }, [selectedCondition, area.package_price]);
 
   useEffect(() => {
     const itemsCost = (area.items || []).reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     );
-    const packageCost = area.packagePrice || 0;
+    const packageCost = area.package_price || 0;
     const newTotalCost = packageCost + itemsCost;
 
-    const currentEstimatedCost = area.estimatedCost || 0;
+    const currentEstimatedCost = area.estimated_cost || 0;
 
     if (currentEstimatedCost !== newTotalCost) {
-      onAreaChange(index, { ...area, estimatedCost: newTotalCost });
+      onAreaChange(index, { ...area, estimated_cost: newTotalCost });
     }
-  }, [area.items, area.packagePrice]);
+  }, [area.items, area.package_price, area.estimated_cost, index, onAreaChange]);
 
   const handleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -107,7 +104,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     const { name, value } = e.target;
     const updatedArea: Partial<AssessmentWorkArea> = { ...area };
 
-    if (name === 'areaSize' || name === 'linearMeters') {
+    if (name === 'area_size' || name === 'linear_meters') {
       updatedArea[name] = value === '' ? undefined : parseFloat(value);
     } else {
       (updatedArea as any)[name] = value;
@@ -118,15 +115,15 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
   // Specific handler for Radio change
   const handleAreaSizeRadioChange = (size: number) => {
-    onAreaChange(index, { ...area, areaSize: size });
+    onAreaChange(index, { ...area, area_size: size });
   };
 
   const handleServiceTypeChange = (service: string) => {
-    const currentTypes = area.serviceType || [];
+    const currentTypes = area.service_type || [];
     const newTypes = currentTypes.includes(service)
       ? currentTypes.filter((s) => s !== service)
       : [...currentTypes, service];
-    onAreaChange(index, { ...area, serviceType: newTypes });
+    onAreaChange(index, { ...area, service_type: newTypes });
   };
 
   const handleAddProducts = (productIds: string[]) => {
@@ -134,7 +131,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
       const product = productMap.get(pid);
       return {
         id: `item-${Date.now()}-${Math.random()}`,
-        productId: pid,
+        product_id: pid,
         quantity: 1,
         price: product?.price || 0,
       };
@@ -163,18 +160,12 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   };
 
   const [measurementType, setMeasurementType] = useState<'sqm' | 'meter'>(
-    area.linearMeters && !area.areaSize ? 'meter' : 'sqm'
+    area.linear_meters && !area.area_size ? 'meter' : 'sqm'
   );
-
-  // ... existing effect hooks ...
 
   const handleMeasurementTypeChange = (type: 'sqm' | 'meter') => {
     setMeasurementType(type);
-    // Optional: clear the other value? kept for safety or clear it?
-    // User might toggle back and forth, keeping data is safer until save.
   };
-
-  // ... existing handlers ...
 
   return (
     <>
@@ -220,16 +211,16 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             htmlFor={`buildingType-${index}`}
           >
             <Input
-              name="buildingType"
-              value={area.buildingType || ''}
+              name="building_type"
+              value={area.building_type || ''}
               onChange={handleFieldChange}
               placeholder="บ้านเดี่ยวชั้นเดียว ,บ้านเดี่ยว 2 ชั้น , ทาวโฮม , อาคารพาณิชย์"
             />
           </FormField>
           <FormField label="ระบบใช้บริการ" htmlFor={`serviceSystem-${index}`}>
             <Select
-              name="serviceSystem"
-              value={area.serviceSystem || ''}
+              name="service_system"
+              value={area.service_system || ''}
               onChange={handleFieldChange}
             >
               <option value="">-- เลือกระบบ --</option>
@@ -279,9 +270,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             <FormField label="พื้นที่ (เมตร)" htmlFor={`linearMeters-${index}`}>
               <Input
                 id={`linearMeters-${index}`}
-                name="linearMeters"
+                name="linear_meters"
                 type="number"
-                value={area.linearMeters || ''}
+                value={area.linear_meters || ''}
                 onChange={handleFieldChange}
                 placeholder="ความยาวรอบรูป (ม.)"
                 required
@@ -299,29 +290,29 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                   {sortedConditions.map((condition) => (
                     <label
                       key={condition.id}
-                      className={`flex items-center p-2 border rounded-md cursor-pointer transition-colors ${area.areaSize === condition.maxArea ? 'bg-primary/10 border-primary ring-1 ring-primary' : 'bg-slate-50 hover:bg-slate-100'}`}
+                      className={`flex items-center p-2 border rounded-md cursor-pointer transition-colors ${area.area_size === condition.max_area ? 'bg-primary/10 border-primary ring-1 ring-primary' : 'bg-slate-50 hover:bg-slate-100'}`}
                     >
                       <input
                         type="radio"
                         name={`areaSizeRadio-${index}`}
-                        value={condition.maxArea}
-                        checked={area.areaSize === condition.maxArea}
+                        value={condition.max_area}
+                        checked={area.area_size === condition.max_area}
                         onChange={() =>
-                          handleAreaSizeRadioChange(condition.maxArea)
+                          handleAreaSizeRadioChange(condition.max_area)
                         }
                         className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
                       />
                       <span className="ml-2 text-sm text-slate-700">
-                        ไม่เกิน {condition.maxArea} ตร.ม.
+                        ไม่เกิน {condition.max_area} ตร.ม.
                       </span>
                     </label>
                   ))}
                 </div>
               ) : (
                 <Input
-                  name="areaSize"
+                  name="area_size"
                   type="number"
-                  value={area.areaSize || ''}
+                  value={area.area_size || ''}
                   onChange={handleFieldChange}
                   placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
                   required
@@ -337,7 +328,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <label key={service} className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={(area.serviceType || []).includes(service)}
+                  checked={(area.service_type || []).includes(service)}
                   onChange={() => handleServiceTypeChange(service)}
                 />
                 <span className="text-sm text-slate-800">{service}</span>
@@ -359,9 +350,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                       {selectedPackage.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {selectedPackage.numberOfVisits} ครั้ง /{' '}
-                      {selectedPackage.contractDuration} (เงื่อนไขที่ใช้:
-                      ไม่เกิน {selectedCondition.maxArea} ตร.ม.)
+                      {selectedPackage.number_of_visits} ครั้ง /{' '}
+                      {selectedPackage.contract_duration} (เงื่อนไขที่ใช้:
+                      ไม่เกิน {selectedCondition.max_area} ตร.ม.)
                     </div>
                   </div>
                   <div className="flex flex-col items-end">
@@ -371,16 +362,16 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                         type="number"
                         className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
                         value={
-                          area.packagePrice === undefined
+                          area.package_price === undefined
                             ? ''
-                            : area.packagePrice
+                            : area.package_price
                         }
                         onClick={(e) => e.stopPropagation()}
                         onChange={(e) => {
                           e.stopPropagation();
                           onAreaChange(index, {
                             ...area,
-                            packagePrice:
+                            package_price:
                               e.target.value === ''
                                 ? undefined
                                 : parseFloat(e.target.value),
@@ -394,14 +385,14 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                     {isPriceInvalid && (
                       <p className="text-xs text-red-600 mt-1">
                         ต่ำกว่าราคาขั้นต่ำ (฿
-                        {selectedCondition?.minPrice.toLocaleString('th-TH')})
+                        {selectedCondition?.min_price.toLocaleString('th-TH')})
                       </p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-          ) : area.areaSize && area.areaSize > 0 ? (
+          ) : area.area_size && area.area_size > 0 ? (
             <div className="pt-4 border-t">
               <FormField
                 label="ราคาบริการแพ็กเกจ"
@@ -411,12 +402,12 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                   id={`manual-package-price-${index}`}
                   type="number"
                   value={
-                    area.packagePrice === undefined ? '' : area.packagePrice
+                    area.package_price === undefined ? '' : area.package_price
                   }
                   onChange={(e) => {
                     onAreaChange(index, {
                       ...area,
-                      packagePrice:
+                      package_price:
                         e.target.value === ''
                           ? undefined
                           : parseFloat(e.target.value),
@@ -438,11 +429,11 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <Input
                 id={`manual-price-${index}`}
                 type="number"
-                value={area.packagePrice === undefined ? '' : area.packagePrice}
+                value={area.package_price === undefined ? '' : area.package_price}
                 onChange={(e) => {
                   onAreaChange(index, {
                     ...area,
-                    packagePrice:
+                    package_price:
                       e.target.value === ''
                         ? undefined
                         : parseFloat(e.target.value),
@@ -497,7 +488,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <tbody>
                 {(area.items || []).length > 0 ? (
                   area.items?.map((item, itemIndex) => {
-                    const product = productMap.get(item.productId);
+                    const product = productMap.get(item.product_id!);
                     return (
                       <tr key={item.id || itemIndex}>
                         <td className="p-1 text-center text-slate-600">
@@ -520,9 +511,10 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                             }
                             className="h-8 text-center"
                             min="1"
+                            
                           />
                         </td>
-                        <td className="p-1 text-slate-600">{product?.unit}</td>
+                        <td className="p-1 text-slate-600">{product?.unit?.name || '-'}</td>
                         <td className="p-1 w-32 text-right text-slate-800">
                           ฿
                           {(item.price * (item.quantity || 0)).toLocaleString(
@@ -558,7 +550,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         </div>
         <div className="text-right font-semibold text-slate-800 pt-2 border-t">
           ยอดรวมพื้นที่นี้: ฿
-          {(area.estimatedCost || 0).toLocaleString('th-TH', {
+          {(area.estimated_cost || 0).toLocaleString('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
@@ -568,7 +560,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         onAddProducts={handleAddProducts}
-        existingProductIds={(area.items || []).map((i) => i.productId!)}
+        existingProductIds={(area.items || []).map((i) => i.product_id!)}
+        products={products}
       />
     </>
   );

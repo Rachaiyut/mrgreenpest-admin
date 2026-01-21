@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { User, UserRole } from '@/src/libs/common/interface/entity/app.interface';
+import { User, UserRole } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 

@@ -1,15 +1,16 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { FieldJob, Assessment } from '@/src/libs/common/interface/entity/app.interface';
+import { FieldJob, Assessment, Warehouse } from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
-import { MOCK_WAREHOUSES, formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../constants';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: FieldJob | null;
   assessment: Assessment | null;
+  warehouses: Warehouse[];
 }
 
 export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
@@ -17,11 +18,12 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   onClose,
   job,
   assessment,
+  warehouses,
 }) => {
   const vehicle = useMemo(() => {
     if (!job?.vehicleId) return null;
-    return MOCK_WAREHOUSES.find((w) => w.id === job.vehicleId);
-  }, [job]);
+    return warehouses.find((w) => w.id === job.vehicleId);
+  }, [job, warehouses]);
 
   if (!isOpen || !job) return null;
 

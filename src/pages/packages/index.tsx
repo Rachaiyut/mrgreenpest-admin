@@ -6,10 +6,10 @@ import React, {
   useCallback,
 } from 'react';
 import { Card } from '../../components/common/Card';
-import { IProduct } from '@/src/libs/common/interface/entity/product.interface';
-import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
-import { Package as PackageApi } from '@/src/libs/api/package';
-import { Category as CategoryApi } from '@/src/libs/api/category';
+import { IProduct } from '@/src/types/entity/product.interface';
+import { ICategory } from '@/src/types/entity/category.interface';
+import { Package as PackageApi } from '@/src/api/package';
+import { Category as CategoryApi } from '@/src/api/category';
 import {
   PlusIcon,
   ManageIcon,

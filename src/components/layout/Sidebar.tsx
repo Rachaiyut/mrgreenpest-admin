@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Page } from '@/src/libs/router/page';
+import { Page } from '@/src/router/page';
 import { XIcon, MenuIcon } from '../../assets/icons/Icons';
 import { useNavigation } from '../../hooks/useNavigation';
 import { useFlyout } from '../../hooks/useFlyout';
@@ -11,12 +11,14 @@ interface SidebarProps {
   currentPage: Page;
   isOpen: boolean;
   toggleSidebar: () => void;
+  onPageChange: (page: Page) => void;
 }
 
 export const Sidebar: FC<SidebarProps> = ({
   currentPage,
   isOpen,
   toggleSidebar,
+  onPageChange,
 }) => {
   const filteredNavigationItems = useNavigation();
   const collapsed = !isOpen;

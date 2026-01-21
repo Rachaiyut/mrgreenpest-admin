@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { User } from '@/src/libs/common/interface/entity/app.interface';
+import { User } from '@/src/types/entity/app.interface';
 import {
   SectionTitle,
   DetailsList,

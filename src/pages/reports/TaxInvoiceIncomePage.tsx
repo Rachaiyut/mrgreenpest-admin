@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Invoice, Receipt, Customer } from '@/src/libs/common/interface/entity/app.interface';
+import { Invoice, Receipt, Customer } from '@/src/types/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
 import { useData } from '../../contexts/DataContext';
@@ -31,73 +31,48 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
     'ธันวาคม',
   ];
 
-  const data = useMemo(() => {
-    // Mock data logic similar to TotalIncomePage but focused on Tax Invoice details
-    const mocks = [
-      {
-        id: 'TAX-2025-001',
-        date: '02/12/2025',
-        rawDate: new Date(2025, 11, 2),
-        customerName: 'บริษัท เอ บี ซี จำกัด',
-        taxInvoiceName: 'บริษัท เอ บี ซี จำกัด (สำนักงานใหญ่)',
-        taxId: '1234567890123',
-        totalAmount: 12840,
-        vatAmount: 840,
-        amountExclVat: 12000,
-        whtAmount: 360,
-        bankFee: 0,
-        netReceived: 12480,
-        whtDeducted: true,
-        paymentChannel: 'KBank',
-      },
-      {
-        id: 'TAX-2025-002',
-        date: '05/12/2025',
-        rawDate: new Date(2025, 11, 5),
-        customerName: 'คุณสมชาย ใจดี',
-        taxInvoiceName: 'นายสมชาย ใจดี',
-        taxId: '-',
-        totalAmount: 5350,
-        vatAmount: 350,
-        amountExclVat: 5000,
-        whtAmount: 0,
-        bankFee: 0,
-        netReceived: 5350,
-        whtDeducted: false,
-        paymentChannel: 'Cash',
-      },
-      {
-        id: 'TAX-2025-003',
-        date: '15/12/2025',
-        rawDate: new Date(2025, 11, 15),
-        customerName: 'หจก. มีชัย',
-        taxInvoiceName: 'หจก. มีชัย',
-        taxId: '0987654321098',
-        totalAmount: 16050,
-        vatAmount: 1050,
-        amountExclVat: 15000,
-        whtAmount: 450,
-        bankFee: 15,
-        netReceived: 15585,
-        whtDeducted: true,
-        paymentChannel: 'SCB',
-      },
-    ];
+    const data = useMemo(() => {
+    return receipts
+      .filter((receipt) => {
+        const receiptDate = new Date(receipt.paid_at);
+        const matchesDate =
+          receiptDate.getMonth() === selectedMonth &&
+          receiptDate.getFullYear() === selectedYear;
 
-    return mocks.filter((item) => {
-      const matchesSearch =
-        item.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.taxId.includes(searchTerm);
+        const matchesSearch =
+          receipt.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          receipt.id.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const itemDate = item.rawDate;
-      const matchesDate =
-        itemDate.getMonth() === selectedMonth &&
-        itemDate.getFullYear() === selectedYear;
+        return matchesDate && matchesSearch;
+      })
+      .map((receipt) => {
+        // Calculate VAT (assuming amount includes VAT 7%)
+        const totalAmount = receipt.amount;
+        const amountExclVat = totalAmount / 1.07;
+        const vatAmount = totalAmount - amountExclVat;
+        
+        // Find customer to get tax ID (if available in customer entity, otherwise dash)
+        const customer = customers.find(c => c.id === receipt.customer_id);
+        const taxId = customer?.tax_id || '-'; // Assuming customer has tax_id, if not use placeholder
 
-      return matchesSearch && matchesDate;
-    });
-  }, [searchTerm, selectedMonth, selectedYear]);
+        return {
+          id: receipt.id,
+          date: new Date(receipt.paid_at).toLocaleDateString('th-TH'),
+          rawDate: new Date(receipt.paid_at),
+          customerName: receipt.customer_name,
+          taxInvoiceName: receipt.customer_name, // Default to customer name
+          taxId: taxId,
+          totalAmount: totalAmount,
+          vatAmount: vatAmount,
+          amountExclVat: amountExclVat,
+          whtAmount: 0, // Not in receipt data yet
+          bankFee: 0, // Not in receipt data yet
+          netReceived: totalAmount, // Assuming full amount received
+          whtDeducted: false,
+          paymentChannel: receipt.payment_method,
+        };
+      });
+  }, [receipts, customers, searchTerm, selectedMonth, selectedYear]);
 
   return (
     <div className="space-y-6 animate-fade-in text-nowrap pb-20">

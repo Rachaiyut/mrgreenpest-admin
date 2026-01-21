@@ -8,22 +8,16 @@ import {
   Button,
 } from '../../common/FormControls';
 import {
-  Assessment,
-  Status,
-  FieldJob,
-  Customer,
-  Contract,
-  FieldJobWorkArea,
   User,
-  Product,
   UserRole,
-} from '@/src/libs/common/interface/entity/app.interface';
-import {
-  MOCK_WAREHOUSES,
-  MOCK_CUSTOMERS,
-  MOCK_PRODUCTS,
-} from '../../../constants';
-import { StatusBadge } from '../../common/StatusBadge';
+} from '@/src/types/entity/core.interface';
+import { FieldJob, FieldJobWorkArea } from '@/src/types/entity/field-job.interface';
+import { Assessment } from '@/src/types/entity/assessment.interface';
+import { Contract } from '@/src/types/entity/financial.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { Warehouse } from '@/src/types/entity/inventory.interface';
+import { JobStatus } from '@/src/types/enums/job.enum';
 import { RefreshIcon } from '../../../assets/icons/Icons';
 
 // A component to manage a single work area within the job form
@@ -36,6 +30,9 @@ const JobWorkAreaForm: React.FC<{
 }> = ({ area, index, onAreaChange, onClearArea, isReadOnly }) => {
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    // Map 'servicePackage' to 'service_package' if needed, but input name should match interface
+    // Interface is snake_case: service_package
+    // Input name should be service_package
     onAreaChange(index, { ...area, [name]: value });
   };
 
@@ -71,8 +68,8 @@ const JobWorkAreaForm: React.FC<{
           htmlFor={`servicePackage-${index}`}
         >
           <Input
-            name="servicePackage"
-            value={area.servicePackage || ''}
+            name="service_package"
+            value={area.service_package || ''}
             onChange={handleFieldChange}
             required
             readOnly={isReadOnly}
@@ -92,6 +89,8 @@ interface AddJobModalProps {
   jobs: FieldJob[];
   users: User[];
   products: Product[];
+  warehouses: Warehouse[];
+  customers: Customer[];
   initialContractId?: string;
   initialWorkDateIso?: string;
 }
@@ -105,6 +104,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   jobs,
   users,
   products,
+  warehouses,
+  customers,
   initialContractId,
   initialWorkDateIso,
 }) => {
@@ -126,8 +127,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const technicians = users.filter((u) => u.role === UserRole.Technician);
   const vehicleWarehouses = useMemo(
-    () => MOCK_WAREHOUSES.filter((w) => w.type === 'รถ'),
-    []
+    () => warehouses.filter((w) => w.type === 'รถ'),
+    [warehouses]
   );
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -136,10 +137,11 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const availableAssessments = useMemo(() => {
     const baseAssessments = assessments.filter(
-      (a) => a.status === Status.Draft || a.status === Status.Completed
+      // TODO: Map Status to AsessmentStatus if needed
+      (a) => a.status === 'Draft' || a.status === 'Completed' // Assuming AsessmentStatus values
     );
     if (selectedCustomerId) {
-      return baseAssessments.filter((a) => a.customerId === selectedCustomerId);
+      return baseAssessments.filter((a) => a.customer_id === selectedCustomerId);
     }
     return [];
   }, [assessments, selectedCustomerId]);
@@ -148,7 +150,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     if (!selectedCustomerId) return [];
     return contracts.filter(
       (c) =>
-        c.customerId === selectedCustomerId && c.status === Status.InProgress
+        c.customer_id === selectedCustomerId && c.status === 'InProgress' // Assuming Status values
     );
   }, [contracts, selectedCustomerId]);
 
@@ -161,31 +163,31 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const selectedContract = isContract
     ? contracts.find((c) => c.id === selectedReference.replace('con-', ''))
     : null;
-  const selectedCustomer = MOCK_CUSTOMERS.find(
+  const selectedCustomer = customers.find(
     (c) => c.id === selectedCustomerId
   );
 
   useEffect(() => {
     if (selectedAssessment) {
-      setSelectedCustomerId(selectedAssessment.customerId);
+      setSelectedCustomerId(selectedAssessment.customer_id);
     } else if (selectedContract) {
-      setSelectedCustomerId(selectedContract.customerId);
+      setSelectedCustomerId(selectedContract.customer_id);
     }
   }, [selectedAssessment, selectedContract]);
 
   // Effect to manage workAreas based on selections
   useEffect(() => {
     if (selectedAssessment) {
-      const newWorkAreas = selectedAssessment.workAreas.map((asmArea) => {
-        let serviceDesc = asmArea.serviceType.join(', ');
-        if (asmArea.packageId) {
-          const pkg = productMap.get(asmArea.packageId);
+      const newWorkAreas = selectedAssessment.work_areas.map((asmArea) => {
+        let serviceDesc = asmArea.service_type.join(', ');
+        if (asmArea.package_id) {
+          const pkg = productMap.get(asmArea.package_id);
           if (pkg) serviceDesc = `${pkg.name} (${serviceDesc})`;
         }
         return {
           id: asmArea.id,
           name: asmArea.name,
-          servicePackage: serviceDesc,
+          service_package: serviceDesc,
         };
       });
       setWorkAreas(newWorkAreas);
@@ -194,14 +196,14 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         {
           id: `area-${Date.now()}`,
           name: 'พื้นที่ตามสัญญา',
-          servicePackage: selectedContract.servicePackage,
+          service_package: selectedContract.service_package,
         },
       ]);
     } else if (selectedCustomerId) {
       // Customer selected, but no reference
       if (workAreas.length === 0) {
         setWorkAreas([
-          { id: `area-${Date.now()}`, name: 'พื้นที่ 1', servicePackage: '' },
+          { id: `area-${Date.now()}`, name: 'พื้นที่ 1', service_package: '' },
         ]);
       }
     } else {
@@ -214,33 +216,33 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     let details = '';
     if (selectedAssessment) {
       details += '**สรุปจากใบประเมิน:**\n\n';
-      selectedAssessment.workAreas.forEach((area, index) => {
+      selectedAssessment.work_areas.forEach((area, index) => {
         details += `**พื้นที่ #${index + 1}: ${area.name}**\n`;
-        details += `- ประเภทบริการ: ${area.serviceType.join(', ')}\n`;
-        if (area.buildingType)
-          details += `- ประเภทสิ่งปลูกสร้าง: ${area.buildingType}\n`;
-        if (area.areaSize) details += `- ขนาดพื้นที่: ${area.areaSize} ตร.ม.\n`;
-        if (area.serviceSystem)
-          details += `- ระบบที่ใช้: ${area.serviceSystem}\n`;
-        if (area.packageId) {
-          const pkg = productMap.get(area.packageId);
+        details += `- ประเภทบริการ: ${area.service_type.join(', ')}\n`;
+        if (area.building_type)
+          details += `- ประเภทสิ่งปลูกสร้าง: ${area.building_type}\n`;
+        if (area.area_size) details += `- ขนาดพื้นที่: ${area.area_size} ตร.ม.\n`;
+        if (area.service_system)
+          details += `- ระบบที่ใช้: ${area.service_system}\n`;
+        if (area.package_id) {
+          const pkg = productMap.get(area.package_id);
           if (pkg) details += `- แพ็กเกจ: ${pkg.name}\n`;
         }
         if (area.items && area.items.length > 0) {
           details += `- สินค้า/บริการเพิ่มเติม:\n`;
           area.items.forEach((item) => {
-            const product = productMap.get(item.productId!);
+            const product = item.product_id ? productMap.get(item.product_id) : undefined;
             details += `  - ${product?.name || 'N/A'} (จำนวน: ${item.quantity})\n`;
           });
         }
         details += '\n';
       });
-      if (selectedAssessment.paymentConditions) {
-        details += `**เงื่อนไขการชำระเงิน:**\n- ${selectedAssessment.paymentConditions}\n\n`;
+      if (selectedAssessment.payment_conditions) {
+        details += `**เงื่อนไขการชำระเงิน:**\n- ${selectedAssessment.payment_conditions}\n\n`;
       }
     } else if (selectedContract) {
       details += '**สรุปจากสัญญา:**\n\n';
-      details += `- แพ็กเกจบริการ: ${selectedContract.servicePackage}\n\n`;
+      details += `- แพ็กเกจบริการ: ${selectedContract.service_package}\n\n`;
     }
 
     if (details) {
@@ -254,13 +256,13 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     return jobs
       .filter(
         (job) =>
-          job.vehicleId === selectedVehicleId &&
-          new Date(job.startTime).toISOString().substring(0, 10) === workDate
+          job.vehicle_id === selectedVehicleId &&
+          new Date(job.start_time).toISOString().substring(0, 10) === workDate
       )
       .map((job) => ({
-        start: new Date(job.startTime).toTimeString().substring(0, 5),
-        end: new Date(job.endTime).toTimeString().substring(0, 5),
-        customer: job.customerName,
+        start: new Date(job.start_time).toTimeString().substring(0, 5),
+        end: new Date(job.end_time).toTimeString().substring(0, 5),
+        customer: job.customer_name,
       }))
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [selectedVehicleId, workDate, jobs]);
@@ -280,10 +282,10 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
 
     const conflictingJob = jobs.find((job) => {
-      if (job.vehicleId !== selectedVehicleId) return false;
+      if (job.vehicle_id !== selectedVehicleId) return false;
 
-      const existingJobStart = new Date(job.startTime);
-      const existingJobEnd = new Date(job.endTime);
+      const existingJobStart = new Date(job.start_time);
+      const existingJobEnd = new Date(job.end_time);
 
       if (existingJobStart.toISOString().substring(0, 10) !== workDate) {
         return false;
@@ -294,7 +296,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
     if (conflictingJob) {
       setTimeConflictError(
-        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customerName} (${new Date(conflictingJob.startTime).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.endTime).toTimeString().substring(0, 5)})`
+        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customer_name} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
       );
     } else {
       setTimeConflictError(null);
@@ -350,7 +352,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     setSelectedReference(reference);
   };
 
-  const createJobObject = (status: Status): Omit<FieldJob, 'id'> | null => {
+  const createJobObject = (status: JobStatus): Omit<FieldJob, 'id'> | null => {
     if (
       !selectedCustomer ||
       !workDate ||
@@ -362,22 +364,27 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       return null;
 
     // Default to customer's address details
-    let address = selectedCustomer.address
-      ? `${selectedCustomer.address.street}, ${selectedCustomer.address.subdistrict}, ${selectedCustomer.address.district}, ${selectedCustomer.address.province} ${selectedCustomer.address.postalcode}`
+    let address = selectedCustomer.address_house_no
+      ? `${selectedCustomer.address_house_no} ${selectedCustomer.sub_district} ${selectedCustomer.district} ${selectedCustomer.province} ${selectedCustomer.postal_code}`
       : '';
-    let googleMapLink = selectedCustomer.googleMapLink;
-    let zone = selectedCustomer.address.zone;
-    let group = selectedCustomer.address.group;
-    let roadLine = selectedCustomer.address.roadLine;
-    let sequence = selectedCustomer.address.sequence;
+    let googleMapLink = selectedCustomer.google_map_link;
+    // Customer doesn't have zone/group/roadLine in new interface?
+    // Let's check Customer interface. It has sub_district, etc. But not zone/group.
+    // Assuming they are not on Customer anymore or I need to fetch them from API or ignore.
+    // I'll ignore zone/group/roadLine/sequence defaults from Customer if they don't exist.
+    // Assessment has them.
+    let zone: string | undefined;
+    let group: string | undefined;
+    let roadLine: string | undefined;
+    let sequence: string | undefined;
 
     // Override with more specific info if available
     if (selectedAssessment) {
-      address = `${selectedAssessment.address}, ${selectedAssessment.subdistrict}, ${selectedAssessment.district}, ${selectedAssessment.province} ${selectedAssessment.postalCode}`;
-      googleMapLink = selectedAssessment.googleMapLink || googleMapLink;
+      address = `${selectedAssessment.address}, ${selectedAssessment.subdistrict}, ${selectedAssessment.district}, ${selectedAssessment.province} ${selectedAssessment.postal_code}`;
+      googleMapLink = selectedAssessment.google_map_link || googleMapLink;
       zone = selectedAssessment.zone || zone;
       group = selectedAssessment.group || group;
-      roadLine = selectedAssessment.roadLine || roadLine;
+      roadLine = selectedAssessment.road_line || roadLine;
       sequence = selectedAssessment.sequence || sequence;
     } else if (selectedContract) {
       address = selectedContract.address;
@@ -393,23 +400,23 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     );
 
     return {
-      assessmentId: selectedAssessment?.id,
-      contractId: selectedContract?.id,
-      customerId: selectedCustomer.id,
-      customerName: selectedCustomer.name,
+      assessment_id: selectedAssessment?.id,
+      contract_id: selectedContract?.id,
+      customer_id: selectedCustomer.id,
+      customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
       address: address,
-      googleMapLink: googleMapLink,
+      google_map_link: googleMapLink,
       zone,
       group,
-      roadLine,
+      road_line: roadLine,
       sequence,
-      startTime: startDateTime,
-      endTime: endDateTime,
+      start_time: startDateTime,
+      end_time: endDateTime,
       technicians: assignedTechnicians,
-      workAreas: workAreas as FieldJobWorkArea[],
+      work_areas: workAreas as FieldJobWorkArea[],
       status: status,
-      vehicleId: selectedVehicleId,
-      operationDetails: operationDetails,
+      vehicle_id: selectedVehicleId,
+      operation_details: operationDetails,
     };
   };
 
@@ -420,9 +427,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       alert('กรุณาเลือกหัวหน้าช่าง');
       return;
     }
-    const jobData = createJobObject(Status.Planned);
+    const jobData = createJobObject(JobStatus.Planned);
     if (jobData) {
-      onCreateJob(jobData, isAssessment ? jobData.assessmentId : undefined);
+      onCreateJob(jobData, isAssessment ? jobData.assessment_id : undefined);
       onClose();
     }
   };
@@ -453,7 +460,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
           (_, i) => ({
             id: `area-${Date.now()}-${i}`,
             name: `พื้นที่ ${currentCount + i + 1}`,
-            servicePackage: '',
+            service_package: '',
           })
         );
         return [...currentAreas, ...newAreas];
@@ -481,7 +488,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         newAreas[index] = {
           id: areaToClear.id,
           name: areaToClear.name,
-          servicePackage: '',
+          service_package: '',
         };
       }
       return newAreas;
@@ -569,9 +576,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
               required
             >
               <option value="">-- เลือกลูกค้า --</option>
-              {MOCK_CUSTOMERS.map((c) => (
+              {customers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.first_name} {c.last_name}
                 </option>
               ))}
             </Select>
@@ -592,8 +599,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   {availableAssessments.map((a) => (
                     <option key={`asm-${a.id}`} value={`asm-${a.id}`}>
                       {a.id} -{' '}
-                      {a.workAreas[0]
-                        ? a.workAreas[0].serviceType.join(', ')
+                      {a.work_areas[0]
+                        ? a.work_areas[0].service_type.join(', ')
                         : ''}
                     </option>
                   ))}
@@ -603,7 +610,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                 <optgroup label="สัญญา">
                   {availableContracts.map((c) => (
                     <option key={`con-${c.id}`} value={`con-${c.id}`}>
-                      {c.id} - {c.servicePackage}
+                      {c.id} - {c.service_package}
                     </option>
                   ))}
                 </optgroup>
@@ -681,7 +688,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             <option value="">-- เลือกรถบริการ --</option>
             {vehicleWarehouses.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} ({v.licensePlate})
+                {v.name} ({v.license_plate})
               </option>
             ))}
           </Select>

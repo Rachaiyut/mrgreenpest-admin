@@ -2,13 +2,13 @@ import { useState, useCallback } from 'react';
 import type { FC } from 'react';
 
 // Base
-import { ILOCAL_STORAGE } from './libs/common/interface/entity/auth.interface';
+import { ILOCAL_STORAGE } from '@/src/types/entity/auth.interface';
 
 // Router
-import { AppRouter } from './libs/router/router';
+import { AppRouter } from '@/src/router/router';
 
 // Service
-import { Auth } from './libs/api/auth';
+import { Auth } from '@/src/api/auth';
 
 // Context
 import { DataProvider } from './contexts/DataContext';

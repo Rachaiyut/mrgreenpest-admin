@@ -4,9 +4,9 @@ import { FormField, Input, Button } from '../../components/common/FormControls';
 import { useNavigate } from 'react-router-dom';
 
 // Interface
-import { ILoginPayload } from '@/src/libs/common/interface/entity/auth.interface';
-import { ILoginProps } from '@/src/libs/common/interface/prop/login.props';
-import { Auth } from '@/src/libs/api/auth';
+import { ILoginPayload } from '@/src/types/entity/auth.interface';
+import { ILoginProps } from '@/src/types/prop/login.props';
+import { Auth } from '@/src/api/auth';
 
 const Login: React.FC<ILoginProps> = ({ onLogin }) => {
   const [citizenId, setCitizenId] = useState('');
@@ -42,8 +42,6 @@ const Login: React.FC<ILoginProps> = ({ onLogin }) => {
       
       const response = await Auth.login(payload);
       
-      console.log("response", response)
-
       if (response.access_token) {
         if (remember) {
           localStorage.setItem('rememberMe', 'true');

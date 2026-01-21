@@ -5,7 +5,7 @@ import {
   UserRole,
   UserWallet,
   WalletTransaction,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import {
   PlusIcon,
   ShieldCheckIcon,

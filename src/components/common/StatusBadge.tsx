@@ -1,12 +1,16 @@
 import React from 'react';
-import { Status } from '@/src/libs/common/interface/entity/app.interface';
+import { Status } from '@/src/types/entity/app.interface';
+import { JobStatus } from '@/src/types/enums/job.enum';
+import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
+import { InvoiceStatus } from '@/src/types/enums/financial.enum';
 
 interface StatusBadgeProps {
-  status: Status;
+  status: Status | JobStatus | AsessmentStatus | InvoiceStatus | string;
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const statusColors: Record<Status, string> = {
+  const statusColors: Record<string, string> = {
+    // Core Status (Thai)
     [Status.Draft]: 'bg-slate-100 text-slate-600',
     [Status.Scheduled]: 'bg-blue-100 text-blue-700',
     [Status.Planned]: 'bg-sky-100 text-sky-700',
@@ -26,6 +30,25 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [Status.UnderReview]: 'bg-violet-100 text-violet-700',
     [Status.Revise]: 'bg-pink-100 text-pink-700',
     [Status.Closed]: 'bg-zinc-100 text-zinc-700',
+
+    // Job Status (English)
+    [JobStatus.Scheduled]: 'bg-blue-100 text-blue-700',
+    [JobStatus.InProgress]: 'bg-amber-100 text-amber-700',
+    [JobStatus.Completed]: 'bg-green-100 text-green-700',
+    [JobStatus.Cancelled]: 'bg-red-100 text-red-700',
+    [JobStatus.Pending]: 'bg-yellow-100 text-yellow-700',
+
+    // Assessment Status (English)
+    [AsessmentStatus.Draft]: 'bg-slate-100 text-slate-600',
+    [AsessmentStatus.PendingApproval]: 'bg-orange-100 text-orange-700',
+    [AsessmentStatus.Scheduled]: 'bg-blue-100 text-blue-700',
+    [AsessmentStatus.Completed]: 'bg-green-100 text-green-700',
+
+    // Invoice Status (English)
+    [InvoiceStatus.Paid]: 'bg-green-100 text-green-700',
+    [InvoiceStatus.Overdue]: 'bg-rose-100 text-rose-700',
+    [InvoiceStatus.Cancelled]: 'bg-red-100 text-red-700',
+    [InvoiceStatus.Pending]: 'bg-yellow-100 text-yellow-700',
   };
 
   return (

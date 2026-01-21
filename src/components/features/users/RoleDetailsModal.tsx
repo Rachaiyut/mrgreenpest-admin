@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import { Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { UserRole } from '@/src/libs/common/interface/entity/app.interface';
+import { UserRole } from '@/src/types/entity/app.interface';
 
 interface RoleDetailsModalProps {
   isOpen: boolean;
@@ -10,8 +10,8 @@ interface RoleDetailsModalProps {
   role: UserRole | null;
 }
 
-// Mock permissions for demonstration
-const MOCK_ROLE_PERMISSIONS: Record<UserRole, string[]> = {
+// Default permissions configuration
+const ROLE_PERMISSIONS_CONFIG: Record<UserRole, string[]> = {
   [UserRole.Admin]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
   [UserRole.Sales]: ['ดู', 'สร้าง', 'แก้ไข'],
   [UserRole.Accounting]: ['ดู', 'สร้าง', 'อนุมัติ'],
@@ -84,7 +84,7 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
 }) => {
   if (!isOpen || !role) return null;
 
-  const rolePermissions = MOCK_ROLE_PERMISSIONS[role] || [];
+  const rolePermissions = ROLE_PERMISSIONS_CONFIG[role] || [];
 
   return (
     <Modal

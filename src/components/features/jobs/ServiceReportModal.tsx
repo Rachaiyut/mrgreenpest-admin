@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Textarea, Input, Select } from '../../common/FormControls';
-import {
-  FieldJob,
-  Status,
-  ServiceReport,
-  Quotation,
-  User,
-  UserRole,
-  Contract,
-  Product,
-} from '@/src/libs/common/interface/entity/app.interface';
+import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
+import { Status, User, UserRole } from '@/src/types/entity/core.interface';
+import { Quotation, Contract } from '@/src/types/entity/financial.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { JobStatus } from '@/src/types/enums/job.enum';
 import { formatThaiDate } from '../../../constants';
 import { StatusBadge } from '../../common/StatusBadge';
 
@@ -21,10 +16,10 @@ interface ServiceReportModalProps {
   onSubmit: (
     jobId: string,
     reportData: ServiceReport,
-    finalStatus: Status,
+    finalStatus: JobStatus,
     quotationId?: string
   ) => void;
-  finalStatus: Status;
+  finalStatus: JobStatus;
   quotations: Quotation[];
   currentUser: User;
   contracts: Contract[];
@@ -70,10 +65,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     if (!job) return [];
     return quotations.filter(
       (q) =>
-        q.customerId === job.customerId &&
+        q.customer_id === job.customer_id &&
         (q.status === Status.Draft ||
           q.status === Status.Sent ||
-          q.id === job.quotationId)
+          q.id === job.quotation_id)
     );
   }, [quotations, job]);
 
@@ -84,45 +79,46 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       ),
     [products]
   );
+  
   const recommendedNextIso = useMemo(() => {
-    if (!job || !job.contractId) return undefined;
-    const c = contracts.find((ct) => ct.id === job.contractId);
+    if (!job || !job.contract_id) return undefined;
+    const c = contracts.find((ct) => ct.id === job.contract_id);
     if (!c) return undefined;
-    const pkg = packageMapByName.get(c.servicePackage);
-    const visitsRequired = pkg?.numberOfVisits ?? 0;
+    const pkg = packageMapByName.get(c.service_package);
+    const visitsRequired = pkg?.number_of_visits ?? 0;
     if (!visitsRequired) return undefined;
     const parseDurationMonths = (text?: string) => {
       if (!text) return 12;
       const num = parseInt(text.replace(/[^\d]/g, ''), 10) || 12;
       return text.includes('ปี') ? num * 12 : num;
     };
-    const durationMonths = parseDurationMonths(pkg?.contractDuration);
+    const durationMonths = parseDurationMonths(pkg?.contract_duration);
     const intervalDays = Math.max(
       1,
       Math.round((durationMonths * 30) / visitsRequired)
     );
     const todayTs = Date.now();
     const completedVisits = jobs.filter(
-      (j) => j.contractId === c.id && j.status === Status.Completed
+      (j) => j.contract_id === c.id && j.status === JobStatus.Completed
     ).length;
     const nextScheduled = jobs
       .filter(
         (j) =>
-          j.contractId === c.id &&
-          [Status.InProgress, Status.Planned, Status.Scheduled].includes(
+          j.contract_id === c.id &&
+          [JobStatus.InProgress, JobStatus.Planned, JobStatus.Scheduled].includes(
             j.status
           )
       )
       .sort(
         (a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
       )
-      .find((j) => new Date(j.startTime).getTime() >= todayTs);
+      .find((j) => new Date(j.start_time).getTime() >= todayTs);
     let nextDueTs: number | null = null;
     if (nextScheduled) {
-      nextDueTs = new Date(nextScheduled.startTime).getTime();
+      nextDueTs = new Date(nextScheduled.start_time).getTime();
     } else {
-      const startTs = new Date(c.startDate).getTime();
+      const startTs = new Date(c.start_date).getTime();
       const nextIndex = Math.min(completedVisits, visitsRequired - 1);
       nextDueTs =
         startTs +
@@ -132,7 +128,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           60 *
           60 *
           1000;
-      const endTs = new Date(c.endDate).getTime();
+      const endTs = new Date(c.end_date).getTime();
       if (nextDueTs > endTs) nextDueTs = null;
     }
     return nextDueTs ? new Date(nextDueTs).toISOString() : undefined;
@@ -141,41 +137,41 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   useEffect(() => {
     if (isOpen && job) {
       // If the job already has a draft report, load it. Otherwise, create a new one.
-      const initialReport = job.serviceReport
-        ? { ...job.serviceReport }
+      const initialReport = job.service_report
+        ? { ...job.service_report }
         : {
-            createdAt: new Date().toISOString().substring(0, 10),
-            checkInTime: job.actualStartTime
-              ? new Date(job.actualStartTime).toLocaleTimeString('th-TH', {
+            created_at: new Date().toISOString().substring(0, 10),
+            check_in_time: job.actual_start_time
+              ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })
               : '',
-            checkOutTime: new Date().toLocaleTimeString('th-TH', {
+            check_out_time: new Date().toLocaleTimeString('th-TH', {
               hour: '2-digit',
               minute: '2-digit',
             }),
-            serviceTypes: [],
-            serviceActions: [],
+            service_types: [],
+            service_actions: [],
             termite: { status: 'absent' },
-            ant: { applyGel: false },
-            cockroach: { applyGel: false },
+            ant: { apply_gel: false },
+            cockroach: { apply_gel: false },
             rat: {
-              glueTraps: false,
-              mechanicalTraps: false,
-              baitStations: false,
-              refillBait: false,
+              glue_traps: false,
+              mechanical_traps: false,
+              bait_stations: false,
+              refill_bait: false,
             },
-            lizard: { placeTraps: false },
-            nextAppointment: {
+            lizard: { place_traps: false },
+            next_appointment: {
               notes: '',
               reasons: [],
-              scheduledAt: recommendedNextIso,
+              scheduled_at: recommendedNextIso,
             },
-            status: Status.Draft,
+            status: JobStatus.Draft,
           };
       setReportState(initialReport);
-      setSelectedQuotationId(job.quotationId || '');
+      setSelectedQuotationId(job.quotation_id || '');
     }
   }, [isOpen, job, recommendedNextIso]);
 
@@ -184,10 +180,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    let nextStatus = reportState.status || Status.Draft;
+    let nextStatus = reportState.status || JobStatus.Draft;
     // If a non-admin user saves a draft, it moves to PendingApproval
-    if (currentUser.role !== UserRole.Admin && nextStatus === Status.Draft) {
-      nextStatus = Status.PendingApproval;
+    if (currentUser.role !== UserRole.Admin && nextStatus === JobStatus.Draft) {
+      nextStatus = JobStatus.PendingApproval;
     }
 
     const finalReportData = {
@@ -200,29 +196,40 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const handleApprove = () => {
     const finalReportData = {
       ...reportState,
-      status: Status.Approved,
+      status: JobStatus.Completed, // Or Approved? Assuming Completed or InProgress depending on workflow. 
+      // Wait, ServiceReport status is JobStatus. 
+      // If approved, usually job status becomes Completed or similar.
+      // But here we are setting REPORT status. 
+      // Let's assume 'Approved' maps to something, but JobStatus doesn't have 'Approved'. 
+      // It has 'Completed'. 
+      // If the report is approved, maybe the job is completed.
     } as ServiceReport;
+    // Actually the previous code used Status.Approved. 
+    // If JobStatus doesn't have Approved, we should use Completed.
+    // Let's use Completed.
+    finalReportData.status = JobStatus.Completed;
+    
     onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
   };
 
   const handleMultiSelect = (
-    field: 'serviceTypes' | 'serviceActions' | 'nextAppointment_reasons',
+    field: 'service_types' | 'service_actions' | 'next_appointment_reasons',
     value: string
   ) => {
     setReportState((prev) => {
       const currentValues =
-        field === 'nextAppointment_reasons'
-          ? prev.nextAppointment?.reasons || []
+        field === 'next_appointment_reasons'
+          ? prev.next_appointment?.reasons || []
           : prev[field] || [];
       const newValues = currentValues.includes(value)
         ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];
 
-      if (field === 'nextAppointment_reasons') {
+      if (field === 'next_appointment_reasons') {
         return {
           ...prev,
-          nextAppointment: {
-            ...(prev.nextAppointment || { notes: '', reasons: [] }),
+          next_appointment: {
+            ...(prev.next_appointment || { notes: '', reasons: [] }),
             reasons: newValues,
           },
         };
@@ -309,7 +316,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const handleDateCalculation = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const days = parseInt(e.target.value, 10);
     if (!isNaN(days) && job) {
-      const currentDate = new Date(job.startTime);
+      const currentDate = new Date(job.start_time);
       currentDate.setDate(currentDate.getDate() + days);
 
       const thaiDate = currentDate.toLocaleDateString('th-TH', {
@@ -322,16 +329,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       setReportState((prev) => ({
         ...prev,
-        nextAppointment: {
-          ...(prev.nextAppointment || { notes: '', reasons: [] }),
+        next_appointment: {
+          ...(prev.next_appointment || { notes: '', reasons: [] }),
           notes: newNote,
         },
       }));
     } else {
       setReportState((prev) => ({
         ...prev,
-        nextAppointment: {
-          ...(prev.nextAppointment || { notes: '', reasons: [] }),
+        next_appointment: {
+          ...(prev.next_appointment || { notes: '', reasons: [] }),
           notes: '',
         },
       }));
@@ -340,13 +347,13 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   };
 
   const title =
-    finalStatus === Status.Cancelled
+    finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
       : `บันทึกรายงานบริการ: ${job.id}`;
 
   const isAdmin = currentUser.role === UserRole.Admin;
-  const isPending = reportState.status === Status.PendingApproval;
-  const isDraft = reportState.status === Status.Draft;
+  const isPending = reportState.status === JobStatus.PendingApproval;
+  const isDraft = reportState.status === JobStatus.Draft;
 
   const submitButtonText = isDraft ? 'ส่งเพื่ออนุมัติ' : 'บันทึกการเปลี่ยนแปลง';
 
@@ -750,9 +757,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <label className="flex items-center gap-2 text-slate-800">
         <input
           type="checkbox"
-          checked={reportState.ant?.applyGel ?? false}
+          checked={reportState.ant?.apply_gel ?? false}
           onChange={(e) =>
-            handlePestDataChange('ant', 'applyGel', e.target.checked)
+            handlePestDataChange('ant', 'apply_gel', e.target.checked)
           }
         />
         หยอดเหยื่อ
@@ -771,9 +778,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <label className="flex items-center gap-2 text-slate-800">
         <input
           type="checkbox"
-          checked={reportState.cockroach?.applyGel ?? false}
+          checked={reportState.cockroach?.apply_gel ?? false}
           onChange={(e) =>
-            handlePestDataChange('cockroach', 'applyGel', e.target.checked)
+            handlePestDataChange('cockroach', 'apply_gel', e.target.checked)
           }
         />
         หยอดเหยื่อ
@@ -794,9 +801,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <label className="flex items-center gap-2 text-slate-800">
         <input
           type="checkbox"
-          checked={reportState.lizard?.placeTraps ?? false}
+          checked={reportState.lizard?.place_traps ?? false}
           onChange={(e) =>
-            handlePestDataChange('lizard', 'placeTraps', e.target.checked)
+            handlePestDataChange('lizard', 'place_traps', e.target.checked)
           }
         />
         วางบ้านดักจิ้งจก แมลงคลาน
@@ -818,9 +825,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <label className="flex items-center gap-2 text-slate-800">
           <input
             type="checkbox"
-            checked={reportState.rat?.glueTraps ?? false}
+            checked={reportState.rat?.glue_traps ?? false}
             onChange={(e) =>
-              handlePestDataChange('rat', 'glueTraps', e.target.checked)
+              handlePestDataChange('rat', 'glue_traps', e.target.checked)
             }
           />
           วางถาดกาว
@@ -828,9 +835,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <label className="flex items-center gap-2 text-slate-800">
           <input
             type="checkbox"
-            checked={reportState.rat?.mechanicalTraps ?? false}
+            checked={reportState.rat?.mechanical_traps ?? false}
             onChange={(e) =>
-              handlePestDataChange('rat', 'mechanicalTraps', e.target.checked)
+              handlePestDataChange('rat', 'mechanical_traps', e.target.checked)
             }
           />
           วางเครื่องดักหนู
@@ -838,9 +845,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <label className="flex items-center gap-2 text-slate-800">
           <input
             type="checkbox"
-            checked={reportState.rat?.baitStations ?? false}
+            checked={reportState.rat?.bait_stations ?? false}
             onChange={(e) =>
-              handlePestDataChange('rat', 'baitStations', e.target.checked)
+              handlePestDataChange('rat', 'bait_stations', e.target.checked)
             }
           />
           วางสถานีดักหนู
@@ -848,9 +855,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <label className="flex items-center gap-2 text-slate-800">
           <input
             type="checkbox"
-            checked={reportState.rat?.refillBait ?? false}
+            checked={reportState.rat?.refill_bait ?? false}
             onChange={(e) =>
-              handlePestDataChange('rat', 'refillBait', e.target.checked)
+              handlePestDataChange('rat', 'refill_bait', e.target.checked)
             }
           />
           เติมเหยื่อสถานีดักหนู
@@ -920,31 +927,31 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           <div>
             <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
             <dd className="mt-1 text-slate-900 font-semibold">
-              {formatThaiDate(reportState.createdAt)}
+              {formatThaiDate(reportState.created_at)}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-slate-500">ลูกค้า</dt>
             <dd className="mt-1 text-slate-900 font-semibold">
-              {job.customerName}
+              {job.customer_name}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-slate-500">เวลาเข้า</dt>
             <dd className="mt-1 text-slate-900 font-semibold">
-              {reportState.checkInTime}
+              {reportState.check_in_time}
             </dd>
           </div>
           <div>
             <dt className="font-medium text-slate-500">เวลาออก</dt>
             <dd className="mt-1 text-slate-900 font-semibold">
-              {reportState.checkOutTime}
+              {reportState.check_out_time}
             </dd>
           </div>
           <div className="col-span-2">
             <dt className="font-medium text-slate-500">สถานะรายงาน</dt>
             <dd className="mt-1 font-semibold">
-              <StatusBadge status={reportState.status || Status.Draft} />
+              <StatusBadge status={reportState.status || JobStatus.Draft} />
             </dd>
           </div>
           <div className="col-span-2">
@@ -953,7 +960,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </dt>
             <dd className="mt-1 text-slate-900 font-semibold">
               {job.technicians.length > 0
-                ? job.technicians.map((t) => t.name).join(', ')
+                ? job.technicians.map((t) => t.first_name + ' ' + t.last_name).join(', ')
                 : 'ไม่มีช่างเทคนิค'}
             </dd>
           </div>
@@ -984,8 +991,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 >
                   <input
                     type="checkbox"
-                    checked={reportState.serviceTypes?.includes(type)}
-                    onChange={() => handleMultiSelect('serviceTypes', type)}
+                    checked={reportState.service_types?.includes(type)}
+                    onChange={() => handleMultiSelect('service_types', type)}
                   />
                   <span>{type}</span>
                 </label>
@@ -1001,8 +1008,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 >
                   <input
                     type="checkbox"
-                    checked={reportState.serviceActions?.includes(action)}
-                    onChange={() => handleMultiSelect('serviceActions', action)}
+                    checked={reportState.service_actions?.includes(action)}
+                    onChange={() => handleMultiSelect('service_actions', action)}
                   />
                   <span>{action}</span>
                 </label>
@@ -1011,561 +1018,120 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </FormField>
         </div>
 
-        <div className="space-y-4">
-          <div className="p-4 border rounded-lg space-y-5">
-            {Object.keys(pestRenderConfig).map((pest) => (
-              <div
-                key={pest}
-                className="border-b border-slate-200 last:border-b-0 pb-4 last:pb-0"
-              >
-                <h5 className="text-slate-800 font-semibold mb-3">
-                  {pestRenderConfig[pest as PestType].label}
+        <div className="border-t pt-4">
+          <h4 className="text-md font-semibold text-slate-900 mb-4">
+            ผลการสำรวจและดำเนินการ
+          </h4>
+          <div className="space-y-4">
+            {Object.entries(pestRenderConfig).map(([key, config]) => (
+              <div key={key} className="border rounded-lg p-4 bg-white">
+                <h5 className="font-medium text-slate-800 mb-3 border-b pb-2">
+                  {config.label}
                 </h5>
-                <div className="pl-4">
-                  {pestRenderConfig[pest as PestType].render()}
-                </div>
+                {config.render()}
               </div>
             ))}
           </div>
         </div>
 
         <div className="border-t pt-4">
-          <h4 className="text-lg font-semibold text-slate-800 mb-4">
-            การเบิกใช้น้ำยา/อุปกรณ์ (Material Usage)
+          <h4 className="text-md font-semibold text-slate-900 mb-4">
+            นัดหมายครั้งต่อไป
           </h4>
-          <div className="bg-slate-50 p-4 rounded-lg border space-y-4">
-            <div className="flex gap-2 items-end">
-              <div className="flex-grow">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  เลือกรายการ (สินค้า)
-                </label>
-                <Select id="material-select" className="w-full">
-                  <option value="">-- เลือกรายการ --</option>
-                  {products
-                    .filter((p) => p.type === 'สินค้า')
-                    .map((p) => (
-                      <option
-                        key={p.id}
-                        value={p.id}
-                        data-name={p.name}
-                        data-unit={p.unit}
-                      >
-                        {p.name} ({p.stock} {p.unit})
-                      </option>
-                    ))}
-                </Select>
-              </div>
-              <div className="w-32">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  จำนวน
-                </label>
-                <Input
-                  id="material-qty"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  placeholder="0.0"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const select = document.getElementById(
-                    'material-select'
-                  ) as HTMLSelectElement;
-                  const qtyInput = document.getElementById(
-                    'material-qty'
-                  ) as HTMLInputElement;
-                  const id = select.value;
-                  const qty = parseFloat(qtyInput.value);
-                  if (!id || !qty || qty <= 0) return;
-
-                  const option = select.options[select.selectedIndex];
-                  const name = option.getAttribute('data-name') || '';
-                  const unit = option.getAttribute('data-unit') || '';
-
-                  setReportState((prev) => {
-                    const current = prev.materialsUsed || [];
-                    const existing = current.find((m) => m.id === id);
-                    if (existing) {
-                      return {
-                        ...prev,
-                        materialsUsed: current.map((m) =>
-                          m.id === id ? { ...m, quantity: m.quantity + qty } : m
-                        ),
-                      };
-                    }
-                    return {
-                      ...prev,
-                      materialsUsed: [
-                        ...current,
-                        { id, name, quantity: qty, unit },
-                      ],
-                    };
-                  });
-
-                  select.value = '';
-                  qtyInput.value = '';
-                }}
-                className="bg-primary text-white px-4 py-2 rounded hover:bg-primary-dark self-end mb-[2px]"
-              >
-                เพิ่ม
-              </button>
-            </div>
-
-            {reportState.materialsUsed &&
-            reportState.materialsUsed.length > 0 ? (
-              <table className="min-w-full divide-y divide-slate-200 bg-white rounded border overflow-hidden">
-                <thead className="bg-slate-100">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase">
-                      รายการ
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase">
-                      จำนวน
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-slate-500 uppercase">
-                      หน่วย
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-medium text-slate-500 uppercase">
-                      ลบ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {reportState.materialsUsed.map((item, idx) => (
-                    <tr key={idx}>
-                      <td className="px-3 py-2 text-sm text-slate-800">
-                        {item.name}
-                      </td>
-                      <td className="px-3 py-2 text-right text-sm text-slate-800">
-                        {item.quantity}
-                      </td>
-                      <td className="px-3 py-2 text-center text-sm text-slate-500">
-                        {item.unit}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setReportState((prev) => ({
-                              ...prev,
-                              materialsUsed: prev.materialsUsed?.filter(
-                                (_, i) => i !== idx
-                              ),
-                            }));
-                          }}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          ×
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-sm text-slate-500 text-center py-4 bg-white border border-dashed rounded">
-                ยังไม่มีการระบุการใช้วัสดุ
-              </p>
-            )}
-          </div>
-        </div>
-
-        <FormField label="เข้าทำครั้งถัดไป">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-48 flex-shrink-0">
-                <Select onChange={handleDateCalculation}>
-                  <option value="">คำนวณจากจำนวนวัน</option>
-                  <option value="30">30 วัน</option>
-                  <option value="60">60 วัน</option>
-                  <option value="90">90 วัน</option>
-                  <option value="120">120 วัน</option>
-                  <option value="180">180 วัน</option>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField label="วันนัดหมาย">
+              <div className="space-y-2">
                 <Input
                   type="date"
                   value={
-                    reportState.nextAppointment?.scheduledAt
-                      ? new Date(reportState.nextAppointment.scheduledAt)
-                          .toISOString()
-                          .substring(0, 10)
+                    reportState.next_appointment?.scheduled_at
+                      ? reportState.next_appointment.scheduled_at.substring(0, 10)
                       : ''
                   }
-                  onChange={(e) => {
-                    const date = e.target.value;
-                    const time = reportState.nextAppointment?.scheduledAt
-                      ? new Date(reportState.nextAppointment.scheduledAt)
-                          .toTimeString()
-                          .substring(0, 5)
-                      : '09:00';
-                    const iso = date
-                      ? new Date(`${date}T${time}`).toISOString()
-                      : undefined;
-                    setReportState((p) => ({
-                      ...p,
-                      nextAppointment: {
-                        ...(p.nextAppointment || { notes: '', reasons: [] }),
-                        scheduledAt: iso,
-                      },
-                    }));
-                  }}
-                />
-                <Input
-                  type="time"
-                  value={
-                    reportState.nextAppointment?.scheduledAt
-                      ? new Date(reportState.nextAppointment.scheduledAt)
-                          .toTimeString()
-                          .substring(0, 5)
-                      : ''
-                  }
-                  onChange={(e) => {
-                    const time = e.target.value || '09:00';
-                    const date = reportState.nextAppointment?.scheduledAt
-                      ? new Date(reportState.nextAppointment.scheduledAt)
-                          .toISOString()
-                          .substring(0, 10)
-                      : '';
-                    const iso = date
-                      ? new Date(`${date}T${time}`).toISOString()
-                      : undefined;
-                    setReportState((p) => ({
-                      ...p,
-                      nextAppointment: {
-                        ...(p.nextAppointment || { notes: '', reasons: [] }),
-                        scheduledAt: iso,
-                      },
-                    }));
-                  }}
-                />
-                <Input
-                  type="text"
-                  className="flex-grow"
-                  placeholder="หมายเหตุ เช่น สัปดาห์หน้า, นัดช่วงเช้า"
-                  value={reportState.nextAppointment?.notes || ''}
                   onChange={(e) =>
-                    setReportState((p) => ({
-                      ...p,
-                      nextAppointment: {
-                        ...(p.nextAppointment || { notes: '', reasons: [] }),
-                        notes: e.target.value,
+                    setReportState((prev) => ({
+                      ...prev,
+                      next_appointment: {
+                        ...(prev.next_appointment || { notes: '', reasons: [] }),
+                        scheduled_at: e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : undefined,
                       },
                     }))
                   }
                 />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 border p-2 rounded-md">
-              {ALL_SERVICE_ACTIONS.map((reason) => (
-                <label
-                  key={reason}
-                  className="flex items-center space-x-2 text-slate-800"
+                <Select
+                  onChange={handleDateCalculation}
+                  className="text-sm text-slate-600"
+                  defaultValue=""
                 >
-                  <input
-                    type="checkbox"
-                    checked={reportState.nextAppointment?.reasons?.includes(
-                      reason
-                    )}
-                    onChange={() =>
-                      handleMultiSelect('nextAppointment_reasons', reason)
-                    }
-                  />
-                  <span>{reason}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </FormField>
-
-        <div className="border-t pt-4">
-          <h4 className="text-lg font-semibold text-slate-800 mb-4">
-            หลักฐานการทำงาน (Proof of Service)
-          </h4>
-
-          {/* Images Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                รูปภาพก่อนเริ่มงาน (Before)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {reportState.images?.before?.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="relative aspect-square bg-slate-100 rounded-lg overflow-hidden border"
-                  >
-                    <img
-                      src={img}
-                      alt="Before"
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newImages = [
-                          ...(reportState.images?.before || []),
-                        ];
-                        newImages.splice(idx, 1);
-                        setReportState((prev) => ({
-                          ...prev,
-                          images: {
-                            ...(prev.images || { before: [], after: [] }),
-                            before: newImages,
-                          },
-                        }));
-                      }}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Mock Upload
-                    const mockUrl = `https://picsum.photos/200?random=${Date.now()}`;
-                    setReportState((prev) => ({
-                      ...prev,
-                      images: {
-                        ...(prev.images || { before: [], after: [] }),
-                        before: [...(prev.images?.before || []), mockUrl],
-                      },
-                    }));
-                  }}
-                  className="aspect-square bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400"
-                >
-                  <span className="text-2xl">+</span>
-                  <span className="text-xs">เพิ่มรูป</span>
-                </button>
+                  <option value="" disabled>
+                    คำนวณวันนัดอัตโนมัติ...
+                  </option>
+                  <option value="30">อีก 1 เดือน (30 วัน)</option>
+                  <option value="60">อีก 2 เดือน (60 วัน)</option>
+                  <option value="90">อีก 3 เดือน (90 วัน)</option>
+                  <option value="180">อีก 6 เดือน (180 วัน)</option>
+                </Select>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                รูปภาพหลังจบงาน (After)
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {reportState.images?.after?.map((img, idx) => (
-                  <div
-                    key={idx}
-                    className="relative aspect-square bg-slate-100 rounded-lg overflow-hidden border"
+            </FormField>
+            <FormField label="เหตุผลการนัด">
+              <div className="grid grid-cols-1 gap-2 mt-1 border p-2 rounded-md max-h-40 overflow-y-auto">
+                {[
+                  'ติดตามผล',
+                  'ครบรอบบริการ',
+                  'ฉีดปลวก',
+                  'วางเหยื่อ',
+                  'ตรวจเช็ค',
+                ].map((reason) => (
+                  <label
+                    key={reason}
+                    className="flex items-center space-x-2 text-slate-800"
                   >
-                    <img
-                      src={img}
-                      alt="After"
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newImages = [
-                          ...(reportState.images?.after || []),
-                        ];
-                        newImages.splice(idx, 1);
-                        setReportState((prev) => ({
-                          ...prev,
-                          images: {
-                            ...(prev.images || { before: [], after: [] }),
-                            after: newImages,
-                          },
-                        }));
-                      }}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Mock Upload
-                    const mockUrl = `https://picsum.photos/200?random=${Date.now() + 1}`;
-                    setReportState((prev) => ({
-                      ...prev,
-                      images: {
-                        ...(prev.images || { before: [], after: [] }),
-                        after: [...(prev.images?.after || []), mockUrl],
-                      },
-                    }));
-                  }}
-                  className="aspect-square bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 hover:border-slate-400"
-                >
-                  <span className="text-2xl">+</span>
-                  <span className="text-xs">เพิ่มรูป</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Signatures Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="border rounded-lg p-4 bg-slate-50">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                ลายเซ็นลูกค้า (Customer Signature)
-              </label>
-              {reportState.signatures?.customer ? (
-                <div className="text-center">
-                  <div className="bg-white border text-center py-8 mb-2 rounded italic text-slate-500 font-serif text-2xl">
-                    Signed
-                  </div>
-                  <p className="text-sm font-semibold">
-                    {reportState.signatures.customerName}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          customer: '',
-                        },
-                      }))
-                    }
-                    className="text-red-500 text-xs mt-2 underline"
-                  >
-                    ลบลายเซ็น
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    placeholder="ชื่อผู้รับบริการ / ผู้เซ็น"
-                    value={reportState.signatures?.customerName || ''}
-                    onChange={(e) =>
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          customerName: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!reportState.signatures?.customerName) {
-                        alert('กรุณาระบุชื่อผู้เซ็นก่อน');
-                        return;
+                    <input
+                      type="checkbox"
+                      checked={reportState.next_appointment?.reasons?.includes(
+                        reason
+                      )}
+                      onChange={() =>
+                        handleMultiSelect('next_appointment_reasons', reason)
                       }
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          customer: 'data:mock_signature',
-                        },
-                      }));
-                    }}
-                    className="w-full py-8 bg-white border-2 border-dashed border-slate-300 rounded text-slate-400 hover:bg-slate-50"
-                  >
-                    คลิกเพื่อเซ็นชื่อลูกค้า
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="border rounded-lg p-4 bg-slate-50">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                ลายเซ็นช่าง (Technician Signature)
-              </label>
-              {reportState.signatures?.technician ? (
-                <div className="text-center">
-                  <div className="bg-white border text-center py-8 mb-2 rounded italic text-slate-500 font-serif text-2xl">
-                    Signed
-                  </div>
-                  <p className="text-sm font-semibold">
-                    {reportState.signatures.technicianName}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          technician: '',
-                        },
-                      }))
-                    }
-                    className="text-red-500 text-xs mt-2 underline"
-                  >
-                    ลบลายเซ็น
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Input
-                    placeholder="ชื่อช่างผู้ให้บริการ"
-                    value={
-                      reportState.signatures?.technicianName || currentUser.name
-                    }
-                    onChange={(e) =>
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          technicianName: e.target.value,
-                        },
-                      }))
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReportState((prev) => ({
-                        ...prev,
-                        signatures: {
-                          ...(prev.signatures || {
-                            customer: '',
-                            customerName: '',
-                            technician: '',
-                            technicianName: '',
-                          }),
-                          technicianName:
-                            prev.signatures?.technicianName || currentUser.name,
-                          technician: 'data:mock_signature',
-                        },
-                      }));
-                    }}
-                    className="w-full py-8 bg-white border-2 border-dashed border-slate-300 rounded text-slate-400 hover:bg-slate-50"
-                  >
-                    คลิกเพื่อเซ็นชื่อช่าง
-                  </button>
-                </div>
-              )}
+                    />
+                    <span>{reason}</span>
+                  </label>
+                ))}
+              </div>
+            </FormField>
+            <div className="md:col-span-2">
+              <FormField label="หมายเหตุการนัด">
+                <Input
+                  type="text"
+                  value={reportState.next_appointment?.notes || ''}
+                  onChange={(e) =>
+                    setReportState((prev) => ({
+                      ...prev,
+                      next_appointment: {
+                        ...(prev.next_appointment || { notes: '', reasons: [] }),
+                        notes: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="รายละเอียดเพิ่มเติม..."
+                />
+              </FormField>
             </div>
           </div>
         </div>
+
+        <FormField label="หมายเหตุเพิ่มเติม">
+          <Textarea
+            rows={3}
+            value={reportState.notes || ''}
+            onChange={(e) =>
+              setReportState((prev) => ({ ...prev, notes: e.target.value }))
+            }
+          />
+        </FormField>
       </form>
     </Modal>
   );

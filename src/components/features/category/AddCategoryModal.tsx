@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
-import { Category } from '@/src/libs/common/interface/entity/app.interface';
-import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { Category } from '@/src/types/entity/app.interface';
+import { CategoryType } from '@/src/types/enums/category.enum';
 
 interface AddCategoryModalProps {
   isOpen: boolean;

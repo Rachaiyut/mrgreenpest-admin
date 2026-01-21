@@ -7,11 +7,11 @@ import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   ReturnToSupplier,
   ReturnToSupplierItem,
-  Status,
-  Warehouse as WarehouseType,
-  Supplier,
-  Product,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/financial.interface';
+import { Status } from '@/src/types/entity/core.interface';
+import { Warehouse as WarehouseType } from '@/src/types/entity/inventory.interface';
+import { Supplier } from '@/src/types/entity/supplier.interface';
+import { Product } from '@/src/types/entity/product.interface';
 
 interface AddReturnToSupplierModalProps {
   isOpen: boolean;
@@ -111,19 +111,19 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
     formData: FormData
   ): Omit<ReturnToSupplier, 'id'> => {
     const returnItems: ReturnToSupplierItem[] = items.map((item) => ({
-      productId: item.productId,
+      product_id: item.productId,
       quantity: item.quantity,
       reason: item.reason,
     }));
 
     return {
-      referenceId: (formData.get('reference-id') as string) || undefined,
-      supplierId: formData.get('supplier') as string, // Required
-      warehouseId: selectedWarehouseId,
+      reference_id: (formData.get('reference-id') as string) || undefined,
+      supplier_id: formData.get('supplier') as string, // Required
+      warehouse_id: selectedWarehouseId,
       status: status,
-      createdAt: formData.get('return-date') as string,
-      createdBy: 'ผู้ดูแลระบบ', // Mock
-      updatedBy: 'ผู้ดูแลระบบ',
+      created_at: formData.get('return-date') as string,
+      created_by: 'ผู้ดูแลระบบ', // Mock
+      updated_by: 'ผู้ดูแลระบบ',
       items: returnItems,
       remarks: (formData.get('remarks') as string) || undefined,
     };
@@ -217,8 +217,8 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                 {warehouses.map((wh) => (
                   <option key={wh.id} value={wh.id}>
                     {wh.name}
-                    {wh.type === 'รถ' && wh.licensePlate
-                      ? ` (${wh.licensePlate})`
+                    {wh.type === 'รถ' && wh.license_plate
+                      ? ` (${wh.license_plate})`
                       : ''}
                   </option>
                 ))}
@@ -229,7 +229,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                 <option value="">-- เลือกผู้จำหน่าย --</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.name}
+                    {s.company_name}
                   </option>
                 ))}
               </Select>
@@ -347,7 +347,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                             />
                           </td>
                           <td className="px-2 py-3 align-middle text-slate-700">
-                            {product?.unit || '-'}
+                            {product?.unit?.name || '-'}
                           </td>
                           <td className="px-2 py-3 text-center align-middle">
                             <Button

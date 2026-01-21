@@ -11,7 +11,7 @@ import {
   Warehouse as WarehouseType,
   Supplier,
   Product,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 
 interface AddGoodsReceiptModalProps {
   isOpen: boolean;

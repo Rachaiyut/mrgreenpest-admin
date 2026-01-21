@@ -2,10 +2,10 @@ import { Button, Card } from "antd";
 
 
 // Enum
-import { CustomerType } from "@/src/libs/common/enum/customer.enum";
+import { CustomerType } from "@/src/types/enums/customer.enum";
 
 // Interface
-import { Customer } from "@/src/libs/common/interface/entity/app.interface";
+import { Customer } from "@/src/types/entity/app.interface";
 
 // Icon
 import {

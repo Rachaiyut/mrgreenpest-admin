@@ -18,6 +18,6 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["src", "src/libs", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "pages", "**/pages/**"]
+  "include": ["src", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

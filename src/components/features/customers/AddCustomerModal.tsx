@@ -7,9 +7,9 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { Status } from '@/src/libs/common/interface/entity/app.interface';
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
-import { CustomerType } from '@/src/libs/common/enum/customer.enum';
+import { Status } from '@/src/types/entity/app.interface';
+import { ICustomer } from '@/src/types/entity/customer.interface';
+import { CustomerType } from '@/src/types/enums/customer.enum';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -80,13 +80,29 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       // otherwise map to existing fields or omit if not supported.
       // ICustomer doesn't seem to have contactPerson field explicitly in the interface I saw.
       // Assuming phone/email are primary contact.
-      email: (data.email as string) || '',
-      phone: (data.phone as string) || '',
+      // Store contact person info in separate fields if available in ICustomer, 
+      // otherwise map to existing fields or omit if not supported.
       // mobilePhone, additionalPhones not in ICustomer interface shown earlier.
       // Combining phones or ignoring? 
       // ICustomer has only 'phone'.
       // I will join them or just use primary phone.
       
+      // ICustomer doesn't seem to have contactPerson field explicitly in the interface I saw.
+      // soi, road not in ICustomer top level?
+      // ICustomer has sub_district, district, province, postal_code, country.
+      // It seems address structure is flat.
+      // Assuming phone/email are primary contact.
+      email: (data.email as string) || '',
+      phone: (data.phone as string) || '',
+      // mobilePhone, additionalPhones not in ICustomer interface shown earlier.
+      // Combining phones or ignoring? 
+      
+      // zone, group, roadLine, sequence not in ICustomer interface shown earlier?
+      // Wait, let me check ICustomer again.
+      // It extends IBase.
+      
+      // ICustomer has only 'phone'.
+      // I will join them or just use primary phone.
       address_house_no: data['address-street'] as string,
       // soi, road not in ICustomer top level?
       // ICustomer has sub_district, district, province, postal_code, country.

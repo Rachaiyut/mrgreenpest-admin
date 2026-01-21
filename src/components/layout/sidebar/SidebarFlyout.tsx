@@ -1,8 +1,8 @@
+import { PAGE_PATH } from '@/src/config/route';
+import { Page } from '@/src/router/page';
+import { NavigationItem } from '@/src/types/nav';
 import { FC, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { PAGE_PATH } from '../../../libs/common/constant/route';
-import { NavigationItem } from '../../../libs/common/type/nav';
-import { Page } from '../../../libs/router/page';
 
 interface SidebarFlyoutProps {
   groupName: string;

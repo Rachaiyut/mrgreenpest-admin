@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Button } from '../../common/FormControls';
-import { Warehouse } from '@/src/libs/common/interface/entity/app.interface';
+import { Warehouse } from '@/src/types/entity/app.interface';
 
 interface AddWarehouseModalProps {
   isOpen: boolean;

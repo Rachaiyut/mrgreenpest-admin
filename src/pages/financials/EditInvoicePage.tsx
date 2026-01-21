@@ -11,7 +11,8 @@ import {
   Status,
   Customer,
   Quotation,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
+import { InvoiceStatus } from '@/src/types/enums/financial.enum';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
 
 interface EditInvoicePageProps {
@@ -37,7 +38,7 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
 
   // Map for quick customer lookup
   const customerMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, c.name])),
+    () => new Map((customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])),
     [customers]
   );
 
@@ -47,11 +48,11 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
       setInvoice(found);
       setFormData({
         ...found,
-        issuedAt: found.issuedAt
-          ? new Date(found.issuedAt).toISOString().substring(0, 10)
+        issued_at: found.issued_at
+          ? new Date(found.issued_at).toISOString().substring(0, 10)
           : '',
-        dueAt: found.dueAt
-          ? new Date(found.dueAt).toISOString().substring(0, 10)
+        due_at: found.due_at
+          ? new Date(found.due_at).toISOString().substring(0, 10)
           : '',
       });
     } else if (id) {
@@ -70,7 +71,7 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
   const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const customerId = e.target.value;
     const customerName = customerMap.get(customerId) || '';
-    setFormData((prev) => ({ ...prev, customerId, customerName }));
+    setFormData((prev) => ({ ...prev, customer_id: customerId, customer_name: customerName }));
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -80,7 +81,7 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
         ...invoice,
         ...formData,
         total: Number(formData.total) || invoice.total,
-        status: formData.status as Status,
+        status: formData.status as InvoiceStatus,
       };
       onUpdateInvoice(updatedData);
       navigate('/billing');
@@ -108,15 +109,15 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
             <FormField label="ลูกค้า" htmlFor="customerId">
               <Select
                 id="customerId"
-                name="customerId"
-                value={formData.customerId || ''}
+                name="customer_id"
+                value={formData.customer_id || ''}
                 onChange={handleCustomerChange}
                 required
               >
                 <option value="">เลือกลูกค้า</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.name}
+                    {c.first_name} {c.last_name}
                   </option>
                 ))}
               </Select>
@@ -125,8 +126,8 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
             <FormField label="อ้างอิงใบเสนอราคา" htmlFor="quotationId">
               <Select
                 id="quotationId"
-                name="quotationId"
-                value={formData.quotationId || ''}
+                name="quotation_id"
+                value={formData.quotation_id || ''}
                 onChange={handleChange}
               >
                 <option value="">ไม่ระบุ</option>
@@ -143,9 +144,9 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
             <FormField label="วันที่ออก" htmlFor="issuedAt">
               <Input
                 id="issuedAt"
-                name="issuedAt"
+                name="issued_at"
                 type="date"
-                value={formData.issuedAt || ''}
+                value={formData.issued_at || ''}
                 onChange={handleChange}
                 required
               />
@@ -153,9 +154,9 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
             <FormField label="วันครบกำหนด" htmlFor="dueAt">
               <Input
                 id="dueAt"
-                name="dueAt"
+                name="due_at"
                 type="date"
-                value={formData.dueAt || ''}
+                value={formData.due_at || ''}
                 onChange={handleChange}
                 required
               />
@@ -170,9 +171,9 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
                 value={formData.status || ''}
                 onChange={handleChange}
               >
-                <option value={Status.Pending}>{Status.Pending}</option>
-                <option value={Status.Paid}>{Status.Paid}</option>
-                <option value={Status.Overdue}>{Status.Overdue}</option>
+                <option value={InvoiceStatus.Pending}>{InvoiceStatus.Pending}</option>
+                <option value={InvoiceStatus.Paid}>{InvoiceStatus.Paid}</option>
+                <option value={InvoiceStatus.Overdue}>{InvoiceStatus.Overdue}</option>
               </Select>
             </FormField>
             <FormField label="ยอดรวม (บาท)" htmlFor="total">
@@ -207,3 +208,5 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
     </div>
   );
 };
+
+export default EditInvoicePage;

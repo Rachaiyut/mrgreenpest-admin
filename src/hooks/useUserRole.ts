@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Role } from '../libs/common/enum/role.enum';
-import { ILOCAL_STORAGE } from '../libs/common/interface/entity/auth.interface';
+import { Role, ILOCAL_STORAGE } from '../types';
 
 export const useUserRole = () => {
   const [userRole, setUserRole] = useState<Role | null>(() => {

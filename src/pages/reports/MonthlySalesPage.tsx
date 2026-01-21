@@ -4,7 +4,7 @@ import {
   Assessment,
   User,
   Status,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 
 import { useData } from '../../contexts/DataContext';

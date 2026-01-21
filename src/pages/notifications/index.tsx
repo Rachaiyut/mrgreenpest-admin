@@ -8,7 +8,7 @@ import {
   Receipt,
   Status,
   Customer,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../constants';
 
 import { useData } from '../../contexts/DataContext';

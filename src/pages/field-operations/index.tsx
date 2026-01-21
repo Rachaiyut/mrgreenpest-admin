@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
-// FIX: Add 'Customer' to the import list to resolve missing type.
 import {
   Status,
-  FieldJob,
-  Assessment,
-  Contract,
-  Product,
   User,
   UserRole,
-  ServiceReport,
-  Quotation,
-  Customer,
-} from '../../types';
+} from '../../types/entity/core.interface';
+import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
+import { Assessment } from '../../types/entity/assessment.interface';
+import { Contract, Quotation } from '../../types/entity/financial.interface';
+import { Product } from '../../types/entity/product.interface';
+import { Customer } from '../../types/entity/customer.interface';
+import { Warehouse } from '../../types/entity/inventory.interface';
+import { JobStatus } from '../../types/enums/job.enum';
+
 import {
   PlusIcon,
   ListBulletIcon,
@@ -38,7 +38,6 @@ import { Pagination } from '../../components/common/Pagination';
 import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
 import { EditJobModal } from '../../components/features/jobs/EditJobModal';
 import {
-  MOCK_WAREHOUSES,
   formatThaiDate,
   formatThaiDateTime,
 } from '../../constants';
@@ -54,7 +53,7 @@ const JobCard: React.FC<{
     event: React.MouseEvent<HTMLButtonElement>,
     jobId: string
   ) => void;
-  onStatusChange: (jobId: string, newStatus: Status) => void;
+  onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
   currentUser: User;
   isAnyJobInProgressForCurrentUser: boolean;
@@ -72,9 +71,9 @@ const JobCard: React.FC<{
   );
 
   const showCheckInButton =
-    isAssignedToCurrentUser && job.status === Status.Planned;
+    isAssignedToCurrentUser && job.status === JobStatus.Planned;
   const showCheckOutButton =
-    isAssignedToCurrentUser && job.status === Status.InProgress;
+    isAssignedToCurrentUser && job.status === JobStatus.InProgress;
 
   let checkInTooltip = '';
   if (isAssignedToCurrentUser) {
@@ -85,17 +84,17 @@ const JobCard: React.FC<{
     }
   }
 
-  const jobDate = formatThaiDate(job.startTime);
-  const jobStartTime = new Date(job.startTime).toLocaleTimeString('th-TH', {
+  const jobDate = formatThaiDate(job.start_time);
+  const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
     hour: '2-digit',
     minute: '2-digit',
   });
-  const jobEndTime = new Date(job.endTime).toLocaleTimeString('th-TH', {
+  const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
     hour: '2-digit',
     minute: '2-digit',
   });
 
-  const hasActions = job.status !== Status.Cancelled;
+  const hasActions = job.status !== JobStatus.Cancelled;
 
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between min-h-[220px]">
@@ -103,10 +102,10 @@ const JobCard: React.FC<{
         <div className="flex justify-between items-start">
           <div className="pr-2">
             <p className="text-base font-bold text-slate-800 leading-tight">
-              {job.customerName}
+              {job.customer_name}
             </p>
             <p className="text-sm text-slate-500 mt-1">
-              {job.workAreas.map((wa) => wa.servicePackage).join(', ')}
+              {job.work_areas.map((wa) => wa.service_package).join(', ')}
             </p>
           </div>
           <div className="relative flex-shrink-0">
@@ -168,7 +167,7 @@ const JobCard: React.FC<{
 
           {showCheckInButton && (
             <Button
-              onClick={() => onStatusChange(job.id, Status.InProgress)}
+              onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
               disabled={isAnyJobInProgressForCurrentUser}
               title={checkInTooltip}
               variant="primary"
@@ -180,7 +179,7 @@ const JobCard: React.FC<{
           )}
           {showCheckOutButton && (
             <Button
-              onClick={() => onStatusChange(job.id, Status.Completed)}
+              onClick={() => onStatusChange(job.id, JobStatus.Completed)}
               title="เช็คเอาท์เพื่อจบงาน"
               variant="accent"
               className="w-full py-2.5 font-bold"
@@ -265,26 +264,16 @@ const CalendarView: React.FC<{
     return grid;
   }, [currentDate]);
 
-  const jobStatusColors: Record<Status, string> = {
-    [Status.Planned]: 'bg-sky-100 text-sky-800 border-sky-300',
-    [Status.InProgress]: 'bg-amber-100 text-amber-800 border-amber-300',
-    [Status.Completed]: 'bg-green-100 text-green-800 border-green-300',
-    [Status.Cancelled]: 'bg-red-100 text-red-800 border-red-300',
-    [Status.Draft]: 'bg-slate-100 text-slate-600 border-slate-300',
-    [Status.Scheduled]: 'bg-blue-100 text-blue-800 border-blue-300',
-    [Status.Paused]: 'bg-gray-100 text-gray-700 border-gray-300',
-    [Status.Converted]: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-    [Status.Failed]: 'bg-red-100 text-red-700 border-red-300',
-    [Status.Pending]: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-    [Status.PendingApproval]: 'bg-orange-100 text-orange-700 border-orange-300',
-    [Status.Approved]: 'bg-green-100 text-green-700 border-green-300',
-    [Status.Rejected]: 'bg-red-100 text-red-700 border-red-300',
-    [Status.Paid]: 'bg-green-100 text-green-700 border-green-300',
-    [Status.Overdue]: 'bg-rose-100 text-rose-700 border-rose-300',
-    [Status.Sent]: 'bg-indigo-100 text-indigo-700 border-indigo-300',
-    [Status.UnderReview]: 'bg-purple-100 text-purple-700 border-purple-300',
-    [Status.Revise]: 'bg-pink-100 text-pink-700 border-pink-300',
-    [Status.Closed]: 'bg-slate-300 text-slate-800 border-slate-400',
+  const jobStatusColors: Record<string, string> = {
+    [JobStatus.Planned]: 'bg-sky-100 text-sky-800 border-sky-300',
+    [JobStatus.InProgress]: 'bg-amber-100 text-amber-800 border-amber-300',
+    [JobStatus.Completed]: 'bg-green-100 text-green-800 border-green-300',
+    [JobStatus.Cancelled]: 'bg-red-100 text-red-800 border-red-300',
+    [JobStatus.Draft]: 'bg-slate-100 text-slate-600 border-slate-300',
+    [JobStatus.Scheduled]: 'bg-blue-100 text-blue-800 border-blue-300',
+    [JobStatus.Paused]: 'bg-gray-100 text-gray-700 border-gray-300',
+    [JobStatus.Failed]: 'bg-red-100 text-red-700 border-red-300',
+    [JobStatus.Pending]: 'bg-yellow-100 text-yellow-700 border-yellow-300',
   };
 
   return (
@@ -329,7 +318,7 @@ const CalendarView: React.FC<{
         {calendarGrid.map((day, index) => {
           const jobsOnDay = jobs
             .filter((job) => {
-              const jobDate = new Date(job.startTime);
+              const jobDate = new Date(job.start_time);
               return (
                 jobDate.getFullYear() === day.date.getFullYear() &&
                 jobDate.getMonth() === day.date.getMonth() &&
@@ -338,8 +327,8 @@ const CalendarView: React.FC<{
             })
             .sort(
               (a, b) =>
-                new Date(a.startTime).getTime() -
-                new Date(b.startTime).getTime()
+                new Date(a.start_time).getTime() -
+                new Date(b.start_time).getTime()
             );
 
           return (
@@ -361,8 +350,8 @@ const CalendarView: React.FC<{
                     className={`p-1.5 rounded-md text-xs border cursor-pointer hover:ring-2 hover:ring-primary/50 ${jobStatusColors[job.status] || 'bg-slate-100'}`}
                   >
                     <p className="font-semibold truncate">
-                      {new Date(job.startTime).toTimeString().substring(0, 5)}{' '}
-                      {job.customerName}
+                      {new Date(job.start_time).toTimeString().substring(0, 5)}{' '}
+                      {job.customer_name}
                     </p>
                   </div>
                 ))}
@@ -375,7 +364,6 @@ const CalendarView: React.FC<{
   );
 };
 
-// FIX: Add missing 'customers' and 'onCreateQuotation' props to match what is passed from App.tsx, resolving the type error in App.tsx.
 interface FieldOperationsProps {
   users: User[];
   jobs: FieldJob[];
@@ -389,6 +377,7 @@ interface FieldOperationsProps {
   onUpdateAssessment: (assessment: Assessment) => void;
   onUpdateQuotation: (quotation: Quotation) => void;
   customers: Customer[];
+  warehouses: Warehouse[];
   onCreateQuotation: (
     quotationData: Omit<Quotation, 'id'>,
     assessmentId?: string
@@ -408,6 +397,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   onUpdateAssessment,
   onUpdateQuotation,
   customers,
+  warehouses,
 }) => {
   const currentUser = users[0];
 
@@ -426,8 +416,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const [jobToEdit, setJobToEdit] = useState<FieldJob | null>(null);
   const [jobForReport, setJobForReport] = useState<FieldJob | null>(null);
-  const [reportFinalStatus, setReportFinalStatus] = useState<Status>(
-    Status.Completed
+  const [reportFinalStatus, setReportFinalStatus] = useState<JobStatus>(
+    JobStatus.Completed
   );
   const [assessmentForCheckout, setAssessmentForCheckout] =
     useState<Assessment | null>(null);
@@ -470,26 +460,26 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const createAutomaticReport = (job: FieldJob): ServiceReport => {
     const serviceTypesFromJob = [
       ...new Set(
-        job.workAreas.flatMap((wa) =>
-          wa.servicePackage.split(',').map((s) => s.trim())
+        job.work_areas.flatMap((wa) =>
+          wa.service_package.split(',').map((s) => s.trim())
         )
       ),
     ];
 
     return {
-      createdAt: new Date().toISOString(),
-      checkInTime: job.actualStartTime
-        ? new Date(job.actualStartTime).toLocaleTimeString('th-TH', {
+      created_at: new Date().toISOString(),
+      check_in_time: job.actual_start_time
+        ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
             hour: '2-digit',
             minute: '2-digit',
           })
         : '',
-      checkOutTime: new Date().toLocaleTimeString('th-TH', {
+      check_out_time: new Date().toLocaleTimeString('th-TH', {
         hour: '2-digit',
         minute: '2-digit',
       }),
-      serviceTypes: serviceTypesFromJob,
-      serviceActions: [],
+      service_types: serviceTypesFromJob,
+      service_actions: [],
       termite: { status: 'absent' },
       ant: { applyGel: false },
       cockroach: { applyGel: false },
@@ -500,9 +490,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         refillBait: false,
       },
       lizard: { placeTraps: false },
-      nextAppointment: { notes: '', reasons: [] },
+      next_appointment: { notes: '', reasons: [] },
       notes: 'รายงานสร้างโดยอัตโนมัติเมื่อเช็คเอาท์',
-      status: Status.Draft,
+      status: JobStatus.Draft,
     };
   };
 
@@ -526,11 +516,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       tempJobs = tempJobs.filter((job) => {
-        const vehicle = MOCK_WAREHOUSES.find((w) => w.id === job.vehicleId);
-        const licensePlateMatch = vehicle?.licensePlate
+        const vehicle = warehouses.find((w) => w.id === job.vehicle_id);
+        const licensePlateMatch = vehicle?.license_plate
           ?.toLowerCase()
           .includes(lowercasedQuery);
-        const dateMatch = formatThaiDate(job.startTime).includes(
+        const dateMatch = formatThaiDate(job.start_time).includes(
           lowercasedQuery
         );
         return licensePlateMatch || dateMatch;
@@ -544,31 +534,31 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     () =>
       jobs.some(
         (j) =>
-          j.status === Status.InProgress &&
+          j.status === JobStatus.InProgress &&
           j.technicians.some((tech) => tech.id === currentUser.id)
       ),
     [jobs, currentUser.id]
   );
 
   const kanbanColumns = useMemo(() => {
-    const serviceVehicles = MOCK_WAREHOUSES.filter((w) => w.type === 'รถ');
+    const serviceVehicles = warehouses.filter((w) => w.type === 'รถ');
     const jobsForKanban = filteredJobs.filter(
-      (j) => j.status === Status.Planned || j.status === Status.InProgress
+      (j) => j.status === JobStatus.Planned || j.status === JobStatus.InProgress
     );
 
     const vehicleColumns = serviceVehicles.map((vehicle) => ({
-      title: vehicle.licensePlate
-        ? `${vehicle.name} (${vehicle.licensePlate})`
+      title: vehicle.license_plate
+        ? `${vehicle.name} (${vehicle.license_plate})`
         : vehicle.name,
       id: vehicle.id,
-      jobs: jobsForKanban.filter((j) => j.vehicleId === vehicle.id),
+      jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
     }));
 
     return vehicleColumns;
   }, [filteredJobs]);
 
   const serviceReports = useMemo(
-    () => reversedJobs.filter((j) => j.serviceReport),
+    () => reversedJobs.filter((j) => j.service_report),
     [reversedJobs]
   );
 
@@ -576,9 +566,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     () =>
       filteredJobs.filter(
         (j) =>
-          j.status !== Status.Completed &&
-          j.status !== Status.Cancelled &&
-          j.status !== Status.Draft
+          j.status !== JobStatus.Completed &&
+          j.status !== JobStatus.Cancelled &&
+          j.status !== JobStatus.Draft
       ),
     [filteredJobs]
   );
@@ -602,23 +592,23 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     return jobs
       .filter(
         (job) =>
-          job.vehicleId === scheduleVehicleId &&
-          new Date(job.startTime).toISOString().substring(0, 10) ===
+          job.vehicle_id === scheduleVehicleId &&
+          new Date(job.start_time).toISOString().substring(0, 10) ===
             scheduleDate
       )
       .sort(
         (a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
       );
   }, [jobs, scheduleVehicleId, scheduleDate]);
 
-  const getAccessStatus = (status: Status) => {
+  const getAccessStatus = (status: JobStatus) => {
     switch (status) {
-      case Status.InProgress:
-      case Status.Completed:
+      case JobStatus.InProgress:
+      case JobStatus.Completed:
         return <span className="font-semibold text-green-600">เข้าได้</span>;
-      case Status.Cancelled:
-      case Status.Failed:
+      case JobStatus.Cancelled:
+      case JobStatus.Failed:
         return <span className="font-semibold text-red-600">ไม่ได้</span>;
       default:
         return <span className="text-slate-500">-</span>;
@@ -634,21 +624,21 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     setReportCurrentPage(1);
   };
 
-  const handleStatusChange = (jobId: string, newStatus: Status) => {
+  const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
     const jobToUpdate = jobs.find((j) => j.id === jobId);
     if (!jobToUpdate) return;
 
-    if (newStatus === Status.InProgress) {
+    if (newStatus === JobStatus.InProgress) {
       // Check-in
       onUpdateJob({
         ...jobToUpdate,
         status: newStatus,
-        actualStartTime: new Date().toISOString(),
+        actual_start_time: new Date().toISOString(),
       });
-    } else if (newStatus === Status.Completed) {
+    } else if (newStatus === JobStatus.Completed) {
       // Check-out flow: open Service Report modal
       setJobForReport(jobToUpdate);
-      setReportFinalStatus(Status.Completed);
+      setReportFinalStatus(JobStatus.Completed);
       setIsReportModalOpen(true);
     } else {
       onUpdateJob({ ...jobToUpdate, status: newStatus });
@@ -662,9 +652,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       const newReport = createAutomaticReport(jobBeingCheckedOut);
       onUpdateJob({
         ...jobBeingCheckedOut,
-        status: Status.Completed,
-        actualEndTime: new Date().toISOString(),
-        serviceReport: newReport,
+        status: JobStatus.Completed,
+        actual_end_time: new Date().toISOString(),
+        service_report: newReport,
       });
     }
     setAssessmentForCheckout(null);
@@ -678,8 +668,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   };
 
   const handleViewDetails = (job: FieldJob) => {
-    const assessment = job.assessmentId
-      ? assessments.find((a) => a.id === job.assessmentId)
+    const assessment = job.assessment_id
+      ? assessments.find((a) => a.id === job.assessment_id)
       : null;
     setSelectedJob(job);
     setSelectedAssessmentForJob(assessment || null);
@@ -690,7 +680,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleWriteReport = (job: FieldJob) => {
     setJobForReport(job);
     setReportFinalStatus(
-      job.status === Status.Completed ? Status.Completed : Status.Draft
+      job.status === JobStatus.Completed ? JobStatus.Completed : JobStatus.Draft
     );
     setIsReportModalOpen(true);
     setOpenDropdownId(null);
@@ -707,7 +697,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     if (jobToUpdate) {
       onUpdateJob({
         ...jobToUpdate,
-        status: Status.Cancelled,
+        status: JobStatus.Cancelled,
         remarks: reason,
       });
     }
@@ -718,25 +708,25 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleReportSubmit = (
     jobId: string,
     reportData: ServiceReport,
-    finalStatus: Status,
+    finalStatus: JobStatus,
     quotationId?: string
   ) => {
     const jobToUpdate = jobs.find((j) => j.id === jobId);
     if (jobToUpdate) {
       const updatedJob = {
         ...jobToUpdate,
-        serviceReport: reportData,
+        service_report: reportData,
         status: finalStatus,
-        quotationId,
-        actualEndTime:
-          finalStatus === Status.Completed
+        quotation_id: quotationId,
+        actual_end_time:
+          finalStatus === JobStatus.Completed
             ? new Date().toISOString()
-            : jobToUpdate.actualEndTime,
+            : jobToUpdate.actual_end_time,
       };
       onUpdateJob(updatedJob);
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
-        if (quote && quote.status === Status.Draft) {
+        if (quote && quote.status === Status.Draft) { // Assuming Quote Status is still core.Status
           onUpdateQuotation({ ...quote, status: Status.Sent });
         }
       }
@@ -799,9 +789,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     ];
 
     if (
-      status === Status.Planned ||
-      status === Status.InProgress ||
-      status === Status.Paused
+      status === JobStatus.Planned ||
+      status === JobStatus.InProgress ||
+      status === JobStatus.Paused
     ) {
       actions.push({
         label: 'แก้ไขงาน',
@@ -810,7 +800,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       });
     }
 
-    if (status === Status.Completed || status === Status.Draft) {
+    if (status === JobStatus.Completed || status === JobStatus.Draft) {
       actions.push({
         label: 'เขียน/แก้ไขรายงาน',
         icon: DocumentCheckIcon,
@@ -818,7 +808,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       });
     }
 
-    if (status === Status.Planned || status === Status.InProgress) {
+    if (status === JobStatus.Planned || status === JobStatus.InProgress) {
       actions.push({
         label: 'ยกเลิกงาน',
         icon: XCircleIcon,
@@ -998,351 +988,85 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                           }
                         />
                       ))}
-                      {col.jobs.length === 0 && (
-                        <div className="flex items-center justify-center h-24 text-sm text-slate-500 rounded-lg border-2 border-dashed border-slate-300">
-                          ไม่มีงาน
-                        </div>
-                      )}
                     </div>
                   </div>
                 ))}
               </div>
-              <Button
-                onClick={() => scrollKanban('right')}
-                variant="ghost"
-                className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 hover:bg-white rounded-full shadow-md border border-slate-200 h-auto"
-              >
-                <ChevronRightIcon className="h-5 w-5 text-slate-600" />
-              </Button>
             </div>
           )}
-
+          
           {activeTab === 'schedule' && view === 'list' && (
-            <Card className="!p-0 flex-grow min-h-0 flex flex-col">
-              <div className="overflow-auto flex-grow">
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50 sticky top-0 z-10">
+                  <thead className="bg-slate-50">
                     <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
-                      >
-                        ลำดับ
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        ลูกค้า/สถานที่
                       </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
-                      >
-                        รหัสลูกค้า
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        วัน-เวลา
                       </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
-                      >
-                        ชื่องาน
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        บริการ
                       </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
-                      >
-                        ที่อยู่
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        ช่าง
                       </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        ทะเบียนรถ
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        ช่างเทคนิค
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        วันที่ปฏิบัติงาน
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                      >
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th scope="col" className="relative px-4 py-2.5">
-                        <span className="sr-only">จัดการ</span>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        จัดการ
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    {paginatedJobs.map((job, index) => {
-                      const vehicle = MOCK_WAREHOUSES.find(
-                        (w) => w.id === job.vehicleId
-                      );
-                      return (
-                        <tr key={job.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                            {job.customerId}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                            {job.customerName}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-xs">
+                    {paginatedJobs.map((job) => (
+                      <tr key={job.id} className="hover:bg-slate-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-slate-900">
+                            {job.customer_name}
+                          </div>
+                          <div className="text-sm text-slate-500">
                             {job.address}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                            {vehicle?.licensePlate || '-'}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-xs">
-                            {job.technicians.map((t) => t.name).join(', ')}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                            {job.startTime
-                              ? `${formatThaiDate(job.startTime)}, ${new Date(job.startTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} - ${job.endTime ? new Date(job.endTime).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''} น.`
-                              : '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            <StatusBadge status={job.status} />
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                            <Button
-                              data-job-id={job.id}
-                              onClick={(e) => handleDropdownToggle(e, job.id)}
-                              variant="icon"
-                              title="ตัวเลือก"
-                            >
-                              <ManageIcon className="h-5 w-5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex-shrink-0">
-                <Pagination
-                  currentPage={currentPage}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={scheduleJobs.length}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'schedule' && view === 'calendar' && (
-            <CalendarView jobs={filteredJobs} onJobClick={handleViewDetails} />
-          )}
-
-          {activeTab === 'work-schedule' && (
-            <Card>
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <div className="flex-1 min-w-[200px]">
-                  <FormField label="เลือกรถบริการ">
-                    <Select
-                      value={scheduleVehicleId}
-                      onChange={(e) => setScheduleVehicleId(e.target.value)}
-                      required
-                    >
-                      <option value="">-- เลือกรถ --</option>
-                      {MOCK_WAREHOUSES.filter((w) => w.type === 'รถ').map(
-                        (v) => (
-                          <option key={v.id} value={v.id}>
-                            {v.name} ({v.licensePlate})
-                          </option>
-                        )
-                      )}
-                    </Select>
-                  </FormField>
-                </div>
-                <div className="flex-1 min-w-[200px]">
-                  <FormField label="เลือกวันที่">
-                    <Input
-                      type="date"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      required
-                    />
-                  </FormField>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        ลำดับ
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        เวลา
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        รายชื่อลูกค้า
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        ที่อยู่
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        หมายเลขโทรศัพท์
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        การดำเนินงาน
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        เข้าได้/ไม่ได้
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        ชื่อผู้ปฏิบัติงาน
-                      </th>
-                      <th className="px-4 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                        สาเหตุ
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {scheduledJobsForTable.length > 0 ? (
-                      scheduledJobsForTable.map((job, index) => {
-                        const customer = customerMap.get(job.customerId);
-                        const startTime = new Date(
-                          job.startTime
-                        ).toLocaleTimeString('th-TH', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
-                        const endTime = new Date(
-                          job.endTime
-                        ).toLocaleTimeString('th-TH', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
-
-                        return (
-                          <tr key={job.id}>
-                            <td className="px-4 py-2 text-slate-500">
-                              {index + 1}
-                            </td>
-                            <td className="px-4 py-2 text-slate-700 whitespace-nowrap">
-                              {startTime} - {endTime}
-                            </td>
-                            <td className="px-4 py-2 font-medium text-slate-800">
-                              {job.customerName}
-                            </td>
-                            <td
-                              className="px-4 py-2 text-slate-600 max-w-xs truncate"
-                              title={job.address}
-                            >
-                              {job.address}
-                            </td>
-                            <td className="px-4 py-2 text-slate-600">
-                              {customer?.phone || '-'}
-                            </td>
-                            <td
-                              className="px-4 py-2 text-slate-600 max-w-sm truncate"
-                              title={
-                                job.operationDetails ||
-                                job.workAreas
-                                  .map((wa) => wa.servicePackage)
-                                  .join(', ')
-                              }
-                            >
-                              {job.operationDetails ||
-                                job.workAreas
-                                  .map((wa) => wa.servicePackage)
-                                  .join(', ')}
-                            </td>
-                            <td className="px-4 py-2">
-                              {getAccessStatus(job.status)}
-                            </td>
-                            <td className="px-4 py-2 text-slate-600 max-w-xs truncate">
-                              {job.technicians.map((t) => t.name).join(', ')}
-                            </td>
-                            <td className="px-4 py-2 text-slate-600">
-                              {job.remarks || '-'}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={9}
-                          className="text-center py-10 text-slate-500"
-                        >
-                          {scheduleVehicleId && scheduleDate
-                            ? 'ไม่พบข้อมูลตารางงานสำหรับรถและวันที่เลือก'
-                            : 'กรุณาเลือกรถบริการและวันที่'}
+                          </div>
                         </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
-
-          {activeTab === 'reports' && (
-            <Card className="!p-0">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                        ลำดับ
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                        รหัสงาน
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                        ลูกค้า
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                        วันที่เข้าบริการ
-                      </th>
-                      <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                        สถานะ
-                      </th>
-                      <th className="relative px-4 py-2.5">
-                        <span className="sr-only">จัดการ</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {paginatedReports.map((job, index) => (
-                      <tr key={job.id}>
-                        <td className="px-4 py-3 text-sm text-slate-500">
-                          {(reportCurrentPage - 1) * reportItemsPerPage +
-                            index +
-                            1}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-slate-900">
+                            {formatThaiDate(job.start_time)}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            {new Date(job.start_time).toLocaleTimeString(
+                              'th-TH',
+                              { hour: '2-digit', minute: '2-digit' }
+                            )}{' '}
+                            -{' '}
+                            {new Date(job.end_time).toLocaleTimeString(
+                              'th-TH',
+                              { hour: '2-digit', minute: '2-digit' }
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 text-sm font-medium text-slate-900">
-                          {job.id}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {job.work_areas
+                            .map((wa) => wa.service_package)
+                            .join(', ')}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-500">
-                          {job.customerName}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {job.technicians.map((t) => t.name).join(', ')}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-500">
-                          {formatThaiDateTime(job.serviceReport?.createdAt)}
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <StatusBadge status={job.status} />
                         </td>
-                        <td className="px-4 py-3">
-                          <StatusBadge
-                            status={job.serviceReport?.status || Status.Draft}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <Button
-                            onClick={() => handleWriteReport(job)}
-                            variant="ghost"
-                            className="text-primary hover:underline p-0 h-auto font-normal"
+                            data-job-id={job.id}
+                            onClick={(e) => handleDropdownToggle(e, job.id)}
+                            variant="icon"
+                            className="text-slate-400 hover:text-slate-600"
                           >
-                            ดู/แก้ไขรายงาน
+                            <ManageIcon className="h-5 w-5" />
                           </Button>
                         </td>
                       </tr>
@@ -1351,32 +1075,230 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 </table>
               </div>
               <Pagination
-                currentPage={reportCurrentPage}
-                itemsPerPage={reportItemsPerPage}
-                totalItems={serviceReports.length}
-                onPageChange={setReportCurrentPage}
-                onItemsPerPageChange={handleReportItemsPerPageChange}
+                currentPage={currentPage}
+                totalItems={scheduleJobs.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
               />
-            </Card>
+            </div>
+          )}
+
+          {activeTab === 'schedule' && view === 'calendar' && (
+            <CalendarView jobs={filteredJobs} onJobClick={handleViewDetails} />
+          )}
+
+          {activeTab === 'reports' && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          วันที่
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          ลูกค้า
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          บริการ
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          สถานะรายงาน
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          จัดการ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {paginatedReports.length > 0 ? (
+                        paginatedReports.map((job) => (
+                          <tr key={job.id} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                              {formatThaiDateTime(job.service_report?.created_at || '')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-slate-900">
+                                {job.customer_name}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                              {job.service_report?.service_types.join(', ')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <StatusBadge status={job.service_report?.status || JobStatus.Draft} />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <Button
+                                onClick={() => handleWriteReport(job)}
+                                variant="ghost"
+                                className="text-primary hover:text-primary-dark"
+                              >
+                                ดู/แก้ไข
+                              </Button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={5}
+                            className="px-6 py-10 text-center text-slate-500"
+                          >
+                            ไม่พบรายงานบริการ
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <Pagination
+                  currentPage={reportCurrentPage}
+                  totalItems={serviceReports.length}
+                  itemsPerPage={reportItemsPerPage}
+                  onPageChange={setReportCurrentPage}
+                  onItemsPerPageChange={handleReportItemsPerPageChange}
+                />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'work-schedule' && (
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
+                <FormField label="วันที่">
+                  <Input
+                    type="date"
+                    value={scheduleDate}
+                    onChange={(e) => setScheduleDate(e.target.value)}
+                  />
+                </FormField>
+                <FormField label="ทะเบียนรถ">
+                  <Select
+                    value={scheduleVehicleId}
+                    onChange={(e) => setScheduleVehicleId(e.target.value)}
+                  >
+                    <option value="">เลือกทะเบียนรถ</option>
+                    {warehouses
+                      .filter((w) => w.type === 'รถ')
+                      .map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.license_plate} ({w.name})
+                        </option>
+                      ))}
+                  </Select>
+                </FormField>
+              </div>
+
+              {scheduleVehicleId && scheduleDate ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-lg">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                          เวลา
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          ลูกค้า
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          สถานที่
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          เบอร์โทร
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          เข้าบริการ
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          ลายเซ็น
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          เก็บเงิน
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          หมายเหตุ
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {scheduledJobsForTable.length > 0 ? (
+                        scheduledJobsForTable.map((job) => {
+                          const customer = customerMap.get(job.customer_id);
+                          return (
+                            <tr key={job.id}>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
+                                {new Date(job.start_time).toLocaleTimeString(
+                                  'th-TH',
+                                  { hour: '2-digit', minute: '2-digit' }
+                                )}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
+                                {job.customer_name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
+                                {job.address}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                {customer?.phone || '-'}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                {getAccessStatus(job.status)}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                {job.service_report?.signatures?.customer
+                                  ? 'เซ็นแล้ว'
+                                  : '-'}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                                {/* TODO: Check Invoice Status */}
+                                -
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
+                                {job.remarks || '-'}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="px-6 py-10 text-center text-slate-500"
+                          >
+                            ไม่มีงานในช่วงเวลานี้
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                  กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedJob && openDropdownId && dropdownPosition && (
+            <div
+              ref={dropdownRef}
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+              }}
+              className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none transform -translate-x-full"
+            >
+              <div className="py-1" role="menu" aria-orientation="vertical">
+                {renderActions()}
+              </div>
+            </div>
           )}
         </div>
       </div>
-
-      {openDropdownId && dropdownPosition && (
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
-        >
-          <div className="py-1">{renderActions()}</div>
-        </div>
-      )}
-
       <AddJobModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -1386,45 +1308,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         jobs={jobs}
         users={users}
         products={products}
-      />
-      <EditJobModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        job={jobToEdit}
-        onUpdateJob={onUpdateJob}
-        jobs={jobs}
-        users={users}
-      />
-      <JobDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        job={selectedJob}
-        assessment={selectedAssessmentForJob}
-      />
-      <ServiceReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        job={jobForReport}
-        onSubmit={handleReportSubmit}
-        finalStatus={reportFinalStatus}
-        quotations={quotations}
-        currentUser={currentUser}
-        contracts={contracts}
-        products={products}
-        jobs={jobs}
-      />
-      <EditAssessmentModal
-        isOpen={isEditAssessmentModalOpen}
-        onClose={() => setIsEditAssessmentModalOpen(false)}
-        assessment={assessmentForCheckout}
-        onUpdateAssessment={handleAssessmentUpdateOnCheckout}
-        products={products}
-      />
-      <CancelJobModal
-        isOpen={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
-        job={jobToCancel}
-        onConfirm={handleConfirmCancel}
       />
     </>
   );

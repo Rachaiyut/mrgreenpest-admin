@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Card } from '../../components/common/Card';
 
 // Interface
-import { ISupplier } from '@/src/libs/common/interface/entity/supplier.interface';
+import { ISupplier } from '@/src/types/entity/supplier.interface';
 
 // Api
-import { Supplier as SupplierApi } from '@/src/libs/api/supplier';
+import { Supplier as SupplierApi } from '@/src/api/supplier';
 
 import {
   PlusIcon,

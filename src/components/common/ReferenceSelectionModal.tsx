@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Input, Button } from './FormControls';
-import { FieldJob } from '@/src/libs/common/interface/entity/app.interface';
+import { FieldJob } from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../constants';
 
 interface ReferenceSelectionModalProps {

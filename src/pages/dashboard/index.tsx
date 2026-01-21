@@ -13,24 +13,17 @@ import {
 } from '../../assets/icons/Icons';
 import { AddAssessmentModal } from '../../components/features/assessments/AddAssessmentModal';
 import { AddJobModal } from '../../components/features/jobs/AddJobModal';
-import {
-  Status,
-  Assessment,
-  FieldJob,
-  Invoice,
-  Product,
-  Contract,
-  User,
-  Receipt,
-  Customer,
-  GoodsReceipt,
-  Withdrawal,
-  Transfer,
-  StockAdjustment,
-  ProductReturn,
-} from '@/src/libs/common/interface/entity/app.interface';
+
+// Interfaces
+import { Status } from '@/src/types/entity/core.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { JobStatus } from '@/src/types/enums/job.enum';
+import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
+import { InvoiceStatus } from '@/src/types/enums/financial.enum';
+
 import { formatThaiDateTime } from '../../constants';
 import { Select, Button } from '../../components/common/FormControls';
+import { useData } from '../../contexts/DataContext';
 
 const SimpleAreaChart = ({
   data,
@@ -151,15 +144,13 @@ const SimpleAreaChart = ({
   );
 };
 
-import { useData } from '../../contexts/DataContext';
-
 interface DashboardProps {}
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const {
     users,
     assessments,
-    fieldJobs,
+    jobs: fieldJobs,
     invoices,
     receipts,
     products,
@@ -170,12 +161,12 @@ const Dashboard: React.FC<DashboardProps> = () => {
     transfers,
     stockAdjustments,
     productReturns,
+    warehouses,
     handlers,
   } = useData();
   
   const onCreateAssessment = handlers.assessments.create;
-  const onCreateJob = handlers.fieldJobs.create;
-  // onNavigateToReports is optional and wasn't passed in router anyway, so we can ignore or implement navigation logic if needed.
+  const onCreateJob = handlers.jobs.create;
 
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
@@ -200,9 +191,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
     return d >= now && d <= future;
   };
 
-  const todaysJobs = fieldJobs.filter((j) => isToday(j.startTime));
-  const overdueInvoices = invoices.filter((i) => i.status === Status.Overdue);
-  const lowStockItems = products.filter((p) => p.stock < p.lowStockThreshold);
+  const todaysJobs = fieldJobs.filter((j) => isToday(j.start_time));
+  const overdueInvoices = invoices.filter((i) => i.status === InvoiceStatus.Overdue);
+  const lowStockItems = products.filter((p) => (p.stock || 0) < p.min_stock);
 
   const isInSelectedRange = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -236,7 +227,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const monthlyRevenue = useMemo(
     () =>
       receipts
-        .filter((r) => isInSelectedRange(r.paidAt))
+        .filter((r) => isInSelectedRange(r.paid_at))
         .reduce((sum, r) => sum + Number(r.amount || 0), 0),
     [receipts, range]
   );
@@ -244,23 +235,23 @@ const Dashboard: React.FC<DashboardProps> = () => {
     () =>
       fieldJobs.filter(
         (j) =>
-          j.status === Status.Completed &&
-          (j.endTime
-            ? isInSelectedRange(j.endTime)
-            : isInSelectedRange(j.startTime))
+          j.status === JobStatus.Completed &&
+          (j.end_time
+            ? isInSelectedRange(j.end_time)
+            : isInSelectedRange(j.start_time))
       ).length,
     [fieldJobs, range]
   );
   const monthlyNewCustomers = useMemo(
-    () => customers.filter((c) => isInSelectedRange(c.createdAt)).length,
+    () => customers.filter((c) => c.created_at && isInSelectedRange(c.created_at)).length,
     [customers, range]
   );
   const monthlyConversionRate = useMemo(() => {
     const base = assessments.filter((a) =>
-      isInSelectedRange(a.createdAt)
+      isInSelectedRange(a.created_at)
     ).length;
     const converted = contracts.filter((c) =>
-      isInSelectedRange(c.startDate)
+      isInSelectedRange(c.start_date)
     ).length;
     if (base === 0) return 0;
     return Math.round((converted / base) * 100);
@@ -269,7 +260,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const outstandingInvoices = useMemo(
     () =>
       invoices.filter(
-        (i) => i.status !== Status.Paid && i.status !== Status.Cancelled
+        (i) => i.status !== InvoiceStatus.Paid && i.status !== InvoiceStatus.Cancelled
       ),
     [invoices]
   );
@@ -280,10 +271,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const inventoryValue = useMemo(
     () =>
       products
-        .filter((p) => p.type === 'สินค้า')
+        // .filter((p) => p.type === 'สินค้า') // Type might be different enum now
         .reduce(
           (sum, p) =>
-            sum + Number(p.stock || 0) * Number((p.costPrice ?? p.price) || 0),
+            sum + Number(p.stock || 0) * Number((p.cost_price ?? p.price) || 0),
           0
         ),
     [products]
@@ -292,10 +283,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const upcomingJobs = useMemo(
     () =>
       fieldJobs
-        .filter((j) => inNextDays(j.startTime, 7))
+        .filter((j) => inNextDays(j.start_time, 7))
         .sort(
           (a, b) =>
-            new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
         )
         .slice(0, 5),
     [fieldJobs]
@@ -303,19 +294,19 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const upcomingAssessments = useMemo(
     () =>
       assessments
-        .filter((a) => inNextDays(a.scheduledAt, 7))
+        .filter((a) => inNextDays(a.scheduled_at, 7))
         .sort(
           (a, b) =>
-            new Date(a.scheduledAt).getTime() -
-            new Date(b.scheduledAt).getTime()
+            new Date(a.scheduled_at).getTime() -
+            new Date(b.scheduled_at).getTime()
         )
         .slice(0, 5),
     [assessments]
   );
 
   const monthlyWarehouseOps = useMemo(() => {
-    const countMonth = (arr: { createdAt: string }[]) =>
-      arr.filter((x) => isThisMonth(x.createdAt)).length;
+    const countMonth = (arr: { created_at: string }[]) =>
+      arr.filter((x) => isThisMonth(x.created_at)).length;
     return {
       gr: countMonth(goodsReceipts),
       wd: countMonth(withdrawals),
@@ -326,7 +317,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   }, [goodsReceipts, withdrawals, transfers, stockAdjustments, productReturns]);
 
   const pendingApprovals = useMemo(() => {
-    const count = (arr: { status: Status }[]) =>
+    const count = (arr: { status: Status | string }[]) =>
       arr.filter((x) => x.status === Status.PendingApproval).length;
     return (
       count(goodsReceipts as any) +
@@ -338,7 +329,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const technicianWorkloadList = useMemo(() => {
     const data: { name: string; jobs: number }[] = [];
     fieldJobs
-      .filter((j) => isInSelectedRange(j.startTime))
+      .filter((j) => isInSelectedRange(j.start_time))
       .forEach((job) => {
         (job.technicians || []).forEach((t) => {
           const name = t.nickname || t.name;
@@ -353,15 +344,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const upcomingCombined = useMemo(() => {
     const jobs = upcomingJobs.map((j) => ({
       type: 'งาน',
-      time: j.startTime,
-      name: j.customerName,
+      time: j.start_time,
+      name: j.customer_name,
       status: j.status,
       id: j.id,
     }));
     const asses = upcomingAssessments.map((a) => ({
       type: 'ประเมิน',
-      time: a.scheduledAt,
-      name: a.customerName,
+      time: a.scheduled_at,
+      name: a.customer_name,
       status: a.status,
       id: a.id,
     }));
@@ -370,20 +361,30 @@ const Dashboard: React.FC<DashboardProps> = () => {
       .slice(0, 8);
   }, [upcomingJobs, upcomingAssessments]);
 
-  // Chart Data Preparation (Mock data for visual, replace with real data logic as needed)
   const chartData = useMemo(() => {
-    // Mock last 7 months data or similar logic based on receipts
-    // Ideally group receipts by date
-    return [
-      { name: 'ม.ค.', total: 4000 },
-      { name: 'ก.พ.', total: 3000 },
-      { name: 'มี.ค.', total: 2000 },
-      { name: 'เม.ย.', total: 2780 },
-      { name: 'พ.ค.', total: 1890 },
-      { name: 'มิ.ย.', total: 2390 },
-      { name: 'ก.ค.', total: 3490 },
-    ];
-  }, []);
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const result = [];
+    const now = new Date();
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthIdx = d.getMonth();
+      const year = d.getFullYear();
+      const monthName = months[monthIdx];
+      
+      const total = receipts.reduce((acc, r) => {
+        const rDate = new Date(r.paid_at);
+        if (rDate.getMonth() === monthIdx && rDate.getFullYear() === year) {
+          return acc + r.amount;
+        }
+        return acc;
+      }, 0);
+      
+      result.push({ name: monthName, total });
+    }
+    
+    return result;
+  }, [receipts]);
 
   return (
     <>
@@ -450,23 +451,23 @@ const Dashboard: React.FC<DashboardProps> = () => {
                     >
                       <div className="flex items-center gap-4">
                         <div
-                          className={`p-3 rounded-full ${job.status === Status.Completed ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}
+                          className={`p-3 rounded-full ${job.status === JobStatus.Completed ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}
                         >
                           <ClipboardDocumentListIcon className="h-6 w-6" />
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-800 text-lg">
-                            {job.customerName}
+                            {job.customer_name}
                           </h4>
                           <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
                             <span className="flex items-center gap-1">
                               <CalendarDaysIcon className="h-4 w-4" />{' '}
-                              {formatThaiDateTime(job.startTime).split(' ')[1]}
+                              {formatThaiDateTime(job.start_time).split(' ')[1]}
                             </span>
                             <span>•</span>
                             <span>
-                              {job.workAreas
-                                .map((wa) => wa.servicePackage)
+                              {job.work_areas
+                                .map((wa) => wa.service_package)
                                 .join(', ')}
                             </span>
                           </div>
@@ -605,7 +606,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                           className="flex justify-between items-center text-sm"
                         >
                           <span className="text-slate-600 truncate max-w-[140px]">
-                            {inv.customerName}
+                            {inv.customer_name}
                           </span>
                           <span className="text-slate-800 font-medium">
                             ฿{inv.total.toLocaleString()}
@@ -642,7 +643,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                             {item.name}
                           </span>
                           <span className="text-amber-600 font-medium">
-                            เหลือ {item.stock}
+                            เหลือ {item.stock || 0}
                           </span>
                         </li>
                       ))}
@@ -738,7 +739,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 <CurrencyDollarIcon className="h-6 w-6 text-green-500 mx-auto mb-2" />
                 <p className="text-xs text-slate-500">เก็บเงินสำเร็จ</p>
                 <p className="font-bold text-slate-800 text-lg">
-                  {receipts.filter((r) => isThisMonth(r.paidAt)).length} ใบ
+                  {receipts.filter((r) => isThisMonth(r.paid_at)).length} ใบ
                 </p>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-center">
@@ -757,6 +758,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         onClose={() => setIsAssessmentModalOpen(false)}
         onCreateAssessment={onCreateAssessment}
         products={products}
+        customers={customers}
       />
       <AddJobModal
         isOpen={isJobModalOpen}
@@ -767,6 +769,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
         jobs={fieldJobs}
         users={users}
         products={products}
+        warehouses={warehouses}
+        customers={customers}
       />
     </>
   );

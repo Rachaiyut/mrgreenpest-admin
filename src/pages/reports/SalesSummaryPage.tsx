@@ -4,7 +4,7 @@ import {
   Assessment,
   FieldJob,
   Status,
-} from '@/src/libs/common/interface/entity/app.interface';
+} from '@/src/types/entity/app.interface';
 import {
   ChartPieIcon,
   ArrowTrendingUpIcon,

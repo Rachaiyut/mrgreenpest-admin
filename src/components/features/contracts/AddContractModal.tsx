@@ -5,13 +5,13 @@ import {
   Quotation,
   Contract,
   Status,
-} from '@/src/libs/common/interface/entity/app.interface';
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
+} from '@/src/types/entity/app.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 
 interface AddContractModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: ICustomer;
+  customer: Customer;
   quotations: Quotation[];
   onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
 }
@@ -32,7 +32,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   const approvedQuotations = useMemo(
     () =>
       quotations.filter(
-        (q) => q.customerId === customer.id && q.status === Status.Approved
+        (q) => q.id === customer.id && q.status === Status.Approved
       ),
     [quotations, customer]
   );
@@ -63,45 +63,30 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
     }
   }, [isOpen, customer]);
 
-  const createContractObject = (
-    status: Status
-  ): Omit<Contract, 'id'> | null => {
-    if (!selectedQuotation) return null;
-    return {
-      customerId: customer.id,
-      customerName: `${customer.first_name} ${customer.last_name}`.trim(),
-      quotationId: selectedQuotation.id,
-      address: address,
-      startDate: startDate,
-      endDate: endDate,
-      servicePackage: servicePackage,
-      status: status,
-      totalAmount: selectedQuotation.total,
-    };
-  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const contractData = createContractObject(Status.InProgress);
-    if (contractData) {
-      onCreateContract(contractData);
-      onClose();
-    }
-  };
 
-  const handleSaveDraft = () => {
-    const contractData = createContractObject(Status.Draft);
-    if (contractData) {
-      onCreateContract(contractData);
-      onClose();
-    }
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const contractData = createContractObject(Status.InProgress);
+  //   if (contractData) {
+  //     onCreateContract(contractData);
+  //     onClose();
+  //   }
+  // };
+
+  // const handleSaveDraft = () => {
+  //   const contractData = createContractObject(Status.Draft);
+  //   if (contractData) {
+  //     onCreateContract(contractData);
+  //     onClose();
+  //   }
   };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`สร้างสัญญาใหม่สำหรับ ${customer.name}`}
+      title={`สร้างสัญญาใหม่สำหรับ ${customer.id}`}
       size="3xl"
       footer={
         <div className="flex gap-2">
@@ -190,7 +175,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
               rel="noopener noreferrer"
               className="text-primary hover:underline truncate block mt-1 text-sm p-2 bg-slate-50 rounded-md"
             >
-              {customer.googleMapLink}
+              {customer.google_map_link}
             </a>
           </FormField>
         )}

@@ -1,8 +1,10 @@
 import { FC } from 'react';
 import { Link } from 'react-router-dom';
-import { PAGE_PATH } from '../../../libs/common/constant/route';
-import { NavLink } from '../../../libs/common/interface/entity/nav.interface';
-import { Page } from '../../../libs/router/page';
+
+import { NavLink } from '@/src/types/entity/nav.interface';
+import { PAGE_PATH } from '@/src/config/route';
+import { Page } from '@/src/router/page';
+
 
 interface SidebarLinkProps {
   item: NavLink;

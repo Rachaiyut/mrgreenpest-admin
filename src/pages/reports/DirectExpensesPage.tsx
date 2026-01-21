@@ -1,100 +1,30 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
-
-// Mock Data Types for Direct Expenses
-interface DirectExpenseItem {
-  id: string;
-  date: string; // วัน เดือน ปี
-  invoiceNo: string; // Invoice No.
-  details: string; // รายละเอียด
-  quantity: number; // จำนวน
-  unit: string; // หน่วย
-  unitPrice: number; // ราคาต่อหน่วย
-  totalExclVat: number; // รวมเป็นค่าใช้จ่าย (Before VAT)
-  totalInclVat: number; // รวมเป็นค่าใช้จ่าย (VAT) (Inc VAT)
-  netPaidWht: number; // ยอดชำระ/หักณที่จ่าย (Net Paid)
-  whtAmount: number; // WHT Amount for display context
-  wallet: string; // กระเป๋าเงิน
-}
-
-const MOCK_DIRECT_EXPENSES: DirectExpenseItem[] = [
-  {
-    id: '1',
-    date: '2025-12-02',
-    invoiceNo: 'INV-S-001',
-    details: 'ซื้อน้ำยาเคมี กำจัดปลวก (Termidor)',
-    quantity: 10,
-    unit: 'แกลลอน',
-    unitPrice: 2500,
-    totalExclVat: 25000,
-    totalInclVat: 26750,
-    netPaidWht: 26000, // example deduction
-    whtAmount: 750,
-    wallet: 'กระเป๋า admin',
-  },
-  {
-    id: '2',
-    date: '2025-12-05',
-    invoiceNo: 'INV-S-005',
-    details: 'อุปกรณ์ป้องกันภัยส่วนบุคคล (PPE)',
-    quantity: 5,
-    unit: 'ชุด',
-    unitPrice: 1200,
-    totalExclVat: 6000,
-    totalInclVat: 6420,
-    netPaidWht: 6420,
-    whtAmount: 0,
-    wallet: 'กระเป๋า CFO',
-  },
-  {
-    id: '3',
-    date: '2025-12-10',
-    invoiceNo: 'INV-T-022',
-    details: 'ค่าเหยื่อกำจัดมด (Optigard)',
-    quantity: 20,
-    unit: 'หลอด',
-    unitPrice: 450,
-    totalExclVat: 9000,
-    totalInclVat: 9630,
-    netPaidWht: 9360,
-    whtAmount: 270, // 3%
-    wallet: 'กระเป๋า admin',
-  },
-  {
-    id: '4',
-    date: '2025-12-12',
-    invoiceNo: 'INV-E-101',
-    details: 'เครื่องพ่นยา (Fogger)',
-    quantity: 2,
-    unit: 'เครื่อง',
-    unitPrice: 15000,
-    totalExclVat: 30000,
-    totalInclVat: 32100,
-    netPaidWht: 31200,
-    whtAmount: 900,
-    wallet: 'กระเป๋า CEO',
-  },
-  {
-    id: '5',
-    date: '2025-12-20',
-    invoiceNo: 'None',
-    details: 'ค่าจ้างรายวัน พนักงานชั่วคราว',
-    quantity: 3,
-    unit: 'วัน',
-    unitPrice: 500,
-    totalExclVat: 1500,
-    totalInclVat: 1500,
-    netPaidWht: 1455, // 3% wht
-    whtAmount: 45,
-    wallet: 'กระเป๋าหัวหน้าทีม1',
-  },
-];
+import { Expense } from '@/src/types/entity/financial.interface';
+import { ExpenseApi } from '@/src/api/expense';
 
 const DirectExpensesPage: React.FC = () => {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number>(
     new Date().getMonth()
   );
+
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        setIsLoading(true);
+        const res = await ExpenseApi.getAll();
+        setExpenses(res.data || []);
+      } catch (error) {
+        console.error('Failed to fetch expenses', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchExpenses();
+  }, []);
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
@@ -117,7 +47,7 @@ const DirectExpensesPage: React.FC = () => {
 
   // Filter Logic
   const processedData = useMemo(() => {
-    return MOCK_DIRECT_EXPENSES.filter((item) => {
+    return expenses.filter((item) => {
       const d = new Date(item.date);
       const matchesDate =
         d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;

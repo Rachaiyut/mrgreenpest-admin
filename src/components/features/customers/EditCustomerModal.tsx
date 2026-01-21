@@ -7,19 +7,19 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Status } from '@/src/libs/common/interface/entity/app.interface';
-import { ICustomer } from '@/src/libs/common/interface/entity/customer.interface';
-import { CustomerType } from '@/src/libs/common/enum/customer.enum';
+import { Status } from '@/src/types/entity/app.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
+import { CustomerType } from '@/src/types/enums/customer.enum';
 
 interface EditCustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: ICustomer | null;
-  onUpdateCustomer: (updatedCustomer: ICustomer) => void;
+  customer: Customer | null;
+  onUpdateCustomer: (updatedCustomer: Customer) => void;
 }
 
 // Define a type for the flat form state
-type FlatCustomerFormData = Partial<ICustomer> & {
+type FlatCustomerFormData = Partial<Customer> & {
   name?: string;
   type?: 'บุคคลธรรมดา' | 'นิติบุคคล';
   contactPerson?: string;
@@ -41,7 +41,13 @@ type FlatCustomerFormData = Partial<ICustomer> & {
   phone3?: string;
   phone4?: string;
   phone5?: string;
-};
+  googleMapLink?: string;
+  taxId?: string;
+  nickname?: string;
+  email?: string;
+  phone?: string;
+}
+
 
 export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
   isOpen,
@@ -97,7 +103,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       ];
       // Check taxId manually since it's not in the requiredFields array for loop but is now required
       if (!formData.taxId) {
-        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (เลขประจำตัวผู้เสียภาษี)');
+        alert('กรุณากรอกเลขประจำตัวผู้เสียภาษี');
         return;
       }
 
@@ -119,7 +125,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
          }
       }
 
-      const updatedData: ICustomer = {
+      const updatedData: Customer = {
         ...customer,
         first_name: firstName,
         last_name: lastName,
@@ -137,8 +143,8 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         
         tax_id: formData.taxId,
         google_map_link: formData.googleMapLink,
-        status: Status.Approved,
       };
+      
       onUpdateCustomer(updatedData);
     }
     onClose();

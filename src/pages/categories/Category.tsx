@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 
 // Interface
-import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
+import { ICategory } from '@/src/types/entity/category.interface';
 
 // API
-import { Category } from '@/src/libs/api/category';
+import { Category } from '@/src/api/category';
 
 // Icon
 import {

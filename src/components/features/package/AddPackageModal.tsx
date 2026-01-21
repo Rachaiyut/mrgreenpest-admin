@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { IProduct, IPackageCondition } from '@/src/libs/common/interface/entity/product.interface';
-import { ICategory } from '@/src/libs/common/interface/entity/category.interface';
-import { CategoryType } from '@/src/libs/common/enum/category.enum';
+import { IProduct, IPackageCondition } from '@/src/types/entity/product.interface';
+import { ICategory } from '@/src/types/entity/category.interface';
+import { CategoryType } from '@/src/types/enums/category.enum';
 import {
   FormField,
   Input,
