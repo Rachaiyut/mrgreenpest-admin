@@ -1,11 +1,11 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { Product } from '@/src/types/entity/app.interface';
+import { Package } from '@/src/types/entity/package.interface';
 
 interface PackageDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  pkg: Product | null;
+  pkg: Package | null;
 }
 
 export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
@@ -30,7 +30,7 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
             <div>
               <dt className="font-medium text-slate-500">รหัสแพ็กเกจ</dt>
-              <dd className="mt-1 text-slate-900 font-semibold">{pkg.id}</dd>
+              <dd className="mt-1 text-slate-900 font-semibold">{pkg.code || pkg.id}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ชื่อแพ็กเกจ</dt>
@@ -41,23 +41,18 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                 จำนวนครั้งที่เข้าบริการ
               </dt>
               <dd className="mt-1 text-slate-900">
-                {pkg.numberOfVisits ? `${pkg.numberOfVisits} ครั้ง` : '-'}
+                {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
               </dd>
             </div>
+            {/* Contract duration not in interface, so omitting or checking if it's in remark? 
+                Just omitting for now as it's not in the data structure provided. 
+            */}
             <div>
-              <dt className="font-medium text-slate-500">อายุสัญญา</dt>
-              <dd className="mt-1 text-slate-900">
-                {pkg.contractDuration || '-'}
+              <dt className="font-medium text-slate-500">หมายเหตุ</dt>
+              <dd className="mt-1 text-slate-900 whitespace-pre-wrap">
+                {pkg.remark || '-'}
               </dd>
             </div>
-            {pkg.description && (
-              <div className="md:col-span-2">
-                <dt className="font-medium text-slate-500">หมายเหตุ</dt>
-                <dd className="mt-1 text-slate-900 bg-slate-50 p-2 rounded-md">
-                  {pkg.description}
-                </dd>
-              </div>
-            )}
           </dl>
         </div>
 
@@ -65,51 +60,63 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
           <h4 className="text-base font-semibold text-slate-800 mb-3">
             เงื่อนไขราคา
           </h4>
-          <div className="overflow-x-auto border border-slate-200 rounded-md">
-            <table className="min-w-full text-sm">
+          <div className="overflow-hidden border border-slate-200 rounded-lg">
+            <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="p-2 text-left font-medium text-slate-600">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
                     พื้นที่ฯ (ตร.ม.)
                   </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
                     ราคาเสนอ (ไม่มีปลวก)
                   </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
                     ราคาเสนอ (มีปลวก)
                   </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
                     ราคาต่ำสุด
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {pkg.conditions && pkg.conditions.length > 0 ? (
-                  pkg.conditions.map((cond, index) => (
+              <tbody className="bg-white divide-y divide-slate-200">
+                {pkg.package_price && pkg.package_price.length > 0 ? (
+                  pkg.package_price.map((cond, index) => (
                     <tr
                       key={cond.id || index}
-                      className="border-b border-slate-200 last:border-b-0"
+                      className="hover:bg-slate-50"
                     >
-                      <td className="p-2 text-slate-700">
-                        ไม่เกิน {cond.maxArea}
+                      <td className="px-4 py-3 text-sm text-slate-900">
+                        ไม่เกิน {cond.area_range}
                       </td>
-                      <td className="p-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.firstOfferPriceNoTermites.toLocaleString(
+                        {cond.price_no_termite.toLocaleString(
                           'th-TH',
                           { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                         )}
                       </td>
-                      <td className="p-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.firstOfferPriceWithTermites.toLocaleString(
+                        {cond.price_with_termite.toLocaleString(
                           'th-TH',
                           { minimumFractionDigits: 2, maximumFractionDigits: 2 }
                         )}
                       </td>
-                      <td className="p-2 text-right text-slate-700">
+                      <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.minPrice.toLocaleString('th-TH', {
+                        {cond.minimum_price.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -118,7 +125,7 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="text-center py-6 text-slate-500">
+                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
                       ไม่มีเงื่อนไขราคา
                     </td>
                   </tr>

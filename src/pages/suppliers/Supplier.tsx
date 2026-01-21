@@ -22,12 +22,13 @@ import { SupplierDetailsModal } from '../../components/features/suppliers/Suppli
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { EditSupplierModal } from '../../components/features/suppliers/EditSupplierModal';
+import { SupplierType } from '@/src/types';
 
 const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -46,7 +47,7 @@ const Suppliers: React.FC = () => {
     null
   );
 
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState<SupplierType>();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
     null
@@ -124,6 +125,7 @@ const Suppliers: React.FC = () => {
           page: currentPage,
           limit: itemsPerPage,
           search: searchQuery,
+          type: typeFilter,
           sort_by: 'created_at',
           sort_order: 'desc'
         });
@@ -134,20 +136,8 @@ const Suppliers: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    }, [currentPage, itemsPerPage, searchQuery]);
+    }, [currentPage, itemsPerPage, searchQuery, typeFilter]);
   
-
-  const onUpdateSupplier = async (supplier: Supplier) => {
-      try {
-        const { id, ...data } = supplier;
-        await SupplierApi.updateSupplier(id, data);
-        fetchSupplier();
-        setIsEditModalOpen(false);
-      } catch (error) {
-        console.error('Failed to update product:', error);
-        alert('Failed to update product');
-      }
-    };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -199,7 +189,7 @@ const Suppliers: React.FC = () => {
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
-        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ผู้จัดจำหน่าย</h1>
             <p className="mt-1 text-slate-600">
@@ -223,13 +213,13 @@ const Suppliers: React.FC = () => {
               <Select
                 value={typeFilter}
                 onChange={(e) => {
-                  setTypeFilter(e.target.value);
+                  setTypeFilter(e.target.value as SupplierType);
                   setCurrentPage(1);
                 }}
               >
-                <option value="all">ทุกประเภท</option>
-                <option value="นิติบุคคล">นิติบุคคล</option>
-                <option value="บุคคลธรรมดา">บุคคลธรรมดา</option>
+                <option value=''>ทุกประเภท</option>
+                <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
+                <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
             </div>
             <Button onClick={() => setIsModalOpen(true)}>
@@ -239,8 +229,8 @@ const Suppliers: React.FC = () => {
           </div>
         </div>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col">
-          <div className="overflow-auto flex-grow">
+        <Card className="p-0 grow min-h-0 flex flex-col">
+          <div className="overflow-auto grow">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
@@ -310,7 +300,7 @@ const Suppliers: React.FC = () => {
                       {supplier.contact_name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {supplier.type}
+                      {supplier.type === SupplierType.INDIVIDUAL ? 'บุคคลธรรมดา' : 'นิติบุคคล' }
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {supplier.tax_id || '-'}
@@ -342,7 +332,7 @@ const Suppliers: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -369,9 +359,8 @@ const Suppliers: React.FC = () => {
         >
           <div className="py-1" role="none">
             {actions.map((action) => (
-              <a
+              <button
                 key={action.label}
-                href="#"
                 onClick={(e) => {
                   e.preventDefault();
                   const supplier = suppliers.find(
@@ -397,7 +386,7 @@ const Suppliers: React.FC = () => {
               >
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                 <span>{action.label}</span>
-              </a>
+              </button>
             ))}
           </div>
         </div>

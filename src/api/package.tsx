@@ -11,7 +11,7 @@ import { Package } from '@/src/types/entity/package.interface';
 import { AuthService } from './auth';
 
 class PackageService extends AuthService {
-  protected path = '/package';
+  protected path = '/packages';
 
   // Your Public API Methods
   async getPackages(query: IBaseQuery): Promise<IBaseResponseArray<Package>> {

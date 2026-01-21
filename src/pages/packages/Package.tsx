@@ -23,6 +23,7 @@ import { EditPackageModal } from '../../components/features/package/EditPackageM
 import { PackageDetailsModal } from '../../components/features/package/PackageDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
+import { CategoryType } from '@/src/types';
 
 const Packages: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
@@ -47,7 +48,7 @@ const Packages: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({ limit: 1000 });
+      const response = await CategoryApi.getCategories({ limit: 100 });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -261,7 +262,7 @@ const Packages: React.FC = () => {
                       className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
                       onClick={() => handleViewDetails(pkg)}
                     >
-                      {pkg.id}
+                      {pkg.code || pkg.id}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
                       {pkg.name}
@@ -270,14 +271,12 @@ const Packages: React.FC = () => {
                       {categoryMap.get(pkg.category_id) || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
-                      {pkg.number_of_visits
-                        ? `${pkg.number_of_visits} ครั้ง`
-                        : '-'}
+                      {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {/* TODO: Handle price range or min price display */}
-                      {pkg.conditions && pkg.conditions.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.conditions.map((c) => c.min_price)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      {pkg.package_price && pkg.package_price.length > 0
+                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.minimum_price)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
@@ -298,7 +297,7 @@ const Packages: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -323,8 +322,7 @@ const Packages: React.FC = () => {
           className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
         >
           <div className="py-1">
-            <a
-              href="#"
+            <button
               onClick={(e) => {
                 e.preventDefault();
                 const pkg = packages.find((p) => p.id === openDropdownId);
@@ -334,9 +332,8 @@ const Packages: React.FC = () => {
             >
               <EyeIcon className="mr-3 h-5 w-5" />
               <span>ดูรายละเอียด</span>
-            </a>
-            <a
-              href="#"
+            </button>
+            <button
               onClick={(e) => {
                 e.preventDefault();
                 const pkg = packages.find((p) => p.id === openDropdownId);
@@ -346,9 +343,8 @@ const Packages: React.FC = () => {
             >
               <PencilIcon className="mr-3 h-5 w-5" />
               <span>แก้ไข</span>
-            </a>
-            <a
-              href="#"
+            </button>
+            <button
               onClick={(e) => {
                 e.preventDefault();
                 const pkg = packages.find((p) => p.id === openDropdownId);
@@ -358,7 +354,7 @@ const Packages: React.FC = () => {
             >
               <TrashIcon className="mr-3 h-5 w-5" />
               <span>ลบ</span>
-            </a>
+            </button>
           </div>
         </div>
       )}
@@ -366,7 +362,6 @@ const Packages: React.FC = () => {
       <AddPackageModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        products={packages}
         onCreatePackage={onCreatePackage}
         categories={categories}
       />

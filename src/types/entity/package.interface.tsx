@@ -1,35 +1,33 @@
 // Interface
-import { IBase } from "./base.interface"
-import { Category } from "./category.interface"
-import { IUnit } from "./unit.interface"
-import { CategoryType } from "@/src/types/enums/category.enum"
+import { IBase, IBaseQuery } from './base.interface';
 
 export interface PackageCondition {
-    id: string;
-    max_area: number;
-    first_offer_price_no_termites: number;
-    first_offer_price_with_termites: number;
-    min_price: number;
+  id: string;
+  max_area: number;
+  first_offer_price_no_termites: number;
+  first_offer_price_with_termites: number;
+  min_price: number;
 }
 
 export interface Package extends IBase {
-    category_id: string,
-    unit_id: string,
-    code: string,
-    barcode: string,
-    name: string,
-    cost_price: string,
-    price?: number, // Selling price
-    description?: string,
-    type?: CategoryType,
-    min_stock: number,
-    fda_number: string,
-    created_by: string,
-    category: Partial<Category>,
-    unit:  Partial<IUnit>
-    
-    number_of_visits?: number;
-    contract_duration?: string;
-    conditions?: PackageCondition[];
-    stock?: number;
+  category_id: string;
+  visit_limit: number;
+  remark: string;
+  code: string;
+  name: string;
+  contract_period: number;
+  package_price: PackagePrice[];
+}
+
+export interface PackagePrice extends IBase {
+  area_range: number;
+  price_with_termite: number;
+  price_no_termite: number;
+  minimum_price: number;
+}
+
+export interface PackageQuery extends IBaseQuery {
+  code: string;
+  name: string;
+  visit_limit: number;
 }

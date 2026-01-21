@@ -264,6 +264,12 @@ const Categories: React.FC = () => {
         </Card>
       </div>
 
+
+      <AddCategoryModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreateCategory={onCreateCategory}
+      />
     </>
   );
 };

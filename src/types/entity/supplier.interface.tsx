@@ -1,5 +1,5 @@
 // Enum
-import { IBase } from "./base.interface";
+import { IBase, IBaseQuery } from "./base.interface";
 import {SupplierType } from "@/src/types/enums/customer.enum";
 
 export interface Supplier extends IBase {
@@ -10,4 +10,10 @@ export interface Supplier extends IBase {
     email: string,
     contact_name: string,
     phone: string,
+}
+
+
+export interface SupplierQuery extends IBaseQuery {
+    search?: string;
+    type?: SupplierType
 }

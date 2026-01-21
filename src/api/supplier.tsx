@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { Supplier } from '@/src/types/entity/supplier.interface';
+import { Supplier, SupplierQuery } from '@/src/types/entity/supplier.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -14,7 +14,7 @@ class SupplierService extends AuthService {
   protected path = '/suppliers';
 
   async getSuppliers(
-    query: IBaseQuery
+    query: SupplierQuery
   ): Promise<IBaseResponseArray<Supplier>> {
     const res = await this.http.get<IBaseResponseArray<Supplier>>(
       `${this.path}`,

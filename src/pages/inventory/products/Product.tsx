@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '../../../components/common/Card';
 import {
   PlusIcon,
@@ -11,8 +11,8 @@ import {
 import { CategoryType } from '@/src/types/enums/category.enum';
 
 // Interface
-import { Product as IProduct } from '@/src/types/entity/package.interface';
-import { ICategory } from '@/src/types/entity/category.interface';
+import { Product as IProduct } from '@/src/types/entity/product.interface';
+import { Category } from '@/src/types/entity/category.interface';
 import { IUnit } from '@/src/types/entity/unit.interface';
 
 // API
@@ -29,7 +29,7 @@ import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
-  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<IUnit[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -191,7 +191,7 @@ const Product: React.FC = () => {
   return (
     <>
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
-        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">สินค้า/บริการ</h1>
             <p className="mt-1 text-slate-600">จัดการสินค้าและบริการ</p>
@@ -216,8 +216,8 @@ const Product: React.FC = () => {
           </div>
         </div>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col">
-          <div className="overflow-auto flex-grow">
+        <Card className="p-0 grow min-h-0 flex flex-col">
+          <div className="overflow-auto grow">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
@@ -255,12 +255,6 @@ const Product: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    ประเภท
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
                     ราคา/หน่วย
                   </th>
                   <th
@@ -274,18 +268,6 @@ const Product: React.FC = () => {
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
                     สต็อกขั้นต่ำ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    หน่วย
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    ผู้สร้าง
                   </th>
                   <th scope="col" className="relative px-6 py-3">
                     <span className="sr-only">จัดการ</span>
@@ -307,9 +289,7 @@ const Product: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {product.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.category.type || '-'}
-                    </td>
+                 
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.category.name || '-'}
                     </td>
@@ -320,17 +300,10 @@ const Product: React.FC = () => {
                     <td
                       className={`px-4 py-3 whitespace-nowrap text-sm `}
                     >
-                      {/* TODO: Check stock logic */}
                       {product.category?.type === CategoryType.PRODUCT ? 'สินค้า' : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.min_stock}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.unit?.name || '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {product.created_by}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
@@ -350,7 +323,7 @@ const Product: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -377,9 +350,8 @@ const Product: React.FC = () => {
         >
           <div className="py-1" role="none">
             {actions.map((action) => (
-              <a
+              <button
                 key={action.label}
-                href="#"
                 onClick={(e) => {
                   e.preventDefault();
                   const product = products.find((p) => p.id === openDropdownId);
@@ -400,7 +372,7 @@ const Product: React.FC = () => {
               >
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                 <span>{action.label}</span>
-              </a>
+              </button>
             ))}
           </div>
         </div>
@@ -429,7 +401,7 @@ const Product: React.FC = () => {
         message={
           <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบสินค้า/บริการ{' '}
-            <strong>{productToDelete?.name}</strong>?
+            <strong>{productToDelete?.code}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }

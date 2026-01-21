@@ -120,7 +120,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
             <Input
               id="supplier-id"
               type="text"
-              value={formData.id || ''}
+              value={formData.code || ''}
               readOnly
               className="bg-slate-100"
             />

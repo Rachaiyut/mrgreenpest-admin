@@ -1,17 +1,17 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 // Interface
-import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { Supplier } from '@/src/types/entity/supplier.interface';
 import { SupplierType } from '@/src/types/enums/customer.enum';
 
 interface AddSupplierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateSupplier: (supplier: Omit<ISupplier, 'id'>) => void;
-  suppliers: ISupplier[];
+  onCreateSupplier: (supplier: Partial<Supplier>) => void;
+  suppliers: Supplier[];
 }
 
 export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
@@ -34,16 +34,6 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
     }
   }, [isOpen]);
 
-  const generatedId = useMemo(() => {
-    if (!isOpen) return '';
-    const prefix = 'SP';
-    const maxId = suppliers.reduce((max, s) => {
-      const num = parseInt(s.id.slice(2), 10);
-      return num > max ? num : max;
-    }, 0);
-    const newIdNumber = maxId + 1;
-    return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
-  }, [isOpen, suppliers]);
 
   const handlePhoneChange = (index: number, value: string) => {
     const newPhones = [...phones];
@@ -78,7 +68,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       return;
     }
 
-    const newSupplier: Partial<Omit<ISupplier, 'id'>> = {
+    const newSupplier: Partial<Partial<Supplier>> = {
       contact_name: data['supplier-name'] as string,
       type: supplierType as SupplierType,
       tax_id: data['tax-id'] as string | undefined,
@@ -123,13 +113,12 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
         className="space-y-4"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="รหัสผู้จัดจำหน่าย" htmlFor="supplier-id">
+          <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax-id">
             <Input
-              id="supplier-id"
+              name="tax-id"
+              id="tax-id"
               type="text"
-              value={generatedId}
-              readOnly
-              className="bg-slate-100"
+              required={supplierType === 'นิติบุคคล'}
             />
           </FormField>
           <FormField label="ประเภทผู้จัดจำหน่าย">
@@ -171,14 +160,6 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
           <Input name="supplier-name" id="supplier-name" type="text" required />
         </FormField>
 
-        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax-id">
-          <Input
-            name="tax-id"
-            id="tax-id"
-            type="text"
-            required={supplierType === 'นิติบุคคล'}
-          />
-        </FormField>
 
         {supplierType === 'นิติบุคคล' && (
           <FormField label="ชื่อผู้ติดต่อ" htmlFor="contact-person">
@@ -189,7 +170,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
         <FormField label="โทรศัพท์">
           <div className="space-y-2">
             {phones.map((phone, index) => (
-              <div key={index} className="flex items-center gap-2">
+              <div key={index + 1} className="flex items-center gap-2">
                 <Input
                   name={`phone-${index}`}
                   type="tel"

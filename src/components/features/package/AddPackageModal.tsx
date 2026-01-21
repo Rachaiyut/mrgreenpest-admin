@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { IProduct, IPackageCondition } from '@/src/types/entity/package.interface';
-import { ICategory } from '@/src/types/entity/category.interface';
+import { Package, PackagePrice } from '@/src/types/entity/package.interface';
+import { Category } from '@/src/types/entity/category.interface';
 import { CategoryType } from '@/src/types/enums/category.enum';
 import {
   FormField,
@@ -15,20 +15,18 @@ import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 interface AddPackageModalProps {
   isOpen: boolean;
   onClose: () => void;
-  products: IProduct[];
-  onCreatePackage: (product: Partial<IProduct>) => void;
-  categories: ICategory[];
+  onCreatePackage: (product: Partial<Package>) => void;
+  categories: Category[];
 }
 
 export const AddPackageModal: React.FC<AddPackageModalProps> = ({
   isOpen,
   onClose,
-  products,
   onCreatePackage,
   categories,
 }) => {
   const [conditions, setConditions] = useState<
-    Partial<Omit<IPackageCondition, 'id'>>[]
+    Partial<Omit<PackagePrice, 'id' | 'created_at' | 'updated_at'>>[]
   >([]);
 
   useEffect(() => {
@@ -42,32 +40,15 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     [categories]
   );
 
-  const generatedId = useMemo(() => {
-    if (!isOpen) return '';
-    const prefix = 'PK';
-    const relevantProducts = products.filter((p) => p.id.startsWith('PK'));
-    const maxId = relevantProducts.reduce((max, p) => {
-      const numPart = p.id.replace('PK', '');
-      if (!numPart) return max;
-      const num = parseInt(numPart, 10);
-      return isNaN(num) ? max : num > max ? num : max;
-    }, 0);
-    const newIdNumber = maxId + 1;
-    return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
-  }, [isOpen, products]);
-
   const invalidConditionIndices = useMemo(() => {
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
       if (
-        typeof cond.min_price === 'number' &&
-        typeof cond.first_offer_price_no_termites === 'number' &&
-        typeof cond.first_offer_price_with_termites === 'number' &&
-        cond.min_price >
-          Math.min(
-            cond.first_offer_price_no_termites,
-            cond.first_offer_price_with_termites
-          )
+        typeof cond.minimum_price === 'number' &&
+        typeof cond.price_no_termite === 'number' &&
+        typeof cond.price_with_termite === 'number' &&
+        cond.minimum_price >
+          Math.min(cond.price_no_termite, cond.price_with_termite)
       ) {
         indices.push(index);
       }
@@ -79,17 +60,17 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     setConditions((prev) => [
       ...prev,
       {
-        max_area: undefined,
-        first_offer_price_no_termites: 0,
-        first_offer_price_with_termites: 0,
-        min_price: 0,
+        area_range: undefined,
+        price_no_termite: 0,
+        price_with_termite: 0,
+        minimum_price: 0,
       },
     ]);
   };
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<IPackageCondition, 'id'>,
+    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at'>,
     value: string
   ) => {
     const newConditions = [...conditions];
@@ -110,21 +91,23 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const newPackage: Partial<IProduct> = {
+    const newPackage: Partial<Package> = {
+      code: data['package-code'] as string,
       name: data['package-name'] as string,
       category_id: data['categoryId'] as string,
-      min_stock: 0,
-      created_by: 'ผู้ดูแลระบบ', // Should be handled by backend or auth context
-      number_of_visits: parseInt(data['package-visits'] as string, 10),
-      contract_duration: data['package-duration'] as string,
-      // description: data['package-description'] as string, // IProduct doesn't have description yet? Add it if needed.
-      conditions: conditions.map((c, i) => ({
-        id: `cond-${Date.now()}-${i}`,
-        max_area: c.max_area || 0,
-        first_offer_price_no_termites: c.first_offer_price_no_termites || 0,
-        first_offer_price_with_termites: c.first_offer_price_with_termites || 0,
-        min_price: c.min_price || 0,
-      })),
+      visit_limit: parseInt(data['package-visit-limit'] as string),
+      contract_period: parseFloat(data['package-contract-period'] as string) || 1,
+      remark: data['package-description'] as string,
+
+      package_price: conditions.map(
+        (c) =>
+          ({
+            area_range: Number(c.area_range) || 0,
+            price_no_termite: Number(c.price_no_termite) || 0,
+            price_with_termite: Number(c.price_with_termite) || 0,
+            minimum_price: Number(c.minimum_price) || 0,
+          }) as PackagePrice
+      ),
     };
 
     onCreatePackage(newPackage);
@@ -169,11 +152,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="รหัสแพ็กเกจ" htmlFor="package-id">
             <Input
-              id="package-id"
-              name="package-id"
+              id="package-code"
+              name="package-code"
               type="text"
-              value={generatedId}
-              readOnly
+              required
+              placeholder="PK0001"
               className="bg-slate-100"
             />
           </FormField>
@@ -190,7 +173,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         </div>
         <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
           <Input
-            id="package-name"
+            id="pckage-name"
             name="package-name"
             type="text"
             required
@@ -199,28 +182,33 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         </FormField>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="package-visits">
-            <Input
-              id="package-visits"
-              name="package-visits"
+          <Input
+              id="package-visit-limit"
+              name="package-visit-limit"
               type="number"
               required
+              min="1"            
+              step="1"     
               placeholder="เช่น 4"
             />
           </FormField>
           <FormField label="อายุสัญญา" htmlFor="package-duration">
-            <Select id="package-duration" name="package-duration" required>
-              <option>ครั้งเดียว</option>
-              <option>3 เดือน</option>
-              <option>6 เดือน</option>
-              <option>1 ปี</option>
-            </Select>
+            <Input
+              id="package-contract-period"
+              name="package-contract-period"
+              type="number"
+              step="0.1"
+              required
+              placeholder="1.0"
+              min="1"
+            />
           </FormField>
         </div>
 
         <FormField label="หมายเหตุ" htmlFor="package-description">
           <Textarea
-            id="package-description"
-            name="package-description"
+            id="package-remark"
+            name="package-remark"
             rows={3}
             placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับแพ็กเกจ"
           />
@@ -269,11 +257,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.max_area || ''}
+                          value={cond.area_range || ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'max_area',
+                              'area_range',
                               e.target.value
                             )
                           }
@@ -285,11 +273,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.first_offer_price_no_termites ?? ''}
+                          value={cond.price_no_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'first_offer_price_no_termites',
+                              'price_no_termite',
                               e.target.value
                             )
                           }
@@ -302,11 +290,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.first_offer_price_with_termites ?? ''}
+                          value={cond.price_with_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'first_offer_price_with_termites',
+                              'price_with_termite',
                               e.target.value
                             )
                           }
@@ -319,11 +307,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.min_price ?? ''}
+                          value={cond.minimum_price ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'min_price',
+                              'minimum_price',
                               e.target.value
                             )
                           }

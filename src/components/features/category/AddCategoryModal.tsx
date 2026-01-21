@@ -1,57 +1,23 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Textarea } from '../../common/FormControls';
+import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Category } from '@/src/types/entity/app.interface';
 import { CategoryType } from '@/src/types/enums/category.enum';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateCategory: (category: Omit<Category, 'id'>) => void;
-  categories: Category[];
+  onCreateCategory: (category: Partial<Category>) => void;
 }
 
 export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   isOpen,
   onClose,
   onCreateCategory,
-  categories,
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
   const [prefix, setPrefix] = useState('');
   const [error, setError] = useState('');
-
-  const generatedId = useMemo(() => {
-    if (!prefix) return '';
-    const upperPrefix = prefix.toUpperCase();
-    const relevantCategories = categories.filter((c) =>
-      c.id.startsWith(upperPrefix)
-    );
-    const maxId = relevantCategories.reduce((max, c) => {
-      const numPart = c.id.replace(upperPrefix, '');
-      if (!numPart) return max;
-      const num = parseInt(numPart, 10);
-      return isNaN(num) ? max : num > max ? num : max;
-    }, 0);
-    const newIdNumber = maxId + 1;
-    return `${upperPrefix}${String(newIdNumber).padStart(3, '0')}`;
-  }, [prefix, categories]);
-
-  useEffect(() => {
-    if (!prefix) {
-      setError('');
-      return;
-    }
-    const upperPrefix = prefix.toUpperCase();
-    const prefixExists = categories.some(
-      (c) => c.prefix?.toUpperCase() === upperPrefix
-    );
-    if (prefixExists) {
-      setError('อักษรย่อนี้มีอยู่แล้ว');
-    } else {
-      setError('');
-    }
-  }, [prefix, categories]);
 
   useEffect(() => {
     if (isOpen) {
@@ -70,11 +36,11 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
 
-    const newCategory: Omit<Category, 'id'> = {
-      name: data['category-name'] as string,
-      description: data.description as string | undefined,
-      type: CategoryType.PRODUCT,
-      prefix: data.prefix as string,
+    const newCategory: Partial<Category> = {
+      code: data['code'] as string,
+      name: data['name'] as string,
+      description: data['description'] as string | undefined,
+      type: data['type'] as CategoryType,
     };
 
     onCreateCategory(newCategory);
@@ -100,7 +66,6 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             type="submit"
             form="add-category-form"
             className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
-            disabled={!!error || !prefix}
             title={error || ''}
           >
             บันทึก
@@ -115,36 +80,30 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         className="space-y-4"
       >
         <FormField label="ชื่อหมวดหมู่" htmlFor="category-name">
-          <Input name="category-name" id="category-name" type="text" required />
+          <Input name="name" id="category-name" type="text" required />
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="อักษรย่อ" htmlFor="prefix">
+          <FormField label="รหัสหมวดหมู่" htmlFor="prefix">
             <Input
-              name="prefix"
-              id="prefix"
+              name="code"
+              id="code"
               type="text"
-              value={prefix}
-              onChange={(e) =>
-                setPrefix(e.target.value.replace(/[^a-zA-Z]/g, ''))
-              }
               maxLength={3}
               required
               placeholder="เช่น CH, MAT"
             />
             {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
           </FormField>
-          <FormField
-            label="รหัสหมวดหมู่ (ตัวอย่าง)"
-            htmlFor="category-id-preview"
-          >
-            <Input
-              id="category-id-preview"
-              type="text"
-              value={generatedId}
-              readOnly
-              className="bg-slate-100"
-            />
+          <FormField label="ประเภทหมวดหมู่" htmlFor="categoryId">
+            {/* Fixed htmlFor */}
+            <Select name="type" id="type" required defaultValue="">
+              <option value="" disabled>
+                -- เลือกหมวดหมู่ --
+              </option>
+              <option value={CategoryType.PRODUCT}>สินค้า</option>
+              <option value={CategoryType.SERVICE}>บริการ</option>
+            </Select>
           </FormField>
         </div>
 
