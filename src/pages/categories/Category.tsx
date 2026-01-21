@@ -7,10 +7,10 @@ import React, {
 } from 'react';
 
 // Interface
-import { ICategory } from '@/src/types/entity/category.interface';
+import { Category } from '@/src/types/entity/category.interface';
 
 // API
-import { Category } from '@/src/api/category';
+import { CategoryApi } from '@/src/api/category';
 
 // Icon
 import {
@@ -28,10 +28,10 @@ import { AddCategoryModal } from '../../components/features/category/AddCategory
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Categories: React.FC = () => {
-  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [categoryToEdit, setCategoryToEdit] = useState<ICategory | null>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -42,7 +42,7 @@ const Categories: React.FC = () => {
   const [pageSize, setPageSize] = useState<number>(10);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<ICategory | null>(
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +54,7 @@ const Categories: React.FC = () => {
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await Category.getCategories({
+      const response = await CategoryApi.getCategories({
         page: currentPage,
         limit: pageSize,
         search: searchQuery,
@@ -77,13 +77,13 @@ const Categories: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleEdit = (category: ICategory) => {
+  const handleEdit = (category: Category) => {
     setCategoryToEdit(category);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (category: ICategory) => {
+  const handleDelete = (category: Category) => {
     setCategoryToDelete(category);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
@@ -92,7 +92,7 @@ const Categories: React.FC = () => {
   const handleConfirmDelete = async () => {
     if (categoryToDelete) {
       try {
-        await Category.deleteCategory(categoryToDelete.id);
+        await CategoryApi.deleteCategory(categoryToDelete.id);
         fetchCategories(); // Refresh the list
       } catch (error) {
         console.error('Error deleting category:', error);
@@ -103,9 +103,9 @@ const Categories: React.FC = () => {
   };
 
   const onCreateCategory = useCallback(
-    async (newCategory: Partial<ICategory>) => {
+    async (newCategory: Partial<Category>) => {
       try {
-        await Category.createCategory(newCategory);
+        await CategoryApi.createCategory(newCategory);
         fetchCategories(); // Refresh the list
         setIsAddModalOpen(false);
       } catch (error) {
@@ -116,9 +116,9 @@ const Categories: React.FC = () => {
   );
 
   const onUpdateCategory = useCallback(
-    async (id: string, updatedCategory: Partial<ICategory>) => {
+    async (id: string, updatedCategory: Partial<Category>) => {
       try {
-        await Category.updateCategory(id, updatedCategory);
+        await CategoryApi.updateCategory(id, updatedCategory);
         fetchCategories();
         setIsEditModalOpen(false);
       } catch (error) {

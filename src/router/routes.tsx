@@ -21,7 +21,7 @@ const Transfers = lazy(() => import('../pages/inventory/transfers'));
 const StockAdjustment = lazy(() => import('../pages/inventory/stock-adjustment'));
 const Returns = lazy(() => import('../pages/inventory/returns'));
 const ReturnToSupplier = lazy(() => import('../pages/inventory/return-to-supplier'));
-const Packages = lazy(() => import('../pages/packages'));
+const Packages = lazy(() => import('../pages/packages/Package'));
 const Categories = lazy(() => import('../pages/categories/Category'));
 const Reports = lazy(() => import('../pages/reports'));
 const Notifications = lazy(() => import('../pages/notifications'));

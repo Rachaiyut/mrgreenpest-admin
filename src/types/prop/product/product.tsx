@@ -1,6 +1,6 @@
 // Interface
 import { ICategory } from "@/src/types/entity/category.interface";
-import { IProduct } from "@/src/types/entity/product.interface";
+import { IProduct } from "@/src/types/entity/package.interface";
 
 export interface IProductProps {
   products: IProduct[];

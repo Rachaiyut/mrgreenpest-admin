@@ -4,6 +4,7 @@ import { Status } from "@/src/types/enums/base.enum";
 import { CustomerType } from "@/src/types/enums/customer.enum";
 
 export interface Customer extends IBase {
+    code: string,
     country: string,
     status: Status,
     customer_type: CustomerType,

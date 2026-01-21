@@ -6,7 +6,7 @@ import {
   AssessmentWorkArea,
   AssessmentItem,
 } from '@/src/types/entity/assessment.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 
 const SERVICE_TYPES = [
   'กำจัดปลวก',

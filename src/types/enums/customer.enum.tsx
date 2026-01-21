@@ -5,5 +5,5 @@ export enum CustomerType {
 
 export enum SupplierType {
     INDIVIDUAL = 'INDIVIDUAL',
-    LEGAL_ENTITY = 'LEGAL_ENTITY',
+    CORPORATE = 'CORPORATE',
 }

@@ -6,10 +6,10 @@ import React, {
   useCallback,
 } from 'react';
 import { Card } from '../../components/common/Card';
-import { IProduct } from '@/src/types/entity/product.interface';
-import { ICategory } from '@/src/types/entity/category.interface';
-import { Package as PackageApi } from '@/src/api/package';
-import { Category as CategoryApi } from '@/src/api/category';
+import { Package } from '@/src/types/entity/package.interface';
+import { Category } from '@/src/types/entity/category.interface';
+import { PackageApi } from '@/src/api/package';
+import { CategoryApi } from '@/src/api/category';
 import {
   PlusIcon,
   ManageIcon,
@@ -25,13 +25,13 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Button } from '../../components/common/FormControls';
 
 const Packages: React.FC = () => {
-  const [packages, setPackages] = useState<IProduct[]>([]);
-  const [categories, setCategories] = useState<ICategory[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState<IProduct | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -41,7 +41,7 @@ const Packages: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [packageToDelete, setPackageToDelete] = useState<IProduct | null>(null);
+  const [packageToDelete, setPackageToDelete] = useState<Package | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [totalItems, setTotalItems] = useState(0);
 
@@ -87,25 +87,25 @@ const Packages: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (pkg: IProduct) => {
+  const handleViewDetails = (pkg: Package) => {
     setSelectedPackage(pkg);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (pkg: IProduct) => {
+  const handleEdit = (pkg: Package) => {
     setSelectedPackage(pkg);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (pkg: IProduct) => {
+  const handleDelete = (pkg: Package) => {
     setPackageToDelete(pkg);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const onCreatePackage = async (data: Partial<IProduct>) => {
+  const onCreatePackage = async (data: Partial<Package>) => {
     try {
       await PackageApi.createPackage(data);
       fetchPackages();
@@ -115,7 +115,7 @@ const Packages: React.FC = () => {
     }
   };
 
-  const onUpdatePackage = async (id: string, data: Partial<IProduct>) => {
+  const onUpdatePackage = async (id: string, data: Partial<Package>) => {
     try {
       await PackageApi.updatePackage(id, data);
       fetchPackages();

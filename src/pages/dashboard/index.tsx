@@ -16,7 +16,7 @@ import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 
 // Interfaces
 import { Status } from '@/src/types/entity/core.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 import { JobStatus } from '@/src/types/enums/job.enum';
 import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
 import { InvoiceStatus } from '@/src/types/enums/financial.enum';

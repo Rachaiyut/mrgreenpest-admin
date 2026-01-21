@@ -7,7 +7,7 @@ import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Quotation, Invoice, Receipt, ReturnToSupplier, UserWallet } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 import { Warehouse, GoodsReceipt, Withdrawal, Transfer, StockAdjustment, ProductReturn } from '@/src/types/entity/inventory.interface';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 import { CategoryType } from '@/src/types/enums/category.enum'; // Or interface?
@@ -23,7 +23,7 @@ import { ReceiptApi } from '@/src/api/receipt';
 import { CustomerApi } from '@/src/api/customer';
 import { ProductApi } from '@/src/api/product';
 import { WarehouseApi } from '@/src/api/warehouse';
-import { Supplier as SupplierApi } from '@/src/api/supplier';
+import { SupplierApi } from '@/src/api/supplier';
 import { GoodsReceiptApi } from '@/src/api/goods-receipt';
 import { WithdrawalApi } from '@/src/api/withdrawal';
 import { TransferApi } from '@/src/api/transfer';

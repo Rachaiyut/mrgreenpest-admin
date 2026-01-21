@@ -11,7 +11,7 @@ import {
 import { Status } from '@/src/types/entity/core.interface';
 import { Warehouse as WarehouseType } from '@/src/types/entity/inventory.interface';
 import { Supplier } from '@/src/types/entity/supplier.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 
 interface AddReturnToSupplierModalProps {
   isOpen: boolean;

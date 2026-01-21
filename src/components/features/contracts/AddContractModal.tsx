@@ -65,21 +65,43 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
 
 
 
-  // const handleSubmit = (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const contractData = createContractObject(Status.InProgress);
-  //   if (contractData) {
-  //     onCreateContract(contractData);
-  //     onClose();
-  //   }
-  // };
+  const createContractObject = (status: Status): Omit<Contract, 'id'> | null => {
+    if (!selectedQuotationId || !startDate || !endDate || !servicePackage) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return null;
+    }
 
-  // const handleSaveDraft = () => {
-  //   const contractData = createContractObject(Status.Draft);
-  //   if (contractData) {
-  //     onCreateContract(contractData);
-  //     onClose();
-  //   }
+    const quotation = quotations.find((q) => q.id === selectedQuotationId);
+    if (!quotation) return null;
+
+    return {
+      customer_id: customer.id,
+      quotation_id: selectedQuotationId,
+      start_date: startDate,
+      end_date: endDate,
+      address: address,
+      status: status,
+      total_amount: quotation.total,
+      service_package: servicePackage,
+      customer_name: customer.first_name + ' ' + (customer.last_name || ''),
+    };
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const contractData = createContractObject(Status.InProgress);
+    if (contractData) {
+      onCreateContract(contractData);
+      onClose();
+    }
+  };
+
+  const handleSaveDraft = () => {
+    const contractData = createContractObject(Status.Draft);
+    if (contractData) {
+      onCreateContract(contractData);
+      onClose();
+    }
   };
 
   return (

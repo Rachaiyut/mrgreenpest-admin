@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { Supplier } from '@/src/types/entity/supplier.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -15,8 +15,8 @@ class SupplierService extends AuthService {
 
   async getSuppliers(
     query: IBaseQuery
-  ): Promise<IBaseResponseArray<ISupplier>> {
-    const res = await this.http.get<IBaseResponseArray<ISupplier>>(
+  ): Promise<IBaseResponseArray<Supplier>> {
+    const res = await this.http.get<IBaseResponseArray<Supplier>>(
       `${this.path}`,
       {
         params: query,
@@ -25,23 +25,23 @@ class SupplierService extends AuthService {
     return res.data;
   }
 
-  async getSupplierById(id: string): Promise<ISupplier> {
-    const res = await this.http.get<ISupplier>(`${this.path}/${id}`);
+  async getSupplierById(id: string): Promise<Supplier> {
+    const res = await this.http.get<Supplier>(`${this.path}/${id}`);
     return res.data;
   }
 
   async createSupplier(
-    supplierData: Omit<ISupplier, 'id'>
-  ): Promise<ISupplier> {
-    const res = await this.http.post<ISupplier>(`${this.path}`, supplierData);
+    supplierData: Omit<Supplier, 'id'>
+  ): Promise<Supplier> {
+    const res = await this.http.post<Supplier>(`${this.path}`, supplierData);
     return res.data;
   }
 
   async updateSupplier(
     id: string,
-    supplierData: Partial<ISupplier>
-  ): Promise<ISupplier> {
-    const res = await this.http.patch<ISupplier>(
+    supplierData: Partial<Supplier>
+  ): Promise<Supplier> {
+    const res = await this.http.patch<Supplier>(
       `${this.path}/${id}`,
       supplierData
     );
@@ -53,4 +53,4 @@ class SupplierService extends AuthService {
   }
 }
 
-export const Supplier = new SupplierService();
+export const SupplierApi = new SupplierService();

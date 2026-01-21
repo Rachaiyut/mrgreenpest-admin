@@ -4,7 +4,7 @@ import { FormField, Textarea, Input, Select } from '../../common/FormControls';
 import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
 import { Status, User, UserRole } from '@/src/types/entity/core.interface';
 import { Quotation, Contract } from '@/src/types/entity/financial.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 import { JobStatus } from '@/src/types/enums/job.enum';
 import { formatThaiDate } from '../../../constants';
 import { StatusBadge } from '../../common/StatusBadge';

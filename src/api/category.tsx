@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { ICategory } from '@/src/types/entity/category.interface';
+import { Category } from '@/src/types/entity/category.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -16,8 +16,8 @@ class CategoryService extends AuthService {
   // Your Public API Methods
   async getCategories(
     query: IBaseQuery
-  ): Promise<IBaseResponseArray<ICategory>> {
-    const res = await this.http.get<IBaseResponseArray<ICategory>>(
+  ): Promise<IBaseResponseArray<Category>> {
+    const res = await this.http.get<IBaseResponseArray<Category>>(
       `${this.path}`,
       {
         params: query,
@@ -26,28 +26,28 @@ class CategoryService extends AuthService {
     return res.data;
   }
 
-  async getCategoryById(id: string): Promise<ICategory> {
-    const res = await this.http.get<ICategory>(`${this.path}/${id}`);
+  async getCategoryById(id: string): Promise<Category> {
+    const res = await this.http.get<Category>(`${this.path}/${id}`);
     return res.data;
   }
 
-  async createCategory(data: Partial<ICategory>): Promise<ICategory> {
-    const res = await this.http.post<ICategory>(`${this.path}`, data);
+  async createCategory(data: Partial<Category>): Promise<Category> {
+    const res = await this.http.post<Category>(`${this.path}`, data);
     return res.data;
   }
 
   async updateCategory(
     id: string,
-    data: Partial<ICategory>
-  ): Promise<ICategory> {
-    const res = await this.http.patch<ICategory>(`${this.path}/${id}`, data);
+    data: Partial<Category>
+  ): Promise<Category> {
+    const res = await this.http.patch<Category>(`${this.path}/${id}`, data);
     return res.data;
   }
 
-  async deleteCategory(id: string): Promise<ICategory> {
-    const res = await this.http.delete<ICategory>(`${this.path}/${id}`);
+  async deleteCategory(id: string): Promise<Category> {
+    const res = await this.http.delete<Category>(`${this.path}/${id}`);
     return res.data;
   }
 }
 
-export const Category = new CategoryService();
+export const CategoryApi = new CategoryService();

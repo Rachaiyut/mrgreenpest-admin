@@ -1,13 +1,13 @@
 import { Button } from 'antd';
 
 // Interface
-import { ICustomer } from '@/src/types/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 
 // Icon
 import { ManageIcon } from '../../assets/icons/Icons';
 
 const CustomerListView: React.FC<{
-  customers: ICustomer[];
+  customers: Customer[];
   handleDropdownToggle: (
     event: React.MouseEvent<HTMLElement>,
     customerId: string
@@ -73,7 +73,7 @@ const CustomerListView: React.FC<{
               {(currentPage - 1) * itemsPerPage + index + 1}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-              {customer.id}
+              {customer.code}
             </td>
             <td className="px-4 py-3 whitespace-nowrap">
               <div className="text-sm font-medium text-slate-900">

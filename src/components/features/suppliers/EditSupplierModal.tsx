@@ -5,12 +5,12 @@ import { Supplier } from '@/src/types/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 // Interface
-import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { SupplierType } from '@/src/types';
 
 interface EditSupplierModalProps {
   isOpen: boolean;
   onClose: () => void;
-  supplier: ISupplier | null;
+  supplier: Supplier | null;
   onUpdateSupplier: (supplier: Supplier) => void;
 }
 
@@ -27,7 +27,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
 
   useEffect(() => {
     if (supplier) {
-      const { phones, ...rest } = supplier;
+      const { phone, ...rest } = supplier;
       setFormData(rest);
       setPhones(phones.length > 0 ? [...phones] : ['']);
     }
@@ -38,7 +38,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type: 'บุคคลธรรมดา' | 'นิติบุคคล') => {
+  const handleTypeChange = (type: SupplierType) => {
     setFormData((prev) => ({ ...prev, type: type }));
   };
 
@@ -65,9 +65,9 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
     e.preventDefault();
     if (supplier) {
       if (
-        !formData.name ||
+        !formData.contact_name ||
         !phones[0].trim() ||
-        (formData.type === 'นิติบุคคล' && !formData.taxId)
+        (formData.type === SupplierType.CORPORATE && !formData.tax_id)
       ) {
         alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
         return;
@@ -89,7 +89,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขผู้จัดจำหน่าย: ${supplier.name}`}
+      title={`แก้ไขผู้จัดจำหน่าย: ${supplier.contact_name}`}
       size="2xl"
       footer={
         <div className="flex gap-2">
@@ -133,8 +133,8 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
                   name="supplierType"
                   value="บุคคลธรรมดา"
                   className="sr-only peer"
-                  checked={formData.type === 'บุคคลธรรมดา'}
-                  onChange={() => handleTypeChange('บุคคลธรรมดา')}
+                  checked={formData.type === SupplierType.INDIVIDUAL}
+                  onChange={() => handleTypeChange(SupplierType.INDIVIDUAL)}
                 />
                 <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                   บุคคลธรรมดา
@@ -146,8 +146,8 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
                   name="supplierType"
                   value="นิติบุคคล"
                   className="sr-only peer"
-                  checked={formData.type === 'นิติบุคคล'}
-                  onChange={() => handleTypeChange('นิติบุคคล')}
+                  checked={formData.type === SupplierType.CORPORATE}
+                  onChange={() => handleTypeChange(SupplierType.CORPORATE)}
                 />
                 <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                   นิติบุคคล
@@ -157,35 +157,35 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
           </FormField>
         </div>
         <FormField
-          label={formData.type === 'นิติบุคคล' ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
-          htmlFor="name"
+          label={formData.type === SupplierType.CORPORATE ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
+          htmlFor="contact_name"
         >
           <Input
-            name="name"
-            id="name"
+            name="contact_name"
+            id="contact_name"
             type="text"
-            value={formData.name || ''}
+            value={formData.contact_name || ''}
             onChange={handleChange}
             required
           />
         </FormField>
-        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
+        <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="tax_id">
           <Input
-            name="taxId"
-            id="taxId"
+            name="tax_id"
+            id="tax_id"
             type="text"
-            value={formData.taxId || ''}
+            value={formData.tax_id || ''}
             onChange={handleChange}
-            required={formData.type === 'นิติบุคคล'}
+            required={formData.type === SupplierType.CORPORATE}
           />
         </FormField>
-        {formData.type === 'นิติบุคคล' && (
+        {formData.type === SupplierType.CORPORATE && (
           <FormField label="ชื่อผู้ติดต่อ" htmlFor="contactPerson">
             <Input
               name="contactPerson"
               id="contactPerson"
               type="text"
-              value={formData.contactPerson || ''}
+              value={formData.contact_name || ''}
               onChange={handleChange}
             />
           </FormField>

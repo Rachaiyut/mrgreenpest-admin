@@ -15,7 +15,7 @@ import { FieldJob, FieldJobWorkArea } from '@/src/types/entity/field-job.interfa
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobStatus } from '@/src/types/enums/job.enum';
 import { RefreshIcon } from '../../../assets/icons/Icons';

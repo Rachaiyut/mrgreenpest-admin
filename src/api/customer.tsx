@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { ICustomer } from '@/src/types/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -15,8 +15,8 @@ class CustomerService extends AuthService {
 
   async getCustomers(
     query: IBaseQuery
-  ): Promise<IBaseResponseArray<ICustomer>> {
-    const res = await this.http.get<IBaseResponseArray<ICustomer>>(
+  ): Promise<IBaseResponseArray<Customer>> {
+    const res = await this.http.get<IBaseResponseArray<Customer>>(
       `${this.path}`,
       {
         params: query,
@@ -31,17 +31,17 @@ class CustomerService extends AuthService {
   }
 
   async createCustomer(
-    customerData: Omit<ICustomer, 'id'>
-  ): Promise<ICustomer> {
-    const res = await this.http.post<ICustomer>(`${this.path}`, customerData);
+    customerData: Omit<Customer, 'id'>
+  ): Promise<Customer> {
+    const res = await this.http.post<Customer>(`${this.path}`, customerData);
     return res.data;
   }
 
   async updateCustomer(
     id: string,
-    customerData: Partial<ICustomer>
-  ): Promise<ICustomer> {
-    const res = await this.http.patch<ICustomer>(
+    customerData: Partial<Customer>
+  ): Promise<Customer> {
+    const res = await this.http.patch<Customer>(
       `${this.path}/${id}`,
       customerData
     );

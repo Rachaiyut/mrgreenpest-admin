@@ -11,7 +11,7 @@ import {
 import { CategoryType } from '@/src/types/enums/category.enum';
 
 // Interface
-import { Product as IProduct } from '@/src/types/entity/product.interface';
+import { Product as IProduct } from '@/src/types/entity/package.interface';
 import { ICategory } from '@/src/types/entity/category.interface';
 import { IUnit } from '@/src/types/entity/unit.interface';
 

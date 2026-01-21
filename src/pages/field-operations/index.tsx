@@ -9,7 +9,7 @@ import {
 import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
-import { Product } from '../../types/entity/product.interface';
+import { Product } from '../../types/entity/package.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
 import { JobStatus } from '../../types/enums/job.enum';

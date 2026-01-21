@@ -4,10 +4,10 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Card } from '../../components/common/Card';
 
 // Interface
-import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { Supplier } from '@/src/types/entity/supplier.interface';
 
 // Api
-import { Supplier as SupplierApi } from '@/src/api/supplier';
+import { SupplierApi } from '@/src/api/supplier';
 
 import {
   PlusIcon,
@@ -24,7 +24,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { EditSupplierModal } from '../../components/features/suppliers/EditSupplierModal';
 
 const Suppliers: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<ISupplier[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState<boolean>(false)
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +34,7 @@ const Suppliers: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [supplierToEdit, setSupplierToEdit] = useState<ISupplier | null>(null);
+  const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -42,13 +42,13 @@ const Suppliers: React.FC = () => {
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<ISupplier | null>(
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null
   );
 
   const [typeFilter, setTypeFilter] = useState('all');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [supplierToDelete, setSupplierToDelete] = useState<ISupplier | null>(
+  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
     null
   );
 
@@ -68,19 +68,19 @@ const Suppliers: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (supplier: ISupplier) => {
+  const handleViewDetails = (supplier: Supplier) => {
     setSelectedSupplier(supplier);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (supplier: ISupplier) => {
+  const handleEdit = (supplier: Supplier) => {
     setSupplierToEdit(supplier);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (supplier: ISupplier) => {
+  const handleDelete = (supplier: Supplier) => {
     setSupplierToDelete(supplier);
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
@@ -137,7 +137,7 @@ const Suppliers: React.FC = () => {
     }, [currentPage, itemsPerPage, searchQuery]);
   
 
-  const onUpdateSupplier = async (supplier: ISupplier) => {
+  const onUpdateSupplier = async (supplier: Supplier) => {
       try {
         const { id, ...data } = supplier;
         await SupplierApi.updateSupplier(id, data);
@@ -173,6 +173,28 @@ const Suppliers: React.FC = () => {
     useEffect(() => {
       fetchSupplier();
     }, [fetchSupplier]);
+
+  const handleCreateSupplier = async (supplierData: Omit<Supplier, 'id'>) => {
+    try {
+      await SupplierApi.createSupplier(supplierData);
+      setIsModalOpen(false);
+      fetchSupplier();
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+    }
+  };
+
+  const handleUpdateSupplier = async (supplier: Supplier) => {
+    try {
+      const { id, ...data } = supplier;
+      await SupplierApi.updateSupplier(id, data);
+      fetchSupplier();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update supplier:', error);
+      alert('Failed to update supplier');
+    }
+  };
 
   return (
     <>
@@ -384,14 +406,15 @@ const Suppliers: React.FC = () => {
       <AddSupplierModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onCreateSupplier={handleCreateSupplier}
         suppliers={suppliers}
       />
-      {/* <EditSupplierModal
+      <EditSupplierModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        supplier={suppliers}
-        onUpdateSupplier={onUpdateSupplier}
-      /> */}
+        supplier={supplierToEdit}
+        onUpdateSupplier={handleUpdateSupplier}
+      />
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}

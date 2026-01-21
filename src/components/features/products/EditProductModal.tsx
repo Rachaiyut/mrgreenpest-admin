@@ -7,7 +7,7 @@ import {
   Select,
   Button,
 } from '../../common/FormControls';
-import { Product } from '@/src/types/entity/product.interface';
+import { Product } from '@/src/types/entity/package.interface';
 import { ICategory } from '@/src/types/entity/category.interface';
 import { IUnit } from '@/src/types/entity/unit.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';

@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { IProduct, IPackageCondition } from '@/src/types/entity/product.interface';
+import { IProduct, IPackageCondition } from '@/src/types/entity/package.interface';
 import { ICategory } from '@/src/types/entity/category.interface';
 import { CategoryType } from '@/src/types/enums/category.enum';
 import {
