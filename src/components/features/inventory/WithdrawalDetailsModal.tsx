@@ -6,7 +6,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 
 interface WithdrawalDetailsModalProps {
@@ -302,3 +302,5 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

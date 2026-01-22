@@ -628,3 +628,4 @@ const Warehouse: React.FC<WarehouseProps> = ({
 };
 
 export default Warehouse;
+

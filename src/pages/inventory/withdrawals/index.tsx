@@ -14,7 +14,7 @@ import {
   CurrencyDollarIcon,
   CalendarDaysIcon,
 } from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import {
   Withdrawal as WithdrawalType,
   Status,
@@ -690,3 +690,5 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
 };
 
 export default Withdrawals;
+
+

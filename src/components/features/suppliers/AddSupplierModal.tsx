@@ -5,7 +5,7 @@ import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 // Interface
 import { Supplier } from '@/src/types/entity/supplier.interface';
-import { SupplierType } from '@/src/types/enums/customer.enum';
+import { SupplierType } from '@/src/types/enums/customer';
 
 interface AddSupplierModalProps {
   isOpen: boolean;
@@ -33,7 +33,6 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       formRef.current?.reset();
     }
   }, [isOpen]);
-
 
   const handlePhoneChange = (index: number, value: string) => {
     const newPhones = [...phones];
@@ -74,7 +73,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       tax_id: data['tax-id'] as string | undefined,
       phone: data.phone as string,
       email: data['email'] as string,
-      company_name: ''
+      company_name: '',
     };
 
     onCreateSupplier(newSupplier);
@@ -160,7 +159,6 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
           <Input name="supplier-name" id="supplier-name" type="text" required />
         </FormField>
 
-
         {supplierType === 'นิติบุคคล' && (
           <FormField label="ชื่อผู้ติดต่อ" htmlFor="contact-person">
             <Input name="contact-person" id="contact-person" type="text" />
@@ -210,3 +208,4 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
     </Modal>
   );
 };
+

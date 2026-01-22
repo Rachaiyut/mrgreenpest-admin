@@ -394,3 +394,4 @@ export const AddStockAdjustmentModal: React.FC<
     </>
   );
 };
+

@@ -9,7 +9,7 @@ import {
   PencilIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import {
   Transfer as TransferType,
   Status,
@@ -411,3 +411,5 @@ const Transfers: React.FC<TransfersProps> = ({
 };
 
 export default Transfers;
+
+

@@ -1,9 +1,13 @@
 import { useMemo } from 'react';
 import type { FC } from 'react';
 import { Modal } from '../../common/Modal';
-import { Quotation, InstallmentPlan, Status } from '@/src/types/entity/app.interface';
+import {
+  Quotation,
+  InstallmentPlan,
+  Status,
+} from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import {
   SectionTitle,
   DetailsList,
@@ -201,3 +205,5 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

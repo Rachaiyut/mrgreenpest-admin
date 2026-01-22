@@ -8,7 +8,7 @@ import {
 } from '../../../assets/icons/Icons';
 
 // Enum
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 
 // Interface
 import { Product as IProduct } from '@/src/types/entity/product.interface';
@@ -25,7 +25,6 @@ import { Input, Button } from '../../../components/common/FormControls';
 import { AddProductModal } from '@/src/components/features/products/AddProductModal';
 import { EditProductModal } from '@/src/components/features/products/EditProductModal';
 import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
-
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -76,7 +75,7 @@ const Product: React.FC = () => {
         limit: itemsPerPage,
         search: searchQuery,
         sort_by: 'created_at',
-        sort_order: 'desc'
+        sort_order: 'desc',
       });
       setProducts(response.data);
       setTotalItems(response.meta?.total || response.data.length);
@@ -86,7 +85,6 @@ const Product: React.FC = () => {
       setLoading(false);
     }
   }, [currentPage, itemsPerPage, searchQuery]);
-
 
   useEffect(() => {
     fetchCategories();
@@ -289,18 +287,17 @@ const Product: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {product.name}
                     </td>
-                 
+
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.category.name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      ฿
-                      {Number(product.cost_price).toLocaleString()}
+                      ฿{Number(product.cost_price).toLocaleString()}
                     </td>
-                    <td
-                      className={`px-4 py-3 whitespace-nowrap text-sm `}
-                    >
-                      {product.category?.type === CategoryType.PRODUCT ? 'สินค้า' : '-'}
+                    <td className={`px-4 py-3 whitespace-nowrap text-sm `}>
+                      {product.category?.type === CategoryType.PRODUCT
+                        ? 'สินค้า'
+                        : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {product.min_stock}
@@ -413,3 +410,4 @@ const Product: React.FC = () => {
 };
 
 export default Product;
+

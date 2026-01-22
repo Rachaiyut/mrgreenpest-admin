@@ -1,8 +1,8 @@
 import React from 'react';
 import { Status } from '@/src/types/entity/app.interface';
-import { JobStatus } from '@/src/types/enums/job.enum';
-import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
-import { InvoiceStatus } from '@/src/types/enums/financial.enum';
+import { JobStatus } from '@/src/types/enums/job';
+import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { InvoiceStatus } from '@/src/types/enums/financial';
 
 interface StatusBadgeProps {
   status: Status | JobStatus | AsessmentStatus | InvoiceStatus | string;
@@ -59,3 +59,4 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     </span>
   );
 };
+

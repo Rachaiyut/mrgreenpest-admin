@@ -1,16 +1,36 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
 
 // Entities
 import { User } from '@/src/types/entity/core.interface';
 import { FieldJob } from '@/src/types/entity/field-job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
-import { Quotation, Invoice, Receipt, ReturnToSupplier, UserWallet } from '@/src/types/entity/financial.interface';
+import {
+  Quotation,
+  Invoice,
+  Receipt,
+  ReturnToSupplier,
+  UserWallet,
+} from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Product } from '@/src/types/entity/package.interface';
-import { Warehouse, GoodsReceipt, Withdrawal, Transfer, StockAdjustment, ProductReturn } from '@/src/types/entity/inventory.interface';
+import {
+  Warehouse,
+  GoodsReceipt,
+  Withdrawal,
+  Transfer,
+  StockAdjustment,
+  ProductReturn,
+} from '@/src/types/entity/inventory.interface';
 import { Supplier } from '@/src/types/entity/supplier.interface';
-import { CategoryType } from '@/src/types/enums/category.enum'; // Or interface?
+import { CategoryType } from '@/src/types/enums/category'; // Or interface?
 
 // APIs
 import { UserApi } from '@/src/api/user';
@@ -51,7 +71,7 @@ export interface DataContextType {
   stockAdjustments: StockAdjustment[];
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
-  
+
   handlers: {
     users: {
       create: (data: any) => Promise<void>;
@@ -121,14 +141,16 @@ export interface DataContextType {
       delete: (id: string) => Promise<void>;
     };
     userWallets: {
-        createTransaction: (userId: string, data: any) => Promise<void>;
-    }
+      createTransaction: (userId: string, data: any) => Promise<void>;
+    };
   };
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const DataProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [users, setUsers] = useState<User[]>([]);
   const [jobs, setJobs] = useState<FieldJob[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -143,16 +165,34 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
+  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>(
+    []
+  );
   const [productReturns, setProductReturns] = useState<ProductReturn[]>([]);
-  const [returnToSuppliers, setReturnToSuppliers] = useState<ReturnToSupplier[]>([]);
+  const [returnToSuppliers, setReturnToSuppliers] = useState<
+    ReturnToSupplier[]
+  >([]);
 
   const refreshData = async () => {
     try {
       const [
-        usersRes, jobsRes, assessmentsRes, contractsRes, quotationsRes, invoicesRes, receiptsRes,
-        customersRes, productsRes, warehousesRes, suppliersRes,
-        goodsReceiptsRes, withdrawalsRes, transfersRes, stockAdjustmentsRes, productReturnsRes, returnToSuppliersRes
+        usersRes,
+        jobsRes,
+        assessmentsRes,
+        contractsRes,
+        quotationsRes,
+        invoicesRes,
+        receiptsRes,
+        customersRes,
+        productsRes,
+        warehousesRes,
+        suppliersRes,
+        goodsReceiptsRes,
+        withdrawalsRes,
+        transfersRes,
+        stockAdjustmentsRes,
+        productReturnsRes,
+        returnToSuppliersRes,
       ] = await Promise.all([
         UserApi.getAll(),
         JobApi.getAll(),
@@ -170,7 +210,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         TransferApi.getAll(),
         StockAdjustmentApi.getAll(),
         ProductReturnApi.getAll(),
-        ReturnToSupplierApi.getAll()
+        ReturnToSupplierApi.getAll(),
       ]);
 
       setUsers(usersRes.data || []);
@@ -190,9 +230,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setStockAdjustments(stockAdjustmentsRes.data || []);
       setProductReturns(productReturnsRes.data || []);
       setReturnToSuppliers(returnToSuppliersRes.data || []);
-
     } catch (error) {
-      console.error("Failed to fetch data", error);
+      console.error('Failed to fetch data', error);
     }
   };
 
@@ -200,90 +239,210 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     refreshData();
   }, []);
 
-  const handlers = useMemo(() => ({
-    users: {
-      create: async (data: any) => { await UserApi.create(data); refreshData(); },
-      update: async (data: any) => { await UserApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await UserApi.delete(id); refreshData(); },
-    },
-    jobs: {
-      create: async (data: any) => { await JobApi.create(data); refreshData(); },
-      update: async (data: any) => { await JobApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await JobApi.delete(id); refreshData(); },
-    },
-    assessments: {
-      create: async (data: any) => { await AssessmentApi.create(data); refreshData(); },
-      update: async (data: any) => { await AssessmentApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await AssessmentApi.delete(id); refreshData(); },
-    },
-    quotations: {
-      create: async (data: any) => { await QuotationApi.create(data); refreshData(); },
-      update: async (data: any) => { await QuotationApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await QuotationApi.delete(id); refreshData(); },
-      revise: async (id: string) => { 
-          // Implement revise logic if API supports it, otherwise create new version
-          console.log("Revise quotation", id);
-          refreshData(); 
+  const handlers = useMemo(
+    () => ({
+      users: {
+        create: async (data: any) => {
+          await UserApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await UserApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await UserApi.delete(id);
+          refreshData();
+        },
       },
-    },
-    invoices: {
-      create: async (data: any) => { await InvoiceApi.create(data); refreshData(); },
-      update: async (data: any) => { await InvoiceApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await InvoiceApi.delete(id); refreshData(); },
-    },
-    receipts: {
-      create: async (data: any) => { await ReceiptApi.create(data); refreshData(); },
-      update: async (data: any) => { await ReceiptApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await ReceiptApi.delete(id); refreshData(); },
-    },
-    warehouses: {
-      create: async (data: any) => { await WarehouseApi.create(data); refreshData(); },
-      update: async (data: any) => { await WarehouseApi.update(data.id, data); refreshData(); }, // Ensure API has update method
-      delete: async (id: string) => { await WarehouseApi.delete(id); refreshData(); }, // Ensure API has delete method
-      updateLimits: async (id: string, limits: any) => { 
+      jobs: {
+        create: async (data: any) => {
+          await JobApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await JobApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await JobApi.delete(id);
+          refreshData();
+        },
+      },
+      assessments: {
+        create: async (data: any) => {
+          await AssessmentApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await AssessmentApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await AssessmentApi.delete(id);
+          refreshData();
+        },
+      },
+      quotations: {
+        create: async (data: any) => {
+          await QuotationApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await QuotationApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await QuotationApi.delete(id);
+          refreshData();
+        },
+        revise: async (id: string) => {
+          // Implement revise logic if API supports it, otherwise create new version
+          console.log('Revise quotation', id);
+          refreshData();
+        },
+      },
+      invoices: {
+        create: async (data: any) => {
+          await InvoiceApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await InvoiceApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await InvoiceApi.delete(id);
+          refreshData();
+        },
+      },
+      receipts: {
+        create: async (data: any) => {
+          await ReceiptApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await ReceiptApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await ReceiptApi.delete(id);
+          refreshData();
+        },
+      },
+      warehouses: {
+        create: async (data: any) => {
+          await WarehouseApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await WarehouseApi.update(data.id, data);
+          refreshData();
+        }, // Ensure API has update method
+        delete: async (id: string) => {
+          await WarehouseApi.delete(id);
+          refreshData();
+        }, // Ensure API has delete method
+        updateLimits: async (id: string, limits: any) => {
           // Custom update for limits
           await WarehouseApi.update(id, { withdrawal_limits: limits });
-          refreshData(); 
+          refreshData();
+        },
       },
-    },
-    goodsReceipts: {
-      create: async (data: any) => { await GoodsReceiptApi.create(data); refreshData(); },
-      update: async (data: any) => { await GoodsReceiptApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await GoodsReceiptApi.delete(id); refreshData(); },
-    },
-    withdrawals: {
-      create: async (data: any) => { await WithdrawalApi.create(data); refreshData(); },
-      update: async (data: any) => { await WithdrawalApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await WithdrawalApi.delete(id); refreshData(); },
-    },
-    transfers: {
-      create: async (data: any) => { await TransferApi.create(data); refreshData(); },
-      update: async (data: any) => { await TransferApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await TransferApi.delete(id); refreshData(); },
-    },
-    stockAdjustments: {
-      create: async (data: any) => { await StockAdjustmentApi.create(data); refreshData(); },
-      update: async (data: any) => { await StockAdjustmentApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await StockAdjustmentApi.delete(id); refreshData(); },
-    },
-    productReturns: {
-      create: async (data: any) => { await ProductReturnApi.create(data); refreshData(); },
-      update: async (data: any) => { await ProductReturnApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await ProductReturnApi.delete(id); refreshData(); },
-    },
-    returnToSuppliers: {
-      create: async (data: any) => { await ReturnToSupplierApi.create(data); refreshData(); },
-      update: async (data: any) => { await ReturnToSupplierApi.update(data.id, data); refreshData(); },
-      delete: async (id: string) => { await ReturnToSupplierApi.delete(id); refreshData(); },
-    },
-    userWallets: {
+      goodsReceipts: {
+        create: async (data: any) => {
+          await GoodsReceiptApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await GoodsReceiptApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await GoodsReceiptApi.delete(id);
+          refreshData();
+        },
+      },
+      withdrawals: {
+        create: async (data: any) => {
+          await WithdrawalApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await WithdrawalApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await WithdrawalApi.delete(id);
+          refreshData();
+        },
+      },
+      transfers: {
+        create: async (data: any) => {
+          await TransferApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await TransferApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await TransferApi.delete(id);
+          refreshData();
+        },
+      },
+      stockAdjustments: {
+        create: async (data: any) => {
+          await StockAdjustmentApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await StockAdjustmentApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await StockAdjustmentApi.delete(id);
+          refreshData();
+        },
+      },
+      productReturns: {
+        create: async (data: any) => {
+          await ProductReturnApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await ProductReturnApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await ProductReturnApi.delete(id);
+          refreshData();
+        },
+      },
+      returnToSuppliers: {
+        create: async (data: any) => {
+          await ReturnToSupplierApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await ReturnToSupplierApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await ReturnToSupplierApi.delete(id);
+          refreshData();
+        },
+      },
+      userWallets: {
         createTransaction: async (userId: string, data: any) => {
-            // Needs Wallet API
-            console.log("Create wallet transaction", userId, data);
-            refreshData();
-        }
-    }
-  }), []);
+          // Needs Wallet API
+          console.log('Create wallet transaction', userId, data);
+          refreshData();
+        },
+      },
+    }),
+    []
+  );
 
   return (
     <DataContext.Provider
@@ -320,3 +479,4 @@ export const useData = () => {
   }
   return context;
 };
+

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { ChevronDownIcon } from '../../../assets/icons/Icons';
 import { Page } from '../../../router/page';
-import { PAGE_PATH } from '@/src/config/route';
+import { PAGE_PATH } from '@/src/constants/route';
 import { NavGroup } from '@/src/types/entity/nav.interface';
 
 interface SidebarGroupProps {
@@ -111,3 +111,4 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
     </div>
   );
 };
+

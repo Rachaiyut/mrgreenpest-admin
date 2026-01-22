@@ -7,7 +7,7 @@ import {
   Product,
   Supplier,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 
 interface ReturnToSupplierDetailsModalProps {
@@ -229,3 +229,5 @@ export const ReturnToSupplierDetailsModal: React.FC<
     </Modal>
   );
 };
+
+

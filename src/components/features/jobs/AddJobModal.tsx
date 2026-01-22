@@ -7,17 +7,17 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
+import { User, UserRole } from '@/src/types/entity/core.interface';
 import {
-  User,
-  UserRole,
-} from '@/src/types/entity/core.interface';
-import { FieldJob, FieldJobWorkArea } from '@/src/types/entity/field-job.interface';
+  FieldJob,
+  FieldJobWorkArea,
+} from '@/src/types/entity/field-job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Product } from '@/src/types/entity/package.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
-import { JobStatus } from '@/src/types/enums/job.enum';
+import { JobStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
 
 // A component to manage a single work area within the job form
@@ -141,7 +141,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       (a) => a.status === 'Draft' || a.status === 'Completed' // Assuming AsessmentStatus values
     );
     if (selectedCustomerId) {
-      return baseAssessments.filter((a) => a.customer_id === selectedCustomerId);
+      return baseAssessments.filter(
+        (a) => a.customer_id === selectedCustomerId
+      );
     }
     return [];
   }, [assessments, selectedCustomerId]);
@@ -149,8 +151,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const availableContracts = useMemo(() => {
     if (!selectedCustomerId) return [];
     return contracts.filter(
-      (c) =>
-        c.customer_id === selectedCustomerId && c.status === 'InProgress' // Assuming Status values
+      (c) => c.customer_id === selectedCustomerId && c.status === 'InProgress' // Assuming Status values
     );
   }, [contracts, selectedCustomerId]);
 
@@ -163,9 +164,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const selectedContract = isContract
     ? contracts.find((c) => c.id === selectedReference.replace('con-', ''))
     : null;
-  const selectedCustomer = customers.find(
-    (c) => c.id === selectedCustomerId
-  );
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
 
   useEffect(() => {
     if (selectedAssessment) {
@@ -221,7 +220,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         details += `- ประเภทบริการ: ${area.service_type.join(', ')}\n`;
         if (area.building_type)
           details += `- ประเภทสิ่งปลูกสร้าง: ${area.building_type}\n`;
-        if (area.area_size) details += `- ขนาดพื้นที่: ${area.area_size} ตร.ม.\n`;
+        if (area.area_size)
+          details += `- ขนาดพื้นที่: ${area.area_size} ตร.ม.\n`;
         if (area.service_system)
           details += `- ระบบที่ใช้: ${area.service_system}\n`;
         if (area.package_id) {
@@ -231,7 +231,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         if (area.items && area.items.length > 0) {
           details += `- สินค้า/บริการเพิ่มเติม:\n`;
           area.items.forEach((item) => {
-            const product = item.product_id ? productMap.get(item.product_id) : undefined;
+            const product = item.product_id
+              ? productMap.get(item.product_id)
+              : undefined;
             details += `  - ${product?.name || 'N/A'} (จำนวน: ${item.quantity})\n`;
           });
         }
@@ -735,3 +737,4 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     </Modal>
   );
 };
+

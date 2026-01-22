@@ -8,13 +8,13 @@ import {
   AssessmentItem,
   PackageCondition,
   AssessmentWorkArea,
-  Customer
+  Customer,
 } from '@/src/types/entity/app.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { WorkAreaForm } from './WorkAreaForm';
-import { AsessmentStatus } from "@/src/types/enums/assessment.enum";
+import { AsessmentStatus } from '@/src/types/enums/assessment';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
@@ -501,7 +501,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                       {option.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {option.number_of_visits} ครั้ง / {option.contract_duration}
+                      {option.number_of_visits} ครั้ง /{' '}
+                      {option.contract_duration}
                     </div>
                   </label>
                 ))}
@@ -532,3 +533,4 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     </Modal>
   );
 };
+

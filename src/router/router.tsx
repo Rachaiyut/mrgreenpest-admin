@@ -6,24 +6,16 @@ import {
   useMemo,
   lazy,
 } from 'react';
-import {
-  useNavigate,
-  useLocation,
-  Routes,
-  Route,
-} from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 
 // Config
-import { PAGE_PATH } from '../config/route';
+import { PAGE_PATH } from '../constants/route';
 import { getCurrentPageFromPath } from './utils';
 import { getRoutes } from './routes';
 
 // Components
 import { Sidebar } from '../components/layout/Sidebar';
 import { Header } from '../components/layout/Header';
-
-// Types
-import { Page } from './page';
 
 // Context
 import { useData } from '../contexts/DataContext';
@@ -49,11 +41,11 @@ export const AppRouter = (props: AppRouterProps) => {
     () =>
       Object.fromEntries(
         Object.entries(PAGE_PATH).map(([k, v]) => ['/' + v, k])
-      ) as Record<string, Page>,
+      ) as Record<string, string>,
     []
   );
 
-  const currentPage: Page = useMemo(() => {
+  const currentPage: string = useMemo(() => {
     return getCurrentPageFromPath(location.pathname, PATH_PAGE);
   }, [location.pathname, PATH_PAGE]);
 
@@ -102,7 +94,7 @@ export const AppRouter = (props: AppRouterProps) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebarState} onLogout={onLogout} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <Suspense
               fallback={
                 <div className="p-8">

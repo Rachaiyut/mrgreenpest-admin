@@ -9,7 +9,7 @@ import {
 } from '../../common/FormControls';
 import { Status } from '@/src/types/entity/app.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { CustomerType } from '@/src/types/enums/customer.enum';
+import { CustomerType } from '@/src/types/enums/customer';
 
 interface EditCustomerModalProps {
   isOpen: boolean;
@@ -46,8 +46,7 @@ type FlatCustomerFormData = Partial<Customer> & {
   nickname?: string;
   email?: string;
   phone?: string;
-}
-
+};
 
 export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
   isOpen,
@@ -61,8 +60,13 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     if (customer) {
       setFormData({
         ...customer,
-        name: customer.first_name + (customer.last_name ? ` ${customer.last_name}` : ''),
-        type: customer.customer_type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา',
+        name:
+          customer.first_name +
+          (customer.last_name ? ` ${customer.last_name}` : ''),
+        type:
+          customer.customer_type === CustomerType.CORPORATE
+            ? 'นิติบุคคล'
+            : 'บุคคลธรรมดา',
         'address-street': customer.address_house_no,
         'address-subdistrict': customer.sub_district,
         'address-district': customer.district,
@@ -116,35 +120,38 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
 
       let firstName = formData.name || '';
       let lastName = '';
-      
+
       if (formData.type === 'บุคคลธรรมดา') {
-         const parts = firstName.trim().split(/\s+/);
-         if (parts.length > 1) {
-           firstName = parts[0];
-           lastName = parts.slice(1).join(' ');
-         }
+        const parts = firstName.trim().split(/\s+/);
+        if (parts.length > 1) {
+          firstName = parts[0];
+          lastName = parts.slice(1).join(' ');
+        }
       }
 
       const updatedData: Customer = {
         ...customer,
         first_name: firstName,
         last_name: lastName,
-        customer_type: formData.type === 'นิติบุคคล' ? CustomerType.CORPORATE : CustomerType.INDIVIDUAL,
+        customer_type:
+          formData.type === 'นิติบุคคล'
+            ? CustomerType.CORPORATE
+            : CustomerType.INDIVIDUAL,
         nickname: formData.nickname || '',
         email: formData.email || '',
         phone: formData.phone || '',
-        
+
         address_house_no: formData['address-street'] || '',
         sub_district: formData['address-subdistrict'] || '',
         district: formData['address-district'] || '',
         province: formData['address-province'] || '',
         postal_code: formData['address-postalcode'] || '',
         country: formData['address-country'] || 'ประเทศไทย',
-        
+
         tax_id: formData.taxId,
         google_map_link: formData.googleMapLink,
       };
-      
+
       onUpdateCustomer(updatedData);
     }
     onClose();
@@ -508,3 +515,4 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     </Modal>
   );
 };
+

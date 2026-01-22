@@ -378,3 +378,4 @@ const IndirectExpensesPage: React.FC = () => {
 };
 
 export default IndirectExpensesPage;
+

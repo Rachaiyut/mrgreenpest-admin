@@ -143,3 +143,4 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
     </Modal>
   );
 };
+

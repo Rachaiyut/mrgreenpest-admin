@@ -17,11 +17,11 @@ import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 // Interfaces
 import { Status } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/package.interface';
-import { JobStatus } from '@/src/types/enums/job.enum';
-import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
-import { InvoiceStatus } from '@/src/types/enums/financial.enum';
+import { JobStatus } from '@/src/types/enums/job';
+import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { InvoiceStatus } from '@/src/types/enums/financial';
 
-import { formatThaiDateTime } from '../../constants';
+import { formatThaiDateTime } from '../../utils/date';
 import { Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 
@@ -164,7 +164,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     warehouses,
     handlers,
   } = useData();
-  
+
   const onCreateAssessment = handlers.assessments.create;
   const onCreateJob = handlers.jobs.create;
 
@@ -192,7 +192,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
   };
 
   const todaysJobs = fieldJobs.filter((j) => isToday(j.start_time));
-  const overdueInvoices = invoices.filter((i) => i.status === InvoiceStatus.Overdue);
+  const overdueInvoices = invoices.filter(
+    (i) => i.status === InvoiceStatus.Overdue
+  );
   const lowStockItems = products.filter((p) => (p.stock || 0) < p.min_stock);
 
   const isInSelectedRange = (dateStr: string) => {
@@ -243,7 +245,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
     [fieldJobs, range]
   );
   const monthlyNewCustomers = useMemo(
-    () => customers.filter((c) => c.created_at && isInSelectedRange(c.created_at)).length,
+    () =>
+      customers.filter((c) => c.created_at && isInSelectedRange(c.created_at))
+        .length,
     [customers, range]
   );
   const monthlyConversionRate = useMemo(() => {
@@ -260,7 +264,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const outstandingInvoices = useMemo(
     () =>
       invoices.filter(
-        (i) => i.status !== InvoiceStatus.Paid && i.status !== InvoiceStatus.Cancelled
+        (i) =>
+          i.status !== InvoiceStatus.Paid &&
+          i.status !== InvoiceStatus.Cancelled
       ),
     [invoices]
   );
@@ -362,16 +368,29 @@ const Dashboard: React.FC<DashboardProps> = () => {
   }, [upcomingJobs, upcomingAssessments]);
 
   const chartData = useMemo(() => {
-    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const months = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
     const result = [];
     const now = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthIdx = d.getMonth();
       const year = d.getFullYear();
       const monthName = months[monthIdx];
-      
+
       const total = receipts.reduce((acc, r) => {
         const rDate = new Date(r.paid_at);
         if (rDate.getMonth() === monthIdx && rDate.getFullYear() === year) {
@@ -379,10 +398,10 @@ const Dashboard: React.FC<DashboardProps> = () => {
         }
         return acc;
       }, 0);
-      
+
       result.push({ name: monthName, total });
     }
-    
+
     return result;
   }, [receipts]);
 
@@ -777,3 +796,5 @@ const Dashboard: React.FC<DashboardProps> = () => {
 };
 
 export default Dashboard;
+
+

@@ -436,3 +436,4 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
 };
 
 export default MonthlySalesPage;
+

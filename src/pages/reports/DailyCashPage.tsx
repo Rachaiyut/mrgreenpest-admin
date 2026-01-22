@@ -289,3 +289,4 @@ const DailyCashPage: React.FC = () => {
 };
 
 export default DailyCashPage;
+

@@ -1,4 +1,4 @@
-import { PAGE_PATH } from '@/src/config/route';
+import { PAGE_PATH } from '@/src/constants/route';
 import { Page } from '@/src/router/page';
 import { NavigationItem } from '@/src/types/nav';
 import { FC, useEffect, useRef } from 'react';
@@ -40,9 +40,7 @@ export const SidebarFlyout: FC<SidebarFlyoutProps> = ({
     };
   }, [anchorEl, onClose]);
 
-  const group = items.find(
-    (i) => i.type === 'group' && i.name === groupName
-  );
+  const group = items.find((i) => i.type === 'group' && i.name === groupName);
 
   if (!group || !('subItems' in group)) return null;
 
@@ -78,3 +76,4 @@ export const SidebarFlyout: FC<SidebarFlyoutProps> = ({
     </div>
   );
 };
+

@@ -12,7 +12,7 @@ import {
   Customer,
   Quotation,
 } from '@/src/types/entity/app.interface';
-import { InvoiceStatus } from '@/src/types/enums/financial.enum';
+import { InvoiceStatus } from '@/src/types/enums/financial';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
 
 interface EditInvoicePageProps {
@@ -38,7 +38,10 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
 
   // Map for quick customer lookup
   const customerMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])),
+    () =>
+      new Map(
+        (customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])
+      ),
     [customers]
   );
 
@@ -71,7 +74,11 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
   const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const customerId = e.target.value;
     const customerName = customerMap.get(customerId) || '';
-    setFormData((prev) => ({ ...prev, customer_id: customerId, customer_name: customerName }));
+    setFormData((prev) => ({
+      ...prev,
+      customer_id: customerId,
+      customer_name: customerName,
+    }));
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -171,9 +178,13 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
                 value={formData.status || ''}
                 onChange={handleChange}
               >
-                <option value={InvoiceStatus.Pending}>{InvoiceStatus.Pending}</option>
+                <option value={InvoiceStatus.Pending}>
+                  {InvoiceStatus.Pending}
+                </option>
                 <option value={InvoiceStatus.Paid}>{InvoiceStatus.Paid}</option>
-                <option value={InvoiceStatus.Overdue}>{InvoiceStatus.Overdue}</option>
+                <option value={InvoiceStatus.Overdue}>
+                  {InvoiceStatus.Overdue}
+                </option>
               </Select>
             </FormField>
             <FormField label="ยอดรวม (บาท)" htmlFor="total">
@@ -210,3 +221,4 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
 };
 
 export default EditInvoicePage;
+

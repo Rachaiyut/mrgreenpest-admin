@@ -31,7 +31,7 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
     'ธันวาคม',
   ];
 
-    const data = useMemo(() => {
+  const data = useMemo(() => {
     return receipts
       .filter((receipt) => {
         const receiptDate = new Date(receipt.paid_at);
@@ -40,7 +40,9 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
           receiptDate.getFullYear() === selectedYear;
 
         const matchesSearch =
-          receipt.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          receipt.customer_name
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
           receipt.id.toLowerCase().includes(searchTerm.toLowerCase());
 
         return matchesDate && matchesSearch;
@@ -50,9 +52,9 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
         const totalAmount = receipt.amount;
         const amountExclVat = totalAmount / 1.07;
         const vatAmount = totalAmount - amountExclVat;
-        
+
         // Find customer to get tax ID (if available in customer entity, otherwise dash)
-        const customer = customers.find(c => c.id === receipt.customer_id);
+        const customer = customers.find((c) => c.id === receipt.customer_id);
         const taxId = customer?.tax_id || '-'; // Assuming customer has tax_id, if not use placeholder
 
         return {
@@ -341,3 +343,4 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
 };
 
 export default TaxInvoiceIncomePage;
+

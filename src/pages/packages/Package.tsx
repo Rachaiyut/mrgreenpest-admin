@@ -5,11 +5,15 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { Card } from '../../components/common/Card';
-import { Package } from '@/src/types/entity/package.interface';
-import { Category } from '@/src/types/entity/category.interface';
-import { PackageApi } from '@/src/api/package';
-import { CategoryApi } from '@/src/api/category';
+import {
+  Card,
+  Pagination,
+  ConfirmationModal,
+  Input,
+  Button,
+} from '../../components/common';
+import { Package, Category, CategoryType } from '@/src/types';
+import { PackageApi, CategoryApi } from '@/src/api';
 import {
   PlusIcon,
   ManageIcon,
@@ -17,13 +21,12 @@ import {
   TrashIcon,
   EyeIcon,
 } from '../../assets/icons/Icons';
-import { Pagination } from '../../components/common/Pagination';
-import { AddPackageModal } from '../../components/features/package/AddPackageModal';
-import { EditPackageModal } from '../../components/features/package/EditPackageModal';
-import { PackageDetailsModal } from '../../components/features/package/PackageDetailsModal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Input, Button } from '../../components/common/FormControls';
-import { CategoryType } from '@/src/types';
+
+import {
+  AddPackageModal,
+  EditPackageModal,
+  PackageDetailsModal,
+} from '../../components/features/package';
 
 const Packages: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
@@ -48,7 +51,10 @@ const Packages: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 });
+      const response = await CategoryApi.getCategories({
+        type: CategoryType.SERVICE,
+        limit: 100,
+      });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);

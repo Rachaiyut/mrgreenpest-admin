@@ -191,3 +191,4 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
     </Modal>
   );
 };
+

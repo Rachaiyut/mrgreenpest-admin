@@ -15,7 +15,7 @@ import {
   AssessmentWorkArea,
   Customer,
 } from '@/src/types/entity/app.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { WorkAreaForm } from './WorkAreaForm';
@@ -433,7 +433,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                       {option.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {option.number_of_visits} ครั้ง / {option.contract_duration}
+                      {option.number_of_visits} ครั้ง /{' '}
+                      {option.contract_duration}
                     </div>
                   </label>
                 ))}
@@ -472,3 +473,4 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     </Modal>
   );
 };
+

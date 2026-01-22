@@ -14,7 +14,7 @@ import {
   InstallmentPlan,
   Product,
 } from '@/src/types/entity/app.interface';
-import { AsessmentStatus } from '@/src/types/enums/assessment.enum';
+import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { LeftArrowIcon, PlusIcon, TrashIcon } from '../../assets/icons/Icons';
 
 interface CreateQuotationPageProps {
@@ -485,3 +485,4 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
 };
 
 export default CreateQuotationPage;
+

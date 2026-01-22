@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal } from '../../common/Modal';
-import { Package } from '@/src/types/entity/package.interface';
+import { Modal } from '../../common';
+import { Package } from '@/src/types';
 
 interface PackageDetailsModalProps {
   isOpen: boolean;
@@ -30,7 +30,9 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-4">
             <div>
               <dt className="font-medium text-slate-500">รหัสแพ็กเกจ</dt>
-              <dd className="mt-1 text-slate-900 font-semibold">{pkg.code || pkg.id}</dd>
+              <dd className="mt-1 text-slate-900 font-semibold">
+                {pkg.code || pkg.id}
+              </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ชื่อแพ็กเกจ</dt>
@@ -93,26 +95,23 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {pkg.package_price && pkg.package_price.length > 0 ? (
                   pkg.package_price.map((cond, index) => (
-                    <tr
-                      key={cond.id || index}
-                      className="hover:bg-slate-50"
-                    >
+                    <tr key={cond.id || index} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-sm text-slate-900">
                         ไม่เกิน {cond.area_range}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.price_no_termite.toLocaleString(
-                          'th-TH',
-                          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                        )}
+                        {cond.price_without_termite.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.price_with_termite.toLocaleString(
-                          'th-TH',
-                          { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                        )}
+                        {cond.price_with_termite.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
@@ -125,7 +124,10 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                    <td
+                      colSpan={4}
+                      className="px-4 py-6 text-center text-sm text-slate-500"
+                    >
                       ไม่มีเงื่อนไขราคา
                     </td>
                   </tr>
@@ -138,3 +140,4 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
     </Modal>
   );
 };
+

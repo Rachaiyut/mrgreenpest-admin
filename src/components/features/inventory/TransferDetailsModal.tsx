@@ -1,8 +1,12 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { Transfer, Warehouse as WarehouseType, Product } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../constants';
+import {
+  Transfer,
+  Warehouse as WarehouseType,
+  Product,
+} from '@/src/types/entity/app.interface';
+import { formatThaiDate } from '../../../utils/date';
 
 interface TransferDetailsModalProps {
   isOpen: boolean;
@@ -167,3 +171,5 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

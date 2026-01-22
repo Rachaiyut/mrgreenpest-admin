@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react';
 import type { FC } from 'react';
 import { ConfigProvider } from 'antd';
-import { StyleProvider } from '@ant-design/cssinjs';
 
-// Base
-import { ILOCAL_STORAGE } from '@/src/types/entity/auth.interface';
+// Cnstant
+import { STORAGE_KEYS } from './constants';
 
 // Router
 import { AppRouter } from '@/src/router/router';
@@ -19,7 +18,7 @@ const App: FC = () => {
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
-      return !!localStorage.getItem(ILOCAL_STORAGE.USER_TOKEN);
+      return !!localStorage.getItem(STORAGE_KEYS.TOKEN);
     } catch {
       return false;
     }
@@ -43,8 +42,8 @@ const App: FC = () => {
 
     setIsAuthenticated(false);
     try {
-      localStorage.removeItem(ILOCAL_STORAGE.USER_TOKEN);
-      localStorage.removeItem(ILOCAL_STORAGE.USER_PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
       localStorage.removeItem('isAuthenticated');
     } catch {}
   }, []);

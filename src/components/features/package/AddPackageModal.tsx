@@ -1,15 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Modal } from '../../common/Modal';
-import { Package, PackagePrice } from '@/src/types/entity/package.interface';
-import { Category } from '@/src/types/entity/category.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
 import {
+  Modal,
   FormField,
   Input,
   Textarea,
   Select,
   Button,
-} from '../../common/FormControls';
+} from '../../common';
+import { Package, PackagePrice, Category, CategoryType } from '@/src/types';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface AddPackageModalProps {
@@ -34,9 +32,6 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
       setConditions([]);
     }
   }, [isOpen]);
-
-
-  console.log("categpry", categories)
 
   const availableCategories = useMemo(
     () => categories.filter((c) => c.type === CategoryType.SERVICE),
@@ -98,17 +93,16 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
       code: data['package-code'] as string,
       name: data['package-name'] as string,
       category_id: data['categoryId'] as string,
-      visit_limit: parseInt(data['package-visit-limit'] as string),
-      contract_period: parseFloat(data['package-contract-period'] as string) || 1,
+      visit_limit: parseInt(data['package-visits'] as string, 10),
+      contract_period: parseFloat(data['package-duration'] as string) || 1,
       remark: data['package-description'] as string,
-
       package_price: conditions.map(
         (c) =>
           ({
-            area_range: Number(c.area_range) || 0,
-            price_no_termite: Number(c.price_no_termite) || 0,
-            price_with_termite: Number(c.price_with_termite) || 0,
-            minimum_price: Number(c.minimum_price) || 0,
+            area_range: c.area_range || 0,
+            price_no_termite: c.price_no_termite || 0,
+            price_with_termite: c.price_with_termite || 0,
+            minimum_price: c.minimum_price || 0,
           }) as PackagePrice
       ),
     };
@@ -155,11 +149,9 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="รหัสแพ็กเกจ" htmlFor="package-id">
             <Input
-              id="package-code"
+              id="package-id"
               name="package-code"
               type="text"
-              required
-              placeholder="PK0001"
               className="bg-slate-100"
             />
           </FormField>
@@ -176,7 +168,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         </div>
         <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
           <Input
-            id="pckage-name"
+            id="package-name"
             name="package-name"
             type="text"
             required
@@ -185,38 +177,35 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         </FormField>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="package-visits">
-          <Input
-              id="package-visit-limit"
-              name="package-visit-limit"
+            <Input
+              id="package-visits"
+              name="package-visits"
               type="number"
               required
-              min="1"            
-              step="1"     
               placeholder="เช่น 4"
             />
           </FormField>
-          <FormField label="อายุสัญญา" htmlFor="package-duration">
+          <FormField label="อายุสัญญา (ปี)" htmlFor="package-duration">
             <Input
-              id="package-contract-period"
-              name="package-contract-period"
+              id="package-duration"
+              name="package-duration"
               type="number"
-              step="0.1"
-              required
-              placeholder="1.0"
-              min="1"
+              step="0.5"
+              placeholder="เช่น 1"
             />
           </FormField>
         </div>
 
         <FormField label="หมายเหตุ" htmlFor="package-description">
           <Textarea
-            id="package-remark"
-            name="package-remark"
+            id="package-description"
+            name="package-description"
             rows={3}
             placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับแพ็กเกจ"
           />
         </FormField>
 
+        {/* Conditions Table */}
         <div>
           <div className="flex justify-between items-center mb-2">
             <h4 className="text-base font-semibold text-slate-800">

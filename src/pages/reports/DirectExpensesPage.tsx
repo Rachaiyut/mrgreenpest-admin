@@ -47,16 +47,18 @@ const DirectExpensesPage: React.FC = () => {
 
   // Filter Logic
   const processedData = useMemo(() => {
-    return expenses.filter((item) => {
-      const d = new Date(item.date);
-      const matchesDate =
-        d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
-      const matchesSearch =
-        item.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.wallet.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesDate && matchesSearch;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return expenses
+      .filter((item) => {
+        const d = new Date(item.date);
+        const matchesDate =
+          d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+        const matchesSearch =
+          item.invoiceNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.wallet.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesDate && matchesSearch;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [selectedMonth, selectedYear, searchTerm]);
 
   return (
@@ -279,3 +281,4 @@ const DirectExpensesPage: React.FC = () => {
 };
 
 export default DirectExpensesPage;
+

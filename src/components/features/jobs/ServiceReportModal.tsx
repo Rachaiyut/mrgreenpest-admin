@@ -5,8 +5,8 @@ import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface'
 import { Status, User, UserRole } from '@/src/types/entity/core.interface';
 import { Quotation, Contract } from '@/src/types/entity/financial.interface';
 import { Product } from '@/src/types/entity/package.interface';
-import { JobStatus } from '@/src/types/enums/job.enum';
-import { formatThaiDate } from '../../../constants';
+import { JobStatus } from '@/src/types/enums/job';
+import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 
 interface ServiceReportModalProps {
@@ -79,7 +79,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       ),
     [products]
   );
-  
+
   const recommendedNextIso = useMemo(() => {
     if (!job || !job.contract_id) return undefined;
     const c = contracts.find((ct) => ct.id === job.contract_id);
@@ -105,9 +105,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       .filter(
         (j) =>
           j.contract_id === c.id &&
-          [JobStatus.InProgress, JobStatus.Planned, JobStatus.Scheduled].includes(
-            j.status
-          )
+          [
+            JobStatus.InProgress,
+            JobStatus.Planned,
+            JobStatus.Scheduled,
+          ].includes(j.status)
       )
       .sort(
         (a, b) =>
@@ -196,19 +198,19 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const handleApprove = () => {
     const finalReportData = {
       ...reportState,
-      status: JobStatus.Completed, // Or Approved? Assuming Completed or InProgress depending on workflow. 
-      // Wait, ServiceReport status is JobStatus. 
+      status: JobStatus.Completed, // Or Approved? Assuming Completed or InProgress depending on workflow.
+      // Wait, ServiceReport status is JobStatus.
       // If approved, usually job status becomes Completed or similar.
-      // But here we are setting REPORT status. 
-      // Let's assume 'Approved' maps to something, but JobStatus doesn't have 'Approved'. 
-      // It has 'Completed'. 
+      // But here we are setting REPORT status.
+      // Let's assume 'Approved' maps to something, but JobStatus doesn't have 'Approved'.
+      // It has 'Completed'.
       // If the report is approved, maybe the job is completed.
     } as ServiceReport;
-    // Actually the previous code used Status.Approved. 
+    // Actually the previous code used Status.Approved.
     // If JobStatus doesn't have Approved, we should use Completed.
     // Let's use Completed.
     finalReportData.status = JobStatus.Completed;
-    
+
     onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
   };
 
@@ -960,7 +962,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </dt>
             <dd className="mt-1 text-slate-900 font-semibold">
               {job.technicians.length > 0
-                ? job.technicians.map((t) => t.first_name + ' ' + t.last_name).join(', ')
+                ? job.technicians
+                    .map((t) => t.first_name + ' ' + t.last_name)
+                    .join(', ')
                 : 'ไม่มีช่างเทคนิค'}
             </dd>
           </div>
@@ -1009,7 +1013,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   <input
                     type="checkbox"
                     checked={reportState.service_actions?.includes(action)}
-                    onChange={() => handleMultiSelect('service_actions', action)}
+                    onChange={() =>
+                      handleMultiSelect('service_actions', action)
+                    }
                   />
                   <span>{action}</span>
                 </label>
@@ -1045,14 +1051,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   type="date"
                   value={
                     reportState.next_appointment?.scheduled_at
-                      ? reportState.next_appointment.scheduled_at.substring(0, 10)
+                      ? reportState.next_appointment.scheduled_at.substring(
+                          0,
+                          10
+                        )
                       : ''
                   }
                   onChange={(e) =>
                     setReportState((prev) => ({
                       ...prev,
                       next_appointment: {
-                        ...(prev.next_appointment || { notes: '', reasons: [] }),
+                        ...(prev.next_appointment || {
+                          notes: '',
+                          reasons: [],
+                        }),
                         scheduled_at: e.target.value
                           ? new Date(e.target.value).toISOString()
                           : undefined,
@@ -1111,7 +1123,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     setReportState((prev) => ({
                       ...prev,
                       next_appointment: {
-                        ...(prev.next_appointment || { notes: '', reasons: [] }),
+                        ...(prev.next_appointment || {
+                          notes: '',
+                          reasons: [],
+                        }),
                         notes: e.target.value,
                       },
                     }))
@@ -1136,3 +1151,5 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     </Modal>
   );
 };
+
+

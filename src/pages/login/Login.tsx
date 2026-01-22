@@ -4,11 +4,14 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 // Interface
-import { ILoginPayload } from '@/src/types/entity/auth.interface';
-import { ILoginProps } from '@/src/types/prop/login.props';
+import { LoginPayload } from '@/src/types/entity/auth.interface';
 import { Auth } from '@/src/api/auth';
 
-const Login: React.FC<ILoginProps> = ({ onLogin }) => {
+interface LoginProps {
+  onLogin: (username: string, remember: boolean) => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -30,7 +33,7 @@ const Login: React.FC<ILoginProps> = ({ onLogin }) => {
     const { citizenId, password, remember } = values;
     setLoading(true);
     try {
-      const payload: ILoginPayload = {
+      const payload: LoginPayload = {
         citizen_id: citizenId,
         password: password,
       };
@@ -148,3 +151,4 @@ const Login: React.FC<ILoginProps> = ({ onLogin }) => {
 };
 
 export default Login;
+

@@ -1,9 +1,13 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { FieldJob, Assessment, Warehouse } from '@/src/types/entity/app.interface';
+import {
+  FieldJob,
+  Assessment,
+  Warehouse,
+} from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -253,3 +257,5 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

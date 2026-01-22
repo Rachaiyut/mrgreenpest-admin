@@ -2,9 +2,8 @@ import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 import { NavLink } from '@/src/types/entity/nav.interface';
-import { PAGE_PATH } from '@/src/config/route';
+import { PAGE_PATH } from '@/src/constants/route';
 import { Page } from '@/src/router/page';
-
 
 interface SidebarLinkProps {
   item: NavLink;
@@ -12,9 +11,13 @@ interface SidebarLinkProps {
   collapsed: boolean;
 }
 
-export const SidebarLink: FC<SidebarLinkProps> = ({ item, isActive, collapsed }) => {
+export const SidebarLink: FC<SidebarLinkProps> = ({
+  item,
+  isActive,
+  collapsed,
+}) => {
   const displayName = item.name === 'Dashboard' ? 'แดชบอร์ด' : item.name;
-  
+
   return (
     <Link
       to={`/${PAGE_PATH[item.name as Page]}`}
@@ -32,3 +35,4 @@ export const SidebarLink: FC<SidebarLinkProps> = ({ item, isActive, collapsed })
     </Link>
   );
 };
+

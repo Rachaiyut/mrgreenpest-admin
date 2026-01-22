@@ -157,7 +157,11 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
           </FormField>
         </div>
         <FormField
-          label={formData.type === SupplierType.CORPORATE ? 'ชื่อบริษัท' : 'ชื่อ-นามสกุล'}
+          label={
+            formData.type === SupplierType.CORPORATE
+              ? 'ชื่อบริษัท'
+              : 'ชื่อ-นามสกุล'
+          }
           htmlFor="contact_name"
         >
           <Input
@@ -240,3 +244,4 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
     </Modal>
   );
 };
+

@@ -6,7 +6,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 
 interface StockAdjustmentDetailsModalProps {
   isOpen: boolean;
@@ -144,3 +144,5 @@ export const StockAdjustmentDetailsModal: React.FC<
     </Modal>
   );
 };
+
+

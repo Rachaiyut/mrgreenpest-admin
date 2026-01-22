@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 
 // Components
 import { Card } from '../../components/common/Card';
@@ -25,8 +31,8 @@ import { EditSupplierModal } from '../../components/features/suppliers/EditSuppl
 import { SupplierType } from '@/src/types';
 
 const Suppliers: React.FC = () => {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([])
-  const [loading, setLoading] = useState<boolean>(false)
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState<string>();
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,15 +60,14 @@ const Suppliers: React.FC = () => {
   );
 
   const onDeleteSupplier = async (id: string) => {
-      try {
-        await SupplierApi.deleteSupplier(id);
-        fetchSupplier();
-      } catch (error) {
-        console.error('Failed to delete product:', error);
-        alert('Failed to delete product');
-      }
-    };
-  
+    try {
+      await SupplierApi.deleteSupplier(id);
+      fetchSupplier();
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      alert('Failed to delete product');
+    }
+  };
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -119,25 +124,24 @@ const Suppliers: React.FC = () => {
   };
 
   const fetchSupplier = useCallback(async () => {
-      setLoading(true);
-      try {
-        const response = await SupplierApi.getSuppliers({
-          page: currentPage,
-          limit: itemsPerPage,
-          search: searchQuery,
-          type: typeFilter,
-          sort_by: 'created_at',
-          sort_order: 'desc'
-        });
-        setSuppliers(response.data);
-        setTotalItems(response.meta?.total || response.data.length);
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
-      } finally {
-        setLoading(false);
-      }
-    }, [currentPage, itemsPerPage, searchQuery, typeFilter]);
-  
+    setLoading(true);
+    try {
+      const response = await SupplierApi.getSuppliers({
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery,
+        type: typeFilter,
+        sort_by: 'created_at',
+        sort_order: 'desc',
+      });
+      setSuppliers(response.data);
+      setTotalItems(response.meta?.total || response.data.length);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchQuery, typeFilter]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -160,9 +164,9 @@ const Suppliers: React.FC = () => {
     };
   }, [openDropdownId]);
 
-    useEffect(() => {
-      fetchSupplier();
-    }, [fetchSupplier]);
+  useEffect(() => {
+    fetchSupplier();
+  }, [fetchSupplier]);
 
   const handleCreateSupplier = async (supplierData: Omit<Supplier, 'id'>) => {
     try {
@@ -217,7 +221,7 @@ const Suppliers: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                <option value=''>ทุกประเภท</option>
+                <option value="">ทุกประเภท</option>
                 <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
                 <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
@@ -300,7 +304,9 @@ const Suppliers: React.FC = () => {
                       {supplier.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {supplier.type === SupplierType.INDIVIDUAL ? 'บุคคลธรรมดา' : 'นิติบุคคล' }
+                      {supplier.type === SupplierType.INDIVIDUAL
+                        ? 'บุคคลธรรมดา'
+                        : 'นิติบุคคล'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {supplier.tax_id || '-'}
@@ -429,3 +435,4 @@ const Suppliers: React.FC = () => {
 };
 
 export default Suppliers;
+

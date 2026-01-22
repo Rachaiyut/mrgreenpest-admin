@@ -9,7 +9,7 @@ import {
   TrashIcon,
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import { AddStockAdjustmentModal } from '../../../components/features/inventory/AddStockAdjustmentModal';
 import {
   StockAdjustment as StockAdjustmentType,
@@ -403,3 +403,5 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
 };
 
 export default StockAdjustment;
+
+

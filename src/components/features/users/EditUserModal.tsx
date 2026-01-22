@@ -240,3 +240,4 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     </Modal>
   );
 };
+

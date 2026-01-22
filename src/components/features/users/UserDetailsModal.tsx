@@ -62,3 +62,4 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     </Modal>
   );
 };
+

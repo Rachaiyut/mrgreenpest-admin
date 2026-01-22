@@ -44,7 +44,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center transition-opacity duration-300 p-4"
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center transition-opacity duration-300 p-4"
       aria-modal="true"
       role="dialog"
       onClick={onClose}

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
-import { Warehouse as WarehouseType, Product } from '@/src/types/entity/app.interface';
+import {
+  Warehouse as WarehouseType,
+  Product,
+} from '@/src/types/entity/app.interface';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
@@ -349,3 +352,4 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
     </>
   );
 };
+

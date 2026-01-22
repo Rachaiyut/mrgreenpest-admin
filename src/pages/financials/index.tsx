@@ -3,7 +3,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { formatThaiDate } from '../../constants';
+import { formatThaiDate } from '../../utils/date';
 import {
   PlusIcon,
   ManageIcon,
@@ -21,7 +21,7 @@ import {
   Assessment,
   Status,
   InstallmentPlan,
-} from '../../types';
+} from '../../constants/types';
 import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
@@ -141,7 +141,10 @@ const Financials: React.FC<FinancialsProps> = ({
   );
 
   const customerMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])),
+    () =>
+      new Map(
+        (customers || []).map((c) => [c.id, `${c.first_name} ${c.last_name}`])
+      ),
     [customers]
   );
 
@@ -209,10 +212,7 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // Create phone map for search
     const custPhoneMap = new Map(
-      (customers || []).map((c) => [
-        c.id,
-        [c.phone].filter(Boolean).join(''),
-      ])
+      (customers || []).map((c) => [c.id, [c.phone].filter(Boolean).join('')])
     );
 
     let result = quotationData;
@@ -287,10 +287,7 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // Create phone map for search
     const custPhoneMap = new Map(
-      (customers || []).map((c) => [
-        c.id,
-        [c.phone].filter(Boolean).join(''),
-      ])
+      (customers || []).map((c) => [c.id, [c.phone].filter(Boolean).join('')])
     );
 
     let result = invoiceData;
@@ -309,7 +306,9 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // 2. Status Filter
     if (invoiceStatusFilter !== 'ทั้งหมด') {
-      result = result.filter((i) => (i.status as unknown as Status) === invoiceStatusFilter);
+      result = result.filter(
+        (i) => (i.status as unknown as Status) === invoiceStatusFilter
+      );
     }
 
     // 3. Date Filter (using issuedAt)
@@ -359,10 +358,7 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // Create phone map for search
     const custPhoneMap = new Map(
-      (customers || []).map((c) => [
-        c.id,
-        [c.phone].filter(Boolean).join(''),
-      ])
+      (customers || []).map((c) => [c.id, [c.phone].filter(Boolean).join('')])
     );
 
     let result = receiptData;
@@ -570,7 +566,9 @@ const Financials: React.FC<FinancialsProps> = ({
     setInvoiceFormTerm(installment.term);
     setInvoiceFormStatus(Status.Pending);
 
-    const d = installment.due_date ? new Date(installment.due_date) : new Date();
+    const d = installment.due_date
+      ? new Date(installment.due_date)
+      : new Date();
     if (!installment.due_date) d.setDate(d.getDate() + 30);
     setInvoiceFormDueAt(d.toISOString().slice(0, 10));
 
@@ -1985,3 +1983,4 @@ const Financials: React.FC<FinancialsProps> = ({
 };
 
 export default Financials;
+

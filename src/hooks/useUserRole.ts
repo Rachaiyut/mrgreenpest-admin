@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Role, ILOCAL_STORAGE } from '../types';
+import { useState } from 'react';
 
+// Constant
+import { STORAGE_KEYS } from '../constants';
+
+// Enum
+import { Role } from '../types/enums/role';
+
+// Interface
 export const useUserRole = () => {
   const [userRole, setUserRole] = useState<Role | null>(() => {
     try {
-      const userProfileStr = localStorage.getItem(ILOCAL_STORAGE.USER_PROFILE);
+      const userProfileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
       if (userProfileStr) {
         const userProfile = JSON.parse(userProfileStr);
         return userProfile.role as Role;
@@ -17,3 +23,4 @@ export const useUserRole = () => {
 
   return userRole;
 };
+

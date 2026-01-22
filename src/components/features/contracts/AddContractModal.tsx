@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
-import {
-  Quotation,
-  Contract,
-  Status,
-} from '@/src/types/entity/app.interface';
+import { Quotation, Contract, Status } from '@/src/types/entity/app.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 
 interface AddContractModalProps {
@@ -63,9 +59,9 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
     }
   }, [isOpen, customer]);
 
-
-
-  const createContractObject = (status: Status): Omit<Contract, 'id'> | null => {
+  const createContractObject = (
+    status: Status
+  ): Omit<Contract, 'id'> | null => {
     if (!selectedQuotationId || !startDate || !endDate || !servicePackage) {
       alert('กรุณากรอกข้อมูลให้ครบถ้วน');
       return null;
@@ -240,3 +236,4 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
     </Modal>
   );
 };
+

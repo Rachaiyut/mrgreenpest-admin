@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Input, Button } from './FormControls';
 import { FieldJob } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../constants';
+import { formatThaiDate } from '../../utils/date';
 
 interface ReferenceSelectionModalProps {
   isOpen: boolean;
@@ -160,3 +160,5 @@ export const ReferenceSelectionModal: React.FC<
     </Modal>
   );
 };
+
+

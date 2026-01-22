@@ -123,7 +123,7 @@ const Categories: React.FC = () => {
   const onUpdateCategory = useCallback(
     async (id: string, updatedCategory: Partial<Category>) => {
       try {
-        console.log("payload", id, updatedCategory)
+        console.log('payload', id, updatedCategory);
 
         await CategoryApi.updateCategory(id, updatedCategory);
         fetchCategories();
@@ -302,7 +302,9 @@ const Categories: React.FC = () => {
             <button
               onClick={(e) => {
                 e.preventDefault();
-                const category = categories.find((p) => p.id === openDropdownId);
+                const category = categories.find(
+                  (p) => p.id === openDropdownId
+                );
                 if (category) handleEdit(category);
               }}
               className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
@@ -330,3 +332,4 @@ const Categories: React.FC = () => {
 };
 
 export default Categories;
+

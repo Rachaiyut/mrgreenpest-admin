@@ -6,7 +6,7 @@ import {
   WalletTransaction,
 } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
-import { formatThaiDateTime } from '../../../constants';
+import { formatThaiDateTime } from '../../../utils/date';
 import { PlusIcon } from '../../../assets/icons/Icons';
 
 interface UserWalletModalProps {
@@ -207,3 +207,5 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
     </Modal>
   );
 };
+
+

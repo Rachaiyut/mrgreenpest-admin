@@ -9,7 +9,7 @@ import {
   Status,
   Customer,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../constants';
+import { formatThaiDate } from '../../utils/date';
 
 import { useData } from '../../contexts/DataContext';
 
@@ -342,3 +342,5 @@ const Notifications: React.FC<NotificationsProps> = () => {
 };
 
 export default Notifications;
+
+

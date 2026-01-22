@@ -7,7 +7,7 @@ import {
   Product,
 } from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
 
 interface AssessmentDetailsModalProps {
@@ -17,7 +17,10 @@ interface AssessmentDetailsModalProps {
   products: Product[];
 }
 
-const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea; products: Product[] }> = ({ area, products }) => {
+const WorkAreaDetails: React.FC<{
+  area: AssessmentWorkArea;
+  products: Product[];
+}> = ({ area, products }) => {
   const productMap = new Map(products.map((p) => [p.id, p]));
   const selectedPackage = products.find((p) => p.id === area.package_id);
   const selectedCondition = selectedPackage?.conditions?.find(
@@ -38,7 +41,9 @@ const WorkAreaDetails: React.FC<{ area: AssessmentWorkArea; products: Product[] 
         </div>
         <div>
           <dt className="font-medium text-slate-500">ประเภทบริการ</dt>
-          <dd className="mt-1 text-slate-900">{area.service_type.join(', ')}</dd>
+          <dd className="mt-1 text-slate-900">
+            {area.service_type.join(', ')}
+          </dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
@@ -326,3 +331,5 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

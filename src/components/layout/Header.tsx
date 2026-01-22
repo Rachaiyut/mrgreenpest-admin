@@ -13,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
 
   return (
     <header className="bg-white shadow-sm z-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         <div className="flex items-center">
           <Button
             variant="ghost"

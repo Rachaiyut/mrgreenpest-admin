@@ -1,11 +1,10 @@
-import { Button, Card } from "antd";
-
+import { Button, Card } from 'antd';
 
 // Enum
-import { CustomerType } from "@/src/types/enums/customer.enum";
+import { CustomerType } from '@/src/types/enums/customer';
 
 // Interface
-import { Customer } from "@/src/types/entity/app.interface";
+import { Customer } from '@/src/types/entity/app.interface';
 
 // Icon
 import {
@@ -14,7 +13,6 @@ import {
   EnvelopeIcon,
   UserIcon,
 } from '../../assets/icons/Icons';
-
 
 const CustomerCardView: React.FC<{
   customers: ICustomer[];
@@ -35,7 +33,9 @@ const CustomerCardView: React.FC<{
               <span
                 className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${customer.customer_type === CustomerType.CORPORATE ? 'bg-sky-100 text-sky-800' : 'bg-lime-100 text-lime-800'}`}
               >
-                {customer.customer_type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคล'}
+                {customer.customer_type === CustomerType.CORPORATE
+                  ? 'นิติบุคคล'
+                  : 'บุคคล'}
               </span>
             </div>
             <div className="relative">
@@ -86,3 +86,4 @@ const CustomerCardView: React.FC<{
 );
 
 export default CustomerCardView;
+

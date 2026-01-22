@@ -73,3 +73,4 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
     </Modal>
   );
 };
+

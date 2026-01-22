@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import {
   SectionTitle,
   DetailsList,
@@ -37,7 +37,8 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.id}
             </DetailsItem>
             <DetailsItem label="ชื่อลูกค้า" valueClassName="font-semibold">
-              {customer.first_name} {customer.last_name} {customer.nickname && `(${customer.nickname})`}
+              {customer.first_name} {customer.last_name}{' '}
+              {customer.nickname && `(${customer.nickname})`}
             </DetailsItem>
             <DetailsItem label="ประเภท">{customer.customer_type}</DetailsItem>
             {customer.tax_id && (
@@ -137,3 +138,5 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

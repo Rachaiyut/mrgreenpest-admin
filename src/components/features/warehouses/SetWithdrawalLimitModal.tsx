@@ -170,3 +170,4 @@ export const SetWithdrawalLimitModal: React.FC<
     </Modal>
   );
 };
+

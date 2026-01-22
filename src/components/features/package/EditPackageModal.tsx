@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Modal } from '../../common/Modal';
-import { Package, PackagePrice } from '@/src/types/entity/package.interface';
-import { Category } from '@/src/types/entity/category.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
-import { FormField, Input, Textarea, Select } from '../../common/FormControls';
+import { Modal } from '../../common';
+import { Package, PackagePrice, Category, CategoryType } from '@/src/types';
+import { FormField, Input, Textarea, Select } from '../../common';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface EditPackageModalProps {
@@ -44,10 +42,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
         typeof cond.price_no_termite === 'number' &&
         typeof cond.price_with_termite === 'number' &&
         cond.minimum_price >
-          Math.min(
-            cond.price_no_termite,
-            cond.price_with_termite
-          )
+          Math.min(cond.price_no_termite, cond.price_with_termite)
       ) {
         indices.push(index);
       }
@@ -110,7 +105,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
         visit_limit:
           typeof formData.visit_limit === 'number'
             ? formData.visit_limit
-            : pkg.visit_limit,    
+            : pkg.visit_limit,
         remark: formData.remark || pkg.remark,
         package_price: conditions.map((c) => ({
           id: c.id || '',
@@ -225,12 +220,12 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           </FormField>
           {/* Removed contract_duration field as it's not in the interface */}
           <FormField label="อายุสัญญา" htmlFor="contractDuration">
-             <Select
+            <Select
               id="contractDuration"
               name="contract_duration" // This will go nowhere unless we handle it or add it to interface
               disabled
               title="Not supported yet"
-             >
+            >
               <option>ครั้งเดียว</option>
               <option>3 เดือน</option>
               <option>6 เดือน</option>
@@ -386,3 +381,4 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     </Modal>
   );
 };
+

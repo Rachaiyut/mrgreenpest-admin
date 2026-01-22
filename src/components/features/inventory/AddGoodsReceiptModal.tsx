@@ -387,3 +387,4 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     </Fragment>
   );
 };
+

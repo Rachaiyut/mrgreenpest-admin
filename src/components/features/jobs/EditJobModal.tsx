@@ -578,3 +578,4 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     </Modal>
   );
 };
+

@@ -707,3 +707,4 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     </>
   );
 };
+

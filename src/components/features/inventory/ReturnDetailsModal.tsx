@@ -5,7 +5,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 
 interface ReturnDetailsModalProps {
   isOpen: boolean;
@@ -145,3 +145,5 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
     </Modal>
   );
 };
+
+

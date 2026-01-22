@@ -1,6 +1,7 @@
 import { lazy, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { DataContextType } from '../contexts/DataContext';
+import Product from '../pages/inventory';
 
 // Lazy Imports
 const Dashboard = lazy(() => import('../pages/dashboard'));
@@ -71,7 +72,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       path: '/assessments',
       element: (
         <Assessments
-          assessments={assessments}
           onCreateAssessment={handlers.assessments.create}
           onUpdateAssessment={handlers.assessments.update}
           onDeleteAssessment={handlers.assessments.delete}
@@ -172,8 +172,8 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       element: <Categories />,
     },
     {
-      path: '/inventory',
-      element: <Inventory />,
+      path: '/products',
+      element: <Product />,
     },
     {
       path: '/packages',

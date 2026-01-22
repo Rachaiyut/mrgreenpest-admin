@@ -89,7 +89,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
         paymentChannel: receipt.payment_method || 'Transfer',
         fee: 0,
         withholdingTax: 0,
-        isVerified: true, 
+        isVerified: true,
       };
     });
 
@@ -377,3 +377,4 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
 };
 
 export default TotalIncomePage;
+

@@ -96,7 +96,13 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     if (currentEstimatedCost !== newTotalCost) {
       onAreaChange(index, { ...area, estimated_cost: newTotalCost });
     }
-  }, [area.items, area.package_price, area.estimated_cost, index, onAreaChange]);
+  }, [
+    area.items,
+    area.package_price,
+    area.estimated_cost,
+    index,
+    onAreaChange,
+  ]);
 
   const handleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -429,7 +435,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <Input
                 id={`manual-price-${index}`}
                 type="number"
-                value={area.package_price === undefined ? '' : area.package_price}
+                value={
+                  area.package_price === undefined ? '' : area.package_price
+                }
                 onChange={(e) => {
                   onAreaChange(index, {
                     ...area,
@@ -511,10 +519,11 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                             }
                             className="h-8 text-center"
                             min="1"
-                            
                           />
                         </td>
-                        <td className="p-1 text-slate-600">{product?.unit?.name || '-'}</td>
+                        <td className="p-1 text-slate-600">
+                          {product?.unit?.name || '-'}
+                        </td>
                         <td className="p-1 w-32 text-right text-slate-800">
                           ฿
                           {(item.price * (item.quantity || 0)).toLocaleString(
@@ -566,3 +575,4 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     </>
   );
 };
+

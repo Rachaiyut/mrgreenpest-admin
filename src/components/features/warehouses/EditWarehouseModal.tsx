@@ -194,3 +194,4 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
     </Modal>
   );
 };
+

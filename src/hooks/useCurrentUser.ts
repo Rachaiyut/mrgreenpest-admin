@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
-import { IAuthUser, ILOCAL_STORAGE } from '@/src/types/entity/auth.interface';
+
+// Cnstant
+import { STORAGE_KEYS } from '../constants';
+
+// Entity
+import { AuthUser } from '../types/entity/auth.interface';
 
 export const useCurrentUser = () => {
-  const [user, setUser] = useState<IAuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
-    const userStr = localStorage.getItem(ILOCAL_STORAGE.USER_PROFILE);
+    const userStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
     if (userStr) {
       try {
         const parsedUser = JSON.parse(userStr);
@@ -18,3 +23,4 @@ export const useCurrentUser = () => {
 
   return user;
 };
+

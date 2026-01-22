@@ -1,5 +1,8 @@
 import { IBase } from "./base.interface";
 
-export interface Unit extends IBase {
+export interface IUnit extends IBase {
+    id: string,
     name: string
 }
+
+export type Unit = IUnit;

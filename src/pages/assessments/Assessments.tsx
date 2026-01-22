@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Enum
-import { AsessmentStatus } from "@/src/types/enums/assessment.enum";
-import { Assessment, Product, Customer } from "@/src/types/entity/app.interface";
+import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { Assessment, Product, Customer } from '@/src/types/entity/app.interface';
 
 // Component
-import AssessmentCard from "./AssessmentCard";
-import { Button, Input } from "@/src/components/common/FormControls";
+import AssessmentCard from './AssessmentCard';
+import { Button, Input } from '@/src/components/common/FormControls';
 import {
   PlusIcon,
   ViewColumnsIcon,
@@ -16,15 +16,15 @@ import {
   ArrowRightIcon,
   TrashIcon,
   ManageIcon,
-} from "@/src/assets/icons/Icons";
-import { Pagination } from "@/src/components/common/Pagination";
-import { formatThaiDate } from "@/src/constants";
-import { AddAssessmentModal } from "@/src/components/features/assessments/AddAssessmentModal";
-import { EditAssessmentModal } from "@/src/components/features/assessments/EditAssessmentModal";
-import { AssessmentDetailsModal } from "@/src/components/features/assessments/AssessmentDetailsModal";
-import { StatusBadge } from "@/src/components/common/StatusBadge";
-import { Card } from "@/src/components/common/Card";
-import { Modal as ConfirmationModal } from "@/src/components/common/Modal";
+} from '@/src/assets/icons/Icons';
+import { Pagination } from '@/src/components/common/Pagination';
+import { formatThaiDate } from '@/src/utils/date';
+import { AddAssessmentModal } from '@/src/components/features/assessments/AddAssessmentModal';
+import { EditAssessmentModal } from '@/src/components/features/assessments/EditAssessmentModal';
+import { AssessmentDetailsModal } from '@/src/components/features/assessments/AssessmentDetailsModal';
+import { StatusBadge } from '@/src/components/common/StatusBadge';
+import { Card } from '@/src/components/common/Card';
+import { Modal as ConfirmationModal } from '@/src/components/common/Modal';
 
 interface AssessmentsProps {
   onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
@@ -126,30 +126,33 @@ const Assessments: React.FC<AssessmentsProps> = ({
     });
   }, [reversedAssessments, searchQuery]);
 
-  const kanbanColumns: { title: AsessmentStatus; assessments: Assessment[] }[] = [
-    {
-      title: AsessmentStatus.Draft,
-      assessments: filteredAssessments.filter((a) => a.status === AsessmentStatus.Draft),
-    },
-    {
-      title: AsessmentStatus.PendingApproval,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.PendingApproval
-      ),
-    },
-    {
-      title: AsessmentStatus.Scheduled,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.Scheduled
-      ),
-    },
-    {
-      title: AsessmentStatus.Completed,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.Completed
-      ),
-    },
-  ];
+  const kanbanColumns: { title: AsessmentStatus; assessments: Assessment[] }[] =
+    [
+      {
+        title: AsessmentStatus.Draft,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.Draft
+        ),
+      },
+      {
+        title: AsessmentStatus.PendingApproval,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.PendingApproval
+        ),
+      },
+      {
+        title: AsessmentStatus.Scheduled,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.Scheduled
+        ),
+      },
+      {
+        title: AsessmentStatus.Completed,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.Completed
+        ),
+      },
+    ];
 
   const totalItems = filteredAssessments.length;
   const paginatedAssessments = filteredAssessments.slice(
@@ -236,17 +239,17 @@ const Assessments: React.FC<AssessmentsProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-        {
-          label: 'ดูรายละเอียด',
-          icon: EyeIcon,
-          onClick: () => handleViewDetails(selectedAssessment),
-        },
-        {
-          label: 'แก้ไข',
-          icon: PencilIcon,
-          onClick: () => handleEdit(selectedAssessment),
-        },
-      ];
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(selectedAssessment),
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(selectedAssessment),
+      },
+    ];
 
     if (selectedAssessment.status === AsessmentStatus.Completed) {
       actions.push({
@@ -408,7 +411,9 @@ const Assessments: React.FC<AssessmentsProps> = ({
                   {paginatedAssessments.map((assessment, index) => {
                     const allServiceTypes = [
                       ...new Set(
-                        assessment.work_areas.flatMap((area) => area.service_type)
+                        assessment.work_areas.flatMap(
+                          (area) => area.service_type
+                        )
                       ),
                     ];
                     const allBuildingTypes = [
@@ -558,3 +563,5 @@ const Assessments: React.FC<AssessmentsProps> = ({
 };
 
 export default Assessments;
+
+

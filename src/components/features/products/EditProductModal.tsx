@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  FormField,
-  Input,
-  Select,
-  Button,
-} from '../../common/FormControls';
+import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category } from '@/src/types/entity/category.interface';
 import { Unit } from '@/src/types/entity/unit.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -38,7 +33,6 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
       setImagePreview(null);
     }
   }, [product]);
-
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -234,3 +228,4 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     </Modal>
   );
 };
+

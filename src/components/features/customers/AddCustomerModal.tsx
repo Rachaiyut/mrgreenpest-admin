@@ -8,7 +8,7 @@ import {
   Button,
 } from '../../common/FormControls';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { CustomerType } from '@/src/types/enums/customer.enum';
+import { CustomerType } from '@/src/types/enums/customer';
 
 interface AddCustomerModalProps {
   isOpen: boolean;
@@ -74,7 +74,10 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       first_name: firstName,
       last_name: lastName,
       nickname: (data.nickname as string) || '',
-      customer_type: customerType === 'บุคคลธรรมดา' ? CustomerType.INDIVIDUAL : CustomerType.CORPORATE,
+      customer_type:
+        customerType === 'บุคคลธรรมดา'
+          ? CustomerType.INDIVIDUAL
+          : CustomerType.CORPORATE,
       email: (data.email as string) || '',
       phone: (data.phone as string) || '',
       address_house_no: data['address-street'] as string,
@@ -87,7 +90,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       created_at: new Date().toISOString(),
       google_map_link: data.googleMapLink as string | undefined,
       status: '' as any,
-      updated_at: ''
+      updated_at: '',
     };
 
     onCreateCustomer(newCustomer);
@@ -367,3 +370,4 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     </Modal>
   );
 };
+

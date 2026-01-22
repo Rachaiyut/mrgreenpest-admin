@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { Product } from '@/src/types/entity/package.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
@@ -173,3 +173,4 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     </Modal>
   );
 };
+

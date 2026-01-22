@@ -6,28 +6,35 @@ import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 
 // Enum
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 
 // Interface
-import { IProduct } from '@/src/types/entity/product.interface';
-import { ICategory } from '@/src/types/entity/category.interface';
-import { IUnit } from '@/src/types/entity/unit.interface';
-
-// Prop
-import { IAddProductModalProps } from '@/src/types/prop/product/add-product';
+import { Product } from '@/src/types/entity/product.interface';
 
 // API
-import { Product as ProductApi } from '@/src/api/product';
+import { ProductApi } from '@/src/api/product';
+import { Category } from '@/src/types/entity/category.interface';
+import { Unit } from '@/src/types/entity/unit.interface';
+
+export interface IAddProductModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  categories: Category[];
+  units: Unit[];
+}
 
 export const AddProductModal: React.FC<IAddProductModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
   categories,
-  units
+  units,
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<CategoryType>(CategoryType.PRODUCT);
+  const [selectedType, setSelectedType] = useState<CategoryType>(
+    CategoryType.PRODUCT
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const filteredCategories = useMemo(() => {
@@ -56,7 +63,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newProduct: Partial<IProduct> = {
+      const newProduct: Partial<Product> = {
         barcode: (data.barcode as string) || '',
         name: data['product-name'] as string,
         category_id: data.categoryId as string,
@@ -64,17 +71,14 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
         fda_number: (data.fdaRegNo as string) || '',
         min_stock: Number(data['low-stock-threshold']) || 0,
         unit_id: data.unit as string,
-        price: Number(data.price) || 0,
-        type: selectedType,
-        description: data.description as string
       };
 
       await ProductApi.createProduct(newProduct);
       onSuccess();
       onClose();
     } catch (error) {
-      console.error("Failed to create product:", error);
-      alert("Failed to create product");
+      console.error('Failed to create product:', error);
+      alert('Failed to create product');
     } finally {
       setIsSubmitting(false);
     }
@@ -104,9 +108,25 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 <span>กำลังบันทึก...</span>
               </>
@@ -146,7 +166,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
                         className="sr-only"
                         accept="image/png, image/jpeg"
                         onChange={handleImageChange}
-                      // required={!imagePreview}
+                        // required={!imagePreview}
                       />
                     </label>
                   </div>
@@ -201,12 +221,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
           </div>
         </div>
         <FormField label="ชื่อสินค้า/บริการ" htmlFor="product-name">
-          <Input
-            name="product-name"
-            id="product-name"
-            type="text"
-            required
-          />
+          <Input name="product-name" id="product-name" type="text" required />
         </FormField>
         <FormField label="หมวดหมู่" htmlFor="categoryId">
           <Select name="categoryId" id="categoryId" required>
@@ -222,7 +237,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
           <Textarea name="description" id="description" rows={3} />
         </FormField>
 
-        {selectedType === CategoryType.PRODUCT && 
+        {selectedType === CategoryType.PRODUCT && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="หน่วย" htmlFor="unit">
@@ -237,17 +252,41 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
               </FormField>
 
               <FormField label="ราคาขาย/หน่วย" htmlFor="price">
-                <Input name="price" id="price" type="number" required placeholder="0.00" step="0.01" defaultValue="0.00" />
+                <Input
+                  name="price"
+                  id="price"
+                  type="number"
+                  required
+                  placeholder="0.00"
+                  step="0.01"
+                  defaultValue="0.00"
+                />
               </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ราคาต้นทุน" htmlFor="cost-price">
-                <Input name="costPrice" id="cost-price" type="number" placeholder="0.00" step="0.01" defaultValue="0.00" />
+                <Input
+                  name="costPrice"
+                  id="cost-price"
+                  type="number"
+                  placeholder="0.00"
+                  step="0.01"
+                  defaultValue="0.00"
+                />
               </FormField>
 
-              <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="low-stock-threshold">
-                <Input name="low-stock-threshold" id="low-stock-threshold" type="number" placeholder="เช่น 10" required />
+              <FormField
+                label="กำหนดสต็อกขั้นต่ำ"
+                htmlFor="low-stock-threshold"
+              >
+                <Input
+                  name="low-stock-threshold"
+                  id="low-stock-threshold"
+                  type="number"
+                  placeholder="เช่น 10"
+                  required
+                />
               </FormField>
             </div>
 
@@ -257,8 +296,9 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
               </FormField>
             </div>
           </>
-        }
+        )}
       </form>
     </Modal>
   );
 };
+

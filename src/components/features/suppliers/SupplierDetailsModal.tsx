@@ -45,9 +45,7 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
             </DetailsItem>
           )}
           {supplier.contact_name && (
-            <DetailsItem label="ผู้ติดต่อ">
-              {supplier.contact_name}
-            </DetailsItem>
+            <DetailsItem label="ผู้ติดต่อ">{supplier.contact_name}</DetailsItem>
           )}
           <DetailsItem label="เบอร์โทรศัพท์">
             <ul className="space-y-1">
@@ -60,3 +58,4 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
     </Modal>
   );
 };
+

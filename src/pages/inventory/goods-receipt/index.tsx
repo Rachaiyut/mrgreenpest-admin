@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '../../../components/common/Card';
-import { formatThaiDate } from '../../../constants';
+import { formatThaiDate } from '../../../utils/date';
 import {
   PlusIcon,
   ManageIcon,
@@ -459,3 +459,5 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
 };
 
 export default GoodsReceipt;
+
+

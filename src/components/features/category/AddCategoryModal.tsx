@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Category } from '@/src/types/entity/app.interface';
-import { CategoryType } from '@/src/types/enums/category.enum';
+import { CategoryType } from '@/src/types/enums/category';
 
 interface AddCategoryModalProps {
   isOpen: boolean;
@@ -114,3 +114,4 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     </Modal>
   );
 };
+
