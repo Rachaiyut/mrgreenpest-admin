@@ -9,7 +9,7 @@ import { PhotoIcon } from '../../../assets/icons/Icons';
 import { CategoryType } from '@/src/types/enums/category.enum';
 
 // Interface
-import { Product } from '@/src/types/entity/package.interface';
+import { IProduct } from '@/src/types/entity/product.interface';
 import { ICategory } from '@/src/types/entity/category.interface';
 import { IUnit } from '@/src/types/entity/unit.interface';
 
@@ -17,7 +17,7 @@ import { IUnit } from '@/src/types/entity/unit.interface';
 import { IAddProductModalProps } from '@/src/types/prop/product/add-product';
 
 // API
-import { ProductApi } from '@/src/api/product';
+import { Product as ProductApi } from '@/src/api/product';
 
 export const AddProductModal: React.FC<IAddProductModalProps> = ({
   isOpen,
@@ -56,7 +56,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      const newProduct: Partial<Product> = {
+      const newProduct: Partial<IProduct> = {
         barcode: (data.barcode as string) || '',
         name: data['product-name'] as string,
         category_id: data.categoryId as string,

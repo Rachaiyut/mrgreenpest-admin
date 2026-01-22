@@ -4,7 +4,7 @@ import {SupplierType } from "@/src/types/enums/customer.enum";
 
 export interface Supplier extends IBase {
     code: string
-    company_name: string,
+    name: string,
     type: SupplierType,
     tax_id: string,
     email: string,

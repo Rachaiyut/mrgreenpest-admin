@@ -297,7 +297,7 @@ const Suppliers: React.FC = () => {
                       {supplier.code}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                      {supplier.contact_name}
+                      {supplier.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {supplier.type === SupplierType.INDIVIDUAL ? 'บุคคลธรรมดา' : 'นิติบุคคล' }

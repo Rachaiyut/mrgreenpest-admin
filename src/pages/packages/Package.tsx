@@ -48,7 +48,7 @@ const Packages: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await CategoryApi.getCategories({ limit: 100 });
+      const response = await CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 });
       setCategories(response.data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);

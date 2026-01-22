@@ -18,6 +18,7 @@ import {
   PencilIcon,
   TrashIcon,
   ManageIcon,
+  EyeIcon,
 } from '../../assets/icons/Icons';
 
 // Component
@@ -25,6 +26,7 @@ import { Card } from '../../components/common/Card';
 import { Input, Button } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
 import { AddCategoryModal } from '../../components/features/category/AddCategoryModal';
+import EditCategoryModal from '@/src/components/features/category/EditCategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Categories: React.FC = () => {
@@ -50,6 +52,9 @@ const Categories: React.FC = () => {
   const [totalCategories, setTotalCategories] = useState<number>(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<string>('desc');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -62,7 +67,7 @@ const Categories: React.FC = () => {
         sort_order: sortOrder as 'asc' | 'desc',
       });
       setCategories(response.data);
-      
+
       setTotalCategories(response.meta.total);
     } catch (error) {
       console.error('เกิดข้อผิดพลาดในการโหลดข้อมูลหมวดหมู่');
@@ -106,7 +111,7 @@ const Categories: React.FC = () => {
     async (newCategory: Partial<Category>) => {
       try {
         await CategoryApi.createCategory(newCategory);
-        fetchCategories(); // Refresh the list
+        fetchCategories();
         setIsAddModalOpen(false);
       } catch (error) {
         console.error('Error creating category:', error);
@@ -118,6 +123,8 @@ const Categories: React.FC = () => {
   const onUpdateCategory = useCallback(
     async (id: string, updatedCategory: Partial<Category>) => {
       try {
+        console.log("payload", id, updatedCategory)
+
         await CategoryApi.updateCategory(id, updatedCategory);
         fetchCategories();
         setIsEditModalOpen(false);
@@ -229,6 +236,9 @@ const Categories: React.FC = () => {
                   >
                     รายละเอียด
                   </th>
+                  <th scope="col" className="relative px-4 py-2.5">
+                    <span className="sr-only">จัดการ</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -246,7 +256,19 @@ const Categories: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-sm">
                       {category.description || '-'}
                     </td>
-                    
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="inline-block text-left">
+                        <Button
+                          data-package-id={category.id}
+                          onClick={(e) => handleDropdownToggle(e, category.id)}
+                          variant="icon"
+                          title="ตัวเลือก"
+                        >
+                          <span className="sr-only">Open options</span>
+                          <ManageIcon className="h-5 w-5" />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -264,11 +286,44 @@ const Categories: React.FC = () => {
         </Card>
       </div>
 
+      {openDropdownId && dropdownPosition && (
+        <div
+          ref={dropdownRef}
+          style={{
+            position: 'absolute',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+            transform: 'translateX(-100%)',
+            zIndex: 50,
+          }}
+          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+        >
+          <div className="py-1">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                const category = categories.find((p) => p.id === openDropdownId);
+                if (category) handleEdit(category);
+              }}
+              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              <PencilIcon className="mr-3 h-5 w-5" />
+              <span>แก้ไข</span>
+            </button>
+          </div>
+        </div>
+      )}
 
-      <AddCategoryModal 
+      <AddCategoryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreateCategory={onCreateCategory}
+      />
+      <EditCategoryModal
+        isOpen={isEditModalOpen}
+        category={categoryToEdit}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdateCategory={onUpdateCategory}
       />
     </>
   );

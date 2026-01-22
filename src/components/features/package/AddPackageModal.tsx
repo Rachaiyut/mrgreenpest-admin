@@ -35,6 +35,9 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     }
   }, [isOpen]);
 
+
+  console.log("categpry", categories)
+
   const availableCategories = useMemo(
     () => categories.filter((c) => c.type === CategoryType.SERVICE),
     [categories]

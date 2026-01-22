@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { Category } from '@/src/types/entity/category.interface';
+import { Category, CategoryQuery } from '@/src/types/entity/category.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -15,7 +15,7 @@ class CategoryService extends AuthService {
 
   // Your Public API Methods
   async getCategories(
-    query: IBaseQuery
+    query: CategoryQuery
   ): Promise<IBaseResponseArray<Category>> {
     const res = await this.http.get<IBaseResponseArray<Category>>(
       `${this.path}`,

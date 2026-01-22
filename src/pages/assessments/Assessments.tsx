@@ -7,15 +7,15 @@ import { Assessment, Product, Customer } from "@/src/types/entity/app.interface"
 // Component
 import AssessmentCard from "./AssessmentCard";
 import { Button, Input } from "@/src/components/common/FormControls";
-import { 
-  PlusIcon, 
-  ViewColumnsIcon, 
+import {
+  PlusIcon,
+  ViewColumnsIcon,
   ListBulletIcon,
   EyeIcon,
   PencilIcon,
   ArrowRightIcon,
   TrashIcon,
-  ManageIcon 
+  ManageIcon,
 } from "@/src/assets/icons/Icons";
 import { Pagination } from "@/src/components/common/Pagination";
 import { formatThaiDate } from "@/src/constants";
@@ -27,7 +27,6 @@ import { Card } from "@/src/components/common/Card";
 import { Modal as ConfirmationModal } from "@/src/components/common/Modal";
 
 interface AssessmentsProps {
-  assessments: Assessment[];
   onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
   onUpdateAssessment: (assessment: Assessment) => void;
   onDeleteAssessment: (assessmentId: string) => void;
@@ -35,8 +34,36 @@ interface AssessmentsProps {
   customers: Customer[];
 }
 
+const MOCK_ASSESSMENTS: Assessment[] = Array.from({ length: 10 }, (_, i) => ({
+  id: `ASM-${String(i + 1).padStart(4, '0')}`,
+  created_at: new Date().toISOString(),
+  customer_id: `CUST-${String(i + 1).padStart(4, '0')}`,
+  customer_name: `Customer ${i + 1}`,
+  address: `123/${i + 1} Some Road, Some District`,
+  subdistrict: 'Some Subdistrict',
+  district: 'Some District',
+  province: 'Bangkok',
+  postal_code: '10110',
+  scheduled_at: new Date(Date.now() + i * 86400000).toISOString(),
+  work_areas: [
+    {
+      id: `WA-${i}-1`,
+      name: 'Living Room',
+      building_type: 'House',
+      area_size: 50,
+      linear_meters: 20,
+      service_type: ['Termite Control'],
+      estimated_cost: 5000,
+      items: [],
+    },
+  ],
+  total_estimated_cost: 5000,
+  status: Object.values(AsessmentStatus)[i % 4],
+  created_by: 'Admin',
+  updated_by: 'Admin',
+}));
+
 const Assessments: React.FC<AssessmentsProps> = ({
-  assessments,
   onCreateAssessment,
   onUpdateAssessment,
   onDeleteAssessment,
@@ -65,6 +92,9 @@ const Assessments: React.FC<AssessmentsProps> = ({
     useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Use mock data
+  const assessments = MOCK_ASSESSMENTS;
+
   const reversedAssessments = useMemo(
     () => [...assessments].reverse(),
     [assessments]
@@ -78,17 +108,17 @@ const Assessments: React.FC<AssessmentsProps> = ({
 
     return reversedAssessments.filter((assessment) => {
       const matchesCustomer =
-        assessment.customerId.toLowerCase().includes(lowercasedQuery) ||
-        assessment.customerName.toLowerCase().includes(lowercasedQuery);
+        assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
+        assessment.customer_name.toLowerCase().includes(lowercasedQuery);
 
-      const matchesWorkArea = assessment.workAreas.some(
+      const matchesWorkArea = assessment.work_areas.some(
         (area) =>
-          (area.buildingType &&
-            area.buildingType.toLowerCase().includes(lowercasedQuery)) ||
-          area.serviceType.join(' ').toLowerCase().includes(lowercasedQuery)
+          (area.building_type &&
+            area.building_type.toLowerCase().includes(lowercasedQuery)) ||
+          area.service_type.join(' ').toLowerCase().includes(lowercasedQuery)
       );
 
-      const matchesDate = formatThaiDate(assessment.scheduledAt).includes(
+      const matchesDate = formatThaiDate(assessment.scheduled_at).includes(
         lowercasedQuery
       );
 
@@ -206,17 +236,17 @@ const Assessments: React.FC<AssessmentsProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-      {
-        label: 'ดูรายละเอียด',
-        icon: EyeIcon,
-        onClick: () => handleViewDetails(selectedAssessment),
-      },
-      {
-        label: 'แก้ไข',
-        icon: PencilIcon,
-        onClick: () => handleEdit(selectedAssessment),
-      },
-    ];
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => handleViewDetails(selectedAssessment),
+        },
+        {
+          label: 'แก้ไข',
+          icon: PencilIcon,
+          onClick: () => handleEdit(selectedAssessment),
+        },
+      ];
 
     if (selectedAssessment.status === AsessmentStatus.Completed) {
       actions.push({
@@ -249,11 +279,6 @@ const Assessments: React.FC<AssessmentsProps> = ({
         <span>{action.label}</span>
       </a>
     ));
-  };
-
-  const handleUpdateAndClose = (updatedAssessment: Assessment) => {
-    onUpdateAssessment(updatedAssessment);
-    setIsEditModalOpen(false);
   };
 
   return (
@@ -303,19 +328,21 @@ const Assessments: React.FC<AssessmentsProps> = ({
         </div>
 
         {view === 'kanban' ? (
-          <div className="flex space-x-4 overflow-x-auto pb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {kanbanColumns.map((col) => (
               <div
                 key={col.title}
-                className="bg-slate-100 rounded-lg p-4 w-80 flex-shrink-0"
+                className="bg-slate-100 rounded-lg p-4 h-fit"
               >
-                <h2 className="font-semibold text-slate-700 mb-4 flex items-center justify-between">
-                  <span className="truncate">{col.title}</span>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-slate-700 truncate">
+                    {col.title}
+                  </h2>
                   <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-sky-100 text-sky-800">
                     {col.assessments.length}
                   </span>
-                </h2>
-                <div className="space-y-3">
+                </div>
+                <div className="grid grid-cols-1 gap-3">
                   {col.assessments.map((assessment) => (
                     <AssessmentCard
                       key={assessment.id}
@@ -381,13 +408,13 @@ const Assessments: React.FC<AssessmentsProps> = ({
                   {paginatedAssessments.map((assessment, index) => {
                     const allServiceTypes = [
                       ...new Set(
-                        assessment.workAreas.flatMap((area) => area.serviceType)
+                        assessment.work_areas.flatMap((area) => area.service_type)
                       ),
                     ];
                     const allBuildingTypes = [
                       ...new Set(
-                        assessment.workAreas
-                          .map((area) => area.buildingType)
+                        assessment.work_areas
+                          .map((area) => area.building_type)
                           .filter(Boolean)
                       ),
                     ];
@@ -400,13 +427,13 @@ const Assessments: React.FC<AssessmentsProps> = ({
                           {assessment.id}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {assessment.customerName}
+                          {assessment.customer_name}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.customerId}
+                          {assessment.customer_id}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {formatThaiDate(assessment.scheduledAt)}
+                          {formatThaiDate(assessment.scheduled_at)}
                         </td>
                         <td
                           className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm"
@@ -425,7 +452,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
                           ฿
-                          {assessment.totalEstimatedCost.toLocaleString(
+                          {assessment.total_estimated_cost.toLocaleString(
                             'th-TH',
                             {
                               minimumFractionDigits: 2,
@@ -434,10 +461,10 @@ const Assessments: React.FC<AssessmentsProps> = ({
                           )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.createdBy}
+                          {assessment.created_by}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.updatedBy}
+                          {assessment.updated_by}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                           <div className="inline-block text-left">
@@ -487,7 +514,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
           </div>
         </div>
       )}
-      
+
       <AddAssessmentModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -514,20 +541,18 @@ const Assessments: React.FC<AssessmentsProps> = ({
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
         title="ยืนยันการลบ"
-        footer={
-            <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => setIsDeleteModalOpen(false)}>ยกเลิก</Button>
-                <Button variant="destructive" onClick={handleConfirmDelete}>ยืนยันการลบ</Button>
-            </div>
-        }
-      >
-        <p>
+        message={
+          <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินสำหรับ{' '}
-            <strong>{assessmentToDelete?.customerName}</strong>?
+            <strong>{assessmentToDelete?.customer_name}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
-        </p>
-      </ConfirmationModal>
+          </p>
+        }
+        confirmButtonText="ยืนยันการลบ"
+        confirmButtonClass="bg-danger hover:bg-danger/90"
+      />
     </>
   );
 };

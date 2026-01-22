@@ -110,13 +110,10 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
         visit_limit:
           typeof formData.visit_limit === 'number'
             ? formData.visit_limit
-            : pkg.visit_limit,
-        // contract_duration removed as it's not in Package interface.
-        // If it was stored in remark or elsewhere, we'd handle it. 
-        // For now, assume it's not part of the core Package update or part of remark if needed.
+            : pkg.visit_limit,    
         remark: formData.remark || pkg.remark,
         package_price: conditions.map((c) => ({
-          id: c.id || '', // Preserve ID if exists
+          id: c.id || '',
           created_at: c.created_at || '',
           updated_at: c.updated_at || '',
           area_range: c.area_range || 0,

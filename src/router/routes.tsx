@@ -5,7 +5,7 @@ import { DataContextType } from '../contexts/DataContext';
 // Lazy Imports
 const Dashboard = lazy(() => import('../pages/dashboard'));
 const Customers = lazy(() => import('../pages/customers/Customer'));
-const Assessments = lazy(() => import('../pages/assessments'));
+const Assessments = lazy(() => import('../pages/assessments/Assessments'));
 const FieldOperations = lazy(() => import('../pages/field-operations'));
 const Financials = lazy(() => import('../pages/financials'));
 const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotationPage'));

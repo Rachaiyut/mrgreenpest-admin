@@ -1,6 +1,7 @@
+import { CategoryType } from '../enums/category.enum';
 import { IBase } from './base.interface';
 import { Category } from './category.interface';
-import { IUnit } from './unit.interface';
+import { Unit } from './unit.interface';
 
 export interface Product extends IBase {
   category_id: string;
@@ -14,5 +15,5 @@ export interface Product extends IBase {
   created_by: string;
 
   category: Category;
-  unit: IUnit;
+  unit: Unit;
 }

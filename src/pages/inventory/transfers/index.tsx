@@ -78,7 +78,7 @@ const Transfers: React.FC<TransfersProps> = ({
     return reversed.filter(
       (transfer) =>
         transfer.id.toLowerCase().includes(lowercasedQuery) ||
-        formatThaiDate(transfer.createdAt).includes(lowercasedQuery)
+        formatThaiDate(transfer.created_at).includes(lowercasedQuery)
     );
   }, [transfers, searchQuery]);
 

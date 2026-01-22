@@ -13,7 +13,7 @@ import { CategoryType } from '@/src/types/enums/category.enum';
 // Interface
 import { Product as IProduct } from '@/src/types/entity/product.interface';
 import { Category } from '@/src/types/entity/category.interface';
-import { IUnit } from '@/src/types/entity/unit.interface';
+import { Unit } from '@/src/types/entity/unit.interface';
 
 // API
 import { ProductApi } from '@/src/api/product';
@@ -30,7 +30,7 @@ import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 const Product: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [units, setUnits] = useState<IUnit[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');

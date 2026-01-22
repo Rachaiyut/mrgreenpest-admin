@@ -3,13 +3,12 @@ import { Modal } from '../../common/Modal';
 import {
   FormField,
   Input,
-  Textarea,
   Select,
   Button,
 } from '../../common/FormControls';
-import { Product } from '@/src/types/entity/package.interface';
-import { ICategory } from '@/src/types/entity/category.interface';
-import { IUnit } from '@/src/types/entity/unit.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { Category } from '@/src/types/entity/category.interface';
+import { Unit } from '@/src/types/entity/unit.interface';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { CategoryType } from '@/src/types/enums/category.enum';
 
@@ -18,8 +17,8 @@ interface EditProductModalProps {
   onClose: () => void;
   product: Product | null;
   onUpdateProduct: (product: Product) => void;
-  categories: ICategory[];
-  units: IUnit[];
+  categories: Category[];
+  units: Unit[];
 }
 
 export const EditProductModal: React.FC<EditProductModalProps> = ({
@@ -36,13 +35,10 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
   useEffect(() => {
     if (product) {
       setFormData(product);
-      setImagePreview(null); // Reset preview, can be enhanced to show existing image
+      setImagePreview(null);
     }
   }, [product]);
 
-  const filteredCategories = useMemo(() => {
-    return categories.filter((category) => category.type === formData.type);
-  }, [categories, formData.type]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -106,149 +102,99 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
         onSubmit={handleSubmit}
         className="space-y-4"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1">
-            <FormField label="รูปภาพ">
-              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
-                <div className="space-y-1 text-center">
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="mx-auto h-32 w-32 object-cover rounded-md"
-                    />
-                  ) : (
-                    <PhotoIcon className="mx-auto h-12 w-12 text-slate-400" />
-                  )}
-                  <div className="flex text-sm text-slate-600 justify-center">
-                    <label
-                      htmlFor="file-upload-edit"
-                      className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
-                    >
-                      <span>เปลี่ยนรูปภาพ</span>
-                      <input
-                        id="file-upload-edit"
-                        name="file-upload"
-                        type="file"
-                        className="sr-only"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                      />
-                    </label>
+        {product.category.type === CategoryType.PRODUCT && (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
+                <FormField label="รูปภาพ">
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
+                    <div className="space-y-1 text-center">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="mx-auto h-32 w-32 object-cover rounded-md"
+                        />
+                      ) : (
+                        <PhotoIcon className="mx-auto h-12 w-12 text-slate-400" />
+                      )}
+                      <div className="flex text-sm text-slate-600 justify-center">
+                        <label
+                          htmlFor="file-upload-edit"
+                          className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                        >
+                          <span>เปลี่ยนรูปภาพ</span>
+                          <input
+                            id="file-upload-edit"
+                            name="file-upload"
+                            type="file"
+                            className="sr-only"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                          />
+                        </label>
+                      </div>
+                      <p className="text-xs text-slate-500">PNG, JPG, GIF</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500">PNG, JPG, GIF</p>
+                </FormField>
+              </div>
+
+              <div className="md:col-span-2 space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
+                    <Input
+                      name="barcode"
+                      type="text"
+                      value={formData.barcode || ''}
+                      onChange={handleChange}
+                    />
+                  </FormField>
                 </div>
               </div>
+            </div>
+            <FormField label="ชื่อสินค้า" htmlFor="name">
+              <Input
+                name="name"
+                type="text"
+                value={formData.name || ''}
+                onChange={handleChange}
+                required
+              />
             </FormField>
-          </div>
-
-          <div className="md:col-span-2 space-y-4">
-            <FormField label="ประเภท">
-              <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-                <label className="relative flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="productTypeRadioEdit"
-                    value={CategoryType.PRODUCT}
-                    className="sr-only peer"
-                    checked={formData.type === CategoryType.PRODUCT}
-                    onChange={() => handleTypeChange(CategoryType.PRODUCT)}
-                  />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                    สินค้า
-                  </span>
-                </label>
-                <label className="relative flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="productTypeRadioEdit"
-                    value={CategoryType.SERVICE}
-                    className="sr-only peer"
-                    checked={formData.type === CategoryType.SERVICE}
-                    onChange={() => handleTypeChange(CategoryType.SERVICE)}
-                  />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                    บริการ
-                  </span>
-                </label>
-              </div>
-            </FormField>
-            <div className="grid grid-cols-1 gap-4">
-              <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
-                <Input
-                  name="barcode"
-                  type="text"
-                  value={formData.barcode || ''}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="หมวดหมู่" htmlFor="categoryId">
+                <Select
+                  name="category_id"
+                  id="categoryId"
+                  value={formData.category_id || ''}
                   onChange={handleChange}
-                  disabled={formData.type === CategoryType.SERVICE}
+                  required
+                >
+                  <option value="">-- เลือกหมวดหมู่ --</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+              <FormField label="ราคา/หน่วย" htmlFor="price">
+                <Input
+                  name="price"
+                  type="number"
+                  value={formData.cost_price ?? ''}
+                  onChange={handleChange}
+                  required
+                  step="0.01"
+                  placeholder="0.00"
                 />
               </FormField>
             </div>
-          </div>
-        </div>
-        <FormField label="ชื่อสินค้า/บริการ" htmlFor="name">
-          <Input
-            name="name"
-            type="text"
-            value={formData.name || ''}
-            onChange={handleChange}
-            required
-          />
-        </FormField>
-        <FormField label="หมวดหมู่" htmlFor="categoryId">
-          <Select
-            name="category_id"
-            id="categoryId"
-            value={formData.category_id || ''}
-            onChange={handleChange}
-            required
-          >
-            <option value="">-- เลือกหมวดหมู่ --</option>
-            {filteredCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-        <FormField label="รายละเอียด" htmlFor="description">
-          <Textarea
-            name="description"
-            value={formData.description || ''}
-            onChange={handleChange}
-            rows={3}
-          />
-        </FormField>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="หน่วย" htmlFor="unit">
-            <Select
-              name="unit_id"
-              id="unit"
-              value={formData.unit_id || ''}
-              onChange={handleChange}
-              required
-            >
-              <option value="">-- เลือกหน่วย --</option>
-              {units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField label="ราคา/หน่วย" htmlFor="price">
-            <Input
-              name="price"
-              type="number"
-              value={formData.price ?? ''}
-              onChange={handleChange}
-              required
-              step="0.01"
-              placeholder="0.00"
-            />
-          </FormField>
-        </div>
-        {formData.type === CategoryType.PRODUCT && (
+          </>
+        )}
+
+        {product.category.type === CategoryType.SERVICE && (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ราคาต้นทุน" htmlFor="cost-price">

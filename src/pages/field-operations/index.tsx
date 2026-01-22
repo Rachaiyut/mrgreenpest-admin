@@ -9,7 +9,7 @@ import {
 import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
-import { Product } from '../../types/entity/package.interface';
+import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
 import { JobStatus } from '../../types/enums/job.enum';
@@ -55,7 +55,7 @@ const JobCard: React.FC<{
   ) => void;
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
-  currentUser: User;
+  currentUser?: User | null;
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
   job,
@@ -66,8 +66,8 @@ const JobCard: React.FC<{
   isAnyJobInProgressForCurrentUser,
 }) => {
   const isAssignedToCurrentUser = useMemo(
-    () => job.technicians.some((tech) => tech.id === currentUser.id),
-    [job.technicians, currentUser.id]
+    () => currentUser ? job.technicians.some((tech) => tech.id === currentUser.id) : false,
+    [job.technicians, currentUser]
   );
 
   const showCheckInButton =
@@ -399,7 +399,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   customers,
   warehouses,
 }) => {
-  const currentUser = users[0];
+  const currentUser = users.length > 0 ? users[0] : null;
 
   const [activeTab, setActiveTab] = useState<
     'schedule' | 'work-schedule' | 'reports'
@@ -532,12 +532,14 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const isAnyJobInProgressForCurrentUser = useMemo(
     () =>
-      jobs.some(
-        (j) =>
-          j.status === JobStatus.InProgress &&
-          j.technicians.some((tech) => tech.id === currentUser.id)
-      ),
-    [jobs, currentUser.id]
+      currentUser
+        ? jobs.some(
+            (j) =>
+              j.status === JobStatus.InProgress &&
+              j.technicians.some((tech) => tech.id === currentUser.id)
+          )
+        : false,
+    [jobs, currentUser]
   );
 
   const kanbanColumns = useMemo(() => {
@@ -1308,6 +1310,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         jobs={jobs}
         users={users}
         products={products}
+        warehouses={warehouses}
+        customers={customers}
       />
     </>
   );

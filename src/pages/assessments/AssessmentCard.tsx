@@ -1,5 +1,14 @@
-import { Button } from "antd";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
+import { Button } from "@/src/components/common/FormControls";
+import {
+  ManageIcon,
+  MapPinIcon,
+  JobDateIcon,
+  EyeIcon,
+} from "@/src/assets/icons/Icons";
+import { formatThaiDate } from "@/src/constants";
+import { StatusBadge } from "@/src/components/common/StatusBadge";
+import { Assessment } from "@/src/types/entity/app.interface";
 
 const AssessmentCard: React.FC<{
   assessment: Assessment;
@@ -9,13 +18,13 @@ const AssessmentCard: React.FC<{
   ) => void;
   onViewDetails: (assessment: Assessment) => void;
 }> = ({ assessment, onDropdownToggle, onViewDetails }) => {
-  const appointmentDate = formatThaiDate(assessment.scheduledAt);
+  const appointmentDate = formatThaiDate(assessment.scheduled_at);
 
   const allServiceTypes = useMemo(
     () => [
-      ...new Set(assessment.workAreas.flatMap((area) => area.serviceType)),
+      ...new Set(assessment.work_areas.flatMap((area) => area.service_type)),
     ],
-    [assessment.workAreas]
+    [assessment.work_areas]
   );
 
   return (
@@ -24,7 +33,7 @@ const AssessmentCard: React.FC<{
         <div className="flex justify-between items-start">
           <div className="pr-2 min-w-0">
             <p className="text-base font-bold text-slate-800 leading-tight truncate">
-              {assessment.customerName}
+              {assessment.customer_name}
             </p>
             <div className="mt-1 flex flex-wrap gap-1">
               {allServiceTypes.map((type) => (
@@ -54,7 +63,7 @@ const AssessmentCard: React.FC<{
         <div className="mt-4 flex items-center gap-2">
           <StatusBadge status={assessment.status} />
           <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-            {assessment.workAreas.length} พื้นที่
+            {assessment.work_areas.length} พื้นที่
           </span>
         </div>
 
@@ -85,4 +94,4 @@ const AssessmentCard: React.FC<{
   );
 };
 
-export default AssessmentCard
+export default AssessmentCard;
