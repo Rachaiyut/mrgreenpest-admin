@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useCallback } from 'react';
-import { Page } from '@/src/router/page';
+import { Page } from '../../types/page';
 import { XIcon, MenuIcon } from '../../assets/icons/Icons';
 import { useNavigation } from '../../hooks/useNavigation';
 import { useFlyout } from '../../hooks/useFlyout';

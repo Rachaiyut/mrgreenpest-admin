@@ -5,6 +5,7 @@ import { Customer } from '@/src/types/entity/customer.interface';
 
 // Icon
 import { ManageIcon } from '../../assets/icons/Icons';
+import { CustomerType } from '@/src/types';
 
 const CustomerListView: React.FC<{
   customers: Customer[];
@@ -87,7 +88,7 @@ const CustomerListView: React.FC<{
               {customer.phone}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {customer.customer_type}
+              {customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา' }
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">

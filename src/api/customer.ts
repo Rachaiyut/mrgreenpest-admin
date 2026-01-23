@@ -1,19 +1,14 @@
-// Constant
 import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-
-// Interface
-import { Customer } from '@/src/types/entity/customer.interface';
-
-// Service
+import { Customer, CustomerQuery } from '@/src/types/entity/customer.interface';
 import { AuthService } from './auth';
 
 class CustomerService extends AuthService {
   protected path = '/customer';
 
-  async getCustomers(query: IBaseQuery): Promise<IBaseResponseArray<Customer>> {
+  async getCustomers(query: CustomerQuery): Promise<IBaseResponseArray<Customer>> {
     const res = await this.http.get<IBaseResponseArray<Customer>>(
       `${this.path}`,
       {

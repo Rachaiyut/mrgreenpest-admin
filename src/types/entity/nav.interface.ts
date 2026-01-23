@@ -3,7 +3,7 @@ import { FC } from 'react';
 // Enum
 import { Role } from '@/src/types/enums/role';
 
-import { Page } from '@/src/router/page';
+import { Page } from '@/src/types/page';
 
 export interface NavLink {
   type: 'link';

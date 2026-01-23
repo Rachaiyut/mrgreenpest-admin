@@ -7,12 +7,13 @@ import {
   DetailsItem,
 } from '../../common/FormControls';
 
-import { ICustomer } from '@/src/types/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
+import { CustomerType } from '@/src/types';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: ICustomer | null;
+  customer: Customer | null;
 }
 
 export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
@@ -34,13 +35,13 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           <SectionTitle>ข้อมูลทั่วไป</SectionTitle>
           <DetailsList cols={2}>
             <DetailsItem label="รหัสลูกค้า" valueClassName="font-semibold">
-              {customer.id}
+              {customer.code}
             </DetailsItem>
             <DetailsItem label="ชื่อลูกค้า" valueClassName="font-semibold">
               {customer.first_name} {customer.last_name}{' '}
               {customer.nickname && `(${customer.nickname})`}
             </DetailsItem>
-            <DetailsItem label="ประเภท">{customer.customer_type}</DetailsItem>
+            <DetailsItem label="ประเภท">{customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา' }</DetailsItem>
             {customer.tax_id && (
               <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
                 {customer.tax_id}
@@ -98,25 +99,22 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           </DetailsList>
         </div>
         {/* Zone/Group fields not in ICustomer */}
-        {/* <div>
+        <div>
           <SectionTitle className="mt-4 border-t pt-4">
             กลุ่มเส้นทาง/พื้นที่บริการ
           </SectionTitle>
           <DetailsList cols={4}>
             <DetailsItem label="เขต (พื้นที่บริการ)">
-              {customer.address.zone || '-'}
+              {customer.service_area || '-'}
             </DetailsItem>
             <DetailsItem label="Group">
-              {customer.address.group || '-'}
+              {customer.service_group || '-'}
             </DetailsItem>
             <DetailsItem label="สายถนนที่">
-              {customer.address.roadLine || '-'}
-            </DetailsItem>
-            <DetailsItem label="ลำดับที่">
-              {customer.address.sequence || '-'}
+              {customer.road_line || '-'}
             </DetailsItem>
           </DetailsList>
-        </div> */}
+        </div>
         {customer.google_map_link && (
           <div className="pt-4 border-t">
             <SectionTitle>ตำแหน่ง</SectionTitle>

@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ChevronDownIcon } from '../../../assets/icons/Icons';
-import { Page } from '../../../router/page';
+import { Page } from '../../../types/page';
 import { PAGE_PATH } from '@/src/constants/route';
 import { NavGroup } from '@/src/types/entity/nav.interface';
 

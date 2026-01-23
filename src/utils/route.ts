@@ -1,4 +1,4 @@
-import { Page } from './page';
+import { Page } from "../types/page";
 
 export const PATH_PREFIX_MAP: Record<string, Page> = {
   '/quotations': 'ใบเสนอราคา',

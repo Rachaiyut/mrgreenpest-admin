@@ -92,7 +92,7 @@ const Suppliers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (supplierToDelete) {
       onDeleteSupplier(supplierToDelete.id);
     }

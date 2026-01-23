@@ -13,7 +13,6 @@ export interface Supplier extends IBase {
 }
 
 export interface SupplierQuery extends IBaseQuery {
-  search?: string;
   type?: SupplierType;
 }
 

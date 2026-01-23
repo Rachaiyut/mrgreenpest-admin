@@ -24,7 +24,8 @@ import { EditAssessmentModal } from '@/src/components/features/assessments/EditA
 import { AssessmentDetailsModal } from '@/src/components/features/assessments/AssessmentDetailsModal';
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
-import { Modal as ConfirmationModal } from '@/src/components/common/Modal';
+import { ConfirmationModal } from '@/src/components/common';
+
 
 interface AssessmentsProps {
   onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
@@ -183,7 +184,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (assessmentToDelete) {
       onDeleteAssessment(assessmentToDelete.id);
     }
@@ -543,6 +544,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
         onUpdateAssessment={onUpdateAssessment}
         products={products}
       />
+      
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

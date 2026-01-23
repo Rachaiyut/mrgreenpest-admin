@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import { NavLink } from '@/src/types/entity/nav.interface';
 import { PAGE_PATH } from '@/src/constants/route';
-import { Page } from '@/src/router/page';
+import { Page } from '@/src/types/page';
 
 interface SidebarLinkProps {
   item: NavLink;

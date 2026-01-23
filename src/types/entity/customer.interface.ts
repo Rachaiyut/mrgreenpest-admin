@@ -1,13 +1,14 @@
 // Enum
-import { IBase } from './base.interface';
+import { IBase, IBaseQuery } from './base.interface';
 import { Status } from '@/src/types/enums/base';
-import { CustomerType } from '@/src/types/enums/customer';
+import { CustomerType, Gender } from '@/src/types/enums/customer';
 
 export interface Customer extends IBase {
   code: string;
   country: string;
   status: Status;
-  customer_type: CustomerType;
+  type: CustomerType;
+  gendder: Gender;
   first_name: string;
   last_name: string;
   nickname: string;
@@ -18,7 +19,15 @@ export interface Customer extends IBase {
   sub_district: string;
   district: string;
   province: string;
+  road_line: string;
   postal_code: string;
+  sequence_no: string;
+  service_area: string;
+  service_group: string;
   google_map_link?: string;
 }
 
+
+export interface CustomerQuery extends IBaseQuery {
+  type: string
+}

@@ -5,17 +5,9 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-
-// Interface
 import { Customer } from '@/src/types/entity/customer.interface';
-
-// Context
 import { useData } from '../../contexts/DataContext';
-
-// Api
 import { CustomerApi } from '@/src/api/customer';
-
-// Icon
 import {
   PlusIcon,
   EyeIcon,
@@ -28,7 +20,6 @@ import {
   ListBulletIcon,
 } from '../../assets/icons/Icons';
 
-// Component
 import CustomerCardView from './CustomerCardView';
 import CustomerListView from './CustomerListView';
 import { Card } from '../../components/common/Card';
@@ -37,15 +28,16 @@ import { Pagination } from '../../components/common/Pagination';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 import { EditCustomerModal } from '../../components/features/customers/EditCustomerModal';
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
-import { Input, Button } from '../../components/common/FormControls';
+import { Input, Button, Select } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { SupplierType } from '@/src/types';
 
 const Customers: React.FC = () => {
   const { contracts, quotations, handlers } = useData();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
-
+  
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,14 +57,12 @@ const Customers: React.FC = () => {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(undefined);
+  const [typeFilter, setTypeFilter] = useState<SupplierType | undefined>(undefined);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null
   );
-
-  // const onCreateContract = handlers.contracts.create;
-  // const onCreateJob = handlers.fieldJobs.create;
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -81,6 +71,7 @@ const Customers: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
+        type: typeFilter,
         sort_by: sortBy,
         sort_order: sortOrder,
       });
@@ -91,7 +82,7 @@ const Customers: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, sortBy, sortOrder]);
+  }, [currentPage, itemsPerPage, searchQuery, typeFilter, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchCustomers();
@@ -221,6 +212,19 @@ const Customers: React.FC = () => {
                 title="ค้นหาด้วย: เลขที่สัญญา, รหัสลูกค้า, ชื่อนามสกุล, ชื่อเล่น, เบอร์โทรศัพท์, ที่อยู่"
               />
             </div>
+            <div className="w-48">
+              <Select
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value as SupplierType);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">ทุกประเภท</option>
+                <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
+                <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
+              </Select>
+            </div>
             <div className="flex items-center rounded-lg bg-slate-200 p-1">
               <Button
                 onClick={() => setView('list')}
@@ -332,6 +336,7 @@ const Customers: React.FC = () => {
           </div>
         </div>
       )}
+      
       <AddCustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -354,8 +359,8 @@ const Customers: React.FC = () => {
         customer={selectedCustomer}
         contracts={contracts}
         quotations={quotations}
-        onCreateContract={() => {}}
-        onCreateJob={() => {}}
+        onCreateContract={() => { }}
+        onCreateJob={() => { }}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

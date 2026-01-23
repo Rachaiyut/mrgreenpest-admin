@@ -10,8 +10,9 @@ import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 
 // Config
 import { PAGE_PATH } from '../constants/route';
-import { getCurrentPageFromPath } from './utils';
+import { getCurrentPageFromPath } from '../utils/route';
 import { getRoutes } from './routes';
+import { Page } from '../types/page';
 
 // Components
 import { Sidebar } from '../components/layout/Sidebar';
@@ -41,11 +42,11 @@ export const AppRouter = (props: AppRouterProps) => {
     () =>
       Object.fromEntries(
         Object.entries(PAGE_PATH).map(([k, v]) => ['/' + v, k])
-      ) as Record<string, string>,
+      ) as Record<string, Page>,
     []
   );
 
-  const currentPage: string = useMemo(() => {
+  const currentPage: Page = useMemo(() => {
     return getCurrentPageFromPath(location.pathname, PATH_PAGE);
   }, [location.pathname, PATH_PAGE]);
 
