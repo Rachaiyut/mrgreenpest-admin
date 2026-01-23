@@ -9,8 +9,6 @@ import { Logo } from '@/src/components/common/Logo';
 // Interface
 import { LoginPayload } from '@/src/types/entity/auth.interface';
 import { Auth } from '@/src/api/auth';
-import { COLORS } from '@/src/constants/app';
-
 interface LoginProps {
   onLogin: (username: string, remember: boolean) => void;
 }
@@ -71,15 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          colorPrimary: COLORS.primary,
-          borderRadius: 4,
-          fontFamily: "'Inter', 'Sarabun', sans-serif",
-        },
-      }}
-    >
+   
       <div className="min-h-screen flex w-full">
         {/* Left Side - Brand & Aesthetic */}
         <div className="hidden lg:flex w-1/2 bg-primary from-green-900 via-slate-900 to-slate-950 relative overflow-hidden items-center justify-center">
@@ -181,7 +171,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 type="primary"
                 htmlType="submit"
                 className="w-full h-12 text-base font-bold border-none shadow-lg shadow-green-700/20 rounded-md transition-all duration-200"
-                style={{ backgroundColor: COLORS.primary }}
                 loading={loading}
               >
                 เข้าสู่ระบบ
@@ -195,7 +184,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           </div>
         </div>
       </div>
-    </ConfigProvider>
   );
 };
 

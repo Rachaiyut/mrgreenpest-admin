@@ -1,5 +1,4 @@
 import React from 'react';
-import { COLORS } from '@/src/constants/app';
 
 interface LogoProps {
   className?: string;
@@ -34,7 +33,6 @@ export const Logo: React.FC<LogoProps> = ({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className={`${size === 'sm' ? 'w-6 h-6' : size === 'md' ? 'w-8 h-8' : size === 'lg' ? 'w-10 h-10' : 'w-12 h-12'} ${isLight ? 'text-white' : 'text-primary'}`}
-          style={{ color: isLight ? undefined : COLORS.primary }}
         >
           <path
             d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
@@ -73,10 +71,7 @@ export const Logo: React.FC<LogoProps> = ({
         </div>
       </div>
       {showSubtitle && (
-        <p 
-          className={`${subtitle} tracking-[0.2em] font-medium ${isLight ? 'text-green-100' : 'text-primary'} mt-1`}
-          style={{ color: isLight ? undefined : COLORS.primary }}
-        >
+        <p className={`${subtitle} tracking-[0.2em] font-medium ${isLight ? 'text-green-100' : 'text-primary'} mt-1`}>
           PEST CONTROL CO.,LTD
         </p>
       )}

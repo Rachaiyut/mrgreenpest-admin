@@ -14,7 +14,7 @@ const EditQuotationPage = lazy(() => import('../pages/financials/EditQuotationPa
 const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
 const Inventory = lazy(() => import('../pages/inventory'));
 const Users = lazy(() => import('../pages/users'));
-const Warehouse = lazy(() => import('../pages/warehouse'));
+const Warehouse = lazy(() => import('../pages/warehouse/Warehouse'));
 const GoodsReceipt = lazy(() => import('../pages/inventory/goods-receipt'));
 const Suppliers = lazy(() => import('../pages/suppliers/Supplier'));
 const Withdrawals = lazy(() => import('../pages/inventory/withdrawals'));

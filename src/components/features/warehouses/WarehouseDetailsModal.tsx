@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
 import { Warehouse, Product } from '@/src/types/entity/app.interface';
+import { WarehouseType } from '@/src/types/enums/warehouse';
 import {
   SectionTitle,
   DetailsList,
@@ -24,7 +25,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
 }) => {
   if (!isOpen || !warehouse) return null;
   const productsInWarehouse = products.filter(
-    (p) => p.type === 'สินค้า' && (stockMap[warehouse.id]?.[p.id] ?? 0) >= 0
+    (p) => (stockMap[warehouse.id]?.[p.id] ?? 0) >= 0
   );
 
   return (
@@ -42,16 +43,16 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
               {warehouse.name}
             </DetailsItem>
             <DetailsItem label="ประเภท">{warehouse.type}</DetailsItem>
-            <DetailsItem label="ที่ตั้ง">{warehouse.location}</DetailsItem>
+            <DetailsItem label="ที่ตั้ง">{warehouse.warehouse_branch?.location || '-'}</DetailsItem>
           </DetailsList>
-          {warehouse.type === 'รถ' && (
+          {warehouse.type === WarehouseType.SUB && warehouse.vehicle && (
             <DetailsList cols={4} className="mt-2 pt-2 border-t text-sm">
               <DetailsItem label="ทะเบียนรถ">
-                {warehouse.licensePlate || '-'}
+                {warehouse.vehicle.vehicle_registration || '-'}
               </DetailsItem>
-              <DetailsItem label="ยี่ห้อ">{warehouse.brand || '-'}</DetailsItem>
-              <DetailsItem label="รุ่น">{warehouse.model || '-'}</DetailsItem>
-              <DetailsItem label="สี">{warehouse.color || '-'}</DetailsItem>
+              <DetailsItem label="ยี่ห้อ">{warehouse.vehicle.brand || '-'}</DetailsItem>
+              <DetailsItem label="รุ่น">{warehouse.vehicle.model || '-'}</DetailsItem>
+              <DetailsItem label="สี">{warehouse.vehicle.color || '-'}</DetailsItem>
             </DetailsList>
           )}
         </div>
@@ -103,35 +104,38 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {productsInWarehouse.length > 0 ? (
-                  productsInWarehouse.map((product) => (
-                    <tr key={product.id}>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                        {product.id}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {product.barcode || '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
-                        {product.name}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {stockMap[warehouse.id]?.[product.id] ?? 0}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {product.lowStockThreshold}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {product.unit}
-                      </td>
-                    </tr>
-                  ))
+                  productsInWarehouse.map((product) => {
+                    const quantity = stockMap[warehouse.id]?.[product.id] ?? 0;
+                    return (
+                      <tr key={product.id}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                          {product.code}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {product.barcode || '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                          {product.name}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 font-semibold">
+                          {quantity}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {product.min_stock}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {product.unit?.name || product.unit_id}
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td
                       colSpan={6}
-                      className="text-center py-10 text-slate-500"
+                      className="px-4 py-8 text-center text-sm text-slate-500"
                     >
-                      ไม่มีสินค้าในคลังนี้
+                      ไม่พบสินค้าในคลัง
                     </td>
                   </tr>
                 )}
@@ -143,4 +147,3 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
     </Modal>
   );
 };
-

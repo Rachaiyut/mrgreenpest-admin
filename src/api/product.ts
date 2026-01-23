@@ -5,7 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { Product } from '@/src/types/entity/package.interface';
+import { Product } from '@/src/types/entity/product.interface';
 
 // Service
 import { AuthService } from './auth';
@@ -46,4 +46,3 @@ class ProductService extends AuthService {
 }
 
 export const ProductApi = new ProductService();
-

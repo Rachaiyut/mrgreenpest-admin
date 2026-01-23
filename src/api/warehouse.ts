@@ -1,17 +1,18 @@
 // Constant
 import {
   IBaseQuery,
+  IBaseResponse,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { Warehouse } from '@/src/types/entity/inventory.interface';
+import { Warehouse, WarehouseStats } from '@/src/types/entity/inventory.interface';
 
 // Service
 import { AuthService } from './auth';
 
 class WarehouseService extends AuthService {
-  protected path = '/warehouse';
+  protected path = '/warehouses';
 
   async getWarehouses(
     query?: IBaseQuery
@@ -22,7 +23,14 @@ class WarehouseService extends AuthService {
         params: query,
       }
     );
+
     return res.data;
+  }
+
+  async getWarehouseStats(): Promise<WarehouseStats> {
+    const res = await this.http.get<WarehouseStats>(`${this.path}/stats`);
+
+    return res.data
   }
 
   async getWarehouseById(id: string): Promise<Warehouse> {

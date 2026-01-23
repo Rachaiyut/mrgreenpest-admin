@@ -1,14 +1,18 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { Status, User, UserRole } from '../../types/entity/core.interface';
+import {
+  Status,
+  User,
+  UserRole,
+} from '../../types/entity/core.interface';
 import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
-import { Product } from '../../types/entity/product.interface';
+import { Product } from '../../types/entity/package.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
-import { JobStatus } from '../../types/enums/job';
+import { JobStatus } from '../../types/enums/job.enum';
 
 import {
   PlusIcon,
@@ -33,7 +37,10 @@ import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 import { Pagination } from '../../components/common/Pagination';
 import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
 import { EditJobModal } from '../../components/features/jobs/EditJobModal';
-import { formatThaiDate, formatThaiDateTime } from '../../utils/date';
+import {
+  formatThaiDate,
+  formatThaiDateTime,
+} from '../../constants';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
@@ -48,7 +55,7 @@ const JobCard: React.FC<{
   ) => void;
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
-  currentUser?: User | null;
+  currentUser: User;
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
   job,
@@ -59,11 +66,8 @@ const JobCard: React.FC<{
   isAnyJobInProgressForCurrentUser,
 }) => {
   const isAssignedToCurrentUser = useMemo(
-    () =>
-      currentUser
-        ? job.technicians.some((tech) => tech.id === currentUser.id)
-        : false,
-    [job.technicians, currentUser]
+    () => job.technicians.some((tech) => tech.id === currentUser.id),
+    [job.technicians, currentUser.id]
   );
 
   const showCheckInButton =
@@ -395,7 +399,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   customers,
   warehouses,
 }) => {
-  const currentUser = users.length > 0 ? users[0] : null;
+  const currentUser = users[0];
 
   const [activeTab, setActiveTab] = useState<
     'schedule' | 'work-schedule' | 'reports'
@@ -528,14 +532,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const isAnyJobInProgressForCurrentUser = useMemo(
     () =>
-      currentUser
-        ? jobs.some(
-            (j) =>
-              j.status === JobStatus.InProgress &&
-              j.technicians.some((tech) => tech.id === currentUser.id)
-          )
-        : false,
-    [jobs, currentUser]
+      jobs.some(
+        (j) =>
+          j.status === JobStatus.InProgress &&
+          j.technicians.some((tech) => tech.id === currentUser.id)
+      ),
+    [jobs, currentUser.id]
   );
 
   const kanbanColumns = useMemo(() => {
@@ -724,8 +726,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       onUpdateJob(updatedJob);
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
-        if (quote && quote.status === Status.Draft) {
-          // Assuming Quote Status is still core.Status
+        if (quote && quote.status === Status.Draft) { // Assuming Quote Status is still core.Status
           onUpdateQuotation({ ...quote, status: Status.Sent });
         }
       }
@@ -993,7 +994,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               </div>
             </div>
           )}
-
+          
           {activeTab === 'schedule' && view === 'list' && (
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
               <div className="overflow-x-auto">
@@ -1116,9 +1117,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                         paginatedReports.map((job) => (
                           <tr key={job.id} className="hover:bg-slate-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                              {formatThaiDateTime(
-                                job.service_report?.created_at || ''
-                              )}
+                              {formatThaiDateTime(job.service_report?.created_at || '')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-slate-900">
@@ -1129,11 +1128,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                               {job.service_report?.service_types.join(', ')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge
-                                status={
-                                  job.service_report?.status || JobStatus.Draft
-                                }
-                              />
+                              <StatusBadge status={job.service_report?.status || JobStatus.Draft} />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <Button
@@ -1258,7 +1253,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                   : '-'}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {/* TODO: Check Invoice Status */}-
+                                {/* TODO: Check Invoice Status */}
+                                -
                               </td>
                               <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
                                 {job.remarks || '-'}
@@ -1312,13 +1308,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         jobs={jobs}
         users={users}
         products={products}
-        warehouses={warehouses}
-        customers={customers}
       />
     </>
   );
 };
 
 export default FieldOperations;
-
-
