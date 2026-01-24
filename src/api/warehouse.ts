@@ -1,7 +1,6 @@
 // Constant
 import {
   IBaseQuery,
-  IBaseResponse,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
 

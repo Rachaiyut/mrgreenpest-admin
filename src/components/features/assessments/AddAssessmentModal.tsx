@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -10,18 +10,18 @@ import {
   AssessmentWorkArea,
   Customer,
 } from '@/src/types/entity/app.interface';
+import { Package } from '@/src/types/entity/package.interface';
 import { CategoryType } from '@/src/types/enums/category';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { WorkAreaForm } from './WorkAreaForm';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { CustomerApi, PackageApi, ProductApi } from '@/src/api';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateAssessment: (assessmentData: Omit<Assessment, 'id'>) => void;
-  products: Product[];
-  customers: Customer[];
 }
 
 const SERVICE_TYPES = [
@@ -37,21 +37,69 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   isOpen,
   onClose,
   onCreateAssessment,
-  products,
-  customers,
 }) => {
   const [formData, setFormData] = useState<
     Partial<Omit<Assessment, 'workAreas' | 'totalEstimatedCost'>>
   >({});
+  const [customers, setCustomer] = useState<Customer[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
 
-  const servicePackages = useMemo(
-    () => products.filter((p) => p.type === CategoryType.SERVICE),
-    [products]
-  );
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const response = await CustomerApi.getCustomers({
+        page: 1,
+        limit: 10,
+        search: searchQuery,
+      });
+
+      setCustomer(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  }, [searchQuery]);
+
+  const fetchPackages = useCallback(async () => {
+    try {
+      const response = await PackageApi.getPackages({
+        page: 1,
+        limit: 1000,
+      });
+      setPackages(response.data);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+    }
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await ProductApi.getProducts({
+        page: 1,
+        limit: 100,
+      });
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCustomers();
+      fetchPackages();
+      fetchProducts();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [fetchCustomers, fetchPackages, fetchProducts]);
+
   const maxAreaSize = useMemo(
     () => Math.max(0, ...workAreas.map((a) => a.area_size || 0)),
     [workAreas]
@@ -59,11 +107,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const suggestedPackageOptions = useMemo(() => {
     if (maxAreaSize === 0) return [];
-    return servicePackages.filter(
+    return packages.filter(
       (pkg) =>
-        pkg.conditions && pkg.conditions.some((c) => c.max_area >= maxAreaSize)
+        pkg.package_price &&
+        pkg.package_price.some((c) => c.area_range >= maxAreaSize)
     );
-  }, [maxAreaSize, servicePackages]);
+  }, [maxAreaSize, packages]);
 
   useEffect(() => {
     if (
@@ -82,7 +131,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       });
       setWorkAreas([
         {
-          id: `area-${Date.now()}`,
+          id: `area-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: 'พื้นที่ 1',
           items: [],
           service_type: [],
@@ -98,24 +147,26 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     [workAreas]
   );
 
-  const handleCustomerChange = (customerId: string) => {
+  const handleCustomerSelect = (customerId: string) => {
     const customer = customers.find((c) => c.id === customerId);
     if (customer) {
       setFormData((prev) => ({
         ...prev,
-        customerId: customer.id,
-        customerName: `${customer.first_name} ${customer.last_name}`,
+        customer_id: customerId,
+        customer_name: `${customer.first_name} ${customer.last_name}`,
         address: customer.address_house_no,
         subdistrict: customer.sub_district,
         district: customer.district,
         province: customer.province,
-        postalCode: customer.postal_code,
-        googleMapLink: customer.google_map_link,
-        zone: '',
-        group: '',
-        roadLine: '',
-        sequence: '',
+        postal_code: customer.postal_code,
+        google_map_link: customer.google_map_link,
+        zone: customer.service_area || '',
+        group: customer.service_group || '',
+        road_line: customer.road_line || '',
+        sequence: customer.sequence_no || '',
       }));
+    } else {
+      setFormData((prev) => ({ ...prev, customer_id: customerId }));
     }
   };
 
@@ -126,26 +177,6 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (name === 'customerId') {
-      const customer = customers.find((c) => c.id === value);
-      if (customer) {
-        setFormData((prev) => ({
-          ...prev,
-          customerName: `${customer.first_name} ${customer.last_name}`,
-          address: customer.address_house_no,
-          subdistrict: customer.sub_district,
-          district: customer.district,
-          province: customer.province,
-          postalCode: customer.postal_code,
-          googleMapLink: customer.google_map_link,
-          zone: '',
-          group: '',
-          roadLine: '',
-          sequence: '',
-        }));
-      }
-    }
   };
 
   const handleNumberOfAreasChange = (count: number) => {
@@ -155,7 +186,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         const newAreas = Array.from(
           { length: count - currentCount },
           (_, i) => ({
-            id: `area-${Date.now()}-${i}`,
+            id: `area-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: `พื้นที่ ${currentCount + i + 1}`,
             items: [],
             service_type: [],
@@ -204,9 +235,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const handlePackageSelect = (pkgId: string | null) => {
     setSelectedPackageId(pkgId);
-    const selectedPkg = pkgId
-      ? servicePackages.find((p) => p.id === pkgId)
-      : null;
+    const selectedPkg = pkgId ? packages.find((p) => p.id === pkgId) : null;
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
@@ -214,17 +243,17 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
             area;
           return { ...rest, package_price: 0 };
         }
-        const sortedConditions = [...(selectedPkg.conditions || [])].sort(
-          (a, b) => a.max_area - b.max_area
+        const sortedConditions = [...(selectedPkg.package_price || [])].sort(
+          (a, b) => a.area_range - b.area_range
         );
         const bestFit = sortedConditions.find(
-          (c) => c.max_area >= area.area_size!
+          (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
           const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
           const priceToUse = hasTermites
-            ? bestFit.first_offer_price_with_termites
-            : bestFit.first_offer_price_no_termites;
+            ? bestFit.price_with_termite
+            : bestFit.price_without_termite;
           return {
             ...area,
             package_id: pkgId,
@@ -322,11 +351,14 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               label="ลูกค้า"
               options={customers.map((c) => ({
                 value: c.id,
-                label: `${c.first_name} ${c.last_name} (${c.phone})`,
-                description: c.address_house_no,
+                label: `${c.code} : ${c.first_name} ${c.last_name} ${
+                  c.nickname ? `(${c.nickname})` : ''
+                } - ${c.phone}`,
+                description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
               }))}
               value={formData.customer_id || ''}
-              onChange={(val) => handleCustomerChange(val)}
+              onChange={handleCustomerSelect}
+              onSearchChange={setSearchQuery}
               required
             />
           </div>
@@ -501,8 +533,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                       {option.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {option.number_of_visits} ครั้ง /{' '}
-                      {option.contract_duration}
+                      {option.visit_limit} ครั้ง / {option.contract_period} ปี
                     </div>
                   </label>
                 ))}
@@ -523,7 +554,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               products={products}
               selectedPackage={
                 selectedPackageId
-                  ? servicePackages.find((p) => p.id === selectedPackageId)!
+                  ? packages.find((p) => p.id === selectedPackageId)!
                   : null
               }
             />
@@ -533,4 +564,3 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     </Modal>
   );
 };
-

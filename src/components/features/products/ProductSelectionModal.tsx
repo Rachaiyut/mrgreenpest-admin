@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { Product } from '@/src/types/entity/package.interface';
-import { CategoryType } from '@/src/types/enums/category';
+import { Product } from '@/src/types';
 
 interface ProductSelectionModalProps {
   isOpen: boolean;
@@ -35,10 +34,8 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     () =>
       productSource.filter(
         (p) =>
-          p.type === CategoryType.PRODUCT &&
           !existingProductIds.includes(p.id) &&
-          (p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.id.toLowerCase().includes(searchTerm.toLowerCase()))
+          (p.name || p.code)
       ),
     [searchTerm, existingProductIds, productSource]
   );
@@ -112,6 +109,12 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   scope="col"
                   className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
                 >
+                  Code
+                </th>
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                >
                   ชื่อสินค้า
                 </th>
                 <th
@@ -144,7 +147,10 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     />
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                    {product.id}
+                    {product.code}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                    {product.code}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-600">
                     {product.name}
@@ -154,10 +160,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
                     ฿
-                    {product.price.toLocaleString('th-TH', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {product.cost_price}
                   </td>
                 </tr>
               ))}
@@ -173,4 +176,3 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     </Modal>
   );
 };
-

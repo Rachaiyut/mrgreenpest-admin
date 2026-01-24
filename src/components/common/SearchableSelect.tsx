@@ -11,6 +11,7 @@ interface SearchableSelectProps {
   options: Option[];
   value: string;
   onChange: (value: string) => void;
+  onSearchChange?: (value: string) => void;
   placeholder?: string;
   label?: string;
   required?: boolean;
@@ -22,6 +23,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   options,
   value,
   onChange,
+  onSearchChange,
   placeholder = 'Select...',
   label,
   required = false,
@@ -55,8 +57,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       // Reset search when closed, but keep it empty if we want to show all initially
       // or maybe don't reset. Let's reset to allow fresh search.
       setSearch('');
+      onSearchChange?.('');
     }
-  }, [isOpen]);
+  }, [isOpen, onSearchChange]);
 
   const filteredOptions = options.filter(
     (option) =>
@@ -109,7 +112,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
                 placeholder="ค้นหา..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  onSearchChange?.(e.target.value);
+                }}
                 onClick={(e) => e.stopPropagation()}
                 autoFocus
               />

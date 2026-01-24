@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Enum
 import { AsessmentStatus } from '@/src/types/enums/assessment';
-import { Assessment, Product, Customer } from '@/src/types/entity/app.interface';
+import { Assessment, Product, Customer, Package } from '@/src/types/entity/app.interface';
 
 // Component
 import AssessmentCard from './AssessmentCard';
@@ -31,8 +31,6 @@ interface AssessmentsProps {
   onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
   onUpdateAssessment: (assessment: Assessment) => void;
   onDeleteAssessment: (assessmentId: string) => void;
-  products: Product[];
-  customers: Customer[];
 }
 
 const MOCK_ASSESSMENTS: Assessment[] = Array.from({ length: 10 }, (_, i) => ({
@@ -68,9 +66,10 @@ const Assessments: React.FC<AssessmentsProps> = ({
   onCreateAssessment,
   onUpdateAssessment,
   onDeleteAssessment,
-  products,
-  customers,
 }) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

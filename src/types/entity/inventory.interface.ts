@@ -32,3 +32,4 @@ export interface WarehouseStats {
   mobile: string,
   active: string
 }
+
