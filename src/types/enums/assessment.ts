@@ -1,6 +1,11 @@
 export enum AsessmentStatus {
-    Draft = 'Draft',
-    PendingApproval = 'PendingApproval',
-    Scheduled = 'Scheduled',
-    Completed = 'Completed',
+    DRAFT = 'DRAFT',
+    PENDING = 'PENDING',
+    APPOIMENT = 'APPOIMENT',
+    COMPLETE = 'COMPLETE',
+}
+
+export enum ServiceType {
+    PREY = 'PREY',
+    CHEMICAL = 'CHEMICAL',
 }

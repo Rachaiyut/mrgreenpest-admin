@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // Enum
 import { AsessmentStatus } from '@/src/types/enums/assessment';
-import { Assessment, Product, Customer, Package } from '@/src/types/entity/app.interface';
+import {
+  Assessment,
+  Product,
+  Customer,
+} from '@/src/types/entity/app.interface';
 
 // Component
 import AssessmentCard from './AssessmentCard';
@@ -25,48 +29,10 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
 import { ConfirmationModal } from '@/src/components/common';
+import { AssessmentApi, CustomerApi, ProductApi } from '@/src/api';
 
-
-interface AssessmentsProps {
-  onCreateAssessment: (assessment: Omit<Assessment, 'id'>) => void;
-  onUpdateAssessment: (assessment: Assessment) => void;
-  onDeleteAssessment: (assessmentId: string) => void;
-}
-
-const MOCK_ASSESSMENTS: Assessment[] = Array.from({ length: 10 }, (_, i) => ({
-  id: `ASM-${String(i + 1).padStart(4, '0')}`,
-  created_at: new Date().toISOString(),
-  customer_id: `CUST-${String(i + 1).padStart(4, '0')}`,
-  customer_name: `Customer ${i + 1}`,
-  address: `123/${i + 1} Some Road, Some District`,
-  subdistrict: 'Some Subdistrict',
-  district: 'Some District',
-  province: 'Bangkok',
-  postal_code: '10110',
-  scheduled_at: new Date(Date.now() + i * 86400000).toISOString(),
-  work_areas: [
-    {
-      id: `WA-${i}-1`,
-      name: 'Living Room',
-      building_type: 'House',
-      area_size: 50,
-      linear_meters: 20,
-      service_type: ['Termite Control'],
-      estimated_cost: 5000,
-      items: [],
-    },
-  ],
-  total_estimated_cost: 5000,
-  status: Object.values(AsessmentStatus)[i % 4],
-  created_by: 'Admin',
-  updated_by: 'Admin',
-}));
-
-const Assessments: React.FC<AssessmentsProps> = ({
-  onCreateAssessment,
-  onUpdateAssessment,
-  onDeleteAssessment,
-}) => {
+const Assessments: React.FC = () => {
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
@@ -91,9 +57,35 @@ const Assessments: React.FC<AssessmentsProps> = ({
   const [assessmentToDelete, setAssessmentToDelete] =
     useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Use mock data
-  const assessments = MOCK_ASSESSMENTS;
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [assessmentsRes, customersRes, productsRes] = await Promise.all([
+        AssessmentApi.getAll({ limit: 1000 }),
+        CustomerApi.getCustomers({ limit: 1000 }),
+        ProductApi.getProducts({ limit: 1000 }),
+      ]);
+      setAssessments(assessmentsRes.data);
+      setCustomers(customersRes.data);
+      setProducts(productsRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const customerMap = useMemo(() => {
+    return new Map(
+      customers.map((c) => [c.id, `${c.first_name} ${c.last_name}`])
+    );
+  }, [customers]);
 
   const reversedAssessments = useMemo(
     () => [...assessments].reverse(),
@@ -107,52 +99,58 @@ const Assessments: React.FC<AssessmentsProps> = ({
     }
 
     return reversedAssessments.filter((assessment) => {
+      const customerName = customerMap.get(assessment.customer_id) || '';
       const matchesCustomer =
         assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
-        assessment.customer_name.toLowerCase().includes(lowercasedQuery);
+        customerName.toLowerCase().includes(lowercasedQuery);
 
       const matchesWorkArea = assessment.work_areas.some(
         (area) =>
           (area.building_type &&
             area.building_type.toLowerCase().includes(lowercasedQuery)) ||
-          area.service_type.join(' ').toLowerCase().includes(lowercasedQuery)
+          (area.service_type || [])
+            .join(' ')
+            .toLowerCase()
+            .includes(lowercasedQuery)
       );
 
-      const matchesDate = formatThaiDate(assessment.scheduled_at).includes(
+      const matchesDate = formatThaiDate(assessment.appointment_date).includes(
         lowercasedQuery
       );
 
       return matchesCustomer || matchesWorkArea || matchesDate;
     });
-  }, [reversedAssessments, searchQuery]);
+  }, [reversedAssessments, searchQuery, customerMap]);
 
-  const kanbanColumns: { title: AsessmentStatus; assessments: Assessment[] }[] =
-    [
-      {
-        title: AsessmentStatus.Draft,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.Draft
-        ),
-      },
-      {
-        title: AsessmentStatus.PendingApproval,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.PendingApproval
-        ),
-      },
-      {
-        title: AsessmentStatus.Scheduled,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.Scheduled
-        ),
-      },
-      {
-        title: AsessmentStatus.Completed,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.Completed
-        ),
-      },
-    ];
+  const kanbanColumns: {
+    title: AsessmentStatus;
+    assessments: Assessment[];
+  }[] = [
+    {
+      title: AsessmentStatus.Draft,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.Draft
+      ),
+    },
+    {
+      title: AsessmentStatus.PendingApproval,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.PendingApproval
+      ),
+    },
+    {
+      title: AsessmentStatus.Scheduled,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.Scheduled
+      ),
+    },
+    {
+      title: AsessmentStatus.Completed,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.Completed
+      ),
+    },
+  ];
 
   const totalItems = filteredAssessments.length;
   const paginatedAssessments = filteredAssessments.slice(
@@ -163,6 +161,36 @@ const Assessments: React.FC<AssessmentsProps> = ({
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
     setCurrentPage(1);
+  };
+
+  const handleCreateAssessment = async (
+    assessmentData: Omit<Assessment, 'id'>
+  ) => {
+    try {
+      await AssessmentApi.create(assessmentData);
+      fetchData();
+    } catch (error) {
+      console.error('Error creating assessment:', error);
+    }
+  };
+
+  const handleUpdateAssessment = async (assessment: Assessment) => {
+    try {
+      await AssessmentApi.update(assessment.id, assessment);
+      fetchData();
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error updating assessment:', error);
+    }
+  };
+
+  const handleDeleteAssessment = async (assessmentId: string) => {
+    try {
+      await AssessmentApi.delete(assessmentId);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting assessment:', error);
+    }
   };
 
   const handleViewDetails = (assessment: Assessment) => {
@@ -185,7 +213,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
 
   const handleConfirmDelete = async () => {
     if (assessmentToDelete) {
-      onDeleteAssessment(assessmentToDelete.id);
+      await handleDeleteAssessment(assessmentToDelete.id);
     }
     setIsDeleteModalOpen(false);
     setAssessmentToDelete(null);
@@ -350,6 +378,7 @@ const Assessments: React.FC<AssessmentsProps> = ({
                     <AssessmentCard
                       key={assessment.id}
                       assessment={assessment}
+                      customerName={customerMap.get(assessment.customer_id)}
                       onDropdownToggle={handleDropdownToggle}
                       onViewDetails={handleViewDetails}
                     />
@@ -429,16 +458,16 @@ const Assessments: React.FC<AssessmentsProps> = ({
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {assessment.id}
+                          {assessment.code || assessment.id}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {assessment.customer_name}
+                          {customerMap.get(assessment.customer_id) || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                           {assessment.customer_id}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {formatThaiDate(assessment.scheduled_at)}
+                          {2026}
                         </td>
                         <td
                           className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm"
@@ -457,13 +486,10 @@ const Assessments: React.FC<AssessmentsProps> = ({
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
                           ฿
-                          {assessment.total_estimated_cost.toLocaleString(
-                            'th-TH',
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
+                          {assessment.total_price.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                           {assessment.created_by}
@@ -523,16 +549,18 @@ const Assessments: React.FC<AssessmentsProps> = ({
       <AddAssessmentModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateAssessment={onCreateAssessment}
-        products={products}
-        customers={customers}
+        onCreateAssessment={handleCreateAssessment}
       />
-      <AssessmentDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        assessment={selectedAssessment}
-        products={products}
-      />
+      {isDetailsModalOpen && (
+        <AssessmentDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          assessment={selectedAssessment}
+          products={products}
+          customers={customers}
+          packages={packages}
+        />
+      )}
       <EditAssessmentModal
         isOpen={isEditModalOpen}
         onClose={() => {
@@ -540,10 +568,11 @@ const Assessments: React.FC<AssessmentsProps> = ({
           setAssessmentToEdit(null);
         }}
         assessment={assessmentToEdit}
-        onUpdateAssessment={onUpdateAssessment}
+        onUpdateAssessment={handleUpdateAssessment}
         products={products}
+        customers={customers}
       />
-      
+
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -551,8 +580,11 @@ const Assessments: React.FC<AssessmentsProps> = ({
         title="ยืนยันการลบ"
         message={
           <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินสำหรับ{' '}
-            <strong>{assessmentToDelete?.customer_name}</strong>?
+            คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินนี้?
+            <br />
+            {assessmentToDelete &&
+              `รหัส: ${assessmentToDelete.code || assessmentToDelete.id}`}
+            <br />
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }
@@ -564,5 +596,3 @@ const Assessments: React.FC<AssessmentsProps> = ({
 };
 
 export default Assessments;
-
-

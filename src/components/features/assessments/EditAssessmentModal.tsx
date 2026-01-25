@@ -26,6 +26,7 @@ interface EditAssessmentModalProps {
   assessment: Assessment | null;
   onUpdateAssessment: (assessmentData: Assessment) => void;
   products: Product[];
+  customers?: Customer[];
 }
 
 const SERVICE_TYPES = [
@@ -43,7 +44,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   assessment,
   onUpdateAssessment,
   products,
-  // customers, // Unused for now as customer is read-only in edit
+  customers = [],
 }) => {
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
@@ -64,9 +65,15 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     if (maxAreaSize === 0) return [];
     return servicePackages.filter(
       (pkg) =>
-        pkg.conditions && pkg.conditions.some((c) => c.max_area >= maxAreaSize)
+        pkg.cost_price &&
+        pkg.package_price.some((c) => c.area_range >= maxAreaSize)
     );
   }, [maxAreaSize, servicePackages]);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
+  };
 
   useEffect(() => {
     if (assessment && isOpen) {
@@ -76,22 +83,21 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         created_at: assessment.created_at
           ? new Date(assessment.created_at).toISOString().substring(0, 10)
           : '',
-        scheduled_at: assessment.scheduled_at
-          ? new Date(assessment.scheduled_at).toISOString().substring(0, 10)
-          : '',
+        appointment_date: assessment.appointment_date
+          ? new Date(assessment.appointment_date)
+          : undefined,
       });
-      const initialPackageId =
-        assessment.work_areas?.find((wa) => wa.package_id)?.package_id || null;
-      setSelectedPackageId(initialPackageId);
+      // Assume package_id is on assessment level if we want to pre-select,
+      // but if logic was work_area based, we might need to check work_areas.
+      // Current interface has package_id on Assessment.
+      setSelectedPackageId(assessment.package_id || null);
+
       const initialWorkAreas = work_areas.map((wa) => {
-        const itemsCost = (wa.items || []).reduce(
-          (sum, item) => sum + item.price * item.quantity,
-          0
-        );
-        const packageCost = wa.estimated_cost - itemsCost;
+        // Just map directly, assuming wa matches AssessmentWorkArea
         return {
           ...wa,
-          package_price: wa.package_id ? packageCost : 0,
+          products: wa.products || [],
+          service_type: wa.service_type || [],
         };
       });
       setWorkAreas(initialWorkAreas || []);
@@ -102,7 +108,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   }, [assessment, isOpen]);
 
   const totalEstimatedCost = useMemo(
-    () => workAreas.reduce((sum, area) => sum + (area.estimated_cost || 0), 0),
+    () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
     [workAreas]
   );
 
@@ -120,10 +126,11 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       ...prev,
       {
         id: `area-${Date.now()}`,
-        name: `พื้นที่ ${prev.length + 1}`,
-        items: [],
+        area_name: `พื้นที่ ${prev.length + 1}`,
+        products: [],
         service_type: [],
-        package_price: 0,
+        base_service_price: 0,
+        total_price: 0,
       },
     ]);
   };
@@ -152,16 +159,14 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       if (areaToClear) {
         newAreas[index] = {
           id: areaToClear.id,
-          name: areaToClear.name,
+          area_name: areaToClear.area_name,
           building_type: '',
           area_size: undefined,
           service_type: [],
           service_system: '',
-          package_id: undefined,
-          selected_condition_id: undefined,
-          package_price: 0,
-          estimated_cost: 0,
-          items: [],
+          base_service_price: 0,
+          total_price: 0,
+          products: [],
         };
       }
       return newAreas;
@@ -170,37 +175,34 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
   const handlePackageSelect = (pkgId: string | null) => {
     setSelectedPackageId(pkgId);
+    setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
+
     const selectedPkg = pkgId
       ? servicePackages.find((p) => p.id === pkgId)
       : null;
+
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
-          const { package_id, selected_condition_id, package_price, ...rest } =
-            area;
-          return { ...rest, package_price: 0 };
+          return { ...area };
         }
-        const sortedConditions = [...(selectedPkg.conditions || [])].sort(
-          (a, b) => a.max_area - b.max_area
+        const sortedConditions = [...(selectedPkg.package_price || [])].sort(
+          (a, b) => a.area_range - b.area_range
         );
         const bestFit = sortedConditions.find(
-          (c) => c.max_area >= area.area_size!
+          (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
           const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
           const priceToUse = hasTermites
-            ? bestFit.first_offer_price_with_termites
-            : bestFit.first_offer_price_no_termites;
+            ? bestFit.price_with_termite
+            : bestFit.price_without_termite;
           return {
             ...area,
-            package_id: pkgId,
-            selected_condition_id: bestFit.id,
-            package_price: priceToUse,
+            base_service_price: priceToUse,
           };
         } else {
-          const { package_id, selected_condition_id, package_price, ...rest } =
-            area;
-          return { ...rest, package_price: undefined };
+          return { ...area };
         }
       })
     );
@@ -215,7 +217,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
       work_areas: workAreas as AssessmentWorkArea[],
-      total_estimated_cost: totalEstimatedCost,
+      total_price: totalEstimatedCost,
+      appointment_date: formData.appointment_date || new Date(),
     };
     onUpdateAssessment(updatedAssessment);
   };
@@ -226,7 +229,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขใบประเมิน: ${assessment.id}`}
+      title={`แก้ไขใบประเมิน: ${assessment.code || assessment.id}`}
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -276,7 +279,11 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </FormField>
           <FormField label="ลูกค้า" htmlFor="customer_id">
             <Input
-              value={`${formData.customer_name} (${formData.customer_id})`}
+              value={
+                customers.find((c) => c.id === formData.customer_id)
+                  ? `${customers.find((c) => c.id === formData.customer_id)?.first_name} ${customers.find((c) => c.id === formData.customer_id)?.last_name}`
+                  : formData.customer_id || ''
+              }
               readOnly
               className="bg-slate-100"
             />
@@ -296,10 +303,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
             />
           </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="แขวง/ตำบล" htmlFor="subdistrict">
+            <FormField label="แขวง/ตำบล" htmlFor="sub_district">
               <Input
-                name="subdistrict"
-                value={formData.subdistrict || ''}
+                name="sub_district"
+                value={formData.sub_district || ''}
                 onChange={handleFieldChange}
                 required
               />
@@ -320,10 +327,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                 required
               />
             </FormField>
-            <FormField label="รหัสไปรษณีย์" htmlFor="postal_code">
+            <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
               <Input
-                name="postal_code"
-                value={formData.postal_code || ''}
+                name="zipcode"
+                value={formData.zipcode || ''}
                 onChange={handleFieldChange}
                 required
               />
@@ -341,10 +348,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                   onChange={handleFieldChange}
                 />
               </FormField>
-              <FormField label="Group" htmlFor="group">
+              <FormField label="Group" htmlFor="route_group">
                 <Input
-                  name="group"
-                  value={formData.group || ''}
+                  name="route_group"
+                  value={formData.route_group || ''}
                   onChange={handleFieldChange}
                 />
               </FormField>
@@ -378,19 +385,25 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         <div className="border border-slate-200 p-4 rounded-lg space-y-4">
           <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="วันที่นัดหมาย" htmlFor="scheduled_at">
+            <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
               <Input
-                name="scheduled_at"
+                name="appointment_date"
                 type="date"
-                value={formData.scheduled_at?.substring(0, 10) || ''}
-                onChange={handleFieldChange}
+                value={
+                  formData.appointment_date
+                    ? new Date(formData.appointment_date)
+                        .toISOString()
+                        .substring(0, 10)
+                    : ''
+                }
+                onChange={handleDateChange}
                 required
               />
             </FormField>
-            <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_conditions">
+            <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
               <Input
-                name="payment_conditions"
-                value={formData.payment_conditions || ''}
+                name="payment_condition"
+                value={formData.payment_condition || ''}
                 onChange={handleFieldChange}
                 placeholder="เช่น เงินสด, โอน"
               />
@@ -473,4 +486,3 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     </Modal>
   );
 };
-

@@ -12,13 +12,14 @@ import { Assessment } from '@/src/types/entity/app.interface';
 
 const AssessmentCard: React.FC<{
   assessment: Assessment;
+  customerName?: string;
   onDropdownToggle: (
     event: React.MouseEvent<HTMLButtonElement>,
     assessmentId: string
   ) => void;
   onViewDetails: (assessment: Assessment) => void;
-}> = ({ assessment, onDropdownToggle, onViewDetails }) => {
-  const appointmentDate = formatThaiDate(assessment.scheduled_at);
+}> = ({ assessment, customerName, onDropdownToggle, onViewDetails }) => {
+  const appointmentDate = formatThaiDate(assessment.appointment_date);
 
   const allServiceTypes = useMemo(
     () => [
@@ -33,7 +34,7 @@ const AssessmentCard: React.FC<{
         <div className="flex justify-between items-start">
           <div className="pr-2 min-w-0">
             <p className="text-base font-bold text-slate-800 leading-tight truncate">
-              {assessment.customer_name}
+              {customerName || assessment.customer_id}
             </p>
             <div className="mt-1 flex flex-wrap gap-1">
               {allServiceTypes.map((type) => (
@@ -49,8 +50,8 @@ const AssessmentCard: React.FC<{
           </div>
           <div className="relative flex-shrink-0">
             <Button
-              data-assessment-id={assessment.id}
-              onClick={(e) => onDropdownToggle(e, assessment.id)}
+              data-assessment-id={assessment.id || assessment.code}
+              onClick={(e) => onDropdownToggle(e, assessment.id || assessment.code)}
               variant="icon"
               className="-mr-1 -mt-1"
               title="ตัวเลือก"

@@ -69,11 +69,15 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             <Input
               id={`manual-price-${index}`}
               type="number"
-              value={area.package_price === undefined ? '' : area.package_price}
+              value={
+                area.base_service_price === undefined
+                  ? ''
+                  : area.base_service_price
+              }
               onChange={(e) => {
                 onAreaChange(index, {
                   ...area,
-                  package_price:
+                  base_service_price:
                     e.target.value === ''
                       ? undefined
                       : parseFloat(e.target.value),
@@ -112,14 +116,16 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                     type="number"
                     className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
                     value={
-                      area.package_price === undefined ? '' : area.package_price
+                      area.base_service_price === undefined
+                        ? ''
+                        : area.base_service_price
                     }
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       e.stopPropagation();
                       onAreaChange(index, {
                         ...area,
-                        package_price:
+                        base_service_price:
                           e.target.value === ''
                             ? undefined
                             : parseFloat(e.target.value),
@@ -153,11 +159,15 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             <Input
               id={`manual-package-price-${index}`}
               type="number"
-              value={area.package_price === undefined ? '' : area.package_price}
+              value={
+                area.base_service_price === undefined
+                  ? ''
+                  : area.base_service_price
+              }
               onChange={(e) => {
                 onAreaChange(index, {
                   ...area,
-                  package_price:
+                  base_service_price:
                     e.target.value === ''
                       ? undefined
                       : parseFloat(e.target.value),
@@ -198,44 +208,41 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
           ? condition.price_with_termite
           : condition.price_without_termite;
 
-        if (area.package_price !== priceToUse) {
-          onAreaChange(index, { ...area, package_price: priceToUse });
+        if (area.base_service_price !== priceToUse) {
+          onAreaChange(index, { ...area, base_service_price: priceToUse });
         }
       } else {
-        // If area size exceeds all defined ranges, you might want to handle it (e.g. use max price or 0)
-        // For now, if no condition matches (e.g. area too big), we might clear price or keep previous?
-        // Let's reset to 0 or undefined to indicate invalid range for this package
-        if (area.package_price !== 0) {
-          onAreaChange(index, { ...area, package_price: 0 });
+        if (area.base_service_price !== 0) {
+          onAreaChange(index, { ...area, base_service_price: 0 });
         }
       }
     }
   }, [area.area_size, selectedPackage, area.service_type]);
 
   const isPriceInvalid = useMemo(() => {
-    if (!selectedCondition || typeof area.package_price !== 'number')
+    if (!selectedCondition || typeof area.base_service_price !== 'number')
       return false;
-    return area.package_price < selectedCondition.minimum_price;
-  }, [selectedCondition, area.package_price]);
+    return area.base_service_price < selectedCondition.minimum_price;
+  }, [selectedCondition, area.base_service_price]);
 
   useEffect(() => {
-    const itemsCost = (area.items || []).reduce(
+    const itemsCost = (area.products || []).reduce(
       (sum, item) =>
         sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
       0
     );
-    const packageCost = Number(area.package_price) || 0;
+    const packageCost = Number(area.base_service_price) || 0;
     const newTotalCost = packageCost + itemsCost;
 
-    const currentEstimatedCost = area.estimated_cost || 0;
+    const currentEstimatedCost = area.total_price || 0;
 
     if (currentEstimatedCost !== newTotalCost) {
-      onAreaChange(index, { ...area, estimated_cost: newTotalCost });
+      onAreaChange(index, { ...area, total_price: newTotalCost });
     }
   }, [
-    area.items,
-    area.package_price,
-    area.estimated_cost,
+    area.products,
+    area.base_service_price,
+    area.total_price,
     index,
     onAreaChange,
   ]);
@@ -246,7 +253,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     const { name, value } = e.target;
     const updatedArea: Partial<AssessmentWorkArea> = { ...area };
 
-    if (name === 'area_size' || name === 'linear_meters') {
+    if (name === 'area_size' || name === 'perimeter') {
       updatedArea[name] = value === '' ? undefined : parseFloat(value);
     } else {
       (updatedArea as any)[name] = value;
@@ -272,7 +279,6 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     const newItems: AssessmentItem[] = productIds.map((pid) => {
       const product = productMap.get(pid);
       return {
-        id: `item-${Date.now()}-${Math.random()}`,
         product_id: pid,
         quantity: 1,
         price: product?.cost_price ? Number(product.cost_price) : 0,
@@ -280,18 +286,18 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     });
 
     // Calculate new total cost immediately
-    const currentItems = [...(area.items || []), ...newItems];
+    const currentItems = [...(area.products || []), ...newItems];
     const itemsCost = currentItems.reduce(
       (sum, item) =>
         sum + (Number(item.price) || 0) * (Number(item.quantity) || 0),
       0
     );
-    const packageCost = Number(area.package_price) || 0;
+    const packageCost = Number(area.base_service_price) || 0;
 
     onAreaChange(index, {
       ...area,
-      items: currentItems,
-      estimated_cost: packageCost + itemsCost,
+      products: currentItems,
+      total_price: packageCost + itemsCost,
     });
   };
 
@@ -300,7 +306,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     field: keyof Omit<AssessmentItem, 'id'>,
     value: string | number
   ) => {
-    const newItems = [...(area.items || [])];
+    const newItems = [...(area.products || [])];
     const item = { ...newItems[itemIndex] };
     (item as any)[field] = value;
     newItems[itemIndex] = item;
@@ -310,34 +316,34 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
       (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
       0
     );
-    const packageCost = Number(area.package_price) || 0;
+    const packageCost = Number(area.base_service_price) || 0;
 
     onAreaChange(index, {
       ...area,
-      items: newItems,
-      estimated_cost: packageCost + itemsCost,
+      products: newItems,
+      total_price: packageCost + itemsCost,
     });
   };
 
   const handleRemoveItem = (itemIndex: number) => {
-    const newItems = (area.items || []).filter((_, i) => i !== itemIndex);
+    const newItems = (area.products || []).filter((_, i) => i !== itemIndex);
 
     // Calculate new total cost immediately
     const itemsCost = newItems.reduce(
       (sum, i) => sum + (Number(i.price) || 0) * (Number(i.quantity) || 0),
       0
     );
-    const packageCost = Number(area.package_price) || 0;
+    const packageCost = Number(area.base_service_price) || 0;
 
     onAreaChange(index, {
       ...area,
-      items: newItems,
-      estimated_cost: packageCost + itemsCost,
+      products: newItems,
+      total_price: packageCost + itemsCost,
     });
   };
 
   const [measurementType, setMeasurementType] = useState<'sqm' | 'meter'>(
-    area.linear_meters && !area.area_size ? 'meter' : 'sqm'
+    area.perimeter && !area.area_size ? 'meter' : 'sqm'
   );
 
   const handleMeasurementTypeChange = (type: 'sqm' | 'meter') => {
@@ -374,8 +380,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
           htmlFor={`areaName-${index}`}
         >
           <Input
-            name="name"
-            value={area.name || ''}
+            name="area_name"
+            value={area.area_name || ''}
             onChange={handleFieldChange}
             placeholder="เช่น บ้าน A-1, อาคาร Lobby"
             required
@@ -448,9 +454,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <div className="relative">
                 <Input
                   id={`linearMeters-${index}`}
-                  name="linear_meters"
+                  name="perimeter"
                   type="number"
-                  value={area.linear_meters || ''}
+                  value={area.perimeter || ''}
                   onChange={handleFieldChange}
                   placeholder="ความยาวรอบรูป (ม.)"
                   required
@@ -490,7 +496,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                     ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
                   </span>
                   <span className="text-lg text-blue-900 font-bold">
-                    ฿{(area.package_price || 0).toLocaleString()}
+                    ฿{(area.base_service_price || 0).toLocaleString()}
                   </span>
                 </div>
               )}
@@ -589,8 +595,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {(area.items || []).length > 0 ? (
-                  area.items?.map((item, itemIndex) => {
+                {(area.products || []).length > 0 ? (
+                  area.products?.map((item, itemIndex) => {
                     const product = productMap.get(item.product_id!);
                     return (
                       <tr key={item.id || itemIndex}>
@@ -653,7 +659,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         </div>
         <div className="text-right font-semibold text-slate-800 pt-2 border-t">
           ยอดรวมพื้นที่นี้: ฿
-          {(area.estimated_cost || 0).toLocaleString('th-TH', {
+          {(area.total_price || 0).toLocaleString('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
@@ -663,7 +669,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}
         onAddProducts={handleAddProducts}
-        existingProductIds={(area.items || []).map((i) => i.product_id!)}
+        existingProductIds={(area.products || []).map((i) => i.product_id!)}
         products={products}
       />
     </>
