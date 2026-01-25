@@ -1,4 +1,5 @@
 import { AsessmentStatus, ServiceType } from '../enums/assessment';
+import { PaymentMethod } from '../enums/financial';
 import { IBase } from './base.interface';
 
 export interface AssessmentItem extends IBase {
@@ -9,6 +10,7 @@ export interface AssessmentItem extends IBase {
 }
 
 export interface AssessmentWorkArea extends IBase {
+  package_price_id?: string,
   area_name: string;
   building_type?: string;
   service_system?: string;
@@ -24,7 +26,7 @@ export interface AssessmentWorkArea extends IBase {
 export interface Assessment extends IBase {
   customer_id: string;
   code: string;
-  package_id: string;
+  package_id?: string;
   appointment_date: Date;
   address: string;
   sub_district: string;
@@ -44,7 +46,3 @@ export interface Assessment extends IBase {
   work_areas: AssessmentWorkArea[];
 }
 
-export enum PaymentMethod {
-  CASH = 'CASH',
-  TRANSFER = 'TRANSFER',
-}

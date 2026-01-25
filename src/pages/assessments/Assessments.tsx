@@ -114,7 +114,7 @@ const Assessments: React.FC = () => {
             .includes(lowercasedQuery)
       );
 
-      const matchesDate = formatThaiDate(assessment.appointment_date).includes(
+      const matchesDate = formatThaiDate((assessment.appointment_date).toDateString()).includes(
         lowercasedQuery
       );
 
@@ -127,27 +127,27 @@ const Assessments: React.FC = () => {
     assessments: Assessment[];
   }[] = [
     {
-      title: AsessmentStatus.Draft,
+      title: AsessmentStatus.DRAFT,
       assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.Draft
+        (a) => a.status === AsessmentStatus.DRAFT
       ),
     },
     {
-      title: AsessmentStatus.PendingApproval,
+      title: AsessmentStatus.PENDING,
       assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.PendingApproval
+        (a) => a.status === AsessmentStatus.PENDING
       ),
     },
     {
-      title: AsessmentStatus.Scheduled,
+      title: AsessmentStatus.APPOIMENT,
       assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.Scheduled
+        (a) => a.status === AsessmentStatus.APPOIMENT
       ),
     },
     {
-      title: AsessmentStatus.Completed,
+      title: AsessmentStatus.COMPLETE,
       assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.Completed
+        (a) => a.status === AsessmentStatus.COMPLETE
       ),
     },
   ];
@@ -279,7 +279,7 @@ const Assessments: React.FC = () => {
       },
     ];
 
-    if (selectedAssessment.status === AsessmentStatus.Completed) {
+    if (selectedAssessment.status === AsessmentStatus.COMPLETE) {
       actions.push({
         label: 'แปลงเป็นใบเสนอราคา',
         icon: ArrowRightIcon,

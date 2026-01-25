@@ -21,12 +21,11 @@ const AssessmentCard: React.FC<{
 }> = ({ assessment, customerName, onDropdownToggle, onViewDetails }) => {
   const appointmentDate = formatThaiDate(assessment.appointment_date);
 
-  const allServiceTypes = useMemo(
-    () => [
-      ...new Set(assessment.work_areas.flatMap((area) => area.service_type)),
-    ],
-    [assessment.work_areas]
-  );
+  const allServiceTypes = useMemo(() => {
+  const areas = assessment?.work_areas || [];
+  
+  return [...new Set(areas.flatMap((area) => area.service_type || []))];
+}, [assessment?.work_areas]);
 
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between min-h-[220px]">
@@ -64,7 +63,7 @@ const AssessmentCard: React.FC<{
         <div className="mt-4 flex items-center gap-2">
           <StatusBadge status={assessment.status} />
           <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-            {assessment.work_areas.length} พื้นที่
+            {assessment.work_areas?.length || []} พื้นที่
           </span>
         </div>
 

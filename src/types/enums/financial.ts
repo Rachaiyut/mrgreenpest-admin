@@ -10,3 +10,9 @@ export enum ReceiptStatus {
     Pending = 'Pending',
     Cancelled = 'Cancelled'
 }
+
+
+export enum PaymentMethod {
+  CASH = 'CASH',
+  TRANSFER = 'TRANSFER',
+}

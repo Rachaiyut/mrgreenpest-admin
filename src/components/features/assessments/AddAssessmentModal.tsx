@@ -12,6 +12,7 @@ import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { CustomerApi, PackageApi, ProductApi } from '@/src/api';
+import { PaymentMethod } from '@/src/types';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
@@ -46,6 +47,11 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
+
+  const paymentOptions = [
+    { value: 'CASH', label: 'เงินสด' },
+    { value: 'TRANSFER', label: 'โอนเงิน' }, // ใช้ TRANSFER ตามที่เราตกลงกัน
+  ];
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -288,7 +294,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         ? new Date(formData.created_at).toISOString()
         : new Date().toISOString(),
       appointment_date: formData.appointment_date || new Date(),
-      payment_condition: formData.payment_condition as any, // Cast or handle enum
+      payment_condition: formData.payment_condition as PaymentMethod,
 
       // Other fields
       zone: formData.zone || '',
@@ -483,11 +489,11 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               />
             </FormField>
             <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
-              <Input
-                name="payment_condition"
+              <SearchableSelect
+                options={paymentOptions}
                 value={formData.payment_condition || ''}
-                onChange={handleFieldChange}
-                placeholder="เช่น เงินสด, โอน"
+                onChange={(val) => setFormData({ ...formData, payment_condition: val })}
+                required
               />
             </FormField>
           </div>
