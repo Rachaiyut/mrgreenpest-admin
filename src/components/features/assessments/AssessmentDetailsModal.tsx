@@ -4,6 +4,7 @@ import { Button } from '../../common/FormControls';
 import {
   Assessment,
   AssessmentWorkArea,
+  AssessmentWorkAreaItem,
   Customer,
   Package,
   Product,
@@ -17,14 +18,14 @@ interface AssessmentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   assessment: Assessment | null;
-  products: Product[];
+  products: AssessmentWorkAreaItem[];
   customers?: Customer[];
   packages?: Package[];
 }
 
 const WorkAreaDetails: React.FC<{
   area: AssessmentWorkArea;
-  products: Product[];
+  products: AssessmentWorkAreaItem[];
 }> = ({ area, products }) => {
   const productMap = new Map(products.map((p) => [p.id, p]));
 
@@ -78,7 +79,7 @@ const WorkAreaDetails: React.FC<{
               </thead>
               <tbody>
                 {area.items.map((item, index) => {
-                  const product = productMap.get(item.product_id);
+                  const productName = item.product_name
                   const quantity = item.quantity || 0;
                   const price = item.product_price || 0;
                   const total = quantity * price;
@@ -89,7 +90,7 @@ const WorkAreaDetails: React.FC<{
                       className="border-b border-slate-200 last:border-b-0"
                     >
                       <td className="p-2 font-medium text-slate-800">
-                        {product?.name || 'N/A'}
+                        {productName || 'N/A'}
                       </td>
                       <td className="p-2 text-center">{quantity}</td>
                       <td className="p-2 text-right">
@@ -196,7 +197,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่นัดหมาย</dt>
               <dd className="mt-1 text-slate-900">
-                {2569}
+                {formatThaiDate((assessment.appointment_date).toLocaleString())}
               </dd>
             </div>
             <div>

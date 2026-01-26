@@ -70,15 +70,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     },
     {
       path: '/assessments',
-      element: (
-        <Assessments
-          onCreateAssessment={handlers.assessments.create}
-          onUpdateAssessment={handlers.assessments.update}
-          onDeleteAssessment={handlers.assessments.delete}
-          products={products}
-          customers={customers}
-        />
-      ),
+      element: <Assessments />
     },
     {
       path: '/field-operations',
@@ -181,14 +173,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     },
     {
       path: '/warehouse',
-      element: (
-        <Warehouse
-          onCreateWarehouse={handlers.warehouses.create}
-          onUpdateWarehouse={handlers.warehouses.update}
-          onDeleteWarehouse={handlers.warehouses.delete}
-          onUpdateWarehouseLimits={handlers.warehouses.updateLimits}
-        />
-      ),
+      element: <Warehouse />
     },
     {
       path: '/suppliers',

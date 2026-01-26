@@ -12,6 +12,7 @@ export interface AssessmentWorkAreaItem extends IBase {
 
 export interface AssessmentWorkAreaCategory extends IBase {
   category_id: string
+  name?: string
 }
 
 export interface AssessmentWorkArea extends IBase {

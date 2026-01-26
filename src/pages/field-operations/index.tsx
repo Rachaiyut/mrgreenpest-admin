@@ -9,10 +9,10 @@ import {
 import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
-import { Product } from '../../types/entity/package.interface';
+import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
-import { JobStatus } from '../../types/enums/job.enum';
+import { JobStatus } from '@/src/types';
 
 import {
   PlusIcon,
@@ -37,10 +37,7 @@ import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 import { Pagination } from '../../components/common/Pagination';
 import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
 import { EditJobModal } from '../../components/features/jobs/EditJobModal';
-import {
-  formatThaiDate,
-  formatThaiDateTime,
-} from '../../constants';
+import { formatThaiDate, formatThaiDateTime } from '@/src/utils/date';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
@@ -517,7 +514,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     if (lowercasedQuery) {
       tempJobs = tempJobs.filter((job) => {
         const vehicle = warehouses.find((w) => w.id === job.vehicle_id);
-        const licensePlateMatch = vehicle?.license_plate
+        const licensePlateMatch = (vehicle as any)?.license_plate
           ?.toLowerCase()
           .includes(lowercasedQuery);
         const dateMatch = formatThaiDate(job.start_time).includes(
@@ -530,6 +527,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     return tempJobs;
   }, [reversedJobs, selectedTechnicianId, searchQuery]);
 
+  // Check for any job in progress by the current user
   const isAnyJobInProgressForCurrentUser = useMemo(
     () =>
       jobs.some(
@@ -541,21 +539,21 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   );
 
   const kanbanColumns = useMemo(() => {
-    const serviceVehicles = warehouses.filter((w) => w.type === 'รถ');
+    const serviceVehicles = warehouses.filter((w) => (w.type as any) === 'รถ');
     const jobsForKanban = filteredJobs.filter(
       (j) => j.status === JobStatus.Planned || j.status === JobStatus.InProgress
     );
 
     const vehicleColumns = serviceVehicles.map((vehicle) => ({
-      title: vehicle.license_plate
-        ? `${vehicle.name} (${vehicle.license_plate})`
+      title: (vehicle as any).license_plate
+        ? `${vehicle.name} (${(vehicle as any).license_plate})`
         : vehicle.name,
       id: vehicle.id,
       jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
     }));
 
     return vehicleColumns;
-  }, [filteredJobs]);
+  }, [filteredJobs, warehouses]);
 
   const serviceReports = useMemo(
     () => reversedJobs.filter((j) => j.service_report),
