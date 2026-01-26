@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
-import { PaymentMethod, ServiceReport, ServiceSystem } from '@/src/types';
+import { PaymentMethod, ServiceReport, ServiceType } from '@/src/types';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ const WorkAreaDetails: React.FC<{
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
+          <dd className="mt-1 text-slate-900">{area.service_system === ServiceType.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
         </div>
       </dl>
 

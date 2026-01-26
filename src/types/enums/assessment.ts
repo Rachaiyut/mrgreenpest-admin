@@ -5,7 +5,7 @@ export enum AsessmentStatus {
     COMPLETE = 'COMPLETE',
 }
 
-export enum ServiceSystem {
+export enum ServiceType {
     PREY = 'PREY',
     CHEMICAL = 'CHEMICAL',
 }

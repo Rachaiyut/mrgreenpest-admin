@@ -11,7 +11,7 @@ import {
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
-import { AsessmentStatus, ServiceSystem } from '@/src/types/enums/assessment';
+import { AsessmentStatus, ServiceType } from '@/src/types/enums/assessment';
 import { CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { CategoryType } from '@/src/types';
