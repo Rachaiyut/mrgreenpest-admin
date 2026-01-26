@@ -6,6 +6,7 @@ import {
   Assessment,
   Product,
   Customer,
+  Package,
 } from '@/src/types/entity/app.interface';
 
 // Component
@@ -29,12 +30,13 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
 import { ConfirmationModal } from '@/src/components/common';
-import { AssessmentApi, CustomerApi, ProductApi } from '@/src/api';
+import { AssessmentApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
 
 const Assessments: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -62,14 +64,16 @@ const Assessments: React.FC = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [assessmentsRes, customersRes, productsRes] = await Promise.all([
+      const [assessmentsRes, customersRes, productsRes, packagesRes] = await Promise.all([
         AssessmentApi.getAll({ limit: 1000 }),
         CustomerApi.getCustomers({ limit: 1000 }),
         ProductApi.getProducts({ limit: 1000 }),
+        PackageApi.getPackages({ limit: 100 })
       ]);
       setAssessments(assessmentsRes.data);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
+      setPackages(packagesRes.data)
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -104,14 +108,11 @@ const Assessments: React.FC = () => {
         assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
         customerName.toLowerCase().includes(lowercasedQuery);
 
-      const matchesWorkArea = assessment.work_areas.some(
+      const matchesWorkArea = assessment.assessment_areas.some(
         (area) =>
           (area.building_type &&
             area.building_type.toLowerCase().includes(lowercasedQuery)) ||
-          (area.service_type || [])
-            .join(' ')
-            .toLowerCase()
-            .includes(lowercasedQuery)
+          (area.service_type)
       );
 
       const matchesDate = formatThaiDate((assessment.appointment_date).toDateString()).includes(
@@ -440,14 +441,14 @@ const Assessments: React.FC = () => {
                   {paginatedAssessments.map((assessment, index) => {
                     const allServiceTypes = [
                       ...new Set(
-                        assessment.work_areas.flatMap(
+                        assessment.assessment_areas.flatMap(
                           (area) => area.service_type
                         )
                       ),
                     ];
                     const allBuildingTypes = [
                       ...new Set(
-                        assessment.work_areas
+                        assessment.assessment_areas
                           .map((area) => area.building_type)
                           .filter(Boolean)
                       ),

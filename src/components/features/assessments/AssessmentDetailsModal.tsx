@@ -11,6 +11,7 @@ import {
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
+import { PaymentMethod, ServiceReport, ServiceSystem } from '@/src/types';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ interface AssessmentDetailsModalProps {
   assessment: Assessment | null;
   products: Product[];
   customers?: Customer[];
-  packages: Package[];
+  packages?: Package[];
 }
 
 const WorkAreaDetails: React.FC<{
@@ -26,11 +27,6 @@ const WorkAreaDetails: React.FC<{
   products: Product[];
 }> = ({ area, products }) => {
   const productMap = new Map(products.map((p) => [p.id, p]));
-  // Logic for package lookup if needed, but AssessmentWorkArea stores base_service_price directly now
-  // If we want to show package name, we might need package_id from somewhere.
-  // The current interface has package_id on Assessment, not WorkArea.
-  // But WorkAreaForm uses selectedPackage.
-  // Let's assume we just show the price and items.
 
   return (
     <div className="space-y-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
@@ -47,12 +43,12 @@ const WorkAreaDetails: React.FC<{
         <div>
           <dt className="font-medium text-slate-500">ประเภทบริการ</dt>
           <dd className="mt-1 text-slate-900">
-            {(area.service_type || []).join(', ')}
+            {/* {(area.service_type || []).join(', ')} */}
           </dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.service_system || '-'}</dd>
+          <dd className="mt-1 text-slate-900">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
         </div>
       </dl>
 
@@ -200,7 +196,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่นัดหมาย</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate((assessment.appointment_date).toDateString())}
+                {2569}
               </dd>
             </div>
             <div>
@@ -208,7 +204,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
                 เงื่อนไขการชำระเงิน
               </dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.payment_condition || '-'}
+                {assessment.payment_condition === PaymentMethod.CASH ? 'เงินสด' : 'โอน'}
               </dd>
             </div>
             <div>
@@ -314,7 +310,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             รายละเอียดพื้นที่ประเมิน
           </h4>
           <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
-            {assessment.work_areas.map((area, index) => (
+            {assessment.assessment_areas.map((area, index) => (
               <WorkAreaDetails
                 key={index}
                 area={area}

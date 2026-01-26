@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
+import { Input } from '../../common/FormControls';
 import { Warehouse, Product } from '@/src/types/entity/app.interface';
 
 interface SetWithdrawalLimitModalProps {
@@ -22,16 +23,19 @@ export const SetWithdrawalLimitModal: React.FC<
   const [errors, setErrors] = useState<{ [productId: string]: string }>({});
 
   const availableProducts = useMemo(() => {
-    // Return all products for now, or filter by category if available
-    return products;
+    // Show all canonical products of type 'สินค้า' from the main warehouse.
+    // This allows setting a withdrawal limit for any product, even if it's not currently in the vehicle's inventory.
+    // This is more robust and correctly filters for products from the main warehouse only.
+    return products.filter(
+      (p) => p.type === 'สินค้า' && p.warehouse === 'คลังหลัก'
+    );
   }, [products]);
 
   useEffect(() => {
     if (warehouse) {
       const initialLimits: { [productId: string]: number | '' } = {};
       availableProducts.forEach((p) => {
-        // Warehouse withdrawal limits not available in current entity, default to empty
-        initialLimits[p.id] = ''; 
+        initialLimits[p.id] = warehouse.withdrawalLimits?.[p.id] ?? '';
       });
       setLimits(initialLimits);
       setErrors({}); // Reset errors on open
@@ -97,78 +101,73 @@ export const SetWithdrawalLimitModal: React.FC<
             ยกเลิก
           </button>
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
+            form="limit-form"
+            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
             disabled={isSaveDisabled}
-            className={`py-2 px-4 rounded-lg text-white font-semibold ${
-              isSaveDisabled
-                ? 'bg-slate-300 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
+            title={isSaveDisabled ? 'กรุณาแก้ไขข้อมูลที่ไม่ถูกต้อง' : ''}
           >
             บันทึก
           </button>
         </div>
       }
     >
-      <div className="overflow-y-auto max-h-[60vh] pr-2">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50 sticky top-0">
-            <tr>
-               <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">
-                รหัสสินค้า
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">
-                ชื่อสินค้า
-              </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-slate-600 w-40">
-                จำนวนจำกัด (หน่วย)
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-slate-200">
-            {availableProducts.length > 0 ? (
-              availableProducts.map((product) => (
+      <form id="limit-form" onSubmit={handleSubmit}>
+        <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-[60vh] overflow-y-auto">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50 sticky top-0">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  สินค้า
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">
+                  คงคลัง (คลังหลัก)
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  จำกัดการเบิก (หน่วย)
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {availableProducts.map((product) => (
                 <tr key={product.id}>
-                  <td className="px-4 py-3 text-sm text-slate-500">
-                    {product.code}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-900 font-medium">
+                  <td className="px-4 py-3 text-sm text-slate-800 font-medium">
                     {product.name}
                   </td>
+                  <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                    {product.stock}
+                  </td>
                   <td className="px-4 py-3">
-                    <div className="relative">
-                       <input
-                          type="number"
-                          min="0"
-                          value={limits[product.id] ?? ''}
-                          onChange={(e) => handleLimitChange(product, e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                            errors[product.id]
-                              ? 'border-red-500 focus:ring-red-200'
-                              : 'border-slate-300 focus:ring-blue-200'
-                          }`}
-                          placeholder="ไม่จำกัด"
-                        />
-                         {errors[product.id] && (
-                        <p className="absolute text-xs text-red-500 mt-1">
+                    <div className="flex flex-col">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={limits[product.id] ?? ''}
+                        onChange={(e) =>
+                          handleLimitChange(product, e.target.value)
+                        }
+                        placeholder="ไม่จำกัด"
+                        className={`w-32 h-9 ${errors[product.id] ? 'border-red-500 focus:ring-red-500' : ''}`}
+                      />
+                      {errors[product.id] && (
+                        <p className="text-xs text-red-600 mt-1">
                           {errors[product.id]}
                         </p>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={3} className="px-4 py-8 text-center text-slate-500">
-                  ไม่พบสินค้า
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+          {availableProducts.length === 0 && (
+            <div className="text-center py-10 text-slate-500">
+              ไม่พบสินค้าในระบบ
+            </div>
+          )}
+        </div>
+      </form>
     </Modal>
   );
 };
+

@@ -7,12 +7,14 @@ import {
   Product,
   AssessmentWorkArea,
   Customer,
+  Category
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
-import { AsessmentStatus } from '@/src/types/enums/assessment';
-import { CustomerApi, PackageApi, ProductApi } from '@/src/api';
-import { PaymentMethod } from '@/src/types';
+import { AsessmentStatus, ServiceSystem } from '@/src/types/enums/assessment';
+import { CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
+import { PaymentMethod } from '@/src/types/enums/financial';
+import { CategoryType } from '@/src/types';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
@@ -40,6 +42,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const [customers, setCustomer] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([])
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -48,10 +51,29 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     null
   );
 
-  const paymentOptions = [
-    { value: 'CASH', label: 'เงินสด' },
-    { value: 'TRANSFER', label: 'โอนเงิน' }, // ใช้ TRANSFER ตามที่เราตกลงกัน
-  ];
+  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+    [PaymentMethod.CASH]: 'เงินสด',
+    [PaymentMethod.TRANSFER]: 'โอนเงิน',
+  };
+
+  const paymentOptions = Object.values(PaymentMethod).map((value) => ({
+    value,
+    label: PAYMENT_LABELS[value as PaymentMethod] || value,
+  }));
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await CategoryApi.getCategories({ 
+        page: 1, 
+        limit: 10, 
+        type: CategoryType.SERVICE 
+      })
+
+      setCategories(response.data)
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, [])
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -71,7 +93,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     try {
       const response = await PackageApi.getPackages({
         page: 1,
-        limit: 1000,
+        limit: 10,
       });
       setPackages(response.data);
     } catch (error) {
@@ -93,13 +115,14 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   useEffect(() => {
     const timer = setTimeout(() => {
+      fetchCategories();
       fetchCustomers();
       fetchPackages();
       fetchProducts();
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [fetchCustomers, fetchPackages, fetchProducts]);
+  }, [fetchCustomers, fetchPackages, fetchProducts, fetchCategories]);
 
   const maxAreaSize = useMemo(
     () => Math.max(0, ...workAreas.map((a) => a.area_size || 0)),
@@ -221,7 +244,6 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           area_name: areaToClear.area_name,
           building_type: '',
           area_size: undefined,
-          service_type: [],
           service_system: '',
           total_price: 0,
           products: [],
@@ -241,7 +263,6 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
-          // Reset logic if needed, or keep manual
           return { ...area };
         }
         const sortedConditions = [...(selectedPkg.package_price || [])].sort(
@@ -251,16 +272,19 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
+          const hasTermites = (area.service_type || []).some((catId) =>
+            categories.some((c) => c.id === catId && c.name.includes('กำจัดปลวก'))
+          );
           const priceToUse = hasTermites
             ? bestFit.price_with_termite
             : bestFit.price_without_termite;
           return {
             ...area,
             base_service_price: priceToUse,
+            package_price_id: bestFit.id,
           };
         } else {
-          return { ...area };
+          return { ...area, package_price_id: undefined };
         }
       })
     );
@@ -269,9 +293,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const newAssessment: Omit<Assessment, 'id'> = {
+    const newAssessment: Omit<Assessment, 'id' | 'code'> = {
       // Defaults
-      code: '',
       status: AsessmentStatus.DRAFT,
       created_by: 'ผู้ดูแลระบบ',
       updated_by: 'ผู้ดูแลระบบ',
@@ -280,7 +303,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       ...formData,
 
       // Overrides/Calculated
-      work_areas: workAreas as AssessmentWorkArea[],
+      assessment_areas: workAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
 
       // Ensure required fields
@@ -490,9 +513,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
             </FormField>
             <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
               <SearchableSelect
+                name='payment_condition'
                 options={paymentOptions}
                 value={formData.payment_condition || ''}
-                onChange={(val) => setFormData({ ...formData, payment_condition: val })}
+                onChange={(val: PaymentMethod) => setFormData({ ...formData, payment_condition: val })}
                 required
               />
             </FormField>
@@ -577,6 +601,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                   ? packages.find((p) => p.id === selectedPackageId)!
                   : null
               }
+              categories={categories}
             />
           ))}
         </div>

@@ -8,15 +8,8 @@ import {
 } from '@/src/types/entity/assessment.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { Product } from '@/src/types/entity/product.interface';
+import { Category, ServiceType } from '@/src/types';
 
-const SERVICE_TYPES = [
-  'กำจัดปลวก',
-  'กำจัดมด',
-  'กำจัดแมลงสาบ',
-  'กำจัดหนู',
-  'กำจัดยุง',
-  'อื่นๆ',
-];
 
 interface WorkAreaFormProps {
   area: Partial<AssessmentWorkArea>;
@@ -29,6 +22,7 @@ interface WorkAreaFormProps {
   onRemoveArea?: (index: number) => void;
   products: Product[];
   selectedPackage: Package | null;
+  categories: Category[]
 }
 
 export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
@@ -39,12 +33,18 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   onRemoveArea,
   products,
   selectedPackage,
+  categories
 }) => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
   );
+
+  const serviceLabels: Record<ServiceType, string> = {
+    [ServiceType.PREY]: 'เหยื่อ',
+    [ServiceType.CHEMICAL]: 'สารเคมีชีวภาพ',
+  };
 
   // Derived logic for package conditions
   const sortedConditions = useMemo(() => {
@@ -188,7 +188,6 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     return null;
   };
 
-  // Auto-calculate price when Area (condition) changes
   useEffect(() => {
     if (selectedPackage && area.area_size) {
       // Sort package prices by area_range ascending to find the best fit
@@ -196,28 +195,39 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         (a, b) => a.area_range - b.area_range
       );
 
-      // Find the first package price condition where the area range covers the input area size
-      // e.g. if input is 80, and ranges are 100, 200... it should match 100.
       const condition = sortedPrices.find(
         (c) => c.area_range >= area.area_size!
       );
 
       if (condition) {
-        const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
+        const hasTermites = (area.service_type || []).some((catId) =>
+          categories.some((c) => c.id === catId && c.name.includes('กำจัดปลวก'))
+        );
         const priceToUse = hasTermites
           ? condition.price_with_termite
           : condition.price_without_termite;
 
-        if (area.base_service_price !== priceToUse) {
-          onAreaChange(index, { ...area, base_service_price: priceToUse });
+        if (
+          area.base_service_price !== priceToUse ||
+          area.package_price_id !== condition.id
+        ) {
+          onAreaChange(index, {
+            ...area,
+            base_service_price: priceToUse,
+            package_price_id: condition.id,
+          });
         }
       } else {
-        if (area.base_service_price !== 0) {
-          onAreaChange(index, { ...area, base_service_price: 0 });
+        if (area.base_service_price !== 0 || area.package_price_id) {
+          onAreaChange(index, {
+            ...area,
+            base_service_price: 0,
+            package_price_id: undefined,
+          });
         }
       }
     }
-  }, [area.area_size, selectedPackage, area.service_type]);
+  }, [area.area_size, selectedPackage, area.service_type, categories]);
 
   const isPriceInvalid = useMemo(() => {
     if (!selectedCondition || typeof area.base_service_price !== 'number')
@@ -405,10 +415,14 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               name="service_system"
               value={area.service_system || ''}
               onChange={handleFieldChange}
+              required
             >
               <option value="">-- เลือกระบบ --</option>
-              <option>เหยื่อ</option>
-              <option>สารเคมีชีวภาพ</option>
+              {Object.values(ServiceType).map((type) => (
+                <option key={type} value={type}>
+                  {serviceLabels[type]}
+                </option>
+              ))}
             </Select>
           </FormField>
         </div>
@@ -510,11 +524,10 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                     {sortedConditions.map((condition, idx) => (
                       <label
                         key={condition.id || idx}
-                        className={`relative block p-3 border rounded-lg cursor-pointer ${
-                          selectedCondition?.id === condition.id
-                            ? 'border-primary ring-2 ring-primary bg-primary/5'
-                            : 'bg-white hover:border-slate-400'
-                        }`}
+                        className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
+                          ? 'border-primary ring-2 ring-primary bg-primary/5'
+                          : 'bg-white hover:border-slate-400'
+                          }`}
                       >
                         <input
                           type="radio"
@@ -540,14 +553,14 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
         <FormField label="ประเภทบริการ">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1 border p-2 rounded-md bg-white">
-            {SERVICE_TYPES.map((service) => (
-              <label key={service} className="flex items-center space-x-2">
+            {categories.map((category) => (
+              <label key={category.id} className="flex items-center space-x-2">
                 <input
+                  name='service-type'
                   type="checkbox"
-                  checked={(area.service_type || []).includes(service)}
-                  onChange={() => handleServiceTypeChange(service)}
+                  onChange={() => handleServiceTypeChange(category.id)}
                 />
-                <span className="text-sm text-slate-800">{service}</span>
+                <span className="text-sm text-slate-800">{category.name}</span>
               </label>
             ))}
           </div>
