@@ -11,7 +11,7 @@ import {
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
-import { AsessmentStatus, ServiceType } from '@/src/types/enums/assessment';
+import { AsessmentStatus, ServiceSystem } from '@/src/types/enums/assessment';
 import { CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { CategoryType } from '@/src/types';
@@ -155,8 +155,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       setWorkAreas([
         {
           area_name: 'พื้นที่ 1',
-          products: [],
-          service_type: [],
+          items: [],
         },
       ]);
       setSelectedPackageId(null);
@@ -213,8 +212,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           { length: count - currentCount },
           (_, i) => ({
             area_name: `พื้นที่ ${currentCount + i + 1}`,
-            products: [],
-            category_id: '',
+            items: [],
+            categories: [],
           })
         );
         return [...currentAreas, ...newAreas];
@@ -240,13 +239,13 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       const areaToClear = newAreas[index];
       if (areaToClear) {
         newAreas[index] = {
-          id: areaToClear.id,
-          area_name: areaToClear.area_name,
-          building_type: '',
-          area_size: undefined,
-          service_system: '',
+            id: areaToClear.id,
+            area_name: areaToClear.area_name,
+            area_size: undefined,
+          service_system: undefined,
           total_price: 0,
-          products: [],
+          items: [],
+          category_services: [],
         };
       }
       return newAreas;
@@ -272,8 +271,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const hasTermites = (area.service_type || []).some((catId) =>
-            categories.some((c) => c.id === catId && c.name.includes('กำจัดปลวก'))
+          const hasTermites = (area.category_services || []).some((cat) =>
+            categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
           );
           const priceToUse = hasTermites
             ? bestFit.price_with_termite

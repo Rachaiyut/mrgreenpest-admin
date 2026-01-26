@@ -2,7 +2,7 @@ import { AsessmentStatus, ServiceSystem } from '../enums/assessment';
 import { PaymentMethod } from '../enums/financial';
 import { IBase } from './base.interface';
 
-export interface AssessmentItem extends IBase {
+export interface AssessmentWorkAreaItem extends IBase {
   product_id: string;
   product_name: string,
   product_price: number,
@@ -10,16 +10,21 @@ export interface AssessmentItem extends IBase {
   total_price: number,
 }
 
+export interface AssessmentWorkAreaCategory extends IBase {
+  category_id: string
+}
+
 export interface AssessmentWorkArea extends IBase {
   package_price_id?: string,
+  building_type: string,
   area_name: string;
-  building_type?: string;
   service_system?: ServiceSystem;
   area_size?: number;
   perimeter?: number;
   base_service_price: number;
   total_price: number;
-  products: AssessmentItem[];
+  items: AssessmentWorkAreaItem[];
+  category_services: AssessmentWorkAreaCategory[];
 }
 
 export interface Assessment extends IBase {

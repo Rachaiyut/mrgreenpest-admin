@@ -11,7 +11,7 @@ import {
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
-import { PaymentMethod, ServiceReport, ServiceType } from '@/src/types';
+import { PaymentMethod, ServiceReport, ServiceSystem } from '@/src/types';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -48,7 +48,7 @@ const WorkAreaDetails: React.FC<{
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.service_system === ServiceType.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
+          <dd className="mt-1 text-slate-900">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
         </div>
       </dl>
 
@@ -57,7 +57,7 @@ const WorkAreaDetails: React.FC<{
           ราคาบริการหลัก: ฿{(area.base_service_price || 0).toLocaleString()}
         </h6>
 
-        {area.products && area.products.length > 0 && (
+        {area.items && area.items.length > 0 && (
           <div className="overflow-x-auto border border-slate-200 rounded-md">
             <table className="min-w-full text-sm">
               <thead className="bg-slate-50">
@@ -77,10 +77,10 @@ const WorkAreaDetails: React.FC<{
                 </tr>
               </thead>
               <tbody>
-                {area.products.map((item, index) => {
+                {area.items.map((item, index) => {
                   const product = productMap.get(item.product_id);
                   const quantity = item.quantity || 0;
-                  const price = item.price || 0;
+                  const price = item.product_price || 0;
                   const total = quantity * price;
 
                   return (
