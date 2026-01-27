@@ -21,7 +21,7 @@ import {
   Assessment,
   Status,
   InstallmentPlan,
-} from '../../constants/types';
+} from '../../types';
 import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';

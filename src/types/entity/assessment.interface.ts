@@ -1,48 +1,53 @@
-import { AsessmentStatus } from '../enums/assessment';
+import { AsessmentStatus, ServiceSystem } from '../enums/assessment';
+import { PaymentMethod } from '../enums/financial';
+import { IBase } from './base.interface';
 
-export interface AssessmentItem {
-  id: string;
-  product_id?: string;
-  quantity: number;
-  price: number;
+export interface AssessmentWorkAreaItem extends IBase {
+  product_id: string;
+  product_name: string,
+  product_price: number,
+  quantity: number,
+  total_price: number,
 }
 
-export interface AssessmentWorkArea {
-  id: string;
-  name: string;
-  building_type?: string;
-  area_size: number;
-  linear_meters: number;
-  service_type: string[];
-  service_system?: string;
-  estimated_cost: number;
-  items: AssessmentItem[];
-  package_id?: string;
-  selected_condition_id?: string;
-  package_price?: number;
+export interface AssessmentWorkAreaCategory extends IBase {
+  category_id: string
+  name?: string
 }
 
-export interface Assessment {
-  id: string;
-  created_at: string;
+export interface AssessmentWorkArea extends IBase {
+  package_price_id?: string,
+  building_type: string,
+  area_name: string;
+  service_system?: ServiceSystem;
+  area_size?: number;
+  perimeter?: number;
+  base_service_price: number;
+  total_price: number;
+  items: AssessmentWorkAreaItem[];
+  category_services: AssessmentWorkAreaCategory[];
+}
+
+export interface Assessment extends IBase {
   customer_id: string;
-  customer_name: string;
+  code: string;
+  package_id?: string;
+  appointment_date: Date;
   address: string;
-  subdistrict: string;
+  sub_district: string;
   district: string;
   province: string;
-  postal_code: string;
-  scheduled_at: string;
-  work_areas: AssessmentWorkArea[];
-  total_estimated_cost: number;
+  zipcode: string;
+  zone: string;
+  route_group: string;
+  road_line: string;
+  sequence: string;
+  google_map_link: string;
   status: AsessmentStatus;
+  payment_condition: PaymentMethod;
+  total_price: number;
   created_by: string;
   updated_by: string;
-  google_map_link?: string;
-  location_type?: string;
-  payment_conditions?: string;
-  zone?: string;
-  group?: string;
-  road_line?: string;
-  sequence?: string;
+  assessment_areas: AssessmentWorkArea[];
 }
+

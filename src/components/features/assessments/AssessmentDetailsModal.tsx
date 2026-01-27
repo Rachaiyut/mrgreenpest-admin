@@ -4,32 +4,34 @@ import { Button } from '../../common/FormControls';
 import {
   Assessment,
   AssessmentWorkArea,
+  AssessmentWorkAreaItem,
+  Customer,
+  Package,
   Product,
 } from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
+import { PaymentMethod, ServiceReport, ServiceSystem } from '@/src/types';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   assessment: Assessment | null;
-  products: Product[];
+  products: AssessmentWorkAreaItem[];
+  customers?: Customer[];
+  packages?: Package[];
 }
 
 const WorkAreaDetails: React.FC<{
   area: AssessmentWorkArea;
-  products: Product[];
+  products: AssessmentWorkAreaItem[];
 }> = ({ area, products }) => {
   const productMap = new Map(products.map((p) => [p.id, p]));
-  const selectedPackage = products.find((p) => p.id === area.package_id);
-  const selectedCondition = selectedPackage?.conditions?.find(
-    (c) => c.id === area.selected_condition_id
-  );
 
   return (
     <div className="space-y-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
-      <h5 className="text-md font-bold text-primary">{area.name}</h5>
+      <h5 className="text-md font-bold text-primary">{area.area_name}</h5>
       <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
         <div>
           <dt className="font-medium text-slate-500">ประเภทสิ่งปลูกสร้าง</dt>
@@ -42,104 +44,81 @@ const WorkAreaDetails: React.FC<{
         <div>
           <dt className="font-medium text-slate-500">ประเภทบริการ</dt>
           <dd className="mt-1 text-slate-900">
-            {area.service_type.join(', ')}
+            {/* {(area.service_type || []).join(', ')} */}
           </dd>
         </div>
         <div>
           <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.service_system || '-'}</dd>
+          <dd className="mt-1 text-slate-900">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
         </div>
       </dl>
 
-      {(area.package_id || (area.items && area.items.length > 0)) && (
-        <div className="pt-4 border-t">
-          <h6 className="font-semibold text-slate-700 mb-2">
-            รายการและราคาสำหรับพื้นที่นี้
-          </h6>
-          {area.package_id && selectedPackage && (
-            <div className="mb-2">
-              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                <div>
-                  <dt className="font-medium text-slate-500">แพ็กเกจ</dt>
-                  <dd className="mt-1 text-slate-900">
-                    {selectedPackage.name}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-slate-500">เงื่อนไข</dt>
-                  <dd className="mt-1 text-slate-900">
-                    {selectedCondition
-                      ? `ไม่เกิน ${selectedCondition.max_area} ตร.ม.`
-                      : '-'}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          )}
+      <div className="pt-4 border-t">
+        <h6 className="font-semibold text-slate-700 mb-2">
+          ราคาบริการหลัก: ฿{(area.base_service_price || 0).toLocaleString()}
+        </h6>
 
-          {area.items && area.items.length > 0 && (
-            <div className="overflow-x-auto border border-slate-200 rounded-md">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      สินค้า/บริการเพิ่มเติม
-                    </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
-                      จำนวน
-                    </th>
-                    <th className="p-2 text-right font-medium text-slate-600">
-                      ราคา/หน่วย
-                    </th>
-                    <th className="p-2 text-right font-medium text-slate-600">
-                      ราคารวม
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {area.items.map((item, index) => {
-                    const product = productMap.get(item.product_id);
-                    return (
-                      <tr
-                        key={index}
-                        className="border-b border-slate-200 last:border-b-0"
-                      >
-                        <td className="p-2 font-medium text-slate-800">
-                          {product?.name || 'N/A'}
-                        </td>
-                        <td className="p-2 text-center">{item.quantity}</td>
-                        <td className="p-2 text-right">
-                          ฿
-                          {item.price.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="p-2 text-right">
-                          ฿
-                          {(item.price * item.quantity).toLocaleString(
-                            'th-TH',
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+        {area.items && area.items.length > 0 && (
+          <div className="overflow-x-auto border border-slate-200 rounded-md">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    สินค้า/บริการเพิ่มเติม
+                  </th>
+                  <th className="p-2 text-center font-medium text-slate-600">
+                    จำนวน
+                  </th>
+                  <th className="p-2 text-right font-medium text-slate-600">
+                    ราคาต่อหน่วย
+                  </th>
+                  <th className="p-2 text-right font-medium text-slate-600">
+                    รวม
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {area.items.map((item, index) => {
+                  const productName = item.product_name
+                  const quantity = item.quantity || 0;
+                  const price = item.product_price || 0;
+                  const total = quantity * price;
+
+                  return (
+                    <tr
+                      key={index}
+                      className="border-b border-slate-200 last:border-b-0"
+                    >
+                      <td className="p-2 font-medium text-slate-800">
+                        {productName || 'N/A'}
+                      </td>
+                      <td className="p-2 text-center">{quantity}</td>
+                      <td className="p-2 text-right">
+                        {price.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="p-2 text-right">
+                        {total.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
       <div className="text-right font-semibold text-slate-800 pt-2 border-t">
         ยอดรวมพื้นที่นี้: ฿
-        {/* {area.estimatedCost.toLocaleString('th-TH', {
+        {(area.total_price || 0).toLocaleString('th-TH', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })} */}
+        })}
       </div>
     </div>
   );
@@ -150,14 +129,22 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
   onClose,
   assessment,
   products,
+  customers = [],
+  packages = [],
 }) => {
   if (!isOpen || !assessment) return null;
+
+  const customerName = customers.find((c) => c.id === assessment.customer_id)
+    ? `${customers.find((c) => c.id === assessment.customer_id)?.first_name} ${customers.find((c) => c.id === assessment.customer_id)?.last_name}`
+    : assessment.customer_id;
+
+  const selectedPackage = packages.find((p) => p.id === assessment.package_id);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบประเมิน: ${assessment.id}`}
+      title={`รายละเอียดใบประเมิน: ${assessment.code || assessment.id}`}
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -165,7 +152,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             ยอดรวมทั้งหมด:{' '}
             <span className="text-primary">
               ฿
-              {assessment.total_estimated_cost.toLocaleString('th-TH', {
+              {assessment.total_price.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -186,13 +173,13 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">รหัสใบประเมิน</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {assessment.id}
+                {assessment.code || assessment.id}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ลูกค้า</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {assessment.customer_name}
+                {customerName}
               </dd>
             </div>
             <div>
@@ -210,7 +197,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่นัดหมาย</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(assessment.scheduled_at)}
+                {formatThaiDate((assessment.appointment_date).toLocaleString())}
               </dd>
             </div>
             <div>
@@ -218,7 +205,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
                 เงื่อนไขการชำระเงิน
               </dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.payment_conditions || '-'}
+                {assessment.payment_condition === PaymentMethod.CASH ? 'เงินสด' : 'โอน'}
               </dd>
             </div>
             <div>
@@ -246,7 +233,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">แขวง/ตำบล</dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.subdistrict || '-'}
+                {assessment.sub_district || '-'}
               </dd>
             </div>
             <div>
@@ -264,7 +251,7 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">รหัสไปรษณีย์</dt>
               <dd className="mt-1 text-slate-900">
-                {assessment.postal_code || '-'}
+                {assessment.zipcode || '-'}
               </dd>
             </div>
           </dl>
@@ -300,7 +287,9 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             </div>
             <div>
               <dt className="font-medium text-slate-500">Group</dt>
-              <dd className="mt-1 text-slate-900">{assessment.group || '-'}</dd>
+              <dd className="mt-1 text-slate-900">
+                {assessment.route_group || '-'}
+              </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">สายถนนที่</dt>
@@ -322,8 +311,12 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
             รายละเอียดพื้นที่ประเมิน
           </h4>
           <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
-            {assessment.work_areas.map((area) => (
-              <WorkAreaDetails key={area.id} area={area} products={products} />
+            {assessment.assessment_areas.map((area, index) => (
+              <WorkAreaDetails
+                key={index}
+                area={area}
+                products={products}
+              />
             ))}
           </div>
         </div>
@@ -331,5 +324,3 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
     </Modal>
   );
 };
-
-

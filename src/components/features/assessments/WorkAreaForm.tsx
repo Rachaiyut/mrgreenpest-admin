@@ -4,18 +4,13 @@ import { ProductSelectionModal } from '../../features/products/ProductSelectionM
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import {
   AssessmentWorkArea,
-  AssessmentItem,
+  AssessmentWorkAreaItem,
+  AssessmentWorkAreaCategory,
 } from '@/src/types/entity/assessment.interface';
-import { Product } from '@/src/types/entity/package.interface';
+import { Package } from '@/src/types/entity/package.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { Category, ServiceSystem } from '@/src/types';
 
-const SERVICE_TYPES = [
-  'กำจัดปลวก',
-  'กำจัดมด',
-  'กำจัดแมลงสาบ',
-  'กำจัดหนู',
-  'กำจัดยุง',
-  'อื่นๆ',
-];
 
 interface WorkAreaFormProps {
   area: Partial<AssessmentWorkArea>;
@@ -27,7 +22,8 @@ interface WorkAreaFormProps {
   onClearArea: (index: number) => void;
   onRemoveArea?: (index: number) => void;
   products: Product[];
-  selectedPackage: Product | null;
+  selectedPackage: Package | null;
+  categories: Category[]
 }
 
 export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
@@ -38,6 +34,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   onRemoveArea,
   products,
   selectedPackage,
+  categories
 }) => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const productMap = useMemo(
@@ -45,61 +42,218 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     [products]
   );
 
+  const serviceLabels: Record<ServiceSystem, string> = {
+    [ServiceSystem.PREY]: 'เหยื่อ',
+    [ServiceSystem.CHEMICAL]: 'สารเคมีชีวภาพ',
+  };
+
   // Derived logic for package conditions
   const sortedConditions = useMemo(() => {
     if (!selectedPackage) return [];
-    return [...(selectedPackage.conditions || [])].sort(
-      (a, b) => a.max_area - b.max_area
+    return [...(selectedPackage.package_price || [])].sort(
+      (a, b) => a.area_range - b.area_range
     );
   }, [selectedPackage]);
 
   const selectedCondition = useMemo(() => {
     if (!selectedPackage || !area.area_size) return null;
-    return sortedConditions.find((c) => c.max_area >= area.area_size!) || null;
+    return (
+      sortedConditions.find((c) => c.area_range >= area.area_size!) || null
+    );
   }, [selectedPackage, area.area_size, sortedConditions]);
 
-  // Auto-calculate price when Area (condition) changes
+  const renderPriceSection = () => {
+    if (!selectedPackage) {
+      return (
+        <div className="pt-4 border-t">
+          <FormField label="ราคาบริการหลัก" htmlFor={`manual-price-${index}`}>
+            <Input
+              id={`manual-price-${index}`}
+              type="number"
+              value={
+                area.base_service_price === undefined
+                  ? ''
+                  : area.base_service_price
+              }
+              onChange={(e) => {
+                onAreaChange(index, {
+                  ...area,
+                  base_service_price:
+                    e.target.value === ''
+                      ? undefined
+                      : parseFloat(e.target.value),
+                });
+              }}
+              step="0.01"
+              placeholder="0.00"
+            />
+          </FormField>
+        </div>
+      );
+    }
+
+    if (selectedCondition) {
+      return (
+        <div className="pt-4 border-t">
+          <h4 className="text-base font-semibold text-slate-700">
+            แพ็กเกจที่เลือก
+          </h4>
+          <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-2">
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold text-slate-800">
+                  {selectedPackage.name}
+                </div>
+                <div className="text-xs text-slate-500 mt-1">
+                  {selectedPackage.visit_limit} ครั้ง /{' '}
+                  {selectedPackage.contract_period} (เงื่อนไขที่ใช้: ไม่เกิน{' '}
+                  {selectedCondition.area_range} ตร.ม.)
+                </div>
+              </div>
+              <div className="flex flex-col items-end">
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-slate-700">฿</span>
+                  <Input
+                    type="number"
+                    className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
+                    value={
+                      area.base_service_price === undefined
+                        ? ''
+                        : area.base_service_price
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      onAreaChange(index, {
+                        ...area,
+                        base_service_price:
+                          e.target.value === ''
+                            ? undefined
+                            : parseFloat(e.target.value),
+                      });
+                    }}
+                    step="0.01"
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                {isPriceInvalid && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ต่ำกว่าราคาขั้นต่ำ (฿
+                    {selectedCondition?.minimum_price.toLocaleString('th-TH')})
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (area.area_size && area.area_size > 0) {
+      return (
+        <div className="pt-4 border-t">
+          <FormField
+            label="ราคาบริการแพ็กเกจ"
+            htmlFor={`manual-package-price-${index}`}
+          >
+            <Input
+              id={`manual-package-price-${index}`}
+              type="number"
+              value={
+                area.base_service_price === undefined
+                  ? ''
+                  : area.base_service_price
+              }
+              onChange={(e) => {
+                onAreaChange(index, {
+                  ...area,
+                  base_service_price:
+                    e.target.value === ''
+                      ? undefined
+                      : parseFloat(e.target.value),
+                });
+              }}
+              step="0.01"
+              placeholder="0.00"
+              required
+            />
+          </FormField>
+          <p className="text-xs text-amber-600 mt-1">
+            ขนาดพื้นที่ไม่อยู่ในเงื่อนไขแพ็กเกจ กรุณาระบุราคาเอง
+          </p>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     if (selectedPackage && area.area_size) {
-      const condition = sortedConditions.find(
-        (c) => c.max_area >= area.area_size!
+      // Sort package prices by area_range ascending to find the best fit
+      const sortedPrices = [...(selectedPackage.package_price || [])].sort(
+        (a, b) => a.area_range - b.area_range
       );
-      if (condition) {
-        const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
-        const priceToUse = hasTermites
-          ? condition.first_offer_price_with_termites
-          : condition.first_offer_price_no_termites;
 
-        if (area.package_price !== priceToUse) {
-          onAreaChange(index, { ...area, package_price: priceToUse });
+      const condition = sortedPrices.find(
+        (c) => c.area_range >= area.area_size!
+      );
+
+      if (condition) {
+        const hasTermites = (area.category_services || []).some((cat) =>
+          categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+        );
+        const priceToUse = hasTermites
+          ? condition.price_with_termite
+          : condition.price_without_termite;
+
+        if (
+          area.base_service_price !== priceToUse ||
+          area.package_price_id !== condition.id
+        ) {
+          onAreaChange(index, {
+            ...area,
+            base_service_price: priceToUse,
+            package_price_id: condition.id,
+          });
+        }
+      } else {
+        if (area.base_service_price !== 0 || area.package_price_id) {
+          onAreaChange(index, {
+            ...area,
+            base_service_price: 0,
+            package_price_id: undefined,
+          });
         }
       }
     }
-  }, [area.area_size, selectedPackage, area.service_type, sortedConditions]);
+  }, [area.area_size, selectedPackage, area.category_services, categories]);
 
   const isPriceInvalid = useMemo(() => {
-    if (!selectedCondition || typeof area.package_price !== 'number')
+    if (!selectedCondition || typeof area.base_service_price !== 'number')
       return false;
-    return area.package_price < selectedCondition.min_price;
-  }, [selectedCondition, area.package_price]);
+    return area.base_service_price < selectedCondition.minimum_price;
+  }, [selectedCondition, area.base_service_price]);
 
   useEffect(() => {
     const itemsCost = (area.items || []).reduce(
-      (sum, item) => sum + item.price * item.quantity,
+      (sum, item) =>
+        sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
       0
     );
-    const packageCost = area.package_price || 0;
+    const packageCost = Number(area.base_service_price) || 0;
     const newTotalCost = packageCost + itemsCost;
 
-    const currentEstimatedCost = area.estimated_cost || 0;
+    const currentEstimatedCost = area.total_price || 0;
 
     if (currentEstimatedCost !== newTotalCost) {
-      onAreaChange(index, { ...area, estimated_cost: newTotalCost });
+      onAreaChange(index, { ...area, total_price: newTotalCost });
     }
   }, [
     area.items,
-    area.package_price,
-    area.estimated_cost,
+    area.base_service_price,
+    area.total_price,
     index,
     onAreaChange,
   ]);
@@ -110,7 +264,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     const { name, value } = e.target;
     const updatedArea: Partial<AssessmentWorkArea> = { ...area };
 
-    if (name === 'area_size' || name === 'linear_meters') {
+    if (name === 'area_size' || name === 'perimeter') {
       updatedArea[name] = value === '' ? undefined : parseFloat(value);
     } else {
       (updatedArea as any)[name] = value;
@@ -124,49 +278,93 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     onAreaChange(index, { ...area, area_size: size });
   };
 
-  const handleServiceTypeChange = (service: string) => {
-    const currentTypes = area.service_type || [];
-    const newTypes = currentTypes.includes(service)
-      ? currentTypes.filter((s) => s !== service)
-      : [...currentTypes, service];
-    onAreaChange(index, { ...area, service_type: newTypes });
+  const handleServiceTypeChange = (categoryId: string) => {
+    const currentCategories = area.category_services || [];
+    const exists = currentCategories.some((c) => c.category_id === categoryId);
+
+    const newCategories = exists
+      ? currentCategories.filter((c) => c.category_id !== categoryId)
+      : [...currentCategories, { category_id: categoryId } as any];
+
+    onAreaChange(index, { ...area, category_services: newCategories });
   };
 
   const handleAddProducts = (productIds: string[]) => {
-    const newItems: AssessmentItem[] = productIds.map((pid) => {
+    const newItems: AssessmentWorkAreaItem[] = productIds.map((pid) => {
       const product = productMap.get(pid);
       return {
-        id: `item-${Date.now()}-${Math.random()}`,
         product_id: pid,
         quantity: 1,
-        price: product?.price || 0,
-      };
+        product_name: product?.name || '',
+        product_price: product?.cost_price ? Number(product.cost_price) : 0,
+        total_price: product?.cost_price ? Number(product.cost_price) : 0,
+      } as any;
     });
+
+    const currentItems = [...(area.items || []), ...newItems];
+
+    // Calculate new total cost immediately
+    const productsTotal = currentItems.reduce(
+      (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
+      0
+    );
+    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
+
     onAreaChange(index, {
       ...area,
-      items: [...(area.items || []), ...newItems],
+      items: currentItems,
+      total_price: newTotalPrice,
     });
+    setIsProductModalOpen(false);
   };
 
   const handleItemChange = (
     itemIndex: number,
-    field: keyof Omit<AssessmentItem, 'id'>,
-    value: string | number
+    field: keyof AssessmentWorkAreaItem,
+    value: any
   ) => {
-    const newItems = [...(area.items || [])];
-    const item = { ...newItems[itemIndex] };
-    (item as any)[field] = value;
-    newItems[itemIndex] = item;
-    onAreaChange(index, { ...area, items: newItems });
+    const currentItems = area.items || [];
+    const newItems = currentItems.map((item, idx) => {
+      if (idx === itemIndex) {
+        return { ...item, [field]: value };
+      }
+      return item;
+    });
+
+    // Recalculate total
+    const productsTotal = newItems.reduce(
+      (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
+      0
+    );
+    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
+
+    onAreaChange(index, {
+      ...area,
+      items: newItems,
+      total_price: newTotalPrice,
+    });
   };
 
   const handleRemoveItem = (itemIndex: number) => {
-    const newItems = (area.items || []).filter((_, i) => i !== itemIndex);
-    onAreaChange(index, { ...area, items: newItems });
+    const currentItems = area.items || [];
+    const newItems = currentItems.filter((_, idx) => idx !== itemIndex);
+
+    // Recalculate total
+    const productsTotal = newItems.reduce(
+      (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
+      0
+    );
+    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
+
+    onAreaChange(index, {
+      ...area,
+      items: newItems,
+      total_price: newTotalPrice,
+    });
   };
 
   const [measurementType, setMeasurementType] = useState<'sqm' | 'meter'>(
-    area.linear_meters && !area.area_size ? 'meter' : 'sqm'
+    area.perimeter && !area.area_size ? 'meter' : 'sqm'
   );
 
   const handleMeasurementTypeChange = (type: 'sqm' | 'meter') => {
@@ -203,8 +401,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
           htmlFor={`areaName-${index}`}
         >
           <Input
-            name="name"
-            value={area.name || ''}
+            name="area_name"
+            value={area.area_name || ''}
             onChange={handleFieldChange}
             placeholder="เช่น บ้าน A-1, อาคาร Lobby"
             required
@@ -228,10 +426,14 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               name="service_system"
               value={area.service_system || ''}
               onChange={handleFieldChange}
+              required
             >
               <option value="">-- เลือกระบบ --</option>
-              <option>เหยื่อ</option>
-              <option>สารเคมีชีวภาพ</option>
+              {Object.values(ServiceSystem).map((type) => (
+                <option key={type} value={type}>
+                  {serviceLabels[type]}
+                </option>
+              ))}
             </Select>
           </FormField>
         </div>
@@ -273,16 +475,21 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
           </div>
 
           {measurementType === 'meter' && (
-            <FormField label="พื้นที่ (เมตร)" htmlFor={`linearMeters-${index}`}>
-              <Input
-                id={`linearMeters-${index}`}
-                name="linear_meters"
-                type="number"
-                value={area.linear_meters || ''}
-                onChange={handleFieldChange}
-                placeholder="ความยาวรอบรูป (ม.)"
-                required
-              />
+            <FormField label="พื้นที่ (ม.)" htmlFor={`linearMeters-${index}`}>
+              <div className="relative">
+                <Input
+                  id={`linearMeters-${index}`}
+                  name="perimeter"
+                  type="number"
+                  value={area.perimeter || ''}
+                  onChange={handleFieldChange}
+                  placeholder="ความยาวรอบรูป (ม.)"
+                  required
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">ม.</span>
+                </div>
+              </div>
             </FormField>
           )}
 
@@ -291,30 +498,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 พื้นที่ (ตร.ม.) <span className="text-red-500">*</span>
               </label>
-              {selectedPackage && sortedConditions.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {sortedConditions.map((condition) => (
-                    <label
-                      key={condition.id}
-                      className={`flex items-center p-2 border rounded-md cursor-pointer transition-colors ${area.area_size === condition.max_area ? 'bg-primary/10 border-primary ring-1 ring-primary' : 'bg-slate-50 hover:bg-slate-100'}`}
-                    >
-                      <input
-                        type="radio"
-                        name={`areaSizeRadio-${index}`}
-                        value={condition.max_area}
-                        checked={area.area_size === condition.max_area}
-                        onChange={() =>
-                          handleAreaSizeRadioChange(condition.max_area)
-                        }
-                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300"
-                      />
-                      <span className="ml-2 text-sm text-slate-700">
-                        ไม่เกิน {condition.max_area} ตร.ม.
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
+
+              {/* Always show input for custom area size */}
+              <div className="relative mb-3">
                 <Input
                   name="area_size"
                   type="number"
@@ -323,6 +509,54 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                   placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
                   required
                 />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">ตร.ม.</span>
+                </div>
+              </div>
+
+              {/* Show current package price if calculated */}
+              {selectedPackage && area.area_size && area.area_size > 0 && (
+                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
+                  <span className="text-sm text-blue-800 font-medium">
+                    ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
+                  </span>
+                  <span className="text-lg text-blue-900 font-bold">
+                    ฿{(area.base_service_price || 0).toLocaleString()}
+                  </span>
+                </div>
+              )}
+
+              {selectedPackage && sortedConditions.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-slate-500 mb-2">
+                    หรือเลือกจากขนาดมาตรฐาน:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {sortedConditions.map((condition, idx) => (
+                      <label
+                        key={condition.id || idx}
+                        className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
+                          ? 'border-primary ring-2 ring-primary bg-primary/5'
+                          : 'bg-white hover:border-slate-400'
+                          }`}
+                      >
+                        <input
+                          type="radio"
+                          name={`areaSize-${index}`}
+                          value={condition.area_range}
+                          className="sr-only"
+                          onChange={() =>
+                            handleAreaSizeRadioChange(condition.area_range)
+                          }
+                          checked={area.area_size === condition.area_range}
+                        />
+                        <div className="font-semibold text-slate-800">
+                          {condition.area_range.toLocaleString()} ตร.ม.
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -330,129 +564,21 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
         <FormField label="ประเภทบริการ">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1 border p-2 rounded-md bg-white">
-            {SERVICE_TYPES.map((service) => (
-              <label key={service} className="flex items-center space-x-2">
+            {categories.map((category) => (
+              <label key={category.id} className="flex items-center space-x-2">
                 <input
+                  name='service-type'
                   type="checkbox"
-                  checked={(area.service_type || []).includes(service)}
-                  onChange={() => handleServiceTypeChange(service)}
+                  checked={area.category_services?.some((c) => c.category_id === category.id) || false}
+                  onChange={() => handleServiceTypeChange(category.id)}
                 />
-                <span className="text-sm text-slate-800">{service}</span>
+                <span className="text-sm text-slate-800">{category.name}</span>
               </label>
             ))}
           </div>
         </FormField>
 
-        {selectedPackage ? (
-          selectedCondition ? (
-            <div className="pt-4 border-t">
-              <h4 className="text-base font-semibold text-slate-700">
-                แพ็กเกจที่เลือก
-              </h4>
-              <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-semibold text-slate-800">
-                      {selectedPackage.name}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {selectedPackage.number_of_visits} ครั้ง /{' '}
-                      {selectedPackage.contract_duration} (เงื่อนไขที่ใช้:
-                      ไม่เกิน {selectedCondition.max_area} ตร.ม.)
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold text-slate-700">฿</span>
-                      <Input
-                        type="number"
-                        className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
-                        value={
-                          area.package_price === undefined
-                            ? ''
-                            : area.package_price
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          onAreaChange(index, {
-                            ...area,
-                            package_price:
-                              e.target.value === ''
-                                ? undefined
-                                : parseFloat(e.target.value),
-                          });
-                        }}
-                        step="0.01"
-                        placeholder="0.00"
-                        required
-                      />
-                    </div>
-                    {isPriceInvalid && (
-                      <p className="text-xs text-red-600 mt-1">
-                        ต่ำกว่าราคาขั้นต่ำ (฿
-                        {selectedCondition?.min_price.toLocaleString('th-TH')})
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : area.area_size && area.area_size > 0 ? (
-            <div className="pt-4 border-t">
-              <FormField
-                label="ราคาบริการแพ็กเกจ"
-                htmlFor={`manual-package-price-${index}`}
-              >
-                <Input
-                  id={`manual-package-price-${index}`}
-                  type="number"
-                  value={
-                    area.package_price === undefined ? '' : area.package_price
-                  }
-                  onChange={(e) => {
-                    onAreaChange(index, {
-                      ...area,
-                      package_price:
-                        e.target.value === ''
-                          ? undefined
-                          : parseFloat(e.target.value),
-                    });
-                  }}
-                  step="0.01"
-                  placeholder="0.00"
-                  required
-                />
-              </FormField>
-              <p className="text-xs text-amber-600 mt-1">
-                ขนาดพื้นที่ไม่อยู่ในเงื่อนไขแพ็กเกจ กรุณาระบุราคาเอง
-              </p>
-            </div>
-          ) : null
-        ) : (
-          <div className="pt-4 border-t">
-            <FormField label="ราคาบริการหลัก" htmlFor={`manual-price-${index}`}>
-              <Input
-                id={`manual-price-${index}`}
-                type="number"
-                value={
-                  area.package_price === undefined ? '' : area.package_price
-                }
-                onChange={(e) => {
-                  onAreaChange(index, {
-                    ...area,
-                    package_price:
-                      e.target.value === ''
-                        ? undefined
-                        : parseFloat(e.target.value),
-                  });
-                }}
-                step="0.01"
-                placeholder="0.00"
-              />
-            </FormField>
-          </div>
-        )}
+        {renderPriceSection()}
 
         <div className="border border-slate-200 p-2 rounded-lg bg-white">
           <div className="flex justify-between items-center mb-2">
@@ -502,7 +628,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                         <td className="p-1 text-center text-slate-600">
                           {itemIndex + 1}
                         </td>
-                        <td className="p-1 text-slate-600">{product?.id}</td>
+                        <td className="p-1 text-slate-600">{product?.code}</td>
                         <td className="p-1 font-medium text-slate-800">
                           {product?.name}
                         </td>
@@ -514,7 +640,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                               handleItemChange(
                                 itemIndex,
                                 'quantity',
-                                parseInt(e.target.value)
+                                parseInt(e.target.value) || 0
                               )
                             }
                             className="h-8 text-center"
@@ -526,13 +652,12 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                         </td>
                         <td className="p-1 w-32 text-right text-slate-800">
                           ฿
-                          {(item.price * (item.quantity || 0)).toLocaleString(
-                            'th-TH',
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            }
-                          )}
+                          {(
+                            (item.product_price || 0) * (item.quantity || 0)
+                          ).toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
                         </td>
                         <td className="p-1 w-10 text-center">
                           <button
@@ -559,7 +684,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         </div>
         <div className="text-right font-semibold text-slate-800 pt-2 border-t">
           ยอดรวมพื้นที่นี้: ฿
-          {(area.estimated_cost || 0).toLocaleString('th-TH', {
+          {(area.total_price || 0).toLocaleString('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
@@ -575,4 +700,3 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     </>
   );
 };
-

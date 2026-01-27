@@ -29,5 +29,5 @@ export interface Customer extends IBase {
 
 
 export interface CustomerQuery extends IBaseQuery {
-  type: string
+  type?: string
 }

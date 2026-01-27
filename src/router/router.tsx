@@ -24,6 +24,8 @@ import { useData } from '../contexts/DataContext';
 // Lazy Imports for Login only (since it's outside the main routes)
 const Login = lazy(() => import('../pages/login/Login'));
 
+import { ProtectedRoute } from './ProtectedRoute';
+
 interface AppRouterProps {
   isAuthenticated: boolean;
   onLogin: (username: string, remember: boolean) => void;
@@ -108,7 +110,11 @@ export const AppRouter = (props: AppRouterProps) => {
                   <Route
                     key={route.path + index}
                     path={route.path}
-                    element={route.element}
+                    element={
+                      <ProtectedRoute allowedRoles={route.roles}>
+                        {route.element}
+                      </ProtectedRoute>
+                    }
                   />
                 ))}
               </Routes>

@@ -20,7 +20,7 @@ import {
   UserWallet,
 } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { Product } from '@/src/types/entity/package.interface';
+import { Product } from '@/src/types/entity/product.interface';
 import {
   Warehouse,
   GoodsReceipt,
@@ -50,8 +50,8 @@ import { TransferApi } from '@/src/api/transfer';
 import { StockAdjustmentApi } from '@/src/api/stock-adjustment';
 import { ProductReturnApi } from '@/src/api/product-return';
 import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
-import { Category as CategoryApi } from '@/src/api/category';
-import { Package as PackageApi } from '@/src/api/package';
+import { CategoryApi } from '@/src/api/category';
+import { PackageApi } from '@/src/api/package';
 
 export interface DataContextType {
   users: User[];
@@ -174,65 +174,65 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   >([]);
 
   const refreshData = async () => {
-    try {
-      const [
-        usersRes,
-        jobsRes,
-        assessmentsRes,
-        contractsRes,
-        quotationsRes,
-        invoicesRes,
-        receiptsRes,
-        customersRes,
-        productsRes,
-        warehousesRes,
-        suppliersRes,
-        goodsReceiptsRes,
-        withdrawalsRes,
-        transfersRes,
-        stockAdjustmentsRes,
-        productReturnsRes,
-        returnToSuppliersRes,
-      ] = await Promise.all([
-        UserApi.getAll(),
-        JobApi.getAll(),
-        AssessmentApi.getAll(),
-        ContractApi.getAll(),
-        QuotationApi.getAll(),
-        InvoiceApi.getAll(),
-        ReceiptApi.getAll(),
-        CustomerApi.getCustomers({}),
-        ProductApi.getProducts({}),
-        WarehouseApi.getWarehouses(),
-        SupplierApi.getSuppliers({}),
-        GoodsReceiptApi.getAll(),
-        WithdrawalApi.getAll(),
-        TransferApi.getAll(),
-        StockAdjustmentApi.getAll(),
-        ProductReturnApi.getAll(),
-        ReturnToSupplierApi.getAll(),
-      ]);
+    // try {
+    //   const [
+    //     usersRes,
+    //     jobsRes,
+    //     assessmentsRes,
+    //     contractsRes,
+    //     quotationsRes,
+    //     invoicesRes,
+    //     receiptsRes,
+    //     customersRes,
+    //     productsRes,
+    //     warehousesRes,
+    //     suppliersRes,
+    //     goodsReceiptsRes,
+    //     withdrawalsRes,
+    //     transfersRes,
+    //     stockAdjustmentsRes,
+    //     productReturnsRes,
+    //     returnToSuppliersRes,
+    //   ] = await Promise.all([
+    //     UserApi.getAll(),
+    //     JobApi.getAll(),
+    //     AssessmentApi.getAll(),
+    //     ContractApi.getAll(),
+    //     QuotationApi.getAll(),
+    //     InvoiceApi.getAll(),
+    //     ReceiptApi.getAll(),
+    //     CustomerApi.getCustomers({}),
+    //     ProductApi.getProducts({}),
+    //     WarehouseApi.getWarehouses(),
+    //     SupplierApi.getSuppliers({}),
+    //     GoodsReceiptApi.getAll(),
+    //     WithdrawalApi.getAll(),
+    //     TransferApi.getAll(),
+    //     StockAdjustmentApi.getAll(),
+    //     ProductReturnApi.getAll(),
+    //     ReturnToSupplierApi.getAll(),
+    //   ]);
 
-      setUsers(usersRes.data || []);
-      setJobs(jobsRes.data || []);
-      setAssessments(assessmentsRes.data || []);
-      setContracts(contractsRes.data || []);
-      setQuotations(quotationsRes.data || []);
-      setInvoices(invoicesRes.data || []);
-      setReceipts(receiptsRes.data || []);
-      setCustomers(customersRes.data || []);
-      setProducts(productsRes.data || []);
-      setWarehouses(warehousesRes.data || []);
-      setSuppliers(suppliersRes.data || []);
-      setGoodsReceipts(goodsReceiptsRes.data || []);
-      setWithdrawals(withdrawalsRes.data || []);
-      setTransfers(transfersRes.data || []);
-      setStockAdjustments(stockAdjustmentsRes.data || []);
-      setProductReturns(productReturnsRes.data || []);
-      setReturnToSuppliers(returnToSuppliersRes.data || []);
-    } catch (error) {
-      console.error('Failed to fetch data', error);
-    }
+    //   setUsers(usersRes.data || []);
+    //   setJobs(jobsRes.data || []);
+    //   setAssessments(assessmentsRes.data || []);
+    //   setContracts(contractsRes.data || []);
+    //   setQuotations(quotationsRes.data || []);
+    //   setInvoices(invoicesRes.data || []);
+    //   setReceipts(receiptsRes.data || []);
+    //   setCustomers(customersRes.data || []);
+    //   setProducts(productsRes.data || []);
+    //   setWarehouses(warehousesRes.data || []);
+    //   setSuppliers(suppliersRes.data || []);
+    //   setGoodsReceipts(goodsReceiptsRes.data || []);
+    //   setWithdrawals(withdrawalsRes.data || []);
+    //   setTransfers(transfersRes.data || []);
+    //   setStockAdjustments(stockAdjustmentsRes.data || []);
+    //   setProductReturns(productReturnsRes.data || []);
+    //   setReturnToSuppliers(returnToSuppliersRes.data || []);
+    // } catch (error) {
+    //   console.error('Failed to fetch data', error);
+    // }
   };
 
   useEffect(() => {

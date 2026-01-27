@@ -2,8 +2,9 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { GoodsReceipt } from '@/src/types/entity/inventory.interface';
-import { AuthService } from './auth';
+import { GoodsReceipt } from '../types/entity/good-receipt';
+import { AuthService } from '.';
+
 
 class GoodsReceiptService extends AuthService {
   protected path = '/goods-receipts';

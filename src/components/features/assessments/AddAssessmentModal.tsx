@@ -1,27 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import {
   Assessment,
   Product,
-  AssessmentItem,
-  PackageCondition,
   AssessmentWorkArea,
   Customer,
+  Category
 } from '@/src/types/entity/app.interface';
-import { CategoryType } from '@/src/types/enums/category';
-import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
+import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
-import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { AsessmentStatus, ServiceSystem } from '@/src/types/enums/assessment';
+import { CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
+import { PaymentMethod } from '@/src/types/enums/financial';
+import { CategoryType } from '@/src/types';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateAssessment: (assessmentData: Omit<Assessment, 'id'>) => void;
-  products: Product[];
-  customers: Customer[];
+  onCreateAssessment: (assessmentData: Omit<Assessment, 'id' | 'code'>) => void;
 }
 
 const SERVICE_TYPES = [
@@ -37,21 +35,95 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   isOpen,
   onClose,
   onCreateAssessment,
-  products,
-  customers,
 }) => {
   const [formData, setFormData] = useState<
     Partial<Omit<Assessment, 'workAreas' | 'totalEstimatedCost'>>
   >({});
+  const [customers, setCustomer] = useState<Customer[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([])
+
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
 
-  const servicePackages = useMemo(
-    () => products.filter((p) => p.type === CategoryType.SERVICE),
-    [products]
-  );
+  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+    [PaymentMethod.CASH]: 'เงินสด',
+    [PaymentMethod.TRANSFER]: 'โอนเงิน',
+  };
+
+  const paymentOptions = Object.values(PaymentMethod).map((value) => ({
+    value,
+    label: PAYMENT_LABELS[value as PaymentMethod] || value,
+  }));
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await CategoryApi.getCategories({ 
+        page: 1, 
+        limit: 10, 
+        type: CategoryType.SERVICE 
+      })
+
+      setCategories(response.data)
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  }, [])
+
+  const fetchCustomers = useCallback(async () => {
+    try {
+      const response = await CustomerApi.getCustomers({
+        page: 1,
+        limit: 10,
+        search: searchQuery,
+      });
+
+      setCustomer(response.data);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  }, [searchQuery]);
+
+  const fetchPackages = useCallback(async () => {
+    try {
+      const response = await PackageApi.getPackages({
+        page: 1,
+        limit: 10,
+      });
+      setPackages(response.data);
+    } catch (error) {
+      console.error('Error fetching packages:', error);
+    }
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      const response = await ProductApi.getProducts({
+        page: 1,
+        limit: 100,
+      });
+      setProducts(response.data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchCategories();
+      fetchCustomers();
+      fetchPackages();
+      fetchProducts();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [fetchCustomers, fetchPackages, fetchProducts, fetchCategories]);
+
   const maxAreaSize = useMemo(
     () => Math.max(0, ...workAreas.map((a) => a.area_size || 0)),
     [workAreas]
@@ -59,11 +131,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const suggestedPackageOptions = useMemo(() => {
     if (maxAreaSize === 0) return [];
-    return servicePackages.filter(
+    return packages.filter(
       (pkg) =>
-        pkg.conditions && pkg.conditions.some((c) => c.max_area >= maxAreaSize)
+        pkg.package_price &&
+        pkg.package_price.some((c) => c.area_range >= maxAreaSize)
     );
-  }, [maxAreaSize, servicePackages]);
+  }, [maxAreaSize, packages]);
 
   useEffect(() => {
     if (
@@ -77,16 +150,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        created_at: new Date().toISOString().substring(0, 10),
-        scheduled_at: new Date().toISOString().substring(0, 10),
+        appointment_date: new Date(),
       });
       setWorkAreas([
         {
-          id: `area-${Date.now()}`,
-          name: 'พื้นที่ 1',
+          area_name: 'พื้นที่ 1',
           items: [],
-          service_type: [],
-          package_price: 0,
         },
       ]);
       setSelectedPackageId(null);
@@ -94,28 +163,30 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   }, [isOpen]);
 
   const totalEstimatedCost = useMemo(
-    () => workAreas.reduce((sum, area) => sum + (area.estimated_cost || 0), 0),
+    () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
     [workAreas]
   );
 
-  const handleCustomerChange = (customerId: string) => {
+  const handleCustomerSelect = (customerId: string) => {
     const customer = customers.find((c) => c.id === customerId);
     if (customer) {
       setFormData((prev) => ({
         ...prev,
-        customerId: customer.id,
-        customerName: `${customer.first_name} ${customer.last_name}`,
+        customer_id: customerId,
         address: customer.address_house_no,
-        subdistrict: customer.sub_district,
+        sub_district: customer.sub_district,
+        status: AsessmentStatus.DRAFT,
         district: customer.district,
         province: customer.province,
-        postalCode: customer.postal_code,
-        googleMapLink: customer.google_map_link,
-        zone: '',
-        group: '',
-        roadLine: '',
-        sequence: '',
+        zipcode: customer.postal_code,
+        google_map_link: customer.google_map_link,
+        zone: customer.service_area || '',
+        route_group: customer.service_group || '',
+        road_line: customer.road_line || '',
+        sequence: customer.sequence_no || '',
       }));
+    } else {
+      setFormData((prev) => ({ ...prev, customer_id: customerId }));
     }
   };
 
@@ -126,26 +197,11 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
-    if (name === 'customerId') {
-      const customer = customers.find((c) => c.id === value);
-      if (customer) {
-        setFormData((prev) => ({
-          ...prev,
-          customerName: `${customer.first_name} ${customer.last_name}`,
-          address: customer.address_house_no,
-          subdistrict: customer.sub_district,
-          district: customer.district,
-          province: customer.province,
-          postalCode: customer.postal_code,
-          googleMapLink: customer.google_map_link,
-          zone: '',
-          group: '',
-          roadLine: '',
-          sequence: '',
-        }));
-      }
-    }
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
   };
 
   const handleNumberOfAreasChange = (count: number) => {
@@ -155,11 +211,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         const newAreas = Array.from(
           { length: count - currentCount },
           (_, i) => ({
-            id: `area-${Date.now()}-${i}`,
-            name: `พื้นที่ ${currentCount + i + 1}`,
+            area_name: `พื้นที่ ${currentCount + i + 1}`,
             items: [],
-            service_type: [],
-            package_price: 0,
+            categories: [],
           })
         );
         return [...currentAreas, ...newAreas];
@@ -185,17 +239,13 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       const areaToClear = newAreas[index];
       if (areaToClear) {
         newAreas[index] = {
-          id: areaToClear.id,
-          name: areaToClear.name,
-          building_type: '',
-          area_size: undefined,
-          service_type: [],
-          service_system: '',
-          package_id: undefined,
-          selected_condition_id: undefined,
-          package_price: 0,
-          estimated_cost: 0,
+            id: areaToClear.id,
+            area_name: areaToClear.area_name,
+            area_size: undefined,
+          service_system: undefined,
+          total_price: 0,
           items: [],
+          category_services: [],
         };
       }
       return newAreas;
@@ -204,37 +254,36 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const handlePackageSelect = (pkgId: string | null) => {
     setSelectedPackageId(pkgId);
-    const selectedPkg = pkgId
-      ? servicePackages.find((p) => p.id === pkgId)
-      : null;
+    const selectedPkg = pkgId ? packages.find((p) => p.id === pkgId) : null;
+
+    // Update form data
+    setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
+
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
-          const { package_id, selected_condition_id, package_price, ...rest } =
-            area;
-          return { ...rest, package_price: 0 };
+          return { ...area };
         }
-        const sortedConditions = [...(selectedPkg.conditions || [])].sort(
-          (a, b) => a.max_area - b.max_area
+        const sortedConditions = [...(selectedPkg.package_price || [])].sort(
+          (a, b) => a.area_range - b.area_range
         );
         const bestFit = sortedConditions.find(
-          (c) => c.max_area >= area.area_size!
+          (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
+          const hasTermites = (area.category_services || []).some((cat) =>
+            categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+          );
           const priceToUse = hasTermites
-            ? bestFit.first_offer_price_with_termites
-            : bestFit.first_offer_price_no_termites;
+            ? bestFit.price_with_termite
+            : bestFit.price_without_termite;
           return {
             ...area,
-            package_id: pkgId,
-            selected_condition_id: bestFit.id,
-            package_price: priceToUse,
+            base_service_price: priceToUse,
+            package_price_id: bestFit.id,
           };
         } else {
-          const { package_id, selected_condition_id, package_price, ...rest } =
-            area;
-          return { ...rest, package_price: undefined };
+          return { ...area, package_price_id: undefined };
         }
       })
     );
@@ -243,22 +292,38 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const newAssessment: Omit<Assessment, 'id'> = {
+    const newAssessment: Omit<Assessment, 'id' | 'code'> = {
+      // Defaults
+      status: AsessmentStatus.DRAFT,
+      created_by: 'ผู้ดูแลระบบ',
+      updated_by: 'ผู้ดูแลระบบ',
+
+      // Spread form data
       ...formData,
-      status: AsessmentStatus.Draft,
-      created_by: 'ผู้ดูแลระบบ', // Mock user
-      updated_by: 'ผู้ดูแลระบบ', // Mock user
-      work_areas: workAreas as AssessmentWorkArea[],
-      total_estimated_cost: totalEstimatedCost,
-      customer_name: formData.customer_name || '',
+
+      // Overrides/Calculated
+      assessment_areas: workAreas as AssessmentWorkArea[],
+      total_price: totalEstimatedCost,
+
+      // Ensure required fields
+      customer_id: formData.customer_id || '',
       address: formData.address || '',
-      subdistrict: formData.subdistrict || '',
+      sub_district: formData.sub_district || '',
       district: formData.district || '',
       province: formData.province || '',
-      postal_code: formData.postal_code || '',
-      customer_id: formData.customer_id || '',
-      created_at: formData.created_at || new Date().toISOString(),
-      scheduled_at: formData.scheduled_at || new Date().toISOString(),
+      zipcode: formData.zipcode || '',
+      created_at: formData.created_at
+        ? new Date(formData.created_at).toISOString()
+        : new Date().toISOString(),
+      appointment_date: formData.appointment_date || new Date(),
+      payment_condition: formData.payment_condition as PaymentMethod,
+
+      // Other fields
+      zone: formData.zone || '',
+      route_group: formData.route_group || '',
+      road_line: formData.road_line || '',
+      sequence: formData.sequence || '',
+      google_map_link: formData.google_map_link || '',
     };
 
     onCreateAssessment(newAssessment);
@@ -322,11 +387,14 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               label="ลูกค้า"
               options={customers.map((c) => ({
                 value: c.id,
-                label: `${c.first_name} ${c.last_name} (${c.phone})`,
-                description: c.address_house_no,
+                label: `${c.code} : ${c.first_name} ${c.last_name} ${
+                  c.nickname ? `(${c.nickname})` : ''
+                } - ${c.phone}`,
+                description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
               }))}
               value={formData.customer_id || ''}
-              onChange={(val) => handleCustomerChange(val)}
+              onChange={handleCustomerSelect}
+              onSearchChange={setSearchQuery}
               required
             />
           </div>
@@ -345,10 +413,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
             />
           </FormField>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="แขวง/ตำบล" htmlFor="subdistrict">
+            <FormField label="แขวง/ตำบล" htmlFor="sub_district">
               <Input
-                name="subdistrict"
-                value={formData.subdistrict || ''}
+                name="sub_district"
+                value={formData.sub_district || ''}
                 onChange={handleFieldChange}
                 required
               />
@@ -369,10 +437,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                 required
               />
             </FormField>
-            <FormField label="รหัสไปรษณีย์" htmlFor="postal_code">
+            <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
               <Input
-                name="postal_code"
-                value={formData.postal_code || ''}
+                name="zipcode"
+                value={formData.zipcode || ''}
                 onChange={handleFieldChange}
                 required
               />
@@ -390,10 +458,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                   onChange={handleFieldChange}
                 />
               </FormField>
-              <FormField label="Group" htmlFor="group">
+              <FormField label="Group" htmlFor="route_group">
                 <Input
-                  name="group"
-                  value={formData.group || ''}
+                  name="route_group"
+                  value={formData.route_group || ''}
                   onChange={handleFieldChange}
                 />
               </FormField>
@@ -427,21 +495,28 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         <div className="border border-slate-200 p-4 rounded-lg space-y-4">
           <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="วันที่นัดหมาย" htmlFor="scheduled_at">
+            <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
               <Input
-                name="scheduled_at"
+                name="appointment_date"
                 type="date"
-                value={formData.scheduled_at?.substring(0, 10) || ''}
-                onChange={handleFieldChange}
+                value={
+                  formData.appointment_date
+                    ? new Date(formData.appointment_date)
+                        .toISOString()
+                        .substring(0, 10)
+                    : ''
+                }
+                onChange={handleDateChange}
                 required
               />
             </FormField>
-            <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_conditions">
-              <Input
-                name="payment_conditions"
-                value={formData.payment_conditions || ''}
-                onChange={handleFieldChange}
-                placeholder="เช่น เงินสด, โอน"
+            <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
+              <SearchableSelect
+                name='payment_condition'
+                options={paymentOptions}
+                value={formData.payment_condition || ''}
+                onChange={(val: PaymentMethod) => setFormData({ ...formData, payment_condition: val })}
+                required
               />
             </FormField>
           </div>
@@ -501,8 +576,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                       {option.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {option.number_of_visits} ครั้ง /{' '}
-                      {option.contract_duration}
+                      {option.visit_limit} ครั้ง / {option.contract_period} ปี
                     </div>
                   </label>
                 ))}
@@ -523,9 +597,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               products={products}
               selectedPackage={
                 selectedPackageId
-                  ? servicePackages.find((p) => p.id === selectedPackageId)!
+                  ? packages.find((p) => p.id === selectedPackageId)!
                   : null
               }
+              categories={categories}
             />
           ))}
         </div>
@@ -533,4 +608,3 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     </Modal>
   );
 };
-
