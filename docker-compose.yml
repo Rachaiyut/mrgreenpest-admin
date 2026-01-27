@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        - API_BASE_URL=https://lawmai.knacx.dev/api
+        - API_BASE_URL=https://mrgreenpest.knacx.dev/api
     image: mrgreenpest-dev:latest
     container_name: mrgreenpest-dev
     ports:
