@@ -271,8 +271,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const hasTermites = (area.category_services || []).some((cat) =>
-            categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+          const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
+          const hasTermites = (area.category_services || []).some(
+            (s) => s.category_id === termiteCategory?.id
           );
           const priceToUse = hasTermites
             ? bestFit.price_with_termite
@@ -512,10 +513,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
             </FormField>
             <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
               <SearchableSelect
-                name='payment_condition'
                 options={paymentOptions}
                 value={formData.payment_condition || ''}
-                onChange={(val: PaymentMethod) => setFormData({ ...formData, payment_condition: val })}
+                onChange={(val: any) => setFormData((prev) => ({ ...prev, payment_condition: val }))}
                 required
               />
             </FormField>
@@ -595,12 +595,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               onAreaChange={handleAreaChange}
               onClearArea={handleClearArea}
               products={products}
+              categories={categories}
               selectedPackage={
                 selectedPackageId
                   ? packages.find((p) => p.id === selectedPackageId)!
                   : null
               }
-              categories={categories}
             />
           ))}
         </div>

@@ -7,6 +7,7 @@ import {
   Product,
   Customer,
   Package,
+  Category,
 } from '@/src/types/entity/app.interface';
 
 // Component
@@ -30,13 +31,15 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
 import { ConfirmationModal } from '@/src/components/common';
-import { AssessmentApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
+import { AssessmentApi, CustomerApi, PackageApi, ProductApi, CategoryApi } from '@/src/api';
+import { CategoryType } from '@/src/types';
 
 const Assessments: React.FC = () => {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -112,7 +115,9 @@ const Assessments: React.FC = () => {
         (area) =>
           (area.building_type &&
             area.building_type.toLowerCase().includes(lowercasedQuery)) ||
-          (area.service_type)
+          (area.category_services || []).some(
+            (service) => service.name.toLowerCase().includes(lowercasedQuery)
+          )
       );
 
       const matchesDate = formatThaiDate((assessment.appointment_date).toDateString()).includes(
@@ -442,7 +447,7 @@ const Assessments: React.FC = () => {
                     const allServiceTypes = [
                       ...new Set(
                         assessment.assessment_areas.flatMap(
-                          (area) => area.service_type
+                          (area) => area.category_services || []
                         )
                       ),
                     ];
@@ -559,7 +564,7 @@ const Assessments: React.FC = () => {
           assessment={selectedAssessment}
           products={products}
           customers={customers}
-          packages={packages}
+          // packages={packages} // Comment out if causing issues or update type
         />
       )}
       <EditAssessmentModal
@@ -572,6 +577,7 @@ const Assessments: React.FC = () => {
         onUpdateAssessment={handleUpdateAssessment}
         products={products}
         customers={customers}
+        categories={categories}
       />
 
       <ConfirmationModal

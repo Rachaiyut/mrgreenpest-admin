@@ -303,17 +303,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
     const currentItems = [...(area.items || []), ...newItems];
 
-    // Calculate new total cost immediately
-    const productsTotal = currentItems.reduce(
-      (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
-      0
-    );
-    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
-
     onAreaChange(index, {
       ...area,
       items: currentItems,
-      total_price: newTotalPrice,
     });
     setIsProductModalOpen(false);
   };
@@ -326,7 +318,11 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     const currentItems = area.items || [];
     const newItems = currentItems.map((item, idx) => {
       if (idx === itemIndex) {
-        return { ...item, [field]: value };
+        const updatedItem = { ...item, [field]: value };
+        if (field === 'quantity') {
+          updatedItem.total_price = (updatedItem.product_price || 0) * (Number(value) || 0);
+        }
+        return updatedItem;
       }
       return item;
     });

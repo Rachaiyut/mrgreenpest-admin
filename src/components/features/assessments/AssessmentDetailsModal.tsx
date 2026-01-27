@@ -18,14 +18,14 @@ interface AssessmentDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   assessment: Assessment | null;
-  products: AssessmentWorkAreaItem[];
+  products: Product[];
   customers?: Customer[];
   packages?: Package[];
 }
 
 const WorkAreaDetails: React.FC<{
   area: AssessmentWorkArea;
-  products: AssessmentWorkAreaItem[];
+  products: Product[];
 }> = ({ area, products }) => {
   const productMap = new Map(products.map((p) => [p.id, p]));
 

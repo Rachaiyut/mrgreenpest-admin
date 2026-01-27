@@ -3,22 +3,25 @@ import { Modal } from '../../common/Modal';
 import {
   FormField,
   Input,
-  Select,
   Textarea,
   Button,
 } from '../../common/FormControls';
 import {
   Assessment,
   Product,
-  AssessmentItem,
+  AssessmentWorkAreaItem,
   PackageCondition,
   AssessmentWorkArea,
   Customer,
+  Category,
 } from '@/src/types/entity/app.interface';
 import { CategoryType } from '@/src/types/enums/category';
+import { ServiceSystem } from '@/src/types/enums/assessment';
+import { PaymentMethod } from '@/src/types/enums/financial';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { WorkAreaForm } from './WorkAreaForm';
+import { SearchableSelect } from '../../common/SearchableSelect';
 
 interface EditAssessmentModalProps {
   isOpen: boolean;
@@ -27,6 +30,7 @@ interface EditAssessmentModalProps {
   onUpdateAssessment: (assessmentData: Assessment) => void;
   products: Product[];
   customers?: Customer[];
+  categories: Category[];
 }
 
 const SERVICE_TYPES = [
@@ -45,6 +49,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   onUpdateAssessment,
   products,
   customers = [],
+  categories = [],
 }) => {
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
@@ -53,7 +58,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   );
 
   const servicePackages = useMemo(
-    () => products.filter((p) => p.type === CategoryType.SERVICE),
+    () => products.filter((p) => p.category.type === CategoryType.SERVICE),
     [products]
   );
   const maxAreaSize = useMemo(
@@ -63,10 +68,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
   const suggestedPackageOptions = useMemo(() => {
     if (maxAreaSize === 0) return [];
-    return servicePackages.filter(
+    return (servicePackages as any[]).filter(
       (pkg) =>
         pkg.cost_price &&
-        pkg.package_price.some((c) => c.area_range >= maxAreaSize)
+        pkg.package_price.some((c: any) => c.area_range >= maxAreaSize)
     );
   }, [maxAreaSize, servicePackages]);
 
@@ -77,7 +82,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
   useEffect(() => {
     if (assessment && isOpen) {
-      const { work_areas, ...rest } = assessment;
+      const { assessment_areas, ...rest } = assessment;
       setFormData({
         ...rest,
         created_at: assessment.created_at
@@ -92,12 +97,12 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       // Current interface has package_id on Assessment.
       setSelectedPackageId(assessment.package_id || null);
 
-      const initialWorkAreas = work_areas.map((wa) => {
+      const initialWorkAreas = (assessment_areas || assessment.assessment_areas || []).map((wa) => {
         // Just map directly, assuming wa matches AssessmentWorkArea
         return {
           ...wa,
-          products: wa.products || [],
-          service_type: wa.service_type || [],
+          items: wa.items || [],
+          category_services: wa.category_services || [],
         };
       });
       setWorkAreas(initialWorkAreas || []);
@@ -127,8 +132,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       {
         id: `area-${Date.now()}`,
         area_name: `พื้นที่ ${prev.length + 1}`,
-        products: [],
-        service_type: [],
+        items: [],
+        category_services: [],
         base_service_price: 0,
         total_price: 0,
       },
@@ -162,11 +167,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           area_name: areaToClear.area_name,
           building_type: '',
           area_size: undefined,
-          service_type: [],
-          service_system: '',
+          category_services: [],
+          service_system: undefined,
           base_service_price: 0,
           total_price: 0,
-          products: [],
         };
       }
       return newAreas;
@@ -186,14 +190,18 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
           return { ...area };
         }
-        const sortedConditions = [...(selectedPkg.package_price || [])].sort(
-          (a, b) => a.area_range - b.area_range
+        const sortedConditions = [...((selectedPkg as any).package_price || [])].sort(
+          (a: any, b: any) => a.area_range - b.area_range
         );
         const bestFit = sortedConditions.find(
-          (c) => c.area_range >= area.area_size!
+          (c: any) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const hasTermites = (area.service_type || []).includes('กำจัดปลวก');
+          // Check if any category service matches 'กำจัดปลวก'
+          const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
+          const hasTermites = (area.category_services || []).some(
+            (s) => s.category_id === termiteCategory?.id
+          );
           const priceToUse = hasTermites
             ? bestFit.price_with_termite
             : bestFit.price_without_termite;
@@ -208,7 +216,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     );
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!assessment) return;
 
@@ -216,20 +224,28 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       ...assessment,
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
-      work_areas: workAreas as AssessmentWorkArea[],
+      assessment_areas: workAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
     };
+    
+    // Call onUpdateAssessment which likely calls API
+    // If onUpdateAssessment doesn't handle API, we might need to call it here.
+    // Based on `Assessments.tsx`, `handleUpdateAssessment` calls `AssessmentApi.update`.
+    // So we just need to make sure we pass the correct data structure.
+    // The current structure seems to match what `AssessmentApi.update` expects (Partial<Assessment>).
+    
     onUpdateAssessment(updatedAssessment);
+    onClose();
   };
 
-  if (!assessment) return null;
+  if (!isOpen) return null; // Only return null if not open
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขใบประเมิน: ${assessment.code || assessment.id}`}
+      title={`แก้ไขใบประเมิน: ${assessment?.code || assessment?.id || ''}`}
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -446,8 +462,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                       {option.name}
                     </div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {option.number_of_visits} ครั้ง /{' '}
-                      {option.contract_duration}
+                      {(option as any).visits_per_month} ครั้ง /{' '}
+                      {(option as any).contract_duration}
                     </div>
                   </label>
                 ))}
@@ -469,9 +485,10 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               products={products}
               selectedPackage={
                 selectedPackageId
-                  ? servicePackages.find((p) => p.id === selectedPackageId)!
+                  ? (servicePackages.find((p) => p.id === selectedPackageId) as any)!
                   : null
               }
+              categories={categories}
             />
           ))}
         </div>
