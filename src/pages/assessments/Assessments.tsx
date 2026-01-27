@@ -67,16 +67,18 @@ const Assessments: React.FC = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [assessmentsRes, customersRes, productsRes, packagesRes] = await Promise.all([
+      const [assessmentsRes, customersRes, productsRes, packagesRes, categoriesRes] = await Promise.all([
         AssessmentApi.getAll({ limit: 1000 }),
         CustomerApi.getCustomers({ limit: 1000 }),
         ProductApi.getProducts({ limit: 1000 }),
-        PackageApi.getPackages({ limit: 100 })
+        PackageApi.getPackages({ limit: 100 }),
+        CategoryApi.getCategories({ limit: 100, type: CategoryType.SERVICE })
       ]);
       setAssessments(assessmentsRes.data);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
-      setPackages(packagesRes.data)
+      setPackages(packagesRes.data);
+      setCategories(categoriesRes.data);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {

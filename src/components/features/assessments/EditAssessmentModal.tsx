@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  FormField,
-  Input,
-  Textarea,
-  Button,
-} from '../../common/FormControls';
+import { FormField, Input, Textarea, Button } from '../../common/FormControls';
 import {
   Assessment,
   Product,
@@ -71,9 +66,20 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     return (servicePackages as any[]).filter(
       (pkg) =>
         pkg.cost_price &&
+        pkg.package_price &&
         pkg.package_price.some((c: any) => c.area_range >= maxAreaSize)
     );
   }, [maxAreaSize, servicePackages]);
+
+  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+    [PaymentMethod.CASH]: 'เงินสด',
+    [PaymentMethod.TRANSFER]: 'โอนเงิน',
+  };
+
+  const paymentOptions = Object.values(PaymentMethod).map((value) => ({
+    value,
+    label: PAYMENT_LABELS[value as PaymentMethod] || value,
+  }));
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -97,11 +103,32 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       // Current interface has package_id on Assessment.
       setSelectedPackageId(assessment.package_id || null);
 
-      const initialWorkAreas = (assessment_areas || assessment.assessment_areas || []).map((wa) => {
+      const initialWorkAreas = (
+        assessment_areas ||
+        assessment.assessment_areas ||
+        []
+      ).map((wa) => {
+        // Fetch missing details from product/package if available
+        const enrichedItems = (wa.items || []).map((item) => {
+          if (item.product_id && (!item.product_name || !item.product_price)) {
+            const product = products.find((p) => p.id === item.product_id);
+            if (product) {
+              return {
+                ...item,
+                product_name: product.name,
+                product_price: product.cost_price
+                  ? Number(product.cost_price)
+                  : 0,
+              };
+            }
+          }
+          return item;
+        });
+
         // Just map directly, assuming wa matches AssessmentWorkArea
         return {
           ...wa,
-          items: wa.items || [],
+          items: enrichedItems,
           category_services: wa.category_services || [],
         };
       });
@@ -190,15 +217,17 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
           return { ...area };
         }
-        const sortedConditions = [...((selectedPkg as any).package_price || [])].sort(
-          (a: any, b: any) => a.area_range - b.area_range
-        );
+        const sortedConditions = [
+          ...((selectedPkg as any).package_price || []),
+        ].sort((a: any, b: any) => a.area_range - b.area_range);
         const bestFit = sortedConditions.find(
           (c: any) => c.area_range >= area.area_size!
         );
         if (bestFit) {
           // Check if any category service matches 'กำจัดปลวก'
-          const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
+          const termiteCategory = categories.find((c) =>
+            c.name.includes('กำจัดปลวก')
+          );
           const hasTermites = (area.category_services || []).some(
             (s) => s.category_id === termiteCategory?.id
           );
@@ -220,21 +249,38 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     e.preventDefault();
     if (!assessment) return;
 
+    // Prepare work areas: remove temp IDs and ensure correct types
+    const sanitizedWorkAreas = workAreas.map((area) => {
+      // Create a shallow copy to avoid mutating state
+      const newArea = { ...area };
+
+      // Remove temporary IDs (starting with "area-") so backend creates new records
+      if (newArea.id && newArea.id.startsWith('area-')) {
+        delete newArea.id;
+      }
+
+      // Ensure items don't have temporary IDs or issues?
+      // Assuming items are okay as is, but we could clean them too if needed.
+      // Usually items are replaced or handled by backend logic.
+
+      return newArea;
+    });
+
     const updatedAssessment: Assessment = {
       ...assessment,
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
-      assessment_areas: workAreas as AssessmentWorkArea[],
+      assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
     };
-    
+
     // Call onUpdateAssessment which likely calls API
     // If onUpdateAssessment doesn't handle API, we might need to call it here.
     // Based on `Assessments.tsx`, `handleUpdateAssessment` calls `AssessmentApi.update`.
     // So we just need to make sure we pass the correct data structure.
     // The current structure seems to match what `AssessmentApi.update` expects (Partial<Assessment>).
-    
+
     onUpdateAssessment(updatedAssessment);
     onClose();
   };
@@ -417,11 +463,14 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               />
             </FormField>
             <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
-              <Input
+              <SearchableSelect
                 name="payment_condition"
+                options={paymentOptions}
                 value={formData.payment_condition || ''}
-                onChange={handleFieldChange}
-                placeholder="เช่น เงินสด, โอน"
+                onChange={(val: any) =>
+                  setFormData((prev) => ({ ...prev, payment_condition: val }))
+                }
+                required
               />
             </FormField>
           </div>
@@ -485,7 +534,9 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               products={products}
               selectedPackage={
                 selectedPackageId
-                  ? (servicePackages.find((p) => p.id === selectedPackageId) as any)!
+                  ? (servicePackages.find(
+                      (p) => p.id === selectedPackageId
+                    ) as any)!
                   : null
               }
               categories={categories}

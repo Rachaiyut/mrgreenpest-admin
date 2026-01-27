@@ -7,7 +7,7 @@ import {
   Product,
   AssessmentWorkArea,
   Customer,
-  Category
+  Category,
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
@@ -42,7 +42,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const [customers, setCustomer] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -63,17 +63,17 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await CategoryApi.getCategories({ 
-        page: 1, 
-        limit: 10, 
-        type: CategoryType.SERVICE 
-      })
+      const response = await CategoryApi.getCategories({
+        page: 1,
+        limit: 10,
+        type: CategoryType.SERVICE,
+      });
 
-      setCategories(response.data)
+      setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  }, [])
+  }, []);
 
   const fetchCustomers = useCallback(async () => {
     try {
@@ -239,9 +239,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       const areaToClear = newAreas[index];
       if (areaToClear) {
         newAreas[index] = {
-            id: areaToClear.id,
-            area_name: areaToClear.area_name,
-            area_size: undefined,
+          id: areaToClear.id,
+          area_name: areaToClear.area_name,
+          area_size: undefined,
           service_system: undefined,
           total_price: 0,
           items: [],
@@ -271,7 +271,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           (c) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
+          const termiteCategory = categories.find((c) =>
+            c.name.includes('กำจัดปลวก')
+          );
           const hasTermites = (area.category_services || []).some(
             (s) => s.category_id === termiteCategory?.id
           );
@@ -513,9 +515,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
             </FormField>
             <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
               <SearchableSelect
+                name="payment_condition"
                 options={paymentOptions}
                 value={formData.payment_condition || ''}
-                onChange={(val: any) => setFormData((prev) => ({ ...prev, payment_condition: val }))}
+                onChange={(val: any) =>
+                  setFormData((prev) => ({ ...prev, payment_condition: val }))
+                }
                 required
               />
             </FormField>

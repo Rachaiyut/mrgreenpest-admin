@@ -1,14 +1,9 @@
 import { useState } from 'react';
-
-// Constant
 import { STORAGE_KEYS } from '../constants';
-
-// Enum
 import { Role } from '../types/enums/role';
 
-// Interface
 export const useUserRole = () => {
-  const [userRole, setUserRole] = useState<Role | null>(() => {
+  const [userRole] = useState<Role | null>(() => {
     try {
       const userProfileStr = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
       if (userProfileStr) {
@@ -23,4 +18,3 @@ export const useUserRole = () => {
 
   return userRole;
 };
-

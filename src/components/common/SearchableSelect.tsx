@@ -146,8 +146,22 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           )}
         </div>
       )}
-      {/* Hidden input for form submission if needed */}
-      <input type="hidden" name={name} value={value} required={required} />
+      {/* Hidden input for form submission validation */}
+      <input
+        type="text"
+        name={name}
+        value={value}
+        required={required}
+        readOnly
+        style={{
+          opacity: 0,
+          width: 0,
+          height: 0,
+          position: 'absolute',
+          bottom: 0,
+          zIndex: -1,
+        }}
+      />
     </div>
   );
 };
