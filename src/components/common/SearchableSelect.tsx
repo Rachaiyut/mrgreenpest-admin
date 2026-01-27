@@ -20,7 +20,7 @@ interface SearchableSelectProps {
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
-  options,
+  options = [],
   value,
   onChange,
   onSearchChange,
@@ -34,7 +34,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const [search, setSearch] = useState('');
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  const selectedOption = options.find((o) => o.value === value);
+  const safeOptions = options || [];
+  const selectedOption = safeOptions.find((o) => o.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +62,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     }
   }, [isOpen, onSearchChange]);
 
-  const filteredOptions = options.filter(
+  const filteredOptions = safeOptions.filter(
     (option) =>
       option.label.toLowerCase().includes(search.toLowerCase()) ||
       (option.description &&

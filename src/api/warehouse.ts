@@ -1,20 +1,12 @@
-// Constant
-import {
-  IBaseQuery,
-  IBaseResponseArray,
-} from '@/src/types/entity/base.interface';
-
-// Interface
-import { Warehouse, WarehouseStats } from '@/src/types/entity/inventory.interface';
-
-// Service
+import { IBaseResponseArray,} from '@/src/types/entity/base.interface';
+import { Warehouse, WarehouseQuery, WarehouseStats } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
 class WarehouseService extends AuthService {
   protected path = '/warehouses';
 
   async getWarehouses(
-    query?: IBaseQuery
+    query?: WarehouseQuery
   ): Promise<IBaseResponseArray<Warehouse>> {
     const res = await this.http.get<IBaseResponseArray<Warehouse>>(
       `${this.path}`,

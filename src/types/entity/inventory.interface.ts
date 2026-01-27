@@ -1,7 +1,14 @@
-import { WarehouseType } from "../enums/warehouse";
+import { VehicleStatus, WarehouseType } from "../enums/inventory";
 import { Status } from "./app.interface";
-import { IBase } from "./base.interface";
+import { IBase, IBaseQuery } from "./base.interface";
+import { Job } from "./job.interface";
 
+export interface WarehouseQuery extends IBaseQuery {
+  code?: string;
+  name?: string;
+  type?: WarehouseType;
+  search?: string;
+}
 export interface Warehouse extends IBase {
   code: string,
   name: string,
@@ -23,6 +30,9 @@ export interface Vehicle extends IBase {
   model: string
   vehicle_registration: string,
   color: string,
+  status: VehicleStatus,
+
+  jobs: Job[]
 }
 
 

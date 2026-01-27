@@ -7,18 +7,26 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
-import { User, UserRole } from '@/src/types/entity/core.interface';
+import { SearchableSelect } from '../../common/SearchableSelect';
+import { User } from '@/src/types/entity/core.interface';
 import {
   FieldJob,
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
+import {
+  Job,
+  TeamMember,
+  ServiceSystem,
+} from '@/src/types/entity/job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
-import { Product } from '@/src/types/entity/package.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
+import { WarehouseApi, UserApi } from '@/src/api';
+import { Product, Role, WarehouseType } from '@/src/types';
+import { UserRole } from '@/src/types/entity/core.interface';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -71,7 +79,6 @@ const JobWorkAreaForm: React.FC<{
             name="service_package"
             value={area.service_package || ''}
             onChange={handleFieldChange}
-            required
             readOnly={isReadOnly}
           />
         </FormField>
@@ -85,7 +92,7 @@ interface AddJobModalProps {
   onClose: () => void;
   assessments: Assessment[];
   contracts: Contract[];
-  onCreateJob: (jobData: Omit<FieldJob, 'id'>, assessmentId?: string) => void;
+  onCreateJob: (jobData: Omit<Job, 'id'> | any, assessmentId?: string) => void;
   jobs: FieldJob[];
   users: User[];
   products: Product[];
@@ -104,7 +111,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   jobs,
   users,
   products,
-  warehouses,
+  warehouses: initialWarehouses,
   customers,
   initialContractId,
   initialWorkDateIso,
@@ -124,21 +131,121 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   );
   const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
+  // Fix: Ensure serviceSystem state is defined
+  const [serviceSystem, setServiceSystem] = useState<string>('');
 
-  const technicians = users.filter((u) => u.role === UserRole.Technician);
-  const vehicleWarehouses = useMemo(
-    () => warehouses.filter((w) => w.type === 'รถ'),
-    [warehouses]
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [referenceSearch, setReferenceSearch] = useState('');
+  const [vehicleSearch, setVehicleSearch] = useState('');
+  const [vehicleOptions, setVehicleOptions] =
+    useState<Warehouse[]>(initialWarehouses);
+
+  const [leadTechSearch, setLeadTechSearch] = useState('');
+  const [leadTechnicianOptions, setLeadTechnicianOptions] = useState<User[]>(
+    users.filter((u) => u.role === UserRole.Technician)
   );
+
+  const [additionalTechSearch, setAdditionalTechSearch] = useState('');
+  const [additionalTechnicianOptions, setAdditionalTechnicianOptions] =
+    useState<User[]>(users.filter((u) => u.role === UserRole.Technician));
+
+  const fetchVehicles = async (search: string) => {
+    try {
+      const response = await WarehouseApi.getWarehouses({
+        limit: 10,
+        search: search,
+        type: WarehouseType.VEHICLE,
+      });
+      // Fallback filtering if backend doesn't support 'type' param strictly or returns mixed
+      const vehicles = response.data.filter((w) => w.type === 'VEHICLE');
+      setVehicleOptions(vehicles);
+    } catch (error) {
+      console.error('Error fetching vehicles:', error);
+    }
+  };
+
+  const fetchLeadTechnicians = async (search: string) => {
+    try {
+      const response = await UserApi.getAll({
+        limit: 10,
+        search: search,
+        role: Role.TECH,
+      });
+      setLeadTechnicianOptions(response.data);
+    } catch (error) {
+      console.error('Error fetching lead technicians:', error);
+    }
+  };
+
+  const fetchAdditionalTechnicians = async (search: string) => {
+    try {
+      const response = await UserApi.getAll({
+        limit: 10,
+        search: search,
+        role: Role.TECH,
+      });
+      setAdditionalTechnicianOptions(response.data);
+    } catch (error) {
+      console.error('Error fetching additional technicians:', error);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isOpen) {
+        fetchVehicles(vehicleSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [vehicleSearch, isOpen]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isOpen) {
+        fetchLeadTechnicians(leadTechSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [leadTechSearch, isOpen]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isOpen) {
+        fetchAdditionalTechnicians(additionalTechSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [additionalTechSearch, isOpen]);
+
+  // Use vehicleOptions for display instead of just initialWarehouses filtering
+  const vehicleWarehouses = useMemo(() => vehicleOptions, [vehicleOptions]);
+
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
   );
 
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch) return customers;
+    const lower = customerSearch.toLowerCase();
+    return customers.filter(
+      (c) =>
+        c.first_name.toLowerCase().includes(lower) ||
+        c.last_name.toLowerCase().includes(lower) ||
+        c.phone?.includes(lower)
+    );
+  }, [customers, customerSearch]);
+
+  const filteredVehicles = useMemo(() => {
+    return vehicleWarehouses.map((v) => ({
+      value: v.id,
+      label: `${v.name} (${(v as any).license_plate || '-'})`,
+    }));
+  }, [vehicleWarehouses]);
+
   const availableAssessments = useMemo(() => {
     const baseAssessments = assessments.filter(
-      // TODO: Map Status to AsessmentStatus if needed
-      (a) => a.status === 'Draft' || a.status === 'Completed' // Assuming AsessmentStatus values
+      (a) => a.status === 'Draft' || a.status === 'Completed'
     );
     if (selectedCustomerId) {
       return baseAssessments.filter(
@@ -151,9 +258,26 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const availableContracts = useMemo(() => {
     if (!selectedCustomerId) return [];
     return contracts.filter(
-      (c) => c.customer_id === selectedCustomerId && c.status === 'InProgress' // Assuming Status values
+      (c) => c.customer_id === selectedCustomerId && c.status === 'InProgress'
     );
   }, [contracts, selectedCustomerId]);
+
+  const filteredReferences = useMemo(() => {
+    const refs = [
+      ...availableAssessments.map((a) => ({
+        value: `asm-${a.id}`,
+        label: `ใบประเมิน: ${a.id} - ${a.work_areas[0] ? a.work_areas[0].service_type.join(', ') : ''}`,
+      })),
+      ...availableContracts.map((c) => ({
+        value: `con-${c.id}`,
+        label: `สัญญา: ${c.id} - ${c.service_package}`,
+      })),
+    ];
+
+    if (!referenceSearch) return refs;
+    const lower = referenceSearch.toLowerCase();
+    return refs.filter((r) => r.label.toLowerCase().includes(lower));
+  }, [availableAssessments, availableContracts, referenceSearch]);
 
   const isAssessment = selectedReference.startsWith('asm-');
   const isContract = selectedReference.startsWith('con-');
@@ -270,42 +394,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   }, [selectedVehicleId, workDate, jobs]);
 
   useEffect(() => {
-    if (!selectedVehicleId || !workDate || !startTime || !endTime) {
-      setTimeConflictError(null);
-      return;
-    }
-
-    const newJobStart = new Date(`${workDate}T${startTime}`);
-    const newJobEnd = new Date(`${workDate}T${endTime}`);
-
-    if (newJobEnd <= newJobStart) {
-      setTimeConflictError('เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น');
-      return;
-    }
-
-    const conflictingJob = jobs.find((job) => {
-      if (job.vehicle_id !== selectedVehicleId) return false;
-
-      const existingJobStart = new Date(job.start_time);
-      const existingJobEnd = new Date(job.end_time);
-
-      if (existingJobStart.toISOString().substring(0, 10) !== workDate) {
-        return false;
-      }
-
-      return newJobStart < existingJobEnd && newJobEnd > existingJobStart;
-    });
-
-    if (conflictingJob) {
-      setTimeConflictError(
-        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customer_name} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
-      );
-    } else {
-      setTimeConflictError(null);
-    }
-  }, [selectedVehicleId, workDate, startTime, endTime, jobs]);
-
-  useEffect(() => {
     if (!isOpen) {
       setSelectedReference('');
       setSelectedCustomerId('');
@@ -315,9 +403,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       setStartTime('');
       setEndTime('');
       setSelectedVehicleId('');
-      setTimeConflictError(null);
       setWorkAreas([]);
       setOperationDetails('');
+      setServiceSystem('');
     }
   }, [isOpen]);
 
@@ -354,71 +442,29 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     setSelectedReference(reference);
   };
 
-  const createJobObject = (status: JobStatus): Omit<FieldJob, 'id'> | null => {
-    if (
-      !selectedCustomer ||
-      !workDate ||
-      !startTime ||
-      !endTime ||
-      workAreas.length === 0 ||
-      !leadTechnicianId
-    )
-      return null;
-
-    // Default to customer's address details
-    let address = selectedCustomer.address_house_no
-      ? `${selectedCustomer.address_house_no} ${selectedCustomer.sub_district} ${selectedCustomer.district} ${selectedCustomer.province} ${selectedCustomer.postal_code}`
-      : '';
-    let googleMapLink = selectedCustomer.google_map_link;
-    // Customer doesn't have zone/group/roadLine in new interface?
-    // Let's check Customer interface. It has sub_district, etc. But not zone/group.
-    // Assuming they are not on Customer anymore or I need to fetch them from API or ignore.
-    // I'll ignore zone/group/roadLine/sequence defaults from Customer if they don't exist.
-    // Assessment has them.
-    let zone: string | undefined;
-    let group: string | undefined;
-    let roadLine: string | undefined;
-    let sequence: string | undefined;
-
-    // Override with more specific info if available
-    if (selectedAssessment) {
-      address = `${selectedAssessment.address}, ${selectedAssessment.subdistrict}, ${selectedAssessment.district}, ${selectedAssessment.province} ${selectedAssessment.postal_code}`;
-      googleMapLink = selectedAssessment.google_map_link || googleMapLink;
-      zone = selectedAssessment.zone || zone;
-      group = selectedAssessment.group || group;
-      roadLine = selectedAssessment.road_line || roadLine;
-      sequence = selectedAssessment.sequence || sequence;
-    } else if (selectedContract) {
-      address = selectedContract.address;
-    }
-
+  const createJobObject = (status: JobStatus): any => {
     const startDateTime = new Date(`${workDate}T${startTime}`).toISOString();
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
 
     const allTechnicianIds = [leadTechnicianId, ...selectedTechnicianIds];
     const uniqueTechnicianIds = [...new Set(allTechnicianIds)];
-    const assignedTechnicians = users.filter((u) =>
-      uniqueTechnicianIds.includes(u.id)
-    );
 
     return {
-      assessment_id: selectedAssessment?.id,
-      contract_id: selectedContract?.id,
-      customer_id: selectedCustomer.id,
-      customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
-      address: address,
-      google_map_link: googleMapLink,
-      zone,
-      group,
-      road_line: roadLine,
-      sequence,
-      start_time: startDateTime,
-      end_time: endDateTime,
-      technicians: assignedTechnicians,
-      work_areas: workAreas as FieldJobWorkArea[],
-      status: status,
+      // New Job Interface Fields
+      customer_id: selectedCustomerId,
+      contract_id: selectedContract?.id || initialContractId || undefined,
+      assessment_id: selectedAssessment?.id || undefined,
+      primary_tech_id: leadTechnicianId,
+      start_date: new Date(startDateTime),
+      end_date: new Date(endDateTime),
+      service_system: serviceSystem,
+      remark: operationDetails,
       vehicle_id: selectedVehicleId,
-      operation_details: operationDetails,
+      team_member: uniqueTechnicianIds.map((uid) => ({
+        user_id: uid,
+        check_in: null as any,
+        check_out: null as any,
+      })),
     };
   };
 
@@ -431,7 +477,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
     const jobData = createJobObject(JobStatus.Planned);
     if (jobData) {
-      onCreateJob(jobData, isAssessment ? jobData.assessment_id : undefined);
+      onCreateJob(jobData);
       onClose();
     }
   };
@@ -497,8 +543,19 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     });
   };
 
-  const additionalTechnicians = technicians.filter(
-    (tech) => tech.id !== leadTechnicianId
+  const getTechnicianName = (tech: User | any) => {
+    if (tech.name) return tech.name;
+    if (tech.first_name)
+      return `${tech.first_name} ${tech.last_name || ''}`.trim();
+    return tech.username || tech.email || tech.phone || 'Unknown';
+  };
+
+  const additionalTechnicians = useMemo(
+    () =>
+      additionalTechnicianOptions.filter(
+        (tech) => tech.id !== leadTechnicianId
+      ),
+    [additionalTechnicianOptions, leadTechnicianId]
   );
 
   return (
@@ -570,55 +627,38 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="เลือกลูกค้า" htmlFor="customer-select">
-            <Select
-              id="customer-select"
+          <div className="mb-4">
+            <SearchableSelect
+              label="เลือกลูกค้า"
+              options={filteredCustomers.map((c) => ({
+                value: c.id,
+                label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
+                description: c.phone || '',
+              }))}
               value={selectedCustomerId}
-              onChange={(e) => handleCustomerChange(e.target.value)}
+              onChange={handleCustomerChange}
+              onSearchChange={setCustomerSearch}
+              placeholder="ค้นหาลูกค้า..."
               required
-            >
-              <option value="">-- เลือกลูกค้า --</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.first_name} {c.last_name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-          <FormField
-            label="หรือ อ้างอิง (ใบประเมิน/สัญญา)"
-            htmlFor="reference-select"
-          >
-            <Select
-              id="reference-select"
+            />
+          </div>
+          <div className="mb-4">
+            <SearchableSelect
+              label="หรือ อ้างอิง (ใบประเมิน/สัญญา)"
+              options={filteredReferences}
               value={selectedReference}
-              onChange={(e) => handleReferenceChange(e.target.value)}
-              disabled={!selectedCustomerId}
-            >
-              <option value="">-- ไม่เลือกรายการอ้างอิง --</option>
-              {availableAssessments.length > 0 && (
-                <optgroup label="ใบประเมิน">
-                  {availableAssessments.map((a) => (
-                    <option key={`asm-${a.id}`} value={`asm-${a.id}`}>
-                      {a.id} -{' '}
-                      {a.work_areas[0]
-                        ? a.work_areas[0].service_type.join(', ')
-                        : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {availableContracts.length > 0 && (
-                <optgroup label="สัญญา">
-                  {availableContracts.map((c) => (
-                    <option key={`con-${c.id}`} value={`con-${c.id}`}>
-                      {c.id} - {c.service_package}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </Select>
-          </FormField>
+              onChange={handleReferenceChange}
+              onSearchChange={setReferenceSearch}
+              placeholder={
+                selectedCustomerId
+                  ? 'เลือกรายการอ้างอิง...'
+                  : 'กรุณาเลือกลูกค้าก่อน'
+              }
+              className={
+                !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+              }
+            />
+          </div>
         </div>
 
         {workAreas.length > 0 && (
@@ -680,43 +720,64 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
           />
         </FormField>
 
-        <FormField label="เลือกรถที่ปฏิบัติงาน" htmlFor="vehicle-select">
+        <FormField label="ระบบบริการ" htmlFor="service-system">
           <Select
-            id="vehicle-select"
-            value={selectedVehicleId}
-            onChange={(e) => setSelectedVehicleId(e.target.value)}
-            required
+            id="service-system"
+            value={serviceSystem}
+            onChange={(e) => setServiceSystem(e.target.value)}
           >
-            <option value="">-- เลือกรถบริการ --</option>
-            {vehicleWarehouses.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name} ({v.license_plate})
+            <option value="" disabled>
+              -- เลือกระบบบริการ --
+            </option>
+            {Object.values(ServiceSystem).map((sys) => (
+              <option key={sys} value={sys}>
+                {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
               </option>
             ))}
           </Select>
         </FormField>
+
+        <div className="mb-4">
+          <SearchableSelect
+            label="เลือกรถที่ปฏิบัติงาน"
+            options={filteredVehicles}
+            value={selectedVehicleId}
+            onChange={setSelectedVehicleId}
+            onSearchChange={setVehicleSearch}
+            placeholder="ค้นหารถบริการ..."
+            required
+          />
+        </div>
 
         {timeConflictError && (
           <p className="text-sm text-red-600 -mt-2">{timeConflictError}</p>
         )}
 
-        <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-select">
-          <Select
-            id="lead-technician-select"
+        <div className="mb-4">
+          <SearchableSelect
+            label="หัวหน้าช่าง *"
+            name="primary_tech_id"
+            options={leadTechnicianOptions.map((tech) => ({
+              value: tech.id,
+              label: `${getTechnicianName(tech)}`,
+              description: tech.phone || '',
+            }))}
             value={leadTechnicianId}
-            onChange={(e) => handleLeadTechnicianChange(e.target.value)}
+            onChange={handleLeadTechnicianChange}
+            onSearchChange={setLeadTechSearch}
+            placeholder="ค้นหาหัวหน้าช่าง..."
             required
-          >
-            <option value="">-- เลือกหัวหน้าช่าง --</option>
-            {technicians.map((tech) => (
-              <option key={tech.id} value={tech.id}>
-                {tech.name}
-              </option>
-            ))}
-          </Select>
-        </FormField>
+          />
+        </div>
 
         <FormField label="ช่างเทคนิคเพิ่มเติม (ถ้ามี)">
+          <div className="mb-2">
+            <Input
+              placeholder="ค้นหาช่างเพิ่มเติม..."
+              value={additionalTechSearch}
+              onChange={(e) => setAdditionalTechSearch(e.target.value)}
+            />
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md max-h-40 overflow-y-auto">
             {additionalTechnicians.map((tech) => (
               <label
@@ -728,7 +789,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   checked={selectedTechnicianIds.includes(tech.id)}
                   onChange={() => handleTechnicianToggle(tech.id)}
                 />
-                <span className="text-slate-800">{tech.name}</span>
+                <span className="text-slate-800">
+                  {getTechnicianName(tech)}
+                </span>
               </label>
             ))}
           </div>
@@ -737,4 +800,3 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     </Modal>
   );
 };
-

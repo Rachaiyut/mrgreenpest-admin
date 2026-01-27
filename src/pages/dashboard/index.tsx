@@ -101,7 +101,7 @@ const SimpleAreaChart = ({
         />
 
         {data.map((d, i) => {
-          const x = padding + i * (graphWidth / (data.length - 1));
+          const x = padding + i * (graphWidth / (data.length - 1 || 1));
           const y = height - padding - (d.total / maxVal) * graphHeight;
           return (
             <g key={i} className="group cursor-pointer">
@@ -796,5 +796,3 @@ const Dashboard: React.FC<DashboardProps> = () => {
 };
 
 export default Dashboard;
-
-

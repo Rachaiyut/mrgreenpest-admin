@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { Card } from '../../components/common/Card';
 import {
   PlusIcon,
@@ -27,19 +33,22 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 
 import { WarehouseApi } from '@/src/api/warehouse';
 import { ProductApi } from '@/src/api/product';
-import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/warehouse';
+import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 
 const Warehouse: React.FC = () => {
-
   // Data State
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
-  const [warehouseStats, setWarehouseStats] = useState<WarehouseStats | null>(null);
+  const [warehouseStats, setWarehouseStats] = useState<WarehouseStats | null>(
+    null
+  );
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
 
   // State
-  const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>(
+    'all'
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -58,11 +67,17 @@ const Warehouse: React.FC = () => {
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
 
   // Selected Items
-  const [selectedWarehouse, setSelectedWarehouse] = useState<WarehouseType | null>(null);
-  const [warehouseToEdit, setWarehouseToEdit] = useState<WarehouseType | null>(null);
-  const [warehouseToDelete, setWarehouseToDelete] = useState<WarehouseType | null>(null);
-  const [warehouseToActivate, setWarehouseToActivate] = useState<WarehouseType | null>(null);
-  const [warehouseForLimits, setWarehouseForLimits] = useState<WarehouseType | null>(null);
+  const [selectedWarehouse, setSelectedWarehouse] =
+    useState<WarehouseType | null>(null);
+  const [warehouseToEdit, setWarehouseToEdit] = useState<WarehouseType | null>(
+    null
+  );
+  const [warehouseToDelete, setWarehouseToDelete] =
+    useState<WarehouseType | null>(null);
+  const [warehouseToActivate, setWarehouseToActivate] =
+    useState<WarehouseType | null>(null);
+  const [warehouseForLimits, setWarehouseForLimits] =
+    useState<WarehouseType | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -75,9 +90,9 @@ const Warehouse: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch warehouses stats:', error);
     }
-  }
+  };
 
-  // Fetch WArehouse Data 
+  // Fetch WArehouse Data
   const fetchWarehouses = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -112,7 +127,7 @@ const Warehouse: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    fetchWarehousesStats()
+    fetchWarehousesStats();
     fetchWarehouses();
     fetchProducts();
   }, [fetchWarehouses, fetchProducts]);
@@ -237,11 +252,14 @@ const Warehouse: React.FC = () => {
   const handleConfirmActivate = async () => {
     if (!warehouseToActivate) return;
     try {
-      await onUpdateWarehouse({ ...warehouseToActivate, status: Status.Approved });
+      await onUpdateWarehouse({
+        ...warehouseToActivate,
+        status: Status.Approved,
+      });
       setIsConfirmModalOpen(false);
       setWarehouseToActivate(null);
     } catch (error) {
-      console.error("Error activating warehouse", error);
+      console.error('Error activating warehouse', error);
     }
   };
 
@@ -263,9 +281,7 @@ const Warehouse: React.FC = () => {
         {/* Header */}
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">
-              คลังสินค้า
-            </h1>
+            <h1 className="text-3xl font-bold text-slate-800">คลังสินค้า</h1>
             <p className="mt-1 text-slate-600">
               จัดการข้อมูลคลังสินค้าและรถบริการของบริษัท
             </p>
@@ -279,10 +295,7 @@ const Warehouse: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button
-              onClick={() => setIsAddModalOpen(true)}
-              variant="primary"
-            >
+            <Button onClick={() => setIsAddModalOpen(true)} variant="primary">
               <PlusIcon className="h-5 w-5 mr-2" />
               เพิ่มคลัง/รถบริการ
             </Button>
@@ -343,29 +356,41 @@ const Warehouse: React.FC = () => {
             {/* Tabs */}
             <div className="flex bg-slate-100 p-1 rounded-lg self-start">
               <button
-                onClick={() => { setActiveTab('all'); setCurrentPage(1); }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'all'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                onClick={() => {
+                  setActiveTab('all');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'all'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 ทั้งหมด
               </button>
               <button
-                onClick={() => { setActiveTab('warehouse'); setCurrentPage(1); }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'warehouse'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                onClick={() => {
+                  setActiveTab('warehouse');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'warehouse'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 คลังสินค้า
               </button>
               <button
-                onClick={() => { setActiveTab('vehicle'); setCurrentPage(1); }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'vehicle'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                onClick={() => {
+                  setActiveTab('vehicle');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'vehicle'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 รถบริการ
               </button>
@@ -376,22 +401,69 @@ const Warehouse: React.FC = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th scope="col" className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
-                  <th scope="col" className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">รหัส</th>
-                  <th scope="col" className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ชื่อคลัง/รถ</th>
-                  <th scope="col" className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ประเภท</th>
-                  <th scope="col" className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ที่ตั้ง/ทะเบียน</th>
-                  <th scope="col" className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap">สถานะ</th>
-                  <th scope="col" className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ใช้งานคลังหลัก</th>
-                  <th scope="col" className="relative px-6 py-3"><span className="sr-only">จัดการ</span></th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    ลำดับ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    รหัส
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    ชื่อคลัง/รถ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    ประเภท
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    ที่ตั้ง/ทะเบียน
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    ใช้งานคลังหลัก
+                  </th>
+                  <th scope="col" className="relative px-6 py-3">
+                    <span className="sr-only">จัดการ</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
-                  <tr><td colSpan={8} className="px-6 py-10 text-center text-slate-500">Loading...</td></tr>
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="px-6 py-10 text-center text-slate-500"
+                    >
+                      Loading...
+                    </td>
+                  </tr>
                 ) : warehouses.length > 0 ? (
                   warehouses.map((warehouse, index) => (
-                    <tr key={warehouse.id} className="hover:bg-slate-50 transition-colors">
+                    <tr
+                      key={warehouse.id}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
@@ -400,23 +472,37 @@ const Warehouse: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                         <div className="flex items-center">
-                          <div className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}>
-                            {warehouse.type === WarehouseTypeEnum.MAIN ? <NewWarehouseIcon className="h-4 w-4" /> : <ManageIcon className="h-4 w-4" />}
+                          <div
+                            className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}
+                          >
+                            {warehouse.type === WarehouseTypeEnum.MAIN ? (
+                              <NewWarehouseIcon className="h-4 w-4" />
+                            ) : (
+                              <ManageIcon className="h-4 w-4" />
+                            )}
                           </div>
                           {warehouse.name}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
-                          {warehouse.type === WarehouseTypeEnum.MAIN ? 'คลังหลัก' : 'คลังย่อย'}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}
+                        >
+                          {warehouse.type === WarehouseTypeEnum.MAIN
+                            ? 'คลังหลัก'
+                            : 'คลังย่อย'}
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
-                        {warehouse.type === WarehouseTypeEnum.SUB && warehouse.vehicle ? (
+                        {warehouse.type === WarehouseTypeEnum.SUB &&
+                        warehouse.vehicle ? (
                           <div className="flex flex-col">
-                            <span>{warehouse.vehicle.vehicle_registration}</span>
+                            <span>
+                              {warehouse.vehicle.vehicle_registration}
+                            </span>
                             <span className="text-xs text-slate-400">
-                              {warehouse.vehicle.brand} {warehouse.vehicle.model}
+                              {warehouse.vehicle.brand}{' '}
+                              {warehouse.vehicle.model}
                             </span>
                           </div>
                         ) : (
@@ -424,11 +510,16 @@ const Warehouse: React.FC = () => {
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
-                        <StatusBadge status={warehouse.status || Status.Draft} />
+                        <StatusBadge
+                          status={warehouse.status || Status.Draft}
+                        />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">
                         {warehouse.type === WarehouseTypeEnum.MAIN ? (
-                          <label htmlFor={`toggle-${warehouse.id}`} className="inline-flex relative items-center cursor-pointer">
+                          <label
+                            htmlFor={`toggle-${warehouse.id}`}
+                            className="inline-flex relative items-center cursor-pointer"
+                          >
                             <input
                               type="checkbox"
                               id={`toggle-${warehouse.id}`}
@@ -457,7 +548,10 @@ const Warehouse: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="px-6 py-10 text-center text-slate-500">
+                    <td
+                      colSpan={8}
+                      className="px-6 py-10 text-center text-slate-500"
+                    >
                       <div className="flex flex-col items-center justify-center">
                         <NewWarehouseIcon className="h-10 w-10 text-slate-300 mb-2" />
                         <p>ไม่พบข้อมูลคลังสินค้า</p>
@@ -504,10 +598,11 @@ const Warehouse: React.FC = () => {
                   <button
                     key={action.label}
                     onClick={() => action.action(warehouse)}
-                    className={`flex w-full items-center px-4 py-2 text-sm ${action.isDanger
-                      ? 'text-red-600 hover:bg-red-50'
-                      : 'text-slate-700 hover:bg-slate-100'
-                      }`}
+                    className={`flex w-full items-center px-4 py-2 text-sm ${
+                      action.isDanger
+                        ? 'text-red-600 hover:bg-red-50'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                     {action.label}
@@ -575,6 +670,6 @@ const Warehouse: React.FC = () => {
       />
     </>
   );
-}
+};
 
 export default Warehouse;

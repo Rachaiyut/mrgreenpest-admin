@@ -23,6 +23,6 @@ export * from './enums/financial';
 export * from './enums/job';
 export * from './enums/product';
 export * from './enums/role';
-export * from './enums/warehouse'
+export * from './enums/inventory';
 
 export * from './nav';

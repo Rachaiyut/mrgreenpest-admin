@@ -45,7 +45,6 @@ import { ProductApi } from '@/src/api/product';
 import { WarehouseApi } from '@/src/api/warehouse';
 import { SupplierApi } from '@/src/api/supplier';
 import { GoodsReceiptApi } from '@/src/api/goods-receipt';
-import { WithdrawalApi } from '@/src/api/withdrawal';
 import { TransferApi } from '@/src/api/transfer';
 import { StockAdjustmentApi } from '@/src/api/stock-adjustment';
 import { ProductReturnApi } from '@/src/api/product-return';
@@ -66,7 +65,7 @@ export interface DataContextType {
   warehouses: Warehouse[];
   suppliers: Supplier[];
   goodsReceipts: GoodsReceipt[];
-  withdrawals: Withdrawal[];
+  // withdrawals: Withdrawal[];
   transfers: Transfer[];
   stockAdjustments: StockAdjustment[];
   productReturns: ProductReturn[];

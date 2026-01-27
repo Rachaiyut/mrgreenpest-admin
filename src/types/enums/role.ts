@@ -4,4 +4,6 @@ export enum Role {
   CFO = 'CFO',
   SUPERADMIN = 'SUPERADMIN',
   ADMIN = 'ADMIN',
+  LEAD_TECH = 'LEAD_TECH',
+  TECH = 'TECH',
 }

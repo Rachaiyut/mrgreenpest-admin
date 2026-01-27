@@ -1,14 +1,13 @@
 import {
-  IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { User } from '@/src/types/entity/core.interface';
+import { User, UserQuery } from '@/src/types/entity/core.interface';
 import { AuthService } from './auth';
 
 class UserService extends AuthService {
   protected path = '/users';
 
-  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<User>> {
+  async getAll(query?: UserQuery): Promise<IBaseResponseArray<User>> {
     const res = await this.http.get<IBaseResponseArray<User>>(this.path, {
       params: query,
     });

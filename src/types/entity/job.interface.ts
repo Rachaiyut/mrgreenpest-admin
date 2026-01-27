@@ -1,5 +1,6 @@
 export enum ServiceSystem {
   CHEMICAL = 'CHEMICAL',
+  PREY = 'PREY',
   // Add other systems here, e.g., BAITING = 'BAITING'
 }
 
@@ -10,6 +11,7 @@ export interface TeamMember {
 }
 
 export interface Job {
+  customer_id: string;
   contract_id: string;
   assessment_id: string;
   primary_tech_id: string;

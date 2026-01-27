@@ -2,31 +2,30 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { Withdrawal } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
-class WithdrawalService extends AuthService {
+class anyService extends AuthService {
   protected path = '/withdrawals';
 
-  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<Withdrawal>> {
-    const res = await this.http.get<IBaseResponseArray<Withdrawal>>(this.path, {
+  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<any>> {
+    const res = await this.http.get<IBaseResponseArray<any>>(this.path, {
       params: query,
     });
     return res.data;
   }
 
-  async getById(id: string): Promise<Withdrawal> {
-    const res = await this.http.get<Withdrawal>(`${this.path}/${id}`);
+  async getById(id: string): Promise<any> {
+    const res = await this.http.get<any>(`${this.path}/${id}`);
     return res.data;
   }
 
-  async create(data: Omit<Withdrawal, 'id'>): Promise<Withdrawal> {
-    const res = await this.http.post<Withdrawal>(this.path, data);
+  async create(data: Omit<any, 'id'>): Promise<any> {
+    const res = await this.http.post<any>(this.path, data);
     return res.data;
   }
 
-  async update(id: string, data: Partial<Withdrawal>): Promise<Withdrawal> {
-    const res = await this.http.patch<Withdrawal>(`${this.path}/${id}`, data);
+  async update(id: string, data: Partial<any>): Promise<any> {
+    const res = await this.http.patch<any>(`${this.path}/${id}`, data);
     return res.data;
   }
 
@@ -35,5 +34,5 @@ class WithdrawalService extends AuthService {
   }
 }
 
-export const WithdrawalApi = new WithdrawalService();
+export const anyApi = new anyService();
 

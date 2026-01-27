@@ -1,3 +1,6 @@
+import { Role } from "../enums/role";
+import { IBaseQuery } from "./base.interface";
+
 export enum Status {
   Draft = 'จัดทำ',
   Scheduled = 'นัดหมายแล้ว',
@@ -27,6 +30,12 @@ export enum UserRole {
   Warehouse = 'คลัง',
   Dispatcher = 'จัดงาน',
   Technician = 'ช่างเทคนิค',
+}
+
+export interface UserQuery extends IBaseQuery {
+  citizen_id?: string;
+  phone?: string;
+  role?: Role;
 }
 
 export interface User {
