@@ -3,5 +3,8 @@
 root * /usr/share/caddy
 file_server
 
+# Proxy /api requests to backend (Optional: requires API_BASE_URL env var at runtime)
+# reverse_proxy /api/* {$API_BASE_URL}
+
 # support React SPA (fallback to index.html)
 try_files {path} /index.html
