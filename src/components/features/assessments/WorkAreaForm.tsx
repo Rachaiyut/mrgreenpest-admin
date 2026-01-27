@@ -626,7 +626,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                         </td>
                         <td className="p-1 text-slate-600">{product?.code}</td>
                         <td className="p-1 font-medium text-slate-800">
-                          {product?.name}
+                          {product?.name || item.product_name}
                         </td>
                         <td className="p-1 w-24">
                           <Input

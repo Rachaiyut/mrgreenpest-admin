@@ -318,7 +318,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       created_at: formData.created_at
         ? new Date(formData.created_at).toISOString()
         : new Date().toISOString(),
-      appointment_date: formData.appointment_date || new Date(),
+      appointment_date: formData.appointment_date,
       payment_condition: formData.payment_condition as PaymentMethod,
 
       // Other fields

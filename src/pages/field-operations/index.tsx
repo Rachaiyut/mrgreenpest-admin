@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { Status, User, UserRole } from '../../types/entity/core.interface';
 import {
-  Status,
-  User,
-  UserRole,
-} from '../../types/entity/core.interface';
-import { FieldJob, ServiceReport } from '../../types/entity/field-job.interface';
+  FieldJob,
+  ServiceReport,
+} from '../../types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
@@ -381,22 +380,136 @@ interface FieldOperationsProps {
   ) => void;
 }
 
+import {
+  AssessmentApi,
+  CustomerApi,
+  ProductApi,
+  WarehouseApi,
+  JobApi,
+} from '@/src/api';
+
 const FieldOperations: React.FC<FieldOperationsProps> = ({
   users,
-  jobs,
-  assessments,
+  jobs: initialJobs, // Rename prop to avoid conflict if we use state
+  assessments: initialAssessments,
   contracts,
   quotations,
-  onCreateJob,
-  onUpdateJob,
-  onDeleteJob,
-  products,
+  // We will override these prop handlers with internal API calls
+  onCreateJob: propOnCreateJob,
+  onUpdateJob: propOnUpdateJob,
+  onDeleteJob: propOnDeleteJob,
+  products: initialProducts,
   onUpdateAssessment,
   onUpdateQuotation,
-  customers,
-  warehouses,
+  customers: initialCustomers,
+  warehouses: initialWarehouses,
 }) => {
   const currentUser = users[0];
+
+  // Local state to manage data fetched from API
+  const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
+  const [assessments, setAssessments] = useState<Assessment[]>(
+    initialAssessments || []
+  );
+  const [customers, setCustomers] = useState<Customer[]>(
+    initialCustomers || []
+  );
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>(
+    initialWarehouses || []
+  );
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [
+        jobsRes,
+        assessmentsRes,
+        customersRes,
+        productsRes,
+        warehousesRes,
+      ] = await Promise.all([
+        JobApi.getAll({ limit: 1000 }),
+        AssessmentApi.getAll({ limit: 1000 }),
+        CustomerApi.getCustomers({ limit: 1000 }),
+        ProductApi.getProducts({ limit: 1000 }),
+        WarehouseApi.getWarehouses({ limit: 100 }),
+      ]);
+      setJobs(jobsRes.data);
+      setAssessments(assessmentsRes.data);
+      setCustomers(customersRes.data);
+      setProducts(productsRes.data);
+      setWarehouses(warehousesRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleCreateJob = async (newJob: Omit<FieldJob, 'id'>) => {
+    try {
+      await JobApi.create(newJob);
+      fetchData();
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Error creating job:', error);
+    }
+  };
+
+  const handleUpdateJob = async (updatedJob: FieldJob) => {
+    try {
+      if (updatedJob.id) {
+        await JobApi.update(updatedJob.id, updatedJob);
+        fetchData();
+        setIsEditModalOpen(false);
+        setJobToEdit(null);
+      }
+    } catch (error) {
+      console.error('Error updating job:', error);
+    }
+  };
+
+  const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
+    try {
+      await JobApi.update(jobId, { status: newStatus });
+      fetchData();
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const handleCancelJob = async (jobId: string, remark: string) => {
+    try {
+      // Assuming 'note' field exists or similar for cancellation remark,
+      // if not we might need to adjust the type or field name.
+      // Based on FieldJob interface, let's check if 'note' is appropriate.
+      // If not, we might just update status.
+      await JobApi.update(jobId, { status: JobStatus.Cancelled });
+      fetchData();
+      setIsCancelModalOpen(false);
+      setJobToCancel(null);
+    } catch (error) {
+      console.error('Error cancelling job:', error);
+    }
+  };
+
+  // Use these handlers instead of the ones passed from props or placeholder logic
+  const onCreateJob = handleCreateJob;
+  const onUpdateJob = handleUpdateJob;
+  const onDeleteJob = async (jobId: string) => {
+    try {
+      await JobApi.delete(jobId);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting job:', error);
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<
     'schedule' | 'work-schedule' | 'reports'
@@ -528,23 +641,22 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   }, [reversedJobs, selectedTechnicianId, searchQuery]);
 
   // Check for any job in progress by the current user
-  const isAnyJobInProgressForCurrentUser = useMemo(
-    () => {
-      if (!currentUser || !jobs) return false;
-      return jobs.some(
-        (j) =>
-          j.status === JobStatus.InProgress &&
-          j.technicians.some((tech) => tech.id === currentUser.id)
-      );
-    },
-    [jobs, currentUser]
-  );
+  const isAnyJobInProgressForCurrentUser = useMemo(() => {
+    if (!currentUser || !jobs) return false;
+    return jobs.some(
+      (j) =>
+        j.status === JobStatus.InProgress &&
+        j.technicians.some((tech) => tech.id === currentUser.id)
+    );
+  }, [jobs, currentUser]);
 
   const kanbanColumns = useMemo(() => {
     // Assuming 'type' exists on Warehouse but maybe not 'license_plate' directly typed or enum mismatch
     // Let's filter first
-    const serviceVehicles = warehouses.filter((w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE'); 
-    
+    const serviceVehicles = warehouses.filter(
+      (w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE'
+    );
+
     const jobsForKanban = filteredJobs.filter(
       (j) => j.status === JobStatus.Planned || j.status === JobStatus.InProgress
     );
@@ -625,27 +737,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleReportItemsPerPageChange = (size: number) => {
     setReportItemsPerPage(size);
     setReportCurrentPage(1);
-  };
-
-  const handleStatusChange = (jobId: string, newStatus: JobStatus) => {
-    const jobToUpdate = jobs.find((j) => j.id === jobId);
-    if (!jobToUpdate) return;
-
-    if (newStatus === JobStatus.InProgress) {
-      // Check-in
-      onUpdateJob({
-        ...jobToUpdate,
-        status: newStatus,
-        actual_start_time: new Date().toISOString(),
-      });
-    } else if (newStatus === JobStatus.Completed) {
-      // Check-out flow: open Service Report modal
-      setJobForReport(jobToUpdate);
-      setReportFinalStatus(JobStatus.Completed);
-      setIsReportModalOpen(true);
-    } else {
-      onUpdateJob({ ...jobToUpdate, status: newStatus });
-    }
   };
 
   const handleAssessmentUpdateOnCheckout = (updatedAssessment: Assessment) => {
@@ -729,7 +820,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       onUpdateJob(updatedJob);
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
-        if (quote && quote.status === Status.Draft) { // Assuming Quote Status is still core.Status
+        if (quote && quote.status === Status.Draft) {
+          // Assuming Quote Status is still core.Status
           onUpdateQuotation({ ...quote, status: Status.Sent });
         }
       }
@@ -997,7 +1089,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               </div>
             </div>
           )}
-          
+
           {activeTab === 'schedule' && view === 'list' && (
             <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
               <div className="overflow-x-auto">
@@ -1120,7 +1212,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                         paginatedReports.map((job) => (
                           <tr key={job.id} className="hover:bg-slate-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                              {formatThaiDateTime(job.service_report?.created_at || '')}
+                              {formatThaiDateTime(
+                                job.service_report?.created_at || ''
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-slate-900">
@@ -1131,7 +1225,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                               {job.service_report?.service_types.join(', ')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge status={job.service_report?.status || JobStatus.Draft} />
+                              <StatusBadge
+                                status={
+                                  job.service_report?.status || JobStatus.Draft
+                                }
+                              />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                               <Button
@@ -1185,7 +1283,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                   >
                     <option value="">เลือกทะเบียนรถ</option>
                     {warehouses
-                      .filter((w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE')
+                      .filter(
+                        (w) =>
+                          (w as any).type === 'รถ' ||
+                          (w as any).type === 'VEHICLE'
+                      )
                       .map((w) => (
                         <option key={w.id} value={w.id}>
                           {(w as any).license_plate} ({w.name})
@@ -1256,8 +1358,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                   : '-'}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {/* TODO: Check Invoice Status */}
-                                -
+                                {/* TODO: Check Invoice Status */}-
                               </td>
                               <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
                                 {job.remarks || '-'}
@@ -1303,17 +1404,17 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         </div>
       </div>
       <AddJobModal
-          isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
-          assessments={assessments}
-          contracts={contracts}
-          onCreateJob={onCreateJob}
-          jobs={jobs}
-          users={users}
-          products={products}
-          warehouses={warehouses}
-          customers={customers}
-        />
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        assessments={assessments}
+        contracts={contracts}
+        onCreateJob={onCreateJob}
+        jobs={jobs}
+        users={users}
+        products={products}
+        warehouses={warehouses}
+        customers={customers}
+      />
     </>
   );
 };
