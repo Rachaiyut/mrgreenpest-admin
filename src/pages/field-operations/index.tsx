@@ -529,17 +529,22 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   // Check for any job in progress by the current user
   const isAnyJobInProgressForCurrentUser = useMemo(
-    () =>
-      jobs.some(
+    () => {
+      if (!currentUser || !jobs) return false;
+      return jobs.some(
         (j) =>
           j.status === JobStatus.InProgress &&
           j.technicians.some((tech) => tech.id === currentUser.id)
-      ),
-    [jobs, currentUser.id]
+      );
+    },
+    [jobs, currentUser]
   );
 
   const kanbanColumns = useMemo(() => {
-    const serviceVehicles = warehouses.filter((w) => (w.type as any) === 'รถ');
+    // Assuming 'type' exists on Warehouse but maybe not 'license_plate' directly typed or enum mismatch
+    // Let's filter first
+    const serviceVehicles = warehouses.filter((w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE'); 
+    
     const jobsForKanban = filteredJobs.filter(
       (j) => j.status === JobStatus.Planned || j.status === JobStatus.InProgress
     );
@@ -1180,10 +1185,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                   >
                     <option value="">เลือกทะเบียนรถ</option>
                     {warehouses
-                      .filter((w) => w.type === 'รถ')
+                      .filter((w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE')
                       .map((w) => (
                         <option key={w.id} value={w.id}>
-                          {w.license_plate} ({w.name})
+                          {(w as any).license_plate} ({w.name})
                         </option>
                       ))}
                   </Select>
@@ -1298,15 +1303,17 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         </div>
       </div>
       <AddJobModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        assessments={assessments}
-        contracts={contracts}
-        onCreateJob={onCreateJob}
-        jobs={jobs}
-        users={users}
-        products={products}
-      />
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          assessments={assessments}
+          contracts={contracts}
+          onCreateJob={onCreateJob}
+          jobs={jobs}
+          users={users}
+          products={products}
+          warehouses={warehouses}
+          customers={customers}
+        />
     </>
   );
 };

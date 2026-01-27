@@ -385,7 +385,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           <div className="mb-4">
             <SearchableSelect
               label="ลูกค้า"
-              options={customers.map((c) => ({
+              options={(customers || []).map((c) => ({
                 value: c.id,
                 label: `${c.code} : ${c.first_name} ${c.last_name} ${
                   c.nickname ? `(${c.nickname})` : ''
