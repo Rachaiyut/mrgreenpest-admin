@@ -420,6 +420,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         ]);
 
       const warehousesData = (warehousesRes as any).data || [];
+      setWarehouses(warehousesData);
 
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
         (warehouse: any) =>
@@ -703,6 +704,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
     return vehicleColumns;
   }, [filteredJobs, warehouses]);
+
+  const customerMap = useMemo(() => {
+    return new Map((initialCustomers || []).map((c) => [c.id, c]));
+  }, [initialCustomers]);
 
   const serviceReports = useMemo(
     () => reversedJobs.filter((j) => j.service_report),

@@ -68,10 +68,10 @@ const Assessments: React.FC = () => {
     setIsLoading(true);
     try {
       const [assessmentsRes, customersRes, productsRes, packagesRes, categoriesRes] = await Promise.all([
-        AssessmentApi.getAll({ limit: 1000 }),
-        CustomerApi.getCustomers({ limit: 1000 }),
-        ProductApi.getProducts({ limit: 1000 }),
-        PackageApi.getPackages({ limit: 100 }),
+        AssessmentApi.getAll({ limit: 10 }),
+        CustomerApi.getCustomers({ limit: 10 }),
+        ProductApi.getProducts({ limit: 10 }),
+        PackageApi.getPackages({ limit: 10 }),
         CategoryApi.getCategories({ limit: 100, type: CategoryType.SERVICE })
       ]);
       setAssessments(assessmentsRes.data);
@@ -147,9 +147,9 @@ const Assessments: React.FC = () => {
       ),
     },
     {
-      title: AsessmentStatus.APPOIMENT,
+      title: AsessmentStatus.APPOINTMENT,
       assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.APPOIMENT
+        (a) => a.status === AsessmentStatus.APPOINTMENT
       ),
     },
     {

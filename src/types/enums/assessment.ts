@@ -1,7 +1,7 @@
 export enum AsessmentStatus {
     DRAFT = 'DRAFT',
     PENDING = 'PENDING',
-    APPOIMENT = 'APPOIMENT',
+    APPOINTMENT = 'APPOINTMENT',
     COMPLETE = 'COMPLETE',
 }
 
