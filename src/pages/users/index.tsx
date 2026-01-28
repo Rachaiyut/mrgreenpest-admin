@@ -1,11 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
-import {
-  User,
-  UserRole,
-  UserWallet,
-  WalletTransaction,
-} from '@/src/types/entity/app.interface';
+import { User, UserRole, WalletTransaction } from '@/src/types/entity/app.interface';
 import {
   PlusIcon,
   ShieldCheckIcon,
@@ -65,7 +60,7 @@ const Users: React.FC<UsersProps> = ({
   defaultView = 'users',
   onCreateWalletTransaction,
 }) => {
-  const { users, userWallets } = useData();
+  const { users } = useData();
   const [view, setView] = useState<'users' | 'roles'>(defaultView);
   const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -138,7 +133,7 @@ const Users: React.FC<UsersProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (userToDelete) {
       onDeleteUser(userToDelete.id);
     }
@@ -589,12 +584,10 @@ const Users: React.FC<UsersProps> = ({
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
         user={selectedUserForWallet}
-        wallet={
-          userWallets.find((w) => w.userId === selectedUserForWallet?.id) || {
-            userId: selectedUserForWallet?.id || '',
-            transactions: [],
-          }
-        }
+        wallet={{
+          user_id: selectedUserForWallet?.id || '',
+          transactions: [],
+        }}
         onCreateTransaction={onCreateWalletTransaction}
       />
     </>
@@ -602,4 +595,3 @@ const Users: React.FC<UsersProps> = ({
 };
 
 export default Users;
-

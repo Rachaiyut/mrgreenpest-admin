@@ -1,7 +1,8 @@
 export enum WarehouseType {
-    MAIN = 'MAIN',
-    SUB = 'SUB',
-    VEHICLE = 'VEHICLE'
+  MAIN = 'MAIN',
+  SUB = 'SUB',
+  VEHICLE = 'VEHICLE',
+
 }
 
 export enum VehicleStatus {

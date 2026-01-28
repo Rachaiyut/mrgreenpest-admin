@@ -11,7 +11,7 @@ import { Contract, Quotation } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
-import { JobStatus } from '@/src/types';
+import { JobStatus, WarehouseType } from '@/src/types';
 
 import {
   PlusIcon,
@@ -61,9 +61,13 @@ const JobCard: React.FC<{
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
+  const currentUserId = (currentUser as any)?.id as string | undefined;
+
   const isAssignedToCurrentUser = useMemo(
-    () => job.technicians.some((tech) => tech.id === currentUser.id),
-    [job.technicians, currentUser.id]
+    () =>
+      !!currentUserId &&
+      job.technicians.some((tech) => tech && tech.id === currentUserId),
+    [job.technicians, currentUserId]
   );
 
   const showCheckInButton =
@@ -423,24 +427,72 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [
-        jobsRes,
-        assessmentsRes,
-        customersRes,
-        productsRes,
-        warehousesRes,
-      ] = await Promise.all([
-        JobApi.getAll({ limit: 1000 }),
-        AssessmentApi.getAll({ limit: 1000 }),
-        CustomerApi.getCustomers({ limit: 1000 }),
-        ProductApi.getProducts({ limit: 1000 }),
-        WarehouseApi.getWarehouses({ limit: 100 }),
-      ]);
-      setJobs(jobsRes.data);
+      const [assessmentsRes, customersRes, productsRes, warehousesRes] =
+        await Promise.all([
+          AssessmentApi.getAll({ limit: 1000 }),
+          CustomerApi.getCustomers({ limit: 1000 }),
+          ProductApi.getProducts({ limit: 1000 }),
+          WarehouseApi.getWarehouses({ limit: 100, type: WarehouseType.VEHICLE }),
+        ]);
+
+      const warehousesData = (warehousesRes as any).data || [];
+
+      const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
+        (warehouse: any) =>
+          (warehouse.jobs || []).map((job: any) => {
+            const customer = job.customer || {};
+            const customerName =
+              customer.first_name || customer.last_name
+                ? `${customer.first_name || ''}${
+                    customer.last_name && customer.last_name !== '-'
+                      ? ` ${customer.last_name}`
+                      : ''
+                  }`.trim()
+                : customer.code || '';
+
+            const addressParts = [
+              customer.address_house_no,
+              customer.address_soi,
+              customer.address_road,
+              customer.sub_district,
+              customer.district,
+              customer.province,
+              customer.postal_code,
+            ].filter(Boolean);
+
+            const address = addressParts.join(' ');
+
+            return {
+              id: job.id,
+              assessment_id: job.assessment_id || undefined,
+              contract_id: job.contract_id || undefined,
+              customer_id: job.customer_id,
+              customer_name: customerName,
+              address,
+              google_map_link: customer.google_map_link || undefined,
+              start_time: job.start_date,
+              end_time: job.end_date,
+              technicians: [],
+              work_areas: [],
+              status: JobStatus.Planned,
+              vehicle_id: warehouse.id,
+              service_report: undefined,
+              remarks: job.remark,
+              quotation_id: undefined,
+              operation_details: undefined,
+              zone: undefined,
+              group: undefined,
+              road_line: undefined,
+              sequence: undefined,
+            } as FieldJob;
+          })
+      );
+
+      setJobs(jobsFromWarehouses);
       setAssessments(assessmentsRes.data);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
-      setWarehouses(warehousesRes.data);
+      setWarehouses(warehousesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -454,7 +506,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleCreateJob = async (newJob: Omit<FieldJob, 'id'>) => {
     try {
-      await JobApi.create(newJob);
+      await JobApi.create(newJob as any);
       fetchData();
       setIsAddModalOpen(false);
     } catch (error) {
@@ -477,7 +529,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
     try {
-      await JobApi.update(jobId, { status: newStatus });
+      await JobApi.update(jobId, { status: newStatus } as any);
       fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -490,7 +542,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       // if not we might need to adjust the type or field name.
       // Based on FieldJob interface, let's check if 'note' is appropriate.
       // If not, we might just update status.
-      await JobApi.update(jobId, { status: JobStatus.Cancelled });
+      await JobApi.update(jobId, { status: JobStatus.Cancelled } as any);
       fetchData();
       setIsCancelModalOpen(false);
       setJobToCancel(null);
