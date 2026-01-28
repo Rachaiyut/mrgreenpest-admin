@@ -10,10 +10,6 @@ import {
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { User } from '@/src/types/entity/core.interface';
 import {
-  FieldJob,
-  FieldJobWorkArea,
-} from '@/src/types/entity/field-job.interface';
-import {
   Job,
   TeamMember,
   ServiceSystem,
@@ -24,15 +20,15 @@ import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
-import { WarehouseApi, UserApi, CustomerApi } from '@/src/api';
+import { JobApi, WarehouseApi, UserApi, CustomerApi } from '@/src/api';
 import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
-  area: Partial<FieldJobWorkArea>;
+  area: any;
   index: number;
-  onAreaChange: (index: number, updatedArea: Partial<FieldJobWorkArea>) => void;
+  onAreaChange: (index: number, updatedArea: Partial<Job>) => void;
   onClearArea: (index: number) => void;
   isReadOnly: boolean;
 }> = ({ area, index, onAreaChange, onClearArea, isReadOnly }) => {
@@ -92,7 +88,7 @@ interface AddJobModalProps {
   initialContractId?: string;
   initialWorkDateIso?: string;
   contracts: Contract[];
-  jobs: FieldJob[];
+  jobs: any[];
   users: User[];
 }
 
@@ -122,7 +118,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const [timeConflictError, setTimeConflictError] = useState<string | null>(
     null
   );
-  const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
+  const [workAreas, setWorkAreas] = useState<Partial<any>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
   const [serviceSystem, setServiceSystem] = useState<string>('');
 
@@ -475,7 +471,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const handleAreaChange = (
     index: number,
-    updatedArea: Partial<FieldJobWorkArea>
+    updatedArea: Partial<Job>
   ) => {
     setWorkAreas((prev) =>
       prev.map((area, i) => (i === index ? updatedArea : area))

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Textarea, Button } from '../../common/FormControls';
 import { FieldJob } from '@/src/types/entity/app.interface';
+import { JobApi } from '@/src/api';
+import { JobStatus } from '@/src/types';
 
 interface CancelJobModalProps {
   isOpen: boolean;
@@ -26,9 +28,17 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
 
   if (!isOpen || !job) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(job.id, reason);
+    if (job && reason) {
+      try {
+        await JobApi.update(job.id, { status: JobStatus.Cancelled, remarks: reason } as any);
+        onConfirm(job.id, reason);
+        onClose();
+      } catch (error) {
+        console.error('Error cancelling job:', error);
+      }
+    }
   };
 
   return (

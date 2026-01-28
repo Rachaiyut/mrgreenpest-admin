@@ -6,6 +6,9 @@ export enum JobStatus {
     Completed = 'Completed',
     Cancelled = 'Cancelled',
     Pending = 'Pending',
+    PendingApproval = 'PendingApproval',
+    Approved = 'Approved',
+    Rejected = 'Rejected',
     Paused = 'Paused',
     Failed = 'Failed'
 }
@@ -14,4 +17,5 @@ export enum JobStatus {
 export enum JobMainStatus {
     PENDING = 'PENDING',
     INPROGRESS = 'IN_PROGRESS',
+    CANCELLED = 'CANCELLED',
 }

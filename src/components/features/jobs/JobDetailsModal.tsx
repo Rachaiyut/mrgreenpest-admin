@@ -1,10 +1,8 @@
 import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  FieldJob,
-  Assessment,
-  Warehouse,
-} from '@/src/types/entity/app.interface';
+import { FieldJob } from '@/src/types/entity/field-job.interface';
+import { Assessment } from '@/src/types/entity/assessment.interface';
+import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { GoogleMapIcon } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
@@ -25,8 +23,8 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   warehouses,
 }) => {
   const vehicle = useMemo(() => {
-    if (!job?.vehicleId) return null;
-    return warehouses.find((w) => w.id === job.vehicleId);
+    if (!job?.vehicle_id) return null;
+    return warehouses.find((w) => w.id === job.vehicle_id);
   }, [job, warehouses]);
 
   if (!isOpen || !job) return null;
@@ -57,16 +55,16 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">ลูกค้า</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {job.customerName}
+                {job.customer_name}
               </dd>
             </div>
-            {job.operationDetails && (
+            {job.operation_details && (
               <div className="md:col-span-2">
                 <dt className="font-medium text-slate-500">
                   รายละเอียดการปฏิบัติงาน
                 </dt>
                 <dd className="mt-1 text-slate-900 bg-slate-50 p-2 rounded-md whitespace-pre-wrap">
-                  {job.operationDetails}
+                  {job.operation_details}
                 </dd>
               </div>
             )}
@@ -76,12 +74,12 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                   พื้นที่และบริการ (ที่มอบหมาย)
                 </dt>
                 <dd className="mt-1 text-slate-900 space-y-1">
-                  {job.workAreas.map((area) => (
+                  {(job.work_areas || []).map((area) => (
                     <div key={area.id}>
                       <p className="font-semibold">
                         {area.name}:{' '}
                         <span className="font-normal">
-                          {area.servicePackage}
+                          {area.service_package}
                         </span>
                       </p>
                     </div>
@@ -100,10 +98,10 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             <div className="md:col-span-2">
               <dt className="font-medium text-slate-500">ที่อยู่</dt>
               <dd className="mt-1 text-slate-900">{job.address}</dd>
-              {job.googleMapLink && (
+              {job.google_map_link && (
                 <dd className="mt-2">
                   <a
-                    href={job.googleMapLink}
+                    href={job.google_map_link}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 text-primary hover:underline"
@@ -126,7 +124,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             </div>
             <div>
               <dt className="font-medium text-slate-500">สายถนนที่</dt>
-              <dd className="mt-1 text-slate-900">{job.roadLine || '-'}</dd>
+              <dd className="mt-1 text-slate-900">{job.road_line || '-'}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ลำดับที่</dt>
@@ -143,18 +141,18 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่ปฏิบัติงาน</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(job.startTime)}
+                {formatThaiDate(job.start_time)}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">เวลา</dt>
               <dd className="mt-1 text-slate-900">
-                {new Date(job.startTime).toLocaleTimeString('th-TH', {
+                {new Date(job.start_time).toLocaleTimeString('th-TH', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}{' '}
                 -{' '}
-                {new Date(job.endTime).toLocaleTimeString('th-TH', {
+                {new Date(job.end_time).toLocaleTimeString('th-TH', {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
@@ -165,12 +163,12 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                 ช่างเทคนิคที่ได้รับมอบหมาย
               </dt>
               <dd className="mt-2">
-                {job.technicians.length > 0 ? (
+                {job.technicians && job.technicians.length > 0 ? (
                   <div className="flex flex-wrap gap-4">
                     {job.technicians.map((tech) => (
                       <div key={tech.id} className="flex items-center gap-2">
                         <img
-                          src={tech.avatarUrl}
+                          src={tech.avatarUrl || `https://ui-avatars.com/api/?name=${tech.name || 'Technician'}&background=random`}
                           alt={tech.name}
                           className="h-8 w-8 rounded-full object-cover"
                         />
@@ -191,7 +189,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
               <dt className="font-medium text-slate-500">รถบริการ</dt>
               <dd className="mt-1 text-slate-900">
                 {vehicle ? (
-                  `${vehicle.name} (${vehicle.licensePlate})`
+                  `${vehicle.name} (${(vehicle as any).license_plate || vehicle.vehicle?.vehicle_registration || '-'})`
                 ) : (
                   <span className="text-slate-500 italic">ยังไม่มอบหมายรถ</span>
                 )}
@@ -207,13 +205,13 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                 รายละเอียดจากใบประเมิน ({assessment.id})
               </h4>
               <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
-                {assessment.workAreas.map((area) => (
+                {(assessment.assessment_areas || []).map((area) => (
                   <div
                     key={area.id}
                     className="p-4 border border-slate-200 rounded-lg bg-slate-50"
                   >
                     <h5 className="text-md font-bold text-primary">
-                      {area.name}
+                      {area.area_name}
                     </h5>
                     <dl className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 text-sm">
                       <div>
@@ -221,21 +219,21 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                           ประเภทสิ่งปลูกสร้าง
                         </dt>
                         <dd className="mt-1 text-slate-900">
-                          {area.buildingType || '-'}
+                          {area.building_type || '-'}
                         </dd>
                       </div>
                       <div>
                         <dt className="font-medium text-slate-500">
                           พื้นที่ (ตร.ม.)
                         </dt>
-                        <dd className="mt-1 text-slate-900">{area.areaSize}</dd>
+                        <dd className="mt-1 text-slate-900">{area.area_size}</dd>
                       </div>
                       <div>
                         <dt className="font-medium text-slate-500">
                           ประเภทบริการ
                         </dt>
                         <dd className="mt-1 text-slate-900">
-                          {area.serviceType.join(', ')}
+                          {area.category_services?.map(c => c.name).join(', ') || '-'}
                         </dd>
                       </div>
                       <div>
@@ -243,7 +241,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                           ระบบที่ใช้
                         </dt>
                         <dd className="mt-1 text-slate-900">
-                          {area.serviceSystem || '-'}
+                          {area.service_system || '-'}
                         </dd>
                       </div>
                     </dl>

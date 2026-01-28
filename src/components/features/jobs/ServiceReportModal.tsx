@@ -4,7 +4,7 @@ import { FormField, Textarea, Input, Select } from '../../common/FormControls';
 import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
 import { Status, User, UserRole } from '@/src/types/entity/core.interface';
 import { Quotation, Contract } from '@/src/types/entity/financial.interface';
-import { Product } from '@/src/types/entity/package.interface';
+import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
@@ -24,7 +24,7 @@ interface ServiceReportModalProps {
   currentUser: User;
   contracts: Contract[];
   products: Product[];
-  jobs: FieldJob[];
+  jobs?: FieldJob[];
 }
 
 const ALL_SERVICE_TYPES = [
@@ -55,15 +55,15 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   quotations,
   currentUser,
   contracts,
-  products,
-  jobs,
+  products = [],
+  jobs = [],
 }) => {
   const [reportState, setReportState] = useState<Partial<ServiceReport>>({});
   const [selectedQuotationId, setSelectedQuotationId] = useState('');
 
   const availableQuotations = useMemo(() => {
     if (!job) return [];
-    return quotations.filter(
+    return (quotations || []).filter(
       (q) =>
         q.customer_id === job.customer_id &&
         (q.status === Status.Draft ||
@@ -75,16 +75,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const packageMapByName = useMemo(
     () =>
       new Map(
-        products.filter((p) => p.type === 'บริการ').map((p) => [p.name, p])
+        (products || []).filter((p: any) => p.type === 'บริการ' || p.category?.type === 'SERVICE').map((p) => [p.name, p])
       ),
     [products]
   );
 
   const recommendedNextIso = useMemo(() => {
     if (!job || !job.contract_id) return undefined;
-    const c = contracts.find((ct) => ct.id === job.contract_id);
+    const c = (contracts || []).find((ct) => ct.id === job.contract_id);
     if (!c) return undefined;
-    const pkg = packageMapByName.get(c.service_package);
+    const pkg = packageMapByName.get(c.service_package) as any;
     const visitsRequired = pkg?.number_of_visits ?? 0;
     if (!visitsRequired) return undefined;
     const parseDurationMonths = (text?: string) => {
@@ -98,10 +98,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       Math.round((durationMonths * 30) / visitsRequired)
     );
     const todayTs = Date.now();
-    const completedVisits = jobs.filter(
+    const completedVisits = (jobs || []).filter(
       (j) => j.contract_id === c.id && j.status === JobStatus.Completed
     ).length;
-    const nextScheduled = jobs
+    const nextScheduled = (jobs || [])
       .filter(
         (j) =>
           j.contract_id === c.id &&
@@ -963,7 +963,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <dd className="mt-1 text-slate-900 font-semibold">
               {job.technicians.length > 0
                 ? job.technicians
-                    .map((t) => t.first_name + ' ' + t.last_name)
+                    .map((t) => t.name || (t as any).first_name + ' ' + (t as any).last_name)
                     .join(', ')
                 : 'ไม่มีช่างเทคนิค'}
             </dd>

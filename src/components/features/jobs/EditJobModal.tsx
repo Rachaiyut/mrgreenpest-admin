@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { User, UserRole, Warehouse } from '@/src/types/entity/app.interface';
 import {
   FieldJob,
-  Status,
-  UserRole,
   FieldJobWorkArea,
-  User,
-  Warehouse,
-} from '@/src/types/entity/app.interface';
+} from '@/src/types/entity/field-job.interface';
+import { JobStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
+import { WarehouseType } from '@/src/types';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -56,8 +55,8 @@ const JobWorkAreaForm: React.FC<{
           htmlFor={`servicePackage-${index}`}
         >
           <Input
-            name="servicePackage"
-            value={area.servicePackage || ''}
+            name="service_package"
+            value={area.service_package || ''}
             onChange={handleFieldChange}
             required
             readOnly={isReadOnly}
@@ -102,48 +101,48 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const technicians = users.filter((u) => u.role === UserRole.Technician);
   const vehicleWarehouses = useMemo(
-    () => warehouses.filter((w) => w.type === 'รถ'),
+    () => warehouses.filter((w) => w.type === WarehouseType.VEHICLE),
     [warehouses]
   );
 
   const bookedSlots = useMemo(() => {
-    if (!formData.vehicleId || !workDate || !job) return [];
+    if (!formData.vehicle_id || !workDate || !job) return [];
     return jobs
       .filter(
         (j) =>
           j.id !== job.id &&
-          j.vehicleId === formData.vehicleId &&
-          new Date(j.startTime).toISOString().substring(0, 10) === workDate
+          j.vehicle_id === formData.vehicle_id &&
+          new Date(j.start_time).toISOString().substring(0, 10) === workDate
       )
       .map((j) => ({
-        start: new Date(j.startTime).toTimeString().substring(0, 5),
-        end: new Date(j.endTime).toTimeString().substring(0, 5),
-        customer: j.customerName,
+        start: new Date(j.start_time).toTimeString().substring(0, 5),
+        end: new Date(j.end_time).toTimeString().substring(0, 5),
+        customer: j.customer_name,
       }))
       .sort((a, b) => a.start.localeCompare(b.start));
-  }, [formData.vehicleId, workDate, jobs, job]);
+  }, [formData.vehicle_id, workDate, jobs, job]);
 
   useEffect(() => {
     if (job) {
-      const { workAreas, technicians, ...rest } = job;
+      const { work_areas, technicians, ...rest } = job;
       setFormData(rest);
-      setWorkAreas(workAreas || []);
+      setWorkAreas(work_areas || []);
 
       const lead = technicians[0];
       const additional = technicians.slice(1);
       setLeadTechnicianId(lead?.id || '');
       setSelectedTechnicianIds(additional.map((t) => t.id));
 
-      const startDate = new Date(job.startTime);
+      const startDate = new Date(job.start_time);
       setWorkDate(startDate.toISOString().substring(0, 10));
       setStartTime(startDate.toTimeString().substring(0, 5));
-      setEndTime(new Date(job.endTime).toTimeString().substring(0, 5));
+      setEndTime(new Date(job.end_time).toTimeString().substring(0, 5));
       setTimeConflictError(null);
     }
   }, [job]);
 
   useEffect(() => {
-    if (!job || !formData.vehicleId || !workDate || !startTime || !endTime) {
+    if (!job || !formData.vehicle_id || !workDate || !startTime || !endTime) {
       setTimeConflictError(null);
       return;
     }
@@ -158,10 +157,10 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
     const conflictingJob = jobs.find((existingJob) => {
       if (existingJob.id === job.id) return false;
-      if (existingJob.vehicleId !== formData.vehicleId) return false;
+      if (existingJob.vehicle_id !== formData.vehicle_id) return false;
 
-      const existingJobStart = new Date(existingJob.startTime);
-      const existingJobEnd = new Date(existingJob.endTime);
+      const existingJobStart = new Date(existingJob.start_time);
+      const existingJobEnd = new Date(existingJob.end_time);
 
       if (existingJobStart.toISOString().substring(0, 10) !== workDate) {
         return false;
@@ -172,12 +171,12 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
     if (conflictingJob) {
       setTimeConflictError(
-        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customerName} (${new Date(conflictingJob.startTime).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.endTime).toTimeString().substring(0, 5)})`
+        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customer_name} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
       );
     } else {
       setTimeConflictError(null);
     }
-  }, [formData.vehicleId, workDate, startTime, endTime, jobs, job]);
+  }, [formData.vehicle_id, workDate, startTime, endTime, jobs, job]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -205,7 +204,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     );
   };
 
-  const createJobObject = (status: Status): FieldJob | null => {
+  const createJobObject = (status: JobStatus): FieldJob | null => {
     if (!job || !workDate || !startTime || !endTime || !leadTechnicianId)
       return null;
 
@@ -221,12 +220,12 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     return {
       ...job,
       ...formData,
-      startTime: startDateTime,
-      endTime: endDateTime,
+      start_time: startDateTime,
+      end_time: endDateTime,
       technicians: assignedTechnicians,
-      workAreas: workAreas as FieldJobWorkArea[],
+      work_areas: workAreas as FieldJobWorkArea[],
       status: status,
-    };
+    } as FieldJob;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -236,7 +235,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       alert('กรุณาเลือกหัวหน้าช่าง');
       return;
     }
-    const updatedJob = createJobObject(formData.status || Status.Planned);
+    const updatedJob = createJobObject(formData.status || JobStatus.Planned);
     if (updatedJob) {
       onUpdateJob(updatedJob);
       onClose();
@@ -249,7 +248,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       alert('กรุณาเลือกหัวหน้าช่าง');
       return;
     }
-    const updatedJob = createJobObject(Status.Draft);
+    const updatedJob = createJobObject(JobStatus.Draft);
     if (updatedJob) {
       onUpdateJob(updatedJob);
       onClose();
@@ -265,7 +264,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           (_, i) => ({
             id: `area-${Date.now()}-${i}`,
             name: `พื้นที่ ${currentCount + i + 1}`,
-            servicePackage: '',
+            service_package: '',
           })
         );
         return [...currentAreas, ...newAreas];
@@ -293,7 +292,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         newAreas[index] = {
           id: areaToClear.id,
           name: areaToClear.name,
-          servicePackage: '',
+          service_package: '',
         };
       }
       return newAreas;
@@ -302,7 +301,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   if (!job) return null;
 
-  const isReadOnly = !!job.assessmentId || !!job.contractId;
+  const isReadOnly = !!job.assessment_id || !!job.contract_id;
   const additionalTechnicians = technicians.filter(
     (tech) => tech.id !== leadTechnicianId
   );
@@ -345,9 +344,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         <FormField label="ลูกค้า" htmlFor="customerName">
           <Input
             id="customerName"
-            name="customerName"
+            name="customer_name"
             type="text"
-            value={formData.customerName || ''}
+            value={formData.customer_name || ''}
             onChange={handleChange}
             required
             readOnly
@@ -388,8 +387,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </FormField>
             <FormField label="สายถนนที่" htmlFor="roadLine">
               <Input
-                name="roadLine"
-                value={formData.roadLine || ''}
+                name="road_line"
+                value={formData.road_line || ''}
                 readOnly
                 className="bg-slate-100"
               />
@@ -407,9 +406,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
         <FormField label="Link Google Map" htmlFor="googleMapLink">
           <Input
-            name="googleMapLink"
+            name="google_map_link"
             type="url"
-            value={formData.googleMapLink || ''}
+            value={formData.google_map_link || ''}
             onChange={handleChange}
             placeholder="https://maps.app.goo.gl/..."
           />
@@ -423,8 +422,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             {isReadOnly ? (
               <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
                 ข้อมูลพื้นที่ถูกดึงมาจาก{' '}
-                {job.assessmentId ? 'ใบประเมิน' : 'สัญญา'} เลขที่:{' '}
-                <strong>{job.assessmentId || job.contractId}</strong>
+                {job.assessment_id ? 'ใบประเมิน' : 'สัญญา'} เลขที่:{' '}
+                <strong>{job.assessment_id || job.contract_id}</strong>
               </div>
             ) : (
               <FormField
@@ -465,8 +464,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         >
           <Textarea
             id="operation-details-edit"
-            name="operationDetails"
-            value={formData.operationDetails || ''}
+            name="operation_details"
+            value={formData.operation_details || ''}
             onChange={handleChange}
             placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
             rows={8}
@@ -476,15 +475,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         <FormField label="เลือกรถที่ปฏิบัติงาน" htmlFor="vehicleId">
           <Select
             id="vehicleId"
-            name="vehicleId"
-            value={formData.vehicleId || ''}
+            name="vehicle_id"
+            value={formData.vehicle_id || ''}
             onChange={handleChange}
             required
           >
             <option value="">-- เลือกรถบริการ --</option>
             {vehicleWarehouses.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} ({v.licensePlate})
+                {v.name} ({v.vehicle.vehicle_registration})
               </option>
             ))}
           </Select>
@@ -578,4 +577,3 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     </Modal>
   );
 };
-

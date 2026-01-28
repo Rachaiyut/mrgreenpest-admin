@@ -5,12 +5,13 @@ import { Status, User, UserRole } from '../../types/entity/core.interface';
 import {
   FieldJob,
   ServiceReport,
-} from '../../types/entity/field-job.interface';
+} from '@/src/types/entity/field-job.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
+import { Category } from '@/src/types/entity/category.interface';
 import { JobStatus, WarehouseType } from '@/src/types';
 
 import {
@@ -387,6 +388,7 @@ import {
   ProductApi,
   WarehouseApi,
   JobApi,
+  CategoryApi,
 } from '@/src/api';
 
 const FieldOperations: React.FC<FieldOperationsProps> = ({
@@ -409,18 +411,22 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
     initialWarehouses || []
   );
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [warehousesRes] =
+      const [warehousesRes, categoriesRes] =
         await Promise.all([
           WarehouseApi.getWarehouses({ type: WarehouseType.VEHICLE }),
+          CategoryApi.getCategories({}),
         ]);
 
       const warehousesData = (warehousesRes as any).data || [];
+      const categoriesData = (categoriesRes as any).data || [];
       setWarehouses(warehousesData);
+      setCategories(categoriesData);
 
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
         (warehouse: any) =>
@@ -555,16 +561,16 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const [isEditAssessmentModalOpen, setIsEditAssessmentModalOpen] =
     useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [jobToCancel, setJobToCancel] = useState<FieldJob | null>(null);
+  const [jobToCancel, setJobToCancel] = useState<any | null>(null);
 
-  const [jobToEdit, setJobToEdit] = useState<FieldJob | null>(null);
-  const [jobForReport, setJobForReport] = useState<FieldJob | null>(null);
+  const [jobToEdit, setJobToEdit] = useState<any | null>(null);
+  const [jobForReport, setJobForReport] = useState<any | null>(null);
   const [reportFinalStatus, setReportFinalStatus] = useState<JobStatus>(
     JobStatus.Completed
   );
   const [assessmentForCheckout, setAssessmentForCheckout] =
     useState<Assessment | null>(null);
-  const [jobBeingCheckedOut, setJobBeingCheckedOut] = useState<FieldJob | null>(
+  const [jobBeingCheckedOut, setJobBeingCheckedOut] = useState<any | null>(
     null
   );
 
@@ -581,7 +587,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
-  const [selectedJob, setSelectedJob] = useState<FieldJob | null>(null);
+  const [selectedJob, setSelectedJob] = useState<any | null>(null);
   const [selectedAssessmentForJob, setSelectedAssessmentForJob] =
     useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -600,14 +606,14 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     [users]
   );
 
-  const createAutomaticReport = (job: FieldJob): ServiceReport => {
+  const createAutomaticReport = (job: any): ServiceReport => {
     const serviceTypesFromJob = [
       ...new Set(
-        job.work_areas.flatMap((wa) =>
-          wa.service_package.split(',').map((s) => s.trim())
+        job.work_areas.flatMap((wa: any) =>
+          wa.service_package.split(',').map((s: any) => s.trim())
         )
       ),
-    ];
+    ] as string[];
 
     return {
       created_at: new Date().toISOString(),
@@ -621,8 +627,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         hour: '2-digit',
         minute: '2-digit',
       }),
-      service_types: serviceTypesFromJob,
       service_actions: [],
+      service_types: serviceTypesFromJob,
       termite: { status: 'absent' },
       ant: { applyGel: false },
       cockroach: { applyGel: false },
@@ -795,7 +801,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleViewDetails = (job: FieldJob) => {
     const assessment = job.assessment_id
-      ? [].find((a) => a.id === job.assessment_id)
+      ? (initialAssessments || []).find((a) => a.id === job.assessment_id)
       : null;
 
     setSelectedJob(job);
@@ -1444,6 +1450,55 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         jobs={jobs}
         users={users}
         warehouses={warehouses}
+      />
+      <JobDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+        job={selectedJob}
+        assessment={selectedAssessmentForJob}
+        warehouses={warehouses}
+      />
+      <EditJobModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setJobToEdit(null);
+        }}
+        job={jobToEdit}
+        onUpdateJob={onUpdateJob}
+        jobs={jobs}
+        users={users}
+        warehouses={warehouses}
+      />
+      <CancelJobModal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        job={jobToCancel}
+        onConfirm={handleConfirmCancel}
+      />
+      <ServiceReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => {
+          setIsReportModalOpen(false);
+          setJobForReport(null);
+        }}
+        job={jobForReport}
+        finalStatus={reportFinalStatus}
+        onSubmit={handleReportSubmit}
+        contracts={contracts}
+        quotations={quotations}
+        currentUser={currentUser}
+        products={initialProducts}
+        jobs={jobs}
+      />
+      <EditAssessmentModal
+        isOpen={isEditAssessmentModalOpen}
+        onClose={() => setIsEditAssessmentModalOpen(false)}
+        assessment={assessmentForCheckout}
+        onUpdateAssessment={handleAssessmentUpdateOnCheckout}
+        products={initialProducts}
+        customers={initialCustomers}
+        categories={[]}
       />
     </>
   );

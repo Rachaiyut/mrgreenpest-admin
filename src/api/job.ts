@@ -25,8 +25,8 @@ class JobService extends AuthService {
     return res.data;
   }
 
-  async update(id: string, data: Partial<Job>): Promise<Job> {
-    const res = await this.http.patch<Job>(`${this.path}/${id}`, data);
+  async update(id: string, data: Partial<any>): Promise<Job> {
+    const res = await this.http.patch<any>(`${this.path}/${id}`, data);
     return res.data;
   }
 
