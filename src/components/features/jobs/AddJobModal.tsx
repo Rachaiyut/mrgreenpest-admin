@@ -22,10 +22,10 @@ import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
-import { JobStatus } from '@/src/types/enums/job';
+import { JobMainStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
-import { WarehouseApi, UserApi } from '@/src/api';
-import { Product, Role, WarehouseType } from '@/src/types';
+import { WarehouseApi, UserApi, CustomerApi } from '@/src/api';
+import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
 
 // A component to manage a single work area within the job form
@@ -38,9 +38,6 @@ const JobWorkAreaForm: React.FC<{
 }> = ({ area, index, onAreaChange, onClearArea, isReadOnly }) => {
   const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    // Map 'servicePackage' to 'service_package' if needed, but input name should match interface
-    // Interface is snake_case: service_package
-    // Input name should be service_package
     onAreaChange(index, { ...area, [name]: value });
   };
 
@@ -90,34 +87,30 @@ const JobWorkAreaForm: React.FC<{
 interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  assessments: Assessment[];
-  contracts: Contract[];
-  onCreateJob: (jobData: Omit<Job, 'id'> | any, assessmentId?: string) => void;
-  jobs: FieldJob[];
-  users: User[];
-  products: Product[];
+  onCreateJob: (jobData: Omit<Job, 'id'> | any, assessmentId?: string) => void | Promise<void>;
   warehouses: Warehouse[];
-  customers: Customer[];
   initialContractId?: string;
   initialWorkDateIso?: string;
+  contracts: Contract[];
+  jobs: FieldJob[];
+  users: User[];
 }
 
 export const AddJobModal: React.FC<AddJobModalProps> = ({
   isOpen,
   onClose,
-  assessments,
   contracts,
   onCreateJob,
   jobs,
   users,
-  products,
   warehouses: initialWarehouses,
-  customers,
   initialContractId,
   initialWorkDateIso,
 }) => {
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedReference, setSelectedReference] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>(
     []
@@ -131,7 +124,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   );
   const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
-  // Fix: Ensure serviceSystem state is defined
   const [serviceSystem, setServiceSystem] = useState<string>('');
 
   const [customerSearch, setCustomerSearch] = useState('');
@@ -149,6 +141,27 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const [additionalTechnicianOptions, setAdditionalTechnicianOptions] =
     useState<User[]>(users.filter((u) => u.role === UserRole.Technician));
 
+  const fetchCustomers = async (search: string) => {
+    try {
+      const response = await CustomerApi.getCustomersService({
+        limit: 10,
+        search: search,
+      });
+      setCustomers(response.data || []);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+    }
+  };
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (isOpen) {
+        fetchCustomers(customerSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [customerSearch, isOpen]);
+
   const fetchVehicles = async (search: string) => {
     try {
       const response = await WarehouseApi.getWarehouses({
@@ -156,7 +169,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         search: search,
         type: WarehouseType.VEHICLE,
       });
-      // Fallback filtering if backend doesn't support 'type' param strictly or returns mixed
       const vehicles = response.data.filter((w) => w.type === 'VEHICLE');
       setVehicleOptions(vehicles);
     } catch (error) {
@@ -169,7 +181,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       const response = await UserApi.getAll({
         limit: 10,
         search: search,
-        role: Role.TECH,
+        role: Role.LEAD_TECH,
       });
       setLeadTechnicianOptions(response.data);
     } catch (error) {
@@ -220,21 +232,15 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   // Use vehicleOptions for display instead of just initialWarehouses filtering
   const vehicleWarehouses = useMemo(() => vehicleOptions, [vehicleOptions]);
 
-  const productMap = useMemo(
-    () => new Map(products.map((p) => [p.id, p])),
-    [products]
-  );
-
   const filteredCustomers = useMemo(() => {
-    if (!customerSearch) return customers;
-    const lower = customerSearch.toLowerCase();
-    return customers.filter(
-      (c) =>
-        c.first_name.toLowerCase().includes(lower) ||
-        c.last_name.toLowerCase().includes(lower) ||
-        c.phone?.includes(lower)
-    );
-  }, [customers, customerSearch]);
+    if (
+      selectedCustomerData &&
+      !customers.find((c) => c.id === selectedCustomerData.id)
+    ) {
+      return [selectedCustomerData, ...customers];
+    }
+    return customers;
+  }, [customers, selectedCustomerData]);
 
   const filteredVehicles = useMemo(() => {
     return vehicleWarehouses.map((v) => ({
@@ -243,34 +249,51 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }));
   }, [vehicleWarehouses]);
 
+  const isAssessment = selectedReference.startsWith('asm-');
+
   const availableAssessments = useMemo(() => {
-    const baseAssessments = assessments.filter(
-      (a) => a.status === 'Draft' || a.status === 'Completed'
-    );
     if (selectedCustomerId) {
-      return baseAssessments.filter(
-        (a) => a.customer_id === selectedCustomerId
-      );
+      const customer =
+        customers.find((c) => c.id === selectedCustomerId) ||
+        (selectedCustomerData?.id === selectedCustomerId
+          ? selectedCustomerData
+          : undefined);
+      if (customer?.assessments) {
+        return customer.assessments.filter(
+          (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE
+        );
+      } 
     }
     return [];
-  }, [assessments, selectedCustomerId]);
+  }, [customers, selectedCustomerId, selectedCustomerData]);
 
   const availableContracts = useMemo(() => {
-    if (!selectedCustomerId) return [];
-    return contracts.filter(
-      (c) => c.customer_id === selectedCustomerId && c.status === 'InProgress'
-    );
-  }, [contracts, selectedCustomerId]);
+    if (selectedCustomerId) {
+      const customer =
+        customers.find((c) => c.id === selectedCustomerId) ||
+        (selectedCustomerData?.id === selectedCustomerId
+          ? selectedCustomerData
+          : undefined);
+      if (customer?.contracts) {
+        return customer.contracts.filter(
+          (a) =>
+            a.status === AsessmentStatus.DRAFT ||
+            a.status === AsessmentStatus.COMPLETE
+        );
+      }
+    }
+    return [];
+  }, [customers, selectedCustomerId, selectedCustomerData]);
 
   const filteredReferences = useMemo(() => {
     const refs = [
       ...availableAssessments.map((a) => ({
         value: `asm-${a.id}`,
-        label: `ใบประเมิน: ${a.id} - ${a.work_areas[0] ? a.work_areas[0].service_type.join(', ') : ''}`,
+        label: `ใบประเมิน: ${a.code}`,
       })),
       ...availableContracts.map((c) => ({
-        value: `con-${c.id}`,
-        label: `สัญญา: ${c.id} - ${c.service_package}`,
+        value: `cnt-${c.id}`,
+        label: `สัญญา: ${c.code}`,
       })),
     ];
 
@@ -279,103 +302,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     return refs.filter((r) => r.label.toLowerCase().includes(lower));
   }, [availableAssessments, availableContracts, referenceSearch]);
 
-  const isAssessment = selectedReference.startsWith('asm-');
-  const isContract = selectedReference.startsWith('con-');
-
-  const selectedAssessment = isAssessment
-    ? assessments.find((a) => a.id === selectedReference.replace('asm-', ''))
-    : null;
-  const selectedContract = isContract
-    ? contracts.find((c) => c.id === selectedReference.replace('con-', ''))
-    : null;
-  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
-
-  useEffect(() => {
-    if (selectedAssessment) {
-      setSelectedCustomerId(selectedAssessment.customer_id);
-    } else if (selectedContract) {
-      setSelectedCustomerId(selectedContract.customer_id);
-    }
-  }, [selectedAssessment, selectedContract]);
-
-  // Effect to manage workAreas based on selections
-  useEffect(() => {
-    if (selectedAssessment) {
-      const newWorkAreas = selectedAssessment.work_areas.map((asmArea) => {
-        let serviceDesc = asmArea.service_type.join(', ');
-        if (asmArea.package_id) {
-          const pkg = productMap.get(asmArea.package_id);
-          if (pkg) serviceDesc = `${pkg.name} (${serviceDesc})`;
-        }
-        return {
-          id: asmArea.id,
-          name: asmArea.name,
-          service_package: serviceDesc,
-        };
-      });
-      setWorkAreas(newWorkAreas);
-    } else if (selectedContract) {
-      setWorkAreas([
-        {
-          id: `area-${Date.now()}`,
-          name: 'พื้นที่ตามสัญญา',
-          service_package: selectedContract.service_package,
-        },
-      ]);
-    } else if (selectedCustomerId) {
-      // Customer selected, but no reference
-      if (workAreas.length === 0) {
-        setWorkAreas([
-          { id: `area-${Date.now()}`, name: 'พื้นที่ 1', service_package: '' },
-        ]);
-      }
-    } else {
-      // Nothing selected
-      setWorkAreas([]);
-    }
-  }, [selectedAssessment, selectedContract, selectedCustomerId, productMap]);
-
-  useEffect(() => {
-    let details = '';
-    if (selectedAssessment) {
-      details += '**สรุปจากใบประเมิน:**\n\n';
-      selectedAssessment.work_areas.forEach((area, index) => {
-        details += `**พื้นที่ #${index + 1}: ${area.name}**\n`;
-        details += `- ประเภทบริการ: ${area.service_type.join(', ')}\n`;
-        if (area.building_type)
-          details += `- ประเภทสิ่งปลูกสร้าง: ${area.building_type}\n`;
-        if (area.area_size)
-          details += `- ขนาดพื้นที่: ${area.area_size} ตร.ม.\n`;
-        if (area.service_system)
-          details += `- ระบบที่ใช้: ${area.service_system}\n`;
-        if (area.package_id) {
-          const pkg = productMap.get(area.package_id);
-          if (pkg) details += `- แพ็กเกจ: ${pkg.name}\n`;
-        }
-        if (area.items && area.items.length > 0) {
-          details += `- สินค้า/บริการเพิ่มเติม:\n`;
-          area.items.forEach((item) => {
-            const product = item.product_id
-              ? productMap.get(item.product_id)
-              : undefined;
-            details += `  - ${product?.name || 'N/A'} (จำนวน: ${item.quantity})\n`;
-          });
-        }
-        details += '\n';
-      });
-      if (selectedAssessment.payment_conditions) {
-        details += `**เงื่อนไขการชำระเงิน:**\n- ${selectedAssessment.payment_conditions}\n\n`;
-      }
-    } else if (selectedContract) {
-      details += '**สรุปจากสัญญา:**\n\n';
-      details += `- แพ็กเกจบริการ: ${selectedContract.service_package}\n\n`;
-    }
-
-    if (details) {
-      details += '--- \n**หมายเหตุเพิ่มเติม:**\n';
-    }
-    setOperationDetails(details);
-  }, [selectedAssessment, selectedContract, productMap]);
 
   const bookedSlots = useMemo(() => {
     if (!selectedVehicleId || !workDate) return [];
@@ -411,7 +337,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   useEffect(() => {
     if (isOpen && initialContractId) {
-      setSelectedReference(`con-${initialContractId}`);
+      setSelectedReference(initialContractId);
     }
   }, [isOpen, initialContractId]);
 
@@ -432,34 +358,58 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
   }, [isOpen, initialWorkDateIso]);
 
-  const handleCustomerChange = (customerId: string) => {
+  const handleCustomerChange = async (customerId: string) => {
     setSelectedCustomerId(customerId);
+    const customer = customers.find((c) => c.id === customerId);
+    if (customer) {
+      setSelectedCustomerData(customer);
+    }
     setSelectedReference('');
-    setWorkAreas([]); // Reset work areas when customer changes
+    setWorkAreas([]); 
+
+    if (customerId) {
+      try {
+        const fullCustomer = await CustomerApi.getCustomerById(customerId);
+        setSelectedCustomerData(fullCustomer);
+      } catch (error) {
+        console.error('Error fetching full customer details:', error);
+      }
+    } else {
+      setSelectedCustomerData(null);
+    }
   };
 
   const handleReferenceChange = (reference: string) => {
     setSelectedReference(reference);
   };
 
-  const createJobObject = (status: JobStatus): any => {
+  const createJobObject = (status: JobMainStatus): any => {
     const startDateTime = new Date(`${workDate}T${startTime}`).toISOString();
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
 
     const allTechnicianIds = [leadTechnicianId, ...selectedTechnicianIds];
     const uniqueTechnicianIds = [...new Set(allTechnicianIds)];
 
+    let assessmentId = '';
+    let contractId = '';
+
+    if (selectedReference.startsWith('asm-')) {
+      assessmentId = selectedReference.replace('asm-', '');
+    } else if (selectedReference.startsWith('cnt-')) {
+      contractId = selectedReference.replace('cnt-', '');
+    }
+
     return {
-      // New Job Interface Fields
+      assessment_id: assessmentId || undefined,
+      contract_id: contractId || undefined,
       customer_id: selectedCustomerId,
-      contract_id: selectedContract?.id || initialContractId || undefined,
-      assessment_id: selectedAssessment?.id || undefined,
       primary_tech_id: leadTechnicianId,
       start_date: new Date(startDateTime),
       end_date: new Date(endDateTime),
       service_system: serviceSystem,
       remark: operationDetails,
       vehicle_id: selectedVehicleId,
+      status,
       team_member: uniqueTechnicianIds.map((uid) => ({
         user_id: uid,
         check_in: null as any,
@@ -468,17 +418,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     };
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (timeConflictError) return;
     if (!leadTechnicianId) {
       alert('กรุณาเลือกหัวหน้าช่าง');
       return;
     }
-    const jobData = createJobObject(JobStatus.Planned);
+    const jobData = createJobObject(JobMainStatus.PENDING);
     if (jobData) {
-      onCreateJob(jobData);
-      onClose();
+      try {
+        await onCreateJob(jobData, jobData.assessment_id);
+        onClose();
+      } catch (error) {
+        console.error('Error creating job:', error);
+      }
     }
   };
 
@@ -671,7 +625,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                 ข้อมูลพื้นที่ถูกดึงมาจาก {isAssessment ? 'ใบประเมิน' : 'สัญญา'}{' '}
                 เลขที่:{' '}
                 <strong>
-                  {selectedAssessment?.id || selectedContract?.id}
+                  {selectedReference}
                 </strong>
               </div>
             ) : (

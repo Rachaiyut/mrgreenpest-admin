@@ -5,16 +5,17 @@ import {
 } from '@/src/types/entity/base.interface';
 
 // Interface
-import { Product } from '@/src/types/entity/package.interface';
+
 
 // Service
 import { AuthService } from './auth';
+import { Product } from '../types/entity/product.interface';
 
 class ProductService extends AuthService {
   protected path = '/products';
 
   // Your Public API Methods
-  async getProducts(query: IBaseQuery): Promise<IBaseResponseArray<Product>> {
+  async getProducts(query?: IBaseQuery): Promise<IBaseResponseArray<Product>> {
     const res = await this.http.get<IBaseResponseArray<Product>>(
       `${this.path}`,
       {

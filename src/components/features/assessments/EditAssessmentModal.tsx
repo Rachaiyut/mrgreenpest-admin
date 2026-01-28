@@ -56,20 +56,14 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     () => products.filter((p) => p.category.type === CategoryType.SERVICE),
     [products]
   );
-  const maxAreaSize = useMemo(
-    () => Math.max(0, ...workAreas.map((a) => a.area_size || 0)),
-    [workAreas]
-  );
-
   const suggestedPackageOptions = useMemo(() => {
-    if (maxAreaSize === 0) return [];
     return (servicePackages as any[]).filter(
       (pkg) =>
         pkg.cost_price &&
         pkg.package_price &&
-        pkg.package_price.some((c: any) => c.area_range >= maxAreaSize)
+        pkg.package_price.length > 0
     );
-  }, [maxAreaSize, servicePackages]);
+  }, [servicePackages]);
 
   const PAYMENT_LABELS: Record<PaymentMethod, string> = {
     [PaymentMethod.CASH]: 'เงินสด',
@@ -476,7 +470,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </div>
         </div>
 
-        {maxAreaSize > 0 && suggestedPackageOptions.length > 0 && (
+        {suggestedPackageOptions.length > 0 && (
           <div className="pt-4 border-t">
             <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">

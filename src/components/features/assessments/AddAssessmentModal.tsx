@@ -124,19 +124,11 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     return () => clearTimeout(timer);
   }, [fetchCustomers, fetchPackages, fetchProducts, fetchCategories]);
 
-  const maxAreaSize = useMemo(
-    () => Math.max(0, ...workAreas.map((a) => a.area_size || 0)),
-    [workAreas]
-  );
-
   const suggestedPackageOptions = useMemo(() => {
-    if (maxAreaSize === 0) return [];
     return packages.filter(
-      (pkg) =>
-        pkg.package_price &&
-        pkg.package_price.some((c) => c.area_range >= maxAreaSize)
+      (pkg) => pkg.package_price && pkg.package_price.length > 0
     );
-  }, [maxAreaSize, packages]);
+  }, [packages]);
 
   useEffect(() => {
     if (
@@ -546,7 +538,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           </Select>
         </FormField>
 
-        {maxAreaSize > 0 && suggestedPackageOptions.length > 0 && (
+        {suggestedPackageOptions.length > 0 && (
           <div className="pt-4 border-t">
             <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">

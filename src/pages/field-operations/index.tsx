@@ -370,9 +370,6 @@ interface FieldOperationsProps {
   assessments: Assessment[];
   contracts: Contract[];
   quotations: Quotation[];
-  onCreateJob: (jobData: Omit<FieldJob, 'id'>) => void;
-  onUpdateJob: (job: FieldJob) => void;
-  onDeleteJob: (jobId: string) => void;
   products: Product[];
   onUpdateAssessment: (assessment: Assessment) => void;
   onUpdateQuotation: (quotation: Quotation) => void;
@@ -399,9 +396,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   contracts,
   quotations,
   // We will override these prop handlers with internal API calls
-  onCreateJob: propOnCreateJob,
-  onUpdateJob: propOnUpdateJob,
-  onDeleteJob: propOnDeleteJob,
   products: initialProducts,
   onUpdateAssessment,
   onUpdateQuotation,
@@ -412,13 +406,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   // Local state to manage data fetched from API
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
-  const [assessments, setAssessments] = useState<Assessment[]>(
-    initialAssessments || []
-  );
-  const [customers, setCustomers] = useState<Customer[]>(
-    initialCustomers || []
-  );
-  const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
     initialWarehouses || []
   );
@@ -427,12 +414,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [assessmentsRes, customersRes, productsRes, warehousesRes] =
+      const [warehousesRes] =
         await Promise.all([
-          AssessmentApi.getAll({ limit: 1000 }),
-          CustomerApi.getCustomers({ limit: 1000 }),
-          ProductApi.getProducts({ limit: 1000 }),
-          WarehouseApi.getWarehouses({ limit: 100, type: WarehouseType.VEHICLE }),
+          WarehouseApi.getWarehouses({ type: WarehouseType.VEHICLE }),
         ]);
 
       const warehousesData = (warehousesRes as any).data || [];
@@ -489,10 +473,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       );
 
       setJobs(jobsFromWarehouses);
-      setAssessments(assessmentsRes.data);
-      setCustomers(customersRes.data);
-      setProducts(productsRes.data);
-      setWarehouses(warehousesData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -749,11 +729,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     reportItemsPerPage * reportItemsPerPage
   );
 
-  const customerMap = useMemo(
-    () => new Map(customers.map((c) => [c.id, c])),
-    [customers]
-  );
-
   const scheduledJobsForTable = useMemo(() => {
     if (!scheduleVehicleId || !scheduleDate) return [];
     return jobs
@@ -815,8 +790,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleViewDetails = (job: FieldJob) => {
     const assessment = job.assessment_id
-      ? assessments.find((a) => a.id === job.assessment_id)
+      ? [].find((a) => a.id === job.assessment_id)
       : null;
+
     setSelectedJob(job);
     setSelectedAssessmentForJob(assessment || null);
     setIsDetailsModalOpen(true);
@@ -1458,14 +1434,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       <AddJobModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        assessments={assessments}
         contracts={contracts}
         onCreateJob={onCreateJob}
         jobs={jobs}
         users={users}
-        products={products}
         warehouses={warehouses}
-        customers={customers}
       />
     </>
   );

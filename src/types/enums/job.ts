@@ -9,3 +9,9 @@ export enum JobStatus {
     Paused = 'Paused',
     Failed = 'Failed'
 }
+
+
+export enum JobMainStatus {
+    PENDING = 'PENDING',
+    INPROGRESS = 'IN_PROGRESS',
+}

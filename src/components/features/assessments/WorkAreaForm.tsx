@@ -23,7 +23,7 @@ interface WorkAreaFormProps {
   onRemoveArea?: (index: number) => void;
   products: Product[];
   selectedPackage: Package | null;
-  categories: Category[]
+  categories: Category[];
 }
 
 export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
@@ -186,7 +186,41 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
       );
     }
 
-    return null;
+    return (
+      <div className="pt-4 border-t">
+        <h4 className="text-base font-semibold text-slate-700">
+          แพ็กเกจที่เลือก
+        </h4>
+        <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-2">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="font-semibold text-slate-800">
+                {selectedPackage.name}
+              </div>
+              <div className="text-xs text-slate-500 mt-1">
+                {selectedPackage.visit_limit} ครั้ง /{' '}
+                {selectedPackage.contract_period}
+              </div>
+              <div className="text-xs text-amber-600 mt-1">
+                กรุณาระบุขนาดพื้นที่เพื่อคำนวณราคา
+              </div>
+            </div>
+            <div className="flex flex-col items-end">
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-slate-700">฿</span>
+                <Input
+                  type="number"
+                  className="w-28 text-right font-bold text-lg h-9 !py-1 text-slate-400 border-slate-300 bg-slate-50"
+                  value=""
+                  placeholder="0.00"
+                  disabled
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   useEffect(() => {
