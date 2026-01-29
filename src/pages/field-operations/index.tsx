@@ -54,6 +54,7 @@ const JobCard: React.FC<{
   ) => void;
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
+  onWriteReport: (job: FieldJob) => void;
   currentUser: User;
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
@@ -61,6 +62,7 @@ const JobCard: React.FC<{
   onDropdownToggle,
   onStatusChange,
   onViewDetails,
+  onWriteReport,
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
@@ -76,11 +78,13 @@ const JobCard: React.FC<{
 
   const showCheckInButton =
     isAssignedToCurrentUser && 
-    (job.status === JobMainStatus.PENDING || (job.status as unknown as string).toUpperCase() === 'PENDING');
+    ((job.status as unknown as JobStatus) === JobStatus.Planned || (job.status as unknown as string).toUpperCase() === 'PENDING');
 
   const showCheckOutButton =
     isAssignedToCurrentUser && 
-    (job.status === JobMainStatus.INPROGRESS || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
+    (job.status === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
+
+  const showReportButton = showCheckOutButton;
 
   let checkInTooltip = '';
   if (isAssignedToCurrentUser) {
@@ -101,7 +105,7 @@ const JobCard: React.FC<{
     minute: '2-digit',
   });
 
-  const hasActions = job.status !== JobMainStatus.COMPLETED
+  const hasActions = (job.status as unknown as JobStatus) !== JobStatus.Completed;
 
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between min-h-[220px]">
@@ -183,6 +187,17 @@ const JobCard: React.FC<{
             >
               <PlayIcon className="h-5 w-5" />
               <span>เช็คอิน</span>
+            </Button>
+          )}
+          {showReportButton && (
+            <Button
+              onClick={() => onWriteReport(job)}
+              title="บันทึกรายงานบริการ"
+              variant="outline"
+              className="w-full py-2.5 font-bold"
+            >
+              <DocumentCheckIcon className="h-5 w-5" />
+              <span>บันทึกรายงาน</span>
             </Button>
           )}
           {showCheckOutButton && (
@@ -1007,7 +1022,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       });
     }
 
-    if (status === JobStatus.Completed || status === JobStatus.Draft) {
+    if (
+      status === JobStatus.Completed ||
+      status === JobStatus.Draft ||
+      status === JobStatus.InProgress ||
+      (status as unknown as string) === 'IN_PROGRESS'
+    ) {
       actions.push({
         label: 'เขียน/แก้ไขรายงาน',
         icon: DocumentCheckIcon,
@@ -1201,6 +1221,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                           onDropdownToggle={handleDropdownToggle}
                           onStatusChange={handleStatusChange}
                           onViewDetails={handleViewDetails}
+                          onWriteReport={handleWriteReport}
                           currentUser={currentUser}
                           isAnyJobInProgressForCurrentUser={
                             isAnyJobInProgressForCurrentUser

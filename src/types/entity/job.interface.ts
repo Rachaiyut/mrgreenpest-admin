@@ -1,3 +1,5 @@
+import { IBase } from "./base.interface";
+
 export enum ServiceSystem {
   CHEMICAL = 'CHEMICAL',
   PREY = 'PREY',
@@ -10,7 +12,7 @@ export interface TeamMember {
   check_out: Date;
 }
 
-export interface Job {
+export interface Job extends IBase {
   customer_id: string;
   contract_id: string;
   assessment_id: string;
