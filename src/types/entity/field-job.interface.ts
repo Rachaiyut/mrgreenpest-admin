@@ -8,6 +8,8 @@ export interface FieldJobWorkArea {
 }
 
 export interface ServiceReport {
+  id?: string;
+  job_id?: string;
   created_at: string;
   check_in_time: string;
   check_out_time: string;

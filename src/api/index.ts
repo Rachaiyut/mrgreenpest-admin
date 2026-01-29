@@ -15,6 +15,7 @@ export * from './product';
 export * from './quotation';
 export * from './receipt';
 export * from './return-to-supplier';
+export * from './service-report';
 export * from './stock-adjustment';
 export * from './supplier';
 export * from './transfer';

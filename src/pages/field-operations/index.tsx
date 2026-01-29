@@ -21,7 +21,6 @@ import {
   ManageIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon,
   XCircleIcon,
   MapPinIcon,
   PlayIcon,
@@ -82,7 +81,7 @@ const JobCard: React.FC<{
 
   const showCheckOutButton =
     isAssignedToCurrentUser && 
-    (job.status === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
+    ((job.status as unknown as JobStatus) === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
   const showReportButton = showCheckOutButton;
 
@@ -411,6 +410,7 @@ import {
   VehicleApi,
   JobApi,
   CategoryApi,
+  ServiceReportApi,
 } from '@/src/api';
 
 const FieldOperations: React.FC<FieldOperationsProps> = ({
@@ -925,32 +925,61 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     setJobToCancel(null);
   };
 
-  const handleReportSubmit = (
+  const handleReportSubmit = async (
     jobId: string,
     reportData: ServiceReport,
     finalStatus: JobStatus,
     quotationId?: string
   ) => {
-    const jobToUpdate = jobs.find((j) => j.id === jobId);
-    if (jobToUpdate) {
-      const updatedJob = {
-        ...jobToUpdate,
-        service_report: reportData,
-        status: finalStatus,
-        quotation_id: quotationId,
-        actual_end_time:
-          finalStatus === JobStatus.Completed
-            ? new Date().toISOString()
-            : jobToUpdate.actual_end_time,
+    try {
+      const job = jobs.find((j) => j.id === jobId);
+      if (!job) return;
+
+      // Prepare payload (ensure job_id is set)
+      const payload = {
+        ...reportData,
+        job_id: jobId,
       };
-      onUpdateJob(updatedJob);
+
+      // Remove id from payload if it exists to avoid issues with create/update if strict
+      const { id, ...dataToSave } = payload;
+
+      if (job.service_report && job.service_report.id) {
+        await ServiceReportApi.update(job.service_report.id, dataToSave);
+      } else {
+        await ServiceReportApi.create(dataToSave);
+      }
+
+      // Update Job Status if needed
+      // Note: Backend might handle status update when report is created/completed, 
+      // but we ensure consistency here.
+      if (finalStatus !== (job.status as unknown as JobStatus)) {
+        const statusStr =
+          finalStatus === JobStatus.Completed
+            ? 'COMPLETED'
+            : finalStatus === JobStatus.InProgress
+            ? 'IN_PROGRESS'
+            : 'PENDING';
+        
+        await JobApi.update(jobId, { 
+          status: statusStr, 
+          quotation_id: quotationId,
+          actual_end_time: finalStatus === JobStatus.Completed ? new Date().toISOString() : undefined
+        } as any);
+      } else if (quotationId && quotationId !== job.quotation_id) {
+        await JobApi.update(jobId, { quotation_id: quotationId } as any);
+      }
+
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
         if (quote && quote.status === Status.Draft) {
-          // Assuming Quote Status is still core.Status
           onUpdateQuotation({ ...quote, status: Status.Sent });
         }
       }
+
+      fetchData();
+    } catch (error) {
+      console.error('Error submitting service report:', error);
     }
     setIsReportModalOpen(false);
     setJobForReport(null);
