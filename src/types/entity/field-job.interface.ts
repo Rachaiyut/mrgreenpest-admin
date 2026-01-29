@@ -1,5 +1,5 @@
 import { User } from './core.interface';
-import { JobStatus } from '../enums/job';
+import { JobMainStatus, JobStatus } from '../enums/job';
 
 export interface FieldJobWorkArea {
   id: string;
@@ -59,7 +59,7 @@ export interface FieldJob {
   actual_end_time?: string;
   technicians: User[];
   work_areas: FieldJobWorkArea[];
-  status: JobStatus;
+  status: JobMainStatus;
   vehicle_id: string;
   service_report?: ServiceReport;
   remarks?: string;

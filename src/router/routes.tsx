@@ -91,15 +91,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           products={products}
           customers={customers}
           warehouses={warehouses}
-          onCreateJob={handlers.jobs.create}
-          onUpdateJob={handlers.jobs.update}
-          onDeleteJob={handlers.jobs.delete}
           onUpdateAssessment={handlers.assessments.update}
           onUpdateQuotation={handlers.quotations.update}
           onCreateQuotation={handlers.quotations.create}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/quotations/new',

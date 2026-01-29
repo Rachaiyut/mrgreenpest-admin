@@ -12,7 +12,7 @@ import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
 import { Category } from '@/src/types/entity/category.interface';
-import { JobStatus, WarehouseType } from '@/src/types';
+import { JobMainStatus, JobStatus, WarehouseType } from '@/src/types';
 
 import {
   PlusIcon,
@@ -43,6 +43,8 @@ import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
 import { FormField } from '../../components/common/FormControls';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { Role } from '../../types/enums/role';
 
 const JobCard: React.FC<{
   job: FieldJob;
@@ -71,10 +73,14 @@ const JobCard: React.FC<{
     [job.technicians, currentUserId]
   );
 
+
   const showCheckInButton =
-    isAssignedToCurrentUser && job.status === JobStatus.Planned;
+    isAssignedToCurrentUser && 
+    (job.status === JobMainStatus.PENDING || (job.status as unknown as string).toUpperCase() === 'PENDING');
+
   const showCheckOutButton =
-    isAssignedToCurrentUser && job.status === JobStatus.InProgress;
+    isAssignedToCurrentUser && 
+    (job.status === JobMainStatus.INPROGRESS || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
   let checkInTooltip = '';
   if (isAssignedToCurrentUser) {
@@ -95,7 +101,7 @@ const JobCard: React.FC<{
     minute: '2-digit',
   });
 
-  const hasActions = job.status !== JobStatus.Cancelled;
+  const hasActions = job.status !== JobMainStatus.COMPLETED
 
   return (
     <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between min-h-[220px]">
@@ -387,7 +393,7 @@ import {
   AssessmentApi,
   CustomerApi,
   ProductApi,
-  WarehouseApi,
+  VehicleApi,
   JobApi,
   CategoryApi,
 } from '@/src/api';
@@ -405,12 +411,13 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   customers: initialCustomers,
   warehouses: initialWarehouses,
 }) => {
-  const currentUser = users[0];
+  const authUser = useCurrentUser();
+  const currentUser = authUser as unknown as User;
 
   // Local state to manage data fetched from API
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
-    initialWarehouses || []
+    Array.isArray(initialWarehouses) ? initialWarehouses : []
   );
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -420,11 +427,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     try {
       const [warehousesRes, categoriesRes] =
         await Promise.all([
-          WarehouseApi.getWarehouses({ type: WarehouseType.VEHICLE }),
+          VehicleApi.getVehiclesWithUserJobs(),
           CategoryApi.getCategories({}),
         ]);
 
-      const warehousesData = (warehousesRes as any).data || [];
+      // Ensure warehousesData is an array
+      let warehousesData: any[] = [];
+      if (Array.isArray((warehousesRes as any).data)) {
+        warehousesData = (warehousesRes as any).data;
+      } else if (Array.isArray(warehousesRes)) {
+        warehousesData = warehousesRes as any[];
+      }
+      
       const categoriesData = (categoriesRes as any).data || [];
       setWarehouses(warehousesData);
       setCategories(categoriesData);
@@ -496,7 +510,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               start_time: job.start_date,
               end_time: job.end_date,
               primary_technician: job.primary_technician || null,
-              technicians: [],
+              technicians: Array.isArray(job.technicians) && job.technicians.length > 0 
+                ? job.technicians 
+                : job.primary_technician 
+                  ? [job.primary_technician] 
+                  : [],
               work_areas: [],
               status: mappedStatus,
               vehicle_id: warehouse.id,
@@ -508,7 +526,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               group: undefined,
               road_line: undefined,
               sequence: undefined,
-            } as FieldJob;
+            } as any;
           })
       );
 
@@ -554,13 +572,15 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
     try {
-      const status =
-        newStatus === JobStatus.InProgress
-          ? 'IN_PROGRESS'
-          : newStatus === JobStatus.Completed
-          ? 'COMPLETE'
-          : 'PENDING';
-      await JobApi.update(jobId, { status } as any);
+      if (newStatus === JobStatus.InProgress) {
+        await JobApi.checkIn(jobId);
+      } else {
+        const status =
+          newStatus === JobStatus.Completed
+            ? 'COMPLETE'
+            : 'PENDING';
+        await JobApi.update(jobId, { status } as any);
+      }
       fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -709,7 +729,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       tempJobs = tempJobs.filter((job) => {
-        const vehicle = warehouses.find((w) => w.id === job.vehicle_id);
+        const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
+        const vehicle = safeWarehouses.find((w) => w.id === job.vehicle_id);
         const licensePlateMatch = (vehicle as any)?.license_plate
           ?.toLowerCase()
           .includes(lowercasedQuery);
@@ -728,23 +749,23 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     if (!currentUser || !jobs) return false;
     return jobs.some(
       (j) =>
-        j.status === JobStatus.InProgress &&
+        j.status === JobMainStatus.INPROGRESS &&
         j.technicians.some((tech) => tech.id === currentUser.id)
     );
   }, [jobs, currentUser]);
 
   const kanbanColumns = useMemo(() => {
-    // Assuming 'type' exists on Warehouse but maybe not 'license_plate' directly typed or enum mismatch
-    // Let's filter first
-    const serviceVehicles = warehouses.filter(
+
+    const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
+    const serviceVehicles = safeWarehouses.filter(
       (w) => w.type === WarehouseType.VEHICLE
     );
 
     const jobsForKanban = filteredJobs.filter(
       (j) =>
-        j.status !== JobStatus.Completed &&
-        j.status !== JobStatus.Cancelled &&
-        j.status !== JobStatus.Draft
+        j.status !== JobMainStatus.COMPLETED &&
+        j.status !== JobMainStatus.CANCELLED &&
+        j.status !== JobMainStatus.PENDING
     );
 
     const vehicleColumns = serviceVehicles.map((vehicle) => ({
@@ -775,9 +796,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     () =>
       filteredJobs.filter(
         (j) =>
-          j.status !== JobStatus.Completed &&
-          j.status !== JobStatus.Cancelled &&
-          j.status !== JobStatus.Draft
+          j.status !== JobMainStatus.COMPLETED &&
+          j.status !== JobMainStatus.CANCELLED &&
+          j.status !== JobMainStatus.PENDING
       ),
     [filteredJobs]
   );
@@ -806,13 +827,13 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       );
   }, [jobs, scheduleVehicleId, scheduleDate]);
 
-  const getAccessStatus = (status: JobStatus) => {
+  const getAccessStatus = (status: JobMainStatus) => {
     switch (status) {
-      case JobStatus.InProgress:
-      case JobStatus.Completed:
+      case JobMainStatus.INPROGRESS:
+      case JobMainStatus.COMPLETED:
         return <span className="font-semibold text-green-600">เข้าได้</span>;
-      case JobStatus.Cancelled:
-      case JobStatus.Failed:
+      case JobMainStatus.CANCELLED:
+      case JobMainStatus.FAILED:
         return <span className="font-semibold text-red-600">ไม่ได้</span>;
       default:
         return <span className="text-slate-500">-</span>;
@@ -864,7 +885,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleWriteReport = (job: FieldJob) => {
     setJobForReport(job);
     setReportFinalStatus(
-      job.status === JobStatus.Completed ? JobStatus.Completed : JobStatus.Draft
+      job.status === JobMainStatus.COMPLETED ? JobStatus.Completed : JobStatus.Draft
     );
     setIsReportModalOpen(true);
     setOpenDropdownId(null);
@@ -1080,10 +1101,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 <CalendarDaysIcon className="h-5 w-5" />
               </Button>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)} variant="primary">
-              <PlusIcon className="h-5 w-5" />
-              สร้างนัดหมาย
-            </Button>
+             {authUser?.role &&
+              [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
+                authUser.role as Role
+              ) && (
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  variant="primary"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  สร้างนัดหมาย
+                </Button>
+              )}
           </div>
         </div>
 

@@ -18,4 +18,6 @@ export enum JobMainStatus {
     PENDING = 'PENDING',
     INPROGRESS = 'IN_PROGRESS',
     CANCELLED = 'CANCELLED',
+    COMPLETED = 'COMPLETED',
+    FAILED = 'FAILED'
 }

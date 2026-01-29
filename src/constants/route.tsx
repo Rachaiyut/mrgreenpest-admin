@@ -15,6 +15,7 @@ import {
   NewReportIcon, 
   BellIcon 
 } from '../assets/icons/Icons';
+import { Role } from '../types/enums/role';
 
 
 export const PAGE_PATH: Record<string, string> = {
@@ -52,19 +53,56 @@ export const PAGE_PATH: Record<string, string> = {
 
 
 export const NAVIGATION_ITEMS: NavigationItem[] = [
-  { type: 'link', name: 'Dashboard', icon: NewDashboardIcon },
-  { type: 'link', name: 'ลูกค้า', icon: NewCustomerIcon },
-  { type: 'link', name: 'ใบประเมิน', icon: NewCustomerIcon },
-  { type: 'link', name: 'ฟอร์ม', icon: DocumentTextIcon },
-  { type: 'link', name: 'ภาคสนาม', icon: NewFieldOpsIcon },
+  { 
+    type: 'link', 
+    name: 'Dashboard', 
+    icon: NewDashboardIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+  },
+  { 
+    type: 'link', 
+    name: 'ลูกค้า', 
+    icon: NewCustomerIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+  },
+  { 
+    type: 'link', 
+    name: 'ใบประเมิน', 
+    icon: NewCustomerIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+  },
+  { 
+    type: 'link', 
+    name: 'ฟอร์ม', 
+    icon: DocumentTextIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+  },
+  { 
+    type: 'link', 
+    name: 'ภาคสนาม', 
+    icon: NewFieldOpsIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
+  },
   {
     type: 'group',
     name: 'การเงินและบัญชี',
     icon: NewAccountingIcon,
     subItems: [
-      { name: 'ใบเสนอราคา', icon: DocumentTextIcon },
-      { name: 'ใบแจ้งหนี้', icon: CurrencyDollarIcon },
-      { name: 'ใบกำกับภาษี/ใบเสร็จรับเงิน', icon: ShieldCheckIcon },
+      { 
+        name: 'ใบเสนอราคา', 
+        icon: DocumentTextIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO]
+      },
+      { 
+        name: 'ใบแจ้งหนี้', 
+        icon: CurrencyDollarIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO]
+      },
+      { 
+        name: 'ใบกำกับภาษี/ใบเสร็จรับเงิน', 
+        icon: ShieldCheckIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO]
+      },
     ],
   },
   {
@@ -72,11 +110,31 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'คลังสินค้า',
     icon: NewWarehouseIcon,
     subItems: [
-      { name: 'คลังสินค้า', icon: NewWarehouseIcon },
-      { name: 'รับเข้า', icon: NewWarehouseIcon },
-      { name: 'โอนย้าย', icon: NewWarehouseIcon },
-      { name: 'ปรับปรุง Stock', icon: NewWarehouseIcon },
-      { name: 'เบิกสินค้าคืนผู้จำหน่าย', icon: NewWarehouseIcon },
+      { 
+        name: 'คลังสินค้า', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
+      { 
+        name: 'รับเข้า', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
+      { 
+        name: 'โอนย้าย', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
+      { 
+        name: 'ปรับปรุง Stock', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
+      { 
+        name: 'เบิกสินค้าคืนผู้จำหน่าย', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
     ],
   },
   {
@@ -84,8 +142,16 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'จัดการสินค้าภายใน',
     icon: NewWarehouseIcon,
     subItems: [
-      { name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย', icon: NewWarehouseIcon },
-      { name: 'คืนสินค้า', icon: NewWarehouseIcon },
+      { 
+        name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
+      { 
+        name: 'คืนสินค้า', 
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
     ],
   },
   {
@@ -93,32 +159,82 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'ข้อมูลสินค้าและคู่ค้า',
     icon: PackageIcon,
     subItems: [
-      { name: 'สินค้า/บริการ', icon: PackageIcon },
-      { name: 'แพ็กเกจ', icon: PackageIcon },
-      { name: 'หมวดหมู่', icon: BookOpenIcon },
-      { name: 'ผู้จัดจำหน่าย', icon: NewUsersIcon },
+      { 
+        name: 'สินค้า/บริการ', 
+        icon: PackageIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN]
+      },
+      { 
+        name: 'แพ็กเกจ', 
+        icon: PackageIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN]
+      },
+      { 
+        name: 'หมวดหมู่', 
+        icon: BookOpenIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN]
+      },
+      { 
+        name: 'ผู้จัดจำหน่าย', 
+        icon: NewUsersIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+      },
     ],
   },
   {
     type: 'group',
     name: 'การตั้งค่าระบบ',
     icon: NewUsersIcon,
-    subItems: [{ name: 'ผู้ใช้งาน' }, { name: 'จัดการบทบาท' }],
+    subItems: [
+      { 
+        name: 'ผู้ใช้งาน',
+        roles: [Role.SUPERADMIN, Role.ADMIN]
+      }, 
+      { 
+        name: 'จัดการบทบาท',
+        roles: [Role.SUPERADMIN, Role.ADMIN]
+      }
+    ],
   },
   {
     type: 'group',
     name: 'รายงาน',
     icon: NewReportIcon,
     subItems: [
-      { name: 'รายงานรายได้ (รายเดือน)' },
-      { name: 'รายได้ออกใบกำกับ(รายเดือน)' },
-      { name: 'ค่าใช้จ่ายทางอ้อม' },
-      { name: 'บัญชีเงินสดรายวัน' },
-      { name: 'ค่าใช้จ่ายทางตรง' },
-      { name: 'ยอดขาย(รายเดือน)' },
-      { name: 'สรุปยอดขาย(รายเดือน)' },
+      { 
+        name: 'รายงานรายได้ (รายเดือน)',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+      },
+      { 
+        name: 'รายได้ออกใบกำกับ(รายเดือน)',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+      },
+      { 
+        name: 'ค่าใช้จ่ายทางอ้อม',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+      },
+      { 
+        name: 'บัญชีเงินสดรายวัน',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+      },
+      { 
+        name: 'ค่าใช้จ่ายทางตรง',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+      },
+      { 
+        name: 'ยอดขาย(รายเดือน)',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO]
+      },
+      { 
+        name: 'สรุปยอดขาย(รายเดือน)',
+        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO]
+      },
     ],
   },
-  { type: 'link', name: 'การแจ้งเตือน', icon: BellIcon },
+  { 
+    type: 'link', 
+    name: 'การแจ้งเตือน', 
+    icon: BellIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+  },
 ];
-

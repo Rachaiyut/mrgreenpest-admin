@@ -23,3 +23,4 @@ export * from './user';
 export * from './wallet-transaction';
 export * from './warehouse';
 export * from './withdrawal';
+export * from './vehicle';
