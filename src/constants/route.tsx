@@ -55,7 +55,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   { type: 'link', name: 'Dashboard', icon: NewDashboardIcon },
   { type: 'link', name: 'ลูกค้า', icon: NewCustomerIcon },
   { type: 'link', name: 'ใบประเมิน', icon: NewCustomerIcon },
-  { type: 'link', name: 'ฟอร์ม', icon: DocumentTextIcon },
+  // { type: 'link', name: 'ฟอร์ม', icon: DocumentTextIcon },
   { type: 'link', name: 'ภาคสนาม', icon: NewFieldOpsIcon },
   {
     type: 'group',
