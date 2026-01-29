@@ -502,10 +502,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     }
   };
 
-  const handleUpdateJob = async (updatedJob: FieldJob) => {
+  const handleUpdateJob = async (updatedJob: any) => {
     try {
       if (updatedJob.id) {
-        await JobApi.update(updatedJob.id, updatedJob);
+        const { id, ...data } = updatedJob;
+        await JobApi.update(id, data as any);
         fetchData();
         setIsEditModalOpen(false);
         setJobToEdit(null);
@@ -517,7 +518,13 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const handleStatusChange = async (jobId: string, newStatus: JobStatus) => {
     try {
-      await JobApi.update(jobId, { status: newStatus } as any);
+      const status =
+        newStatus === JobStatus.InProgress
+          ? 'IN_PROGRESS'
+          : newStatus === JobStatus.Completed
+          ? 'COMPLETE'
+          : 'PENDING';
+      await JobApi.update(jobId, { status } as any);
       fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -1470,6 +1477,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         jobs={jobs}
         users={users}
         warehouses={warehouses}
+        currentUser={currentUser}
       />
       <CancelJobModal
         isOpen={isCancelModalOpen}

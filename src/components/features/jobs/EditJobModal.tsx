@@ -75,10 +75,11 @@ interface EditJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: FieldJob | null;
-  onUpdateJob: (job: FieldJob) => void;
+  onUpdateJob: (payload: any) => void;
   jobs: FieldJob[];
   users: User[];
   warehouses: Warehouse[];
+  currentUser?: User;
 }
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -94,6 +95,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   jobs,
   users,
   warehouses,
+  currentUser,
 }) => {
   const [formData, setFormData] = useState<Partial<FieldJob>>({});
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
@@ -271,45 +273,89 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     );
   };
 
-  const createJobObject = (status: JobStatus): FieldJob | null => {
-    if (!job || !workDate || !startTime || !endTime || !leadTechnicianId)
-      return null;
+  const createJobObject = (status: JobStatus): any | null => {
+    if (!job || !workDate || !startTime || !endTime) return null;
 
     const startDateTime = new Date(`${workDate}T${startTime}`).toISOString();
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
+    const apiStatus =
+      status === JobStatus.InProgress
+        ? 'IN_PROGRESS'
+        : status === JobStatus.Completed
+        ? 'COMPLETE'
+        : 'PENDING';
 
-    const allTechnicianIds = [leadTechnicianId, ...selectedTechnicianIds];
-    const uniqueTechnicianIds = [...new Set(allTechnicianIds)];
-    const assignedTechnicians = users.filter((u) =>
-      uniqueTechnicianIds.includes(u.id)
-    );
+    const primaryTechId =
+      (job as any)?.primary_technician?.id || leadTechnicianId || undefined;
 
-    return {
-      ...job,
-      ...formData,
-      start_time: startDateTime,
-      end_time: endDateTime,
-      technicians: assignedTechnicians,
-      work_areas: workAreas as FieldJobWorkArea[],
-      status: status,
-    } as FieldJob;
+    const teamMembers = (selectedTechnicianIds || []).map((id) => ({
+      user_id: id,
+      check_in: null,
+      check_out: null,
+    }));
+
+    const payload: any = {
+      id: job.id,
+      primary_tech_id: primaryTechId,
+      vehicle_id: formData.vehicle_id,
+      start_date: startDateTime,
+      end_date: endDateTime,
+      status: apiStatus,
+      service_system: (assessment as any)?.service_system || 'CHEMICAL',
+      remark: formData.remarks,
+      team_member: teamMembers,
+      assessment: assessment
+        ? {
+            customer_id: job.customer_id,
+            package_id: (assessment as any).package_id,
+            appointment_date: assessment.appointment_date
+              ? new Date(assessment.appointment_date).toISOString().substring(0, 10)
+              : undefined,
+            address: job.address,
+            sub_district: (assessment as any).sub_district || (job as any).sub_district,
+            district: (assessment as any).district || (job as any).district,
+            province: (assessment as any).province || (job as any).province,
+            zipcode: (assessment as any).zipcode || (job as any).postal_code,
+            zone: (job as any).zone,
+            route_group: (job as any).group,
+            road_line: (job as any).road_line,
+            sequence: (job as any).sequence,
+            google_map_link: job.google_map_link,
+            status: (assessment as any).status,
+            payment_condition: (assessment as any).payment_condition,
+            total_price: (assessment as any).total_price,
+            created_by: currentUser?.name,
+            updated_by: currentUser?.name,
+            assessment_areas: ((assessment as any)?.assessment_areas || []).map(
+              (area: any) => ({
+                package_price_id: area.package_price_id,
+                area_name: area.area_name,
+                building_type: area.building_type,
+                service_system: area.service_system,
+                area_size: area.area_size,
+                total_price: area.total_price,
+                category_services: area.category_services || [],
+                items: (area.items || []).map((it: any) => ({
+                  product_id: it.product_id,
+                  quantity: it.quantity,
+                  total_price: it.total_price,
+                })),
+              })
+            ),
+          }
+        : undefined,
+    };
+
+    return payload;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (timeConflictError) return;
    
-    const updatedJob = createJobObject(formData.status || JobStatus.Planned);
-    if (updatedJob) {
-      if (assessment && job?.assessment_id) {
-        AssessmentApi.update(job.assessment_id, {
-          appointment_date: assessment.appointment_date,
-          payment_condition: assessment.payment_condition,
-        }).catch((err) => {
-          console.error('Error updating assessment:', err);
-        });
-      }
-      onUpdateJob(updatedJob);
+    const updatedPayload = createJobObject(formData.status || JobStatus.Planned);
+    if (updatedPayload) {
+      onUpdateJob(updatedPayload);
       onClose();
     }
   };
@@ -482,14 +528,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           >
             ยกเลิก
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={handleSaveDraft}
             className="py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed"
             disabled={!!timeConflictError}
           >
             บันทึกเป็นฉบับร่าง
-          </button>
+          </button> */}
           <button
             type="submit"
             form="edit-job-form"
