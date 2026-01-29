@@ -9,6 +9,32 @@ interface StatusBadgeProps {
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+  const s = String(status || '').trim();
+  const upper = s.toUpperCase();
+
+  const statusLabels: Record<string, string> = {
+    PENDING: Status.Pending,
+    IN_PROGRESS: Status.InProgress,
+    INPROGRESS: Status.InProgress,
+    COMPLETED: Status.Completed,
+    COMPLETE: Status.Completed,
+    CANCELLED: Status.Cancelled,
+    DRAFT: Status.Draft,
+    PLANNED: Status.Planned,
+    SCHEDULED: Status.Scheduled,
+    PENDINGAPPROVAL: Status.PendingApproval,
+    APPROVED: Status.Approved,
+    REJECTED: Status.Rejected,
+    PAUSED: Status.Paused,
+    FAILED: Status.Failed,
+    PAID: Status.Paid,
+    OVERDUE: Status.Overdue,
+    SENT: Status.Sent,
+    UNDERREVIEW: Status.UnderReview,
+    REVISE: Status.Revise,
+    CLOSED: Status.Closed,
+  };
+
   const statusColors: Record<string, string> = {
     // Core Status (Thai)
     [Status.Draft]: 'bg-slate-100 text-slate-600',
@@ -39,10 +65,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [JobStatus.Pending]: 'bg-yellow-100 text-yellow-700',
 
     // Assessment Status (English)
-    [AsessmentStatus.Draft]: 'bg-slate-100 text-slate-600',
-    [AsessmentStatus.PendingApproval]: 'bg-orange-100 text-orange-700',
-    [AsessmentStatus.Scheduled]: 'bg-blue-100 text-blue-700',
-    [AsessmentStatus.Completed]: 'bg-green-100 text-green-700',
+    [AsessmentStatus.DRAFT]: 'bg-slate-100 text-slate-600',
+    [AsessmentStatus.PENDING]: 'bg-orange-100 text-orange-700',
+    [AsessmentStatus.APPOINTMENT]: 'bg-blue-100 text-blue-700',
+    [AsessmentStatus.COMPLETE]: 'bg-green-100 text-green-700',
 
     // Invoice Status (English)
     [InvoiceStatus.Paid]: 'bg-green-100 text-green-700',
@@ -51,12 +77,39 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [InvoiceStatus.Pending]: 'bg-yellow-100 text-yellow-700',
   };
 
+  const displayLabel =
+    statusLabels[upper] ||
+    (s === JobStatus.Pending
+      ? Status.Pending
+      : s === JobStatus.InProgress
+      ? Status.InProgress
+      : s === JobStatus.Completed
+      ? Status.Completed
+      : s === JobStatus.Cancelled
+      ? Status.Cancelled
+      : s === JobStatus.Scheduled
+      ? Status.Scheduled
+      : s);
+
+  const colorKey =
+    statusLabels[upper] ||
+    (s === JobStatus.Pending
+      ? JobStatus.Pending
+      : s === JobStatus.InProgress
+      ? JobStatus.InProgress
+      : s === JobStatus.Completed
+      ? JobStatus.Completed
+      : s === JobStatus.Cancelled
+      ? JobStatus.Cancelled
+      : s === JobStatus.Scheduled
+      ? JobStatus.Scheduled
+      : displayLabel);
+
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || 'bg-slate-100 text-slate-600'}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[colorKey] || 'bg-slate-100 text-slate-600'}`}
     >
-      {status}
+      {displayLabel}
     </span>
   );
 };
-

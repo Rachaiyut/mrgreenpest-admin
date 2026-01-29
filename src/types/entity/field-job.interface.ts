@@ -45,6 +45,7 @@ export interface ServiceReport {
 }
 
 export interface FieldJob {
+  api_status: string;
   id: string;
   assessment_id?: string;
   contract_id?: string;

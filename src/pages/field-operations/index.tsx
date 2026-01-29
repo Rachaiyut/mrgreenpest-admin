@@ -123,8 +123,9 @@ const JobCard: React.FC<{
         </div>
 
         <div className="mt-4 space-y-3">
+          
           <div>
-            <StatusBadge status={job.status} />
+            <StatusBadge status={job.api_status} />
           </div>
           <div className="flex items-start text-sm text-slate-600">
             <MapPinIcon className="h-5 w-5 mr-3 mt-0.5 text-accent flex-shrink-0" />
@@ -428,6 +429,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       setWarehouses(warehousesData);
       setCategories(categoriesData);
 
+      const debugItems: any[] = [];
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
         (warehouse: any) =>
           (warehouse.jobs || []).map((job: any) => {
@@ -453,7 +455,37 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
             const address = addressParts.join(' ');
 
+            const rawStatus = String(job.status || '');
+            const statusUpper = rawStatus.toUpperCase();
+            const mappedStatus =
+              statusUpper === 'PENDING'
+                ? JobStatus.Pending
+                : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
+                ? JobStatus.InProgress
+                : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
+                ? JobStatus.Completed
+                : statusUpper === 'CANCELLED'
+                ? JobStatus.Cancelled
+                : JobStatus.Planned;
+            console.log('Status mapping', {
+              id: job.id,
+              api_status: rawStatus,
+              mapped_status: mappedStatus,
+            });
+
+            debugItems.push({
+              id: job.id,
+              api_status: rawStatus,
+              mapped_status: mappedStatus,
+              start_date: job.start_date,
+              end_date: job.end_date,
+              customer_name: customerName,
+              vehicle_id: warehouse.id,
+              primary_tech_id: job.primary_technician?.id || null,
+            });
+
             return {
+              api_status: rawStatus,
               id: job.id,
               assessment_id: job.assessment_id || undefined,
               contract_id: job.contract_id || undefined,
@@ -466,7 +498,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               primary_technician: job.primary_technician || null,
               technicians: [],
               work_areas: [],
-              status: JobStatus.Planned,
+              status: mappedStatus,
               vehicle_id: warehouse.id,
               service_report: undefined,
               remarks: job.remark,
@@ -480,6 +512,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           })
       );
 
+      console.groupCollapsed('FieldOperations: Jobs mapped from warehouses');
+      console.table(debugItems);
+      console.log('Total jobs:', jobsFromWarehouses.length);
+      console.groupEnd();
       setJobs(jobsFromWarehouses);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -701,17 +737,24 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     // Assuming 'type' exists on Warehouse but maybe not 'license_plate' directly typed or enum mismatch
     // Let's filter first
     const serviceVehicles = warehouses.filter(
-      (w) => (w as any).type === 'รถ' || (w as any).type === 'VEHICLE'
+      (w) => w.type === WarehouseType.VEHICLE
     );
 
     const jobsForKanban = filteredJobs.filter(
-      (j) => j.status === JobStatus.Planned || j.status === JobStatus.InProgress
+      (j) =>
+        j.status !== JobStatus.Completed &&
+        j.status !== JobStatus.Cancelled &&
+        j.status !== JobStatus.Draft
     );
 
     const vehicleColumns = serviceVehicles.map((vehicle) => ({
-      title: (vehicle as any).license_plate
-        ? `${vehicle.name} (${(vehicle as any).license_plate})`
-        : vehicle.name,
+      title: (() => {
+        const license =
+          (vehicle as any)?.license_plate ||
+          (vehicle as any)?.vehicle?.vehicle_registration ||
+          (vehicle as any)?.vehicle_registration;
+        return license ? `${vehicle.name} (${license})` : vehicle.name;
+      })(),
       id: vehicle.id,
       jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
     }));
@@ -932,6 +975,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
     if (
       status === JobStatus.Planned ||
+      status === JobStatus.Pending ||
       status === JobStatus.InProgress ||
       status === JobStatus.Paused
     ) {
@@ -950,7 +994,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       });
     }
 
-    if (status === JobStatus.Planned || status === JobStatus.InProgress) {
+    if (
+      status === JobStatus.Planned ||
+      status === JobStatus.Pending ||
+      status === JobStatus.InProgress
+    ) {
       actions.push({
         label: 'ยกเลิกงาน',
         icon: XCircleIcon,

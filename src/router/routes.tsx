@@ -26,6 +26,7 @@ const Packages = lazy(() => import('../pages/packages/Package'));
 const Categories = lazy(() => import('../pages/categories/Category'));
 const Reports = lazy(() => import('../pages/reports'));
 const Notifications = lazy(() => import('../pages/notifications'));
+const Forms = lazy(() => import('../pages/forms'));
 
 // Reports Sub-pages
 const TotalIncome = lazy(() => import('../pages/reports/TotalIncomePage'));
@@ -171,6 +172,11 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
+    },
+    {
+      path: '/forms',
+      element: <Forms />,
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
     },
     {
       path: '/categories',
