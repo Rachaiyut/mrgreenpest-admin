@@ -517,7 +517,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขงาน-: ${job.customer_name}`}
+      title={`แก้ไขงาน-: ${job.customer_name || 'ลูกค้าไม่ระบุ'}`}
       size="5xl"
       footer={
         <div className="flex gap-2">

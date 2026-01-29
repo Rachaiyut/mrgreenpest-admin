@@ -33,7 +33,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดงาน: ${job.id}`}
+      title={`รายละเอียดงาน: ${job.customer_name || 'ลูกค้าไม่ระบุ'}`}
       size="4xl"
     >
       <div className="space-y-6 text-sm">
