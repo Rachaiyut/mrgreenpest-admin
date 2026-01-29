@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
-import { User, UserRole, Warehouse } from '@/src/types/entity/app.interface';
+import { SearchableSelect } from '../../common/SearchableSelect';
+import { Assessment, User, UserRole, Warehouse } from '@/src/types/entity/app.interface';
 import {
   FieldJob,
   FieldJobWorkArea,
@@ -9,6 +10,8 @@ import {
 import { JobStatus } from '@/src/types/enums/job';
 import { RefreshIcon } from '../../../assets/icons/Icons';
 import { WarehouseType } from '@/src/types';
+import { AssessmentApi } from '@/src/api';
+import { PaymentMethod } from '@/src/types/enums/financial';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -77,6 +80,11 @@ interface EditJobModalProps {
   warehouses: Warehouse[];
 }
 
+const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.CASH]: 'เงินสด',
+  [PaymentMethod.TRANSFER]: 'โอนเงิน',
+};
+
 export const EditJobModal: React.FC<EditJobModalProps> = ({
   isOpen,
   onClose,
@@ -98,12 +106,23 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     null
   );
   const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
 
   const technicians = users.filter((u) => u.role === UserRole.Technician);
+
+  // Handle Assessment field changes
+  const handleAssessmentChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    if (!assessment) return;
+    const { name, value } = e.target;
+    setAssessment((prev) => (prev ? { ...prev, [name]: value } : null));
+  };
   const vehicleWarehouses = useMemo(
     () => warehouses.filter((w) => w.type === WarehouseType.VEHICLE),
     [warehouses]
   );
+
 
   const bookedSlots = useMemo(() => {
     if (!formData.vehicle_id || !workDate || !job) return [];
@@ -121,6 +140,19 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       }))
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [formData.vehicle_id, workDate, jobs, job]);
+
+  useEffect(() => {
+    if (isOpen && job?.assessment_id) {
+      AssessmentApi.getById(job.assessment_id)
+        .then((res) => {
+          setAssessment(res.data || null);
+          console.log('Fetched assessment:', res.data || null);
+        })
+        .catch((err) => {
+          console.error('Error fetching assessment:', err);
+        });
+    }
+  }, [isOpen, job?.assessment_id]);
 
   useEffect(() => {
     if (job) {
@@ -237,6 +269,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     }
     const updatedJob = createJobObject(formData.status || JobStatus.Planned);
     if (updatedJob) {
+      if (assessment && job?.assessment_id) {
+        AssessmentApi.update(job.assessment_id, {
+          appointment_date: assessment.appointment_date,
+          payment_condition: assessment.payment_condition,
+        }).catch((err) => {
+          console.error('Error updating assessment:', err);
+        });
+      }
       onUpdateJob(updatedJob);
       onClose();
     }
@@ -310,7 +350,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขงาน---: ${job.id}`}
+      title={`แก้ไขงาน-: ${job.customer_name}`}
       size="5xl"
       footer={
         <div className="flex gap-2">
@@ -573,6 +613,47 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             ))}
           </div>
         </FormField>
+       
+        {assessment && (
+          <div className="border border-slate-200 p-4 rounded-lg space-y-4">
+            <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
+                <Input
+                  name="appointment_date"
+                  type="date"
+                  value={
+                    assessment.appointment_date
+                      ? new Date(assessment.appointment_date)
+                          .toISOString()
+                          .substring(0, 10)
+                      : ''
+                  }
+                  onChange={handleAssessmentChange}
+                  className="bg-white"
+                />
+              </FormField>
+              <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
+                <SearchableSelect
+                  name="payment_condition"
+                  options={Object.values(PaymentMethod).map((method) => ({
+                    value: method,
+                    label: PAYMENT_LABELS[method],
+                  }))}
+                  value={assessment.payment_condition || ''}
+                  onChange={(val: string) =>
+                    setAssessment((prev) =>
+                      prev ? { ...prev, payment_condition: val as PaymentMethod } : null
+                    )
+                  }
+                  required
+                />
+              </FormField>
+            </div>
+            
+          </div>
+        )}
+       
       </form>
     </Modal>
   );

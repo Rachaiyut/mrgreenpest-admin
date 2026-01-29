@@ -29,6 +29,7 @@ export interface AssessmentWorkArea extends IBase {
 }
 
 export interface Assessment extends IBase {
+  data: null;
   customer_id: string;
   code: string;
   package_id?: string;
