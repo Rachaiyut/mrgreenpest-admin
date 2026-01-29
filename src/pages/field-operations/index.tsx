@@ -463,6 +463,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               google_map_link: customer.google_map_link || undefined,
               start_time: job.start_date,
               end_time: job.end_date,
+              primary_technician: job.primary_technician || null,
               technicians: [],
               work_areas: [],
               status: JobStatus.Planned,

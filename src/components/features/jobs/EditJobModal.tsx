@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { Button, FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { Assessment, User, UserRole, Warehouse } from '@/src/types/entity/app.interface';
+import { Assessment, User, UserRole, Warehouse, Product, Category } from '@/src/types/entity/app.interface';
 import {
   FieldJob,
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
 import { JobStatus } from '@/src/types/enums/job';
-import { RefreshIcon } from '../../../assets/icons/Icons';
-import { WarehouseType } from '@/src/types';
-import { AssessmentApi } from '@/src/api';
+import { PlusIcon, RefreshIcon } from '../../../assets/icons/Icons';
+import { WarehouseType, CategoryType } from '@/src/types';
+import { AssessmentApi, ProductApi, CategoryApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
+import { WorkAreaForm } from '../assessments/WorkAreaForm';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -107,8 +108,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   );
   const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const servicePackages = useMemo(
+    () => products.filter((p) => (p as any)?.category?.type === CategoryType.SERVICE),
+    [products]
+  );
 
-  const technicians = users.filter((u) => u.role === UserRole.Technician);
+  const technicians = (users || []).filter((u) => u.role === UserRole.Technician);
 
   // Handle Assessment field changes
   const handleAssessmentChange = (
@@ -153,6 +161,33 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         });
     }
   }, [isOpen, job?.assessment_id]);
+
+  useEffect(() => {
+    if (isOpen) {
+      ProductApi.getProducts({ page: 1, limit: 100 })
+        .then((res: any) => {
+          setProducts(res.data || []);
+        })
+        .catch((err: any) => {
+          console.error('Error fetching products:', err);
+        });
+      CategoryApi.getCategories({ type: CategoryType.SERVICE, page: 1, limit: 100 })
+        .then((res: any) => {
+          setCategories(res.data || []);
+        })
+        .catch((err: any) => {
+          console.error('Error fetching categories:', err);
+        });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (assessment) {
+      setSelectedPackageId((assessment as any).package_id || null);
+    } else {
+      setSelectedPackageId(null);
+    }
+  }, [assessment]);
 
   useEffect(() => {
     if (job) {
@@ -263,10 +298,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (timeConflictError) return;
-    if (!leadTechnicianId) {
-      alert('กรุณาเลือกหัวหน้าช่าง');
-      return;
-    }
+   
     const updatedJob = createJobObject(formData.status || JobStatus.Planned);
     if (updatedJob) {
       if (assessment && job?.assessment_id) {
@@ -283,11 +315,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   };
 
   const handleSaveDraft = () => {
-    if (timeConflictError) return;
-    if (!leadTechnicianId) {
-      alert('กรุณาเลือกหัวหน้าช่าง');
-      return;
-    }
+   
     const updatedJob = createJobObject(JobStatus.Draft);
     if (updatedJob) {
       onUpdateJob(updatedJob);
@@ -339,12 +367,105 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     });
   };
 
+  const handleAssessmentAreaChange = (
+    index: number,
+    updatedArea: any
+  ) => {
+    setAssessment((prev) => {
+      if (!prev) return prev;
+      const areas = [...(prev.assessment_areas || [])];
+      areas[index] = updatedArea;
+      return { ...prev, assessment_areas: areas } as Assessment;
+    });
+  };
+
+  const handleAssessmentAreaClear = (index: number) => {
+    setAssessment((prev) => {
+      if (!prev) return prev;
+      const areas = [...(prev.assessment_areas || [])];
+      const areaToClear = areas[index] as any;
+      if (areaToClear) {
+        areas[index] = {
+          id: areaToClear.id,
+          area_name: areaToClear.area_name,
+          building_type: '',
+          area_size: undefined,
+          category_services: [],
+          service_system: undefined,
+          base_service_price: 0,
+          total_price: 0,
+          items: [],
+        };
+      }
+      return { ...prev, assessment_areas: areas } as Assessment;
+    });
+  };
+
+  const handleAssessmentAreaRemove = (index: number) => {
+    setAssessment((prev) => {
+      if (!prev) return prev;
+      const areas = [...(prev.assessment_areas || [])];
+      if (areas.length > 1) {
+        const newAreas = areas.filter((_, i) => i !== index);
+        return { ...prev, assessment_areas: newAreas } as Assessment;
+      } else {
+        alert('ต้องมีอย่างน้อย 1 พื้นที่ในใบประเมิน');
+        return prev;
+      }
+    });
+  };
+
   if (!job) return null;
 
   const isReadOnly = !!job.assessment_id || !!job.contract_id;
   const additionalTechnicians = technicians.filter(
     (tech) => tech.id !== leadTechnicianId
   );
+
+  const primaryTechnicianDisplay = (() => {
+    const pt = (job as any)?.primary_technician;
+    const parts = [
+      pt?.first_name || '',
+      pt?.last_name || '',
+      pt?.nick_name || pt?.nickname || '',
+    ].filter(Boolean);
+    if (parts.length > 0) return parts.join(' ');
+    if (leadTechnicianId) {
+      const tech: any = (users || []).find((u) => u.id === leadTechnicianId);
+      const name = tech?.name || '';
+      const fallbackParts = name
+        ? [name]
+        : [
+            tech?.first_name || '',
+            tech?.last_name || '',
+            tech?.nick_name || tech?.nickname || '',
+          ].filter(Boolean);
+      return fallbackParts.join(' ');
+    }
+    return '';
+  })();
+
+  const handleAddArea = () => {
+    setAssessment((prev) => {
+      if (!prev) return prev;
+      const nextIndex = (prev.assessment_areas || []).length + 1;
+      const newArea: any = {
+        id: `area-${Date.now()}`,
+        area_name: `พื้นที่ ${nextIndex}`,
+        building_type: '',
+        area_size: undefined,
+        category_services: [],
+        service_system: undefined,
+        base_service_price: 0,
+        total_price: 0,
+        items: [],
+      };
+      return {
+        ...prev,
+        assessment_areas: [...(prev.assessment_areas || []), newArea],
+      } as Assessment;
+    });
+  };
 
   return (
     <Modal
@@ -523,7 +644,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             <option value="">-- เลือกรถบริการ --</option>
             {vehicleWarehouses.map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name} ({v.vehicle.vehicle_registration})
+                {v.name} ({v.vehicle?.vehicle_registration || '-'})
               </option>
             ))}
           </Select>
@@ -579,21 +700,13 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           <p className="text-sm text-red-600 -mt-2">{timeConflictError}</p>
         )}
 
-        <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-select">
-          <Select
-            id="lead-technician-select"
-            name="leadTechnicianId"
-            value={leadTechnicianId}
-            onChange={(e) => handleLeadTechnicianChange(e.target.value)}
-            required
-          >
-            <option value="">-- เลือกหัวหน้าช่าง --</option>
-            {technicians.map((tech) => (
-              <option key={tech.id} value={tech.id}>
-                {tech.name}
-              </option>
-            ))}
-          </Select>
+        <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-display">
+          <Input
+            id="lead-technician-display"
+            value={primaryTechnicianDisplay}
+            readOnly
+            className="bg-slate-100"
+          />
         </FormField>
 
         <FormField label="ช่างเทคนิคเพิ่มเติม (ถ้ามี)">
@@ -650,7 +763,34 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 />
               </FormField>
             </div>
-            
+               {/* Work Areas */}
+                <div className="space-y-4">
+                 {(assessment.assessment_areas || []).map((area, index) => (
+                  <WorkAreaForm
+                          key={area.id || index}
+                          area={area}
+                          index={index}
+                          onAreaChange={handleAssessmentAreaChange}
+                          onRemoveArea={handleAssessmentAreaRemove}
+                          onClearArea={handleAssessmentAreaClear}
+                          products={products}
+                          selectedPackage={
+                            selectedPackageId
+                              ? (servicePackages.find(
+                                  (p) => p.id === selectedPackageId
+                                ) as any)!
+                              : null
+                          }
+                          categories={categories}
+                        />
+                      ))}
+             </div>
+               <div className="flex justify-center">
+                       <Button type="button" onClick={handleAddArea} variant="primary">
+                         <PlusIcon className="h-5 w-5" />
+                         เพิ่มพื้นที่ใหม่
+                       </Button>
+                     </div>
           </div>
         )}
        
