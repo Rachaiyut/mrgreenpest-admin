@@ -35,6 +35,11 @@ class JobService extends AuthService {
     return res.data;
   }
 
+  async checkOut(id: string): Promise<Job> {
+    const res = await this.http.patch<Job>(`${this.path}/${id}/check-out`);
+    return res.data;
+  }
+
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }

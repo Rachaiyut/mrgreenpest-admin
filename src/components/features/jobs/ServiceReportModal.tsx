@@ -99,7 +99,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     );
     const todayTs = Date.now();
     const completedVisits = (jobs || []).filter(
-      (j) => j.contract_id === c.id && j.status === JobStatus.Completed
+      (j) => j.contract_id === c.id && (j.status as unknown as JobStatus) === JobStatus.Completed
     ).length;
     const nextScheduled = (jobs || [])
       .filter(
@@ -109,7 +109,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             JobStatus.InProgress,
             JobStatus.Planned,
             JobStatus.Scheduled,
-          ].includes(j.status)
+          ].includes(j.status as unknown as JobStatus)
       )
       .sort(
         (a, b) =>
@@ -191,6 +191,69 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     const finalReportData = {
       ...reportState,
       status: nextStatus,
+      // Map legacy fields to new payload structure
+      job_id: job.id,
+      customer_id: job.customer_id,
+      report_date: new Date().toISOString(),
+      customer_name: job.customer_name,
+      
+      // Service Types
+      is_service_termite: reportState.service_types?.includes('กำจัดปลวก'),
+      is_service_ant_roach: reportState.service_types?.some(t => ['กำจัดมด', 'กำจัดแมลงสาบ'].includes(t)),
+      is_service_rodent: reportState.service_types?.includes('กำจัดหนู'),
+      is_service_mosquito: reportState.service_types?.includes('กำจัดยุง'),
+      service_other: reportState.service_types?.includes('กำจัดอื่นๆ') ? 'Other' : null,
+      
+      // Time
+      time_in: reportState.check_in_time,
+      time_out: reportState.check_out_time,
+      
+      // Operations (Merging generic actions and pest-specific details)
+      is_op_station: reportState.service_actions?.includes('ฝังสถานี') || 
+                     reportState.termite?.actions?.installStations?.enabled,
+                     
+      is_op_refill: reportState.service_actions?.includes('เติมเหยื่อ') || 
+                    reportState.termite?.actions?.addBait?.enabled ||
+                    reportState.rat?.refill_bait,
+                    
+      is_op_chemical: reportState.service_actions?.includes('อัดน้ำยา') || 
+                      reportState.termite?.actions?.injectPipes?.enabled ||
+                      reportState.termite?.actions?.injectShaft?.enabled,
+                      
+      is_op_check: reportState.service_actions?.includes('ตรวจเช็ค'),
+      
+      is_op_underground: reportState.termite?.actions?.injectSoil?.enabled, 
+      
+      is_op_renew: reportState.service_actions?.includes('ต่อสัญญา'),
+      
+      is_op_spray: reportState.termite?.actions?.sprayGarden?.enabled ||
+                   reportState.termite?.actions?.sprayBio?.enabled ||
+                   reportState.termite?.actions?.aroundBuilding?.enabled ||
+                   reportState.termite?.actions?.insideBuilding?.enabled,
+                   
+      is_op_fogging: reportState.service_actions?.includes('พ่นหมอกควัน'),
+      
+      is_op_gel: reportState.ant?.apply_gel || reportState.cockroach?.apply_gel,
+      
+      is_op_powder: reportState.service_actions?.includes('โรยผง'),
+      
+      is_op_bait: reportState.rat?.bait_stations, // Placing bait stations
+      
+      is_op_trap: reportState.lizard?.place_traps || 
+                  reportState.rat?.glue_traps || 
+                  reportState.rat?.mechanical_traps,
+      
+      op_other: null,
+      
+      // Next Service
+      work_note: reportState.notes,
+      next_service_schedule: reportState.next_appointment?.scheduled_at,
+      next_service_purpose: reportState.next_appointment?.reasons?.join(', '),
+      is_next_refill: reportState.next_appointment?.reasons?.includes('เติมเหยื่อ') || reportState.next_appointment?.reasons?.includes('วางเหยื่อ'),
+      is_next_chemical: reportState.next_appointment?.reasons?.includes('ฉีดปลวก'),
+      is_next_check: reportState.next_appointment?.reasons?.includes('ตรวจเช็ค'),
+      is_next_underground: reportState.next_appointment?.reasons?.includes('อัดลงดิน'),
+      is_next_renew: reportState.next_appointment?.reasons?.includes('ครบรอบบริการ'),
     } as ServiceReport;
     onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
   };

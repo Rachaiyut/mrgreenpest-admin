@@ -93,6 +93,25 @@ export const NewWarehouseIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const LoadingIcon: React.FC<IconProps> = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    {...props}
+    className={`${props.className || ''} animate-spin`}
+  >
+    <path
+      fill="currentColor"
+      d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+      opacity=".25"
+    />
+    <path
+      fill="currentColor"
+      d="M12,4a8,8,0,0,1,7.89,6.7A1.5,1.5,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-10.72-9.48,1.5,1.5,0,0,0-1.48,1.75h0A1.5,1.5,0,0,0,12,4Z"
+    />
+  </svg>
+);
+
 export const NewUsersIcon: React.FC<IconProps> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
     <g fill="none" stroke="currentColor" strokeWidth="1.5">

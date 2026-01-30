@@ -21,6 +21,7 @@ import {
   ManageIcon,
   EyeIcon,
   PencilIcon,
+  TrashIcon,
   XCircleIcon,
   MapPinIcon,
   PlayIcon,
@@ -31,6 +32,7 @@ import {
   ChevronRightIcon,
   JobDateIcon,
   JobTimeIcon,
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 import { Pagination } from '../../components/common/Pagination';
@@ -41,6 +43,7 @@ import { ServiceReportModal } from '../../components/features/jobs/ServiceReport
 import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { FormField } from '../../components/common/FormControls';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { Role } from '../../types/enums/role';
@@ -431,6 +434,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   // Local state to manage data fetched from API
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
+  const [reports, setReports] = useState<ServiceReport[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
     Array.isArray(initialWarehouses) ? initialWarehouses : []
   );
@@ -440,10 +444,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [warehousesRes, categoriesRes] =
+      const [warehousesRes, categoriesRes, reportsRes] =
         await Promise.all([
           VehicleApi.getVehiclesWithUserJobs(),
           CategoryApi.getCategories({}),
+          ServiceReportApi.getAll({}),
         ]);
 
       // Ensure warehousesData is an array
@@ -455,8 +460,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       }
       
       const categoriesData = (categoriesRes as any).data || [];
+      const reportsData = (reportsRes as any).data || [];
+      
       setWarehouses(warehousesData);
       setCategories(categoriesData);
+      setReports(reportsData);
 
       const debugItems: any[] = [];
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
@@ -518,7 +526,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               id: job.id,
               assessment_id: job.assessment_id || undefined,
               contract_id: job.contract_id || undefined,
-              customer_id: job.customer_id,
+              customer_id: job.customer_id || customer.id,
               customer_name: customerName,
               address,
               google_map_link: customer.google_map_link || undefined,
@@ -589,6 +597,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     try {
       if (newStatus === JobStatus.InProgress) {
         await JobApi.checkIn(jobId);
+      } else if (newStatus === JobStatus.Completed) {
+        await JobApi.checkOut(jobId);
       } else {
         const status =
           newStatus === JobStatus.Completed
@@ -641,6 +651,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [jobToCancel, setJobToCancel] = useState<any | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<any | null>(null);
 
   const [jobToEdit, setJobToEdit] = useState<any | null>(null);
   const [jobForReport, setJobForReport] = useState<any | null>(null);
@@ -679,6 +691,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     new Date().toISOString().substring(0, 10)
   );
   const [scheduleVehicleId, setScheduleVehicleId] = useState('');
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   const technicians = useMemo(
     () => users.filter((user) => user.role === UserRole.Technician),
@@ -803,8 +816,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   }, [initialCustomers]);
 
   const serviceReports = useMemo(
-    () => reversedJobs.filter((j) => j.service_report),
-    [reversedJobs]
+    () => [...reports].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    [reports]
   );
 
   const scheduleJobs = useMemo(
@@ -925,6 +938,25 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     setJobToCancel(null);
   };
 
+  const handleDelete = (job: FieldJob) => {
+    setJobToDelete(job);
+    setIsDeleteModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (jobToDelete) {
+      try {
+        await JobApi.delete(jobToDelete.id);
+        fetchData();
+        setIsDeleteModalOpen(false);
+        setJobToDelete(null);
+      } catch (error) {
+        console.error('Error deleting job:', error);
+      }
+    }
+  };
+
   const handleReportSubmit = async (
     jobId: string,
     reportData: ServiceReport,
@@ -935,10 +967,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       const job = jobs.find((j) => j.id === jobId);
       if (!job) return;
 
-      // Prepare payload (ensure job_id is set)
+      // Prepare payload (ensure job_id and customer_id are set)
       const payload = {
         ...reportData,
         job_id: jobId,
+        customer_id: job.customer_id,
       };
 
       // Remove id from payload if it exists to avoid issues with create/update if strict
@@ -953,20 +986,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       // Update Job Status if needed
       // Note: Backend might handle status update when report is created/completed, 
       // but we ensure consistency here.
-      if (finalStatus !== (job.status as unknown as JobStatus)) {
-        const statusStr =
-          finalStatus === JobStatus.Completed
-            ? 'COMPLETED'
-            : finalStatus === JobStatus.InProgress
-            ? 'IN_PROGRESS'
-            : 'PENDING';
-        
-        await JobApi.update(jobId, { 
-          status: statusStr, 
-          quotation_id: quotationId,
-          actual_end_time: finalStatus === JobStatus.Completed ? new Date().toISOString() : undefined
-        } as any);
-      } else if (quotationId && quotationId !== job.quotation_id) {
+      if (quotationId && quotationId !== job.quotation_id) {
         await JobApi.update(jobId, { quotation_id: quotationId } as any);
       }
 
@@ -1073,6 +1093,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         label: 'ยกเลิกงาน',
         icon: XCircleIcon,
         onClick: () => handleCancel(selectedJob),
+        isDanger: true,
+      });
+    }
+
+    if (
+      authUser?.role &&
+      [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role)
+    ) {
+      actions.push({
+        label: 'ลบงาน',
+        icon: TrashIcon,
+        onClick: () => handleDelete(selectedJob),
         isDanger: true,
       });
     }
@@ -1365,13 +1397,16 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          วันที่
+                          ลูกค้า/สถานที่
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          ลูกค้า
+                          วัน-เวลา
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                           บริการ
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          ช่าง
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                           สถานะรายงาน
@@ -1383,43 +1418,100 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                       {paginatedReports.length > 0 ? (
-                        paginatedReports.map((job) => (
-                          <tr key={job.id} className="hover:bg-slate-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                              {formatThaiDateTime(
-                                job.service_report?.created_at || ''
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-slate-900">
-                                {job.customer_name}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                              {job.service_report?.service_types.join(', ')}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge
-                                status={
-                                  job.service_report?.status || JobStatus.Draft
-                                }
-                              />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <Button
-                                onClick={() => handleWriteReport(job)}
-                                variant="ghost"
-                                className="text-primary hover:text-primary-dark"
-                              >
-                                ดู/แก้ไข
-                              </Button>
-                            </td>
-                          </tr>
-                        ))
+                        paginatedReports.map((report) => {
+                          const job = jobs.find((j) => j.id === report.job_id);
+                          const reportDate = report.report_date || report.created_at || '';
+                          
+                          return (
+                            <tr key={report.id} className="hover:bg-slate-50">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-slate-900">
+                                  {report.customer_name || job?.customer_name || '-'}
+                                </div>
+                                <div className="text-sm text-slate-500">
+                                  {job?.address || '-'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-slate-900">
+                                  {formatThaiDate(reportDate)}
+                                </div>
+                                <div className="text-sm text-slate-500">
+                                  {report.time_in && report.time_out 
+                                    ? `${report.time_in} - ${report.time_out}`
+                                    : new Date(reportDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+                                  }
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {report.service_types?.join(', ') || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {job?.technicians?.map(t => t.name).join(', ') || 
+                                 report.signatures?.technician_name || 
+                                 '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <StatusBadge
+                                  status={report.status || JobStatus.Draft}
+                                />
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <Button
+                                  onClick={async () => {
+                                    try {
+                                      if (report.id) {
+                                        setLoadingPdfId(report.id);
+                                        const blob = await ServiceReportApi.getServiceReportPdfById(report.id);
+                                        const url = window.URL.createObjectURL(blob);
+                                        window.open(url, '_blank');
+                                        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                                      } else {
+                                        alert('ไม่พบ ID ของรายงาน');
+                                      }
+                                    } catch (error) {
+                                      console.error('Error fetching PDF:', error);
+                                      alert('ไม่สามารถดาวน์โหลด PDF ได้');
+                                    } finally {
+                                      setLoadingPdfId(null);
+                                    }
+                                  }}
+                                  variant="ghost"
+                                  className="text-primary hover:text-primary-dark mr-2"
+                                  title="ดู PDF"
+                                  disabled={loadingPdfId === report.id}
+                                >
+                                  {loadingPdfId === report.id ? (
+                                    <LoadingIcon className="h-5 w-5 animate-spin" />
+                                  ) : (
+                                    <span className="flex items-center gap-1">
+                                      <DocumentCheckIcon className="h-5 w-5" />
+                                      <span>ดู</span>
+                                    </span>
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    if (job) {
+                                      handleWriteReport(job);
+                                    } else {
+                                       alert('ไม่พบข้อมูลงานสำหรับรายงานนี้ (อาจเป็นงานเก่าที่ไม่ได้โหลดมาแสดงผล)');
+                                    }
+                                  }}
+                                  variant="ghost"
+                                  className="text-slate-500 hover:text-slate-700"
+                                  title="แก้ไขรายงาน"
+                                >
+                                  <PencilIcon className="h-5 w-5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })
                       ) : (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="px-6 py-10 text-center text-slate-500"
                           >
                             ไม่พบรายงานบริการ
@@ -1612,6 +1704,27 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         job={jobToCancel}
         onConfirm={handleConfirmCancel}
       />
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="ยืนยันการลบงาน"
+        message={
+          jobToDelete ? (
+            <div className="text-slate-600">
+              คุณแน่ใจหรือไม่ที่จะลบงาน{' '}
+              <span className="font-semibold text-slate-800">
+                {jobToDelete.customer_name}
+              </span>{' '}
+              ? การกระทำนี้ไม่สามารถย้อนกลับได้
+            </div>
+          ) : (
+            'คุณแน่ใจหรือไม่ที่จะลบงานนี้?'
+          )
+        }
+        confirmButtonText="ลบงาน"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+      />
       <ServiceReportModal
         isOpen={isReportModalOpen}
         onClose={() => {
@@ -1634,7 +1747,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         onUpdateAssessment={handleAssessmentUpdateOnCheckout}
         products={initialProducts}
         customers={initialCustomers}
-        categories={[]}
+        categories={categories}
       />
     </>
   );

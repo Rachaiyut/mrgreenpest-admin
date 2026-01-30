@@ -675,6 +675,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             id="service-system"
             value={serviceSystem}
             onChange={(e) => setServiceSystem(e.target.value)}
+            required
           >
             <option value="" disabled>
               -- เลือกระบบบริการ --

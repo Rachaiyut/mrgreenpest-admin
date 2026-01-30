@@ -19,6 +19,15 @@ class ServiceReportService extends AuthService {
     return res.data;
   }
 
+  async getServiceReportPdfById(
+    id: string
+  ): Promise<Blob> {
+    const res = await this.http.get<Blob>(`${this.path}/${id}/pdf`, {
+      responseType: 'blob' as any,
+    });
+    return res.data;
+  }
+
   async getById(id: string): Promise<ServiceReport> {
     const res = await this.http.get<ServiceReport>(`${this.path}/${id}`);
     return res.data;
