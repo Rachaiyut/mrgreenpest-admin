@@ -74,7 +74,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       first_name: firstName,
       last_name: lastName,
       nickname: (data.nickname as string) || '',
-      customer_type:
+      type:
         customerType === 'บุคคลธรรมดา'
           ? CustomerType.INDIVIDUAL
           : CustomerType.CORPORATE,
@@ -234,7 +234,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
             />
           </FormField>
           <FormField label="อีเมล" htmlFor="email">
-            <Input id="email" name="email" type="email" />
+            <Input id="email" name="email" type="email" required />
           </FormField>
         </div>
 
