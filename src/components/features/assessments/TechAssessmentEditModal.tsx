@@ -84,6 +84,11 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
 
   useEffect(() => {
     if (assessment && isOpen) {
+      // Debug: Log assessment data to verify package is present
+      console.log('TechAssessmentEditModal - Assessment:', assessment);
+      console.log('TechAssessmentEditModal - Package from assessment:', (assessment as any).package);
+      console.log('TechAssessmentEditModal - package_id:', assessment.package_id);
+
       const { assessment_areas, ...rest } = assessment;
       setFormData({
         ...rest,

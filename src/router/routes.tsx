@@ -106,12 +106,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/quotations/new',
       element: <CreateQuotation />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/quotations/create',
       element: <CreateQuotation />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/quotations/:id/edit',
@@ -121,7 +121,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onUpdateQuotation={handlers.quotations.update}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/invoices/:id/edit',

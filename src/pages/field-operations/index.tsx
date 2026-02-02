@@ -375,17 +375,17 @@ const CalendarView: React.FC<{
               <div
                 key={index}
                 className={`relative min-h-[120px] p-2 flex flex-col ${day.isCurrentMonth
-                    ? isWeekend ? 'bg-slate-50/50' : 'bg-white'
-                    : 'bg-slate-100/50'
+                  ? isWeekend ? 'bg-slate-50/50' : 'bg-white'
+                  : 'bg-slate-100/50'
                   } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
                 <time
                   dateTime={day.date.toISOString().substring(0, 10)}
                   className={`text-sm font-semibold mb-1 ${day.isToday
-                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
-                      : day.isCurrentMonth
-                        ? dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-slate-700'
-                        : 'text-slate-300'
+                    ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
+                    : day.isCurrentMonth
+                      ? dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-slate-700'
+                      : 'text-slate-300'
                     }`}
                 >
                   {day.date.getDate()}
@@ -508,8 +508,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
             const customerName =
               customer.first_name || customer.last_name
                 ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
-                    ? ` ${customer.last_name}`
-                    : ''
+                  ? ` ${customer.last_name}`
+                  : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -1188,8 +1188,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           action.onClick();
         }}
         className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${action.isDanger
-            ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
-            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+          ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
           } ${index === 0 ? '' : ''}`}
         role="menuitem"
       >
@@ -1334,8 +1334,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               <button
                 onClick={() => setActiveTab('schedule')}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'schedule'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100'
                   }`}
               >
                 <span className="flex items-center gap-2">
@@ -1346,8 +1346,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               <button
                 onClick={() => setActiveTab('reports')}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'reports'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100'
                   }`}
               >
                 <span className="flex items-center gap-2">
@@ -1358,8 +1358,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               <button
                 onClick={() => setActiveTab('work-schedule')}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'work-schedule'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100'
                   }`}
               >
                 <span className="flex items-center gap-2">
@@ -2069,6 +2069,17 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         onUpdateAssessment={handleAssessmentUpdateOnCheckout}
         products={initialProducts}
         customers={initialCustomers}
+        categories={categories}
+      />
+      <TechAssessmentEditModal
+        isOpen={isTechAssessmentModalOpen}
+        onClose={() => {
+          setIsTechAssessmentModalOpen(false);
+          setSelectedAssessmentForJob(null);
+        }}
+        assessment={selectedAssessmentForJob}
+        onUpdateAssessment={handleTechUpdateAssessment}
+        products={initialProducts}
         categories={categories}
       />
     </>
