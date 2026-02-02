@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import { PlusIcon, TrashIcon, XCircleIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
@@ -432,37 +433,31 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="เบิกจากคลัง" htmlFor="from-warehouse">
-              <Select
-                id="from-warehouse"
+              <SearchableSelect
                 required
                 value={fromWarehouseId}
-                onChange={(e) => setFromWarehouseId(e.target.value)}
-              >
-                <option value="">-- เลือกคลังต้นทาง --</option>
-                {warehouses
+                onChange={setFromWarehouseId}
+                placeholder="-- เลือกคลังต้นทาง --"
+                options={warehouses
                   .filter((w) => w.type === 'คลัง')
-                  .map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-              </Select>
+                  .map((w) => ({
+                    value: w.id,
+                    label: w.name,
+                  }))}
+              />
             </FormField>
             <FormField label="ไปยังคลัง (รถ)" htmlFor="to-warehouse">
-              <Select
-                id="to-warehouse"
+              <SearchableSelect
                 value={toWarehouseId}
-                onChange={(e) => setToWarehouseId(e.target.value)}
-              >
-                <option value="">-- เลือกคลังปลายทาง --</option>
-                {warehouses
+                onChange={setToWarehouseId}
+                placeholder="-- เลือกคลังปลายทาง --"
+                options={warehouses
                   .filter((w) => w.type === 'รถ')
-                  .map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-              </Select>
+                  .map((w) => ({
+                    value: w.id,
+                    label: w.name,
+                  }))}
+              />
             </FormField>
           </div>
 

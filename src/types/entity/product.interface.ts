@@ -6,13 +6,15 @@ export interface Product extends IBase {
   category_id: string;
   unit_id: string;
   code: string;
-  name: string,
+  name: string;
   barcode: string;
-  cost_price: string;
+  price?: number;
+  cost_price: number;
   min_stock: number;
-  fda_number: string;
-  created_by: string;
+  fda_number?: string;
+  created_by?: string;
+  updated_by?: string;
 
-  category: Category;
-  unit: Unit;
+  category?: Category;
+  unit?: Unit;
 }

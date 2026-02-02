@@ -9,8 +9,10 @@ const Customers = lazy(() => import('../pages/customers/Customer'));
 const Assessments = lazy(() => import('../pages/assessments/Assessments'));
 const FieldOperations = lazy(() => import('../pages/field-operations'));
 const Financials = lazy(() => import('../pages/financials'));
+const QuotationsPage = lazy(() => import('../pages/quotations'));
 const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotationPage'));
 const EditQuotationPage = lazy(() => import('../pages/financials/EditQuotationPage'));
+const CreateQuotation = lazy(() => import('../pages/quotations/CreateQuotation'));
 const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
 const Inventory = lazy(() => import('../pages/inventory'));
 const Users = lazy(() => import('../pages/users'));
@@ -27,6 +29,9 @@ const Categories = lazy(() => import('../pages/categories/Category'));
 const Reports = lazy(() => import('../pages/reports'));
 const Notifications = lazy(() => import('../pages/notifications'));
 const Forms = lazy(() => import('../pages/forms'));
+const ContractsPage = lazy(() => import('../pages/contracts'));
+const CreateContractPage = lazy(() => import('../pages/contracts/CreateContract'));
+const CreateInvoicePage = lazy(() => import('../pages/billing/CreateInvoice'));
 
 // Reports Sub-pages
 const TotalIncome = lazy(() => import('../pages/reports/TotalIncomePage'));
@@ -100,14 +105,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     },
     {
       path: '/quotations/new',
-      element: (
-        <CreateQuotationPage
-          onCreateQuotation={handlers.quotations.create}
-          customers={customers}
-          assessments={assessments}
-          products={products}
-        />
-      ),
+      element: <CreateQuotation />,
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+    },
+    {
+      path: '/quotations/create',
+      element: <CreateQuotation />,
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
     },
     {
@@ -135,14 +138,29 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/quotations',
       element: (
-        <Financials
-          defaultTab="ใบเสนอราคา"
+        <QuotationsPage
           onCreateQuotation={handlers.quotations.create}
           onUpdateQuotation={handlers.quotations.update}
           onDeleteQuotation={handlers.quotations.delete}
           onReviseQuotation={handlers.quotations.revise}
         />
       ),
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+    },
+    {
+      path: '/contracts',
+      element: (
+        <ContractsPage
+          onCreateContract={handlers.contracts.create}
+          onUpdateContract={handlers.contracts.update}
+          onDeleteContract={handlers.contracts.delete}
+        />
+      ),
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+    },
+    {
+      path: '/contracts/new',
+      element: <CreateContractPage />,
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
     },
     {
@@ -156,6 +174,11 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateReceipt={handlers.receipts.create}
         />
       ),
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
+    },
+    {
+      path: '/billing/new',
+      element: <CreateInvoicePage />,
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
     },
     {

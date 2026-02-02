@@ -6,6 +6,7 @@ import {
   Select,
   Button,
 } from '../../components/common/FormControls';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 import {
   Customer,
   Quotation,
@@ -234,19 +235,17 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
             {/* Left Column: Job Info */}
             <div className="space-y-6">
               <FormField label="เลือกลูกค้า" htmlFor="customer-select">
-                <Select
-                  id="customer-select"
+                <SearchableSelect
                   value={selectedCustomerId}
-                  onChange={(e) => handleCustomerChange(e.target.value)}
+                  onChange={handleCustomerChange}
+                  placeholder="-- เลือกลูกค้า --"
                   required
-                >
-                  <option value="">-- เลือกลูกค้า --</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.first_name} {c.last_name}
-                    </option>
-                  ))}
-                </Select>
+                  options={customers.map((c) => ({
+                    value: c.id,
+                    label: `${c.first_name} ${c.last_name}`,
+                    description: c.phone || '',
+                  }))}
+                />
               </FormField>
 
               {selectedCustomerId && (
@@ -254,21 +253,15 @@ export const CreateQuotationPage: React.FC<CreateQuotationPageProps> = ({
                   label="อ้างอิงใบประเมิน (ไม่บังคับ)"
                   htmlFor="assessment-select"
                 >
-                  <Select
-                    id="assessment-select"
+                  <SearchableSelect
                     value={selectedAssessmentId}
-                    onChange={(e) => setSelectedAssessmentId(e.target.value)}
-                  >
-                    <option value="">-- ไม่อ้างอิงใบประเมิน --</option>
-                    {availableAssessmentsForCustomer.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.id} - ยอดรวม: ฿
-                        {a.total_estimated_cost.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={setSelectedAssessmentId}
+                    placeholder="-- ไม่อ้างอิงใบประเมิน --"
+                    options={availableAssessmentsForCustomer.map((a) => ({
+                      value: a.id,
+                      label: `${a.id} - ยอดรวม: ฿${a.total_estimated_cost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`,
+                    }))}
+                  />
                 </FormField>
               )}
 

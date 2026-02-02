@@ -106,4 +106,8 @@ export interface FieldJob {
   group?: string;
   road_line?: string;
   sequence?: string;
+  // Legacy camelCase aliases
+  customerName?: string;
+  startTime?: string;
+  endTime?: string;
 }

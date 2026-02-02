@@ -1,26 +1,38 @@
 import { IBase } from "./base.interface";
+import { JobMainStatus } from "../enums/job";
+import { Customer } from "./customer.interface";
 
 export enum ServiceSystem {
   CHEMICAL = 'CHEMICAL',
   PREY = 'PREY',
-  // Add other systems here, e.g., BAITING = 'BAITING'
 }
 
 export interface TeamMember {
+  id?: string;
+  job_id?: string;
   user_id: string;
-  check_in: Date;
-  check_out: Date;
+  check_in?: Date | string;
+  check_out?: Date | string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Job extends IBase {
-  customer_id: string;
-  contract_id: string;
-  assessment_id: string;
+  customer_id?: string;
+  contract_id?: string;
+  assessment_id?: string;
   primary_tech_id: string;
   vehicle_id: string;
-  start_date: Date;
-  end_date: Date;
-  service_system: ServiceSystem | string;
-  remark: string;
-  team_member: TeamMember[];
+  start_date: Date | string;
+  end_date: Date | string;
+  status: JobMainStatus | string;
+  service_system?: ServiceSystem | string;
+  remark?: string;
+  
+  // Relations
+  customer?: Customer;
+  primary_technician?: any;
+  job_team_members?: TeamMember[];
+  team_member?: TeamMember[]; // Legacy support
+  vehicle?: any;
 }

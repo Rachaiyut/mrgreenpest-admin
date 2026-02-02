@@ -65,16 +65,17 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [JobStatus.Pending]: 'bg-yellow-100 text-yellow-700',
 
     // Assessment Status (English)
-    [AsessmentStatus.DRAFT]: 'bg-slate-100 text-slate-600',
-    [AsessmentStatus.PENDING]: 'bg-orange-100 text-orange-700',
     [AsessmentStatus.APPOINTMENT]: 'bg-blue-100 text-blue-700',
     [AsessmentStatus.COMPLETE]: 'bg-green-100 text-green-700',
 
-    // Invoice Status (English)
-    [InvoiceStatus.Paid]: 'bg-green-100 text-green-700',
-    [InvoiceStatus.Overdue]: 'bg-rose-100 text-rose-700',
-    [InvoiceStatus.Cancelled]: 'bg-red-100 text-red-700',
-    [InvoiceStatus.Pending]: 'bg-yellow-100 text-yellow-700',
+    // Invoice Status (English) - Only unique values
+    PAID: 'bg-green-100 text-green-700',
+    OVERDUE: 'bg-rose-100 text-rose-700',
+    DRAFT: 'bg-slate-100 text-slate-600',
+    PENDING: 'bg-yellow-100 text-yellow-700',
+    CANCELLED: 'bg-red-100 text-red-700',
+    SENT: 'bg-indigo-100 text-indigo-700',
+    PARTIAL: 'bg-amber-100 text-amber-700',
   };
 
   const displayLabel =

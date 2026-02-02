@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { Contract, Quotation } from '@/src/types/entity/app.interface';
-import { ICustomer } from '@/src/types/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { PlusIcon } from '../../../assets/icons/Icons';
 import { AddContractModal } from '../contracts/AddContractModal';
@@ -11,7 +11,7 @@ import { formatThaiDate } from '../../../utils/date';
 interface CustomerContractsListModalProps {
   isOpen: boolean;
   onClose: () => void;
-  customer: ICustomer | null;
+  customer: Customer | null;
   contracts: Contract[];
   quotations: Quotation[];
   onCreateContract: (contractData: Omit<Contract, 'id'>) => void;

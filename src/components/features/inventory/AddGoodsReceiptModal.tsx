@@ -2,6 +2,7 @@ import type { FC, FormEvent, MouseEvent } from 'react';
 import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
@@ -41,6 +42,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
 }) => {
   const [items, setItems] = useState<LineItem[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -72,6 +74,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     if (isOpen) {
       setItems([]);
       setSelectedWarehouseId('');
+      setSelectedSupplierId('');
     }
   }, [isOpen]);
 
@@ -198,32 +201,29 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="รับเข้าคลัง" htmlFor="warehouse">
-              <Select
-                id="warehouse"
+              <SearchableSelect
                 value={selectedWarehouseId}
-                onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                onChange={setSelectedWarehouseId}
+                placeholder="-- เลือกคลัง --"
                 required
-              >
-                <option value="">-- เลือกคลัง --</option>
-                {warehouses.map((wh) => (
-                  <option key={wh.id} value={wh.id}>
-                    {wh.name}
-                    {wh.type === 'รถ' && wh.licensePlate
-                      ? ` (${wh.licensePlate})`
-                      : ''}
-                  </option>
-                ))}
-              </Select>
+                name="warehouse"
+                options={warehouses.map((wh) => ({
+                  value: wh.id,
+                  label: `${wh.name}${wh.type === 'รถ' && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
+                }))}
+              />
             </FormField>
             <FormField label="ผู้จัดจำหน่าย" htmlFor="supplier">
-              <Select id="supplier" name="supplier">
-                <option value="">-- ไม่ระบุ --</option>
-                {suppliers.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                value={selectedSupplierId}
+                onChange={setSelectedSupplierId}
+                placeholder="-- ไม่ระบุ --"
+                name="supplier"
+                options={suppliers.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                }))}
+              />
             </FormField>
           </div>
           <FormField label="เลขที่อ้างอิงเอกสาร" htmlFor="reference-id">

@@ -46,13 +46,13 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
     withdrawals,
     users,
     warehouses,
-    fieldJobs: jobs,
+    jobs,
     customers,
     products,
-    warehouseStocks: stockMap,
   } = useData();
 
-  const currentUser = users[0]; // Mock user for now
+  const stockMap = new Map<string, Map<string, number>>();
+  const currentUser = users.length > 0 ? users[0] : null;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);

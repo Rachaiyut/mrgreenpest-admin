@@ -18,7 +18,7 @@ interface NotificationsProps {}
 const Notifications: React.FC<NotificationsProps> = () => {
   const {
     contracts,
-    fieldJobs: jobs,
+    jobs,
     invoices,
     receipts,
     customers,

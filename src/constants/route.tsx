@@ -24,6 +24,7 @@ export const PAGE_PATH: Record<string, string> = {
   'ใบประเมิน': 'assessments',
   'ภาคสนาม': 'field-operations',
   'ใบเสนอราคา': 'quotations',
+  'ใบสัญญา': 'contracts',
   'ใบแจ้งหนี้': 'billing',
   'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
   'ฟอร์ม': 'forms',
@@ -90,6 +91,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     subItems: [
       { 
         name: 'ใบเสนอราคา', 
+        icon: DocumentTextIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO]
+      },
+      { 
+        name: 'ใบสัญญา', 
         icon: DocumentTextIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO]
       },

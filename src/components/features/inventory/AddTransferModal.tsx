@@ -7,6 +7,7 @@ import {
   Textarea,
   Button,
 } from '../../common/FormControls';
+import { SearchableSelect } from '../../common/SearchableSelect';
 
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
@@ -201,48 +202,35 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="คลังต้นทาง" htmlFor="from-warehouse">
-              <Select
-                id="from-warehouse"
+              <SearchableSelect
                 required
                 value={fromWarehouseId}
-                onChange={(e) => {
-                  const newFromId = e.target.value;
+                onChange={(newFromId) => {
                   setFromWarehouseId(newFromId);
                   if (newFromId && newFromId === toWarehouseId) {
                     setToWarehouseId('');
                   }
                 }}
-              >
-                <option value="">-- เลือกคลัง --</option>
-                {warehouses.map((wh) => (
-                  <option key={wh.id} value={wh.id}>
-                    {wh.name}
-                    {wh.type === 'รถ' && wh.licensePlate
-                      ? ` (${wh.licensePlate})`
-                      : ''}
-                  </option>
-                ))}
-              </Select>
+                placeholder="-- เลือกคลัง --"
+                options={warehouses.map((wh) => ({
+                  value: wh.id,
+                  label: `${wh.name}${wh.type === 'รถ' && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
+                }))}
+              />
             </FormField>
             <FormField label="คลังปลายทาง" htmlFor="to-warehouse">
-              <Select
-                id="to-warehouse"
+              <SearchableSelect
                 required
                 value={toWarehouseId}
-                onChange={(e) => setToWarehouseId(e.target.value)}
-              >
-                <option value="">-- เลือกคลัง --</option>
-                {warehouses
+                onChange={setToWarehouseId}
+                placeholder="-- เลือกคลัง --"
+                options={warehouses
                   .filter((wh) => wh.id !== fromWarehouseId)
-                  .map((wh) => (
-                    <option key={wh.id} value={wh.id}>
-                      {wh.name}
-                      {wh.type === 'รถ' && wh.licensePlate
-                        ? ` (${wh.licensePlate})`
-                        : ''}
-                    </option>
-                  ))}
-              </Select>
+                  .map((wh) => ({
+                    value: wh.id,
+                    label: `${wh.name}${wh.type === 'รถ' && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
+                  }))}
+              />
             </FormField>
           </div>
           <FormField label="เหตุผลในการโอนย้าย" htmlFor="reason">

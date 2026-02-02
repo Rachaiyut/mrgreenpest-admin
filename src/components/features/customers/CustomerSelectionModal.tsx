@@ -1,13 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
-import { ICustomer } from '@/src/types/entity/customer.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
 
 interface CustomerSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (customerIds: string[]) => void;
-  customers: ICustomer[];
+  customers: Customer[];
   initialSelectedIds: string[];
 }
 

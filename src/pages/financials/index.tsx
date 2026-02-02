@@ -11,6 +11,10 @@ import {
   PencilIcon,
   TrashIcon,
   CurrencyDollarIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import {
@@ -22,6 +26,7 @@ import {
   Status,
   InstallmentPlan,
 } from '../../types';
+import { InvoiceStatus } from '../../types/enums/financial';
 import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
@@ -37,19 +42,45 @@ interface FinancialsProps {
   onCreateQuotation?: (
     data: Omit<Quotation, 'id'>,
     assessmentId?: string
-  ) => void;
-  onUpdateQuotation?: (updated: Quotation) => void;
-  onDeleteQuotation?: (id: string) => void;
-  onReviseQuotation?: (id: string) => void;
+  ) => void | Promise<void>;
+  onUpdateQuotation?: (updated: Quotation) => void | Promise<void>;
+  onDeleteQuotation?: (id: string) => void | Promise<void>;
+  onReviseQuotation?: (id: string) => void | Promise<void>;
 
-  onCreateInvoice?: (data: Omit<Invoice, 'id'>) => void;
-  onUpdateInvoice?: (updated: Invoice) => void;
-  onDeleteInvoice?: (id: string) => void;
+  onCreateInvoice?: (data: Omit<Invoice, 'id'>) => void | Promise<void>;
+  onUpdateInvoice?: (updated: Invoice) => void | Promise<void>;
+  onDeleteInvoice?: (id: string) => void | Promise<void>;
 
-  onCreateReceipt?: (data: Omit<Receipt, 'id'>) => void;
-  onUpdateReceipt?: (updated: Receipt) => void;
-  onDeleteReceipt?: (id: string) => void;
+  onCreateReceipt?: (data: Omit<Receipt, 'id'>) => void | Promise<void>;
+  onUpdateReceipt?: (updated: Receipt) => void | Promise<void>;
+  onDeleteReceipt?: (id: string) => void | Promise<void>;
 }
+
+const paymentMethodLabels: Record<string, string> = {
+  TRANSFER: 'โอนเงิน',
+  CASH: 'เงินสด',
+  CHEQUE: 'เช็ค',
+  CREDIT_CARD: 'บัตรเครดิต',
+  QR_PAYMENT: 'QR Payment',
+};
+
+const getPaymentMethodLabel = (method: string): string => {
+  return paymentMethodLabels[method] || method;
+};
+
+const invoiceStatusLabels: Record<string, string> = {
+  DRAFT: 'ร่าง',
+  PENDING: 'รอชำระ',
+  SENT: 'ส่งแล้ว',
+  PAID: 'ชำระแล้ว',
+  PARTIAL: 'ชำระบางส่วน',
+  OVERDUE: 'เกินกำหนด',
+  CANCELLED: 'ยกเลิก',
+};
+
+const getInvoiceStatusLabel = (status: string): string => {
+  return invoiceStatusLabels[status] || status;
+};
 
 const pageDetails: Record<
   string,
@@ -85,7 +116,7 @@ const Financials: React.FC<FinancialsProps> = ({
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const { quotations, invoices, receipts, customers, assessments } = useData();
+  const { quotations, invoices, receipts, customers, assessments, contracts } = useData();
   const navigate = useNavigate();
   const { title, subtitle, buttonText } =
     pageDetails[defaultTab] || pageDetails['ใบเสนอราคา'];
@@ -121,6 +152,8 @@ const Financials: React.FC<FinancialsProps> = ({
   const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false);
   const [invoiceFormCustomerId, setInvoiceFormCustomerId] = useState('');
   const [invoiceFormQuotationId, setInvoiceFormQuotationId] = useState('');
+  const [invoiceFormContractId, setInvoiceFormContractId] = useState('');
+  const [invoiceFormContractTerm, setInvoiceFormContractTerm] = useState<number | undefined>(undefined);
   const [invoiceFormIssuedAt, setInvoiceFormIssuedAt] = useState(() =>
     new Date().toISOString().slice(0, 10)
   );
@@ -129,10 +162,14 @@ const Financials: React.FC<FinancialsProps> = ({
     d.setDate(d.getDate() + 30);
     return d.toISOString().slice(0, 10);
   });
-  const [invoiceFormStatus, setInvoiceFormStatus] = useState<Status>(
-    Status.Pending
+  const [invoiceFormStatus, setInvoiceFormStatus] = useState<InvoiceStatus>(
+    InvoiceStatus.PENDING
   );
+  const [invoiceFormSubtotal, setInvoiceFormSubtotal] = useState(0);
+  const [invoiceFormVatAmount, setInvoiceFormVatAmount] = useState(0);
+  const [invoiceFormIncludeVat, setInvoiceFormIncludeVat] = useState(true);
   const [invoiceFormTotal, setInvoiceFormTotal] = useState(0);
+  const [invoiceFormNotes, setInvoiceFormNotes] = useState('');
   const [invoiceFormInstallmentId, setInvoiceFormInstallmentId] = useState<
     string | undefined
   >(undefined);
@@ -189,12 +226,14 @@ const Financials: React.FC<FinancialsProps> = ({
   const [receiptFormInvoiceId, setReceiptFormInvoiceId] = useState('');
   const [receiptFormCustomerId, setReceiptFormCustomerId] = useState('');
   const [receiptFormCustomerName, setReceiptFormCustomerName] = useState('');
-  const [receiptFormPaidAt, setReceiptFormPaidAt] = useState<string>(() =>
+  const [receiptFormReceivedAt, setReceiptFormReceivedAt] = useState<string>(() =>
     new Date().toISOString().slice(0, 10)
   );
   const [receiptFormPaymentMethod, setReceiptFormPaymentMethod] =
-    useState<string>('โอนเงิน');
+    useState<string>('TRANSFER');
   const [receiptFormAmount, setReceiptFormAmount] = useState<number>(0);
+  const [receiptFormPaymentReference, setReceiptFormPaymentReference] = useState<string>('');
+  const [receiptFormNotes, setReceiptFormNotes] = useState<string>('');
   const [quotationSearchQuery, setQuotationSearchQuery] = useState('');
   const [quotationStatusFilter, setQuotationStatusFilter] = useState<
     'ทั้งหมด' | Status
@@ -306,9 +345,7 @@ const Financials: React.FC<FinancialsProps> = ({
 
     // 2. Status Filter
     if (invoiceStatusFilter !== 'ทั้งหมด') {
-      result = result.filter(
-        (i) => (i.status as unknown as Status) === invoiceStatusFilter
-      );
+      result = result.filter((i) => i.status === invoiceStatusFilter);
     }
 
     // 3. Date Filter (using issuedAt)
@@ -385,7 +422,7 @@ const Financials: React.FC<FinancialsProps> = ({
     // 3. Date Filter (using paidAt)
     if (start || end) {
       result = result.filter((item) => {
-        const d = new Date(item.paid_at);
+        const d = new Date(item.received_at || item.paid_at);
         return (!start || d >= start) && (!end || d <= end);
       });
     }
@@ -413,6 +450,42 @@ const Financials: React.FC<FinancialsProps> = ({
       ),
     [reversedReceipts, receiptPage, receiptItemsPerPage]
   );
+
+  // Invoice Stats
+  const invoiceStats = useMemo(() => {
+    const total = invoiceData.length;
+    const pending = invoiceData.filter((i) => i.status === InvoiceStatus.PENDING).length;
+    const paid = invoiceData.filter((i) => i.status === InvoiceStatus.PAID).length;
+    const overdue = invoiceData.filter((i) => i.status === InvoiceStatus.OVERDUE).length;
+    const totalValue = invoiceData.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+    const pendingValue = invoiceData
+      .filter((i) => i.status === InvoiceStatus.PENDING || i.status === InvoiceStatus.OVERDUE)
+      .reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+
+    return { total, pending, paid, overdue, totalValue, pendingValue };
+  }, [invoiceData]);
+
+  // Receipt Stats
+  const receiptStats = useMemo(() => {
+    const total = receiptData.length;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayReceipts = receiptData.filter((r) => {
+      const receivedDate = (r.received_at || r.paid_at || '').slice(0, 10);
+      return receivedDate === todayStr;
+    });
+    const todayCount = todayReceipts.length;
+    const todayAmount = todayReceipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const totalAmount = receiptData.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+
+    // Group by payment method
+    const byMethod: Record<string, number> = {};
+    receiptData.forEach((r) => {
+      const method = r.payment_method || 'อื่นๆ';
+      byMethod[method] = (byMethod[method] || 0) + (Number(r.amount) || 0);
+    });
+
+    return { total, todayCount, todayAmount, totalAmount, byMethod };
+  }, [receiptData]);
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -564,7 +637,7 @@ const Financials: React.FC<FinancialsProps> = ({
     setInvoiceFormTotal(installment.amount);
     setInvoiceFormInstallmentId(installment.id);
     setInvoiceFormTerm(installment.term);
-    setInvoiceFormStatus(Status.Pending);
+    setInvoiceFormStatus(InvoiceStatus.PENDING);
 
     const d = installment.due_date
       ? new Date(installment.due_date)
@@ -747,6 +820,56 @@ const Financials: React.FC<FinancialsProps> = ({
       case 'ใบแจ้งหนี้': {
         return (
           <div className="space-y-6">
+            {/* Invoice Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <DocumentTextIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
+                    <p className="text-2xl font-bold text-blue-800">{invoiceStats.total}</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-500 rounded-lg">
+                    <ClockIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-amber-600 font-medium">รอชำระ</p>
+                    <p className="text-2xl font-bold text-amber-800">{invoiceStats.pending}</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-500 rounded-lg">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-red-600 font-medium">เกินกำหนด</p>
+                    <p className="text-2xl font-bold text-red-800">{invoiceStats.overdue}</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">ยอดค้างชำระ</p>
+                    <p className="text-lg font-bold text-purple-800">
+                      ฿{invoiceStats.pendingValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
             <Card
               title="ใบแจ้งหนี้"
               className="!p-0"
@@ -784,15 +907,19 @@ const Financials: React.FC<FinancialsProps> = ({
                     <Select
                       value={invoiceStatusFilter}
                       onChange={(e) => {
-                        const v = e.target.value as 'ทั้งหมด' | Status;
+                        const v = e.target.value as 'ทั้งหมด' | InvoiceStatus;
                         setInvoiceStatusFilter(v);
                         setInvoicePage(1);
                       }}
                     >
                       <option value="ทั้งหมด">ทั้งหมด</option>
-                      <option value={Status.Pending}>{Status.Pending}</option>
-                      <option value={Status.Paid}>{Status.Paid}</option>
-                      <option value={Status.Overdue}>{Status.Overdue}</option>
+                      <option value="DRAFT">ร่าง</option>
+                      <option value="PENDING">รอชำระ</option>
+                      <option value="SENT">ส่งแล้ว</option>
+                      <option value="PAID">ชำระแล้ว</option>
+                      <option value="PARTIAL">ชำระบางส่วน</option>
+                      <option value="OVERDUE">เกินกำหนด</option>
+                      <option value="CANCELLED">ยกเลิก</option>
                     </Select>
                   </div>
                 </div>
@@ -866,7 +993,7 @@ const Financials: React.FC<FinancialsProps> = ({
                             {formatThaiDate(i.due_at)}
                           </td>
                           <td className="px-4 py-3 text-sm">
-                            <StatusBadge status={i.status} />
+                            <StatusBadge status={getInvoiceStatusLabel(i.status)} />
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
                             ฿
@@ -916,6 +1043,58 @@ const Financials: React.FC<FinancialsProps> = ({
       case 'ใบกำกับภาษี/ใบเสร็จรับเงิน': {
         return (
           <div className="space-y-6">
+            {/* Receipt Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-500 rounded-lg">
+                    <DocumentTextIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
+                    <p className="text-2xl font-bold text-blue-800">{receiptStats.total}</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-500 rounded-lg">
+                    <CheckCircleIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-green-600 font-medium">วันนี้</p>
+                    <p className="text-2xl font-bold text-green-800">{receiptStats.todayCount}</p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500 rounded-lg">
+                    <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-emerald-600 font-medium">รับวันนี้</p>
+                    <p className="text-lg font-bold text-emerald-800">
+                      ฿{receiptStats.todayAmount.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-500 rounded-lg">
+                    <CurrencyDollarIcon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">รับทั้งหมด</p>
+                    <p className="text-lg font-bold text-purple-800">
+                      ฿{receiptStats.totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
             <Card
               title="ใบเสร็จรับเงิน"
               className="!p-0"
@@ -962,7 +1141,7 @@ const Financials: React.FC<FinancialsProps> = ({
                       <option value="ทั้งหมด">ทั้งหมด</option>
                       {receiptPaymentMethods.map((m) => (
                         <option key={m} value={m}>
-                          {m}
+                          {getPaymentMethodLabel(m)}
                         </option>
                       ))}
                     </Select>
@@ -1005,7 +1184,7 @@ const Financials: React.FC<FinancialsProps> = ({
                   <tbody className="bg-white divide-y divide-slate-200">
                     {paginatedReceipts.map((r, index) => {
                       const customer = customers?.find(
-                        (c) => c.id === r.customerId
+                        (c) => c.id === r.customer_id
                       );
                       return (
                         <tr key={r.id}>
@@ -1033,10 +1212,10 @@ const Financials: React.FC<FinancialsProps> = ({
                             {customer?.phone || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {formatThaiDate(r.paid_at)}
+                            {formatThaiDate(r.received_at || r.paid_at)}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
-                            {r.payment_method}
+                            {getPaymentMethodLabel(r.payment_method)}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500">
                             ฿
@@ -1111,20 +1290,20 @@ const Financials: React.FC<FinancialsProps> = ({
     },
     ...(defaultTab === 'ใบเสนอราคา'
       ? [
-          {
-            label: 'revise (แก้ไขตามรอบ)',
-            icon: PencilIcon,
-            handler: () => {
-              if (selectedQuotation) {
-                navigate(
-                  `/quotations/${selectedQuotation.id}/edit?mode=revise`
-                );
-                setOpenDropdownId(null);
-              }
-            },
-            isDanger: false,
+        {
+          label: 'revise (แก้ไขตามรอบ)',
+          icon: PencilIcon,
+          handler: () => {
+            if (selectedQuotation) {
+              navigate(
+                `/quotations/${selectedQuotation.id}/edit?mode=revise`
+              );
+              setOpenDropdownId(null);
+            }
           },
-        ]
+          isDanger: false,
+        },
+      ]
       : []),
     { label: 'ลบ', icon: TrashIcon, handler: handleDelete, isDanger: true },
   ];
@@ -1232,21 +1411,25 @@ const Financials: React.FC<FinancialsProps> = ({
               onClick={() => {
                 if (!onCreateReceipt) return;
                 const payload: Omit<Receipt, 'id'> = {
-                  invoice_id: receiptFormInvoiceId,
+                  invoice_id: receiptFormInvoiceId || undefined,
                   customer_id: receiptFormCustomerId,
                   customer_name: receiptFormCustomerName,
-                  paid_at: receiptFormPaidAt,
+                  received_at: receiptFormReceivedAt,
                   amount: receiptFormAmount,
                   payment_method: receiptFormPaymentMethod,
+                  payment_reference: receiptFormPaymentReference || undefined,
+                  notes: receiptFormNotes || undefined,
                 };
                 onCreateReceipt(payload);
                 setIsAddReceiptModalOpen(false);
                 setReceiptFormInvoiceId('');
                 setReceiptFormCustomerId('');
                 setReceiptFormCustomerName('');
-                setReceiptFormPaidAt(new Date().toISOString().slice(0, 10));
+                setReceiptFormReceivedAt(new Date().toISOString().slice(0, 10));
                 setReceiptFormPaymentMethod('โอนเงิน');
                 setReceiptFormAmount(0);
+                setReceiptFormPaymentReference('');
+                setReceiptFormNotes('');
               }}
               className="px-4 py-2 rounded-md bg-primary text-white"
               variant="primary"
@@ -1272,20 +1455,40 @@ const Financials: React.FC<FinancialsProps> = ({
                 }
               }}
             >
-              <option value="">เลือกใบแจ้งหนี้</option>
+              <option value="">เลือกใบแจ้งหนี้ (ไม่บังคับ)</option>
               {(invoices || []).map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.id} — {i.customer_name}
+                  {i.code || i.id} — {i.customer_name}
                 </option>
               ))}
             </Select>
           </div>
           <div>
-            <div className="text-sm text-slate-600">วันที่ชำระ</div>
+            <div className="text-sm text-slate-600">ลูกค้า</div>
+            <Select
+              value={receiptFormCustomerId}
+              onChange={(e) => {
+                const cust = customers?.find((c) => c.id === e.target.value);
+                setReceiptFormCustomerId(e.target.value);
+                if (cust) {
+                  setReceiptFormCustomerName(`${cust.first_name} ${cust.last_name}`);
+                }
+              }}
+            >
+              <option value="">เลือกลูกค้า</option>
+              {(customers || []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.code} - {c.first_name} {c.last_name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <div className="text-sm text-slate-600">วันที่รับชำระ</div>
             <Input
               type="date"
-              value={receiptFormPaidAt}
-              onChange={(e) => setReceiptFormPaidAt(e.target.value)}
+              value={receiptFormReceivedAt}
+              onChange={(e) => setReceiptFormReceivedAt(e.target.value)}
             />
           </div>
           <div>
@@ -1294,28 +1497,41 @@ const Financials: React.FC<FinancialsProps> = ({
               value={receiptFormPaymentMethod}
               onChange={(e) => setReceiptFormPaymentMethod(e.target.value)}
             >
-              <option value="โอนเงิน">โอนเงิน</option>
-              <option value="เงินสด">เงินสด</option>
-              <option value="เช็ค">เช็ค</option>
-              <option value="บัตรเครดิต">บัตรเครดิต</option>
+              <option value="TRANSFER">โอนเงิน</option>
+              <option value="CASH">เงินสด</option>
+              <option value="CHEQUE">เช็ค</option>
+              <option value="CREDIT_CARD">บัตรเครดิต</option>
+              <option value="QR_PAYMENT">QR Payment</option>
             </Select>
           </div>
           <div>
-            <div className="text-sm text-slate-600">จำนวนเงิน</div>
+            <div className="text-sm text-slate-600">จำนวนเงิน (บาท)</div>
             <Input
               type="number"
               value={String(receiptFormAmount)}
               onChange={(e) =>
                 setReceiptFormAmount(parseFloat(e.target.value) || 0)
               }
+              step="0.01"
+              min="0"
             />
           </div>
           <div>
-            <div className="text-sm text-slate-600">ลูกค้า</div>
+            <div className="text-sm text-slate-600">เลขอ้างอิงการชำระ</div>
             <Input
               type="text"
-              value={receiptFormCustomerName}
-              onChange={(e) => setReceiptFormCustomerName(e.target.value)}
+              value={receiptFormPaymentReference}
+              onChange={(e) => setReceiptFormPaymentReference(e.target.value)}
+              placeholder="เลขที่เช็ค / เลขอ้างอิงโอนเงิน"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <div className="text-sm text-slate-600">หมายเหตุ</div>
+            <Input
+              type="text"
+              value={receiptFormNotes}
+              onChange={(e) => setReceiptFormNotes(e.target.value)}
+              placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
             />
           </div>
         </div>
@@ -1339,27 +1555,37 @@ const Financials: React.FC<FinancialsProps> = ({
                 if (!invoiceFormCustomerId) return;
                 const name = customerMap.get(invoiceFormCustomerId) || '';
                 onCreateInvoice({
-                  customerId: invoiceFormCustomerId,
-                  customerName: name,
-                  quotationId: invoiceFormQuotationId || undefined,
-                  installmentId: invoiceFormInstallmentId,
+                  customer_id: invoiceFormCustomerId,
+                  customer_name: name,
+                  quotation_id: invoiceFormQuotationId || undefined,
+                  installment_id: invoiceFormInstallmentId,
                   term: invoiceFormTerm,
-                  issuedAt: invoiceFormIssuedAt,
-                  dueAt: invoiceFormDueAt,
+                  issued_at: invoiceFormIssuedAt,
+                  due_at: invoiceFormDueAt,
                   status: invoiceFormStatus,
+                  subtotal: invoiceFormSubtotal,
+                  vat_amount: invoiceFormVatAmount,
+                  include_vat: invoiceFormIncludeVat,
                   total: invoiceFormTotal || 0,
+                  notes: invoiceFormNotes || undefined,
                 });
                 setIsAddInvoiceModalOpen(false);
                 setInvoiceFormCustomerId('');
                 setInvoiceFormQuotationId('');
+                setInvoiceFormContractId('');
+                setInvoiceFormContractTerm(undefined);
                 setInvoiceFormInstallmentId(undefined);
                 setInvoiceFormTerm(undefined);
                 setInvoiceFormIssuedAt(new Date().toISOString().slice(0, 10));
                 const d = new Date();
                 d.setDate(d.getDate() + 30);
                 setInvoiceFormDueAt(d.toISOString().slice(0, 10));
-                setInvoiceFormStatus(Status.Pending);
+                setInvoiceFormStatus(InvoiceStatus.PENDING);
+                setInvoiceFormSubtotal(0);
+                setInvoiceFormVatAmount(0);
+                setInvoiceFormIncludeVat(true);
                 setInvoiceFormTotal(0);
+                setInvoiceFormNotes('');
               }}
               className="px-4 py-2 rounded-md bg-primary text-white"
               variant="primary"
@@ -1379,21 +1605,109 @@ const Financials: React.FC<FinancialsProps> = ({
               <option value="">เลือก</option>
               {(customers || []).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.code} - {c.first_name} {c.last_name}
                 </option>
               ))}
             </Select>
           </div>
           <div>
+            <div className="text-sm text-slate-600">อ้างอิงสัญญา</div>
+            <Select
+              value={invoiceFormContractId}
+              onChange={(e) => {
+                try {
+                  const cId = e.target.value;
+                  setInvoiceFormContractId(cId);
+                  setInvoiceFormContractTerm(undefined);
+                  if (!cId) {
+                    return;
+                  }
+                  const c = contracts?.find((x) => x.id === cId);
+                  if (c) {
+                    setInvoiceFormCustomerId(c.customer_id || '');
+                    setInvoiceFormQuotationId(c.quotation_id || '');
+                  }
+                } catch (err) {
+                  console.error('Error selecting contract:', err);
+                }
+              }}
+            >
+              <option value="">ไม่ระบุ</option>
+              {(contracts || []).filter(c => c.status === 'ACTIVE').map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.code || `CT-${c.id.slice(0, 8)}`} - {c.customer_name}
+                </option>
+              ))}
+            </Select>
+          </div>
+          {invoiceFormContractId && (
+            <div>
+              <div className="text-sm text-slate-600">งวดชำระ</div>
+              <Select
+                value={invoiceFormContractTerm?.toString() || ''}
+                onChange={(e) => {
+                  const term = e.target.value ? parseInt(e.target.value) : undefined;
+                  setInvoiceFormContractTerm(term);
+                  const c = contracts?.find((x) => x.id === invoiceFormContractId);
+                  if (c && term) {
+                    // Calculate amount based on term (mock: assume 3 terms with 30/35/35 split)
+                    const total = Number(c.total_amount) || 0;
+                    const percentages = [30, 35, 35];
+                    const amount = total * (percentages[term - 1] || 0) / 100;
+                    setInvoiceFormSubtotal(amount);
+                    if (invoiceFormIncludeVat) {
+                      const vat = amount * 0.07;
+                      setInvoiceFormVatAmount(vat);
+                      setInvoiceFormTotal(amount + vat);
+                    } else {
+                      setInvoiceFormVatAmount(0);
+                      setInvoiceFormTotal(amount);
+                    }
+                    setInvoiceFormNotes(`งวดที่ ${term} ตามสัญญา ${c.code || c.id.slice(0, 8)}`);
+                  }
+                }}
+              >
+                <option value="">เลือกงวด</option>
+                <option value="1">งวดที่ 1 - ชำระเมื่อเซ็นสัญญา (30%)</option>
+                <option value="2">งวดที่ 2 - ชำระหลังบริการครั้งที่ 3 (35%)</option>
+                <option value="3">งวดที่ 3 - ชำระหลังบริการครั้งสุดท้าย (35%)</option>
+              </Select>
+            </div>
+          )}
+          <div>
             <div className="text-sm text-slate-600">อ้างอิงใบเสนอราคา</div>
             <Select
               value={invoiceFormQuotationId}
-              onChange={(e) => setInvoiceFormQuotationId(e.target.value)}
+              onChange={(e) => {
+                try {
+                  const qId = e.target.value;
+                  setInvoiceFormQuotationId(qId);
+                  if (!qId) {
+                    return;
+                  }
+                  const q = quotations?.find((x) => x.id === qId);
+                  if (q) {
+                    setInvoiceFormCustomerId(q.customer_id || '');
+                    const sub = Number(q.total) || 0;
+                    setInvoiceFormSubtotal(sub);
+                    if (invoiceFormIncludeVat) {
+                      const vat = sub * 0.07;
+                      setInvoiceFormVatAmount(vat);
+                      setInvoiceFormTotal(sub + vat);
+                    } else {
+                      setInvoiceFormVatAmount(0);
+                      setInvoiceFormTotal(sub);
+                    }
+                  }
+                } catch (err) {
+                  console.error('Error selecting quotation:', err);
+                }
+              }}
             >
               <option value="">ไม่ระบุ</option>
               {(quotations || []).map((q) => (
                 <option key={q.id} value={q.id}>
-                  {q.id}
+                  QT-{q.id.slice(0, 8)} - {q.customer_name}
                 </option>
               ))}
             </Select>
@@ -1415,24 +1729,87 @@ const Financials: React.FC<FinancialsProps> = ({
             />
           </div>
           <div>
-            <div className="text-sm text-slate-600">สถานะ</div>
-            <Select
-              value={invoiceFormStatus}
-              onChange={(e) => setInvoiceFormStatus(e.target.value as Status)}
-            >
-              <option value={Status.Pending}>{Status.Pending}</option>
-              <option value={Status.Paid}>{Status.Paid}</option>
-              <option value={Status.Overdue}>{Status.Overdue}</option>
-            </Select>
-          </div>
-          <div>
-            <div className="text-sm text-slate-600">ยอดรวม</div>
+            <div className="text-sm text-slate-600">ยอดก่อน VAT</div>
             <Input
               type="number"
-              value={String(invoiceFormTotal)}
-              onChange={(e) =>
-                setInvoiceFormTotal(parseFloat(e.target.value) || 0)
-              }
+              value={String(invoiceFormSubtotal)}
+              onChange={(e) => {
+                const sub = parseFloat(e.target.value) || 0;
+                setInvoiceFormSubtotal(sub);
+                if (invoiceFormIncludeVat) {
+                  const vat = sub * 0.07;
+                  setInvoiceFormVatAmount(vat);
+                  setInvoiceFormTotal(sub + vat);
+                } else {
+                  setInvoiceFormVatAmount(0);
+                  setInvoiceFormTotal(sub);
+                }
+              }}
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div>
+            <div className="text-sm text-slate-600 flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={invoiceFormIncludeVat}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setInvoiceFormIncludeVat(checked);
+                  if (checked) {
+                    const vat = invoiceFormSubtotal * 0.07;
+                    setInvoiceFormVatAmount(vat);
+                    setInvoiceFormTotal(invoiceFormSubtotal + vat);
+                  } else {
+                    setInvoiceFormVatAmount(0);
+                    setInvoiceFormTotal(invoiceFormSubtotal);
+                  }
+                }}
+                className="rounded border-slate-300"
+              />
+              <span>รวม VAT 7%</span>
+            </div>
+            <Input
+              type="number"
+              value={String((invoiceFormVatAmount || 0).toFixed(2))}
+              disabled
+              className="bg-slate-50 mt-1"
+            />
+          </div>
+          <div>
+            <div className="text-sm text-slate-600">ยอดรวมสุทธิ</div>
+            <Input
+              type="number"
+              value={String((invoiceFormTotal || 0).toFixed(2))}
+              disabled
+              className="bg-slate-50 font-semibold"
+            />
+          </div>
+          <div>
+            <div className="text-sm text-slate-600">สถานะ</div>
+            <select
+              value={invoiceFormStatus}
+              onChange={(e) => setInvoiceFormStatus(e.target.value as InvoiceStatus)}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900"
+            >
+              <option value="DRAFT">ร่าง</option>
+              <option value="PENDING">รอชำระ</option>
+              <option value="SENT">ส่งแล้ว</option>
+              <option value="PAID">ชำระแล้ว</option>
+              <option value="PARTIAL">ชำระบางส่วน</option>
+              <option value="OVERDUE">เกินกำหนด</option>
+              <option value="CANCELLED">ยกเลิก</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2">
+            <div className="text-sm text-slate-600">หมายเหตุ</div>
+            <textarea
+              value={invoiceFormNotes}
+              onChange={(e) => setInvoiceFormNotes(e.target.value)}
+              placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+              rows={2}
+              className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
         </div>
@@ -1512,10 +1889,15 @@ const Financials: React.FC<FinancialsProps> = ({
               ยกเลิก
             </Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!selectedInvoice || !onUpdateInvoice) return;
-                onUpdateInvoice(selectedInvoice);
-                setIsInvoiceEditModalOpen(false);
+                try {
+                  await onUpdateInvoice(selectedInvoice);
+                  setIsInvoiceEditModalOpen(false);
+                } catch (err) {
+                  console.error('Error updating invoice:', err);
+                  alert('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง');
+                }
               }}
               className="px-4 py-2 rounded-md bg-primary text-white"
               variant="primary"
@@ -1595,19 +1977,24 @@ const Financials: React.FC<FinancialsProps> = ({
             </div>
             <div>
               <div className="text-sm text-slate-600">สถานะ</div>
-              <Select
+              <select
                 value={selectedInvoice.status}
                 onChange={(e) =>
                   setSelectedInvoice({
                     ...selectedInvoice,
-                    status: e.target.value as Status,
+                    status: e.target.value as InvoiceStatus,
                   })
                 }
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900"
               >
-                <option value={Status.Pending}>{Status.Pending}</option>
-                <option value={Status.Paid}>{Status.Paid}</option>
-                <option value={Status.Overdue}>{Status.Overdue}</option>
-              </Select>
+                <option value="DRAFT">ร่าง</option>
+                <option value="PENDING">รอชำระ</option>
+                <option value="SENT">ส่งแล้ว</option>
+                <option value="PAID">ชำระแล้ว</option>
+                <option value="PARTIAL">ชำระบางส่วน</option>
+                <option value="OVERDUE">เกินกำหนด</option>
+                <option value="CANCELLED">ยกเลิก</option>
+              </select>
             </div>
             <div>
               <div className="text-sm text-slate-600">ยอดรวม</div>
@@ -1627,7 +2014,7 @@ const Financials: React.FC<FinancialsProps> = ({
                 <div className="text-sm text-slate-600">งวดการชำระ</div>
                 <div className="p-2 bg-blue-50 text-blue-800 rounded text-sm font-medium">
                   งวดที่ {selectedInvoice.term} (รหัสงวด:{' '}
-                  {selectedInvoice.installmentId})
+                  {selectedInvoice.installment_id})
                 </div>
               </div>
             )}
@@ -1655,26 +2042,29 @@ const Financials: React.FC<FinancialsProps> = ({
           setIsInvoiceMarkPaidConfirmOpen(false);
           setInvoiceToMarkPaid(null);
         }}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (!invoiceToMarkPaid || !onUpdateInvoice || !onCreateReceipt)
             return;
-          const updated: Invoice = {
-            ...invoiceToMarkPaid,
-            status: Status.Paid,
-          };
-          onUpdateInvoice(updated);
-          onCreateReceipt({
-            invoiceId: invoiceToMarkPaid.id,
-            customerId: invoiceToMarkPaid.customerId,
-            customerName: invoiceToMarkPaid.customerName,
-            paidAt: new Date().toISOString().slice(0, 10),
-            amount: invoiceToMarkPaid.total,
-            paymentMethod: 'โอนเงิน',
-            // Note: Receipt interface might need updates if we track installment on receipt too,
-            // but for now we primarily link via Invoice.
-          });
-          setIsInvoiceMarkPaidConfirmOpen(false);
-          setInvoiceToMarkPaid(null);
+          try {
+            const updated: Invoice = {
+              ...invoiceToMarkPaid,
+              status: InvoiceStatus.PAID,
+            };
+            await onUpdateInvoice(updated);
+            await onCreateReceipt({
+              invoice_id: invoiceToMarkPaid.id,
+              customer_id: invoiceToMarkPaid.customer_id,
+              customer_name: invoiceToMarkPaid.customer_name,
+              received_at: new Date().toISOString().slice(0, 10),
+              amount: invoiceToMarkPaid.total,
+              payment_method: 'TRANSFER',
+            });
+            setIsInvoiceMarkPaidConfirmOpen(false);
+            setInvoiceToMarkPaid(null);
+          } catch (err) {
+            console.error('Error marking invoice as paid:', err);
+            alert('เกิดข้อผิดพลาดในการบันทึก กรุณาลองใหม่อีกครั้ง');
+          }
         }}
         title="ทำเครื่องหมายชำระแล้ว"
         message={
@@ -1715,7 +2105,7 @@ const Financials: React.FC<FinancialsProps> = ({
             {onUpdateInvoice &&
               onCreateReceipt &&
               selectedInvoice &&
-              selectedInvoice.status !== Status.Paid && (
+              selectedInvoice.status !== InvoiceStatus.PAID && (
                 <a
                   href="#"
                   onClick={(e) => {
@@ -1848,25 +2238,25 @@ const Financials: React.FC<FinancialsProps> = ({
             <div>
               <div className="text-sm text-slate-600">ลูกค้า</div>
               <div className="text-sm text-slate-800">
-                {selectedReceipt.customerName}
+                {selectedReceipt.customer_name}
               </div>
             </div>
             <div>
               <div className="text-sm text-slate-600">อ้างอิงใบแจ้งหนี้</div>
               <div className="text-sm text-slate-800">
-                {selectedReceipt.invoiceId}
+                {selectedReceipt.invoice_id}
               </div>
             </div>
             <div>
               <div className="text-sm text-slate-600">วันที่ชำระ</div>
               <div className="text-sm text-slate-800">
-                {formatThaiDate(selectedReceipt.paidAt)}
+                {formatThaiDate(selectedReceipt.paid_at)}
               </div>
             </div>
             <div>
               <div className="text-sm text-slate-600">วิธีชำระเงิน</div>
               <div className="text-sm text-slate-800">
-                {selectedReceipt.paymentMethod}
+                {selectedReceipt.payment_method}
               </div>
             </div>
             <div>
@@ -1920,11 +2310,11 @@ const Financials: React.FC<FinancialsProps> = ({
               <div className="text-sm text-slate-600">วันที่ชำระ</div>
               <Input
                 type="date"
-                value={selectedReceipt.paidAt}
+                value={selectedReceipt.received_at || selectedReceipt.paid_at}
                 onChange={(e) =>
                   setSelectedReceipt({
                     ...selectedReceipt,
-                    paidAt: e.target.value,
+                    received_at: e.target.value,
                   })
                 }
               />
@@ -1933,11 +2323,11 @@ const Financials: React.FC<FinancialsProps> = ({
               <div className="text-sm text-slate-600">วิธีชำระเงิน</div>
               <Input
                 type="text"
-                value={selectedReceipt.paymentMethod}
+                value={selectedReceipt.payment_method}
                 onChange={(e) =>
                   setSelectedReceipt({
                     ...selectedReceipt,
-                    paymentMethod: e.target.value,
+                    payment_method: e.target.value,
                   })
                 }
               />

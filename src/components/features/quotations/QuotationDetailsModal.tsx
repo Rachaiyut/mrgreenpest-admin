@@ -56,26 +56,26 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
             <StatusBadge status={quotation.status} />
           </DetailsItem>
           <DetailsItem label="ลูกค้า" valueClassName="font-semibold">
-            {quotation.customerName}
+            {quotation.customer_name}
           </DetailsItem>
           <DetailsItem label="อ้างอิงใบประเมิน">
-            {quotation.assessmentId || '-'}
+            {quotation.assessment_id || '-'}
           </DetailsItem>
           <DetailsItem label="วันที่สร้าง">
-            {formatThaiDate(quotation.createdAt)}
+            {formatThaiDate(quotation.created_at)}
           </DetailsItem>
           <DetailsItem label="หมดอายุวันที่">
-            {formatThaiDate(quotation.expiresAt)}
+            {formatThaiDate(quotation.expires_at)}
           </DetailsItem>
-          {quotation.googleMapLink && (
+          {quotation.google_map_link && (
             <DetailsItem label="Link Google Map">
               <a
-                href={quotation.googleMapLink}
+                href={quotation.google_map_link}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline truncate block"
               >
-                {quotation.googleMapLink}
+                {quotation.google_map_link}
               </a>
             </DetailsItem>
           )}
@@ -188,7 +188,7 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
                           {item.id}
                         </p>
                         <p className="text-sm text-gray-500 truncate">
-                          {formatThaiDate(item.createdAt)}
+                          {formatThaiDate(item.created_at)}
                         </p>
                       </div>
                       <div>

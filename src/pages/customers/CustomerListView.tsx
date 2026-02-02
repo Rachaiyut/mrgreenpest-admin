@@ -6,6 +6,30 @@ import { Customer } from '@/src/types/entity/customer.interface';
 // Icon
 import { ManageIcon } from '../../assets/icons/Icons';
 import { CustomerType } from '@/src/types';
+import { formatThaiDate } from '@/src/utils/date';
+
+// Helper function to calculate duration
+const calculateDuration = (createdAt: string): string => {
+	if (!createdAt) return '-';
+	
+	const created = new Date(createdAt);
+	const now = new Date();
+	
+	const diffMs = now.getTime() - created.getTime();
+	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+	
+	if (diffDays < 1) return 'วันนี้';
+	if (diffDays < 30) return `${diffDays} วัน`;
+	
+	const diffMonths = Math.floor(diffDays / 30);
+	if (diffMonths < 12) return `${diffMonths} เดือน`;
+	
+	const diffYears = Math.floor(diffMonths / 12);
+	const remainingMonths = diffMonths % 12;
+	
+	if (remainingMonths === 0) return `${diffYears} ปี`;
+	return `${diffYears} ปี ${remainingMonths} เดือน`;
+};
 
 const CustomerListView: React.FC<{
   customers: Customer[];
@@ -91,8 +115,11 @@ const CustomerListView: React.FC<{
               {customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา' }
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                {customer.created_at}
+              <span 
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"
+                title={`สร้างเมื่อ: ${formatThaiDate(customer.created_at)}`}
+              >
+                {calculateDuration(customer.created_at)}
               </span>
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">

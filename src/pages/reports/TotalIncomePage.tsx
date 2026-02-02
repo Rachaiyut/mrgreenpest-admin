@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { Card } from '../../components/common/Card';
 import { ClipboardDocumentListIcon } from '../../assets/icons/Icons';
 import { Invoice, Receipt, Customer } from '@/src/types/entity/app.interface';
 
@@ -66,7 +65,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
       const outstanding = Math.max(0, invoiceTotal - totalPaidForInvoice);
       const isPaidFull = outstanding === 0;
 
-      const paidDate = new Date(receipt.paid_at);
+      const paidDate = new Date(receipt.paid_at || receipt.received_at);
       const formattedDate = paidDate.toLocaleDateString('th-TH', {
         year: 'numeric',
         month: '2-digit',
@@ -113,40 +112,39 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
   const displayData = data;
 
   return (
-    <div className="space-y-6 animate-fade-in text-nowrap pb-20">
+    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-xl">
-            <ClipboardDocumentListIcon className="w-8 h-8 text-blue-600" />
+          <div className="p-3.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg shadow-teal-500/20">
+            <ClipboardDocumentListIcon className="w-7 h-7 text-white" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-800">
               รายงานรายได้ (รายเดือน)
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="text-slate-500 text-sm mt-0.5">
               สรุปยอดรายรับและสถานะการชำระเงินของลูกค้าประจำเดือน
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition-colors shadow-sm font-medium">
+        <div className="flex gap-3">
+          <button className="px-4 py-2.5 border border-slate-300 rounded-xl text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200 shadow-sm font-medium text-sm">
             Export Excel
           </button>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium flex items-center">
-            {/* Inline Printer Icon since we might not have it in Icons.tsx yet */}
+          <button className="px-4 py-2.5 bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all duration-200 shadow-md shadow-teal-500/25 font-medium text-sm flex items-center gap-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5 mr-2"
+              className="w-4 h-4"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M6.75 6.75h10.5M6.75 3h10.5c.828 0 1.5.672 1.5 1.5v3c0 .828-.672 1.5-1.5 1.5h-10.5c-.828 0-1.5-.672-1.5-1.5v-3c0-.828.672-1.5 1.5-1.5m3 11.25H16.5m-9.75 0h9.75M4.5 9.75h15a2.25 2.25 0 012.25 2.25v6a2.25 2.25 0 01-2.25 2.25h-1.5v-2.25a2.25 2.25 0 00-2.25-2.25h-9a2.25 2.25 0 00-2.25 2.25V20.25h-1.5a2.25 2.25 0 01-2.25-2.25v-6a2.25 2.25 0 012.25-2.25z"
+                d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5zm-3 0h.008v.008H15V10.5z"
               />
             </svg>
             พิมพ์รายงาน
@@ -155,28 +153,28 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
       </div>
 
       {/* Filter Section */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-grow w-full md:w-auto">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+      <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200/80">
+        <div className="flex flex-col lg:flex-row gap-4 items-end">
+          <div className="flex-1 min-w-0">
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">
               ค้นหา
             </label>
             <input
               type="text"
               placeholder="ชื่อลูกค้า, รหัสลูกค้า, หรือ เลขที่ใบกำกับภาษี..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all text-sm bg-slate-50/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="w-full md:w-48">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+          <div className="w-full lg:w-44">
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">
               เดือน
             </label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all text-sm bg-slate-50/50"
             >
               {thaiMonths.map((m, i) => (
                 <option key={i} value={i}>
@@ -185,16 +183,16 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
               ))}
             </select>
           </div>
-          <div className="w-full md:w-32">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+          <div className="w-full lg:w-28">
+            <label className="block text-sm font-medium text-slate-600 mb-1.5">
               ปี
             </label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all text-sm bg-slate-50/50"
             >
-              {[2023, 2024, 2025].map((y) => (
+              {[2023, 2024, 2025, 2026].map((y) => (
                 <option key={y} value={y}>
                   {y}
                 </option>
@@ -205,7 +203,7 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">

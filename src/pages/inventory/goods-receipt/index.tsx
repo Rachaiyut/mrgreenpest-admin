@@ -37,7 +37,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const { receipts, warehouses, suppliers, products } = useData();
+  const { goodsReceipts: receipts, warehouses, suppliers, products } = useData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);

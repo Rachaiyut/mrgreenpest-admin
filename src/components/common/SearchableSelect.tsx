@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MagnifyingGlassIcon } from '../../assets/icons/Icons'; // Assuming you have this icon
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { MagnifyingGlassIcon } from '../../assets/icons/Icons';
 
 interface Option {
   value: string;
@@ -32,17 +33,45 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  const updateDropdownPosition = useCallback(() => {
+    if (triggerRef.current && isOpen) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        zIndex: 9999,
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+      window.addEventListener('scroll', updateDropdownPosition, true);
+      window.addEventListener('resize', updateDropdownPosition);
+    }
+    return () => {
+      window.removeEventListener('scroll', updateDropdownPosition, true);
+      window.removeEventListener('resize', updateDropdownPosition);
+    };
+  }, [isOpen, updateDropdownPosition]);
 
   const safeOptions = options || [];
   const selectedOption = safeOptions.find((o) => o.value === value);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        wrapperRef.current &&
-        !wrapperRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
+      const isOutsideDropdown = wrapperRef.current && !wrapperRef.current.contains(target);
+      
+      if (isOutsideTrigger && isOutsideDropdown) {
         setIsOpen(false);
       }
     };
@@ -77,6 +106,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         </label>
       )}
       <div
+        ref={triggerRef}
         className="relative cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -101,9 +131,13 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         </div>
       </div>
 
-      {isOpen && (
-        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-          <div className="sticky top-0 z-10 bg-white px-2 py-1.5 border-b border-gray-100">
+      {isOpen && createPortal(
+        <div 
+          ref={wrapperRef}
+          style={dropdownStyle}
+          className="max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+        >
+          <div className="sticky top-0 bg-white px-2 py-1.5 border-b border-gray-100">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                 <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />
@@ -145,7 +179,8 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
               ไม่พบข้อมูล
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
       {/* Hidden input for form submission validation */}
       <input

@@ -183,6 +183,19 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             >
               เข้าสู่ระบบ
             </Button>
+
+            <Button
+              type="dashed"
+              className="w-full h-10 text-sm font-medium text-slate-600 border-slate-300 hover:border-green-500 hover:text-green-600 rounded-md transition-all duration-200"
+              onClick={() => {
+                form.setFieldsValue({
+                  citizenId: '1000000000001',
+                  password: 'password123',
+                });
+              }}
+            >
+              🧪 ใช้ Demo Credential
+            </Button>
           </Form>
 
           <div className="mt-10 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">

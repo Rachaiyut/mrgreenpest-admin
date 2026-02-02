@@ -1,39 +1,40 @@
 import { AsessmentStatus, ServiceSystem } from '../enums/assessment';
 import { PaymentMethod } from '../enums/financial';
 import { IBase } from './base.interface';
+import { Customer } from './customer.interface';
+import { Package } from './package.interface';
 
 export interface AssessmentWorkAreaItem extends IBase {
   product_id: string;
-  product_name: string,
-  product_price: number,
-  quantity: number,
-  total_price: number,
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  total_price: number;
 }
 
 export interface AssessmentWorkAreaCategory extends IBase {
-  category_id: string
-  name?: string
+  category_id: string;
+  name?: string;
 }
 
 export interface AssessmentWorkArea extends IBase {
-  package_price_id?: string,
-  building_type: string,
+  package_price_id?: string;
+  building_type: string;
   area_name: string;
   service_system?: ServiceSystem;
   area_size?: number;
   perimeter?: number;
   base_service_price: number;
   total_price: number;
-  items: AssessmentWorkAreaItem[];
-  category_services: AssessmentWorkAreaCategory[];
+  items?: AssessmentWorkAreaItem[];
+  category_services?: AssessmentWorkAreaCategory[];
 }
 
 export interface Assessment extends IBase {
-  data: null;
   customer_id: string;
   code: string;
   package_id?: string;
-  appointment_date: Date;
+  appointment_date: Date | string;
   address: string;
   sub_district: string;
   district: string;
@@ -49,6 +50,10 @@ export interface Assessment extends IBase {
   total_price: number;
   created_by: string;
   updated_by: string;
-  assessment_areas: AssessmentWorkArea[];
+  
+  // Relations
+  assessment_areas?: AssessmentWorkArea[];
+  customer?: Customer;
+  package?: Package;
 }
 

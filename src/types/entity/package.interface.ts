@@ -1,5 +1,6 @@
 // Interface
 import { IBase, IBaseQuery } from './base.interface';
+import { Category } from './category.interface';
 
 export interface PackageCondition {
   id: string;
@@ -11,15 +12,18 @@ export interface PackageCondition {
 
 export interface Package extends IBase {
   category_id: string;
+  unit_id?: string;
   visit_limit: number;
-  remark: string;
+  remark?: string;
   code: string;
   name: string;
   contract_period: number;
-  package_price: PackagePrice[];
+  package_price?: PackagePrice[];
+  category?: Category;
 }
 
 export interface PackagePrice extends IBase {
+  package_id?: string;
   area_range: number;
   price_with_termite: number;
   price_without_termite: number;
@@ -27,7 +31,7 @@ export interface PackagePrice extends IBase {
 }
 
 export interface PackageQuery extends IBaseQuery {
-  code: string;
-  name: string;
-  visit_limit: number;
+  code?: string;
+  name?: string;
+  visit_limit?: number;
 }

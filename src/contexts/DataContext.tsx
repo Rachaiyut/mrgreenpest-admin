@@ -9,7 +9,7 @@ import React, {
 
 // Entities
 import { User } from '@/src/types/entity/core.interface';
-import { FieldJob } from '@/src/types/entity/field-job.interface';
+import { Job } from '@/src/types/entity/job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import {
@@ -23,12 +23,12 @@ import { Customer } from '@/src/types/entity/customer.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import {
   Warehouse,
-  GoodsReceipt,
   Withdrawal,
   Transfer,
   StockAdjustment,
   ProductReturn,
 } from '@/src/types/entity/inventory.interface';
+import { GoodsReceipt } from '@/src/types/entity/good-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 import { CategoryType } from '@/src/types/enums/category'; // Or interface?
 
@@ -49,12 +49,13 @@ import { TransferApi } from '@/src/api/transfer';
 import { StockAdjustmentApi } from '@/src/api/stock-adjustment';
 import { ProductReturnApi } from '@/src/api/product-return';
 import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
+import { WithdrawalApi } from '@/src/api/withdrawal';
 import { CategoryApi } from '@/src/api/category';
 import { PackageApi } from '@/src/api/package';
 
 export interface DataContextType {
   users: User[];
-  jobs: FieldJob[];
+  jobs: Job[];
   assessments: Assessment[];
   contracts: Contract[];
   quotations: Quotation[];
@@ -65,7 +66,7 @@ export interface DataContextType {
   warehouses: Warehouse[];
   suppliers: Supplier[];
   goodsReceipts: GoodsReceipt[];
-  // withdrawals: Withdrawal[];
+  withdrawals: Withdrawal[];
   transfers: Transfer[];
   stockAdjustments: StockAdjustment[];
   productReturns: ProductReturn[];
@@ -83,6 +84,11 @@ export interface DataContextType {
       delete: (id: string) => Promise<void>;
     };
     assessments: {
+      create: (data: any) => Promise<void>;
+      update: (data: any) => Promise<void>;
+      delete: (id: string) => Promise<void>;
+    };
+    contracts: {
       create: (data: any) => Promise<void>;
       update: (data: any) => Promise<void>;
       delete: (id: string) => Promise<void>;
@@ -151,7 +157,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [users, setUsers] = useState<User[]>([]);
-  const [jobs, setJobs] = useState<FieldJob[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -173,65 +179,77 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   >([]);
 
   const refreshData = async () => {
-    // try {
-    //   const [
-    //     usersRes,
-    //     jobsRes,
-    //     assessmentsRes,
-    //     contractsRes,
-    //     quotationsRes,
-    //     invoicesRes,
-    //     receiptsRes,
-    //     customersRes,
-    //     productsRes,
-    //     warehousesRes,
-    //     suppliersRes,
-    //     goodsReceiptsRes,
-    //     withdrawalsRes,
-    //     transfersRes,
-    //     stockAdjustmentsRes,
-    //     productReturnsRes,
-    //     returnToSuppliersRes,
-    //   ] = await Promise.all([
-    //     UserApi.getAll(),
-    //     JobApi.getAll(),
-    //     AssessmentApi.getAll(),
-    //     ContractApi.getAll(),
-    //     QuotationApi.getAll(),
-    //     InvoiceApi.getAll(),
-    //     ReceiptApi.getAll(),
-    //     CustomerApi.getCustomers({}),
-    //     ProductApi.getProducts({}),
-    //     WarehouseApi.getWarehouses(),
-    //     SupplierApi.getSuppliers({}),
-    //     GoodsReceiptApi.getAll(),
-    //     WithdrawalApi.getAll(),
-    //     TransferApi.getAll(),
-    //     StockAdjustmentApi.getAll(),
-    //     ProductReturnApi.getAll(),
-    //     ReturnToSupplierApi.getAll(),
-    //   ]);
+    // Helper to safely fetch data - returns empty array if API fails
+    const safeFetch = async <T,>(
+      fetchFn: () => Promise<{ data: T[] }>
+    ): Promise<T[]> => {
+      try {
+        const res = await fetchFn();
+        return res.data || [];
+      } catch {
+        return [];
+      }
+    };
 
-    //   setUsers(usersRes.data || []);
-    //   setJobs(jobsRes.data || []);
-    //   setAssessments(assessmentsRes.data || []);
-    //   setContracts(contractsRes.data || []);
-    //   setQuotations(quotationsRes.data || []);
-    //   setInvoices(invoicesRes.data || []);
-    //   setReceipts(receiptsRes.data || []);
-    //   setCustomers(customersRes.data || []);
-    //   setProducts(productsRes.data || []);
-    //   setWarehouses(warehousesRes.data || []);
-    //   setSuppliers(suppliersRes.data || []);
-    //   setGoodsReceipts(goodsReceiptsRes.data || []);
-    //   setWithdrawals(withdrawalsRes.data || []);
-    //   setTransfers(transfersRes.data || []);
-    //   setStockAdjustments(stockAdjustmentsRes.data || []);
-    //   setProductReturns(productReturnsRes.data || []);
-    //   setReturnToSuppliers(returnToSuppliersRes.data || []);
-    // } catch (error) {
-    //   console.error('Failed to fetch data', error);
-    // }
+    try {
+      const [
+        usersData,
+        jobsData,
+        assessmentsData,
+        contractsData,
+        quotationsData,
+        invoicesData,
+        receiptsData,
+        customersData,
+        productsData,
+        warehousesData,
+        suppliersData,
+        goodsReceiptsData,
+        withdrawalsData,
+        transfersData,
+        stockAdjustmentsData,
+        productReturnsData,
+        returnToSuppliersData,
+      ] = await Promise.all([
+        safeFetch(() => UserApi.getAll({ limit: 1000 })),
+        safeFetch(() => JobApi.getAll({ limit: 1000 })),
+        safeFetch(() => AssessmentApi.getAll({ limit: 1000 })),
+        safeFetch(() => ContractApi.getAll({ limit: 1000 })),
+        safeFetch(() => QuotationApi.getAll({ limit: 1000 })),
+        safeFetch(() => InvoiceApi.getAll({ limit: 1000 })),
+        safeFetch(() => ReceiptApi.getAll({ limit: 1000 })),
+        safeFetch(() => CustomerApi.getCustomers({ limit: 1000 })),
+        safeFetch(() => ProductApi.getProducts({ limit: 1000 })),
+        safeFetch(() => WarehouseApi.getWarehouses({ limit: 1000 })),
+        safeFetch(() => SupplierApi.getSuppliers({ limit: 1000 })),
+        safeFetch(() => GoodsReceiptApi.getAll({ limit: 1000 })),
+        safeFetch(() => WithdrawalApi.getAll({ limit: 1000 })),
+        safeFetch(() => TransferApi.getAll({ limit: 1000 })),
+        safeFetch(() => StockAdjustmentApi.getAll({ limit: 1000 })),
+        safeFetch(() => ProductReturnApi.getAll({ limit: 1000 })),
+        safeFetch(() => ReturnToSupplierApi.getAll({ limit: 1000 })),
+      ]);
+
+      setUsers(usersData);
+      setJobs(jobsData);
+      setAssessments(assessmentsData);
+      setContracts(contractsData);
+      setQuotations(quotationsData);
+      setInvoices(invoicesData);
+      setReceipts(receiptsData);
+      setCustomers(customersData);
+      setProducts(productsData);
+      setWarehouses(warehousesData);
+      setSuppliers(suppliersData);
+      setGoodsReceipts(goodsReceiptsData);
+      setWithdrawals(withdrawalsData);
+      setTransfers(transfersData);
+      setStockAdjustments(stockAdjustmentsData);
+      setProductReturns(productReturnsData);
+      setReturnToSuppliers(returnToSuppliersData);
+    } catch (error) {
+      console.error('Failed to fetch data', error);
+    }
   };
 
   useEffect(() => {
@@ -279,6 +297,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         },
         delete: async (id: string) => {
           await AssessmentApi.delete(id);
+          refreshData();
+        },
+      },
+      contracts: {
+        create: async (data: any) => {
+          await ContractApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await ContractApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await ContractApi.delete(id);
           refreshData();
         },
       },

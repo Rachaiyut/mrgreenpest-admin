@@ -5,7 +5,7 @@ import { Button } from './FormControls';
 interface ConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void>;
+  onConfirm: () => void | Promise<void>;
   title: string;
   message: React.ReactNode;
   confirmButtonText?: string;

@@ -1,3 +1,4 @@
+// Legacy status - for backwards compatibility
 export enum JobStatus {
     Draft = 'Draft',
     Scheduled = 'Scheduled',
@@ -13,11 +14,10 @@ export enum JobStatus {
     Failed = 'Failed'
 }
 
-
+// Backend compatible status
 export enum JobMainStatus {
     PENDING = 'PENDING',
-    INPROGRESS = 'IN_PROGRESS',
+    IN_PROGRESS = 'IN_PROGRESS',
+    COMPLETE = 'COMPLETE',
     CANCELLED = 'CANCELLED',
-    COMPLETED = 'COMPLETED',
-    FAILED = 'FAILED'
 }

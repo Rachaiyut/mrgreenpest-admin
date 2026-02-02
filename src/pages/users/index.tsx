@@ -21,21 +21,35 @@ import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
 
-const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
-  const roleColors: Record<UserRole, string> = {
+const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | string }> = ({ role }) => {
+  // Handle role as object or string
+  const roleName = typeof role === 'object' && role !== null ? (role as { name: string }).name : String(role || '-');
+  
+  const roleColors: Record<string, string> = {
     [UserRole.Admin]: 'bg-purple-100 text-purple-700',
     [UserRole.Sales]: 'bg-blue-100 text-blue-700',
     [UserRole.Accounting]: 'bg-green-100 text-green-700',
     [UserRole.Warehouse]: 'bg-orange-100 text-orange-700',
     [UserRole.Dispatcher]: 'bg-yellow-100 text-yellow-700',
     [UserRole.Technician]: 'bg-sky-100 text-sky-700',
+    // Fallback colors for API role names
+    'ADMIN': 'bg-purple-100 text-purple-700',
+    'SUPERADMIN': 'bg-purple-100 text-purple-700',
+    'CEO': 'bg-purple-100 text-purple-700',
+    'SALES': 'bg-blue-100 text-blue-700',
+    'ACCOUNTING': 'bg-green-100 text-green-700',
+    'WAREHOUSE': 'bg-orange-100 text-orange-700',
+    'DISPATCHER': 'bg-yellow-100 text-yellow-700',
+    'TECHNICIAN': 'bg-sky-100 text-sky-700',
   };
+
+  const colorClass = roleColors[roleName] || roleColors[roleName.toUpperCase()] || 'bg-slate-100 text-slate-700';
 
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${roleColors[role]}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}
     >
-      {role}
+      {roleName}
     </span>
   );
 };
@@ -93,13 +107,17 @@ const Users: React.FC<UsersProps> = ({
   const filteredUsers = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase();
     return [...users].reverse().filter((user) => {
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      // Handle role as object or string
+      const userRoleName = typeof user.role === 'object' && user.role !== null 
+        ? (user.role as { name: string }).name 
+        : String(user.role || '');
+      const matchesRole = roleFilter === 'all' || userRoleName === roleFilter || userRoleName.toUpperCase() === roleFilter.toUpperCase();
       const matchesSearch =
         !searchQuery ||
-        user.nationalId.toLowerCase().includes(lowercasedQuery) ||
-        user.name.toLowerCase().includes(lowercasedQuery) ||
-        user.nickname.toLowerCase().includes(lowercasedQuery) ||
-        user.email?.toLowerCase().includes(lowercasedQuery);
+        (user.nationalId || '').toLowerCase().includes(lowercasedQuery) ||
+        (user.name || '').toLowerCase().includes(lowercasedQuery) ||
+        (user.nickname || '').toLowerCase().includes(lowercasedQuery) ||
+        (user.email || '').toLowerCase().includes(lowercasedQuery);
       return matchesRole && matchesSearch;
     });
   }, [users, searchQuery, roleFilter]);
@@ -155,8 +173,12 @@ const Users: React.FC<UsersProps> = ({
 
   const roleCounts = Object.values(UserRole).reduce(
     (acc, role) => {
-      // FIX: Use users prop for calculation
-      acc[role] = users.filter((user) => user.role === role).length;
+      acc[role] = users.filter((user) => {
+        const userRoleName = typeof user.role === 'object' && user.role !== null 
+          ? (user.role as { name: string }).name 
+          : String(user.role || '');
+        return userRoleName === role || userRoleName.toUpperCase() === role.toUpperCase();
+      }).length;
       return acc;
     },
     {} as Record<UserRole, number>

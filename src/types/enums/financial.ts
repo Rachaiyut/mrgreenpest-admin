@@ -1,18 +1,45 @@
 export enum InvoiceStatus {
-    Paid = 'Paid',
-    Overdue = 'Overdue',
-    Cancelled = 'Cancelled',
-    Pending = 'Pending'
+    DRAFT = 'DRAFT',
+    PENDING = 'PENDING',
+    SENT = 'SENT',
+    PAID = 'PAID',
+    PARTIAL = 'PARTIAL',
+    OVERDUE = 'OVERDUE',
+    CANCELLED = 'CANCELLED',
 }
 
 export enum ReceiptStatus {
-    Paid = 'Paid',
-    Pending = 'Pending',
-    Cancelled = 'Cancelled'
+    DRAFT = 'DRAFT',
+    ISSUED = 'ISSUED',
+    CANCELLED = 'CANCELLED',
+    VOIDED = 'VOIDED',
 }
 
-
 export enum PaymentMethod {
-  CASH = 'CASH',
-  TRANSFER = 'TRANSFER',
+    CASH = 'CASH',
+    TRANSFER = 'TRANSFER',
+    CREDIT_CARD = 'CREDIT_CARD',
+    CHEQUE = 'CHEQUE',
+    QR_PAYMENT = 'QR_PAYMENT',
+}
+
+export enum QuotationStatus {
+    DRAFT = 'DRAFT',
+    SENT = 'SENT',
+    PENDING = 'PENDING',
+    PENDING_APPROVAL = 'PENDING_APPROVAL',
+    APPROVED = 'APPROVED',
+    REJECTED = 'REJECTED',
+    CONVERTED = 'CONVERTED',
+    CANCELLED = 'CANCELLED',
+    EXPIRED = 'EXPIRED',
+}
+
+export enum ContractStatus {
+    DRAFT = 'DRAFT',
+    PENDING = 'PENDING',
+    ACTIVE = 'ACTIVE',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED',
+    EXPIRED = 'EXPIRED',
 }

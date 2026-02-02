@@ -54,6 +54,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const PAYMENT_LABELS: Record<PaymentMethod, string> = {
     [PaymentMethod.CASH]: 'เงินสด',
     [PaymentMethod.TRANSFER]: 'โอนเงิน',
+    [PaymentMethod.CREDIT_CARD]: 'บัตรเครดิต',
+    [PaymentMethod.CHEQUE]: 'เช็ค',
+    [PaymentMethod.QR_PAYMENT]: 'QR Payment',
   };
 
   const paymentOptions = Object.values(PaymentMethod).map((value) => ({

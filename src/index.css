@@ -20,6 +20,11 @@
 }
 
 @layer base {
+  html,
+  body {
+    font-family: 'Noto Sans Thai', sans-serif;
+  }
+
   *,
   ::after,
   ::before {

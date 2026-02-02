@@ -33,6 +33,7 @@ import {
   JobDateIcon,
   JobTimeIcon,
   LoadingIcon,
+  ClipboardDocumentListIcon,
 } from '../../assets/icons/Icons';
 import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 import { Pagination } from '../../components/common/Pagination';
@@ -77,7 +78,6 @@ const JobCard: React.FC<{
     [job.technicians, currentUserId]
   );
 
-
   const showCheckInButton =
     isAssignedToCurrentUser && 
     ((job.status as unknown as JobStatus) === JobStatus.Planned || (job.status as unknown as string).toUpperCase() === 'PENDING');
@@ -109,74 +109,83 @@ const JobCard: React.FC<{
 
   const hasActions = (job.status as unknown as JobStatus) !== JobStatus.Completed;
 
-  return (
-    <div className="bg-white p-5 rounded-lg shadow-sm border border-slate-200 flex flex-col justify-between min-h-[220px]">
-      <div>
-        <div className="flex justify-between items-start">
-          <div className="pr-2">
-            <p className="text-base font-bold text-slate-800 leading-tight">
-              {job.customer_name}
-            </p>
-            <p className="text-sm text-slate-500 mt-1">
-              {job.work_areas.map((wa) => wa.service_package).join(', ')}
-            </p>
-          </div>
-          <div className="relative flex-shrink-0">
-            <Button
-              data-job-id={job.id}
-              onClick={(e) => onDropdownToggle(e, job.id)}
-              variant="icon"
-              className="-mr-1 -mt-1"
-              title="ตัวเลือก"
-            >
-              <ManageIcon className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
+  // Get status color for left border
+  const getStatusColor = () => {
+    const statusUpper = String(job.status || job.api_status || '').toUpperCase();
+    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'border-l-amber-500';
+    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'border-l-green-500';
+    if (statusUpper === 'CANCELLED') return 'border-l-red-500';
+    return 'border-l-primary';
+  };
 
-        <div className="mt-4 space-y-3">
-          
-          <div>
-            <StatusBadge status={job.api_status} />
+  return (
+    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}>
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
+              {job.customer_name}
+            </h4>
+            {job.work_areas.length > 0 && (
+              <p className="text-xs text-slate-500 mt-1 truncate">
+                {job.work_areas.map((wa) => wa.service_package).join(', ')}
+              </p>
+            )}
           </div>
-          <div className="flex items-start text-sm text-slate-600">
-            <MapPinIcon className="h-5 w-5 mr-3 mt-0.5 text-accent flex-shrink-0" />
-            <span>{job.address}</span>
-          </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <JobDateIcon className="h-5 w-5 mr-3 text-accent flex-shrink-0" />
-            <span>{jobDate}</span>
-          </div>
-          <div className="flex items-center text-sm text-slate-600">
-            <JobTimeIcon className="h-5 w-5 mr-3 text-accent flex-shrink-0" />
-            <span>{`${jobStartTime} - ${jobEndTime} น.`}</span>
-          </div>
-          <div className="flex items-center text-sm text-slate-600 overflow-hidden">
-            <TechnicianIcon className="h-5 w-5 mr-3 text-accent flex-shrink-0" />
-            <span
-              className="truncate"
-              title={job.technicians.map((t) => t.name).join(', ')}
-            >
-              {job.technicians.length > 0
-                ? job.technicians.map((t) => t.name).join(', ')
-                : 'ยังไม่มอบหมาย'}
-            </span>
-          </div>
+          <Button
+            data-job-id={job.id}
+            onClick={(e) => onDropdownToggle(e, job.id)}
+            variant="ghost"
+            className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
+            title="ตัวเลือก"
+          >
+            <ManageIcon className="h-4 w-4 text-slate-400" />
+          </Button>
+        </div>
+        <div className="mt-2">
+          <StatusBadge status={job.api_status} />
         </div>
       </div>
 
-      {hasActions && <div className="mt-4 pt-4 border-t border-slate-200" />}
+      {/* Info */}
+      <div className="px-4 pb-3 space-y-2">
+        <div className="flex items-start gap-2.5 text-sm">
+          <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+          <span className="text-slate-600 line-clamp-2 leading-snug">{job.address || '-'}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-600">{jobDate}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-700 font-medium">{jobStartTime} - {jobEndTime}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span
+            className="text-slate-600 truncate"
+            title={job.technicians.map((t) => t.name).join(', ')}
+          >
+            {job.technicians.length > 0
+              ? job.technicians.map((t) => t.nickname || t.name).join(', ')
+              : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
+          </span>
+        </div>
+      </div>
 
+      {/* Actions */}
       {hasActions && (
-        <div className="flex flex-col gap-2">
+        <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
           <Button
             onClick={() => onViewDetails(job)}
             title="ดูรายละเอียดงาน"
-            variant="outline"
-            className="w-full py-2.5 font-bold"
+            variant="ghost"
+            className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
           >
-            <EyeIcon className="h-5 w-5" />
-            <span>ดูรายละเอียด</span>
+            <EyeIcon className="h-4 w-4 mr-1.5" />
+            ดูรายละเอียด
           </Button>
 
           {showCheckInButton && (
@@ -185,21 +194,20 @@ const JobCard: React.FC<{
               disabled={isAnyJobInProgressForCurrentUser}
               title={checkInTooltip}
               variant="primary"
-              className="w-full py-2.5 font-bold"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
             >
-              <PlayIcon className="h-5 w-5" />
-              <span>เช็คอิน</span>
+              <PlayIcon className="h-4 w-4 mr-1.5" />
+              เช็คอิน
             </Button>
           )}
           {showReportButton && (
             <Button
               onClick={() => onWriteReport(job)}
               title="บันทึกรายงานบริการ"
-              variant="outline"
-              className="w-full py-2.5 font-bold"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
             >
-              <DocumentCheckIcon className="h-5 w-5" />
-              <span>บันทึกรายงาน</span>
+              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+              บันทึกรายงาน
             </Button>
           )}
           {showCheckOutButton && (
@@ -207,10 +215,10 @@ const JobCard: React.FC<{
               onClick={() => onStatusChange(job.id, JobStatus.Completed)}
               title="เช็คเอาท์เพื่อจบงาน"
               variant="accent"
-              className="w-full py-2.5 font-bold"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
             >
-              <DocumentCheckIcon className="h-5 w-5" />
-              <span>เช็คเอาท์</span>
+              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+              เช็คเอาท์
             </Button>
           )}
         </div>
@@ -244,7 +252,7 @@ const CalendarView: React.FC<{
     year: 'numeric',
   });
 
-  const daysOfWeek = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+  const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์', 'เสาร์'];
 
   const calendarGrid = useMemo(() => {
     const today = new Date();
@@ -289,103 +297,127 @@ const CalendarView: React.FC<{
     return grid;
   }, [currentDate]);
 
-  const jobStatusColors: Record<string, string> = {
-    [JobStatus.Planned]: 'bg-sky-100 text-sky-800 border-sky-300',
-    [JobStatus.InProgress]: 'bg-amber-100 text-amber-800 border-amber-300',
-    [JobStatus.Completed]: 'bg-green-100 text-green-800 border-green-300',
-    [JobStatus.Cancelled]: 'bg-red-100 text-red-800 border-red-300',
-    [JobStatus.Draft]: 'bg-slate-100 text-slate-600 border-slate-300',
-    [JobStatus.Scheduled]: 'bg-blue-100 text-blue-800 border-blue-300',
-    [JobStatus.Paused]: 'bg-gray-100 text-gray-700 border-gray-300',
-    [JobStatus.Failed]: 'bg-red-100 text-red-700 border-red-300',
-    [JobStatus.Pending]: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+  const getJobStatusStyle = (status: string) => {
+    const statusUpper = String(status || '').toUpperCase();
+    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'bg-amber-50 text-amber-700 border-l-amber-500';
+    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'bg-green-50 text-green-700 border-l-green-500';
+    if (statusUpper === 'CANCELLED') return 'bg-red-50 text-red-600 border-l-red-500';
+    if (statusUpper === 'PENDING' || statusUpper === 'PLANNED') return 'bg-blue-50 text-blue-700 border-l-blue-500';
+    return 'bg-primary/5 text-primary border-l-primary';
   };
 
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-slate-800">{monthYearString}</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      {/* Calendar Header */}
+      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+        <div className="flex items-center gap-4">
+          <h2 className="text-xl font-bold text-slate-800">{monthYearString}</h2>
+        </div>
         <div className="flex items-center gap-2">
           <Button
             onClick={handlePrevMonth}
             variant="ghost"
-            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 h-auto"
+            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 h-auto"
           >
             <ChevronLeftIcon className="h-5 w-5" />
           </Button>
           <Button
             onClick={handleGoToToday}
-            variant="outline"
-            className="text-sm font-semibold text-slate-700 px-3 py-1.5 border border-slate-300 rounded-md hover:bg-slate-50 h-auto"
+            className="text-sm font-semibold text-slate-600 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm h-auto"
           >
             วันนี้
           </Button>
           <Button
             onClick={handleNextMonth}
             variant="ghost"
-            className="p-2 rounded-md hover:bg-slate-100 text-slate-600 h-auto"
+            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 h-auto"
           >
             <ChevronRightIcon className="h-5 w-5" />
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-px bg-slate-200 border border-slate-200 rounded-lg overflow-hidden">
-        {daysOfWeek.map((day) => (
-          <div
-            key={day}
-            className="text-center py-2 bg-slate-50 text-xs font-medium text-slate-500 uppercase"
-          >
-            {day}
-          </div>
-        ))}
-
-        {calendarGrid.map((day, index) => {
-          const jobsOnDay = jobs
-            .filter((job) => {
-              const jobDate = new Date(job.start_time);
-              return (
-                jobDate.getFullYear() === day.date.getFullYear() &&
-                jobDate.getMonth() === day.date.getMonth() &&
-                jobDate.getDate() === day.date.getDate()
-              );
-            })
-            .sort(
-              (a, b) =>
-                new Date(a.start_time).getTime() -
-                new Date(b.start_time).getTime()
-            );
-
-          return (
+      {/* Calendar Grid */}
+      <div className="p-4">
+        <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-xl overflow-hidden">
+          {/* Day Headers */}
+          {daysOfWeek.map((day, i) => (
             <div
-              key={index}
-              className={`relative p-2 h-40 flex flex-col ${day.isCurrentMonth ? 'bg-white' : 'bg-slate-50'} overflow-hidden`}
+              key={day}
+              className={`text-center py-3 text-xs font-semibold uppercase tracking-wider ${i === 0 ? 'bg-red-50/50 text-red-400' : i === 6 ? 'bg-blue-50/50 text-blue-400' : 'bg-slate-50 text-slate-500'}`}
             >
-              <time
-                dateTime={day.date.toISOString().substring(0, 10)}
-                className={`text-sm font-semibold ${day.isToday ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center' : day.isCurrentMonth ? 'text-slate-700' : 'text-slate-400'}`}
-              >
-                {day.date.getDate()}
-              </time>
-              <div className="mt-1 flex-grow overflow-y-auto space-y-1">
-                {jobsOnDay.map((job) => (
-                  <div
-                    key={job.id}
-                    onClick={() => onJobClick(job)}
-                    className={`p-1.5 rounded-md text-xs border cursor-pointer hover:ring-2 hover:ring-primary/50 ${jobStatusColors[job.status] || 'bg-slate-100'}`}
-                  >
-                    <p className="font-semibold truncate">
-                      {new Date(job.start_time).toTimeString().substring(0, 5)}{' '}
-                      {job.customer_name}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              {day}
             </div>
-          );
-        })}
+          ))}
+
+          {/* Calendar Days */}
+          {calendarGrid.map((day, index) => {
+            const jobsOnDay = jobs
+              .filter((job) => {
+                const jobDate = new Date(job.start_time);
+                return (
+                  jobDate.getFullYear() === day.date.getFullYear() &&
+                  jobDate.getMonth() === day.date.getMonth() &&
+                  jobDate.getDate() === day.date.getDate()
+                );
+              })
+              .sort(
+                (a, b) =>
+                  new Date(a.start_time).getTime() -
+                  new Date(b.start_time).getTime()
+              );
+
+            const dayOfWeek = day.date.getDay();
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+            return (
+              <div
+                key={index}
+                className={`relative min-h-[120px] p-2 flex flex-col ${
+                  day.isCurrentMonth 
+                    ? isWeekend ? 'bg-slate-50/50' : 'bg-white' 
+                    : 'bg-slate-100/50'
+                } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
+              >
+                <time
+                  dateTime={day.date.toISOString().substring(0, 10)}
+                  className={`text-sm font-semibold mb-1 ${
+                    day.isToday 
+                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto' 
+                      : day.isCurrentMonth 
+                        ? dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-slate-700'
+                        : 'text-slate-300'
+                  }`}
+                >
+                  {day.date.getDate()}
+                </time>
+                <div className="flex-grow overflow-y-auto space-y-1 scrollbar-thin">
+                  {jobsOnDay.slice(0, 3).map((job) => (
+                    <div
+                      key={job.id}
+                      onClick={() => onJobClick(job)}
+                      className={`px-2 py-1 rounded text-xs cursor-pointer hover:shadow-sm transition-shadow border-l-2 ${getJobStatusStyle(job.api_status || job.status)}`}
+                    >
+                      <p className="font-semibold truncate">
+                        <span className="text-[10px] opacity-70 mr-1">
+                          {new Date(job.start_time).toTimeString().substring(0, 5)}
+                        </span>
+                        {job.customer_name}
+                      </p>
+                    </div>
+                  ))}
+                  {jobsOnDay.length > 3 && (
+                    <div className="text-xs text-center text-slate-400 font-medium pt-1">
+                      +{jobsOnDay.length - 3} งาน
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
@@ -1109,7 +1141,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       });
     }
 
-    return actions.map((action) => (
+    return actions.map((action, index) => (
       <a
         key={action.label}
         href="#"
@@ -1117,10 +1149,14 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           e.preventDefault();
           action.onClick();
         }}
-        className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+        className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
+          action.isDanger 
+            ? 'text-red-600 hover:bg-red-50 hover:text-red-700' 
+            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+        } ${index === 0 ? '' : ''}`}
         role="menuitem"
       >
-        <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+        <action.icon className={`mr-3 h-4 w-4 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`} aria-hidden="true" />
         <span>{action.label}</span>
       </a>
     ));
@@ -1136,252 +1172,417 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     }
   };
 
+  // Stats calculations
+  const jobStats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayJobs = jobs.filter((j) => {
+      const jobDate = new Date(j.start_time);
+      jobDate.setHours(0, 0, 0, 0);
+      return jobDate.getTime() === today.getTime();
+    });
+    const inProgressJobs = jobs.filter((j) => {
+      const status = String(j.status || j.api_status || '').toUpperCase();
+      return status === 'IN_PROGRESS' || status === 'INPROGRESS';
+    });
+    const pendingJobs = jobs.filter((j) => {
+      const status = String(j.status || j.api_status || '').toUpperCase();
+      return status === 'PENDING' || status === 'PLANNED';
+    });
+    return { today: todayJobs.length, inProgress: inProgressJobs.length, pending: pendingJobs.length };
+  }, [jobs]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 flex items-center justify-center min-h-screen bg-slate-50/30">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingIcon className="h-10 w-10 text-primary animate-spin" />
+          <p className="text-slate-500">กำลังโหลดข้อมูล...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
-        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
-            <p className="mt-1 text-slate-600">
-              จัดการและติดตามงานภาคสนามทั้งหมด
-            </p>
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full bg-slate-50/30 min-h-screen">
+        {/* Header Section */}
+        <div className="flex-shrink-0 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">ภาคสนาม</h1>
+              <p className="mt-1 text-slate-500 text-sm">จัดการและติดตามงานภาคสนามทั้งหมด</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <Input
+                  type="search"
+                  placeholder="ค้นหาทะเบียนรถ, วันที่..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full sm:w-64 pl-10 bg-white border-slate-200 shadow-sm"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              {authUser?.role &&
+                [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
+                  authUser.role as Role
+                ) && (
+                  <Button
+                    onClick={() => setIsAddModalOpen(true)}
+                    variant="primary"
+                    className="shadow-md shadow-primary/20"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    สร้างนัดหมาย
+                  </Button>
+                )}
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-full sm:w-auto">
-              <Input
-                type="search"
-                placeholder="ค้นหาทะเบียนรถ, วันที่..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-64"
-              />
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-50 rounded-lg">
+                  <CalendarDaysIcon className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{jobStats.today}</p>
+                  <p className="text-xs text-slate-500">งานวันนี้</p>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center rounded-lg bg-slate-200 p-1">
-              <Button
-                onClick={() => setView('list')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                title="มุมมองรายการ"
-              >
-                <ListBulletIcon className="h-5 w-5" />
-              </Button>
-              <Button
-                onClick={() => setView('kanban')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                title="มุมมอง Kanban"
-              >
-                <ViewColumnsIcon className="h-5 w-5" />
-              </Button>
-              <Button
-                onClick={() => setView('calendar')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                title="มุมมองปฏิทิน"
-              >
-                <CalendarDaysIcon className="h-5 w-5" />
-              </Button>
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-50 rounded-lg">
+                  <PlayIcon className="h-5 w-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{jobStats.inProgress}</p>
+                  <p className="text-xs text-slate-500">กำลังดำเนินการ</p>
+                </div>
+              </div>
             </div>
-             {authUser?.role &&
-              [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
-                authUser.role as Role
-              ) && (
-                <Button
-                  onClick={() => setIsAddModalOpen(true)}
-                  variant="primary"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  สร้างนัดหมาย
-                </Button>
-              )}
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-50 rounded-lg">
+                  <ClipboardDocumentListIcon className="h-5 w-5 text-purple-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{jobStats.pending}</p>
+                  <p className="text-xs text-slate-500">รอดำเนินการ</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-green-50 rounded-lg">
+                  <DocumentCheckIcon className="h-5 w-5 text-green-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{serviceReports.length}</p>
+                  <p className="text-xs text-slate-500">รายงานทั้งหมด</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs and View Toggle */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex gap-1">
+              <button
+                onClick={() => setActiveTab('schedule')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === 'schedule' 
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <CalendarDaysIcon className="h-4 w-4" />
+                  นัดหมาย
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === 'reports' 
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <DocumentCheckIcon className="h-4 w-4" />
+                  รายงานบริการ
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveTab('work-schedule')}
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
+                  activeTab === 'work-schedule' 
+                    ? 'bg-primary text-white shadow-sm' 
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <ListBulletIcon className="h-4 w-4" />
+                  ตารางงาน
+                </span>
+              </button>
+            </div>
+
+            {activeTab === 'schedule' && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <TechnicianIcon className="h-4 w-4 text-slate-400" />
+                  <Select
+                    id="technician-filter"
+                    value={selectedTechnicianId}
+                    onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                    className="w-full sm:w-48 text-sm border-slate-200"
+                  >
+                    <option value="all">ช่างทั้งหมด</option>
+                    {technicians.map((tech) => (
+                      <option key={tech.id} value={tech.id}>
+                        {tech.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div className="flex items-center rounded-lg bg-slate-100 p-1">
+                  <Button
+                    onClick={() => setView('kanban')}
+                    variant="ghost"
+                    className={`p-2 rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                    title="มุมมอง Kanban"
+                  >
+                    <ViewColumnsIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setView('list')}
+                    variant="ghost"
+                    className={`p-2 rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                    title="มุมมองรายการ"
+                  >
+                    <ListBulletIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setView('calendar')}
+                    variant="ghost"
+                    className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                    title="มุมมองปฏิทิน"
+                  >
+                    <CalendarDaysIcon className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="flex border-b border-slate-200">
-            <Button
-              onClick={() => setActiveTab('schedule')}
-              variant="ghost"
-              className={`py-2 px-4 text-sm font-medium rounded-none h-auto ${activeTab === 'schedule' ? 'border-b-2 border-primary text-primary' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              นัดหมาย
-            </Button>
-            <Button
-              onClick={() => setActiveTab('reports')}
-              variant="ghost"
-              className={`py-2 px-4 text-sm font-medium rounded-none h-auto ${activeTab === 'reports' ? 'border-b-2 border-primary text-primary' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              รายงานบริการ
-            </Button>
-            <Button
-              onClick={() => setActiveTab('work-schedule')}
-              variant="ghost"
-              className={`py-2 px-4 text-sm font-medium rounded-none h-auto ${activeTab === 'work-schedule' ? 'border-b-2 border-primary text-primary' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-              ตารางงาน
-            </Button>
-          </div>
-        </div>
-
-        {activeTab === 'schedule' && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
-            <label
-              htmlFor="technician-filter"
-              className="text-sm font-medium text-slate-700 flex-shrink-0"
-            >
-              กรองโดยช่าง:
-            </label>
-            <div className="w-full sm:w-auto sm:max-w-xs">
-              <Select
-                id="technician-filter"
-                value={selectedTechnicianId}
-                onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                className="w-full"
-              >
-                <option value="all">ทั้งหมด</option>
-                {technicians.map((tech) => (
-                  <option key={tech.id} value={tech.id}>
-                    {tech.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        )}
-
-        <div className="flex-grow min-h-0">
+        <div className="flex-grow min-h-0 mt-6">
           {activeTab === 'schedule' && view === 'kanban' && (
             <div className="relative">
-              <Button
+              {/* Scroll Buttons */}
+              <button
                 onClick={() => scrollKanban('left')}
-                variant="ghost"
-                className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-2 bg-white/80 hover:bg-white rounded-full shadow-md border border-slate-200 h-auto"
+                className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
               >
                 <ChevronLeftIcon className="h-5 w-5 text-slate-600" />
-              </Button>
+              </button>
+              <button
+                onClick={() => scrollKanban('right')}
+                className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
+              >
+                <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+              </button>
+
+              {/* Kanban Board */}
               <div
                 ref={kanbanContainerRef}
-                className="flex space-x-4 overflow-x-auto pb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8"
+                className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth"
+                style={{ scrollbarWidth: 'thin' }}
               >
-                {kanbanColumns.map((col) => (
-                  <div
-                    key={col.id}
-                    className="bg-slate-100 rounded-lg p-4 w-80 flex-shrink-0"
-                  >
-                    <h2 className="font-semibold text-slate-700 mb-4 flex items-center justify-between">
-                      <span className="truncate">{col.title}</span>
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-sky-100 text-sky-800">
-                        {col.jobs.length}
-                      </span>
-                    </h2>
-                    <div className="space-y-3">
-                      {col.jobs.map((job) => (
-                        <JobCard
-                          key={job.id}
-                          job={job}
-                          onDropdownToggle={handleDropdownToggle}
-                          onStatusChange={handleStatusChange}
-                          onViewDetails={handleViewDetails}
-                          onWriteReport={handleWriteReport}
-                          currentUser={currentUser}
-                          isAnyJobInProgressForCurrentUser={
-                            isAnyJobInProgressForCurrentUser
-                          }
-                        />
-                      ))}
+                {kanbanColumns.length > 0 ? (
+                  kanbanColumns.map((col) => (
+                    <div
+                      key={col.id}
+                      className="bg-slate-100/80 rounded-xl p-4 w-80 flex-shrink-0 min-h-[400px]"
+                    >
+                      {/* Column Header */}
+                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                          <h3 className="font-bold text-slate-700 text-sm truncate" title={col.title}>
+                            {col.title}
+                          </h3>
+                        </div>
+                        <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
+                          {col.jobs.length}
+                        </span>
+                      </div>
+
+                      {/* Column Jobs */}
+                      <div className="space-y-3">
+                        {col.jobs.length > 0 ? (
+                          col.jobs.map((job) => (
+                            <JobCard
+                              key={job.id}
+                              job={job}
+                              onDropdownToggle={handleDropdownToggle}
+                              onStatusChange={handleStatusChange}
+                              onViewDetails={handleViewDetails}
+                              onWriteReport={handleWriteReport}
+                              currentUser={currentUser}
+                              isAnyJobInProgressForCurrentUser={
+                                isAnyJobInProgressForCurrentUser
+                              }
+                            />
+                          ))
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                            <CalendarDaysIcon className="h-10 w-10 mb-2 opacity-50" />
+                            <p className="text-sm">ไม่มีงาน</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  ))
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                    <ViewColumnsIcon className="h-12 w-12 mb-3 opacity-50" />
+                    <p className="text-lg font-medium">ไม่พบรถให้บริการ</p>
+                    <p className="text-sm mt-1">กรุณาเพิ่มรถในระบบก่อน</p>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
 
           {activeTab === 'schedule' && view === 'list' && (
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                         ลูกค้า/สถานที่
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {paginatedJobs.map((job) => (
-                      <tr key={job.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-900">
-                            {job.customer_name}
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedJobs.length > 0 ? (
+                      paginatedJobs.map((job, idx) => (
+                        <tr 
+                          key={job.id} 
+                          className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                        >
+                          <td className="px-6 py-4">
+                            <div className="flex items-start gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-primary font-bold text-sm">
+                                  {job.customer_name.charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-800 truncate">
+                                  {job.customer_name}
+                                </p>
+                                <p className="text-xs text-slate-500 truncate max-w-[200px]" title={job.address}>
+                                  {job.address || '-'}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 bg-blue-50 rounded-md">
+                                <JobDateIcon className="h-4 w-4 text-blue-500" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800">
+                                  {formatThaiDate(job.start_time)}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                  {' - '}
+                                  {new Date(job.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-slate-600">
+                              {job.work_areas.map((wa) => wa.service_package).join(', ') || '-'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <TechnicianIcon className="h-4 w-4 text-slate-400" />
+                              <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                                {job.technicians.map((t) => t.nickname || t.name).join(', ') || '-'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <StatusBadge status={job.api_status || job.status} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <Button
+                              data-job-id={job.id}
+                              onClick={(e) => handleDropdownToggle(e, job.id)}
+                              variant="ghost"
+                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                            >
+                              <ManageIcon className="h-5 w-5" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center text-slate-400">
+                            <ListBulletIcon className="h-12 w-12 mb-3 opacity-50" />
+                            <p className="text-lg font-medium">ไม่พบข้อมูลงาน</p>
+                            <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือสร้างนัดหมายใหม่</p>
                           </div>
-                          <div className="text-sm text-slate-500">
-                            {job.address}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-slate-900">
-                            {formatThaiDate(job.start_time)}
-                          </div>
-                          <div className="text-sm text-slate-500">
-                            {new Date(job.start_time).toLocaleTimeString(
-                              'th-TH',
-                              { hour: '2-digit', minute: '2-digit' }
-                            )}{' '}
-                            -{' '}
-                            {new Date(job.end_time).toLocaleTimeString(
-                              'th-TH',
-                              { hour: '2-digit', minute: '2-digit' }
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {job.work_areas
-                            .map((wa) => wa.service_package)
-                            .join(', ')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {job.technicians.map((t) => t.name).join(', ')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <StatusBadge status={job.status} />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            data-job-id={job.id}
-                            onClick={(e) => handleDropdownToggle(e, job.id)}
-                            variant="icon"
-                            className="text-slate-400 hover:text-slate-600"
-                          >
-                            <ManageIcon className="h-5 w-5" />
-                          </Button>
                         </td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
-              <Pagination
-                currentPage={currentPage}
-                totalItems={scheduleJobs.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
+              {paginatedJobs.length > 0 && (
+                <div className="border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalItems={scheduleJobs.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -1390,73 +1591,107 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           )}
 
           {activeTab === 'reports' && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          ลูกค้า/สถานที่
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          วัน-เวลา
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          บริการ
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          ช่าง
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          สถานะรายงาน
-                        </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
-                          จัดการ
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                      {paginatedReports.length > 0 ? (
-                        paginatedReports.map((report) => {
-                          const job = jobs.find((j) => j.id === report.job_id);
-                          const reportDate = report.report_date || report.created_at || '';
-                          
-                          return (
-                            <tr key={report.id} className="hover:bg-slate-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-slate-900">
-                                  {report.customer_name || job?.customer_name || '-'}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ลูกค้า/สถานที่
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        วัน-เวลา
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        บริการ
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ช่าง
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        สถานะ
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        จัดการ
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedReports.length > 0 ? (
+                      paginatedReports.map((report, idx) => {
+                        const job = jobs.find((j) => j.id === report.job_id);
+                        const reportDate = report.report_date || report.created_at || '';
+                        const customerName = report.customer_name || job?.customer_name || '-';
+                        
+                        return (
+                          <tr 
+                            key={report.id} 
+                            className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
+                                  <DocumentCheckIcon className="h-5 w-5 text-green-500" />
                                 </div>
-                                <div className="text-sm text-slate-500">
-                                  {job?.address || '-'}
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-slate-800 truncate">
+                                    {customerName}
+                                  </p>
+                                  <p className="text-xs text-slate-500 truncate max-w-[200px]" title={job?.address}>
+                                    {job?.address || '-'}
+                                  </p>
                                 </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-slate-900">
-                                  {formatThaiDate(reportDate)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-blue-50 rounded-md">
+                                  <JobDateIcon className="h-4 w-4 text-blue-500" />
                                 </div>
-                                <div className="text-sm text-slate-500">
-                                  {report.time_in && report.time_out 
-                                    ? `${report.time_in} - ${report.time_out}`
-                                    : new Date(reportDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-                                  }
+                                <div>
+                                  <p className="text-sm font-medium text-slate-800">
+                                    {formatThaiDate(reportDate)}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    {report.time_in && report.time_out 
+                                      ? `${report.time_in} - ${report.time_out}`
+                                      : new Date(reportDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+                                    }
+                                  </p>
                                 </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                {report.service_types?.join(', ') || '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                {job?.technicians?.map(t => t.name).join(', ') || 
-                                 report.signatures?.technician_name || 
-                                 '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <StatusBadge
-                                  status={report.status || JobStatus.Draft}
-                                />
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-1">
+                                {report.service_types?.length ? (
+                                  report.service_types.slice(0, 2).map((type, i) => (
+                                    <span key={i} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                                      {type}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="text-sm text-slate-400">-</span>
+                                )}
+                                {(report.service_types?.length || 0) > 2 && (
+                                  <span className="text-xs text-slate-400">+{(report.service_types?.length || 0) - 2}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <TechnicianIcon className="h-4 w-4 text-slate-400" />
+                                <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                                  {job?.technicians?.map(t => t.nickname || t.name).join(', ') || 
+                                   report.signatures?.technician_name || 
+                                   '-'}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <StatusBadge status={report.status || JobStatus.Draft} />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1">
                                 <Button
                                   onClick={async () => {
                                     try {
@@ -1476,17 +1711,16 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                       setLoadingPdfId(null);
                                     }
                                   }}
-                                  variant="ghost"
-                                  className="text-primary hover:text-primary-dark mr-2"
+                                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
                                   title="ดู PDF"
                                   disabled={loadingPdfId === report.id}
                                 >
                                   {loadingPdfId === report.id ? (
-                                    <LoadingIcon className="h-5 w-5 animate-spin" />
+                                    <LoadingIcon className="h-4 w-4 animate-spin" />
                                   ) : (
-                                    <span className="flex items-center gap-1">
-                                      <DocumentCheckIcon className="h-5 w-5" />
-                                      <span>ดู</span>
+                                    <span className="flex items-center gap-1.5">
+                                      <EyeIcon className="h-4 w-4" />
+                                      ดู PDF
                                     </span>
                                   )}
                                 </Button>
@@ -1495,150 +1729,200 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                     if (job) {
                                       handleWriteReport(job);
                                     } else {
-                                       alert('ไม่พบข้อมูลงานสำหรับรายงานนี้ (อาจเป็นงานเก่าที่ไม่ได้โหลดมาแสดงผล)');
+                                       alert('ไม่พบข้อมูลงานสำหรับรายงานนี้');
                                     }
                                   }}
                                   variant="ghost"
-                                  className="text-slate-500 hover:text-slate-700"
+                                  className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
                                   title="แก้ไขรายงาน"
                                 >
-                                  <PencilIcon className="h-5 w-5" />
+                                  <PencilIcon className="h-4 w-4" />
                                 </Button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={6}
-                            className="px-6 py-10 text-center text-slate-500"
-                          >
-                            ไม่พบรายงานบริการ
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <Pagination
-                  currentPage={reportCurrentPage}
-                  totalItems={serviceReports.length}
-                  itemsPerPage={reportItemsPerPage}
-                  onPageChange={setReportCurrentPage}
-                  onItemsPerPageChange={handleReportItemsPerPageChange}
-                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center text-slate-400">
+                            <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
+                            <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
+                            <p className="text-sm mt-1">รายงานจะแสดงเมื่อช่างทำรายงานบริการเสร็จสิ้น</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
+              {paginatedReports.length > 0 && (
+                <div className="border-t border-slate-100">
+                  <Pagination
+                    currentPage={reportCurrentPage}
+                    totalItems={serviceReports.length}
+                    itemsPerPage={reportItemsPerPage}
+                    onPageChange={setReportCurrentPage}
+                    onItemsPerPageChange={handleReportItemsPerPageChange}
+                  />
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'work-schedule' && (
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex flex-col md:flex-row gap-4 mb-6 items-end">
-                <FormField label="วันที่">
-                  <Input
-                    type="date"
-                    value={scheduleDate}
-                    onChange={(e) => setScheduleDate(e.target.value)}
-                  />
-                </FormField>
-                <FormField label="ทะเบียนรถ">
-                  <Select
-                    value={scheduleVehicleId}
-                    onChange={(e) => setScheduleVehicleId(e.target.value)}
-                  >
-                    <option value="">เลือกทะเบียนรถ</option>
-                    {warehouses
-                      .filter(
-                        (w) =>
-                          (w as any).type === 'รถ' ||
-                          (w as any).type === 'VEHICLE'
-                      )
-                      .map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {(w as any).license_plate} ({w.name})
-                        </option>
-                      ))}
-                  </Select>
-                </FormField>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              {/* Filters */}
+              <div className="p-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                <div className="flex flex-col md:flex-row gap-4 items-end">
+                  <div className="flex-1 max-w-xs">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      <JobDateIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
+                      วันที่
+                    </label>
+                    <Input
+                      type="date"
+                      value={scheduleDate}
+                      onChange={(e) => setScheduleDate(e.target.value)}
+                      className="bg-white border-slate-200 shadow-sm"
+                    />
+                  </div>
+                  <div className="flex-1 max-w-sm">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      <TechnicianIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
+                      ทะเบียนรถ
+                    </label>
+                    <Select
+                      value={scheduleVehicleId}
+                      onChange={(e) => setScheduleVehicleId(e.target.value)}
+                      className="bg-white border-slate-200 shadow-sm"
+                    >
+                      <option value="">เลือกทะเบียนรถ</option>
+                      {warehouses
+                        .filter(
+                          (w) =>
+                            (w as any).type === 'รถ' ||
+                            (w as any).type === 'VEHICLE'
+                        )
+                        .map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {(w as any).license_plate} ({w.name})
+                          </option>
+                        ))}
+                    </Select>
+                  </div>
+                  {scheduleVehicleId && scheduleDate && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
+                      <span className="text-sm font-semibold text-primary">
+                        {scheduledJobsForTable.length} งาน
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {scheduleVehicleId && scheduleDate ? (
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200 border border-slate-200 rounded-lg">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-24">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr className="bg-slate-50/50 border-b border-slate-100">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-20">
                           เวลา
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                           ลูกค้า
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                           สถานที่
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-28">
                           เบอร์โทร
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
                           เข้าบริการ
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
                           ลายเซ็น
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
                           เก็บเงิน
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
                           หมายเหตุ
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
+                    <tbody className="divide-y divide-slate-100">
                       {scheduledJobsForTable.length > 0 ? (
-                        scheduledJobsForTable.map((job) => {
+                        scheduledJobsForTable.map((job, idx) => {
                           const customer = customerMap.get(job.customer_id);
+                          const statusUpper = String(job.status || '').toUpperCase();
+                          const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE';
+                          const isInProgress = statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS';
+                          
                           return (
-                            <tr key={job.id}>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                                {new Date(job.start_time).toLocaleTimeString(
-                                  'th-TH',
-                                  { hour: '2-digit', minute: '2-digit' }
+                            <tr 
+                              key={job.id} 
+                              className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                            >
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
+                                  {new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm font-semibold text-slate-800">{job.customer_name}</p>
+                              </td>
+                              <td className="px-4 py-3">
+                                <p className="text-sm text-slate-500 max-w-[200px] truncate" title={job.address}>
+                                  {job.address || '-'}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                <span className="text-sm text-slate-600">{customer?.phone || '-'}</span>
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                {isCompleted || isInProgress ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                    ✓ เข้าได้
+                                  </span>
+                                ) : statusUpper === 'CANCELLED' ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">
+                                    ✕ ไม่ได้
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
-                                {job.customer_name}
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                {job.service_report?.signatures?.customer ? (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                                    ✓ เซ็นแล้ว
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">-</span>
+                                )}
                               </td>
-                              <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
-                                {job.address}
+                              <td className="px-4 py-3 whitespace-nowrap text-center">
+                                <span className="text-slate-400">-</span>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {customer?.phone || '-'}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                {getAccessStatus(job.status)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {job.service_report?.signatures?.customer
-                                  ? 'เซ็นแล้ว'
-                                  : '-'}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                                {/* TODO: Check Invoice Status */}-
-                              </td>
-                              <td className="px-4 py-3 text-sm text-slate-500 max-w-xs truncate">
-                                {job.remarks || '-'}
+                              <td className="px-4 py-3">
+                                <p className="text-sm text-slate-500 max-w-[150px] truncate" title={job.remarks}>
+                                  {job.remarks || '-'}
+                                </p>
                               </td>
                             </tr>
                           );
                         })
                       ) : (
                         <tr>
-                          <td
-                            colSpan={8}
-                            className="px-6 py-10 text-center text-slate-500"
-                          >
-                            ไม่มีงานในช่วงเวลานี้
+                          <td colSpan={8} className="px-6 py-16 text-center">
+                            <div className="flex flex-col items-center text-slate-400">
+                              <CalendarDaysIcon className="h-12 w-12 mb-3 opacity-50" />
+                              <p className="text-lg font-medium">ไม่มีงานในวันนี้</p>
+                              <p className="text-sm mt-1">ไม่พบงานสำหรับรถคันนี้ในวันที่เลือก</p>
+                            </div>
                           </td>
                         </tr>
                       )}
@@ -1646,8 +1930,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-10 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-                  กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                  <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                    <CalendarDaysIcon className="h-10 w-10 text-slate-300" />
+                  </div>
+                  <p className="text-lg font-medium text-slate-500">เลือกตารางงาน</p>
+                  <p className="text-sm mt-1">กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน</p>
                 </div>
               )}
             </div>
@@ -1660,9 +1948,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
               }}
-              className="absolute z-50 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none transform -translate-x-full"
+              className="absolute z-50 mt-2 w-52 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none transform -translate-x-full border border-slate-100 overflow-hidden"
             >
-              <div className="py-1" role="menu" aria-orientation="vertical">
+              <div className="py-2" role="menu" aria-orientation="vertical">
                 {renderActions()}
               </div>
             </div>
