@@ -12,6 +12,7 @@ import { SearchableSelect } from '../../components/common/SearchableSelect';
 import { LeftArrowIcon, PlusIcon, TrashIcon } from '../../assets/icons/Icons';
 import { useData } from '../../contexts/DataContext';
 import { Status } from '../../types/entity/core.interface';
+import { AsessmentStatus } from '../../types/enums/assessment';
 
 interface QuotationItem {
 	id: string;
@@ -23,13 +24,30 @@ interface QuotationItem {
 	amount: number;
 }
 
+import { AssessmentApi } from '../../api/assessment';
+import { Assessment } from '../../types/entity/assessment.interface';
+
 const CreateQuotationPage: React.FC = () => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
-	const { customers, products, assessments, handlers } = useData();
+	const { customers, products, handlers } = useData();
 
 	// Assessment reference
+	const [assessments, setAssessments] = useState<Assessment[]>([]);
 	const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
+
+	useEffect(() => {
+		const fetchAssessments = async () => {
+			try {
+				const res = await AssessmentApi.getAll();
+				console.log('Fetched assessments locally:', res.data);
+				setAssessments(res.data);
+			} catch (error) {
+				console.error('Failed to fetch assessments:', error);
+			}
+		};
+		fetchAssessments();
+	}, []);
 
 	// Quotation info
 	const [quotationDate, setQuotationDate] = useState('');
@@ -73,13 +91,19 @@ const CreateQuotationPage: React.FC = () => {
 
 	// Assessment options for dropdown
 	const assessmentOptions = useMemo(() => {
+		console.log('Assessments for options:', assessments);
 		return (assessments || [])
-			.filter((a) => a.status === 'APPROVED' || a.status === 'PENDING')
-			.map((a) => ({
-				value: a.id,
-				label: `${a.code} - ${a.customer?.name || 'ไม่ระบุลูกค้า'}`,
-				description: a.address || '',
-			}));
+			// .filter((a) => a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.PENDING)
+			.map((a) => {
+				const customerName = a.customer
+					? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
+					: 'ไม่ระบุลูกค้า';
+				return {
+					value: a.id,
+					label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
+					description: a.address || '',
+				};
+			});
 	}, [assessments]);
 
 	// Selected assessment details
@@ -218,7 +242,7 @@ const CreateQuotationPage: React.FC = () => {
 				if (item.id !== itemId) return item;
 
 				if (product) {
-					const unitPrice = parseFloat(product.cost_price) || 0;
+					const unitPrice = product.cost_price || 0;
 					return {
 						...item,
 						productId: productId,
@@ -406,7 +430,9 @@ const CreateQuotationPage: React.FC = () => {
 								<div>
 									<span className="text-slate-500">ลูกค้า:</span>{' '}
 									<span className="font-medium">
-										{selectedAssessment.customer?.name || selectedAssessment.customer?.first_name || 'ไม่ระบุ'}
+										{selectedAssessment.customer?.first_name 
+											? `${selectedAssessment.customer.first_name} ${selectedAssessment.customer.last_name || ''}`
+											: 'ไม่ระบุ'}
 									</span>
 								</div>
 								<div className="md:col-span-2">

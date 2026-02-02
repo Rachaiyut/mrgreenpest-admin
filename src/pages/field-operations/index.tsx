@@ -43,6 +43,7 @@ import { formatThaiDate, formatThaiDateTime } from '@/src/utils/date';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
+import { TechAssessmentEditModal } from '../../components/features/assessments/TechAssessmentEditModal';
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { FormField } from '../../components/common/FormControls';
@@ -69,163 +70,163 @@ const JobCard: React.FC<{
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
-  const currentUserId = (currentUser as any)?.id as string | undefined;
+    const currentUserId = (currentUser as any)?.id as string | undefined;
 
-  const isAssignedToCurrentUser = useMemo(
-    () =>
-      !!currentUserId &&
-      job.technicians.some((tech) => tech && tech.id === currentUserId),
-    [job.technicians, currentUserId]
-  );
+    const isAssignedToCurrentUser = useMemo(
+      () =>
+        !!currentUserId &&
+        (job.technicians || []).some((tech) => tech && tech.id === currentUserId),
+      [job.technicians, currentUserId]
+    );
 
-  const showCheckInButton =
-    isAssignedToCurrentUser && 
-    ((job.status as unknown as JobStatus) === JobStatus.Planned || (job.status as unknown as string).toUpperCase() === 'PENDING');
+    const showCheckInButton =
+      isAssignedToCurrentUser &&
+      ((job.status as unknown as JobStatus) === JobStatus.Planned || (job.status as unknown as string).toUpperCase() === 'PENDING');
 
-  const showCheckOutButton =
-    isAssignedToCurrentUser && 
-    ((job.status as unknown as JobStatus) === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
+    const showCheckOutButton =
+      isAssignedToCurrentUser &&
+      ((job.status as unknown as JobStatus) === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
-  const showReportButton = showCheckOutButton;
+    const showReportButton = showCheckOutButton;
 
-  let checkInTooltip = '';
-  if (isAssignedToCurrentUser) {
-    if (isAnyJobInProgressForCurrentUser) {
-      checkInTooltip = 'คุณกำลังเช็คอินในงานอื่นอยู่';
-    } else {
-      checkInTooltip = 'เช็คอินเพื่อเริ่มงาน';
+    let checkInTooltip = '';
+    if (isAssignedToCurrentUser) {
+      if (isAnyJobInProgressForCurrentUser) {
+        checkInTooltip = 'คุณกำลังเช็คอินในงานอื่นอยู่';
+      } else {
+        checkInTooltip = 'เช็คอินเพื่อเริ่มงาน';
+      }
     }
-  }
 
-  const jobDate = formatThaiDate(job.start_time);
-  const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+    const jobDate = formatThaiDate(job.start_time);
+    const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
 
-  const hasActions = (job.status as unknown as JobStatus) !== JobStatus.Completed;
+    const hasActions = (job.status as unknown as JobStatus) !== JobStatus.Completed;
 
-  // Get status color for left border
-  const getStatusColor = () => {
-    const statusUpper = String(job.status || job.api_status || '').toUpperCase();
-    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'border-l-amber-500';
-    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'border-l-green-500';
-    if (statusUpper === 'CANCELLED') return 'border-l-red-500';
-    return 'border-l-primary';
-  };
+    // Get status color for left border
+    const getStatusColor = () => {
+      const statusUpper = String(job.status || job.api_status || '').toUpperCase();
+      if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'border-l-amber-500';
+      if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'border-l-green-500';
+      if (statusUpper === 'CANCELLED') return 'border-l-red-500';
+      return 'border-l-primary';
+    };
 
-  return (
-    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}>
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
-              {job.customer_name}
-            </h4>
-            {job.work_areas.length > 0 && (
-              <p className="text-xs text-slate-500 mt-1 truncate">
-                {job.work_areas.map((wa) => wa.service_package).join(', ')}
-              </p>
+    return (
+      <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}>
+        {/* Header */}
+        <div className="px-4 pt-4 pb-3">
+          <div className="flex justify-between items-start gap-2">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
+                {job.customer_name}
+              </h4>
+              {job.work_areas.length > 0 && (
+                <p className="text-xs text-slate-500 mt-1 truncate">
+                  {job.work_areas.map((wa) => wa.service_package).join(', ')}
+                </p>
+              )}
+            </div>
+            <Button
+              data-job-id={job.id}
+              onClick={(e) => onDropdownToggle(e, job.id)}
+              variant="ghost"
+              className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
+              title="ตัวเลือก"
+            >
+              <ManageIcon className="h-4 w-4 text-slate-400" />
+            </Button>
+          </div>
+          <div className="mt-2">
+            <StatusBadge status={job.api_status} />
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="px-4 pb-3 space-y-2">
+          <div className="flex items-start gap-2.5 text-sm">
+            <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+            <span className="text-slate-600 line-clamp-2 leading-snug">{job.address || '-'}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-sm">
+            <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <span className="text-slate-600">{jobDate}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-sm">
+            <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <span className="text-slate-700 font-medium">{jobStartTime} - {jobEndTime}</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-sm">
+            <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+            <span
+              className="text-slate-600 truncate"
+              title={job.technicians.map((t) => t.name).join(', ')}
+            >
+              {job.technicians.length > 0
+                ? job.technicians.map((t) => t.nickname || t.name).join(', ')
+                : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        {hasActions && (
+          <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
+            <Button
+              onClick={() => onViewDetails(job)}
+              title="ดูรายละเอียดงาน"
+              variant="ghost"
+              className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
+            >
+              <EyeIcon className="h-4 w-4 mr-1.5" />
+              ดูรายละเอียด
+            </Button>
+
+            {showCheckInButton && (
+              <Button
+                onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
+                disabled={isAnyJobInProgressForCurrentUser}
+                title={checkInTooltip}
+                variant="primary"
+                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+              >
+                <PlayIcon className="h-4 w-4 mr-1.5" />
+                เช็คอิน
+              </Button>
+            )}
+            {showReportButton && (
+              <Button
+                onClick={() => onWriteReport(job)}
+                title="บันทึกรายงานบริการ"
+                className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+                บันทึกรายงาน
+              </Button>
+            )}
+            {showCheckOutButton && (
+              <Button
+                onClick={() => onStatusChange(job.id, JobStatus.Completed)}
+                title="เช็คเอาท์เพื่อจบงาน"
+                variant="accent"
+                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+              >
+                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+                เช็คเอาท์
+              </Button>
             )}
           </div>
-          <Button
-            data-job-id={job.id}
-            onClick={(e) => onDropdownToggle(e, job.id)}
-            variant="ghost"
-            className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
-            title="ตัวเลือก"
-          >
-            <ManageIcon className="h-4 w-4 text-slate-400" />
-          </Button>
-        </div>
-        <div className="mt-2">
-          <StatusBadge status={job.api_status} />
-        </div>
+        )}
       </div>
-
-      {/* Info */}
-      <div className="px-4 pb-3 space-y-2">
-        <div className="flex items-start gap-2.5 text-sm">
-          <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-          <span className="text-slate-600 line-clamp-2 leading-snug">{job.address || '-'}</span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-600">{jobDate}</span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-700 font-medium">{jobStartTime} - {jobEndTime}</span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span
-            className="text-slate-600 truncate"
-            title={job.technicians.map((t) => t.name).join(', ')}
-          >
-            {job.technicians.length > 0
-              ? job.technicians.map((t) => t.nickname || t.name).join(', ')
-              : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions */}
-      {hasActions && (
-        <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
-          <Button
-            onClick={() => onViewDetails(job)}
-            title="ดูรายละเอียดงาน"
-            variant="ghost"
-            className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
-          >
-            <EyeIcon className="h-4 w-4 mr-1.5" />
-            ดูรายละเอียด
-          </Button>
-
-          {showCheckInButton && (
-            <Button
-              onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
-              disabled={isAnyJobInProgressForCurrentUser}
-              title={checkInTooltip}
-              variant="primary"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-            >
-              <PlayIcon className="h-4 w-4 mr-1.5" />
-              เช็คอิน
-            </Button>
-          )}
-          {showReportButton && (
-            <Button
-              onClick={() => onWriteReport(job)}
-              title="บันทึกรายงานบริการ"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-            >
-              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-              บันทึกรายงาน
-            </Button>
-          )}
-          {showCheckOutButton && (
-            <Button
-              onClick={() => onStatusChange(job.id, JobStatus.Completed)}
-              title="เช็คเอาท์เพื่อจบงาน"
-              variant="accent"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-            >
-              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-              เช็คเอาท์
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
+    );
+  };
 
 const CalendarView: React.FC<{
   jobs: FieldJob[];
@@ -373,21 +374,19 @@ const CalendarView: React.FC<{
             return (
               <div
                 key={index}
-                className={`relative min-h-[120px] p-2 flex flex-col ${
-                  day.isCurrentMonth 
-                    ? isWeekend ? 'bg-slate-50/50' : 'bg-white' 
+                className={`relative min-h-[120px] p-2 flex flex-col ${day.isCurrentMonth
+                    ? isWeekend ? 'bg-slate-50/50' : 'bg-white'
                     : 'bg-slate-100/50'
-                } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
+                  } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
                 <time
                   dateTime={day.date.toISOString().substring(0, 10)}
-                  className={`text-sm font-semibold mb-1 ${
-                    day.isToday 
-                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto' 
-                      : day.isCurrentMonth 
+                  className={`text-sm font-semibold mb-1 ${day.isToday
+                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
+                      : day.isCurrentMonth
                         ? dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-slate-700'
                         : 'text-slate-300'
-                  }`}
+                    }`}
                 >
                   {day.date.getDate()}
                 </time>
@@ -476,11 +475,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [warehousesRes, categoriesRes, reportsRes] =
+      const [warehousesRes, categoriesRes, reportsRes, productsRes] =
         await Promise.all([
           VehicleApi.getVehiclesWithUserJobs(),
           CategoryApi.getCategories({}),
           ServiceReportApi.getAll({}),
+          ProductApi.getProducts({ limit: 1000 }),
         ]);
 
       // Ensure warehousesData is an array
@@ -490,13 +490,15 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       } else if (Array.isArray(warehousesRes)) {
         warehousesData = warehousesRes as any[];
       }
-      
+
       const categoriesData = (categoriesRes as any).data || [];
       const reportsData = (reportsRes as any).data || [];
-      
+      const productsData = (productsRes as any).data || [];
+
       setWarehouses(warehousesData);
       setCategories(categoriesData);
       setReports(reportsData);
+      setProducts(productsData);
 
       const debugItems: any[] = [];
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
@@ -505,10 +507,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
             const customer = job.customer || {};
             const customerName =
               customer.first_name || customer.last_name
-                ? `${customer.first_name || ''}${
-                    customer.last_name && customer.last_name !== '-'
-                      ? ` ${customer.last_name}`
-                      : ''
+                ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
+                    ? ` ${customer.last_name}`
+                    : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -530,12 +531,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               statusUpper === 'PENDING'
                 ? JobStatus.Pending
                 : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
-                ? JobStatus.InProgress
-                : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
-                ? JobStatus.Completed
-                : statusUpper === 'CANCELLED'
-                ? JobStatus.Cancelled
-                : JobStatus.Planned;
+                  ? JobStatus.InProgress
+                  : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
+                    ? JobStatus.Completed
+                    : statusUpper === 'CANCELLED'
+                      ? JobStatus.Cancelled
+                      : JobStatus.Planned;
             console.log('Status mapping', {
               id: job.id,
               api_status: rawStatus,
@@ -565,10 +566,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               start_time: job.start_date,
               end_time: job.end_date,
               primary_technician: job.primary_technician || null,
-              technicians: Array.isArray(job.technicians) && job.technicians.length > 0 
-                ? job.technicians 
-                : job.primary_technician 
-                  ? [job.primary_technician] 
+              technicians: Array.isArray(job.technicians) && job.technicians.length > 0
+                ? job.technicians
+                : job.primary_technician
+                  ? [job.primary_technician]
                   : [],
               work_areas: [],
               status: mappedStatus,
@@ -681,6 +682,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isEditAssessmentModalOpen, setIsEditAssessmentModalOpen] =
     useState(false);
+  const [isTechAssessmentModalOpen, setIsTechAssessmentModalOpen] =
+    useState(false);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [jobToCancel, setJobToCancel] = useState<any | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -743,9 +747,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       created_at: new Date().toISOString(),
       check_in_time: job.actual_start_time
         ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })
+          hour: '2-digit',
+          minute: '2-digit',
+        })
         : '',
       check_out_time: new Date().toLocaleTimeString('th-TH', {
         hour: '2-digit',
@@ -879,7 +883,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         (job) =>
           job.vehicle_id === scheduleVehicleId &&
           new Date(job.start_time).toISOString().substring(0, 10) ===
-            scheduleDate
+          scheduleDate
       )
       .sort(
         (a, b) =>
@@ -1073,6 +1077,28 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdownId]);
 
+  const handleEditAssessment = async (job: FieldJob) => {
+    if (!job.assessment_id) return;
+    try {
+      const assessment = await AssessmentApi.getById(job.assessment_id);
+      setSelectedAssessmentForJob(assessment);
+      setIsTechAssessmentModalOpen(true);
+      setOpenDropdownId(null);
+    } catch (error) {
+      console.error('Error fetching assessment:', error);
+    }
+  };
+
+  const handleTechUpdateAssessment = async (updatedAssessment: Assessment) => {
+    try {
+      await AssessmentApi.update(updatedAssessment.id, updatedAssessment);
+      fetchData();
+      setIsTechAssessmentModalOpen(false);
+    } catch (error) {
+      console.error('Error updating assessment:', error);
+    }
+  };
+
   const renderActions = () => {
     if (!selectedJob) return null;
     const { status } = selectedJob;
@@ -1083,12 +1109,24 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-      {
-        label: 'ดูรายละเอียด',
-        icon: EyeIcon,
-        onClick: () => handleViewDetails(selectedJob),
-      },
-    ];
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => handleViewDetails(selectedJob),
+        },
+      ];
+
+    if (
+      selectedJob.assessment_id &&
+      authUser?.role &&
+      [Role.LEAD_TECH, Role.TECH, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role)
+    ) {
+      actions.push({
+        label: 'แก้ไขใบประเมิน',
+        icon: ClipboardDocumentListIcon,
+        onClick: () => handleEditAssessment(selectedJob),
+      });
+    }
 
     if (
       status === JobStatus.Planned ||
@@ -1149,11 +1187,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           e.preventDefault();
           action.onClick();
         }}
-        className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
-          action.isDanger 
-            ? 'text-red-600 hover:bg-red-50 hover:text-red-700' 
+        className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${action.isDanger
+            ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
             : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-        } ${index === 0 ? '' : ''}`}
+          } ${index === 0 ? '' : ''}`}
         role="menuitem"
       >
         <action.icon className={`mr-3 h-4 w-4 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`} aria-hidden="true" />
@@ -1296,11 +1333,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
             <div className="flex gap-1">
               <button
                 onClick={() => setActiveTab('schedule')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === 'schedule' 
-                    ? 'bg-primary text-white shadow-sm' 
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'schedule'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <span className="flex items-center gap-2">
                   <CalendarDaysIcon className="h-4 w-4" />
@@ -1309,11 +1345,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('reports')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === 'reports' 
-                    ? 'bg-primary text-white shadow-sm' 
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'reports'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <span className="flex items-center gap-2">
                   <DocumentCheckIcon className="h-4 w-4" />
@@ -1322,11 +1357,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               </button>
               <button
                 onClick={() => setActiveTab('work-schedule')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${
-                  activeTab === 'work-schedule' 
-                    ? 'bg-primary text-white shadow-sm' 
+                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'work-schedule'
+                    ? 'bg-primary text-white shadow-sm'
                     : 'text-slate-600 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <span className="flex items-center gap-2">
                   <ListBulletIcon className="h-4 w-4" />
@@ -1492,8 +1526,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                   <tbody className="divide-y divide-slate-100">
                     {paginatedJobs.length > 0 ? (
                       paginatedJobs.map((job, idx) => (
-                        <tr 
-                          key={job.id} 
+                        <tr
+                          key={job.id}
                           className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                         >
                           <td className="px-6 py-4">
@@ -1622,10 +1656,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                         const job = jobs.find((j) => j.id === report.job_id);
                         const reportDate = report.report_date || report.created_at || '';
                         const customerName = report.customer_name || job?.customer_name || '-';
-                        
+
                         return (
-                          <tr 
-                            key={report.id} 
+                          <tr
+                            key={report.id}
                             className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                           >
                             <td className="px-6 py-4">
@@ -1653,7 +1687,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                     {formatThaiDate(reportDate)}
                                   </p>
                                   <p className="text-xs text-slate-500">
-                                    {report.time_in && report.time_out 
+                                    {report.time_in && report.time_out
                                       ? `${report.time_in} - ${report.time_out}`
                                       : new Date(reportDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
                                     }
@@ -1681,9 +1715,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                               <div className="flex items-center gap-2">
                                 <TechnicianIcon className="h-4 w-4 text-slate-400" />
                                 <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                  {job?.technicians?.map(t => t.nickname || t.name).join(', ') || 
-                                   report.signatures?.technician_name || 
-                                   '-'}
+                                  {job?.technicians?.map(t => t.nickname || t.name).join(', ') ||
+                                    report.signatures?.technician_name ||
+                                    '-'}
                                 </span>
                               </div>
                             </td>
@@ -1729,7 +1763,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                     if (job) {
                                       handleWriteReport(job);
                                     } else {
-                                       alert('ไม่พบข้อมูลงานสำหรับรายงานนี้');
+                                      alert('ไม่พบข้อมูลงานสำหรับรายงานนี้');
                                     }
                                   }}
                                   variant="ghost"
@@ -1860,10 +1894,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                           const statusUpper = String(job.status || '').toUpperCase();
                           const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE';
                           const isInProgress = statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS';
-                          
+
                           return (
-                            <tr 
-                              key={job.id} 
+                            <tr
+                              key={job.id}
                               className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                             >
                               <td className="px-4 py-3 whitespace-nowrap">

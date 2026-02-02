@@ -122,7 +122,7 @@ const Assessments: React.FC = () => {
           )
       );
 
-      const matchesDate = formatThaiDate((assessment.appointment_date).toDateString()).includes(
+      const matchesDate = formatThaiDate(new Date(assessment.appointment_date).toDateString()).includes(
         lowercasedQuery
       );
 
@@ -134,31 +134,31 @@ const Assessments: React.FC = () => {
     title: AsessmentStatus;
     assessments: Assessment[];
   }[] = [
-    {
-      title: AsessmentStatus.DRAFT,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.DRAFT
-      ),
-    },
-    {
-      title: AsessmentStatus.PENDING,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.PENDING
-      ),
-    },
-    {
-      title: AsessmentStatus.APPOINTMENT,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.APPOINTMENT
-      ),
-    },
-    {
-      title: AsessmentStatus.COMPLETE,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.COMPLETE
-      ),
-    },
-  ];
+      {
+        title: AsessmentStatus.DRAFT,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.DRAFT
+        ),
+      },
+      {
+        title: AsessmentStatus.PENDING,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.PENDING
+        ),
+      },
+      {
+        title: AsessmentStatus.APPOINTMENT,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.APPOINTMENT
+        ),
+      },
+      {
+        title: AsessmentStatus.COMPLETE,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.COMPLETE
+        ),
+      },
+    ];
 
   const totalItems = filteredAssessments.length;
   const paginatedAssessments = filteredAssessments.slice(
@@ -275,17 +275,17 @@ const Assessments: React.FC = () => {
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-      {
-        label: 'ดูรายละเอียด',
-        icon: EyeIcon,
-        onClick: () => handleViewDetails(selectedAssessment),
-      },
-      {
-        label: 'แก้ไข',
-        icon: PencilIcon,
-        onClick: () => handleEdit(selectedAssessment),
-      },
-    ];
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => handleViewDetails(selectedAssessment),
+        },
+        {
+          label: 'แก้ไข',
+          icon: PencilIcon,
+          onClick: () => handleEdit(selectedAssessment),
+        },
+      ];
 
     if (selectedAssessment.status === AsessmentStatus.COMPLETE) {
       actions.push({
@@ -566,7 +566,7 @@ const Assessments: React.FC = () => {
           assessment={selectedAssessment}
           products={products}
           customers={customers}
-          // packages={packages} // Comment out if causing issues or update type
+        // packages={packages} // Comment out if causing issues or update type
         />
       )}
       <EditAssessmentModal

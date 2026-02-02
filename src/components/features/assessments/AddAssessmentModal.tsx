@@ -146,6 +146,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     if (isOpen) {
       setFormData({
         appointment_date: new Date(),
+        payment_condition: PaymentMethod.CASH, // Default payment condition
       });
       setWorkAreas([
         {
@@ -385,9 +386,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               label="ลูกค้า"
               options={(customers || []).map((c) => ({
                 value: c.id,
-                label: `${c.code} : ${c.first_name} ${c.last_name} ${
-                  c.nickname ? `(${c.nickname})` : ''
-                } - ${c.phone}`,
+                label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''
+                  } - ${c.phone}`,
                 description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
               }))}
               value={formData.customer_id || ''}
@@ -500,8 +500,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                 value={
                   formData.appointment_date
                     ? new Date(formData.appointment_date)
-                        .toISOString()
-                        .substring(0, 10)
+                      .toISOString()
+                      .substring(0, 10)
                     : ''
                 }
                 onChange={handleDateChange}

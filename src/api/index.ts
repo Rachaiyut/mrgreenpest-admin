@@ -25,3 +25,4 @@ export * from './wallet-transaction';
 export * from './warehouse';
 export * from './withdrawal';
 export * from './vehicle';
+export * from './price-engine';

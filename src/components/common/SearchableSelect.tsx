@@ -70,7 +70,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       const target = event.target as Node;
       const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
       const isOutsideDropdown = wrapperRef.current && !wrapperRef.current.contains(target);
-      
+
       if (isOutsideTrigger && isOutsideDropdown) {
         setIsOpen(false);
       }
@@ -93,7 +93,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const filteredOptions = safeOptions.filter(
     (option) =>
-      option.label.toLowerCase().includes(search.toLowerCase()) ||
+      (option.label && option.label.toLowerCase().includes(search.toLowerCase())) ||
       (option.description &&
         option.description.toLowerCase().includes(search.toLowerCase()))
   );
@@ -132,7 +132,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       </div>
 
       {isOpen && createPortal(
-        <div 
+        <div
           ref={wrapperRef}
           style={dropdownStyle}
           className="max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
