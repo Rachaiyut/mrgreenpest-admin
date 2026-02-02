@@ -20,27 +20,24 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
+import { RoleApi } from '../../api/role';
 
 const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | string }> = ({ role }) => {
   // Handle role as object or string
   const roleName = typeof role === 'object' && role !== null ? (role as { name: string }).name : String(role || '-');
-  
+
   const roleColors: Record<string, string> = {
-    [UserRole.Admin]: 'bg-purple-100 text-purple-700',
-    [UserRole.Sales]: 'bg-blue-100 text-blue-700',
-    [UserRole.Accounting]: 'bg-green-100 text-green-700',
-    [UserRole.Warehouse]: 'bg-orange-100 text-orange-700',
-    [UserRole.Dispatcher]: 'bg-yellow-100 text-yellow-700',
-    [UserRole.Technician]: 'bg-sky-100 text-sky-700',
-    // Fallback colors for API role names
-    'ADMIN': 'bg-purple-100 text-purple-700',
-    'SUPERADMIN': 'bg-purple-100 text-purple-700',
-    'CEO': 'bg-purple-100 text-purple-700',
-    'SALES': 'bg-blue-100 text-blue-700',
-    'ACCOUNTING': 'bg-green-100 text-green-700',
-    'WAREHOUSE': 'bg-orange-100 text-orange-700',
-    'DISPATCHER': 'bg-yellow-100 text-yellow-700',
-    'TECHNICIAN': 'bg-sky-100 text-sky-700',
+    [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
+    [UserRole.SALES]: 'bg-blue-100 text-blue-700',
+    [UserRole.ACCOUNTING]: 'bg-green-100 text-green-700',
+    [UserRole.WAREHOUSE]: 'bg-orange-100 text-orange-700',
+    [UserRole.DISPATCHER]: 'bg-yellow-100 text-yellow-700',
+    [UserRole.TECH]: 'bg-sky-100 text-sky-700',
+    [UserRole.LEAD_TECH]: 'bg-sky-100 text-sky-700',
+    [UserRole.CEO]: 'bg-purple-100 text-purple-700',
+    [UserRole.COO]: 'bg-purple-100 text-purple-700',
+    [UserRole.CFO]: 'bg-green-100 text-green-700',
+    [UserRole.SUPERADMIN]: 'bg-purple-100 text-purple-700',
   };
 
   const colorClass = roleColors[roleName] || roleColors[roleName.toUpperCase()] || 'bg-slate-100 text-slate-700';
@@ -99,6 +96,19 @@ const Users: React.FC<UsersProps> = ({
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [selectedUserForWallet, setSelectedUserForWallet] =
     useState<User | null>(null);
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const res = await RoleApi.getAll();
+        setRoles(res.data || []);
+      } catch (error) {
+        console.error('Failed to fetch roles:', error);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     setView(defaultView);
@@ -108,8 +118,8 @@ const Users: React.FC<UsersProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase();
     return [...users].reverse().filter((user) => {
       // Handle role as object or string
-      const userRoleName = typeof user.role === 'object' && user.role !== null 
-        ? (user.role as { name: string }).name 
+      const userRoleName = typeof user.role === 'object' && user.role !== null
+        ? (user.role as { name: string }).name
         : String(user.role || '');
       const matchesRole = roleFilter === 'all' || userRoleName === roleFilter || userRoleName.toUpperCase() === roleFilter.toUpperCase();
       const matchesSearch =
@@ -174,8 +184,8 @@ const Users: React.FC<UsersProps> = ({
   const roleCounts = Object.values(UserRole).reduce(
     (acc, role) => {
       acc[role] = users.filter((user) => {
-        const userRoleName = typeof user.role === 'object' && user.role !== null 
-          ? (user.role as { name: string }).name 
+        const userRoleName = typeof user.role === 'object' && user.role !== null
+          ? (user.role as { name: string }).name
           : String(user.role || '');
         return userRoleName === role || userRoleName.toUpperCase() === role.toUpperCase();
       }).length;
@@ -546,11 +556,10 @@ const Users: React.FC<UsersProps> = ({
                       ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
                       : 'ลบบทบาท'
                   }
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${
-                    roleCounts[openDropdownId as UserRole] > 0
-                      ? 'text-slate-400 cursor-not-allowed'
-                      : 'text-red-700 hover:bg-red-50'
-                  }`}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${roleCounts[openDropdownId as UserRole] > 0
+                    ? 'text-slate-400 cursor-not-allowed'
+                    : 'text-red-700 hover:bg-red-50'
+                    }`}
                   role="menuitem"
                   variant="ghost"
                 >
@@ -570,12 +579,14 @@ const Users: React.FC<UsersProps> = ({
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onCreateUser={onCreateUser}
+        roles={roles}
       />
       <EditUserModal
         isOpen={isEditUserModalOpen}
         onClose={() => setIsEditUserModalOpen(false)}
         user={userToEdit}
         onUpdateUser={onUpdateUser}
+        roles={roles}
       />
       <UserDetailsModal
         isOpen={isDetailsModalOpen}

@@ -23,6 +23,7 @@ const Withdrawals = lazy(() => import('../pages/inventory/withdrawals'));
 const Transfers = lazy(() => import('../pages/inventory/transfers'));
 const StockAdjustment = lazy(() => import('../pages/inventory/stock-adjustment'));
 const Returns = lazy(() => import('../pages/inventory/returns'));
+const Requisitions = lazy(() => import('../pages/inventory/requisitions'));
 const ReturnToSupplier = lazy(() => import('../pages/inventory/return-to-supplier'));
 const Packages = lazy(() => import('../pages/packages/Package'));
 const Categories = lazy(() => import('../pages/categories/Category'));
@@ -89,7 +90,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       element: (
         <FieldOperations
           users={users}
-          jobs={jobs}
           assessments={assessments}
           contracts={contracts}
           quotations={quotations}
@@ -145,7 +145,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onReviseQuotation={handlers.quotations.revise}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/contracts',
@@ -292,6 +292,11 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+    },
+    {
+      path: '/requisitions',
+      element: <Requisitions />,
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO],
     },
     {
       path: '/return-to-supplier',

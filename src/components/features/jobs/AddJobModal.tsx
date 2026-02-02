@@ -130,12 +130,18 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const [leadTechSearch, setLeadTechSearch] = useState('');
   const [leadTechnicianOptions, setLeadTechnicianOptions] = useState<User[]>(
-    users.filter((u) => u.role === UserRole.Technician)
+    users.filter((u) => {
+      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+      return roleName === UserRole.TECH;
+    })
   );
 
   const [additionalTechSearch, setAdditionalTechSearch] = useState('');
   const [additionalTechnicianOptions, setAdditionalTechnicianOptions] =
-    useState<User[]>(users.filter((u) => u.role === UserRole.Technician));
+    useState<User[]>(users.filter((u) => {
+      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+      return roleName === UserRole.TECH;
+    }));
 
   const fetchCustomers = async (search: string) => {
     try {
@@ -258,7 +264,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         return customer.assessments.filter(
           (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE
         );
-      } 
+      }
     }
     return [];
   }, [customers, selectedCustomerId, selectedCustomerData]);
@@ -361,7 +367,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       setSelectedCustomerData(customer);
     }
     setSelectedReference('');
-    setWorkAreas([]); 
+    setWorkAreas([]);
 
     if (customerId) {
       try {

@@ -105,20 +105,18 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   const createReceiptObject = (
     status: Status,
     formData: FormData
-  ): Omit<GoodsReceipt, 'id'> => {
-    const receiptItems: GoodsReceiptItem[] = items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantityReceived,
+  ) => {
+    // Map items to backend DTO format (snake_case)
+    const receiptItems = items.map((item) => ({
+      product_id: item.productId,
+      qty_ordered: item.quantityOrdered,
+      qty_received: item.quantityReceived,
     }));
 
     return {
-      referenceId: (formData.get('reference-id') as string) || undefined,
-      supplierId: (formData.get('supplier') as string) || undefined,
-      warehouseId: selectedWarehouseId,
-      status: status,
-      createdAt: formData.get('receipt-date') as string,
-      createdBy: 'ผู้ดูแลระบบ',
-      updatedBy: 'ผู้ดูแลระบบ',
+      receipt_no: (formData.get('reference-id') as string) || undefined,
+      supplier_id: selectedSupplierId || undefined,
+      warehouse_id: selectedWarehouseId,
       items: receiptItems,
     };
   };
@@ -217,8 +215,9 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
               <SearchableSelect
                 value={selectedSupplierId}
                 onChange={setSelectedSupplierId}
-                placeholder="-- ไม่ระบุ --"
+                placeholder="-- เลือกผู้จัดจำหน่าย --"
                 name="supplier"
+                required
                 options={suppliers.map((s) => ({
                   value: s.id,
                   label: s.name,
@@ -337,15 +336,15 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                           </td>
                           <td className="px-2 py-3 align-middle text-slate-700 text-right">
                             ฿
-                            {product
+                            {product?.price != null
                               ? product.price.toLocaleString('th-TH', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
                               : '0.00'}
                           </td>
                           <td className="px-2 py-3 align-middle text-slate-700">
-                            {product?.unit || '-'}
+                            {product?.unit?.name || '-'}
                           </td>
                           <td className="px-2 py-3 text-center align-middle">
                             <Button

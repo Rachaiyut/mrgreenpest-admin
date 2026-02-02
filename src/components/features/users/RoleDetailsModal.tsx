@@ -12,12 +12,17 @@ interface RoleDetailsModalProps {
 
 // Default permissions configuration
 const ROLE_PERMISSIONS_CONFIG: Record<UserRole, string[]> = {
-  [UserRole.Admin]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
-  [UserRole.Sales]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.Accounting]: ['ดู', 'สร้าง', 'อนุมัติ'],
-  [UserRole.Warehouse]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.Dispatcher]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.Technician]: ['ดู'],
+  [UserRole.ADMIN]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
+  [UserRole.SUPERADMIN]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
+  [UserRole.CEO]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
+  [UserRole.COO]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
+  [UserRole.CFO]: ['ดู', 'สร้าง', 'อนุมัติ'],
+  [UserRole.SALES]: ['ดู', 'สร้าง', 'แก้ไข'],
+  [UserRole.ACCOUNTING]: ['ดู', 'สร้าง', 'อนุมัติ'],
+  [UserRole.WAREHOUSE]: ['ดู', 'สร้าง', 'แก้ไข'],
+  [UserRole.DISPATCHER]: ['ดู', 'สร้าง', 'แก้ไข'],
+  [UserRole.TECH]: ['ดู'],
+  [UserRole.LEAD_TECH]: ['ดู', 'สร้าง', 'แก้ไข'],
 };
 
 const PERMISSION_ACTIONS = ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'];

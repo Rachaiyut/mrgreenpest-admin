@@ -24,12 +24,18 @@ export enum Status {
 }
 
 export enum UserRole {
-  Admin = 'ผู้ดูแลระบบ',
-  Sales = 'ฝ่ายขาย',
-  Accounting = 'ฝ่ายบัญชี',
-  Warehouse = 'คลัง',
-  Dispatcher = 'จัดงาน',
-  Technician = 'ช่างเทคนิค',
+  CEO = 'CEO',
+  COO = 'COO',
+  CFO = 'CFO',
+  SUPERADMIN = 'SUPERADMIN',
+  ADMIN = 'ADMIN',
+  LEAD_TECH = 'LEAD_TECH',
+  TECH = 'TECH',
+  // Legacy/Additional roles
+  SALES = 'SALES',
+  WAREHOUSE = 'WAREHOUSE',
+  DISPATCHER = 'DISPATCHER',
+  ACCOUNTING = 'ACCOUNTING',
 }
 
 export interface UserQuery extends IBaseQuery {
@@ -40,14 +46,17 @@ export interface UserQuery extends IBaseQuery {
 
 export interface User {
   id: string;
-  nationalId: string;
-  name: string;
-  nickname: string;
+  citizen_id?: string;
+  first_name: string;
+  last_name: string;
+  nick_name?: string;
   email?: string;
-  phone: string;
-  role: UserRole;
-  avatarUrl: string;
+  phone?: string;
+  role?: any;
+  stroage_id?: string;
   creditLimit?: number;
+  // Computed property for display
+  name: string;
 }
 
 export interface Address {

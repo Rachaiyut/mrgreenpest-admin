@@ -35,15 +35,15 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
 
   if (!isOpen || !withdrawal) return null;
 
-  const fromWarehouse = warehouseMap.get(withdrawal.fromWarehouseId);
-  const toWarehouse = withdrawal.toWarehouseId
-    ? warehouseMap.get(withdrawal.toWarehouseId)
+  const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
+  const toWarehouse = withdrawal.to_warehouse_id
+    ? warehouseMap.get(withdrawal.to_warehouse_id)
     : null;
 
   const totalGoodsAmount = useMemo(
     () =>
-      withdrawal.items.reduce((sum, item) => {
-        const product = productMap.get(item.productId);
+      (withdrawal.items || []).reduce((sum, item) => {
+        const product = productMap.get(item.product_id);
         return sum + (product ? product.price * item.quantity : 0);
       }, 0),
     [withdrawal.items, productMap]
@@ -60,7 +60,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบเบิก: ${withdrawal.id}`}
+      title={`รายละเอียดใบเบิก: ${withdrawal.id || 'N/A'}`}
       size="4xl"
       footer={
         <div className="flex w-full justify-between items-center">
@@ -101,7 +101,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(withdrawal.createdAt)}
+                {withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}
               </dd>
             </div>
             <div>
@@ -117,9 +117,9 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div className="md:col-span-3">
               <dt className="font-medium text-slate-500">เลขที่อ้างอิง</dt>
               <dd className="mt-1 flex flex-wrap gap-2">
-                {withdrawal.referenceIds &&
-                withdrawal.referenceIds.length > 0 ? (
-                  withdrawal.referenceIds.map((id) => (
+                {withdrawal.reference_ids &&
+                  withdrawal.reference_ids.length > 0 ? (
+                  withdrawal.reference_ids.map((id) => (
                     <span
                       key={id}
                       className="px-2 py-1 bg-slate-200 text-slate-800 text-xs font-medium rounded-md"
@@ -134,19 +134,21 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{withdrawal.createdBy}</dd>
+              <dd className="mt-1 text-slate-900">{withdrawal.created_by}</dd>
             </div>
+            {/* 
             {withdrawal.approvedBy && (
               <div>
                 <dt className="font-medium text-slate-500">ผู้อนุมัติ</dt>
                 <dd className="mt-1 text-slate-900">{withdrawal.approvedBy}</dd>
               </div>
             )}
-            {withdrawal.remarks && (
+             */}
+            {withdrawal.notes && (
               <div className="md:col-span-3">
                 <dt className="font-medium text-slate-500">หมายเหตุ</dt>
                 <dd className="mt-1 text-slate-900 bg-slate-50 p-2 rounded-md">
-                  {withdrawal.remarks}
+                  {withdrawal.notes}
                 </dd>
               </div>
             )}
@@ -179,17 +181,17 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {withdrawal.items.length > 0 ? (
-                  withdrawal.items.map((item, index) => {
-                    const product = productMap.get(item.productId);
+                {(withdrawal.items || []).length > 0 ? (
+                  (withdrawal.items || []).map((item, index) => {
+                    const product = productMap.get(item.product_id);
                     const total = product ? product.price * item.quantity : 0;
                     return (
-                      <tr key={`${withdrawal.id}-${item.productId}`}>
+                      <tr key={`${withdrawal.id}-${item.product_id}`}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {index + 1}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          <div>{product?.name || item.productId}</div>
+                          <div>{product?.name || item.product_id}</div>
                           <div className="text-xs text-slate-500">
                             {product?.id}
                           </div>
@@ -198,7 +200,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                           {item.quantity}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product?.unit || '-'}
+                          {product?.unit?.name || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right">
                           {total.toLocaleString('th-TH', {
@@ -302,5 +304,3 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     </Modal>
   );
 };
-
-

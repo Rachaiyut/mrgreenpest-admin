@@ -470,6 +470,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     Array.isArray(initialWarehouses) ? initialWarehouses : []
   );
   const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = async () => {
@@ -684,7 +685,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     useState(false);
   const [isTechAssessmentModalOpen, setIsTechAssessmentModalOpen] =
     useState(false);
-  const [products, setProducts] = useState<Product[]>(initialProducts || []);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [jobToCancel, setJobToCancel] = useState<any | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -730,7 +730,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   const technicians = useMemo(
-    () => users.filter((user) => user.role === UserRole.Technician),
+    () => users.filter((user) => {
+      const roleName = typeof user.role === 'object' && user.role !== null
+        ? (user.role as { name: string }).name
+        : String(user.role || '');
+      return roleName === UserRole.TECH;
+    }),
     [users]
   );
 
@@ -813,7 +818,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     if (!currentUser || !jobs) return false;
     return jobs.some(
       (j) =>
-        j.status === JobMainStatus.INPROGRESS &&
+        j.status === JobMainStatus.IN_PROGRESS &&
         j.technicians.some((tech) => tech.id === currentUser.id)
     );
   }, [jobs, currentUser]);
@@ -827,7 +832,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
     const jobsForKanban = filteredJobs.filter(
       (j) =>
-        j.status !== JobMainStatus.COMPLETED &&
+        j.status !== JobMainStatus.COMPLETE &&
         j.status !== JobMainStatus.CANCELLED &&
         j.status !== JobMainStatus.PENDING
     );
@@ -860,7 +865,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     () =>
       filteredJobs.filter(
         (j) =>
-          j.status !== JobMainStatus.COMPLETED &&
+          j.status !== JobMainStatus.COMPLETE &&
           j.status !== JobMainStatus.CANCELLED &&
           j.status !== JobMainStatus.PENDING
       ),
@@ -893,8 +898,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   const getAccessStatus = (status: JobMainStatus) => {
     switch (status) {
-      case JobMainStatus.INPROGRESS:
-      case JobMainStatus.COMPLETED:
+      case JobMainStatus.IN_PROGRESS:
+      case JobMainStatus.COMPLETE:
         return <span className="font-semibold text-green-600">เข้าได้</span>;
       case JobMainStatus.CANCELLED:
       case JobMainStatus.FAILED:

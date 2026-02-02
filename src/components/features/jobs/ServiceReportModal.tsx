@@ -125,11 +125,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       nextDueTs =
         startTs +
         (nextIndex + (completedVisits >= visitsRequired ? 0 : 1)) *
-          intervalDays *
-          24 *
-          60 *
-          60 *
-          1000;
+        intervalDays *
+        24 *
+        60 *
+        60 *
+        1000;
       const endTs = new Date(c.end_date).getTime();
       if (nextDueTs > endTs) nextDueTs = null;
     }
@@ -142,36 +142,36 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const initialReport = job.service_report
         ? { ...job.service_report }
         : {
-            created_at: new Date().toISOString().substring(0, 10),
-            check_in_time: job.actual_start_time
-              ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '',
-            check_out_time: new Date().toLocaleTimeString('th-TH', {
+          created_at: new Date().toISOString().substring(0, 10),
+          check_in_time: job.actual_start_time
+            ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
               hour: '2-digit',
               minute: '2-digit',
-            }),
-            service_types: [],
-            service_actions: [],
-            termite: { status: 'absent' },
-            ant: { apply_gel: false },
-            cockroach: { apply_gel: false },
-            rat: {
-              glue_traps: false,
-              mechanical_traps: false,
-              bait_stations: false,
-              refill_bait: false,
-            },
-            lizard: { place_traps: false },
-            next_appointment: {
-              notes: '',
-              reasons: [],
-              scheduled_at: recommendedNextIso,
-            },
-            status: JobStatus.Draft,
-          };
+            })
+            : '',
+          check_out_time: new Date().toLocaleTimeString('th-TH', {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+          service_types: [],
+          service_actions: [],
+          termite: { status: 'absent' },
+          ant: { apply_gel: false },
+          cockroach: { apply_gel: false },
+          rat: {
+            glue_traps: false,
+            mechanical_traps: false,
+            bait_stations: false,
+            refill_bait: false,
+          },
+          lizard: { place_traps: false },
+          next_appointment: {
+            notes: '',
+            reasons: [],
+            scheduled_at: recommendedNextIso,
+          },
+          status: JobStatus.Draft,
+        };
       setReportState(initialReport);
       setSelectedQuotationId(job.quotation_id || '');
     }
@@ -184,7 +184,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
     let nextStatus = reportState.status || JobStatus.Draft;
     // If a non-admin user saves a draft, it moves to PendingApproval
-    if (currentUser.role !== UserRole.Admin && nextStatus === JobStatus.Draft) {
+    if (currentUser.role !== UserRole.ADMIN && nextStatus === JobStatus.Draft) {
       nextStatus = JobStatus.PendingApproval;
     }
 
@@ -196,55 +196,55 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       customer_id: job.customer_id,
       report_date: new Date().toISOString(),
       customer_name: job.customer_name,
-      
+
       // Service Types
       is_service_termite: reportState.service_types?.includes('กำจัดปลวก'),
       is_service_ant_roach: reportState.service_types?.some(t => ['กำจัดมด', 'กำจัดแมลงสาบ'].includes(t)),
       is_service_rodent: reportState.service_types?.includes('กำจัดหนู'),
       is_service_mosquito: reportState.service_types?.includes('กำจัดยุง'),
       service_other: reportState.service_types?.includes('กำจัดอื่นๆ') ? 'Other' : null,
-      
+
       // Time
       time_in: reportState.check_in_time,
       time_out: reportState.check_out_time,
-      
+
       // Operations (Merging generic actions and pest-specific details)
-      is_op_station: reportState.service_actions?.includes('ฝังสถานี') || 
-                     reportState.termite?.actions?.installStations?.enabled,
-                     
-      is_op_refill: reportState.service_actions?.includes('เติมเหยื่อ') || 
-                    reportState.termite?.actions?.addBait?.enabled ||
-                    reportState.rat?.refill_bait,
-                    
-      is_op_chemical: reportState.service_actions?.includes('อัดน้ำยา') || 
-                      reportState.termite?.actions?.injectPipes?.enabled ||
-                      reportState.termite?.actions?.injectShaft?.enabled,
-                      
+      is_op_station: reportState.service_actions?.includes('ฝังสถานี') ||
+        reportState.termite?.actions?.installStations?.enabled,
+
+      is_op_refill: reportState.service_actions?.includes('เติมเหยื่อ') ||
+        reportState.termite?.actions?.addBait?.enabled ||
+        reportState.rat?.refill_bait,
+
+      is_op_chemical: reportState.service_actions?.includes('อัดน้ำยา') ||
+        reportState.termite?.actions?.injectPipes?.enabled ||
+        reportState.termite?.actions?.injectShaft?.enabled,
+
       is_op_check: reportState.service_actions?.includes('ตรวจเช็ค'),
-      
-      is_op_underground: reportState.termite?.actions?.injectSoil?.enabled, 
-      
+
+      is_op_underground: reportState.termite?.actions?.injectSoil?.enabled,
+
       is_op_renew: reportState.service_actions?.includes('ต่อสัญญา'),
-      
+
       is_op_spray: reportState.termite?.actions?.sprayGarden?.enabled ||
-                   reportState.termite?.actions?.sprayBio?.enabled ||
-                   reportState.termite?.actions?.aroundBuilding?.enabled ||
-                   reportState.termite?.actions?.insideBuilding?.enabled,
-                   
+        reportState.termite?.actions?.sprayBio?.enabled ||
+        reportState.termite?.actions?.aroundBuilding?.enabled ||
+        reportState.termite?.actions?.insideBuilding?.enabled,
+
       is_op_fogging: reportState.service_actions?.includes('พ่นหมอกควัน'),
-      
+
       is_op_gel: reportState.ant?.apply_gel || reportState.cockroach?.apply_gel,
-      
+
       is_op_powder: reportState.service_actions?.includes('โรยผง'),
-      
+
       is_op_bait: reportState.rat?.bait_stations, // Placing bait stations
-      
-      is_op_trap: reportState.lizard?.place_traps || 
-                  reportState.rat?.glue_traps || 
-                  reportState.rat?.mechanical_traps,
-      
+
+      is_op_trap: reportState.lizard?.place_traps ||
+        reportState.rat?.glue_traps ||
+        reportState.rat?.mechanical_traps,
+
       op_other: null,
-      
+
       // Next Service
       work_note: reportState.notes,
       next_service_schedule: reportState.next_appointment?.scheduled_at,
@@ -416,7 +416,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       ? 'บันทึกเหตุผลการยกเลิก'
       : `บันทึกรายงานบริการ: ${job.id}`;
 
-  const isAdmin = currentUser.role === UserRole.Admin;
+  const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
   const isDraft = reportState.status === JobStatus.Draft;
 
@@ -1026,8 +1026,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <dd className="mt-1 text-slate-900 font-semibold">
               {job.technicians.length > 0
                 ? job.technicians
-                    .map((t) => t.name || (t as any).first_name + ' ' + (t as any).last_name)
-                    .join(', ')
+                  .map((t) => t.name || (t as any).first_name + ' ' + (t as any).last_name)
+                  .join(', ')
                 : 'ไม่มีช่างเทคนิค'}
             </dd>
           </div>
@@ -1115,9 +1115,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   value={
                     reportState.next_appointment?.scheduled_at
                       ? reportState.next_appointment.scheduled_at.substring(
-                          0,
-                          10
-                        )
+                        0,
+                        10
+                      )
                       : ''
                   }
                   onChange={(e) =>

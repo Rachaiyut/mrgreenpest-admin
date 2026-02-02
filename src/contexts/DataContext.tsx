@@ -28,6 +28,7 @@ import {
   StockAdjustment,
   ProductReturn,
 } from '@/src/types/entity/inventory.interface';
+import { Requisition, RequisitionStatus } from '@/src/types/entity/requisition.interface'; // New Import
 import { GoodsReceipt } from '@/src/types/entity/good-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 import { CategoryType } from '@/src/types/enums/category'; // Or interface?
@@ -52,6 +53,7 @@ import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
 import { WithdrawalApi } from '@/src/api/withdrawal';
 import { CategoryApi } from '@/src/api/category';
 import { PackageApi } from '@/src/api/package';
+import { RequisitionApi } from '@/src/api/requisition';
 
 export interface DataContextType {
   users: User[];
@@ -71,6 +73,7 @@ export interface DataContextType {
   stockAdjustments: StockAdjustment[];
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
+  requisitions: Requisition[];
 
   handlers: {
     users: {
@@ -145,6 +148,12 @@ export interface DataContextType {
       update: (data: any) => Promise<void>;
       delete: (id: string) => Promise<void>;
     };
+    requisitions: {
+      create: (data: any) => Promise<void>;
+      update: (data: any) => Promise<void>;
+      delete: (id: string) => Promise<void>;
+      approve: (id: string, data: any) => Promise<void>;
+    };
     userWallets: {
       createTransaction: (userId: string, data: any) => Promise<void>;
     };
@@ -177,14 +186,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   const [returnToSuppliers, setReturnToSuppliers] = useState<
     ReturnToSupplier[]
   >([]);
+  const [requisitions, setRequisitions] = useState<Requisition[]>([]);
 
   const refreshData = async () => {
     // Helper to safely fetch data - returns empty array if API fails
     const safeFetch = async <T,>(
-      fetchFn: () => Promise<{ data: T[] }>
+      fetchFn: () => Promise<any>
     ): Promise<T[]> => {
       try {
         const res = await fetchFn();
+        if (Array.isArray(res)) return res;
         return res.data || [];
       } catch {
         return [];
@@ -210,6 +221,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         stockAdjustmentsData,
         productReturnsData,
         returnToSuppliersData,
+        requisitionsData,
       ] = await Promise.all([
         safeFetch(() => UserApi.getAll({ limit: 1000 })),
         safeFetch(() => JobApi.getAll({ limit: 1000 })),
@@ -228,6 +240,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         safeFetch(() => StockAdjustmentApi.getAll({ limit: 1000 })),
         safeFetch(() => ProductReturnApi.getAll({ limit: 1000 })),
         safeFetch(() => ReturnToSupplierApi.getAll({ limit: 1000 })),
+        safeFetch(() => RequisitionApi.getAll({ limit: 1000 })),
       ]);
 
       setUsers(usersData);
@@ -247,6 +260,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setStockAdjustments(stockAdjustmentsData);
       setProductReturns(productReturnsData);
       setReturnToSuppliers(returnToSuppliersData);
+      setRequisitions(requisitionsData);
     } catch (error) {
       console.error('Failed to fetch data', error);
     }
@@ -464,6 +478,24 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
           refreshData();
         },
       },
+      requisitions: {
+        create: async (data: any) => {
+          await RequisitionApi.create(data);
+          refreshData();
+        },
+        update: async (data: any) => {
+          await RequisitionApi.update(data.id, data);
+          refreshData();
+        },
+        delete: async (id: string) => {
+          await RequisitionApi.delete(id);
+          refreshData();
+        },
+        approve: async (id: string, data: any) => {
+          await RequisitionApi.approve(id, data);
+          refreshData();
+        }
+      },
       userWallets: {
         createTransaction: async (userId: string, data: any) => {
           // Needs Wallet API
@@ -495,6 +527,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         stockAdjustments,
         productReturns,
         returnToSuppliers,
+        requisitions,
         handlers,
       }}
     >

@@ -1,7 +1,7 @@
-import { 
-  VehicleStatus, 
-  WarehouseType, 
-  WithdrawalStatus, 
+import {
+  VehicleStatus,
+  WarehouseType,
+  WithdrawalStatus,
   ProductReturnStatus,
   StockAdjustmentStatus,
   TransferStatus,
@@ -83,6 +83,11 @@ export interface Withdrawal extends IBase {
   created_by: string;
   updated_by?: string;
   items?: WithdrawalItem[];
+  expenses?: WithdrawalExpense[];
+  requester_id?: string;
+  recipient_id?: string;
+  to_warehouse_id?: string;
+  reference_ids?: string[];
 }
 
 export interface GoodsReceiptItem {

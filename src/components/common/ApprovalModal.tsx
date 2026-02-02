@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { FormField, Textarea, Button } from './FormControls';
-import { Status } from '@/src/types/entity/app.interface';
 
 interface ApprovableItem {
   id: string;
-  status: Status;
+  status: string; // Accept any status type
 }
 
 interface ApprovalModalProps {

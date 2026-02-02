@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { FormField, Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { PlusIcon, TrashIcon, XCircleIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
@@ -12,7 +12,11 @@ import {
   FieldJob,
   Customer,
   Product,
+  WithdrawalStatus,
 } from '@/src/types/entity/app.interface';
+import { WarehouseType as InventoryWarehouseType } from '@/src/types/enums/inventory';
+import { UserApi } from '../../../api/user';
+import { WarehouseApi } from '../../../api/warehouse';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
@@ -25,9 +29,9 @@ interface AddWithdrawalModalProps {
   warehouses: WarehouseType[];
   jobs: FieldJob[];
   customers: Customer[];
-  currentUser: User;
+  currentUser: User | null;
   products: Product[];
-  stockMap: Record<string, Record<string, number>>;
+  stockMap: Map<string, Map<string, number>>;
 }
 
 interface LineItem {
@@ -59,14 +63,19 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
   const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
+
   const [requesterId, setRequesterId] = useState('');
+  const [recipientId, setRecipientId] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isCustomerSelectionModalOpen, setIsCustomerSelectionModalOpen] =
     useState(false);
   const [referenceIds, setReferenceIds] = useState<string[]>([]);
   const [createdBy, setCreatedBy] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+  const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   const productMap = useMemo(
@@ -83,12 +92,15 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     if (!sourceWarehouse) return [];
     const whId = sourceWarehouse.id;
     return products.filter(
-      (p) => (stockMap[whId]?.[p.id] || 0) > 0 && p.type === 'สินค้า'
+      (p) => {
+        const qty = stockMap.get(whId)?.get(p.id);
+        return (qty || 0) > 0;
+      }
     );
   }, [sourceWarehouse, products, stockMap]);
 
   const allUsedReferenceIds = useMemo(
-    () => withdrawals.flatMap((w) => w.referenceIds || []),
+    () => withdrawals.flatMap((w) => w.reference_ids || []),
     [withdrawals]
   );
 
@@ -98,20 +110,78 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     const thaiYearLastTwoDigits = (new Date().getFullYear() + 543)
       .toString()
       .slice(-2);
-    const prefix = `SR${thaiYearLastTwoDigits}`;
+    const prefix = `WR${thaiYearLastTwoDigits}`;
 
     const withdrawalsThisYear = withdrawals.filter((w) =>
-      w.id.startsWith(prefix)
+      w.id?.startsWith(prefix)
     );
 
     const maxId = withdrawalsThisYear.reduce((max, w) => {
+      if (!w.id) return max;
       const num = parseInt(w.id.slice(4), 10);
-      return num > max ? num : max;
+      return !isNaN(num) && num > max ? num : max;
     }, 0);
 
     const newIdNumber = maxId + 1;
     return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
   }, [isOpen, withdrawals]);
+
+  // Initialize user options from props
+  useEffect(() => {
+    if (users) {
+      setUserOptions(users.map(u => ({ value: u.id, label: u.name })));
+    }
+  }, [users]);
+
+  const handleUserSearch = useCallback(async (search: string) => {
+    if (!search) {
+      setUserOptions(users.map(u => ({ value: u.id, label: u.name })));
+      return;
+    }
+    try {
+      const res = await UserApi.getAll({ search, limit: 20 });
+      if (res && res.data) {
+        setUserOptions(res.data.map(u => ({ value: u.id, label: u.name })));
+      } else if (Array.isArray(res)) {
+        setUserOptions((res as any).map((u: any) => ({ value: u.id, label: u.name })));
+      }
+    } catch (error) {
+      console.error("Failed to search users", error);
+    }
+  }, [users]);
+
+  // Fetch warehouses on modal open
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const res = await WarehouseApi.getWarehouses();
+      if (res && res.data) {
+        const allWarehouses = res.data;
+        // Filter source warehouses (MAIN or SUB)
+        const sourceWhs = allWarehouses
+          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+          .map((w: any) => ({ value: w.id, label: w.name }));
+        setSourceWarehouseOptions(sourceWhs);
+
+        // Filter vehicle warehouses
+        const vehicleWhs = allWarehouses
+          .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
+          .map((w: any) => ({ value: w.id, label: w.name }));
+        setVehicleWarehouseOptions(vehicleWhs);
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses", error);
+      // Fallback to prop data
+      const sourceWhs = warehouses
+        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+        .map((w) => ({ value: w.id, label: w.name }));
+      setSourceWarehouseOptions(sourceWhs);
+
+      const vehicleWhs = warehouses
+        .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
+        .map((w) => ({ value: w.id, label: w.name }));
+      setVehicleWarehouseOptions(vehicleWhs);
+    }
+  }, [warehouses]);
 
   useEffect(() => {
     if (isOpen) {
@@ -121,15 +191,18 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       setToWarehouseId('');
       setReferenceIds([]);
       setSelectedCustomerIds([]);
-      setCreatedBy(currentUser.name);
+      setCreatedBy(currentUser?.name || '-');
       setRequesterId('');
+      setRecipientId('');
+      // Fetch warehouses when modal opens
+      fetchWarehouses();
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen, currentUser, fetchWarehouses]);
 
   const jobsForSelectedCustomers = useMemo(() => {
     if (selectedCustomerIds.length === 0) return [];
     const customerIdSet = new Set(selectedCustomerIds);
-    return jobs.filter((job) => customerIdSet.has(job.customerId));
+    return jobs.filter((job) => customerIdSet.has(job.customer_id));
   }, [jobs, selectedCustomerIds]);
 
   const selectedCustomers = useMemo(
@@ -197,7 +270,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const handleRemoveCustomer = (customerId: string) => {
     setSelectedCustomerIds((prev) => prev.filter((id) => id !== customerId));
     const jobsOfRemovedCustomer = new Set(
-      jobs.filter((j) => j.customerId === customerId).map((j) => j.id)
+      jobs.filter((j) => j.customer_id === customerId).map((j) => j.id)
     );
     setReferenceIds((currentRefs) =>
       currentRefs.filter((refId) => !jobsOfRemovedCustomer.has(refId))
@@ -214,7 +287,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
     if (removedIds.length > 0) {
       const removedCustomerJobs = new Set(
-        jobs.filter((j) => removedIds.includes(j.customerId)).map((j) => j.id)
+        jobs.filter((j) => removedIds.includes(j.customer_id)).map((j) => j.id)
       );
       setReferenceIds((currentRefs) =>
         currentRefs.filter((refId) => !removedCustomerJobs.has(refId))
@@ -229,17 +302,17 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     formData: FormData
   ): Omit<WithdrawalType, 'id'> => {
     return {
-      createdAt: formData.get('createdAt') as string,
-      fromWarehouseId: fromWarehouseId,
-      toWarehouseId: toWarehouseId,
-      referenceIds: referenceIds,
-      customerIds: selectedCustomerIds,
+      warehouse_id: fromWarehouseId,
+      to_warehouse_id: toWarehouseId || undefined,
+      reference_ids: referenceIds,
       status: status,
-      createdBy: createdBy,
+      created_by: createdBy,
+
       items: goodsItems.map((item) => ({
-        productId: item.productId,
+        product_id: item.productId,
         quantity: Number(item.quantity),
       })),
+
       expenses: expenseItems
         .filter(
           (item) =>
@@ -248,12 +321,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
             !isNaN(Number(item.amount))
         )
         .map((item) => ({
-          id: item.id,
           description: item.description,
           amount: Number(item.amount) || 0,
         })),
-      recipientId: expenseItems.length > 0 ? requesterId : undefined,
-      remarks: (formData.get('remarks') as string) || undefined,
+
+      recipient_id: recipientId || undefined,
+      requester_id: requesterId || undefined,
+      notes: (formData.get('remarks') as string) || undefined,
     };
   };
 
@@ -376,7 +450,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                     key={customer.id}
                     className="flex items-center gap-1.5 bg-slate-200 text-slate-800 text-sm font-medium px-2 py-1 rounded-md"
                   >
-                    {customer.name}
+                    {customer.first_name} {customer.last_name}
                     <button
                       type="button"
                       onClick={() => handleRemoveCustomer(customer.id)}
@@ -404,29 +478,24 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
               <FormField label="ผู้เบิก" htmlFor="requester-id">
-                <Select
-                  id="requester-id"
+                <SearchableSelect
                   value={requesterId}
-                  onChange={(e) => setRequesterId(e.target.value)}
+                  onChange={setRequesterId}
+                  onSearchChange={handleUserSearch}
+                  options={userOptions}
+                  placeholder="-- ค้นหาผู้เบิก --"
                   required={expenseItems.length > 0}
-                >
-                  <option value="">-- เลือกผู้เบิก --</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-                </Select>
+                />
               </FormField>
             </div>
             <div className="md:col-span-1">
-              <FormField label="ผู้รับเงิน" htmlFor="recipient-display">
-                <Input
-                  id="recipient-display"
-                  type="text"
-                  value={selectedRequester?.name || ''}
-                  readOnly
-                  className="bg-slate-100"
+              <FormField label="ผู้รับเงิน" htmlFor="recipient-id">
+                <SearchableSelect
+                  value={recipientId}
+                  onChange={setRecipientId}
+                  onSearchChange={handleUserSearch}
+                  options={userOptions}
+                  placeholder="-- ค้นหาผู้รับเงิน --"
                 />
               </FormField>
             </div>
@@ -438,12 +507,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 value={fromWarehouseId}
                 onChange={setFromWarehouseId}
                 placeholder="-- เลือกคลังต้นทาง --"
-                options={warehouses
-                  .filter((w) => w.type === 'คลัง')
-                  .map((w) => ({
-                    value: w.id,
-                    label: w.name,
-                  }))}
+                options={sourceWarehouseOptions}
               />
             </FormField>
             <FormField label="ไปยังคลัง (รถ)" htmlFor="to-warehouse">
@@ -451,12 +515,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 value={toWarehouseId}
                 onChange={setToWarehouseId}
                 placeholder="-- เลือกคลังปลายทาง --"
-                options={warehouses
-                  .filter((w) => w.type === 'รถ')
-                  .map((w) => ({
-                    value: w.id,
-                    label: w.name,
-                  }))}
+                options={vehicleWarehouseOptions}
               />
             </FormField>
           </div>
@@ -529,7 +588,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 {goodsItems.map((item, index) => {
                   const product = productMap.get(item.productId);
                   const available = sourceWarehouse
-                    ? stockMap[sourceWarehouse.id]?.[item.productId] || 0
+                    ? stockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
                     : 0;
                   return (
                     <div
@@ -542,7 +601,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                         </div>
                         <div className="text-xs text-slate-500">
                           รหัส: {product?.id} | คงเหลือ: {available}{' '}
-                          {product?.unit}
+                          {product?.unit?.name || '-'}
                         </div>
                       </div>
                       <div className="col-span-4 md:col-span-4">
@@ -702,4 +761,3 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     </>
   );
 };
-

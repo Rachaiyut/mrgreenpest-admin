@@ -8,7 +8,8 @@ interface EditUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onUpdateUser: (user: User) => void;
+  onUpdateUser: (data: any) => void;
+  roles: { id: string; name: string }[];
 }
 
 export const EditUserModal: React.FC<EditUserModalProps> = ({
@@ -16,13 +17,21 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   onClose,
   user,
   onUpdateUser,
+  roles,
 }) => {
-  const [formData, setFormData] = useState<Partial<User>>({});
+  const [formData, setFormData] = useState<any>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
-      setFormData(user);
+      // Map user entity to form data
+      setFormData({
+        ...user,
+        first_name: (user as any).first_name || user.name.split(' ')[0] || '',
+        last_name: (user as any).last_name || user.name.split(' ').slice(1).join(' ') || '',
+        role_id: typeof user.role === 'object' ? (user.role as any).id : '',
+        citizen_id: user.nationalId, // user.nationalId maps to citizen_id
+      });
       setImagePreview(user.avatarUrl);
     }
     if (!isOpen) {
@@ -35,7 +44,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     if (file) {
       const newUrl = URL.createObjectURL(file);
       setImagePreview(newUrl);
-      setFormData((prev) => ({ ...prev, avatarUrl: newUrl }));
+      setFormData((prev: any) => ({ ...prev, avatarUrl: newUrl }));
     }
   };
 
@@ -43,35 +52,37 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
       if (
-        !formData.name ||
+        !formData.first_name ||
+        !formData.last_name ||
         !formData.phone ||
-        !formData.role ||
+        !formData.role_id ||
         !formData.nickname
       ) {
         alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
         return;
       }
-      const updatedUser: User = {
-        ...user,
-        ...formData,
-        name: formData.name || user.name,
-        nickname: formData.nickname || user.nickname,
+
+      // Map to Backend DTO (UpdateUserDto)
+      const updatePayload = {
+        id: user.id, // Keep UUID for API call url
+        citizen_id: formData.citizen_id,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        nick_name: formData.nickname,
         email: formData.email,
-        phone: formData.phone || user.phone,
-        role: formData.role || user.role,
-        avatarUrl: formData.avatarUrl || user.avatarUrl,
-        creditLimit: formData.creditLimit
-          ? parseFloat(String(formData.creditLimit))
-          : undefined,
+        phone: formData.phone,
+        role_id: formData.role_id,
+        // password: only if changed? (Usually handled in separate change password flow or optional)
       };
-      onUpdateUser(updatedUser);
+
+      onUpdateUser(updatePayload);
     }
     onClose();
   };
@@ -148,12 +159,12 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
           {/* Form Fields */}
           <div className="md:col-span-2 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="เลขบัตรประชาชน (Username)" htmlFor="nationalId">
+              <FormField label="เลขบัตรประชาชน (Username)" htmlFor="citizen_id">
                 <Input
-                  id="nationalId"
-                  name="nationalId"
+                  id="citizen_id"
+                  name="citizen_id"
                   type="text"
-                  value={formData.nationalId || ''}
+                  value={formData.citizen_id || ''}
                   readOnly
                   className="bg-slate-100"
                 />
@@ -161,22 +172,22 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ชื่อ-นามสกุล" htmlFor="name">
+              <FormField label="ชื่อจริง" htmlFor="first_name">
                 <Input
-                  id="name"
-                  name="name"
+                  id="first_name"
+                  name="first_name"
                   type="text"
-                  value={formData.name || ''}
+                  value={formData.first_name || ''}
                   onChange={handleChange}
                   required
                 />
               </FormField>
-              <FormField label="ชื่อเล่น" htmlFor="nickname">
+              <FormField label="นามสกุล" htmlFor="last_name">
                 <Input
-                  id="nickname"
-                  name="nickname"
+                  id="last_name"
+                  name="last_name"
                   type="text"
-                  value={formData.nickname || ''}
+                  value={formData.last_name || ''}
                   onChange={handleChange}
                   required
                 />
@@ -184,6 +195,19 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อเล่น" htmlFor="nickname">
+                <Input
+                  id="nickname"
+                  name="nickname"
+                  type="text"
+                  value={formData.nickname || ''} // Using 'nickname' property from formData which we mapped to 'nick_name' in payload? No state uses 'nickname'
+                  // Wait, TS map above: setFormData({ ..., nick_name: user.nickname, ... }) -> I should use nick_name consistently or map back
+                  // Current formData init: ...user (user has nickname)
+                  // So formData.nickname exists.
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
               <FormField label="เบอร์โทรศัพท์" htmlFor="phone">
                 <Input
                   id="phone"
@@ -194,6 +218,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   required
                 />
               </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
               <FormField label="อีเมล" htmlFor="email">
                 <Input
                   id="email"
@@ -204,34 +232,22 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   placeholder="example@email.com"
                 />
               </FormField>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="เลือกบทบาท" htmlFor="role">
+              <FormField label="เลือกบทบาท" htmlFor="role_id">
                 <Select
-                  id="role"
-                  name="role"
-                  value={formData.role || ''}
+                  id="role_id"
+                  name="role_id"
+                  value={formData.role_id || ''}
                   onChange={handleChange}
                   required
                 >
-                  {Object.values(UserRole).map((role) => (
-                    <option key={role} value={role}>
-                      {role}
+                  <option value="">เลือกบทบาท</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
                     </option>
                   ))}
                 </Select>
-              </FormField>
-              <FormField label="จำกัดการเบิก (บาท)" htmlFor="creditLimit">
-                <Input
-                  id="creditLimit"
-                  name="creditLimit"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                  value={formData.creditLimit ?? ''}
-                  onChange={handleChange}
-                />
               </FormField>
             </div>
           </div>

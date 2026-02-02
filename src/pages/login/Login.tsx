@@ -28,7 +28,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           remember: true,
         });
       }
-    } catch {}
+    } catch { }
   }, [form]);
 
   const onFinish = async (values: any) => {
@@ -79,7 +79,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="p-6 bg-white/5 rounded-full backdrop-blur-sm ring-1 ring-white/10 shadow-2xl">
               <div className="overflow-hidden">
                 <img
-                  src="mrgreen1.png"
+                  src="/mrgreen1.png"
                   alt="Mr. GREEN PEST CONTROL CO., LTD."
                   className="mx-auto max-h-52 sm:max-h-64 scale-105 object-cover"
                 />

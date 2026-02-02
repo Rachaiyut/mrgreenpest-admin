@@ -7,13 +7,15 @@ import { PhotoIcon } from '../../../assets/icons/Icons';
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateUser: (user: Omit<User, 'id'>) => void;
+  onCreateUser: (data: any) => void;
+  roles: { id: string; name: string }[];
 }
 
 export const AddUserModal: React.FC<AddUserModalProps> = ({
   isOpen,
   onClose,
   onCreateUser,
+  roles,
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -38,30 +40,33 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     if (
       !data['user-national-id'] ||
       !data['user-password'] ||
-      !data['user-full-name'] ||
+      !data['user-first-name'] ||
+      !data['user-last-name'] ||
       !data['user-nickname'] ||
-      !data['user-role'] ||
-      !data['user-phone'] ||
-      !imagePreview
+      !data['user-role-id'] ||
+      !data['user-phone']
     ) {
       alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
       return;
     }
 
-    const newUser: Omit<User, 'id' | 'status'> = {
-      nationalId: data['user-national-id'] as string,
-      name: data['user-full-name'] as string,
-      nickname: data['user-nickname'] as string,
-      email: data['user-email'] as string | undefined,
-      role: data['user-role'] as UserRole,
+    // Map to Backend DTO (CreateUserDto)
+    const newUser = {
+      citizen_id: data['user-national-id'] as string,
+      first_name: data['user-first-name'] as string,
+      last_name: data['user-last-name'] as string,
+      nick_name: data['user-nickname'] as string,
+      email: data['user-email'] as string,
+      password: data['user-password'] as string,
+      role_id: data['user-role-id'] as string,
       phone: data['user-phone'] as string,
-      avatarUrl: imagePreview,
-      creditLimit: data['user-credit-limit']
-        ? parseFloat(data['user-credit-limit'] as string)
-        : undefined,
+      status: 'active',
+      // storage_id? 
+      // avatar? backend DTO doesn't have it yet, maybe need to upload separately or base64? 
+      // For now we omit avatarUrl as API doesn't seem to support it in CreateUserDto
     };
 
-    onCreateUser(newUser as Omit<User, 'id'>);
+    onCreateUser(newUser);
     onClose();
   };
 
@@ -96,7 +101,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Image Upload */}
           <div className="md:col-span-1">
-            <FormField label="รูปโปรไฟล์*">
+            <FormField label="รูปโปรไฟล์">
               <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
                 <div className="space-y-1 text-center">
                   {imagePreview ? (
@@ -123,7 +128,6 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                         className="sr-only"
                         accept="image/png, image/jpeg"
                         onChange={handleImageChange}
-                        required={!imagePreview}
                       />
                     </label>
                   </div>
@@ -137,7 +141,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
           <div className="md:col-span-2 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                label="เลขบัตรประชาชน (Username)"
+                label="เลขบัตรประชาชน (Username)*"
                 htmlFor="user-national-id"
               >
                 <Input
@@ -149,7 +153,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                   placeholder="13 หลัก"
                 />
               </FormField>
-              <FormField label="รหัสผ่าน" htmlFor="user-password">
+              <FormField label="รหัสผ่าน*" htmlFor="user-password">
                 <Input
                   id="user-password"
                   name="user-password"
@@ -160,15 +164,26 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ชื่อ-นามสกุล" htmlFor="user-full-name">
+              <FormField label="ชื่อจริง*" htmlFor="user-first-name">
                 <Input
-                  id="user-full-name"
-                  name="user-full-name"
+                  id="user-first-name"
+                  name="user-first-name"
                   type="text"
                   required
                 />
               </FormField>
-              <FormField label="ชื่อเล่น" htmlFor="user-nickname">
+              <FormField label="นามสกุล*" htmlFor="user-last-name">
+                <Input
+                  id="user-last-name"
+                  name="user-last-name"
+                  type="text"
+                  required
+                />
+              </FormField>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ชื่อเล่น*" htmlFor="user-nickname">
                 <Input
                   id="user-nickname"
                   name="user-nickname"
@@ -176,41 +191,30 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                   required
                 />
               </FormField>
+              <FormField label="เบอร์โทรศัพท์*" htmlFor="user-phone">
+                <Input id="user-phone" name="user-phone" type="tel" required />
+              </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="เบอร์โทรศัพท์" htmlFor="user-phone">
-                <Input id="user-phone" name="user-phone" type="tel" required />
-              </FormField>
-              <FormField label="อีเมล" htmlFor="user-email">
+              <FormField label="อีเมล*" htmlFor="user-email">
                 <Input
                   id="user-email"
                   name="user-email"
                   type="email"
                   placeholder="example@email.com"
+                  required
                 />
               </FormField>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="เลือกบทบาท" htmlFor="user-role">
-                <Select id="user-role" name="user-role" required>
+              <FormField label="เลือกบทบาท*" htmlFor="user-role-id">
+                <Select id="user-role-id" name="user-role-id" required>
                   <option value="">เลือกบทบาท</option>
-                  {Object.values(UserRole).map((role) => (
-                    <option key={role} value={role}>
-                      {role}
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.name}
                     </option>
                   ))}
                 </Select>
-              </FormField>
-              <FormField label="จำกัดการเบิก (บาท)" htmlFor="user-credit-limit">
-                <Input
-                  id="user-credit-limit"
-                  name="user-credit-limit"
-                  type="number"
-                  placeholder="0.00"
-                  step="0.01"
-                />
               </FormField>
             </div>
           </div>

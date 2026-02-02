@@ -10,9 +10,10 @@ import {
 import { JobStatus } from '@/src/types/enums/job';
 import { PlusIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { WarehouseType, CategoryType } from '@/src/types';
-import { AssessmentApi, ProductApi, CategoryApi } from '@/src/api';
+import { AssessmentApi, ProductApi, CategoryApi, PackageApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
+import { Package } from '@/src/types/entity/package.interface';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -113,12 +114,25 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+
   const servicePackages = useMemo(
     () => products.filter((p) => (p as any)?.category?.type === CategoryType.SERVICE),
     [products]
   );
 
-  const technicians = (users || []).filter((u) => u.role === UserRole.Technician);
+  // Use packages from API for calculation and display
+  const suggestedPackageOptions = useMemo(() => {
+    return packages.filter(
+      (pkg) => pkg.package_price && pkg.package_price.length > 0
+    );
+  }, [packages]);
+
+  const technicians = (users || []).filter((u) => {
+    const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+    return roleName === UserRole.TECH;
+  });
 
   // Handle Assessment field changes
   const handleAssessmentChange = (
@@ -180,6 +194,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         .catch((err: any) => {
           console.error('Error fetching categories:', err);
         });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoadingPackages(true);
+      PackageApi.getPackages({ limit: 100 })
+        .then((res) => {
+          setPackages(res.data || []);
+        })
+        .catch((err) => console.error('Error fetching packages:', err))
+        .finally(() => setIsLoadingPackages(false));
     }
   }, [isOpen]);
 
@@ -282,8 +308,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       status === JobStatus.InProgress
         ? 'IN_PROGRESS'
         : status === JobStatus.Completed
-        ? 'COMPLETE'
-        : 'PENDING';
+          ? 'COMPLETE'
+          : 'PENDING';
 
     const primaryTechId =
       (job as any)?.primary_technician?.id || leadTechnicianId || undefined;
@@ -306,43 +332,43 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       team_member: teamMembers,
       assessment: assessment
         ? {
-            customer_id: job.customer_id,
-            package_id: (assessment as any).package_id,
-            appointment_date: assessment.appointment_date
-              ? new Date(assessment.appointment_date).toISOString().substring(0, 10)
-              : undefined,
-            address: job.address,
-            sub_district: (assessment as any).sub_district || (job as any).sub_district,
-            district: (assessment as any).district || (job as any).district,
-            province: (assessment as any).province || (job as any).province,
-            zipcode: (assessment as any).zipcode || (job as any).postal_code,
-            zone: (job as any).zone,
-            route_group: (job as any).group,
-            road_line: (job as any).road_line,
-            sequence: (job as any).sequence,
-            google_map_link: job.google_map_link,
-            status: (assessment as any).status,
-            payment_condition: (assessment as any).payment_condition,
-            total_price: (assessment as any).total_price,
-            created_by: currentUser?.name,
-            updated_by: currentUser?.name,
-            assessment_areas: ((assessment as any)?.assessment_areas || []).map(
-              (area: any) => ({
-                package_price_id: area.package_price_id,
-                area_name: area.area_name,
-                building_type: area.building_type,
-                service_system: area.service_system,
-                area_size: area.area_size,
-                total_price: area.total_price,
-                category_services: area.category_services || [],
-                items: (area.items || []).map((it: any) => ({
-                  product_id: it.product_id,
-                  quantity: it.quantity,
-                  total_price: it.total_price,
-                })),
-              })
-            ),
-          }
+          customer_id: job.customer_id,
+          package_id: (assessment as any).package_id,
+          appointment_date: assessment.appointment_date
+            ? new Date(assessment.appointment_date).toISOString().substring(0, 10)
+            : undefined,
+          address: job.address,
+          sub_district: (assessment as any).sub_district || (job as any).sub_district,
+          district: (assessment as any).district || (job as any).district,
+          province: (assessment as any).province || (job as any).province,
+          zipcode: (assessment as any).zipcode || (job as any).postal_code,
+          zone: (job as any).zone,
+          route_group: (job as any).group,
+          road_line: (job as any).road_line,
+          sequence: (job as any).sequence,
+          google_map_link: job.google_map_link,
+          status: (assessment as any).status,
+          payment_condition: (assessment as any).payment_condition,
+          total_price: (assessment as any).total_price,
+          created_by: currentUser?.name,
+          updated_by: currentUser?.name,
+          assessment_areas: ((assessment as any)?.assessment_areas || []).map(
+            (area: any) => ({
+              package_price_id: area.package_price_id,
+              area_name: area.area_name,
+              building_type: area.building_type,
+              service_system: area.service_system,
+              area_size: area.area_size,
+              total_price: area.total_price,
+              category_services: area.category_services || [],
+              items: (area.items || []).map((it: any) => ({
+                product_id: it.product_id,
+                quantity: it.quantity,
+                total_price: it.total_price,
+              })),
+            })
+          ),
+        }
         : undefined,
     };
 
@@ -352,7 +378,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (timeConflictError) return;
-   
+
     const updatedPayload = createJobObject(formData.status || JobStatus.Planned);
     if (updatedPayload) {
       onUpdateJob(updatedPayload);
@@ -361,7 +387,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   };
 
   const handleSaveDraft = () => {
-   
+
     const updatedJob = createJobObject(JobStatus.Draft);
     if (updatedJob) {
       onUpdateJob(updatedJob);
@@ -420,8 +446,23 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     setAssessment((prev) => {
       if (!prev) return prev;
       const areas = [...(prev.assessment_areas || [])];
-      areas[index] = updatedArea;
-      return { ...prev, assessment_areas: areas } as Assessment;
+
+      // Calculate new price if area size changed and package selected
+      let newArea = { ...updatedArea };
+      if (selectedPackageId) {
+        const pkg = packages.find(p => p.id === selectedPackageId);
+        if (pkg) {
+          const basePrice = calculateAreaPrice(newArea, pkg);
+          const itemsTotal = (newArea.items || []).reduce((sum: number, item: any) => sum + (item.total_price || 0), 0);
+          newArea.base_service_price = basePrice;
+          newArea.total_price = basePrice + itemsTotal;
+        }
+      }
+
+      areas[index] = newArea;
+
+      const newTotal = areas.reduce((sum, a) => sum + (a.total_price || 0), 0);
+      return { ...prev, assessment_areas: areas, total_price: newTotal } as Assessment;
     });
   };
 
@@ -461,6 +502,54 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     });
   };
 
+  const calculateAreaPrice = (area: any, pkg: Package) => {
+    if (!area.area_size || area.area_size <= 0 || !pkg.package_price) return area.base_service_price || 0;
+
+    const sortedConditions = [...pkg.package_price].sort((a, b) => a.area_range - b.area_range);
+    const bestFit = sortedConditions.find((c) => c.area_range >= area.area_size);
+
+    if (bestFit) {
+      // Check for termite service
+      // We need categories list here. 
+      const termiteCategory = categories.find((c) => c.name.includes('กำจัดปลวก'));
+      const hasTermites = (area.category_services || []).some(
+        (s: any) => s.category_id === termiteCategory?.id
+      );
+      return hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
+    }
+    return area.base_service_price || 0;
+  };
+
+  const handlePackageSelect = (pkgId: string | null) => {
+    setSelectedPackageId(pkgId);
+    setAssessment((prev) => {
+      if (!prev) return null;
+      let newAssessment = { ...prev, package_id: pkgId || undefined };
+
+      // Recalculate prices if package selected
+      if (pkgId) {
+        const pkg = packages.find(p => p.id === pkgId);
+        if (pkg) {
+          newAssessment.assessment_areas = (prev.assessment_areas || []).map(area => {
+            const basePrice = calculateAreaPrice(area, pkg);
+            // Recalculate total price for area (base + items)
+            const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + (item.total_price || 0), 0);
+            return {
+              ...area,
+              base_service_price: basePrice,
+              total_price: basePrice + itemsTotal
+            };
+          }) as any;
+        }
+      }
+
+      // Update total price of assessment
+      newAssessment.total_price = (newAssessment.assessment_areas || []).reduce((sum, area) => sum + (area.total_price || 0), 0);
+
+      return newAssessment as Assessment;
+    });
+  };
+
   if (!job) return null;
 
   const isReadOnly = !!job.assessment_id || !!job.contract_id;
@@ -482,10 +571,10 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       const fallbackParts = name
         ? [name]
         : [
-            tech?.first_name || '',
-            tech?.last_name || '',
-            tech?.nick_name || tech?.nickname || '',
-          ].filter(Boolean);
+          tech?.first_name || '',
+          tech?.last_name || '',
+          tech?.nick_name || tech?.nickname || '',
+        ].filter(Boolean);
       return fallbackParts.join(' ');
     }
     return '';
@@ -772,7 +861,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             ))}
           </div>
         </FormField>
-       
+
         {assessment && (
           <div className="border border-slate-200 p-4 rounded-lg space-y-4">
             <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
@@ -784,8 +873,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   value={
                     assessment.appointment_date
                       ? new Date(assessment.appointment_date)
-                          .toISOString()
-                          .substring(0, 10)
+                        .toISOString()
+                        .substring(0, 10)
                       : ''
                   }
                   onChange={handleAssessmentChange}
@@ -809,37 +898,83 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 />
               </FormField>
             </div>
-               {/* Work Areas */}
-                <div className="space-y-4">
-                 {(assessment.assessment_areas || []).map((area, index) => (
-                  <WorkAreaForm
-                          key={area.id || index}
-                          area={area}
-                          index={index}
-                          onAreaChange={handleAssessmentAreaChange}
-                          onRemoveArea={handleAssessmentAreaRemove}
-                          onClearArea={handleAssessmentAreaClear}
-                          products={products}
-                          selectedPackage={
-                            selectedPackageId
-                              ? (servicePackages.find(
-                                  (p) => p.id === selectedPackageId
-                                ) as any)!
-                              : null
-                          }
-                          categories={categories}
+
+            {suggestedPackageOptions.length > 0 && (
+              <div className="pt-4 border-t">
+                <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                    <label
+                      className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="packageId-main-job-edit"
+                        className="sr-only"
+                        onChange={() => handlePackageSelect(null)}
+                        checked={!selectedPackageId}
+                      />
+                      <span className="font-semibold text-slate-800">
+                        ไม่ใช้แพ็กเกจ
+                      </span>
+                    </label>
+                    {suggestedPackageOptions.map((option) => (
+                      <label
+                        key={option.id}
+                        className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="packageId-main-job-edit"
+                          value={option.id}
+                          className="sr-only"
+                          onChange={() => handlePackageSelect(option.id)}
+                          checked={selectedPackageId === option.id}
                         />
-                      ))}
-             </div>
-               <div className="flex justify-center">
-                       <Button type="button" onClick={handleAddArea} variant="primary">
-                         <PlusIcon className="h-5 w-5" />
-                         เพิ่มพื้นที่ใหม่
-                       </Button>
-                     </div>
+                        <div className="font-semibold text-slate-800">
+                          {option.name}
+                        </div>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {option.visit_limit} ครั้ง /{' '}
+                          {option.contract_period} เดือน
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </FormField>
+              </div>
+            )}
+
+            {/* Work Areas */}
+            <div className="space-y-4">
+              {(assessment.assessment_areas || []).map((area, index) => (
+                <WorkAreaForm
+                  key={area.id || index}
+                  area={area}
+                  index={index}
+                  onAreaChange={handleAssessmentAreaChange}
+                  onRemoveArea={handleAssessmentAreaRemove}
+                  onClearArea={handleAssessmentAreaClear}
+                  products={products}
+                  selectedPackage={
+                    selectedPackageId
+                      ? (packages.find(
+                        (p) => p.id === selectedPackageId
+                      ) as any)!
+                      : null
+                  }
+                  categories={categories}
+                />
+              ))}
+            </div>
+            <div className="flex justify-center">
+              <Button type="button" onClick={handleAddArea} variant="primary">
+                <PlusIcon className="h-5 w-5" />
+                เพิ่มพื้นที่ใหม่
+              </Button>
+            </div>
           </div>
         )}
-       
+
       </form>
     </Modal>
   );

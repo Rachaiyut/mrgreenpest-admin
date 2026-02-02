@@ -17,9 +17,11 @@ import {
 import { formatThaiDate } from '../../../utils/date';
 import {
   Withdrawal as WithdrawalType,
+  Warehouse as WarehouseType,
+} from '@/src/types/entity/inventory.interface';
+import {
   Status,
   User,
-  Warehouse as WarehouseType,
   FieldJob,
   Customer,
   Product,
@@ -51,7 +53,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
     products,
   } = useData();
 
-  const stockMap = new Map<string, Map<string, number>>();
+  const stockMap = useMemo(() => new Map<string, Map<string, number>>(), []);
   const currentUser = users.length > 0 ? users[0] : null;
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,7 +91,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
   );
 
   const uniqueCreators = useMemo(
-    () => [...new Set(withdrawals.map((w) => w.createdBy))],
+    () => [...new Set(withdrawals.map((w) => w.created_by))],
     [withdrawals]
   );
 
@@ -98,23 +100,23 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
 
     // Filter by creator
     if (creatorFilter !== 'all') {
-      filtered = filtered.filter((w) => w.createdBy === creatorFilter);
+      filtered = filtered.filter((w) => w.created_by === creatorFilter);
     }
 
     // Filter by search query
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       filtered = filtered.filter((withdrawal) => {
-        const totalGoodsAmount = withdrawal.items.reduce((sum, item) => {
-          const product = productMap.get(item.productId);
+        const totalGoodsAmount = withdrawal.items?.reduce((sum, item) => {
+          const product = productMap.get(item.product_id);
           return sum + (product ? product.price * item.quantity : 0);
-        }, 0);
+        }, 0) || 0;
         const totalExpenseAmount =
           withdrawal.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
         const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
-        const productNames = withdrawal.items
-          .map((item) => productMap.get(item.productId)?.name || '')
+        const productNames = (withdrawal.items || [])
+          .map((item) => productMap.get(item.product_id)?.name || '')
           .join(' ')
           .toLowerCase();
 
@@ -125,11 +127,11 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
           .toLowerCase();
 
         return (
-          withdrawal.id.toLowerCase().includes(lowercasedQuery) ||
+          (withdrawal.id || '').toLowerCase().includes(lowercasedQuery) ||
           productNames.includes(lowercasedQuery) ||
           expenseDescriptions.includes(lowercasedQuery) ||
           totalAmount.toString().includes(lowercasedQuery) ||
-          formatThaiDate(withdrawal.createdAt).includes(lowercasedQuery)
+          (withdrawal.created_at && formatThaiDate(withdrawal.created_at).includes(lowercasedQuery))
         );
       });
     }
@@ -187,9 +189,9 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         ...withdrawalToUpdate,
         status:
           approvalAction === 'approve' ? Status.Approved : Status.Rejected,
-        remarks: remarks,
-        approvedBy: 'ผู้ดูแลระบบ', // Mock approver
-        updatedBy: 'ผู้ดูแลระบบ',
+        notes: remarks,
+        // approvedBy: 'ผู้ดูแลระบบ', // Mock approver - field might not exist in type
+        updated_by: 'ผู้ดูแลระบบ',
       });
     }
     setIsApprovalModalOpen(false);
@@ -203,7 +205,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
       onUpdateWithdrawal({
         ...withdrawalToUpdate,
         status: Status.Cancelled,
-        remarks: 'ยกเลิกโดยผู้ใช้',
+        notes: 'ยกเลิกโดยผู้ใช้',
       });
     }
     setOpenDropdownId(null);
@@ -361,20 +363,20 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         {/* Mobile View: Cards */}
         <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
           {paginatedWithdrawals.map((withdrawal) => {
-            const fromWarehouse = warehouseMap.get(withdrawal.fromWarehouseId);
-            const toWarehouse = withdrawal.toWarehouseId
-              ? warehouseMap.get(withdrawal.toWarehouseId)
+            const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
+            const toWarehouse = withdrawal.to_warehouse_id
+              ? warehouseMap.get(withdrawal.to_warehouse_id)
               : null;
-            const totalGoodsAmount = withdrawal.items.reduce((sum, item) => {
-              const product = productMap.get(item.productId);
+            const totalGoodsAmount = withdrawal.items?.reduce((sum, item) => {
+              const product = productMap.get(item.product_id);
               return sum + (product ? product.price * item.quantity : 0);
-            }, 0);
+            }, 0) || 0;
             const totalExpenseAmount =
               withdrawal.expenses?.reduce((sum, exp) => sum + exp.amount, 0) ||
               0;
             const totalAmount = totalGoodsAmount + totalExpenseAmount;
-            const recipientName = withdrawal.recipientId
-              ? userMap.get(withdrawal.recipientId)
+            const recipientName = withdrawal.recipient_id
+              ? userMap.get(withdrawal.recipient_id)
               : '-';
 
             return (
@@ -405,7 +407,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                 <div className="mt-4 space-y-3 text-sm text-slate-600">
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>{formatThaiDate(withdrawal.createdAt)}</span>
+                    <span>{withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}</span>
                   </div>
                   <div className="flex items-center">
                     <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
@@ -421,13 +423,13 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                     <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                     <span className="truncate">
                       {fromWarehouse?.name} &rarr; {toWarehouse?.name}{' '}
-                      {toWarehouse?.type === 'รถ' &&
-                        `(${toWarehouse.licensePlate})`}
+                      {toWarehouse?.type === 'VEHICLE' && // Assuming string check if enum not available easily or map
+                        `(${toWarehouse.vehicle?.vehicle_registration || '-'})`}
                     </span>
                   </div>
                   <div className="flex items-center">
                     <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้สร้าง: {withdrawal.createdBy}</span>
+                    <span>ผู้สร้าง: {withdrawal.created_by}</span>
                   </div>
                   <div className="flex items-center">
                     <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
@@ -526,32 +528,32 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedWithdrawals.map((withdrawal, index) => {
                   const fromWarehouse = warehouseMap.get(
-                    withdrawal.fromWarehouseId
+                    withdrawal.warehouse_id
                   );
-                  const toWarehouse = withdrawal.toWarehouseId
-                    ? warehouseMap.get(withdrawal.toWarehouseId)
+                  const toWarehouse = withdrawal.to_warehouse_id
+                    ? warehouseMap.get(withdrawal.to_warehouse_id)
                     : null;
                   const totalItemsCount =
                     (withdrawal.items?.length || 0) +
                     (withdrawal.expenses?.length || 0);
 
-                  const totalGoodsAmount = withdrawal.items.reduce(
+                  const totalGoodsAmount = withdrawal.items?.reduce(
                     (sum, item) => {
-                      const product = productMap.get(item.productId);
+                      const product = productMap.get(item.product_id);
                       return (
                         sum + (product ? product.price * item.quantity : 0)
                       );
                     },
                     0
-                  );
+                  ) || 0;
                   const totalExpenseAmount =
                     withdrawal.expenses?.reduce(
                       (sum, exp) => sum + exp.amount,
                       0
                     ) || 0;
                   const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                  const recipientName = withdrawal.recipientId
-                    ? userMap.get(withdrawal.recipientId)
+                  const recipientName = withdrawal.recipient_id
+                    ? userMap.get(withdrawal.recipient_id)
                     : '-';
 
                   return (
@@ -566,7 +568,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                         {withdrawal.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {formatThaiDate(withdrawal.createdAt)}
+                        {withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
                         {totalItemsCount}
@@ -590,19 +592,19 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {withdrawal.referenceIds?.length || 0} รายการ
+                        {withdrawal.reference_ids?.length || 0} รายการ
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={withdrawal.status} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {withdrawal.createdBy}
+                        {withdrawal.created_by}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {recipientName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs xl:table-cell hidden">
-                        {withdrawal.remarks || '-'}
+                        {withdrawal.notes || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">
@@ -675,7 +677,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
         action={approvalAction}
-        item={selectedWithdrawal}
+        item={selectedWithdrawal as any}
         onConfirm={handleConfirmApproval}
       />
       <WithdrawalDetailsModal
@@ -690,5 +692,3 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
 };
 
 export default Withdrawals;
-
-
