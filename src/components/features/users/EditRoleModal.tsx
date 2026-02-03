@@ -159,41 +159,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
       }
     >
       <form id="edit-role-form" onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="role-name"
-            className="block text-sm font-medium text-slate-700 mb-1"
-          >
-            ชื่อบทบาท<span className="text-red-500">*</span>
-          </label>
-          <Input
-            id="role-name"
-            type="text"
-            required
-            value={roleName}
-            onChange={(e) => setRoleName(e.target.value)}
-            placeholder="เช่น ผู้จัดการฝ่ายขาย"
-            disabled={true}
-          />
-        </div>
-
-        <div>
-          <label
-            htmlFor="description"
-            className="block text-sm font-medium text-slate-700 mb-1"
-          >
-            รายละเอียด
-          </label>
-          <Input
-            id="description"
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับบทบาท"
-          />
-        </div>
-
-        <div className="border-t border-slate-200 pt-4">
+        <div className="pt-2">
           <h3 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h3>
 
           {isLoading ? (
