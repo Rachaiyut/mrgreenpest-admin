@@ -1,198 +1,169 @@
 import type { FC } from 'react';
-import { Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { UserRole } from '@/src/types/entity/app.interface';
+import { RoleApi, Role, Permission } from '@/src/api/role';
+import { PERMISSION_MATRIX, PERMISSION_ACTIONS } from '@/src/constants/permission-matrix';
+import { Fragment } from 'react';
 
 interface RoleDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  role: UserRole | null;
+  roleId: string | null;
 }
-
-// Default permissions configuration
-const ROLE_PERMISSIONS_CONFIG: Record<UserRole, string[]> = {
-  [UserRole.ADMIN]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
-  [UserRole.SUPERADMIN]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
-  [UserRole.CEO]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
-  [UserRole.COO]: ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'],
-  [UserRole.CFO]: ['ดู', 'สร้าง', 'อนุมัติ'],
-  [UserRole.SALES]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.ACCOUNTING]: ['ดู', 'สร้าง', 'อนุมัติ'],
-  [UserRole.WAREHOUSE]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.DISPATCHER]: ['ดู', 'สร้าง', 'แก้ไข'],
-  [UserRole.TECH]: ['ดู'],
-  [UserRole.LEAD_TECH]: ['ดู', 'สร้าง', 'แก้ไข'],
-};
-
-const PERMISSION_ACTIONS = ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'];
-
-const PERMISSION_GROUPS = [
-  {
-    groupName: 'ภาพรวมและลูกค้า',
-    items: ['Dashboard', 'ลูกค้า', 'สัญญา', 'การต่ออายุสัญญา'],
-  },
-  {
-    groupName: 'ภาคสนาม',
-    items: ['ใบประเมิน', 'ภาคสนาม', 'รายงานบริการ'],
-  },
-  {
-    groupName: 'กลุ่มเอกสารการจัดซื้อและบัญชี',
-    items: ['ใบเสนอราคา', 'ใบแจ้งหนี้/ใบวางบิล', 'ใบกำกับภาษี/ใบเสร็จรับเงิน'],
-  },
-  {
-    groupName: 'กลุ่ม คลังสินค้า',
-    items: [
-      'แพ็กเกจ',
-      'สินค้า/บริการ',
-      'คลังสินค้า',
-      'ผู้จัดจำหน่าย',
-      'รับเข้า',
-      'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-      'โอนย้าย',
-      'ปรับปรุง Stock',
-      'คืนสินค้า',
-      'จำกัดการเบิก',
-    ],
-  },
-  {
-    groupName: 'ตั้งค่าระบบ',
-    items: ['ผู้ใช้งาน', 'จัดการบทบาท', 'รายงาน'],
-  },
-];
-
-const VIEW_ONLY_ITEMS = ['Dashboard', 'รายงาน'];
-const APPROVABLE_ITEMS = [
-  'ใบประเมิน',
-  'ใบเสนอราคา',
-  'รับเข้า',
-  'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-];
-
-const isActionNotApplicable = (item: string, action: string): boolean => {
-  if (VIEW_ONLY_ITEMS.includes(item) && action !== 'ดู') {
-    return true;
-  }
-  if (item === 'จำกัดการเบิก' && action === 'อนุมัติ') {
-    return true;
-  }
-  if (action === 'อนุมัติ' && !APPROVABLE_ITEMS.includes(item)) {
-    return true;
-  }
-  return false;
-};
 
 export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
   isOpen,
   onClose,
-  role,
+  roleId,
 }) => {
-  if (!isOpen || !role) return null;
+  const [role, setRole] = useState<Role | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const rolePermissions = ROLE_PERMISSIONS_CONFIG[role] || [];
+  useEffect(() => {
+    if (isOpen && roleId) {
+      fetchRoleDetails();
+    } else {
+      setRole(null);
+    }
+  }, [isOpen, roleId]);
+
+  const fetchRoleDetails = async () => {
+    if (!roleId) return;
+    setLoading(true);
+    try {
+      const data = await RoleApi.getById(roleId);
+      setRole(data);
+    } catch (error) {
+      console.error('Failed to fetch role details', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const groupedPermissions = useMemo(() => {
+    if (!role || !role.permissions) return {};
+    const groups: Record<string, Permission[]> = {};
+
+    // Normalize permissions to array of Permission objects
+    const perms = role.permissions.map((p: any) => p.id && p.name ? p : null).filter(Boolean) as Permission[];
+
+    perms.forEach((perm) => {
+      const groupName = perm.group || 'Other';
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(perm);
+    });
+    return groups;
+  }, [role]);
+
+  if (!isOpen) return null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดบทบาท: ${role}`}
-      size="4xl"
+      title={role ? `รายละเอียดบทบาท: ${role.name}` : 'รายละเอียดบทบาท'}
+      size="5xl"
       footer={
-        <Button
-          type="button"
-          onClick={onClose}
-          className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
-          variant="primary"
-        >
-          ปิด
-        </Button>
+        <div className="flex justify-end w-full">
+          <Button
+            type="button"
+            onClick={onClose}
+            className="py-2 px-4 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold shadow-sm"
+            variant="ghost"
+          >
+            ปิด
+          </Button>
+        </div>
       }
     >
-      <div className="space-y-4">
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="sticky left-0 bg-slate-50 z-10 px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider"
-                >
-                  สิทธิ์การใช้งาน
-                </th>
-                {PERMISSION_ACTIONS.map((action) => (
-                  <th
-                    key={action}
-                    scope="col"
-                    className="px-4 py-3 text-center font-medium text-slate-600 uppercase tracking-wider"
-                  >
-                    {action}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {PERMISSION_GROUPS.map((group) => (
-                <Fragment key={group.groupName}>
+      {loading ? (
+        <div className="text-center py-8 text-slate-500">กำลังโหลดข้อมูล...</div>
+      ) : role ? (
+        <div className="space-y-6">
+          <div>
+            <h4 className="text-sm font-medium text-slate-500 mb-1">ชื่อบทบาท</h4>
+            <p className="text-lg font-semibold text-slate-900">{role.name}</p>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-medium text-slate-500 mb-1">รายละเอียด</h4>
+            <p className="text-slate-700">{role.description || '-'}</p>
+          </div>
+
+          <div className="border-t border-slate-200 pt-4">
+            <h4 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h4>
+            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
                   <tr>
-                    <td
-                      colSpan={PERMISSION_ACTIONS.length + 1}
-                      className="px-4 py-2 bg-slate-100 font-semibold text-slate-800"
-                    >
-                      {group.groupName}
-                    </td>
+                    <th className="px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 w-64">
+                      สิทธิ์การใช้งาน
+                    </th>
+                    {PERMISSION_ACTIONS.map((action) => (
+                      <th
+                        key={action.action}
+                        className="px-4 py-3 text-center font-medium text-slate-600 uppercase tracking-wider"
+                      >
+                        {action.label}
+                      </th>
+                    ))}
                   </tr>
-                  {group.items.map((item) => (
-                    <tr key={item} className="hover:bg-slate-50">
-                      <td className="sticky left-0 bg-white px-4 py-3 font-medium text-slate-800">
-                        {item}
-                      </td>
-                      {PERMISSION_ACTIONS.map((action) => {
-                        const isNotApplicable = isActionNotApplicable(
-                          item,
-                          action
-                        );
-                        return (
-                          <td key={action} className="px-4 py-3 text-center">
-                            {!isNotApplicable ? (
-                              rolePermissions.includes(action) ? (
-                                <svg
-                                  className="mx-auto h-5 w-5 text-green-500"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              ) : (
-                                <svg
-                                  className="mx-auto h-5 w-5 text-slate-300"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  viewBox="0 0 20 20"
-                                  fill="currentColor"
-                                >
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              )
-                            ) : null}
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {PERMISSION_MATRIX.map((group) => (
+                    <Fragment key={group.groupName}>
+                      <tr>
+                        <td
+                          colSpan={PERMISSION_ACTIONS.length + 1}
+                          className="px-4 py-2 bg-slate-100 font-semibold text-slate-800 sticky left-0 z-10"
+                        >
+                          {group.groupName}
+                        </td>
+                      </tr>
+                      {group.items.map((item) => (
+                        <tr key={item.label} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
+                            {item.label}
                           </td>
-                        );
-                      })}
-                    </tr>
+                          {PERMISSION_ACTIONS.map((actionCol) => {
+                            // Find permission by pattern: ACTION_MODULE
+                            const permName = `${actionCol.action}_${item.module}`;
+                            const perm = role?.permissions?.find((p: any) => p.name === permName);
+
+                            const isAvailable = true; // In view mode we can assume all defined in matrix are potential
+                            const isChecked = !!perm;
+
+                            return (
+                              <td key={actionCol.action} className="px-4 py-3 text-center">
+                                {isAvailable ? (
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    disabled
+                                    className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-default disabled:opacity-100 disabled:checked:text-primary"
+                                  />
+                                ) : (
+                                  <span className="block w-4 h-4 mx-auto bg-slate-100 rounded-sm"></span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </Fragment>
                   ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-8 text-slate-500">ไม่พบข้อมูลบทบาท</div>
+      )}
     </Modal>
   );
 };

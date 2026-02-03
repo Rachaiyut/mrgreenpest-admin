@@ -1,169 +1,138 @@
 import type { FC, FormEvent } from 'react';
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { Input } from '../../common/FormControls';
+import { Input, Button } from '../../common/FormControls';
+import { RoleApi, Role, Permission } from '@/src/api/role';
+import { PermissionApi } from '@/src/api/permission';
 
 interface AddRoleModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: (role: Role) => void;
 }
 
-const PERMISSION_ACTIONS = ['ดู', 'สร้าง', 'แก้ไข', 'ลบ', 'อนุมัติ'];
+export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [roleName, setRoleName] = useState('');
+  const [description, setDescription] = useState('');
+  const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-const PERMISSION_GROUPS = [
-  {
-    groupName: 'ภาพรวมและลูกค้า',
-    items: ['Dashboard', 'ลูกค้า', 'สัญญา', 'การต่ออายุสัญญา'],
-  },
-  {
-    groupName: 'ภาคสนาม',
-    items: ['ใบประเมิน', 'ภาคสนาม', 'รายงานบริการ'],
-  },
-  {
-    groupName: 'กลุ่มเอกสารการจัดซื้อและบัญชี',
-    items: ['ใบเสนอราคา', 'ใบแจ้งหนี้/ใบวางบิล', 'ใบกำกับภาษี/ใบเสร็จรับเงิน'],
-  },
-  {
-    groupName: 'กลุ่ม คลังสินค้า',
-    items: [
-      'แพ็กเกจ',
-      'สินค้า/บริการ',
-      'คลังสินค้า',
-      'ผู้จัดจำหน่าย',
-      'รับเข้า',
-      'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-      'โอนย้าย',
-      'ปรับปรุง Stock',
-      'คืนสินค้า',
-      'จำกัดการเบิก',
-    ],
-  },
-  {
-    groupName: 'ตั้งค่าระบบ',
-    items: ['ผู้ใช้งาน', 'จัดการบทบาท', 'รายงาน', 'กำหนดวงเงินเบิก'],
-  },
-];
-
-const allPermissionItems = PERMISSION_GROUPS.flatMap((g) => g.items);
-
-const VIEW_ONLY_ITEMS = ['Dashboard', 'รายงาน'];
-const APPROVABLE_ITEMS = [
-  'ใบประเมิน',
-  'ใบเสนอราคา',
-  'รับเข้า',
-  'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-];
-
-const isActionDisabled = (item: string, action: string): boolean => {
-  if (VIEW_ONLY_ITEMS.includes(item) && action !== 'ดู') {
-    return true;
-  }
-  if (item === 'กำหนดวงเงินเบิก' && !['ดู', 'แก้ไข'].includes(action)) {
-    return true;
-  }
-  if (item === 'จำกัดการเบิก' && action === 'อนุมัติ') {
-    return true;
-  }
-  if (action === 'อนุมัติ' && !APPROVABLE_ITEMS.includes(item)) {
-    return true;
-  }
-  return false;
-};
-
-export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose }) => {
-  const initialPermissions = useMemo(() => {
-    return allPermissionItems.reduce(
-      (acc, item) => {
-        acc[item] = PERMISSION_ACTIONS.reduce(
-          (itemAcc, action) => {
-            itemAcc[action] = false;
-            return itemAcc;
-          },
-          {} as Record<string, boolean>
-        );
-        return acc;
-      },
-      {} as Record<string, Record<string, boolean>>
-    );
-  }, []);
-
-  const [permissions, setPermissions] = useState(initialPermissions);
-
+  // Fetch permissions when modal opens
   useEffect(() => {
     if (isOpen) {
-      setPermissions(initialPermissions);
+      fetchPermissions();
+      setRoleName('');
+      setDescription('');
+      setSelectedPermissionIds(new Set());
     }
-  }, [isOpen, initialPermissions]);
+  }, [isOpen]);
 
-  const handlePermissionChange = (
-    item: string,
-    action: string,
-    checked: boolean
-  ) => {
-    setPermissions((prev) => ({
-      ...prev,
-      [item]: {
-        ...prev[item],
-        [action]: checked,
-      },
-    }));
+  const fetchPermissions = async () => {
+    setIsLoading(true);
+    try {
+      const res = await PermissionApi.getAll({ limit: 1000 }); // Fetch all
+      setPermissions(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch permissions', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSelectAllForRow = (item: string, checked: boolean) => {
-    setPermissions((prev) => {
-      const newPermissionsForItem = { ...prev[item] };
-      PERMISSION_ACTIONS.forEach((action) => {
-        if (!isActionDisabled(item, action)) {
-          newPermissionsForItem[action] = checked;
-        }
-      });
-      return { ...prev, [item]: newPermissionsForItem };
+  // Group permissions by 'group' property
+  const groupedPermissions = useMemo(() => {
+    const groups: Record<string, Permission[]> = {};
+    permissions.forEach((perm) => {
+      const groupName = perm.group || 'Other';
+      if (!groups[groupName]) {
+        groups[groupName] = [];
+      }
+      groups[groupName].push(perm);
+    });
+    return groups;
+  }, [permissions]);
+
+  const handleTogglePermission = (id: string) => {
+    setSelectedPermissionIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
     });
   };
 
-  const handleSelectAllForColumn = (action: string, checked: boolean) => {
-    setPermissions((prev) => {
-      const newPermissions = { ...prev };
-      allPermissionItems.forEach((item) => {
-        if (!isActionDisabled(item, action)) {
-          newPermissions[item] = {
-            ...newPermissions[item],
-            [action]: checked,
-          };
+  const handleSelectGroup = (groupName: string, checked: boolean) => {
+    const groupPerms = groupedPermissions[groupName] || [];
+    setSelectedPermissionIds((prev) => {
+      const newSet = new Set(prev);
+      groupPerms.forEach((perm) => {
+        if (checked) {
+          newSet.add(perm.id);
+        } else {
+          newSet.delete(perm.id);
         }
       });
-      return newPermissions;
+      return newSet;
     });
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log('Saving role with permissions:', permissions);
-    onClose();
+    setIsSaving(true);
+    try {
+      // 1. Create Role
+      const createdRole = await RoleApi.create({
+        name: roleName,
+        description: description,
+        status: true
+      });
+
+      // 2. Assign Permissions
+      if (selectedPermissionIds.size > 0) {
+        await RoleApi.assignPermissions(createdRole.id, Array.from(selectedPermissionIds));
+      }
+
+      if (onSuccess) {
+        onSuccess(createdRole);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Failed to create role', error);
+      // You might want to show an error toast here
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="จัดการบทบาท"
-      size="5xl"
+      title="สร้างบทบาทใหม่"
+      size="2xl"
       footer={
-        <div className="flex gap-2">
-          <button
+        <div className="flex gap-2 justify-end w-full">
+          <Button
             type="button"
             onClick={onClose}
-            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
+            className="bg-slate-100 text-slate-700 hover:bg-slate-200"
+            variant="ghost"
           >
             ยกเลิก
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             form="add-role-form"
-            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+            variant="primary"
+            disabled={isSaving}
           >
-            บันทึก
-          </button>
+            {isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+          </Button>
         </div>
       }
     >
@@ -179,120 +148,76 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose }) => {
             id="role-name"
             type="text"
             required
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
             placeholder="เช่น ผู้จัดการฝ่ายขาย"
           />
         </div>
 
-        <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th
-                  scope="col"
-                  className="sticky left-0 bg-slate-50 z-10 px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider"
-                >
-                  สิทธิ์การใช้งาน
-                </th>
-                {PERMISSION_ACTIONS.map((action) => {
-                  const enabledItemsForAction = allPermissionItems.filter(
-                    (item) => !isActionDisabled(item, action)
-                  );
-                  const areAllChecked =
-                    enabledItemsForAction.length > 0 &&
-                    enabledItemsForAction.every(
-                      (item) => permissions[item]?.[action]
-                    );
-                  return (
-                    <th
-                      key={action}
-                      scope="col"
-                      className="px-4 py-3 text-center font-medium text-slate-600 uppercase tracking-wider"
-                    >
-                      <label className="flex flex-col items-center justify-center gap-1">
-                        <span>{action}</span>
+        <div>
+          <label
+            htmlFor="description"
+            className="block text-sm font-medium text-slate-700 mb-1"
+          >
+            รายละเอียด
+          </label>
+          <Input
+            id="description"
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับบทบาท"
+          />
+        </div>
+
+        <div className="border-t border-slate-200 pt-4">
+          <h3 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h3>
+
+          {isLoading ? (
+            <div className="text-center py-4 text-slate-500">กำลังโหลดข้อมูล...</div>
+          ) : (
+            <div className="space-y-4 max-h-[400px] overflow-y-auto p-1">
+              {Object.entries(groupedPermissions).map(([groupName, groupPerms]) => {
+                const allChecked = groupPerms.every(p => selectedPermissionIds.has(p.id));
+                const someChecked = groupPerms.some(p => selectedPermissionIds.has(p.id));
+
+                return (
+                  <div key={groupName} className="border border-slate-200 rounded-lg p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold text-slate-700">{groupName}</div>
+                      <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer hover:text-primary">
                         <input
                           type="checkbox"
-                          checked={areAllChecked}
-                          onChange={(e) =>
-                            handleSelectAllForColumn(action, e.target.checked)
-                          }
+                          checked={allChecked}
+                          ref={input => { if (input) input.indeterminate = someChecked && !allChecked }}
+                          onChange={(e) => handleSelectGroup(groupName, e.target.checked)}
+                          className="rounded border-slate-300 text-primary focus:ring-primary"
                         />
+                        เลือกทั้งหมด
                       </label>
-                    </th>
-                  );
-                })}
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-center font-medium text-slate-600 uppercase tracking-wider"
-                >
-                  <label className="flex flex-col items-center justify-center gap-1">
-                    <span>ทั้งหมด</span>
-                  </label>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {PERMISSION_GROUPS.map((group) => (
-                <Fragment key={group.groupName}>
-                  <tr>
-                    <td
-                      colSpan={PERMISSION_ACTIONS.length + 2}
-                      className="px-4 py-2 bg-slate-100 font-semibold text-slate-800"
-                    >
-                      {group.groupName}
-                    </td>
-                  </tr>
-                  {group.items.map((item) => {
-                    const enabledActionsForRow = PERMISSION_ACTIONS.filter(
-                      (action) => !isActionDisabled(item, action)
-                    );
-                    const areAllForRowChecked =
-                      enabledActionsForRow.length > 0 &&
-                      enabledActionsForRow.every(
-                        (action) => permissions[item]?.[action]
-                      );
+                    </div>
 
-                    return (
-                      <tr key={item} className="hover:bg-slate-50">
-                        <td className="sticky left-0 bg-white px-4 py-3 font-medium text-slate-800">
-                          {item}
-                        </td>
-                        {PERMISSION_ACTIONS.map((action) => {
-                          const isDisabled = isActionDisabled(item, action);
-                          return (
-                            <td key={action} className="px-4 py-3 text-center">
-                              {!isDisabled ? (
-                                <input
-                                  type="checkbox"
-                                  checked={permissions[item]?.[action] ?? false}
-                                  onChange={(e) =>
-                                    handlePermissionChange(
-                                      item,
-                                      action,
-                                      e.target.checked
-                                    )
-                                  }
-                                />
-                              ) : null}
-                            </td>
-                          );
-                        })}
-                        <td className="px-4 py-3 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {groupPerms.map((perm) => (
+                        <label
+                          key={perm.id}
+                          className="flex items-center gap-2 text-sm p-2 hover:bg-slate-50 rounded cursor-pointer"
+                        >
                           <input
                             type="checkbox"
-                            checked={areAllForRowChecked}
-                            onChange={(e) =>
-                              handleSelectAllForRow(item, e.target.checked)
-                            }
+                            checked={selectedPermissionIds.has(perm.id)}
+                            onChange={() => handleTogglePermission(perm.id)}
+                            className="rounded border-slate-300 text-primary focus:ring-primary"
                           />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
+                          <span>{perm.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </form>
     </Modal>

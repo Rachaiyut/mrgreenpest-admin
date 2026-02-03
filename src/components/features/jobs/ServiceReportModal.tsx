@@ -8,6 +8,9 @@ import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
+import { Assessment } from '@/src/types';
+import { AssessmentApi, QuotationApi } from '@/src/api';
+import { SearchableSelect } from '../../common';
 
 interface ServiceReportModalProps {
   isOpen: boolean;
@@ -60,6 +63,76 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 }) => {
   const [reportState, setReportState] = useState<Partial<ServiceReport>>({});
   const [selectedQuotationId, setSelectedQuotationId] = useState('');
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
+
+  const [quotation, setQuotation] = useState<Quotation[]>([]);
+
+  useEffect(() => {
+    const fetchQuotation = async () => {
+      try {
+        const res = await QuotationApi.getAll();
+        setQuotation(res.data);
+      } catch (error) {
+        console.error('Failed to fetch quotation:', error);
+      }
+    };
+    fetchQuotation();
+  }, []);
+
+  useEffect(() => {
+    const fetchAssessments = async () => {
+      try {
+        const res = await AssessmentApi.getAll();
+        console.log('Fetched assessments locally:', res.data);
+        setAssessments(res.data);
+      } catch (error) {
+        console.error('Failed to fetch assessments:', error);
+      }
+    };
+    fetchAssessments();
+  }, []);
+
+  // Assessment options for dropdown
+  const assessmentOptions = useMemo(() => {
+    console.log('Assessments for options:', assessments);
+    return (assessments || [])
+      // .filter((a) => a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.PENDING)
+      .map((a) => {
+        const customerName = a.customer
+          ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
+          : 'ไม่ระบุลูกค้า';
+        return {
+          value: a.id,
+          label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
+          description: a.address || '',
+        };
+      });
+  }, [assessments]);
+
+
+  // Quotation options for dropdown
+  const quotationOptions = useMemo(() => {
+    console.log('Quotations for options:', quotation);
+    return (quotation || [])
+      // .filter((a) => a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.PENDING)
+      .map((q) => {
+        const customerName = q.customer_name
+          ? `${q.customer_name}`.trim()
+          : 'ไม่ระบุลูกค้า';
+        return {
+          value: q.id,
+          label: `${q.code || 'No Code'} - ${customerName} [${q.status}]`,
+          description: q.code || '',
+        };
+      });
+  }, [quotation]);
+
+  // Selected assessment details
+  const selectedAssessment = useMemo(() => {
+    return assessments?.find((a) => a.id === selectedAssessmentId);
+  }, [assessments, selectedAssessmentId]);
+
 
   const availableQuotations = useMemo(() => {
     if (!job) return [];
@@ -1045,19 +1118,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
         </div>
 
+
         <FormField label="อ้างอิงใบเสนอราคา (ถ้ามี)" htmlFor="quotation-ref">
-          <Select
-            id="quotation-ref"
-            value={selectedQuotationId}
-            onChange={(e) => setSelectedQuotationId(e.target.value)}
-          >
-            <option value="">-- ไม่ระบุ --</option>
-            {availableQuotations.map((q) => (
-              <option key={q.id} value={q.id}>
-                {q.id} (ยอด: ฿{q.total.toLocaleString()})
-              </option>
-            ))}
-          </Select>
+          <FormField label="เลือกใบประเมิน" htmlFor="assessment-select">
+            <SearchableSelect
+              value={selectedQuotationId}
+              onChange={(value) => setSelectedQuotationId(value)}
+              placeholder="-- เลือกใบประเมิน (ไม่บังคับ) --"
+              options={quotationOptions}
+            />
+          </FormField>
         </FormField>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

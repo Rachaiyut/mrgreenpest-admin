@@ -57,6 +57,7 @@ export interface User {
   creditLimit?: number;
   // Computed property for display
   name: string;
+  avatarUrl?: string;
 }
 
 export interface Address {

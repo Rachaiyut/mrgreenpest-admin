@@ -12,19 +12,51 @@ import {
   WalletIcon,
 } from '../../assets/icons/Icons';
 import { AddRoleModal } from '../../components/features/users/AddRoleModal';
+import { EditRoleModal } from '../../components/features/users/EditRoleModal';
 import { AddUserModal } from '../../components/features/users/AddUserModal';
 import { Pagination } from '../../components/common/Pagination';
 import { UserDetailsModal } from '../../components/features/users/UserDetailsModal';
-import { RoleDetailsModal } from '../../components/features/users/RoleDetailsModal';
+import { RoleDetailsModal } from '../../components/features/users/RoleDetailsModal'; // Keep for now or remove?
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
-import { RoleApi } from '../../api/role';
+import { RoleApi, Role } from '../../api/role';
+
+const ROLE_NAME_MAPPING: Record<string, string> = {
+  admin: 'ผู้ดูแลระบบ',
+  lead_tech: 'หัวหน้าช่าง',
+  cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน',
+  coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ',
+  ceo: 'ประธานเจ้าหน้าที่บริหาร',
+  superadmin: 'ผู้ดูแลระบบสูงสุด',
+  sales: 'ฝ่ายขาย',
+  accounting: 'ฝ่ายบัญชี',
+  warehouse: 'คลังสินค้า',
+  dispatcher: 'ผู้จัดส่ง',
+  tech: 'ช่างเทคนิค',
+};
 
 const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | string }> = ({ role }) => {
   // Handle role as object or string
-  const roleName = typeof role === 'object' && role !== null ? (role as { name: string }).name : String(role || '-');
+  let roleNameRaw: string = '-';
+  if (typeof role === 'string') {
+    roleNameRaw = role;
+  } else if (typeof role === 'object' && role !== null) {
+    const r = role as any;
+    if (typeof r.name === 'string') {
+      roleNameRaw = r.name;
+    } else if (typeof r.name === 'object' && r.name !== null) {
+      roleNameRaw = (r.name as any).name || JSON.stringify(r.name);
+    } else {
+      roleNameRaw = JSON.stringify(role);
+    }
+  }
+
+  const normalizedName = typeof roleNameRaw === 'string' ? roleNameRaw : String(roleNameRaw);
+  const roleName = ROLE_NAME_MAPPING[normalizedName.toLowerCase()] || normalizedName;
+
+  // ... rest of the component
 
   const roleColors: Record<string, string> = {
     [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
@@ -40,7 +72,7 @@ const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | stri
     [UserRole.SUPERADMIN]: 'bg-purple-100 text-purple-700',
   };
 
-  const colorClass = roleColors[roleName] || roleColors[roleName.toUpperCase()] || 'bg-slate-100 text-slate-700';
+  const colorClass = roleColors[roleNameRaw] || roleColors[roleNameRaw.toUpperCase()] || 'bg-slate-100 text-slate-700';
 
   return (
     <span
@@ -88,7 +120,15 @@ const Users: React.FC<UsersProps> = ({
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isRoleDetailsModalOpen, setIsRoleDetailsModalOpen] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+
+  // Role Management
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
+  const [roleToEditId, setRoleToEditId] = useState<string | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
+  const [isDeleteRoleModalOpen, setIsDeleteRoleModalOpen] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -96,19 +136,23 @@ const Users: React.FC<UsersProps> = ({
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [selectedUserForWallet, setSelectedUserForWallet] =
     useState<User | null>(null);
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([]);
+
+  const fetchRoles = async () => {
+    try {
+      const res = await RoleApi.getAll();
+      setRoles(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch roles:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const res = await RoleApi.getAll();
-        setRoles(res.data || []);
-      } catch (error) {
-        console.error('Failed to fetch roles:', error);
-      }
-    };
     fetchRoles();
   }, []);
+
+  useEffect(() => {
+    console.log('Roles Data:', roles);
+  }, [roles]);
 
   useEffect(() => {
     setView(defaultView);
@@ -124,9 +168,9 @@ const Users: React.FC<UsersProps> = ({
       const matchesRole = roleFilter === 'all' || userRoleName === roleFilter || userRoleName.toUpperCase() === roleFilter.toUpperCase();
       const matchesSearch =
         !searchQuery ||
-        (user.nationalId || '').toLowerCase().includes(lowercasedQuery) ||
+        (user.citizen_id || '').toLowerCase().includes(lowercasedQuery) ||
         (user.name || '').toLowerCase().includes(lowercasedQuery) ||
-        (user.nickname || '').toLowerCase().includes(lowercasedQuery) ||
+        (user.nick_name || '').toLowerCase().includes(lowercasedQuery) ||
         (user.email || '').toLowerCase().includes(lowercasedQuery);
       return matchesRole && matchesSearch;
     });
@@ -146,6 +190,12 @@ const Users: React.FC<UsersProps> = ({
   const handleViewDetails = (user: User) => {
     setSelectedUser(user);
     setIsDetailsModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
+  const handleViewRoleDetails = (roleId: string) => {
+    setSelectedRoleId(roleId);
+    setIsRoleDetailsModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -169,10 +219,29 @@ const Users: React.FC<UsersProps> = ({
     setUserToDelete(null);
   };
 
-  const handleViewRoleDetails = (role: UserRole) => {
-    setSelectedRole(role);
-    setIsRoleDetailsModalOpen(true);
+  const handleEditRole = (roleId: string) => {
+    setRoleToEditId(roleId);
+    setIsEditRoleModalOpen(true);
     setOpenDropdownId(null);
+  };
+
+  const handleDeleteRole = (role: Role) => {
+    setRoleToDelete(role);
+    setIsDeleteRoleModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
+  const handleConfirmDeleteRole = async () => {
+    if (roleToDelete) {
+      try {
+        await RoleApi.delete(roleToDelete.id);
+        fetchRoles(); // Refresh
+      } catch (error) {
+        console.error("Failed to delete role", error);
+      }
+    }
+    setIsDeleteRoleModalOpen(false);
+    setRoleToDelete(null);
   };
 
   const handleOpenWallet = (user: User) => {
@@ -181,28 +250,29 @@ const Users: React.FC<UsersProps> = ({
     setOpenDropdownId(null);
   };
 
-  const roleCounts = Object.values(UserRole).reduce(
-    (acc, role) => {
-      acc[role] = users.filter((user) => {
-        const userRoleName = typeof user.role === 'object' && user.role !== null
-          ? (user.role as { name: string }).name
-          : String(user.role || '');
-        return userRoleName === role || userRoleName.toUpperCase() === role.toUpperCase();
-      }).length;
-      return acc;
-    },
-    {} as Record<UserRole, number>
-  );
+  // Calculate user counts per role dynamically
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    roles.forEach(r => counts[r.name] = 0);
+
+    users.forEach(user => {
+      const roleName = typeof user.role === 'object' && user.role !== null
+        ? (user.role as { name: string }).name
+        : String(user.role || '');
+      if (counts[roleName] !== undefined) {
+        counts[roleName]++;
+      } else {
+        // Handle roles not in list or fallback
+        counts[roleName] = (counts[roleName] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [roles, users]);
 
   const userActions = [
     { label: 'ดูรายละเอียด', icon: EyeIcon },
     { label: 'แก้ไข', icon: PencilIcon },
     { label: 'กระเป๋าเงิน', icon: WalletIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
-  ];
-
-  const roleActions = [
-    { label: 'แก้ไข', icon: PencilIcon },
     { label: 'ลบ', icon: TrashIcon, isDanger: true },
   ];
 
@@ -271,28 +341,30 @@ const Users: React.FC<UsersProps> = ({
                     title="ค้นหาด้วย: เลขบัตรประชาชน, ชื่อ-นามสกุล, ชื่อเล่น, อีเมล"
                   />
                 </div>
-                <div className="w-48">
-                  <Select
-                    value={roleFilter}
-                    onChange={(e) => {
-                      setRoleFilter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <option value="all">ทุกบทบาท</option>
-                    {Object.values(UserRole).map((role) => (
-                      <option key={role} value={role}>
-                        {role}
+                <Select
+                  value={roleFilter}
+                  onChange={(e) => {
+                    setRoleFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="all">ทุกบทบาท</option>
+                  {roles.map((role) => {
+                    if (typeof role.name === 'object') console.error('Role name is object:', role);
+                    return (
+                      <option key={role.id} value={typeof role.name === 'string' ? role.name : JSON.stringify(role.name)}>
+                        {ROLE_NAME_MAPPING[(typeof role.name === 'string' ? role.name : '').toLowerCase()] || (typeof role.name === 'string' ? role.name : 'Invalid Name')}
                       </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button onClick={() => setIsAddUserModalOpen(true)}>
-                  <PlusIcon className="h-5 w-5" />
-                  สร้างผู้ใช้งาน
-                </Button>
+                    );
+                  })}
+                </Select>
               </div>
+              <Button onClick={() => setIsAddUserModalOpen(true)}>
+                <PlusIcon className="h-5 w-5" />
+                สร้างผู้ใช้งาน
+              </Button>
             </div>
+
 
             <Card className="!p-0">
               <div className="overflow-x-auto">
@@ -351,7 +423,7 @@ const Users: React.FC<UsersProps> = ({
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-slate-900">
-                                {user.name} ({user.nickname})
+                                {user.name} ({user.nick_name})
                               </div>
                             </div>
                           </div>
@@ -433,6 +505,12 @@ const Users: React.FC<UsersProps> = ({
                         scope="col"
                         className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
                       >
+                        รายละเอียด
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                      >
                         จำนวนผู้ใช้งาน
                       </th>
                       <th scope="col" className="relative px-6 py-3">
@@ -441,21 +519,35 @@ const Users: React.FC<UsersProps> = ({
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
-                    {Object.values(UserRole).map((role) => (
-                      <tr key={role} className="hover:bg-slate-50">
+                    {roles.length === 0 && (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
+                          ไม่พบข้อมูลบทบาทใระบบ
+                        </td>
+                      </tr>
+                    )}
+                    {roles.map((role) => (
+                      <tr key={role.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
-                            {role}
+                            {(() => {
+                              const rName = role.name;
+                              const safeName = typeof rName === 'string' ? rName : 'Unknown';
+                              return ROLE_NAME_MAPPING[safeName.toLowerCase()] || safeName;
+                            })()}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {roleCounts[role]}
+                          {role.description || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          {roleCounts[role.name] || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="inline-block text-left">
                             <Button
-                              data-role-id={role}
-                              onClick={(e) => handleDropdownToggle(e, role)}
+                              data-role-id={role.id}
+                              onClick={(e) => handleDropdownToggle(e, role.id)}
                               variant="icon"
                               title="ตัวเลือก"
                             >
@@ -475,7 +567,7 @@ const Users: React.FC<UsersProps> = ({
             </Card>
           </>
         )}
-      </div>
+      </div >
       {openDropdownId && dropdownPosition && (
         <div
           ref={dropdownRef}
@@ -527,7 +619,7 @@ const Users: React.FC<UsersProps> = ({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    handleViewRoleDetails(openDropdownId as UserRole);
+                    handleViewRoleDetails(openDropdownId!);
                   }}
                   className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
                   role="menuitem"
@@ -539,8 +631,7 @@ const Users: React.FC<UsersProps> = ({
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    setOpenDropdownId(null);
-                    setIsAddRoleModalOpen(true);
+                    handleEditRole(openDropdownId!);
                   }}
                   className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
                   role="menuitem"
@@ -549,14 +640,17 @@ const Users: React.FC<UsersProps> = ({
                   <span>แก้ไข</span>
                 </a>
                 <Button
-                  onClick={() => setOpenDropdownId(null)}
-                  disabled={roleCounts[openDropdownId as UserRole] > 0}
+                  onClick={() => {
+                    const role = roles.find(r => r.id === openDropdownId);
+                    if (role) handleDeleteRole(role);
+                  }}
+                  disabled={roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0}
                   title={
-                    roleCounts[openDropdownId as UserRole] > 0
+                    roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0
                       ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
                       : 'ลบบทบาท'
                   }
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${roleCounts[openDropdownId as UserRole] > 0
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0
                     ? 'text-slate-400 cursor-not-allowed'
                     : 'text-red-700 hover:bg-red-50'
                     }`}
@@ -570,23 +664,31 @@ const Users: React.FC<UsersProps> = ({
             )}
           </div>
         </div>
-      )}
+      )
+      }
       <AddRoleModal
         isOpen={isAddRoleModalOpen}
         onClose={() => setIsAddRoleModalOpen(false)}
+        onSuccess={() => fetchRoles()}
+      />
+      <EditRoleModal
+        isOpen={isEditRoleModalOpen}
+        onClose={() => setIsEditRoleModalOpen(false)}
+        roleId={roleToEditId}
+        onSuccess={() => fetchRoles()}
       />
       <AddUserModal
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onCreateUser={onCreateUser}
-        roles={roles}
+        roles={roles as any}
       />
       <EditUserModal
         isOpen={isEditUserModalOpen}
         onClose={() => setIsEditUserModalOpen(false)}
         user={userToEdit}
         onUpdateUser={onUpdateUser}
-        roles={roles}
+        roles={roles as any}
       />
       <UserDetailsModal
         isOpen={isDetailsModalOpen}
@@ -596,7 +698,7 @@ const Users: React.FC<UsersProps> = ({
       <RoleDetailsModal
         isOpen={isRoleDetailsModalOpen}
         onClose={() => setIsRoleDetailsModalOpen(false)}
-        role={selectedRole}
+        roleId={selectedRoleId}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -607,6 +709,21 @@ const Users: React.FC<UsersProps> = ({
           <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้งาน{' '}
             <strong>{userToDelete?.name}</strong>?
+            การกระทำนี้ไม่สามารถย้อนกลับได้
+          </p>
+        }
+        confirmButtonText="ยืนยันการลบ"
+        confirmButtonClass="bg-danger hover:bg-danger/90"
+      />
+      <ConfirmationModal
+        isOpen={isDeleteRoleModalOpen}
+        onClose={() => setIsDeleteRoleModalOpen(false)}
+        onConfirm={handleConfirmDeleteRole}
+        title="ยืนยันการลบ"
+        message={
+          <p>
+            คุณแน่ใจหรือไม่ว่าต้องการลบผู้บทบาท{' '}
+            <strong>{roleToDelete?.name}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }

@@ -1128,18 +1128,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       ];
 
     if (
-      selectedJob.assessment_id &&
-      authUser?.role &&
-      [Role.LEAD_TECH, Role.TECH, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role)
-    ) {
-      actions.push({
-        label: 'แก้ไขใบประเมิน',
-        icon: ClipboardDocumentListIcon,
-        onClick: () => handleEditAssessment(selectedJob),
-      });
-    }
-
-    if (
       status === JobStatus.Planned ||
       status === JobStatus.Pending ||
       status === JobStatus.InProgress ||
@@ -2083,17 +2071,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         customers={initialCustomers}
         categories={categories}
       />
-      <TechAssessmentEditModal
-        isOpen={isTechAssessmentModalOpen}
-        onClose={() => {
-          setIsTechAssessmentModalOpen(false);
-          setSelectedAssessmentForJob(null);
-        }}
-        assessment={selectedAssessmentForJob}
-        onUpdateAssessment={handleTechUpdateAssessment}
-        products={initialProducts}
-        categories={categories}
-      />
+
     </>
   );
 };
