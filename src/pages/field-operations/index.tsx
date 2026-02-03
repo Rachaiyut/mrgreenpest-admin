@@ -9,6 +9,7 @@ import {
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
+import { Package } from '../../types/entity/package.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
 import { Category } from '@/src/types/entity/category.interface';
@@ -445,6 +446,7 @@ import {
   JobApi,
   CategoryApi,
   ServiceReportApi,
+  PackageApi,
 } from '@/src/api';
 
 const FieldOperations: React.FC<FieldOperationsProps> = ({
@@ -471,17 +473,19 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   );
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>(initialProducts || []);
+  const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [warehousesRes, categoriesRes, reportsRes, productsRes] =
+      const [warehousesRes, categoriesRes, reportsRes, productsRes, packagesRes] =
         await Promise.all([
           VehicleApi.getVehiclesWithUserJobs(),
           CategoryApi.getCategories({}),
           ServiceReportApi.getAll({}),
           ProductApi.getProducts({ limit: 1000 }),
+          PackageApi.getPackages({ limit: 100 }),
         ]);
 
       // Ensure warehousesData is an array
@@ -495,11 +499,13 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       const categoriesData = (categoriesRes as any).data || [];
       const reportsData = (reportsRes as any).data || [];
       const productsData = (productsRes as any).data || [];
+      const packagesData = (packagesRes as any).data || [];
 
       setWarehouses(warehousesData);
       setCategories(categoriesData);
       setReports(reportsData);
       setProducts(productsData);
+      setPackages(packagesData);
 
       const debugItems: any[] = [];
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
@@ -2073,6 +2079,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         assessment={assessmentForCheckout}
         onUpdateAssessment={handleAssessmentUpdateOnCheckout}
         products={initialProducts}
+        packages={packages}
         customers={initialCustomers}
         categories={categories}
       />

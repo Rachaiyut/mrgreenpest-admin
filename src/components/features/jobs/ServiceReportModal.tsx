@@ -254,6 +254,18 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       is_next_check: reportState.next_appointment?.reasons?.includes('ตรวจเช็ค'),
       is_next_underground: reportState.next_appointment?.reasons?.includes('อัดลงดิน'),
       is_next_renew: reportState.next_appointment?.reasons?.includes('ครบรอบบริการ'),
+
+      // Pest Detail - nested object for backend
+      pest_detail: {
+        ant_bait: reportState.ant?.apply_gel || false,
+        roach_bait: reportState.cockroach?.apply_gel || false,
+        rat_glue_trap: reportState.rat?.glue_traps || false,
+        rat_mechanical_trap: reportState.rat?.mechanical_traps || false,
+        rat_bait_station: reportState.rat?.bait_stations || false,
+        rat_refill_bait: reportState.rat?.refill_bait || false,
+        lizard_trap: reportState.lizard?.place_traps || false,
+        pest_other: null,
+      },
     } as ServiceReport;
     onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
   };

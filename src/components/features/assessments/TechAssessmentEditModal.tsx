@@ -33,6 +33,8 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
 }) => {
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
+  const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
+  const [originalTotalPrice, setOriginalTotalPrice] = useState<number>(0);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
@@ -101,11 +103,18 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
       });
       setSelectedPackageId(assessment.package_id || null);
 
-      const initialWorkAreas = (
-        assessment_areas ||
-        assessment.assessment_areas ||
-        []
-      ).map((wa) => {
+      const rawAreas = assessment_areas || assessment.assessment_areas || [];
+
+      // Store original values for reference (deep copy to prevent mutations)
+      const originalAreas = rawAreas.map((wa) => ({
+        ...wa,
+        items: [...(wa.items || [])],
+        category_services: [...(wa.category_services || [])],
+      }));
+      setOriginalWorkAreas(originalAreas);
+      setOriginalTotalPrice(assessment.total_price || 0);
+
+      const initialWorkAreas = rawAreas.map((wa) => {
         const enrichedItems = (wa.items || []).map((item) => {
           if (item.product_id && (!item.product_name || !item.product_price)) {
             const product = products.find((p) => p.id === item.product_id);
@@ -132,6 +141,8 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     } else if (!isOpen) {
       setFormData({});
       setWorkAreas([]);
+      setOriginalWorkAreas([]);
+      setOriginalTotalPrice(0);
     }
   }, [assessment, isOpen, products]);
 
@@ -372,6 +383,149 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
           </FormField>
         </div>
 
+        {/* Draft Data from Admin - Summary Section */}
+        {originalWorkAreas.length > 0 && (
+          <div className="border-2 border-blue-300 p-4 rounded-lg bg-blue-50">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                📋 ข้อมูล Draft จาก Admin
+              </div>
+              <span className="text-sm text-blue-700">
+                (ข้อมูลที่ Admin สร้างไว้ - อ่านอย่างเดียว)
+              </span>
+            </div>
+
+            {/* Package Info */}
+            {(assessment as any)?.package && (
+              <div className="mb-4 p-3 bg-white rounded-lg border border-blue-200">
+                <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                  แพ็กเกจที่เลือก
+                </h4>
+                <div className="text-slate-700">
+                  <span className="font-medium">{(assessment as any).package?.name}</span>
+                  {(assessment as any).package?.visit_limit && (
+                    <span className="text-sm text-slate-500 ml-2">
+                      ({(assessment as any).package.visit_limit} ครั้ง / {(assessment as any).package.contract_period} เดือน)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Original Work Areas Summary */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-blue-800">
+                พื้นที่สำรวจ ({originalWorkAreas.length} พื้นที่)
+              </h4>
+
+              {originalWorkAreas.map((area, index) => (
+                <div key={area.id || index} className="bg-white p-3 rounded-lg border border-blue-200">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-semibold text-slate-800">
+                        {area.area_name || `พื้นที่ ${index + 1}`}
+                      </span>
+                      {area.building_type && (
+                        <span className="text-sm text-slate-500 ml-2">
+                          ({area.building_type})
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-blue-700">
+                        ฿{(area.total_price || 0).toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    {area.area_size && (
+                      <div>
+                        <span className="text-slate-500">ขนาด:</span>{' '}
+                        <span className="font-medium">{area.area_size} ตร.ม.</span>
+                      </div>
+                    )}
+                    {typeof area.base_service_price === 'number' && (
+                      <div>
+                        <span className="text-slate-500">ราคาบริการ:</span>{' '}
+                        <span className="font-medium">
+                          ฿{area.base_service_price.toLocaleString('th-TH')}
+                        </span>
+                      </div>
+                    )}
+                    {area.service_system && (
+                      <div>
+                        <span className="text-slate-500">ระบบ:</span>{' '}
+                        <span className="font-medium">{area.service_system}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Category Services */}
+                  {area.category_services && area.category_services.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {area.category_services.map((cat, catIdx) => {
+                        const categoryInfo = categories.find(c => c.id === cat.category_id);
+                        return (
+                          <span
+                            key={catIdx}
+                            className="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full"
+                          >
+                            {categoryInfo?.name || cat.name || 'บริการ'}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Items */}
+                  {area.items && area.items.length > 0 && (
+                    <div className="mt-2 border-t pt-2">
+                      <div className="text-xs text-slate-500 mb-1">สินค้า/บริการเพิ่มเติม:</div>
+                      <div className="space-y-1">
+                        {area.items.map((item, itemIdx) => (
+                          <div key={itemIdx} className="flex justify-between text-sm">
+                            <span>{item.product_name} x{item.quantity}</span>
+                            <span className="text-slate-600">
+                              ฿{(item.total_price || 0).toLocaleString('th-TH')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Original Total */}
+              <div className="flex justify-between items-center p-3 bg-blue-100 rounded-lg">
+                <span className="font-semibold text-blue-800">ยอดรวมจาก Admin:</span>
+                <span className="text-xl font-bold text-blue-700">
+                  ฿{originalTotalPrice.toLocaleString('th-TH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Divider with edit indicator */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-300"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="px-4 py-1 bg-white text-slate-600 text-sm font-medium rounded-full border border-slate-300">
+              ✏️ แก้ไขข้อมูลด้านล่าง
+            </span>
+          </div>
+        </div>
+
         {/* Package Selection */}
         <div className="border border-slate-200 p-4 rounded-lg space-y-4">
           <div className="flex items-center justify-between">
@@ -463,6 +617,8 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
               products={products}
               selectedPackage={selectedPackageForForm as any}
               categories={categories}
+              isEditing={true}
+              originalArea={originalWorkAreas[index]}
             />
           ))}
         </div>
@@ -481,28 +637,55 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
               สรุปราคา
             </h3>
             <div className="space-y-2">
-              {workAreas.map((area, index) => (
-                <div
-                  key={area.id || index}
-                  className="flex justify-between items-center text-sm"
-                >
-                  <span className="text-slate-600">
-                    {area.area_name || `พื้นที่ ${index + 1}`}
-                    {area.area_size && (
-                      <span className="text-slate-400 ml-1">
-                        ({area.area_size} ตร.ม.)
+              {workAreas.map((area, index) => {
+                const originalArea = originalWorkAreas[index];
+                const hasChanged = originalArea && originalArea.total_price !== area.total_price;
+
+                return (
+                  <div
+                    key={area.id || index}
+                    className="flex justify-between items-center text-sm"
+                  >
+                    <span className="text-slate-600">
+                      {area.area_name || `พื้นที่ ${index + 1}`}
+                      {area.area_size && (
+                        <span className="text-slate-400 ml-1">
+                          ({area.area_size} ตร.ม.)
+                        </span>
+                      )}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      {hasChanged && originalArea && (
+                        <span className="text-xs text-amber-600 line-through">
+                          ฿{(originalArea.total_price || 0).toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      )}
+                      <span className={`font-semibold ${hasChanged ? 'text-green-600' : 'text-slate-800'}`}>
+                        ฿{(area.total_price || 0).toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </span>
-                    )}
-                  </span>
-                  <span className="font-semibold text-slate-800">
-                    ฿{(area.total_price || 0).toLocaleString('th-TH', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              ))}
+                    </div>
+                  </div>
+                );
+              })}
               <div className="border-t border-slate-200 pt-2 mt-2">
+                {/* Original Total Display */}
+                {originalTotalPrice > 0 && originalTotalPrice !== totalEstimatedCost && (
+                  <div className="flex justify-between items-center text-sm text-amber-600 mb-1">
+                    <span>ยอดเดิม (ก่อนแก้ไข)</span>
+                    <span className="line-through">
+                      ฿{originalTotalPrice.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-slate-800">รวมทั้งหมด</span>
                   <span className="text-xl font-bold text-primary">

@@ -578,6 +578,7 @@ const Assessments: React.FC = () => {
         assessment={assessmentToEdit}
         onUpdateAssessment={handleUpdateAssessment}
         products={products}
+        packages={packages}
         customers={customers}
         categories={categories}
       />

@@ -10,7 +10,6 @@ import {
   Customer,
   Category,
 } from '@/src/types/entity/app.interface';
-import { CategoryType } from '@/src/types/enums/category';
 import { ServiceSystem } from '@/src/types/enums/assessment';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
@@ -24,6 +23,7 @@ interface EditAssessmentModalProps {
   assessment: Assessment | null;
   onUpdateAssessment: (assessmentData: Assessment) => void;
   products: Product[];
+  packages: import('@/src/types/entity/package.interface').Package[];
   customers?: Customer[];
   categories: Category[];
 }
@@ -43,27 +43,25 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   assessment,
   onUpdateAssessment,
   products,
+  packages = [],
   customers = [],
   categories = [],
 }) => {
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
+  const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
 
-  const servicePackages = useMemo(
-    () => products.filter((p) => p.category.type === CategoryType.SERVICE),
-    [products]
-  );
+  // Use packages prop directly - filter to only those with price tiers
   const suggestedPackageOptions = useMemo(() => {
-    return (servicePackages as any[]).filter(
+    return packages.filter(
       (pkg) =>
-        pkg.cost_price &&
         pkg.package_price &&
         pkg.package_price.length > 0
     );
-  }, [servicePackages]);
+  }, [packages]);
 
   const PAYMENT_LABELS: Record<PaymentMethod, string> = {
     [PaymentMethod.CASH]: 'เงินสด',
@@ -100,11 +98,17 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       // Current interface has package_id on Assessment.
       setSelectedPackageId(assessment.package_id || null);
 
-      const initialWorkAreas = (
-        assessment_areas ||
-        assessment.assessment_areas ||
-        []
-      ).map((wa) => {
+      const rawAreas = assessment_areas || assessment.assessment_areas || [];
+
+      // Store original values for reference (deep copy to prevent mutations)
+      const originalAreas = rawAreas.map((wa) => ({
+        ...wa,
+        items: [...(wa.items || [])],
+        category_services: [...(wa.category_services || [])],
+      }));
+      setOriginalWorkAreas(originalAreas);
+
+      const initialWorkAreas = rawAreas.map((wa) => {
         // Fetch missing details from product/package if available
         const enrichedItems = (wa.items || []).map((item) => {
           if (item.product_id && (!item.product_name || !item.product_price)) {
@@ -133,6 +137,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     } else if (!isOpen) {
       setFormData({});
       setWorkAreas([]);
+      setOriginalWorkAreas([]);
     }
   }, [assessment, isOpen]);
 
@@ -206,7 +211,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
 
     const selectedPkg = pkgId
-      ? servicePackages.find((p) => p.id === pkgId)
+      ? packages.find((p) => p.id === pkgId)
       : null;
 
     setWorkAreas((prevAreas) =>
@@ -249,16 +254,52 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     // Prepare work areas: remove temp IDs and ensure correct types
     const sanitizedWorkAreas = workAreas.map((area) => {
       // Create a shallow copy to avoid mutating state
-      const newArea = { ...area };
+      const newArea: any = { ...area };
 
       // Remove temporary IDs (starting with "area-") so backend creates new records
       if (newArea.id && newArea.id.startsWith('area-')) {
         delete newArea.id;
       }
 
-      // Ensure items don't have temporary IDs or issues?
-      // Assuming items are okay as is, but we could clean them too if needed.
-      // Usually items are replaced or handled by backend logic.
+      // Ensure area_size is a number (required by backend)
+      if (newArea.area_size === undefined || newArea.area_size === '') {
+        newArea.area_size = 0;
+      } else {
+        newArea.area_size = Number(newArea.area_size);
+      }
+
+      // Ensure total_price is calculated correctly
+      const itemsCost = (newArea.items || []).reduce(
+        (sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+        0
+      );
+      const baseCost = Number(newArea.base_service_price) || 0;
+      newArea.total_price = baseCost + itemsCost;
+
+      // Sanitize items - ensure correct field types and remove temp IDs
+      newArea.items = (newArea.items || []).map((item: any, idx: number) => {
+        const sanitizedItem: any = {
+          product_id: item.product_id,
+          product_name: item.product_name || '',
+          product_price: Number(item.product_price) || 0,
+          quantity: Number(item.quantity) || 1,
+          total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
+        };
+        // Keep existing item ID if valid UUID, otherwise remove
+        if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) {
+          sanitizedItem.id = item.id;
+        }
+        return sanitizedItem;
+      });
+
+      // Sanitize category_services - keep only category_id
+      newArea.category_services = (newArea.category_services || []).map((cat: any) => ({
+        category_id: cat.category_id,
+        ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
+      }));
+
+      // Remove frontend-only fields that backend doesn't expect
+      delete newArea.base_service_price;
 
       return newArea;
     });
@@ -271,12 +312,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
     };
-
-    // Call onUpdateAssessment which likely calls API
-    // If onUpdateAssessment doesn't handle API, we might need to call it here.
-    // Based on `Assessments.tsx`, `handleUpdateAssessment` calls `AssessmentApi.update`.
-    // So we just need to make sure we pass the correct data structure.
-    // The current structure seems to match what `AssessmentApi.update` expects (Partial<Assessment>).
 
     onUpdateAssessment(updatedAssessment);
     onClose();
@@ -451,8 +486,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                 value={
                   formData.appointment_date
                     ? new Date(formData.appointment_date)
-                        .toISOString()
-                        .substring(0, 10)
+                      .toISOString()
+                      .substring(0, 10)
                     : ''
                 }
                 onChange={handleDateChange}
@@ -531,12 +566,14 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               products={products}
               selectedPackage={
                 selectedPackageId
-                  ? (servicePackages.find(
-                      (p) => p.id === selectedPackageId
-                    ) as any)!
+                  ? (packages.find(
+                    (p) => p.id === selectedPackageId
+                  ) as any)!
                   : null
               }
               categories={categories}
+              isEditing={true}
+              originalArea={originalWorkAreas[index]}
             />
           ))}
         </div>

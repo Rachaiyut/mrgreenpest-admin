@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FormField, Input, Select } from '../../common/FormControls';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
@@ -24,6 +24,10 @@ interface WorkAreaFormProps {
   products: Product[];
   selectedPackage: Package | null;
   categories: Category[];
+  /** Original area data for comparison when editing (optional) */
+  originalArea?: Partial<AssessmentWorkArea>;
+  /** Flag to indicate this is an edit operation (optional) */
+  isEditing?: boolean;
 }
 
 export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
@@ -34,8 +38,13 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   onRemoveArea,
   products,
   selectedPackage,
-  categories
+  categories,
+  originalArea,
+  isEditing = false,
 }) => {
+  // Track if this is the initial load - skip auto-recalculation if editing existing data
+  const isInitialLoad = useRef(true);
+  const hasUserMadeChanges = useRef(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -223,7 +232,28 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     );
   };
 
+  // Stringify category_services IDs for stable comparison
+  const categoryServicesKey = useMemo(() => {
+    return JSON.stringify((area.category_services || []).map(c => c.category_id).sort());
+  }, [area.category_services]);
+
   useEffect(() => {
+    // Skip auto-recalculation on initial load if we're editing existing data with valid prices
+    // This preserves the original saved values
+    if (isInitialLoad.current && isEditing) {
+      // If the area already has a base_service_price from the database, preserve it
+      if (typeof area.base_service_price === 'number' && area.base_service_price > 0) {
+        isInitialLoad.current = false;
+        return;
+      }
+    }
+
+    // Mark initial load as complete after first run
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      return; // Don't recalculate on first render if editing
+    }
+
     if (selectedPackage && area.area_size) {
       // Sort package prices by area_range ascending to find the best fit
       const sortedPrices = [...(selectedPackage.package_price || [])].sort(
@@ -262,7 +292,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
         }
       }
     }
-  }, [area.area_size, selectedPackage, area.category_services, categories]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area.area_size, selectedPackage?.id, categoryServicesKey, isEditing, index]);
 
   const isPriceInvalid = useMemo(() => {
     if (!selectedCondition || typeof area.base_service_price !== 'number')
@@ -281,15 +312,17 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
     const currentEstimatedCost = area.total_price || 0;
 
-    if (currentEstimatedCost !== newTotalCost) {
+    // Only update if the total actually changed (avoid infinite loop)
+    if (Math.abs(currentEstimatedCost - newTotalCost) > 0.001) {
       onAreaChange(index, { ...area, total_price: newTotalCost });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     area.items,
     area.base_service_price,
-    area.total_price,
+    // NOTE: Removed area.total_price to prevent infinite loop
+    // We're calculating and setting total_price, so it shouldn't be a dependency
     index,
-    onAreaChange,
   ]);
 
   const handleFieldChange = (
@@ -712,6 +745,48 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             </table>
           </div>
         </div>
+
+        {/* Original Values Display (when editing) */}
+        {isEditing && originalArea && (
+          <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+            <h4 className="text-sm font-semibold text-amber-800 mb-2">
+              📋 ค่าก่อนหน้า (Previous Values)
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+              {originalArea.area_size && (
+                <div>
+                  <span className="text-amber-600">พื้นที่:</span>{' '}
+                  <span className="font-medium text-amber-900">
+                    {originalArea.area_size} ตร.ม.
+                  </span>
+                </div>
+              )}
+              {typeof originalArea.base_service_price === 'number' && (
+                <div>
+                  <span className="text-amber-600">ราคาบริการ:</span>{' '}
+                  <span className="font-medium text-amber-900">
+                    ฿{originalArea.base_service_price.toLocaleString('th-TH', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+              {typeof originalArea.total_price === 'number' && (
+                <div>
+                  <span className="text-amber-600">ยอดรวม:</span>{' '}
+                  <span className="font-medium text-amber-900">
+                    ฿{originalArea.total_price.toLocaleString('th-TH', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="text-right font-semibold text-slate-800 pt-2 border-t">
           ยอดรวมพื้นที่นี้: ฿
           {(area.total_price || 0).toLocaleString('th-TH', {
