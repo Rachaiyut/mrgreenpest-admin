@@ -88,7 +88,7 @@ const JobCard: React.FC<{
       isAssignedToCurrentUser &&
       ((job.status as unknown as JobStatus) === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
-    const showReportButton = showCheckOutButton;
+    const showReportButton = showCheckOutButton && !job.service_report;
 
     let checkInTooltip = '';
     if (isAssignedToCurrentUser) {

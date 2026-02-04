@@ -250,8 +250,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSave = async (statusOverride?: AsessmentStatus) => {
     if (!assessment) return;
 
     // Prepare work areas: remove temp IDs and ensure correct types
@@ -314,10 +313,18 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
+      status: statusOverride || (formData.status as AsessmentStatus) || assessment.status,
     };
 
     onUpdateAssessment(updatedAssessment);
+
+    // Only close if it's a normal save or explicit action usually implies closing or refreshing
     onClose();
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    await handleSave();
   };
 
   if (!isOpen) return null; // Only return null if not open
@@ -577,12 +584,12 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               categories={categories}
               isEditing={true}
               originalArea={originalWorkAreas[index]}
-              onApprove={() => {
-                // Determine next status (e.g. from PENDING to APPOINTMENT or IN_PROGRESS)
-                // Assuming APPOINTMENT is the next valid step for "IN_PROGRESS" workflow
-                setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
-                // Optionally could force update immediately or just let user save
-              }}
+              onApprove={assessment?.status === AsessmentStatus.PENDING ? () => {
+                if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\nConfirm approval and status change to Appointment?')) {
+                  setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
+                  handleSave(AsessmentStatus.APPOINTMENT);
+                }
+              } : undefined}
             />
           ))}
         </div>
