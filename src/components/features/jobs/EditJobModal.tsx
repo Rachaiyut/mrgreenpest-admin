@@ -12,6 +12,7 @@ import { PlusIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { WarehouseType, CategoryType } from '@/src/types';
 import { AssessmentApi, ProductApi, CategoryApi, PackageApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
+import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
 import { Package } from '@/src/types/entity/package.interface';
 
@@ -109,7 +110,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   const [timeConflictError, setTimeConflictError] = useState<string | null>(
     null
   );
-  const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]);
+  const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]); // Note: This might be redundant if using assessment.assessment_areas
+  const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -169,7 +171,36 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     if (isOpen && job?.assessment_id) {
       AssessmentApi.getById(job.assessment_id)
         .then((res) => {
-          setAssessment(res.data || null);
+          const rawAssessment = res.data || null;
+          if (rawAssessment) {
+            // Helper to derive base price (Logic sync with EditAssessmentModal)
+            const enrichArea = (wa: any) => {
+              const itemsTotal = (wa.items || []).reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+              const derivedBasePrice = wa.base_service_price !== undefined
+                ? wa.base_service_price
+                : (Number(wa.total_price) || 0) - itemsTotal;
+
+              return {
+                ...wa,
+                items: wa.items || [],
+                category_services: wa.category_services || [],
+                base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+              };
+            };
+
+            const enrichedAreas = (rawAssessment.assessment_areas || []).map(enrichArea);
+
+            // Update assessment with enriched areas so they display correctly immediately
+            setAssessment({
+              ...rawAssessment,
+              assessment_areas: enrichedAreas
+            });
+            // Set original areas for comparison/protection
+            setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
+          } else {
+            setAssessment(null);
+            setOriginalWorkAreas([]);
+          }
           console.log('Fetched assessment:', res.data || null);
         })
         .catch((err) => {
@@ -221,7 +252,30 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     if (job) {
       const { work_areas, technicians, ...rest } = job;
       setFormData(rest);
-      setWorkAreas(work_areas || []);
+
+      // Helper to derive base price (Logic sync with EditAssessmentModal)
+      const enrichArea = (wa: any) => {
+        // Calculate base_service_price if not present
+        // In Job Edit, we assume items are already populated
+        const itemsTotal = (wa.items || []).reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+
+        // If coming from DB, base_service_price might be missing, so derive it
+        const derivedBasePrice = wa.base_service_price !== undefined
+          ? wa.base_service_price
+          : (Number(wa.total_price) || 0) - itemsTotal;
+
+        return {
+          ...wa,
+          items: wa.items || [],
+          category_services: wa.category_services || [],
+          base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+        };
+      };
+
+      const enrichedAreas = (work_areas || []).map(enrichArea);
+      setWorkAreas(enrichedAreas);
+      // Deep copy to ensure independence for edit detection
+      setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
 
       const lead = technicians[0];
       const additional = technicians.slice(1);
@@ -330,8 +384,48 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       service_system: (assessment as any)?.service_system || 'CHEMICAL',
       remark: formData.remarks,
       team_member: teamMembers,
-      assessment: assessment
-        ? {
+      assessment: (() => {
+        if (!assessment) return undefined;
+
+        let shouldBePending = false;
+        const mappedAreas = ((assessment as any)?.assessment_areas || []).map(
+          (area: any) => {
+            // Check for price condition
+            if (assessment.package_id) {
+              const pkg = packages.find(p => p.id === assessment.package_id);
+              if (pkg) {
+                const standardBasePrice = Number(calculateAreaPrice(area, pkg));
+                const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
+                const minExpectedTotal = standardBasePrice + itemsTotal;
+
+                // Allow for small floating point differences
+                if (Number(area.total_price) < minExpectedTotal - 0.01) {
+                  shouldBePending = true;
+                }
+              }
+            }
+
+            return {
+              package_price_id: area.package_price_id,
+              area_name: area.area_name,
+              building_type: area.building_type,
+              service_system: area.service_system,
+              area_size: area.area_size,
+              base_service_price: area.base_service_price,
+              total_price: area.total_price,
+              category_services: area.category_services || [],
+              items: (area.items || []).map((it: any) => ({
+                product_id: it.product_id,
+                product_name: it.product_name,
+                product_price: it.product_price,
+                quantity: it.quantity,
+                total_price: it.total_price,
+              })),
+            };
+          }
+        );
+
+        return {
           customer_id: job.customer_id,
           package_id: (assessment as any).package_id,
           appointment_date: assessment.appointment_date
@@ -347,29 +441,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           road_line: (job as any).road_line,
           sequence: (job as any).sequence,
           google_map_link: job.google_map_link,
-          status: (assessment as any).status,
+          // If price condition met, force PENDING, otherwise use existing status
+          status: shouldBePending ? AsessmentStatus.PENDING : (assessment as any).status,
           payment_condition: (assessment as any).payment_condition,
           total_price: (assessment as any).total_price,
           created_by: currentUser?.name,
           updated_by: currentUser?.name,
-          assessment_areas: ((assessment as any)?.assessment_areas || []).map(
-            (area: any) => ({
-              package_price_id: area.package_price_id,
-              area_name: area.area_name,
-              building_type: area.building_type,
-              service_system: area.service_system,
-              area_size: area.area_size,
-              total_price: area.total_price,
-              category_services: area.category_services || [],
-              items: (area.items || []).map((it: any) => ({
-                product_id: it.product_id,
-                quantity: it.quantity,
-                total_price: it.total_price,
-              })),
-            })
-          ),
-        }
-        : undefined,
+          assessment_areas: mappedAreas,
+        };
+      })(),
     };
 
     return payload;
@@ -452,8 +532,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       if (selectedPackageId) {
         const pkg = packages.find(p => p.id === selectedPackageId);
         if (pkg) {
-          const basePrice = calculateAreaPrice(newArea, pkg);
-          const itemsTotal = (newArea.items || []).reduce((sum: number, item: any) => sum + (item.total_price || 0), 0);
+          // Use the price from the form (which allows manual edits), don't force recalculation
+          const basePrice = Number(newArea.base_service_price || 0);
+          const itemsTotal = (newArea.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
           newArea.base_service_price = basePrice;
           newArea.total_price = basePrice + itemsTotal;
         }
@@ -461,7 +542,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
       areas[index] = newArea;
 
-      const newTotal = areas.reduce((sum, a) => sum + (a.total_price || 0), 0);
+      const newTotal = areas.reduce((sum, a) => sum + Number(a.total_price || 0), 0);
       return { ...prev, assessment_areas: areas, total_price: newTotal } as Assessment;
     });
   };
@@ -515,9 +596,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       const hasTermites = (area.category_services || []).some(
         (s: any) => s.category_id === termiteCategory?.id
       );
-      return hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
+      return hasTermites ? Number(bestFit.price_with_termite) : Number(bestFit.price_without_termite);
     }
-    return area.base_service_price || 0;
+    return Number(area.base_service_price || 0);
   };
 
   const handlePackageSelect = (pkgId: string | null) => {
@@ -531,9 +612,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         const pkg = packages.find(p => p.id === pkgId);
         if (pkg) {
           newAssessment.assessment_areas = (prev.assessment_areas || []).map(area => {
-            const basePrice = calculateAreaPrice(area, pkg);
+            const basePrice = Number(calculateAreaPrice(area, pkg));
             // Recalculate total price for area (base + items)
-            const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + (item.total_price || 0), 0);
+            const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
             return {
               ...area,
               base_service_price: basePrice,
@@ -544,7 +625,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       }
 
       // Update total price of assessment
-      newAssessment.total_price = (newAssessment.assessment_areas || []).reduce((sum, area) => sum + (area.total_price || 0), 0);
+      newAssessment.total_price = (newAssessment.assessment_areas || []).reduce((sum, area) => sum + Number(area.total_price || 0), 0);
 
       return newAssessment as Assessment;
     });
@@ -963,6 +1044,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       : null
                   }
                   categories={categories}
+                  isEditing={true}
+                  originalArea={originalWorkAreas[index]}
                 />
               ))}
             </div>

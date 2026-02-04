@@ -41,7 +41,7 @@ const statusLabels: Record<QuotationStatus, string> = {
     [QuotationStatus.CANCELLED]: 'ยกเลิก',
     [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
-import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
+// import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
@@ -62,7 +62,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     const { quotations, customers } = useData();
     const navigate = useNavigate();
 
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -179,7 +179,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     }, [openDropdownId]);
 
     const handleViewDetails = () => {
-        setIsDetailsModalOpen(true);
+        if (selectedQuotation) {
+            navigate(`/quotations/${selectedQuotation.id}`);
+        }
         setOpenDropdownId(null);
     };
 
@@ -355,6 +357,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 ) : (
                                     paginatedQuotations.map((q, index) => {
                                         const customer = customers?.find((c) => c.id === q.customer_id);
+                                        console.log(q);
+
                                         return (
                                             <tr key={q.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-4 py-3 text-sm text-slate-500">
@@ -362,22 +366,14 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                 </td>
                                                 <td
                                                     className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
-                                                    onClick={() => {
-                                                        setSelectedQuotation(q);
-                                                        setIsDetailsModalOpen(true);
-                                                    }}
+                                                    onClick={() => navigate(`/quotations/${q.id}`)}
                                                     title={q.id}
                                                 >
-                                                    QT-{q.id.slice(0, 8).toUpperCase()}
-                                                    {q.revision > 1 && (
-                                                        <span className="ml-2 text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                                                            Rev.{q.revision}
-                                                        </span>
-                                                    )}
+                                                    {q.code}
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-slate-700 font-medium">{q.customer_name}</td>
                                                 <td className="px-4 py-3 text-sm text-slate-500">{customer?.phone || '-'}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-500">{q.assessment_id || '-'}</td>
+                                                <td className="px-4 py-3 text-sm text-slate-500">{q['assessment']?.code || '-'}</td>
                                                 <td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(q.created_at)}</td>
                                                 <td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(q.expires_at)}</td>
                                                 <td className="px-4 py-3"><StatusBadge status={statusLabels[q.status as QuotationStatus] || q.status} /></td>
@@ -458,12 +454,12 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             )}
 
             {/* Modals */}
-            <QuotationDetailsModal
+            {/* <QuotationDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 quotation={selectedQuotation}
                 allQuotations={quotations}
-            />
+            /> */}
 
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}

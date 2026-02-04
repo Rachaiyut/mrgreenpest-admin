@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@headlessui/react": "^2.2.9",
     "@tailwindcss/postcss": "^4.1.18",
     "antd": "^6.0.1",
     "axios": "^1.13.2",

@@ -10,12 +10,13 @@ import {
   Customer,
   Category,
 } from '@/src/types/entity/app.interface';
-import { ServiceSystem } from '@/src/types/enums/assessment';
+import { ServiceSystem, AsessmentStatus } from '@/src/types/enums/assessment';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import { WorkAreaForm } from './WorkAreaForm';
 import { SearchableSelect } from '../../common/SearchableSelect';
+
+// ... (existing imports)
 
 interface EditAssessmentModalProps {
   isOpen: boolean;
@@ -100,46 +101,48 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
       const rawAreas = assessment_areas || assessment.assessment_areas || [];
 
-      // Store original values for reference (deep copy to prevent mutations)
-      const originalAreas = rawAreas.map((wa) => ({
-        ...wa,
-        items: [...(wa.items || [])],
-        category_services: [...(wa.category_services || [])],
-      }));
-      setOriginalWorkAreas(originalAreas);
-
-      const initialWorkAreas = rawAreas.map((wa) => {
+      // Helper to derive base price
+      const enrichArea = (wa: any) => {
         // Fetch missing details from product/package if available
-        const enrichedItems = (wa.items || []).map((item) => {
+        const enrichedItems = (wa.items || []).map((item: any) => {
           if (item.product_id && (!item.product_name || !item.product_price)) {
             const product = products.find((p) => p.id === item.product_id);
             if (product) {
               return {
                 ...item,
                 product_name: product.name,
-                product_price: product.cost_price
-                  ? Number(product.cost_price)
-                  : 0,
+                product_price: product.cost_price ? Number(product.cost_price) : 0,
               };
             }
           }
           return item;
         });
 
-        // Just map directly, assuming wa matches AssessmentWorkArea
+        // Calculate base_service_price if not present
+        const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+        const derivedBasePrice = wa.base_service_price !== undefined
+          ? wa.base_service_price
+          : (Number(wa.total_price) || 0) - itemsTotal;
+
         return {
           ...wa,
           items: enrichedItems,
           category_services: wa.category_services || [],
+          base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
         };
-      });
-      setWorkAreas(initialWorkAreas || []);
+      };
+
+      // Apply logic to BOTH initial and original areas
+      const enrichedAreas = rawAreas.map(enrichArea);
+
+      setWorkAreas(enrichedAreas);
+      setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a }))); // Deep copy
     } else if (!isOpen) {
       setFormData({});
       setWorkAreas([]);
       setOriginalWorkAreas([]);
     }
-  }, [assessment, isOpen]);
+  }, [assessment, isOpen, products]);
 
   const totalEstimatedCost = useMemo(
     () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
@@ -323,7 +326,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขใบประเมิน: ${assessment?.code || assessment?.id || ''}`}
+      title={`แก้ไขใบประเมิน: ${assessment?.code || assessment?.id || ''
+        }`}
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
@@ -513,7 +517,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
             <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
                 <label
-                  className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                  className={`relative block p - 3 border rounded - lg cursor - pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
                 >
                   <input
                     type="radio"
@@ -529,7 +533,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                 {suggestedPackageOptions.map((option) => (
                   <label
                     key={option.id}
-                    className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                    className={`relative block p - 3 border rounded - lg cursor - pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
                   >
                     <input
                       type="radio"
@@ -553,7 +557,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </div>
         )}
 
-        {/* Work Areas */}
         <div className="space-y-4">
           {workAreas.map((area, index) => (
             <WorkAreaForm
@@ -574,6 +577,12 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               categories={categories}
               isEditing={true}
               originalArea={originalWorkAreas[index]}
+              onApprove={() => {
+                // Determine next status (e.g. from PENDING to APPOINTMENT or IN_PROGRESS)
+                // Assuming APPOINTMENT is the next valid step for "IN_PROGRESS" workflow
+                setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
+                // Optionally could force update immediately or just let user save
+              }}
             />
           ))}
         </div>

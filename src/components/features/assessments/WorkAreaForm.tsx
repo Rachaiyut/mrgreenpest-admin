@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FormField, Input, Select } from '../../common/FormControls';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
-import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, TrashIcon, RefreshIcon, ShieldCheckIcon } from '../../../assets/icons/Icons';
 import {
   AssessmentWorkArea,
   AssessmentWorkAreaItem,
@@ -28,6 +28,7 @@ interface WorkAreaFormProps {
   originalArea?: Partial<AssessmentWorkArea>;
   /** Flag to indicate this is an edit operation (optional) */
   isEditing?: boolean;
+  onApprove?: (index: number) => void;
 }
 
 export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
@@ -41,6 +42,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   categories,
   originalArea,
   isEditing = false,
+  onApprove,
 }) => {
   // Track if this is the initial load - skip auto-recalculation if editing existing data
   const isInitialLoad = useRef(true);
@@ -146,11 +148,23 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                     required
                   />
                 </div>
-                {isPriceInvalid && (
-                  <p className="text-xs text-red-600 mt-1">
-                    ต่ำกว่าราคาขั้นต่ำ (฿
-                    {selectedCondition?.minimum_price.toLocaleString('th-TH')})
-                  </p>
+                {isPriceInvalid && selectedCondition && (
+                  <div className="flex flex-col items-end mt-2 p-2 bg-red-50 border border-red-100 rounded-lg">
+                    <p className="text-xs text-red-600 font-medium mb-2 text-right">
+                      ⚠️ ราคาต่ำกว่าเกณฑ์มาตรฐาน<br />
+                      (ส่วนต่าง ฿{(selectedCondition.minimum_price - (area.base_service_price || 0)).toLocaleString('th-TH')})
+                    </p>
+                    {onApprove && (
+                      <button
+                        type="button"
+                        onClick={() => onApprove(index)}
+                        className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs font-medium"
+                      >
+                        <ShieldCheckIcon className="h-4 w-4" />
+                        <span>อนุมัติราคาพิเศษ (Approve)</span>
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -211,7 +225,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                 {selectedPackage.contract_period}
               </div>
               <div className="text-xs text-amber-600 mt-1">
-                กรุณาระบุขนาดพื้นที่เพื่อคำนวณราคา
+                กรุณาระบุขนาดพื้นที่เพื่อคำนวณราคา (หรือระบุราคาเอง)
               </div>
             </div>
             <div className="flex flex-col items-end">
@@ -219,10 +233,23 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
                 <span className="font-semibold text-slate-700">฿</span>
                 <Input
                   type="number"
-                  className="w-28 text-right font-bold text-lg h-9 !py-1 text-slate-400 border-slate-300 bg-slate-50"
-                  value=""
+                  className="w-28 text-right font-bold text-lg h-9 !py-1 text-primary border-slate-300 focus:ring-primary focus:border-primary"
+                  value={
+                    area.base_service_price === undefined
+                      ? ''
+                      : area.base_service_price
+                  }
+                  onChange={(e) => {
+                    onAreaChange(index, {
+                      ...area,
+                      base_service_price:
+                        e.target.value === ''
+                          ? undefined
+                          : parseFloat(e.target.value),
+                    });
+                  }}
+                  step="0.01"
                   placeholder="0.00"
-                  disabled
                 />
               </div>
             </div>
@@ -276,6 +303,19 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
           area.base_service_price !== priceToUse ||
           area.package_price_id !== condition.id
         ) {
+          // PROTECTION: If we are editing, and the current price matches the ORIGINAL saved price,
+          // AND the area size hasn't changed from original,
+          // then assume this is a custom price override that should be preserved.
+          // This prevents late-loading packages from overwriting the saved custom price.
+          if (isEditing && originalArea &&
+            typeof originalArea.base_service_price === 'number' &&
+            Math.abs((area.base_service_price || 0) - originalArea.base_service_price) < 0.1 &&
+            area.area_size === originalArea.area_size
+          ) {
+            console.log("Preserving custom price:", area.base_service_price);
+            return;
+          }
+
           onAreaChange(index, {
             ...area,
             base_service_price: priceToUse,

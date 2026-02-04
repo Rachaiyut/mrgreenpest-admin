@@ -7,9 +7,11 @@ export interface IBase {
 export interface IBaseQuery {
     search?: string,
     page?: number,
-    limit?: number, 
+    limit?: number,
     sort_by?: string,
-    sort_order?:  string,
+    sort_order?: string,
+    status?: string,
+    [key: string]: any,
 }
 
 export interface IMeta {

@@ -839,8 +839,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     const jobsForKanban = filteredJobs.filter(
       (j) =>
         j.status !== JobMainStatus.COMPLETE &&
-        j.status !== JobMainStatus.CANCELLED &&
-        j.status !== JobMainStatus.PENDING
+        j.status !== JobMainStatus.CANCELLED
     );
 
     const vehicleColumns = serviceVehicles.map((vehicle) => ({
@@ -872,8 +871,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       filteredJobs.filter(
         (j) =>
           j.status !== JobMainStatus.COMPLETE &&
-          j.status !== JobMainStatus.CANCELLED &&
-          j.status !== JobMainStatus.PENDING
+          j.status !== JobMainStatus.CANCELLED
       ),
     [filteredJobs]
   );

@@ -11,7 +11,9 @@ const FieldOperations = lazy(() => import('../pages/field-operations'));
 const Financials = lazy(() => import('../pages/financials'));
 const QuotationsPage = lazy(() => import('../pages/quotations'));
 const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotationPage'));
-const EditQuotationPage = lazy(() => import('../pages/financials/EditQuotationPage'));
+const EditQuotationPage = lazy(() => import('../pages/quotations/EditQuotation'));
+const DetailQuotationPage = lazy(() => import('../pages/quotations/DetailQuotation'));
+
 const CreateQuotation = lazy(() => import('../pages/quotations/CreateQuotation'));
 const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
 const Inventory = lazy(() => import('../pages/inventory'));
@@ -114,12 +116,14 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
+      path: '/quotations/:id',
+      element: <DetailQuotationPage />,
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
+    },
+    {
       path: '/quotations/:id/edit',
       element: (
-        <EditQuotationPage
-          quotations={quotations}
-          onUpdateQuotation={handlers.quotations.update}
-        />
+        <EditQuotationPage />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
@@ -156,12 +160,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteContract={handlers.contracts.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/contracts/new',
       element: <CreateContractPage />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/billing',
@@ -258,7 +262,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteWithdrawal={handlers.withdrawals.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/transfers',
@@ -291,12 +295,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReturn={handlers.productReturns.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/requisitions',
       element: <Requisitions />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/return-to-supplier',

@@ -80,36 +80,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     fetchQuotation();
   }, []);
 
-  useEffect(() => {
-    const fetchAssessments = async () => {
-      try {
-        const res = await AssessmentApi.getAll();
-        console.log('Fetched assessments locally:', res.data);
-        setAssessments(res.data);
-      } catch (error) {
-        console.error('Failed to fetch assessments:', error);
-      }
-    };
-    fetchAssessments();
-  }, []);
-
-  // Assessment options for dropdown
-  const assessmentOptions = useMemo(() => {
-    console.log('Assessments for options:', assessments);
-    return (assessments || [])
-      // .filter((a) => a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.PENDING)
-      .map((a) => {
-        const customerName = a.customer
-          ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
-          : 'ไม่ระบุลูกค้า';
-        return {
-          value: a.id,
-          label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
-          description: a.address || '',
-        };
-      });
-  }, [assessments]);
-
 
   // Quotation options for dropdown
   const quotationOptions = useMemo(() => {
@@ -267,6 +237,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       // Map legacy fields to new payload structure
       job_id: job.id,
       customer_id: job.customer_id,
+      quotation_id: selectedQuotationId,
       report_date: new Date().toISOString(),
       customer_name: job.customer_name,
 

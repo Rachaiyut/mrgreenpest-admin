@@ -30,7 +30,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         first_name: (user as any).first_name || user.name.split(' ')[0] || '',
         last_name: (user as any).last_name || user.name.split(' ').slice(1).join(' ') || '',
         role_id: typeof user.role === 'object' ? (user.role as any).id : '',
-        citizen_id: user.nationalId, // user.nationalId maps to citizen_id
+        citizen_id: user.citizen_id,
       });
       setImagePreview(user.avatarUrl);
     }

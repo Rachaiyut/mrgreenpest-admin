@@ -36,6 +36,7 @@ export const PAGE_PATH: Record<string, string> = {
   'รับเข้า': 'goods-receipt',
   'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย': 'withdrawals',
   'โอนย้าย': 'transfers',
+  'ใบเบิกสินค้า': 'requisitions',
   'ปรับปรุง Stock': 'stock-adjustment',
   'คืนสินค้า': 'returns',
   'ผู้ใช้งาน': 'users',
@@ -151,12 +152,17 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
+      },
+      {
+        name: 'ใบเบิกสินค้า',
+        icon: DocumentTextIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
       },
       {
         name: 'คืนสินค้า',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
       },
     ],
   },

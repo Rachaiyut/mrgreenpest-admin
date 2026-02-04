@@ -1,7 +1,8 @@
 import React from 'react';
-import { BellIcon, MenuIcon, ChevronDownIcon } from '@/src/assets/icons/Icons';
+import { MenuIcon, ChevronDownIcon } from '@/src/assets/icons/Icons';
 import { Button } from '../common/FormControls';
 import { useCurrentUser } from '@/src/hooks/useCurrentUser';
+import { NotificationMenu } from './NotificationMenu';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -26,13 +27,7 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
         </div>
 
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <Button
-            variant="ghost"
-            className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-            style={{ borderRadius: '9999px' }}
-          >
-            <BellIcon className="h-6 w-6" />
-          </Button>
+          <NotificationMenu />
 
           {currentUser && (
             <div className="relative">

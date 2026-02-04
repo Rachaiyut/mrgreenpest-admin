@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // Enum
 import { AsessmentStatus } from '@/src/types/enums/assessment';
@@ -35,6 +36,7 @@ import { AssessmentApi, CustomerApi, PackageApi, ProductApi, CategoryApi } from 
 import { CategoryType } from '@/src/types';
 
 const Assessments: React.FC = () => {
+  const location = useLocation();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -67,8 +69,19 @@ const Assessments: React.FC = () => {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const statusParam = searchParams.get('status');
+
+      const filter: any = { limit: 10 };
+      if (statusParam) {
+        filter.status = statusParam;
+        // If filtering by status, ensure we get enough items
+        filter.limit = 100;
+        // Also ensure current page is reset if needed, but here we just fetch
+      }
+
       const [assessmentsRes, customersRes, productsRes, packagesRes, categoriesRes] = await Promise.all([
-        AssessmentApi.getAll({ limit: 10 }),
+        AssessmentApi.getAll(filter),
         CustomerApi.getCustomers({ limit: 10 }),
         ProductApi.getProducts({ limit: 10 }),
         PackageApi.getPackages({ limit: 10 }),
@@ -84,7 +97,7 @@ const Assessments: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [location.search]);
 
   useEffect(() => {
     fetchData();
