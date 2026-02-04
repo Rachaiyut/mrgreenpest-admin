@@ -77,6 +77,8 @@ export interface Withdrawal extends IBase {
   code?: string;
   warehouse_id: string;
   job_id?: string;
+  assessment_id?: string;
+  contract_id?: string;
   purpose?: string;
   status: WithdrawalStatus | Status;
   notes?: string;

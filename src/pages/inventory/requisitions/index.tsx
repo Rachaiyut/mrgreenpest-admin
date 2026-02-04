@@ -31,6 +31,8 @@ interface RequisitionsProps { }
 const Requisitions: React.FC<RequisitionsProps> = () => {
     const {
         requisitions,
+        products,
+        warehouses,
         handlers: { requisitions: requisitionHandlers },
     } = useData();
     const [currentPage, setCurrentPage] = useState(1);
@@ -365,14 +367,15 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
             <AddRequisitionModal
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
+                products={products}
             />
 
             <RequisitionDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}
                 requisition={selectedRequisition}
-                products={useData().products}
-                warehouses={useData().warehouses}
+                products={products}
+                warehouses={warehouses}
             />
 
             <ApprovalModal

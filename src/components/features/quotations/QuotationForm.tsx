@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, ChangeEvent, FormEvent, FC } from 'react';
 import { Card } from '../../common/Card';
 import {
     FormField,
@@ -13,6 +13,8 @@ import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
 import { Assessment } from '../../../types/entity/assessment.interface';
 import { Quotation } from '../../../types/entity/financial.interface';
+import { CustomerApi } from '../../../api/customer';
+import { Customer } from '../../../types/entity/customer.interface';
 
 interface QuotationItem {
     id: string;
@@ -25,14 +27,14 @@ interface QuotationItem {
 }
 
 export interface QuotationFormProps {
-    mode: 'create' | 'edit' | 'revise';
+    mode: 'create' | 'edit' | 'revise' | 'detail';
     initialValues?: Partial<Quotation>;
     onSubmit: (data: any) => Promise<void>;
     onCancel: () => void;
     assessmentId?: string | null;
 }
 
-export const QuotationForm: React.FC<QuotationFormProps> = ({
+export const QuotationForm: FC<QuotationFormProps> = ({
     mode,
     initialValues,
     onSubmit,
@@ -40,6 +42,43 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
     assessmentId,
 }) => {
     const { customers, products, assessments } = useData();
+    const isReadOnly = mode === 'detail';
+
+    // Customer Search Handling
+    const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
+
+    useEffect(() => {
+        // Initialize with context data
+        if (customers.length > 0 && searchedCustomers.length === 0) {
+            setSearchedCustomers(customers);
+        }
+    }, [customers]);
+
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleCustomerSearch = (query: string) => {
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        searchTimeoutRef.current = setTimeout(async () => {
+            // If query is empty, revert to default context list
+            if (!query.trim()) {
+                setSearchedCustomers(customers);
+                return;
+            }
+
+            try {
+                const res = await CustomerApi.getCustomers({ search: query, limit: 50 });
+                if (res && res.data) {
+                    setSearchedCustomers(res.data);
+                }
+            } catch (error) {
+                console.error("Error searching customers:", error);
+            }
+        }, 500);
+    };
+
 
     // Assessment reference
     const [selectedAssessmentId, setSelectedAssessmentId] = useState(
@@ -129,8 +168,8 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
 
     // Selected customer details
     const selectedCustomer = useMemo(() => {
-        return customers.find((c) => c.id === selectedCustomerId);
-    }, [customers, selectedCustomerId]);
+        return customers.find((c) => c.id === selectedCustomerId) || searchedCustomers.find((c) => c.id === selectedCustomerId);
+    }, [customers, searchedCustomers, selectedCustomerId]);
 
 
 
@@ -337,7 +376,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
         setItems((prev) => prev.filter((item) => item.id !== id));
     };
 
-    const handlePackagePricingToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handlePackagePricingToggle = (e: ChangeEvent<HTMLInputElement>) => {
         const isChecked = e.target.checked;
         setUsePackagePricing(isChecked);
 
@@ -401,7 +440,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
     }, [subtotal, vatAmount]);
 
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         if (!selectedCustomerId || !selectedCustomer) {
@@ -610,9 +649,10 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                                 <SearchableSelect
                                     value={selectedCustomerId}
                                     onChange={setSelectedCustomerId}
+                                    onSearchChange={handleCustomerSearch}
                                     placeholder="ค้นหาและเลือกลูกค้า..."
                                     required
-                                    options={customers.map((c) => ({
+                                    options={(searchedCustomers.length > 0 ? searchedCustomers : customers).map((c) => ({
                                         value: c.id,
                                         label: `${c.code} - ${c.first_name} ${c.last_name}`,
                                         description: c.phone || '',
@@ -773,6 +813,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                                                 onChange={(value) => handleProductSelect(item.id, value)}
                                                 placeholder="-- เลือกสินค้า --"
                                                 options={productOptions}
+                                                disabled={isReadOnly}
                                             />
                                             {item.productId && (
                                                 <div className="mt-1 text-xs text-slate-500 pl-1 font-mono">
@@ -788,6 +829,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                                                     onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
                                                     min={1}
                                                     className="text-center w-20 h-9 font-mono text-slate-700"
+                                                    disabled={isReadOnly}
                                                 />
                                             </div>
                                         </td>
@@ -803,13 +845,14 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                                                 onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))}
                                                 min={0}
                                                 className="text-right h-9 font-mono text-slate-700"
+                                                disabled={isReadOnly}
                                             />
                                         </td>
                                         <td className="px-4 py-2 text-right text-sm font-bold text-slate-800 font-mono bg-slate-50/30">
                                             {item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                         </td>
                                         <td className="px-2 py-2 text-center">
-                                            {items.length > 0 && (
+                                            {!isReadOnly && items.length > 0 && (
                                                 <button
                                                     type="button"
                                                     onClick={() => removeItem(item.id)}
@@ -827,17 +870,19 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                     </div>
                 )}
 
-                <div className="flex justify-start">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addItem}
-                        className="w-auto border-dashed border-2 border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 py-2 px-6 flex items-center gap-2 transition-all font-medium"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        เพิ่มรายการสินค้า (Add Item)
-                    </Button>
-                </div>
+                {!isReadOnly && (
+                    <div className="flex justify-start">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={addItem}
+                            className="w-auto border-dashed border-2 border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 py-2 px-6 flex items-center gap-2 transition-all font-medium"
+                        >
+                            <PlusIcon className="w-5 h-5" />
+                            เพิ่มรายการสินค้า (Add Item)
+                        </Button>
+                    </div>
+                )}
             </div>
 
 
@@ -852,6 +897,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                             rows={3}
                             placeholder="ระบุเงื่อนไขการชำระเงิน..."
                             className="font-sans"
+                            disabled={isReadOnly}
                         />
                     </FormField>
                     <FormField label="หมายเหตุ (Notes)" htmlFor="notes">
@@ -862,6 +908,7 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                             rows={2}
                             placeholder="ข้อความเพิ่มเติมถึงลูกค้า..."
                             className="font-sans"
+                            disabled={isReadOnly}
                         />
                     </FormField>
                 </div>
@@ -878,12 +925,13 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
                             </div>
 
                             <div className="flex justify-between items-center py-3 border-b border-slate-300">
-                                <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none hover:text-slate-800">
+                                <label className={`flex items-center gap-2 text-sm text-slate-600 ${!isReadOnly ? 'cursor-pointer hover:text-slate-800' : ''} select-none`}>
                                     <input
                                         type="checkbox"
                                         checked={includeVat}
                                         onChange={(e) => setIncludeVat(e.target.checked)}
                                         className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                                        disabled={isReadOnly}
                                     />
                                     ภาษีมูลค่าเพิ่ม 7% (VAT)
                                 </label>
@@ -907,23 +955,25 @@ export const QuotationForm: React.FC<QuotationFormProps> = ({
             </div>
 
             {/* Action Bar */}
-            <div className="flex justify-end gap-4 pt-8 pb-4 border-t border-slate-200 mt-10">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onCancel}
-                    className="px-6 h-11 text-base font-medium text-slate-700 hover:bg-slate-50 border-slate-300 min-w-[120px]"
-                >
-                    ยกเลิก (Cancel)
-                </Button>
-                <Button
-                    type="submit"
-                    variant="primary"
-                    className="px-8 h-11 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow transition-all min-w-[200px]"
-                >
-                    {mode === 'create' ? 'ยืนยันสร้างใบเสนอราคา (Create Quotation)' : 'บันทึกการแก้ไข (Save Changes)'}
-                </Button>
-            </div>
+            {!isReadOnly && (
+                <div className="flex justify-end gap-4 pt-8 pb-4 border-t border-slate-200 mt-10">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onCancel}
+                        className="px-6 h-11 text-base font-medium text-slate-700 hover:bg-slate-50 border-slate-300 min-w-[120px]"
+                    >
+                        ยกเลิก (Cancel)
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        className="px-8 h-11 text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-sm hover:shadow transition-all min-w-[200px]"
+                    >
+                        {mode === 'create' ? 'ยืนยันสร้างใบเสนอราคา (Create Quotation)' : 'บันทึกการแก้ไข (Save Changes)'}
+                    </Button>
+                </div>
+            )}
         </form>
     );
 };

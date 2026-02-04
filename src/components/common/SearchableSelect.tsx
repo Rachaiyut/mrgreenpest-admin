@@ -18,6 +18,7 @@ interface SearchableSelectProps {
   required?: boolean;
   name?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -30,6 +31,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   required = false,
   name,
   className,
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -84,8 +86,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   useEffect(() => {
     if (!isOpen) {
-      // Reset search when closed, but keep it empty if we want to show all initially
-      // or maybe don't reset. Let's reset to allow fresh search.
+      // Reset search when closed
       setSearch('');
       onSearchChange?.('');
     }
@@ -98,6 +99,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         option.description.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const handleToggle = () => {
+    if (disabled) return;
+    setIsOpen(!isOpen);
+  };
+
   return (
     <div className={`relative ${className}`} ref={wrapperRef}>
       {label && (
@@ -107,17 +113,19 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       )}
       <div
         ref={triggerRef}
-        className="relative cursor-pointer"
-        onClick={() => setIsOpen(!isOpen)}
+        className="relative"
+        onClick={handleToggle}
       >
         <div
-          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 bg-white min-h-[38px] ${!selectedOption && 'text-slate-400'}`}
+          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 min-h-[38px] transition-colors
+            ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white cursor-pointer'} 
+            ${!selectedOption && !disabled ? 'text-slate-400' : ''}`}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </div>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg
-            className="h-5 w-5 text-gray-400"
+            className={`h-5 w-5 ${disabled ? 'text-slate-300' : 'text-gray-400'}`}
             viewBox="0 0 20 20"
             fill="currentColor"
             aria-hidden="true"
@@ -131,7 +139,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         </div>
       </div>
 
-      {isOpen && createPortal(
+      {isOpen && !disabled && createPortal(
         <div
           ref={wrapperRef}
           style={dropdownStyle}
@@ -189,6 +197,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         value={value}
         required={required}
         readOnly
+        disabled={disabled}
         style={{
           opacity: 0,
           width: 0,

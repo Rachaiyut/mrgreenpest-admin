@@ -27,7 +27,7 @@ import {
   InstallmentPlan,
 } from '../../types';
 import { InvoiceStatus } from '../../types/enums/financial';
-import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
+import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
@@ -121,11 +121,16 @@ const Financials: React.FC<FinancialsProps> = ({
   const { title, subtitle, buttonText } =
     pageDetails[defaultTab] || pageDetails['ใบเสนอราคา'];
 
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // Can likely remove this if unused elsewhere, but keeping for safety for now or replacing usage
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(
     null
   );
+
+  // Quotation Modal State
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
+  const [quotationModalMode, setQuotationModalMode] = useState<'create' | 'edit' | 'revise' | 'detail'>('create');
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -587,16 +592,50 @@ const Financials: React.FC<FinancialsProps> = ({
     }
   };
 
+  const handleCreateQuotation = () => {
+    setQuotationModalMode('create');
+    setSelectedQuotation(null);
+    setSelectedAssessmentId(null);
+    setIsQuotationModalOpen(true);
+  };
+
   const handleViewDetails = () => {
-    setIsDetailsModalOpen(true);
+    if (selectedQuotation) {
+      setQuotationModalMode('detail');
+      setIsQuotationModalOpen(true);
+    }
     setOpenDropdownId(null);
   };
   const handleEdit = () => {
     if (selectedQuotation) {
-      navigate(`/quotations/${selectedQuotation.id}/edit`);
+      setQuotationModalMode('edit');
+      setIsQuotationModalOpen(true);
     }
     setOpenDropdownId(null);
   };
+  const handleRevise = () => {
+    if (selectedQuotation) {
+      setQuotationModalMode('revise');
+      setIsQuotationModalOpen(true);
+    }
+    setOpenDropdownId(null);
+  };
+
+  const handleQuotationModalSubmit = async (data: any) => {
+    try {
+      if (quotationModalMode === 'create') {
+        if (onCreateQuotation) await onCreateQuotation(data, selectedAssessmentId || undefined);
+      } else if (quotationModalMode === 'edit' && selectedQuotation) {
+        if (onUpdateQuotation) await onUpdateQuotation({ ...selectedQuotation, ...data });
+      } else if (quotationModalMode === 'revise') {
+        if (onCreateQuotation) await onCreateQuotation(data);
+      }
+      setIsQuotationModalOpen(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleDelete = () => {
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
@@ -1293,14 +1332,7 @@ const Financials: React.FC<FinancialsProps> = ({
         {
           label: 'revise (แก้ไขตามรอบ)',
           icon: PencilIcon,
-          handler: () => {
-            if (selectedQuotation) {
-              navigate(
-                `/quotations/${selectedQuotation.id}/edit?mode=revise`
-              );
-              setOpenDropdownId(null);
-            }
-          },
+          handler: handleRevise,
           isDanger: false,
         },
       ]
@@ -1317,7 +1349,7 @@ const Financials: React.FC<FinancialsProps> = ({
             <p className="mt-1 text-slate-600">{subtitle}</p>
           </div>
           {defaultTab === 'ใบเสนอราคา' && onCreateQuotation && (
-            <Button onClick={() => navigate('/quotations/new')}>
+            <Button onClick={handleCreateQuotation}>
               <PlusIcon className="h-5 w-5" />
               {buttonText}
             </Button>
@@ -1372,12 +1404,13 @@ const Financials: React.FC<FinancialsProps> = ({
         </div>
       )}
 
-      <QuotationDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        quotation={selectedQuotation}
-        allQuotations={quotations}
-        onCreateInvoice={handleCreateInvoiceFromInstallment}
+      <QuotationModal
+        isOpen={isQuotationModalOpen}
+        onClose={() => setIsQuotationModalOpen(false)}
+        mode={quotationModalMode}
+        initialValues={selectedQuotation}
+        assessmentId={selectedAssessmentId}
+        onSubmit={handleQuotationModalSubmit}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

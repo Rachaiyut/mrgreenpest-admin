@@ -10,11 +10,13 @@ const Assessments = lazy(() => import('../pages/assessments/Assessments'));
 const FieldOperations = lazy(() => import('../pages/field-operations'));
 const Financials = lazy(() => import('../pages/financials'));
 const QuotationsPage = lazy(() => import('../pages/quotations'));
-const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotationPage'));
-const EditQuotationPage = lazy(() => import('../pages/quotations/EditQuotation'));
-const DetailQuotationPage = lazy(() => import('../pages/quotations/DetailQuotation'));
+const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotationPage')); // Keeping this if needed for unrelated pages or just remove if unused. Wait, user asked to remove "unused Detail/Create/Edit pages".
+// I'll comment them out or remove them if I'm sure.
+// To be safe, I will remove the imports that were directly used in the removed routes.
+// CreateQuotation was used in /quotations/new and /create.
+// EditQuotationPage was used in /quotations/:id/edit.
+// DetailQuotationPage was used in /quotations/:id.
 
-const CreateQuotation = lazy(() => import('../pages/quotations/CreateQuotation'));
 const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
 const Inventory = lazy(() => import('../pages/inventory'));
 const Users = lazy(() => import('../pages/users'));
@@ -92,6 +94,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       element: (
         <FieldOperations
           users={users}
+          jobs={jobs as any}
           assessments={assessments}
           contracts={contracts}
           quotations={quotations}
@@ -105,28 +108,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
-    {
-      path: '/quotations/new',
-      element: <CreateQuotation />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
-    },
-    {
-      path: '/quotations/create',
-      element: <CreateQuotation />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
-    },
-    {
-      path: '/quotations/:id',
-      element: <DetailQuotationPage />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
-    },
-    {
-      path: '/quotations/:id/edit',
-      element: (
-        <EditQuotationPage />
-      ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
-    },
+
     {
       path: '/invoices/:id/edit',
       element: (

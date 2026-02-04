@@ -12,7 +12,8 @@ import {
   FieldJob,
   Customer,
   Product,
-  WithdrawalStatus,
+  Assessment,
+  Contract,
 } from '@/src/types/entity/app.interface';
 import { WarehouseType as InventoryWarehouseType } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../api/user';
@@ -32,6 +33,8 @@ interface AddWithdrawalModalProps {
   currentUser: User | null;
   products: Product[];
   stockMap: Map<string, Map<string, number>>;
+  assessments: Assessment[];
+  contracts: Contract[];
 }
 
 interface LineItem {
@@ -58,6 +61,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   currentUser,
   products,
   stockMap,
+  assessments,
+  contracts,
 }) => {
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
@@ -76,6 +81,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+
+  // Reference Type State
+  const [referenceType, setReferenceType] = useState<'JOB' | 'ASSESSMENT' | 'CONTRACT'>('JOB');
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>('');
+  const [selectedContractId, setSelectedContractId] = useState<string>('');
+
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   const productMap = useMemo(
@@ -304,7 +315,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     return {
       warehouse_id: fromWarehouseId,
       to_warehouse_id: toWarehouseId || undefined,
-      reference_ids: referenceIds,
+      reference_ids: referenceType === 'JOB' ? referenceIds : undefined,
+      assessment_id: referenceType === 'ASSESSMENT' ? selectedAssessmentId : undefined,
+      contract_id: referenceType === 'CONTRACT' ? selectedContractId : undefined,
       status: status,
       created_by: createdBy,
 
@@ -520,45 +533,47 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
             </FormField>
           </div>
 
-          <FormField label="อ้างอิงใบงาน/สัญญา">
-            <div className="p-2 border rounded-md bg-slate-50 min-h-[5rem] flex flex-wrap gap-2 items-start">
-              {referenceIds.length > 0 ? (
-                referenceIds.map((refId) => {
-                  const job = jobs.find((j) => j.id === refId);
-                  return (
-                    <span
-                      key={refId}
-                      className="flex items-center gap-1.5 bg-slate-200 text-slate-800 text-sm font-medium px-2 py-1 rounded-md"
-                    >
-                      {job ? `ใบงาน: ${job.customerName}` : `อ้างอิง: ${refId}`}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setReferenceIds((prev) =>
-                            prev.filter((id) => id !== refId)
-                          )
-                        }
-                        className="text-slate-500 hover:text-slate-700"
-                      >
-                        <XCircleIcon className="h-4 w-4" />
-                      </button>
-                    </span>
-                  );
-                })
-              ) : (
-                <p className="text-slate-500 text-sm p-2">ไม่มีการอ้างอิง</p>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsReferenceModalOpen(true)}
-                className="text-sm text-primary hover:underline font-semibold p-2"
-                disabled={selectedCustomerIds.length === 0}
-                title={
-                  selectedCustomerIds.length === 0 ? 'กรุณาเลือกลูกค้าก่อน' : ''
-                }
+          <FormField label="อ้างอิง (Reference)">
+            <div className="space-y-3">
+              <select
+                className="w-full border border-slate-300 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                value={referenceType}
+                onChange={(e) => setReferenceType(e.target.value as any)}
               >
-                + เพิ่มอ้างอิง
-              </button>
+                <option value="JOB">ใบงาน (Job)</option>
+                <option value="ASSESSMENT">ใบประเมิน (Assessment)</option>
+                <option value="CONTRACT">สัญญา (Contract)</option>
+              </select>
+
+              {referenceType === 'JOB' && (
+                <SearchableSelect
+                  value={referenceIds[0] || ''}
+                  onChange={(value) => setReferenceIds(value ? [value] : [])}
+                  options={jobs.map(j => ({
+                    value: j.id,
+                    label: `${j.id} - ${(j as any).customer_name || (j as any).customerName || (j as any).customer?.first_name || ''}`
+                  }))}
+                  placeholder="-- เลือกใบงาน --"
+                />
+              )}
+
+              {referenceType === 'ASSESSMENT' && (
+                <SearchableSelect
+                  value={selectedAssessmentId}
+                  onChange={setSelectedAssessmentId}
+                  options={assessments.map(a => ({ value: a.id, label: `${a.code} - ${a.customer ? (a.customer.first_name + ' ' + a.customer.last_name) : 'Unknown Customer'}` }))}
+                  placeholder="-- เลือกใบประเมิน --"
+                />
+              )}
+
+              {referenceType === 'CONTRACT' && (
+                <SearchableSelect
+                  value={selectedContractId}
+                  onChange={setSelectedContractId}
+                  options={contracts.map(c => ({ value: c.id, label: `${c.code} - ${c.customer_name}` }))}
+                  placeholder="-- เลือกสัญญา --"
+                />
+              )}
             </div>
           </FormField>
 

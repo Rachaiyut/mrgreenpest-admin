@@ -41,6 +41,7 @@ const statusLabels: Record<QuotationStatus, string> = {
     [QuotationStatus.CANCELLED]: 'ยกเลิก',
     [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
+import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 // import { QuotationDetailsModal } from '../../components/features/quotations/QuotationDetailsModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
@@ -65,6 +66,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMode, setModalMode] = useState<'create' | 'edit' | 'revise' | 'detail'>('create');
+    const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
+
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -178,25 +183,50 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [openDropdownId]);
 
+    const handleCreate = () => {
+        setModalMode('create');
+        setSelectedQuotation(null);
+        setSelectedAssessmentId(null);
+        setIsModalOpen(true);
+    };
+
     const handleViewDetails = () => {
         if (selectedQuotation) {
-            navigate(`/quotations/${selectedQuotation.id}`);
+            setModalMode('detail');
+            setIsModalOpen(true);
         }
         setOpenDropdownId(null);
     };
 
     const handleEdit = () => {
         if (selectedQuotation) {
-            navigate(`/quotations/${selectedQuotation.id}/edit`);
+            setModalMode('edit');
+            setIsModalOpen(true);
         }
         setOpenDropdownId(null);
     };
 
     const handleRevise = () => {
         if (selectedQuotation) {
-            navigate(`/quotations/${selectedQuotation.id}/edit?mode=revise`);
+            setModalMode('revise');
+            setIsModalOpen(true);
         }
         setOpenDropdownId(null);
+    };
+
+    const handleModalSubmit = async (data: any) => {
+        try {
+            if (modalMode === 'create') {
+                if (onCreateQuotation) await onCreateQuotation(data, selectedAssessmentId || undefined);
+            } else if (modalMode === 'edit' && selectedQuotation) {
+                if (onUpdateQuotation) await onUpdateQuotation({ ...selectedQuotation, ...data });
+            } else if (modalMode === 'revise') {
+                if (onCreateQuotation) await onCreateQuotation(data);
+            }
+            setIsModalOpen(false);
+        } catch (err) {
+            console.error(err);
+        }
     };
 
     const handleDelete = () => {
@@ -222,7 +252,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <p className="mt-1 text-slate-600">จัดการและติดตามใบเสนอราคาทั้งหมด</p>
                     </div>
                     {onCreateQuotation && (
-                        <Button onClick={() => navigate('/quotations/new')}>
+                        <Button onClick={handleCreate}>
                             <PlusIcon className="h-5 w-5" />
                             สร้างใบเสนอราคา
                         </Button>
@@ -366,7 +396,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                 </td>
                                                 <td
                                                     className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
-                                                    onClick={() => navigate(`/quotations/${q.id}`)}
+                                                    onClick={() => {
+                                                        setSelectedQuotation(q);
+                                                        setModalMode('detail');
+                                                        setIsModalOpen(true);
+                                                    }}
                                                     title={q.id}
                                                 >
                                                     {q.code}
@@ -454,6 +488,14 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             )}
 
             {/* Modals */}
+            <QuotationModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                mode={modalMode}
+                initialValues={selectedQuotation}
+                assessmentId={selectedAssessmentId}
+                onSubmit={handleModalSubmit}
+            />
             {/* <QuotationDetailsModal
                 isOpen={isDetailsModalOpen}
                 onClose={() => setIsDetailsModalOpen(false)}

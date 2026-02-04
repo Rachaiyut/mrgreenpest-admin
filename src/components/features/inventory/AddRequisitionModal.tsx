@@ -3,6 +3,8 @@ import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
+import { JobApi } from '../../../api/job';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import {
     Requisition as RequisitionType,
     RequisitionType as ReqTypeEnum,
@@ -15,6 +17,7 @@ import { useData } from '../../../contexts/DataContext';
 interface AddRequisitionModalProps {
     isOpen: boolean;
     onClose: () => void;
+    products: Product[];
     // onCreateRequisition: (data: CreateRequisitionDto) => void; 
 }
 
@@ -34,14 +37,20 @@ interface RequisitionExpenseLocal {
 export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
     isOpen,
     onClose,
+    products,
 }) => {
-    const { handlers: { requisitions: { create } }, warehouses, products } = useData();
+    const { handlers: { requisitions: { create } }, warehouses } = useData();
 
     const [type, setType] = useState<ReqTypeEnum>(ReqTypeEnum.ITEM);
     const [requestDate, setRequestDate] = useState(new Date().toISOString().substring(0, 10));
     const [warehouseId, setWarehouseId] = useState('');
     const [vehicleId, setVehicleId] = useState('');
     const [description, setDescription] = useState('');
+
+    // Reference
+    const [refType, setRefType] = useState<'NONE' | 'JOB'>('NONE');
+    const [refJobId, setRefJobId] = useState('');
+    const [jobOptions, setJobOptions] = useState<{ value: string; label: string }[]>([]);
 
     const [items, setItems] = useState<RequisitionItemLocal[]>([]);
     const [expenses, setExpenses] = useState<RequisitionExpenseLocal[]>([]);
@@ -70,8 +79,23 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
             setVehicleId('');
             setDescription('');
             setRequestDate(new Date().toISOString().substring(0, 10));
+            setRefType('NONE');
+            setRefJobId('');
         }
     }, [isOpen]);
+
+    // Fetch jobs when refType is JOB
+    useEffect(() => {
+        if (refType === 'JOB') {
+            JobApi.getAll().then(res => {
+                const options = res.data.map(job => ({
+                    value: job.id,
+                    label: `Job: ${job.status} - ${job.customer?.first_name} ${job.customer?.last_name} (${new Date(job.start_date).toLocaleDateString()})`
+                }));
+                setJobOptions(options);
+            }).catch(err => console.error(err));
+        }
+    }, [refType]);
 
     const handleAddProducts = (productIds: string[]) => {
         const newItems: RequisitionItemLocal[] = productIds.map(pid => ({
@@ -103,7 +127,7 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
                 request_date: requestDate,
                 warehouse_id: type === ReqTypeEnum.ITEM ? warehouseId : undefined,
                 vehicle_id: type === ReqTypeEnum.ITEM && vehicleId ? vehicleId : undefined,
-                description,
+                description: description + (refType === 'JOB' && refJobId ? `\nRef Job: ${refJobId}` : ''),
                 items: type === ReqTypeEnum.ITEM ? items.map(i => ({
                     product_id: i.productId,
                     quantity: i.quantity,
@@ -168,6 +192,27 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
                             </FormField>
                         </div>
                     )}
+
+                    <div className="space-y-2">
+                        <FormField label="อ้างอิง (Reference)">
+                            <Select value={refType} onChange={(e) => setRefType(e.target.value as any)}>
+                                <option value="NONE">ไม่มีการอ้างอิง</option>
+                                <option value="JOB">ใบงาน (Job)</option>
+                            </Select>
+                        </FormField>
+
+                        {refType === 'JOB' && (
+                            <div className="pl-4 border-l-2 border-gray-200">
+                                <SearchableSelect
+                                    label="เลือกใบงาน"
+                                    placeholder="ค้นหาใบงาน..."
+                                    options={jobOptions}
+                                    value={refJobId}
+                                    onChange={setRefJobId}
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     <FormField label="รายละเอียดเพิ่มเติม">
                         <Textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} />

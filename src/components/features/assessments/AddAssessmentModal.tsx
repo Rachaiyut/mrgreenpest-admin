@@ -57,6 +57,8 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     [PaymentMethod.CREDIT_CARD]: 'บัตรเครดิต',
     [PaymentMethod.CHEQUE]: 'เช็ค',
     [PaymentMethod.QR_PAYMENT]: 'QR Payment',
+    [PaymentMethod.DIVIDED]: 'แบ่งจ่าย',
+    [PaymentMethod.INSTALLMENT]: 'งวด',
   };
 
   const paymentOptions = Object.values(PaymentMethod).map((value) => ({
@@ -336,10 +338,10 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       title="สร้างใบประเมินใหม่"
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-end gap-6">
           <p className="text-lg font-semibold text-slate-800">
             ยอดรวมทั้งหมด:{' '}
-            <span className="text-primary">
+            <span className="text-green-600">
               ฿
               {totalEstimatedCost.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
@@ -508,18 +510,51 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                 required
               />
             </FormField>
-            <FormField label="เงื่อนไขการชำระเงิน" htmlFor="payment_condition">
-              <SearchableSelect
-                name="payment_condition"
-                options={paymentOptions}
-                value={formData.payment_condition || ''}
-                onChange={(val: any) =>
-                  setFormData((prev) => ({ ...prev, payment_condition: val }))
-                }
-                required
-              />
-            </FormField>
           </div>
+
+          {suggestedPackageOptions.length > 0 && (
+            <div className="pt-4 border-t">
+              <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
+                  <label
+                    className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="packageId-main"
+                      className="sr-only"
+                      onChange={() => handlePackageSelect(null)}
+                      checked={!selectedPackageId}
+                    />
+                    <span className="font-semibold text-slate-800">
+                      ไม่ใช้แพ็กเกจ
+                    </span>
+                  </label>
+                  {suggestedPackageOptions.map((option) => (
+                    <label
+                      key={option.id}
+                      className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
+                    >
+                      <input
+                        type="radio"
+                        name="packageId-main"
+                        value={option.id}
+                        className="sr-only"
+                        onChange={() => handlePackageSelect(option.id)}
+                        checked={selectedPackageId === option.id}
+                      />
+                      <div className="font-semibold text-slate-800">
+                        {option.name}
+                      </div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {option.visit_limit} ครั้ง / {option.contract_period} ปี
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+            </div>
+          )}
         </div>
 
         <FormField
@@ -541,49 +576,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           </Select>
         </FormField>
 
-        {suggestedPackageOptions.length > 0 && (
-          <div className="pt-4 border-t">
-            <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-                <label
-                  className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                >
-                  <input
-                    type="radio"
-                    name="packageId-main"
-                    className="sr-only"
-                    onChange={() => handlePackageSelect(null)}
-                    checked={!selectedPackageId}
-                  />
-                  <span className="font-semibold text-slate-800">
-                    ไม่ใช้แพ็กเกจ
-                  </span>
-                </label>
-                {suggestedPackageOptions.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="packageId-main"
-                      value={option.id}
-                      className="sr-only"
-                      onChange={() => handlePackageSelect(option.id)}
-                      checked={selectedPackageId === option.id}
-                    />
-                    <div className="font-semibold text-slate-800">
-                      {option.name}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {option.visit_limit} ครั้ง / {option.contract_period} ปี
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </FormField>
-          </div>
-        )}
+
 
         {/* Work Areas */}
         <div className="space-y-4">
@@ -603,6 +596,61 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               }
             />
           ))}
+        </div>
+
+        {/* Payment Condition Section (Moved to Bottom) */}
+        {/* Payment Condition Section (Moved to Bottom) */}
+        <div className="w-full md:w-1/2 ml-auto">
+          <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-slate-50">
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                เงื่อนไขการชำระเงิน
+              </label>
+
+              <div className="flex gap-4 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment_type"
+                    className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
+                    checked={formData.payment_condition !== PaymentMethod.INSTALLMENT && formData.payment_condition !== PaymentMethod.DIVIDED}
+                    onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
+                  />
+                  <span className="text-slate-700">ชำระเต็มจำนวน</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment_type"
+                    className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
+                    checked={formData.payment_condition === PaymentMethod.INSTALLMENT}
+                    onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
+                  />
+                  <span className="text-slate-700">แบ่งชำระ (งวด)</span>
+                </label>
+              </div>
+
+              {formData.payment_condition === PaymentMethod.INSTALLMENT && (
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                    <Input
+                      name="payment_installment_count"
+                      type="number"
+                      placeholder="ระบุจำนวนงวด"
+                      value={formData.payment_installment_count || ''}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          payment_installment_count: parseInt(e.target.value, 10) || 0,
+                        }))
+                      }
+                      required
+                    />
+                  </FormField>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </form>
     </Modal>

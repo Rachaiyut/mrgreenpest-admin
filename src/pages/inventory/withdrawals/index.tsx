@@ -13,6 +13,7 @@ import {
   UserIcon,
   CurrencyDollarIcon,
   CalendarDaysIcon,
+  PencilIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
 import {
@@ -27,6 +28,7 @@ import {
   Product,
 } from '@/src/types/entity/app.interface';
 import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalModal';
+import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 import { Input, Select, Button } from '../../../components/common/FormControls';
@@ -51,6 +53,8 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
     jobs,
     customers,
     products,
+    assessments,
+    contracts,
   } = useData();
 
   const stockMap = useMemo(() => new Map<string, Map<string, number>>(), []);
@@ -69,6 +73,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [approvalAction, setApprovalAction] = useState<
     'approve' | 'reject' | null
   >(null);
@@ -153,6 +158,12 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
   const handleViewDetails = (withdrawal: WithdrawalType) => {
     setSelectedWithdrawal(withdrawal);
     setIsDetailsModalOpen(true);
+  };
+
+  const handleEditWithdrawal = (withdrawal: WithdrawalType) => {
+    setSelectedWithdrawal(withdrawal);
+    setIsEditModalOpen(true);
+    setOpenDropdownId(null);
   };
 
   const handleDropdownToggle = (
@@ -261,6 +272,25 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         <span>ดูรายละเอียด</span>
       </a>,
     ];
+
+    // Allow editing for Draft and PendingApproval statuses
+    if (withdrawal.status === Status.Draft || withdrawal.status === Status.PendingApproval) {
+      actions.push(
+        <a
+          key="edit"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            handleEditWithdrawal(withdrawal);
+          }}
+          className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          role="menuitem"
+        >
+          <PencilIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
+          <span>แก้ไข</span>
+        </a>
+      );
+    }
 
     if (withdrawal.status === Status.PendingApproval) {
       actions.push(
@@ -667,11 +697,13 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         withdrawals={withdrawals}
         users={users}
         warehouses={warehouses}
-        jobs={jobs}
+        jobs={jobs as any}
         customers={customers}
         currentUser={currentUser}
         products={products}
         stockMap={stockMap}
+        assessments={assessments}
+        contracts={contracts}
       />
       <ApprovalModal
         isOpen={isApprovalModalOpen}
@@ -686,6 +718,23 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
         withdrawal={selectedWithdrawal}
         warehouses={warehouses}
         products={products}
+      />
+      <EditWithdrawalModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedWithdrawal(null);
+        }}
+        onUpdateWithdrawal={onUpdateWithdrawal}
+        withdrawal={selectedWithdrawal}
+        users={users}
+        warehouses={warehouses}
+        jobs={jobs as any}
+        customers={customers}
+        products={products}
+        stockMap={stockMap}
+        assessments={assessments}
+        contracts={contracts}
       />
     </>
   );

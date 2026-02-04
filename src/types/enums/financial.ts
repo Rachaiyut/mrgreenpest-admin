@@ -21,6 +21,8 @@ export enum PaymentMethod {
     CREDIT_CARD = 'CREDIT_CARD',
     CHEQUE = 'CHEQUE',
     QR_PAYMENT = 'QR_PAYMENT',
+    DIVIDED = 'DIVIDED',
+    INSTALLMENT = 'INSTALLMENT',
 }
 
 export enum QuotationStatus {
