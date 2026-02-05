@@ -170,9 +170,20 @@ const Warehouse: React.FC = () => {
     warehouseId: string,
     limits: { [productId: string]: number }
   ) => {
-    // Implement API call for limits if available
-    console.log('Update limits', warehouseId, limits);
-    setIsLimitModalOpen(false);
+    try {
+      const limitsArray = Object.entries(limits).map(
+        ([productId, max_quantity]) => ({
+          product_id: productId,
+          max_quantity,
+        })
+      );
+      await WarehouseApi.updateLimits(warehouseId, limitsArray);
+      setIsLimitModalOpen(false);
+      // Optional: Refresh warehouse data to show new limits if we were fetching them
+      // fetchWarehouses(); // But limits are deep detail, maybe not needed on list
+    } catch (error) {
+      console.error('Failed to update limits', error);
+    }
   };
 
   // Handlers
@@ -360,11 +371,10 @@ const Warehouse: React.FC = () => {
                   setActiveTab('all');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'all'
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'all'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}
+                  }`}
               >
                 ทั้งหมด
               </button>
@@ -373,11 +383,10 @@ const Warehouse: React.FC = () => {
                   setActiveTab('warehouse');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'warehouse'
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'warehouse'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}
+                  }`}
               >
                 คลังสินค้า
               </button>
@@ -386,11 +395,10 @@ const Warehouse: React.FC = () => {
                   setActiveTab('vehicle');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                  activeTab === 'vehicle'
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'vehicle'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
-                }`}
+                  }`}
               >
                 รถบริการ
               </button>
@@ -495,7 +503,7 @@ const Warehouse: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
                         {warehouse.type === WarehouseTypeEnum.SUB &&
-                        warehouse.vehicle ? (
+                          warehouse.vehicle ? (
                           <div className="flex flex-col">
                             <span>
                               {warehouse.vehicle.vehicle_registration}
@@ -598,11 +606,10 @@ const Warehouse: React.FC = () => {
                   <button
                     key={action.label}
                     onClick={() => action.action(warehouse)}
-                    className={`flex w-full items-center px-4 py-2 text-sm ${
-                      action.isDanger
+                    className={`flex w-full items-center px-4 py-2 text-sm ${action.isDanger
                         ? 'text-red-600 hover:bg-red-50'
                         : 'text-slate-700 hover:bg-slate-100'
-                    }`}
+                      }`}
                   >
                     <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                     {action.label}

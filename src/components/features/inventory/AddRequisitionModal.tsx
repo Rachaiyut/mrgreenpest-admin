@@ -4,7 +4,9 @@ import { FormField, Input, Select, Button, Textarea } from '../../common/FormCon
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import { JobApi } from '../../../api/job';
+import { WarehouseApi } from '@/src/api/warehouse';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { JobMainStatus } from '@/src/types/enums/job';
 import {
     Requisition as RequisitionType,
     RequisitionType as ReqTypeEnum,
@@ -69,6 +71,10 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
         [warehouses]
     );
 
+    // Stock state
+    const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
+    const [stockMap, setStockMap] = useState<Map<string, number>>(new Map());
+
     // Reset form on open
     useEffect(() => {
         if (isOpen) {
@@ -81,17 +87,66 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
             setRequestDate(new Date().toISOString().substring(0, 10));
             setRefType('NONE');
             setRefJobId('');
+            setStockMap(new Map());
+            setAvailableProducts(products); // Default to all products if no warehouse selected
         }
-    }, [isOpen]);
+    }, [isOpen, products]);
+
+    // Fetch stock when warehouse changes
+    useEffect(() => {
+        if (warehouseId && type === ReqTypeEnum.ITEM) {
+            const fetchStock = async () => {
+                try {
+                    const stocks = await WarehouseApi.getStockBalances(warehouseId);
+                    const newStockMap = new Map<string, number>();
+                    const newAvailableProducts: Product[] = [];
+
+                    if (Array.isArray(stocks)) {
+                        stocks.forEach((stock: any) => {
+                            if (stock.product) {
+                                newStockMap.set(stock.product.id, Number(stock.quantity));
+                                // Add product to available list
+                                newAvailableProducts.push(stock.product);
+                            }
+                        });
+                    }
+                    setStockMap(newStockMap);
+                    setAvailableProducts(newAvailableProducts);
+                } catch (err) {
+                    console.error("Failed to fetch stock balances", err);
+                    // Fallback or clear
+                    setStockMap(new Map());
+                    setAvailableProducts([]);
+                }
+            };
+            fetchStock();
+        } else {
+            // If no warehouse selected, maybe separate logic? 
+            // For now, if no warehouse is selected, we probably shouldn't allow adding items or fallback to all?
+            // Usually user MUST select warehouse.
+            setStockMap(new Map());
+            // setAvailableProducts(products); // Optional: reset to all? Or keep empty to force selection?
+            // Let's reset to all to be safe, or empty. The Modal UI enforces warehouse selection.
+        }
+    }, [warehouseId, type]);
 
     // Fetch jobs when refType is JOB
     useEffect(() => {
         if (refType === 'JOB') {
-            JobApi.getAll().then(res => {
-                const options = res.data.map(job => ({
-                    value: job.id,
-                    label: `Job: ${job.status} - ${job.customer?.first_name} ${job.customer?.last_name} (${new Date(job.start_date).toLocaleDateString()})`
-                }));
+            JobApi.getAll({ status: JobMainStatus.COMPLETE }).then(res => {
+                // Deduplicate jobs to prevent key collisions
+                const uniqueJobs = Array.from(new Map(res.data.map(j => [j.id, j])).values());
+                const options = uniqueJobs.map(job => {
+                    const customerName = job.customer
+                        ? `${job.customer.first_name || ''} ${job.customer.last_name || ''}`.trim()
+                        : 'Unknown Customer';
+                    const runNo = (job as any).run_no || job.id.substring(0, 8); // Assuming there's a running number or use short ID
+
+                    return {
+                        value: job.id,
+                        label: customerName
+                    };
+                });
                 setJobOptions(options);
             }).catch(err => console.error(err));
         }
@@ -224,7 +279,7 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <h4 className="font-semibold">รายการสินค้า</h4>
-                                <Button variant="primary" type="button" onClick={() => setIsProductModalOpen(true)} className="text-sm py-1 px-3">
+                                <Button variant="primary" type="button" onClick={() => setIsProductModalOpen(true)} className="text-sm py-1 px-3" disabled={!warehouseId}>
                                     <PlusIcon className="w-4 h-4 mr-1" /> เพิ่มสินค้า
                                 </Button>
                             </div>
@@ -250,6 +305,7 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
                                                             setItems(items.map(i => i.id === item.id ? { ...i, quantity: val } : i));
                                                         }}
                                                     />
+                                                    <div className="text-xs text-gray-400">คงเหลือ: {stockMap.get(item.productId) || 0}</div>
                                                 </td>
                                                 <td className="p-2 border">
                                                     <Input value={item.remark} onChange={e => setItems(items.map(i => i.id === item.id ? { ...i, remark: e.target.value } : i))} />
@@ -310,7 +366,9 @@ export const AddRequisitionModal: React.FC<AddRequisitionModalProps> = ({
                 onClose={() => setIsProductModalOpen(false)}
                 onAddProducts={handleAddProducts}
                 existingProductIds={existingProductIds}
-                products={products} // Should filter by available if strict
+                products={availableProducts}
+                disableFetch={true}
+                stockMap={stockMap}
             />
         </>
     );

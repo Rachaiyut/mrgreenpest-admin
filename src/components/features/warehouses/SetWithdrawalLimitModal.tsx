@@ -23,20 +23,20 @@ export const SetWithdrawalLimitModal: React.FC<
   const [errors, setErrors] = useState<{ [productId: string]: string }>({});
 
   const availableProducts = useMemo(() => {
-    // Show all canonical products of type 'สินค้า' from the main warehouse.
-    // This allows setting a withdrawal limit for any product, even if it's not currently in the vehicle's inventory.
-    // This is more robust and correctly filters for products from the main warehouse only.
-    return products.filter(
-      (p) => p.type === 'สินค้า' && p.warehouse === 'คลังหลัก'
-    );
+    // Show all products.
+    return products;
   }, [products]);
 
   useEffect(() => {
     if (warehouse) {
       const initialLimits: { [productId: string]: number | '' } = {};
-      availableProducts.forEach((p) => {
-        initialLimits[p.id] = warehouse.withdrawalLimits?.[p.id] ?? '';
-      });
+
+      if (Array.isArray(warehouse.withdrawal_limits)) {
+        warehouse.withdrawal_limits.forEach((limit) => {
+          initialLimits[limit.product_id] = limit.max_quantity;
+        });
+      }
+
       setLimits(initialLimits);
       setErrors({}); // Reset errors on open
     }
@@ -120,9 +120,6 @@ export const SetWithdrawalLimitModal: React.FC<
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
                   สินค้า
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">
-                  คงคลัง (คลังหลัก)
-                </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
                   จำกัดการเบิก (หน่วย)
                 </th>
@@ -133,9 +130,6 @@ export const SetWithdrawalLimitModal: React.FC<
                 <tr key={product.id}>
                   <td className="px-4 py-3 text-sm text-slate-800 font-medium">
                     {product.name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600 text-center">
-                    {product.stock}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-col">

@@ -22,6 +22,20 @@ export interface WithdrawalLimit {
   max_quantity: number;
 }
 
+export interface StockBalance {
+  product_id: string;
+  warehouse_id: string;
+  quantity: number;
+  product?: {
+    id: string;
+    name: string;
+    code: string;
+    unit: {
+      name: string;
+    }
+  }
+}
+
 export interface Warehouse extends IBase {
   code: string,
   name: string,
@@ -30,6 +44,7 @@ export interface Warehouse extends IBase {
   warehouse_branch: WarehouseBranch,
   vehicle: Vehicle,
   withdrawal_limits?: WithdrawalLimit[],
+  stock?: StockBalance[],
 }
 
 export interface WarehouseBranch extends IBase {

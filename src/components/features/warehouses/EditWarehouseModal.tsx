@@ -16,23 +16,53 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
   warehouse,
   onUpdateWarehouse,
 }) => {
-  const [formData, setFormData] = useState<Partial<Warehouse>>({});
+  const [formData, setFormData] = useState<any>({});
 
   useEffect(() => {
     if (warehouse) {
-      setFormData(warehouse);
+      setFormData({
+        name: warehouse.name,
+        type: warehouse.type,
+        licensePlate: warehouse.vehicle?.vehicle_registration || '',
+        brand: warehouse.vehicle?.brand || '',
+        model: warehouse.vehicle?.model || '',
+        color: warehouse.vehicle?.color || '',
+        location: warehouse.warehouse_branch?.location || '',
+      });
     }
   }, [warehouse]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (warehouse) {
-      onUpdateWarehouse({ ...warehouse, ...formData } as Warehouse);
+      const payload: any = {
+        id: warehouse.id,
+        name: formData.name,
+        type: formData.type,
+      };
+
+      if (formData.type === 'รถ') {
+        payload.vehicle = [
+          {
+            vehicle_registration: formData.licensePlate,
+            brand: formData.brand,
+            model: formData.model,
+            color: formData.color,
+          },
+        ];
+      } else {
+        payload.warehouse_branch = [
+          {
+            location: formData.location,
+          },
+        ];
+      }
+      onUpdateWarehouse({ ...warehouse, ...payload });
     }
     onClose();
   };
@@ -73,14 +103,14 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
             <label className="relative flex-1">
               <input
                 type="radio"
-                name="warehouseType"
+                name="type"
                 value="คลัง"
                 className="sr-only peer"
-                checked={formData.type === 'คลัง'}
+                checked={formData.type === 'คลัง' || formData.type === 'Warehouse'} // Handle legacy or API value
                 disabled
               />
               <span
-                className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'คลัง' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
+                className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'คลัง' || formData.type === 'Warehouse' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
               >
                 คลัง
               </span>
@@ -88,14 +118,14 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
             <label className="relative flex-1">
               <input
                 type="radio"
-                name="warehouseType"
+                name="type"
                 value="รถ"
                 className="sr-only peer"
-                checked={formData.type === 'รถ'}
+                checked={formData.type === 'รถ' || formData.type === 'Vehicle'} // Handle legacy or API value
                 disabled
               />
               <span
-                className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'รถ' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
+                className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'รถ' || formData.type === 'Vehicle' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
               >
                 รถ
               </span>
@@ -116,7 +146,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
           />
         </FormField>
 
-        {formData.type === 'รถ' ? (
+        {(formData.type === 'รถ' || formData.type === 'Vehicle') ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ทะเบียนรถ" htmlFor="licensePlate">

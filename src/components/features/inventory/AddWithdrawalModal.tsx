@@ -18,6 +18,8 @@ import {
 import { WarehouseType as InventoryWarehouseType } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
+import { JobApi } from '../../../api/job';
+import { JobMainStatus } from '@/src/types/enums/job';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
@@ -81,6 +83,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [fetchedJobs, setFetchedJobs] = useState<FieldJob[]>([]);
 
   // Reference Type State
   const [referenceType, setReferenceType] = useState<'JOB' | 'ASSESSMENT' | 'CONTRACT'>('JOB');
@@ -94,6 +97,66 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     [products]
   );
 
+  const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
+
+  // Fetch warehouses on modal open
+  const fetchWarehouses = useCallback(async () => {
+    try {
+      const res = await WarehouseApi.getWarehousesWithItems(); // Use getWarehousesWithItems
+      if (res && res.data) {
+        const allWarehouses = res.data;
+        const newStockMap = new Map<string, Map<string, number>>();
+
+        allWarehouses.forEach((w: any) => {
+          const warehouseStock = new Map<string, number>();
+          // Handle both 'stock' and 'stock_balances' keys, and ensure it's an array
+          const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
+
+          stockItems.forEach((s: any) => {
+            const productId = s.product_id || s.product?.id;
+            const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
+
+            if (productId && !isNaN(quantity)) {
+              warehouseStock.set(productId, quantity);
+            }
+          });
+          newStockMap.set(w.id, warehouseStock);
+        });
+        setLocalStockMap(newStockMap);
+
+        // Filter source warehouses (MAIN or SUB)
+        const sourceWhs = allWarehouses
+          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+          .map((w: any) => ({ value: w.id, label: w.name }));
+        setSourceWarehouseOptions(sourceWhs);
+
+        // Filter vehicle warehouses
+        const vehicleWhs = allWarehouses
+          .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
+          .map((w: any) => ({ value: w.id, label: w.name }));
+        setVehicleWarehouseOptions(vehicleWhs);
+      }
+    } catch (error) {
+      console.error("Failed to fetch warehouses", error);
+      // Fallback to prop data
+      const sourceWhs = warehouses
+        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+        .map((w) => ({ value: w.id, label: w.name }));
+      setSourceWarehouseOptions(sourceWhs);
+
+      const vehicleWhs = warehouses
+        .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
+        .map((w) => ({ value: w.id, label: w.name }));
+      setVehicleWarehouseOptions(vehicleWhs);
+    }
+  }, [warehouses]);
+
+  const effectiveStockMap = useMemo(() => {
+    // Merge prop stockMap and localStockMap, preferring local since it's freshly fetched with-items
+    if (localStockMap.size > 0) return localStockMap;
+    return stockMap;
+  }, [stockMap, localStockMap]);
+
   const sourceWarehouse = useMemo(
     () => warehouses.find((w) => w.id === fromWarehouseId),
     [fromWarehouseId, warehouses]
@@ -104,11 +167,11 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     const whId = sourceWarehouse.id;
     return products.filter(
       (p) => {
-        const qty = stockMap.get(whId)?.get(p.id);
+        const qty = effectiveStockMap.get(whId)?.get(p.id);
         return (qty || 0) > 0;
       }
     );
-  }, [sourceWarehouse, products, stockMap]);
+  }, [sourceWarehouse, products, effectiveStockMap]);
 
   const allUsedReferenceIds = useMemo(
     () => withdrawals.flatMap((w) => w.reference_ids || []),
@@ -161,39 +224,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     }
   }, [users]);
 
-  // Fetch warehouses on modal open
-  const fetchWarehouses = useCallback(async () => {
-    try {
-      const res = await WarehouseApi.getWarehouses();
-      if (res && res.data) {
-        const allWarehouses = res.data;
-        // Filter source warehouses (MAIN or SUB)
-        const sourceWhs = allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-          .map((w: any) => ({ value: w.id, label: w.name }));
-        setSourceWarehouseOptions(sourceWhs);
-
-        // Filter vehicle warehouses
-        const vehicleWhs = allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
-          .map((w: any) => ({ value: w.id, label: w.name }));
-        setVehicleWarehouseOptions(vehicleWhs);
-      }
-    } catch (error) {
-      console.error("Failed to fetch warehouses", error);
-      // Fallback to prop data
-      const sourceWhs = warehouses
-        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-        .map((w) => ({ value: w.id, label: w.name }));
-      setSourceWarehouseOptions(sourceWhs);
-
-      const vehicleWhs = warehouses
-        .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
-        .map((w) => ({ value: w.id, label: w.name }));
-      setVehicleWarehouseOptions(vehicleWhs);
-    }
-  }, [warehouses]);
-
   useEffect(() => {
     if (isOpen) {
       setGoodsItems([]);
@@ -207,6 +237,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       setRecipientId('');
       // Fetch warehouses when modal opens
       fetchWarehouses();
+
+      // Fetch jobs when modal opens
+      JobApi.getAll({ status: JobMainStatus.COMPLETE }).then(res => {
+        if (res && res.data) {
+          setFetchedJobs(res.data as unknown as FieldJob[]);
+        }
+      }).catch(err => console.error("Failed to fetch jobs", err));
     }
   }, [isOpen, currentUser, fetchWarehouses]);
 
@@ -541,37 +578,23 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 onChange={(e) => setReferenceType(e.target.value as any)}
               >
                 <option value="JOB">ใบงาน (Job)</option>
-                <option value="ASSESSMENT">ใบประเมิน (Assessment)</option>
-                <option value="CONTRACT">สัญญา (Contract)</option>
               </select>
 
               {referenceType === 'JOB' && (
                 <SearchableSelect
                   value={referenceIds[0] || ''}
                   onChange={(value) => setReferenceIds(value ? [value] : [])}
-                  options={jobs.map(j => ({
-                    value: j.id,
-                    label: `${j.id} - ${(j as any).customer_name || (j as any).customerName || (j as any).customer?.first_name || ''}`
-                  }))}
+                  options={(fetchedJobs.length > 0 ? fetchedJobs : jobs).map(j => {
+                    const c = (j as any).customer;
+                    const customerName = c
+                      ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+                      : (j as any).customer_name || 'Unknown Customer';
+                    return {
+                      value: j.id,
+                      label: customerName
+                    };
+                  })}
                   placeholder="-- เลือกใบงาน --"
-                />
-              )}
-
-              {referenceType === 'ASSESSMENT' && (
-                <SearchableSelect
-                  value={selectedAssessmentId}
-                  onChange={setSelectedAssessmentId}
-                  options={assessments.map(a => ({ value: a.id, label: `${a.code} - ${a.customer ? (a.customer.first_name + ' ' + a.customer.last_name) : 'Unknown Customer'}` }))}
-                  placeholder="-- เลือกใบประเมิน --"
-                />
-              )}
-
-              {referenceType === 'CONTRACT' && (
-                <SearchableSelect
-                  value={selectedContractId}
-                  onChange={setSelectedContractId}
-                  options={contracts.map(c => ({ value: c.id, label: `${c.code} - ${c.customer_name}` }))}
-                  placeholder="-- เลือกสัญญา --"
                 />
               )}
             </div>
@@ -603,7 +626,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 {goodsItems.map((item, index) => {
                   const product = productMap.get(item.productId);
                   const available = sourceWarehouse
-                    ? stockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
+                    ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
                     : 0;
                   return (
                     <div
@@ -633,8 +656,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                             )
                           }
                           placeholder="จำนวน"
-                          className="w-full text-right"
+                          className={`w-full text-right ${item.quantity > available ? 'border-red-500 focus:ring-red-500' : ''}`}
                         />
+                        {item.quantity > available && (
+                          <div className="text-xs text-red-500 mt-1 text-right">
+                            เกินจำนวนคงเหลือ ({available})
+                          </div>
+                        )}
                       </div>
                       <div className="col-span-2 md:col-span-1 flex justify-end">
                         <button
@@ -753,6 +781,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         onAddProducts={handleAddProducts}
         products={productsInWarehouse}
         existingProductIds={existingProductIds}
+        disableFetch={true}
+        stockMap={effectiveStockMap.get(fromWarehouseId)}
       />
 
       <ReferenceSelectionModal

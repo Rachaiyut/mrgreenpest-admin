@@ -28,17 +28,32 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const newWarehouse: Omit<Warehouse, 'id'> = {
-      name: formData.get('warehouse-name') as string,
+    const name = formData.get('warehouse-name') as string;
+    const location = formData.get('warehouse-location') as string;
+
+    const payload: any = {
+      name,
       type: warehouseType,
-      location: formData.get('warehouse-location') as string,
-      licensePlate: formData.get('license-plate') as string | undefined,
-      brand: formData.get('brand') as string | undefined,
-      model: formData.get('model') as string | undefined,
-      color: formData.get('color') as string | undefined,
     };
 
-    onCreateWarehouse(newWarehouse);
+    if (warehouseType === 'รถ') {
+      payload.vehicle = [
+        {
+          vehicle_registration: formData.get('license-plate') as string,
+          brand: formData.get('brand') as string,
+          model: formData.get('model') as string,
+          color: formData.get('color') as string,
+        },
+      ];
+    } else {
+      payload.warehouse_branch = [
+        {
+          location,
+        },
+      ];
+    }
+
+    onCreateWarehouse(payload);
     onClose();
   };
 

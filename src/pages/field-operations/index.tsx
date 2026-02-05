@@ -561,6 +561,15 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               primary_tech_id: job.primary_technician?.id || null,
             });
 
+            const techniciansList =
+              Array.isArray(job.technicians) && job.technicians.length > 0
+                ? job.technicians
+                : Array.isArray(job.job_team_members) && job.job_team_members.length > 0
+                  ? job.job_team_members
+                  : job.primary_technician
+                    ? [job.primary_technician]
+                    : [];
+
             return {
               api_status: rawStatus,
               id: job.id,
@@ -573,11 +582,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               start_time: job.start_date,
               end_time: job.end_date,
               primary_technician: job.primary_technician || null,
-              technicians: Array.isArray(job.technicians) && job.technicians.length > 0
-                ? job.technicians
-                : job.primary_technician
-                  ? [job.primary_technician]
-                  : [],
+              technicians: techniciansList,
               work_areas: [],
               status: mappedStatus,
               vehicle_id: warehouse.id,
@@ -825,7 +830,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     return jobs.some(
       (j) =>
         j.status === JobMainStatus.IN_PROGRESS &&
-        j.technicians.some((tech) => tech.id === currentUser.id)
+        j.technicians?.some((tech) => tech.id === currentUser.id)
     );
   }, [jobs, currentUser]);
 
@@ -842,17 +847,19 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         j.status !== JobMainStatus.CANCELLED
     );
 
-    const vehicleColumns = serviceVehicles.map((vehicle) => ({
-      title: (() => {
-        const license =
-          (vehicle as any)?.license_plate ||
-          (vehicle as any)?.vehicle?.vehicle_registration ||
-          (vehicle as any)?.vehicle_registration;
-        return license ? `${vehicle.name} (${license})` : vehicle.name;
-      })(),
-      id: vehicle.id,
-      jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
-    }));
+    const vehicleColumns = serviceVehicles.map((vehicle) => {
+      const license =
+        (vehicle as any)?.license_plate ||
+        (vehicle as any)?.vehicle?.vehicle_registration ||
+        (vehicle as any)?.vehicle_registration;
+
+      return {
+        title: license ? `${vehicle.name} (${license})` : vehicle.name,
+        id: vehicle.id,
+        jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
+      };
+    }).filter(v => v.id);
+
 
     return vehicleColumns;
   }, [filteredJobs, warehouses]);

@@ -154,15 +154,15 @@ const Assessments: React.FC = () => {
         ),
       },
       {
-        title: AsessmentStatus.PENDING,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.PENDING
-        ),
-      },
-      {
         title: AsessmentStatus.APPOINTMENT,
         assessments: filteredAssessments.filter(
           (a) => a.status === AsessmentStatus.APPOINTMENT
+        ),
+      },
+      {
+        title: AsessmentStatus.PENDING,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.PENDING
         ),
       },
       {

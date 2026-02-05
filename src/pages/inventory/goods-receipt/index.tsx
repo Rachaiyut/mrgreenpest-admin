@@ -87,16 +87,16 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
 
     return reversedReceipts.filter((receipt) => {
       const supplierName =
-        (receipt.supplierId && supplierMap[receipt.supplierId]) || '';
-      const receiptDate = formatThaiDate(receipt.createdAt);
+        (receipt.supplier_id && supplierMap[receipt.supplier_id]) || '';
+      const receiptDate = formatThaiDate(receipt.created_at);
 
       return (
-        receipt.id.toLowerCase().includes(lowercasedQuery) ||
-        (receipt.referenceId &&
-          receipt.referenceId.toLowerCase().includes(lowercasedQuery)) ||
+        (receipt.code && receipt.code.toLowerCase().includes(lowercasedQuery)) ||
+        (receipt.receipt_no &&
+          receipt.receipt_no.toLowerCase().includes(lowercasedQuery)) ||
         supplierName.toLowerCase().includes(lowercasedQuery) ||
         receiptDate.includes(lowercasedQuery) ||
-        receipt.status.toLowerCase().includes(lowercasedQuery)
+        (receipt.status && receipt.status.toLowerCase().includes(lowercasedQuery))
       );
     });
   }, [reversedReceipts, searchQuery, supplierMap]);
@@ -128,7 +128,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       setSelectedReceipt(null);
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedReceipt(receipts.find((r) => r.id === receiptId) || null);
+      const found = receipts.find((r) => r.id === receiptId);
+      setSelectedReceipt((found as any) || null);
       setOpenDropdownId(receiptId);
       setDropdownPosition({
         top: buttonRect.bottom + window.scrollY,
@@ -151,8 +152,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
         status:
           approvalAction === 'approve' ? Status.Approved : Status.Rejected,
         remarks: remarks,
-        approvedBy: 'ผู้ดูแลระบบ', // Mock approver
-        updatedBy: 'ผู้ดูแลระบบ',
+        // approved_by: 'ผู้ดูแลระบบ', // Interface might not have this yet
+        updated_by: 'ผู้ดูแลระบบ',
       });
     }
     setIsApprovalModalOpen(false);
@@ -168,10 +169,9 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
         ...receiptToUpdate,
         status: Status.Cancelled,
         remarks: 'ยกเลิกโดยผู้ใช้',
-        updatedBy: 'ผู้ดูแลระบบ',
+        updated_by: 'ผู้ดูแลระบบ',
       });
     }
-    // FIX: Incomplete statement 'set' corrected to 'setOpenDropdownId(null);'
     setOpenDropdownId(null);
   };
 
@@ -361,22 +361,23 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                     </td>
                     <td
                       className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
-                      onClick={() => handleViewDetails(receipt)}
+                      onClick={() => handleViewDetails(receipt as any)}
                     >
-                      {receipt.id}
+                      {receipt.code || receipt.id.substring(0, 8)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {receipt.referenceId || '-'}
+                      {receipt.receipt_no || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {formatThaiDate(receipt.createdAt)}
+                      {formatThaiDate(receipt.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {warehouseMap[receipt.warehouseId] || '-'}
+                      {/* Try to use nested warehouse name if available, otherwise map id */}
+                      {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {receipt.supplierId
-                        ? supplierMap[receipt.supplierId]
+                      {receipt.supplier_id
+                        ? supplierMap[receipt.supplier_id]
                         : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
@@ -434,8 +435,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       <AddGoodsReceiptModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateReceipt={onCreateReceipt}
-        receipts={receipts}
+        onCreateReceipt={onCreateReceipt as any}
+        receipts={receipts as any}
         warehouses={warehouses}
         suppliers={suppliers}
         products={products}
@@ -451,7 +452,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
         action={approvalAction}
-        item={selectedReceipt}
+        item={selectedReceipt as any}
         onConfirm={handleConfirmApproval}
       />
     </>

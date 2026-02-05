@@ -30,6 +30,7 @@ export const GoodsReceiptDetailsModal: React.FC<
     );
   }, [warehouses]);
 
+  // Map for fallback if product details are not nested in items
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
@@ -37,11 +38,14 @@ export const GoodsReceiptDetailsModal: React.FC<
 
   if (!isOpen || !receipt) return null;
 
+  // Safe Cast or access for properties that might satisfy multiple interfaces
+  const r = receipt as any;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบรับเข้า: ${receipt.id}`}
+      title={`รายละเอียดใบรับเข้า: ${r.code || r.id}`}
       size="4xl"
       footer={
         <Button variant="primary" type="button" onClick={onClose}>
@@ -58,48 +62,61 @@ export const GoodsReceiptDetailsModal: React.FC<
             <div>
               <dt className="font-medium text-slate-500">เลขที่ใบรับเข้า</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {receipt.id}
+                {r.code || r.id}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">รับเข้าคลัง</dt>
               <dd className="mt-1 text-slate-900">
-                {warehouseMap[receipt.warehouseId]}
+                {r.warehouse?.name || warehouseMap[r.warehouse_id] || '-'}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">สถานะ</dt>
               <dd className="mt-1 text-slate-900">
-                <StatusBadge status={receipt.status} />
+                <StatusBadge status={r.status} />
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-500">เลขที่ใบสั่งซื้อ (PO)</dt>
+              <dd className="mt-1 text-slate-900">
+                {r.receipt_no || '-'}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">เลขที่อ้างอิง</dt>
               <dd className="mt-1 text-slate-900">
-                {receipt.referenceId || '-'}
+                {/*  Use reference_id if distinct, otherwise fallback/skip */}
+                {r.reference_id || '-'}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(receipt.createdAt)}
+                {formatThaiDate(r.created_at)}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{receipt.createdBy}</dd>
+              <dd className="mt-1 text-slate-900">{r.created_by || '-'}</dd>
             </div>
-            {receipt.approvedBy && (
+
+            {(r.approved_by || r.updated_by) && (
               <div>
-                <dt className="font-medium text-slate-500">ผู้อนุมัติ</dt>
-                <dd className="mt-1 text-slate-900">{receipt.approvedBy}</dd>
+                <dt className="font-medium text-slate-500">
+                  {r.approved_by ? "ผู้อนุมัติ" : "ผู้แก้ไขล่าสุด"}
+                </dt>
+                <dd className="mt-1 text-slate-900">
+                  {r.approved_by || r.updated_by}
+                </dd>
               </div>
             )}
-            {receipt.remarks && (
+
+            {r.remarks && (
               <div className="md:col-span-3">
                 <dt className="font-medium text-slate-500">หมายเหตุ</dt>
                 <dd className="mt-1 text-slate-900 bg-slate-50 p-2 rounded-md">
-                  {receipt.remarks}
+                  {r.remarks}
                 </dd>
               </div>
             )}
@@ -153,28 +170,31 @@ export const GoodsReceiptDetailsModal: React.FC<
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {receipt.items.length > 0 ? (
-                  receipt.items.map((item, index) => {
-                    const product = productMap.get(item.productId);
+                {r.items && r.items.length > 0 ? (
+                  r.items.map((item: any, index: number) => {
+                    // Try to get detail from nested product object, fallback to global product map
+                    const productDesc = item.product || productMap.get(item.product_id);
+
                     return (
                       <tr key={index} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {item.productId}
+                          {productDesc?.code || item.product_id?.substring(0, 8)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product?.barcode || '-'}
+                          {productDesc?.barcode || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {product?.name || 'ไม่พบสินค้า'}
+                          {productDesc?.name || 'ไม่พบสินค้า'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {item.quantity}
+                          {item.qty_received ?? item.quantity}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product?.unit || 'ชิ้น'}
+                          {/* Handle nested unit object or string */}
+                          {productDesc?.unit?.name || productDesc?.unit || 'ชิ้น'}
                         </td>
                       </tr>
                     );
