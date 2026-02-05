@@ -33,24 +33,19 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
 
     const payload: any = {
       name,
-      type: warehouseType,
+      type: warehouseType === 'รถ' ? 'VEHICLE' : 'MAIN',
+      // Backend validates `address` as required
+      address: location || (warehouseType === 'รถ' ? 'เคลื่อนที่' : '-'),
     };
 
     if (warehouseType === 'รถ') {
-      payload.vehicle = [
-        {
-          vehicle_registration: formData.get('license-plate') as string,
-          brand: formData.get('brand') as string,
-          model: formData.get('model') as string,
-          color: formData.get('color') as string,
-        },
-      ];
+      // Backend vehicle DTO expects flattened fields (based on validation keys).
+      payload.vehicle_registration = (formData.get('license-plate') as string) || '';
+      payload.brand = (formData.get('brand') as string) || '';
+      payload.model = (formData.get('model') as string) || '';
+      payload.color = (formData.get('color') as string) || '';
     } else {
-      payload.warehouse_branch = [
-        {
-          location,
-        },
-      ];
+      // Keep address as the source of truth for location.
     }
 
     onCreateWarehouse(payload);
@@ -140,6 +135,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   id="license-plate"
                   type="text"
                   required
+                  maxLength={20}
                   placeholder="เช่น 1กข 1234"
                 />
               </FormField>
@@ -149,6 +145,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   id="brand"
                   type="text"
                   required
+                  maxLength={50}
                   placeholder="เช่น Toyota"
                 />
               </FormField>
@@ -160,6 +157,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   id="model"
                   type="text"
                   required
+                  maxLength={100}
                   placeholder="เช่น Hilux Revo"
                 />
               </FormField>
@@ -169,6 +167,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   id="color"
                   type="text"
                   required
+                  maxLength={30}
                   placeholder="เช่น ขาว"
                 />
               </FormField>
@@ -191,6 +190,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
               id="warehouse-location"
               type="text"
               placeholder="เช่น สำนักงานใหญ่"
+              required
             />
           </FormField>
         )}

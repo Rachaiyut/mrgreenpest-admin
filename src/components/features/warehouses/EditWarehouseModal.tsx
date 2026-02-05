@@ -20,6 +20,11 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
 
   useEffect(() => {
     if (warehouse) {
+      const existingAddress =
+        (warehouse as any).address ||
+        warehouse.warehouse_branch?.location ||
+        (warehouse.vehicle ? 'เคลื่อนที่' : '');
+
       setFormData({
         name: warehouse.name,
         type: warehouse.type,
@@ -27,41 +32,54 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
         brand: warehouse.vehicle?.brand || '',
         model: warehouse.vehicle?.model || '',
         color: warehouse.vehicle?.color || '',
-        location: warehouse.warehouse_branch?.location || '',
+        location: warehouse.warehouse_branch?.location || existingAddress || '',
       });
     }
   }, [warehouse]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
+    // Enforce backend validation limits at input-level.
+    const limits: Record<string, number> = {
+      licensePlate: 20,
+      brand: 50,
+      model: 100,
+      color: 30,
+    };
+    const max = limits[name];
+    const nextValue = typeof max === 'number' ? value.slice(0, max) : value;
+    setFormData((prev: any) => ({ ...prev, [name]: nextValue }));
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (warehouse) {
+      const isVehicle =
+        formData.type === 'รถ' ||
+        formData.type === 'Vehicle' ||
+        formData.type === 'VEHICLE';
+
       const payload: any = {
         id: warehouse.id,
         name: formData.name,
-        type: formData.type,
+        // Preserve existing backend type if it’s already SUB/VEHICLE.
+        type: isVehicle
+          ? (warehouse.type === 'SUB' || warehouse.type === 'VEHICLE'
+              ? warehouse.type
+              : 'VEHICLE')
+          : 'MAIN',
+        // Backend validates `address` as required.
+        address: (formData.location || '').trim() || (isVehicle ? 'เคลื่อนที่' : '-'),
       };
 
-      if (formData.type === 'รถ') {
-        payload.vehicle = [
-          {
-            vehicle_registration: formData.licensePlate,
-            brand: formData.brand,
-            model: formData.model,
-            color: formData.color,
-          },
-        ];
-      } else {
-        payload.warehouse_branch = [
-          {
-            location: formData.location,
-          },
-        ];
+      if (isVehicle) {
+        // Backend validation keys indicate flattened DTO fields.
+        payload.vehicle_registration = formData.licensePlate || '';
+        payload.brand = formData.brand || '';
+        payload.model = formData.model || '';
+        payload.color = formData.color || '';
       }
+
       onUpdateWarehouse({ ...warehouse, ...payload });
     }
     onClose();
@@ -99,15 +117,15 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
         className="space-y-4"
       >
         <FormField label="ประเภท">
-          <div className="flex rounded-lg bg-slate-200 p-1 w-full cursor-not-allowed">
-            <label className="relative flex-1">
+          <div className="flex rounded-lg bg-slate-200 p-1 w-full">
+            <label className="relative flex-1 cursor-pointer">
               <input
                 type="radio"
                 name="type"
                 value="คลัง"
                 className="sr-only peer"
-                checked={formData.type === 'คลัง' || formData.type === 'Warehouse'} // Handle legacy or API value
-                disabled
+                checked={formData.type === 'คลัง' || formData.type === 'Warehouse'}
+                onChange={handleChange}
               />
               <span
                 className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'คลัง' || formData.type === 'Warehouse' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
@@ -115,14 +133,14 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                 คลัง
               </span>
             </label>
-            <label className="relative flex-1">
+            <label className="relative flex-1 cursor-pointer">
               <input
                 type="radio"
                 name="type"
                 value="รถ"
                 className="sr-only peer"
-                checked={formData.type === 'รถ' || formData.type === 'Vehicle'} // Handle legacy or API value
-                disabled
+                checked={formData.type === 'รถ' || formData.type === 'Vehicle'}
+                onChange={handleChange}
               />
               <span
                 className={`block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium transition-colors ${formData.type === 'รถ' || formData.type === 'Vehicle' ? 'bg-primary text-white shadow-sm' : 'text-slate-500'}`}
@@ -146,7 +164,9 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
           />
         </FormField>
 
-        {(formData.type === 'รถ' || formData.type === 'Vehicle') ? (
+        {(formData.type === 'รถ' ||
+          formData.type === 'Vehicle' ||
+          formData.type === 'VEHICLE') ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ทะเบียนรถ" htmlFor="licensePlate">
@@ -157,6 +177,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                   value={formData.licensePlate || ''}
                   onChange={handleChange}
                   required
+                  maxLength={20}
                   placeholder="เช่น 1กข 1234"
                 />
               </FormField>
@@ -168,6 +189,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                   value={formData.brand || ''}
                   onChange={handleChange}
                   required
+                  maxLength={50}
                   placeholder="เช่น Toyota"
                 />
               </FormField>
@@ -181,6 +203,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                   value={formData.model || ''}
                   onChange={handleChange}
                   required
+                  maxLength={100}
                   placeholder="เช่น Hilux Revo"
                 />
               </FormField>
@@ -192,6 +215,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                   value={formData.color || ''}
                   onChange={handleChange}
                   required
+                  maxLength={30}
                   placeholder="เช่น ขาว"
                 />
               </FormField>
@@ -202,8 +226,8 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
                 id="location"
                 type="text"
                 value={formData.location || ''}
-                readOnly
-                className="bg-slate-100"
+                onChange={handleChange}
+                placeholder="เช่น เคลื่อนที่ หรือ ระบุจุดจอด"
               />
             </FormField>
           </>

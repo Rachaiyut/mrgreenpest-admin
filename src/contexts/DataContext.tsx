@@ -264,12 +264,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 100 })).then((data: any) => setWarehouses(data)));
     }
     if (shouldFetch('suppliers')) {
-      // promises.push(safeFetch(() => SupplierApi.getSuppliers({ limit: 100 })).then(setSuppliers));
-      setSuppliers([]);
+      promises.push(
+        safeFetch(() => SupplierApi.getSuppliers({ limit: 100 })).then(
+          (data: any) => setSuppliers(data)
+        )
+      );
     }
     if (shouldFetch('goodsReceipts')) {
-      // promises.push(safeFetch(() => GoodsReceiptApi.getAll({ limit: 100 })).then(setGoodsReceipts));
-      setGoodsReceipts([]);
+      promises.push(
+        safeFetch(() => GoodsReceiptApi.getAll({ limit: 100 })).then(
+          (data: any) => setGoodsReceipts(data)
+        )
+      );
     }
     if (shouldFetch('withdrawals')) {
       promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 100 })).then((data: any) => setWithdrawals(data)));
@@ -432,15 +438,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       goodsReceipts: {
         create: async (data: any) => {
           await GoodsReceiptApi.create(data);
-          // fetchData(['goodsReceipts']);
+          fetchData(['goodsReceipts']);
         },
         update: async (data: any) => {
           await GoodsReceiptApi.update(data.id, data);
-          // fetchData(['goodsReceipts']);
+          fetchData(['goodsReceipts']);
         },
         delete: async (id: string) => {
           await GoodsReceiptApi.delete(id);
-          // fetchData(['goodsReceipts']);
+          fetchData(['goodsReceipts']);
         },
       },
       withdrawals: {

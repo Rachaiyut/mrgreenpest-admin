@@ -105,7 +105,7 @@ const Warehouse: React.FC = () => {
 
       // Filter by Type based on activeTab
       if (activeTab === 'warehouse') query.type = WarehouseTypeEnum.MAIN;
-      if (activeTab === 'vehicle') query.type = WarehouseTypeEnum.SUB;
+      if (activeTab === 'vehicle') query.type = WarehouseTypeEnum.VEHICLE;
 
       const res = await WarehouseApi.getWarehouses(query);
       setWarehouses(res.data);
@@ -145,7 +145,39 @@ const Warehouse: React.FC = () => {
 
   const onUpdateWarehouse = async (warehouse: WarehouseType) => {
     try {
-      await WarehouseApi.update(warehouse.id, warehouse);
+      // Backend validates `address` as required even on partial updates.
+      // For vehicle-warehouses, backend validation errors indicate it expects
+      // vehicle fields flattened in the DTO:
+      // `brand`, `model`, `vehicle_registration`, `color` (not nested).
+      const address =
+        (warehouse as any).address ||
+        warehouse.warehouse_branch?.location ||
+        (warehouse.vehicle ? 'เคลื่อนที่' : '-') ||
+        '-';
+
+      const isVehicleWarehouse =
+        !!warehouse.vehicle ||
+        warehouse.type === WarehouseTypeEnum.SUB ||
+        warehouse.type === WarehouseTypeEnum.VEHICLE;
+
+      const payload: any = {
+        name: warehouse.name,
+        type: warehouse.type,
+        status: warehouse.status,
+        address,
+      };
+
+      if (isVehicleWarehouse) {
+        payload.vehicle_registration =
+          (warehouse as any).vehicle_registration ||
+          warehouse.vehicle?.vehicle_registration ||
+          '';
+        payload.brand = (warehouse as any).brand || warehouse.vehicle?.brand || '';
+        payload.model = (warehouse as any).model || warehouse.vehicle?.model || '';
+        payload.color = (warehouse as any).color || warehouse.vehicle?.color || '';
+      }
+
+      await WarehouseApi.update(warehouse.id, payload);
       setIsEditModalOpen(false);
       fetchWarehouses();
       fetchWarehousesStats();
@@ -179,8 +211,27 @@ const Warehouse: React.FC = () => {
       );
       await WarehouseApi.updateLimits(warehouseId, limitsArray);
       setIsLimitModalOpen(false);
-      // Optional: Refresh warehouse data to show new limits if we were fetching them
-      // fetchWarehouses(); // But limits are deep detail, maybe not needed on list
+      // Fetch the authoritative warehouse (in case backend enriches / transforms limits)
+      try {
+        const full = await WarehouseApi.getWarehouseById(warehouseId);
+        setWarehouses((prev) => prev.map((w) => (w.id === warehouseId ? (full as any) : w)));
+        setWarehouseForLimits((prev) =>
+          prev && prev.id === warehouseId ? (full as any) : prev
+        );
+      } catch (e) {
+        console.error('Failed to refetch warehouse after limits update; falling back to local state', e);
+        // Fallback: update local state with what we just sent
+        setWarehouses((prev) =>
+          prev.map((w) =>
+            w.id === warehouseId ? { ...w, withdrawal_limits: limitsArray as any } : w
+          )
+        );
+        setWarehouseForLimits((prev) =>
+          prev && prev.id === warehouseId
+            ? { ...(prev as any), withdrawal_limits: limitsArray as any }
+            : prev
+        );
+      }
     } catch (error) {
       console.error('Failed to update limits', error);
     }
@@ -266,10 +317,20 @@ const Warehouse: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleSetLimits = (warehouse: WarehouseType) => {
-    setWarehouseForLimits(warehouse);
-    setIsLimitModalOpen(true);
+  const handleSetLimits = async (warehouse: WarehouseType) => {
     setOpenDropdownId(null);
+    setIsLimitModalOpen(true);
+    setWarehouseForLimits(null);
+
+    // Ensure we have latest withdrawal_limits from API (list endpoint may omit).
+    try {
+      const full = await WarehouseApi.getWarehouseById(warehouse.id);
+      setWarehouseForLimits(full as any);
+    } catch (e) {
+      console.error('Failed to fetch warehouse limits', warehouse.id, e);
+      // Fallback to whatever we already had.
+      setWarehouseForLimits(warehouse);
+    }
   };
 
   const handleConfirmDelete = async () => {
@@ -304,7 +365,11 @@ const Warehouse: React.FC = () => {
       label: 'จำกัดการเบิก',
       icon: LimitIcon,
       action: handleSetLimits,
-      condition: (w: WarehouseType) => w.type === WarehouseTypeEnum.SUB,
+      // Limits apply to vehicle warehouses (บาง backend ส่งเป็น SUB แต่มี vehicle)
+      condition: (w: WarehouseType) =>
+        !!(w as any).vehicle ||
+        w.type === WarehouseTypeEnum.SUB ||
+        w.type === WarehouseTypeEnum.VEHICLE,
     },
     { label: 'ลบ', icon: TrashIcon, isDanger: true, action: handleDelete },
   ];
