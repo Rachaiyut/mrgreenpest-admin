@@ -225,10 +225,33 @@ const Warehouse: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [openDropdownId]);
 
-  const handleViewDetails = (warehouse: WarehouseType) => {
+  // State for stock map
+  const [stockMap, setStockMap] = useState<Record<string, Record<string, number>>>({});
+
+  const handleViewDetails = async (warehouse: WarehouseType) => {
     setSelectedWarehouse(warehouse);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
+
+    // Fetch stock
+    try {
+      const res: any = await WarehouseApi.getStockBalances(warehouse.id);
+      const stocks = res.data || res; // Handle if it returns { data: [...] } or just [...]
+      const map: Record<string, number> = {};
+
+      if (Array.isArray(stocks)) {
+        stocks.forEach((s: any) => {
+          const qty = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity || 0);
+          const productId = s.product?.id || s.product_id;
+          if (productId) {
+            map[productId] = qty;
+          }
+        });
+      }
+      setStockMap(prev => ({ ...prev, [warehouse.id]: map }));
+    } catch (e) {
+      console.error("Failed to fetch stock for warehouse", warehouse.id, e);
+    }
   };
 
   const handleEdit = (warehouse: WarehouseType) => {
@@ -372,8 +395,8 @@ const Warehouse: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'all'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 ทั้งหมด
@@ -384,8 +407,8 @@ const Warehouse: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'warehouse'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 คลังสินค้า
@@ -396,8 +419,8 @@ const Warehouse: React.FC = () => {
                   setCurrentPage(1);
                 }}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'vehicle'
-                    ? 'bg-white text-slate-800 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-slate-800 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 รถบริการ
@@ -607,8 +630,8 @@ const Warehouse: React.FC = () => {
                     key={action.label}
                     onClick={() => action.action(warehouse)}
                     className={`flex w-full items-center px-4 py-2 text-sm ${action.isDanger
-                        ? 'text-red-600 hover:bg-red-50'
-                        : 'text-slate-700 hover:bg-slate-100'
+                      ? 'text-red-600 hover:bg-red-50'
+                      : 'text-slate-700 hover:bg-slate-100'
                       }`}
                   >
                     <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
@@ -638,7 +661,7 @@ const Warehouse: React.FC = () => {
         onClose={() => setIsDetailsModalOpen(false)}
         warehouse={selectedWarehouse}
         products={products}
-        stockMap={{}}
+        stockMap={stockMap}
       />
       <ConfirmationModal
         isOpen={isConfirmModalOpen}

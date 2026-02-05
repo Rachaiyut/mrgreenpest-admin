@@ -18,8 +18,9 @@ import {
 import { formatThaiDate } from '../../../utils/date';
 import {
   Withdrawal as WithdrawalType,
-  Warehouse as WarehouseType,
+  Warehouse as WarehouseEntity,
 } from '@/src/types/entity/inventory.interface';
+import { WarehouseType } from '@/src/types/enums/inventory';
 import {
   Status,
   User,
@@ -516,12 +517,6 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    เส้นทาง
-                  </th>
-                  <th
-                    scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase xl:table-cell hidden whitespace-nowrap"
                   >
                     อ้างอิง
@@ -543,12 +538,6 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
                     ผู้เบิก/ผู้รับเงิน
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase xl:table-cell hidden whitespace-nowrap"
-                  >
-                    หมายเหตุ
                   </th>
                   <th scope="col" className="relative px-6 py-3">
                     <span className="sr-only">จัดการ</span>
@@ -595,7 +584,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                         className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
                         onClick={() => handleViewDetails(withdrawal)}
                       >
-                        {withdrawal.id}
+                        {withdrawal.code}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}
@@ -610,17 +599,6 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                           maximumFractionDigits: 2,
                         })}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        <div>
-                          {fromWarehouse?.name || '-'} &rarr;{' '}
-                          {toWarehouse?.name || '-'}
-                        </div>
-                        {toWarehouse?.type === 'รถ' && (
-                          <div className="text-xs text-slate-400">
-                            {toWarehouse.licensePlate}
-                          </div>
-                        )}
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
                         {withdrawal.reference_ids?.length || 0} รายการ
                       </td>
@@ -632,9 +610,6 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {recipientName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-xs xl:table-cell hidden">
-                        {withdrawal.notes || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

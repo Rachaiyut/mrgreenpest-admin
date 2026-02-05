@@ -355,13 +355,19 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       reference_ids: referenceType === 'JOB' ? referenceIds : undefined,
       assessment_id: referenceType === 'ASSESSMENT' ? selectedAssessmentId : undefined,
       contract_id: referenceType === 'CONTRACT' ? selectedContractId : undefined,
+      purpose: 'เบิกสินค้าสำหรับงานบริการ', // Default purpose to satisfy API requirement
       status: status,
       created_by: createdBy,
 
-      items: goodsItems.map((item) => ({
-        product_id: item.productId,
-        quantity: Number(item.quantity),
-      })),
+      items: goodsItems.map((item) => {
+        const product = productMap.get(item.productId);
+        return {
+          product_id: item.productId,
+          product_name: product?.name || '-',
+          quantity: Number(item.quantity),
+          unit: product?.unit?.name || '-',
+        };
+      }),
 
       expenses: expenseItems
         .filter(
@@ -478,16 +484,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 type="date"
                 defaultValue={new Date().toISOString().substring(0, 10)}
                 required
-              />
-            </FormField>
-            <FormField label="ผู้สร้าง (ผู้บันทึก)" htmlFor="createdBy">
-              <Input
-                id="createdBy"
-                name="createdBy"
-                type="text"
-                value={createdBy}
-                readOnly
-                className="bg-slate-100"
               />
             </FormField>
           </div>

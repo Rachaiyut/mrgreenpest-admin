@@ -33,28 +33,28 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     [products]
   );
 
-  if (!isOpen || !withdrawal) return null;
-
-  const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
-  const toWarehouse = withdrawal.to_warehouse_id
+  const fromWarehouse = withdrawal ? warehouseMap.get(withdrawal.warehouse_id) : undefined;
+  const toWarehouse = withdrawal && withdrawal.to_warehouse_id
     ? warehouseMap.get(withdrawal.to_warehouse_id)
     : null;
 
   const totalGoodsAmount = useMemo(
     () =>
-      (withdrawal.items || []).reduce((sum, item) => {
+      (withdrawal?.items || []).reduce((sum, item) => {
         const product = productMap.get(item.product_id);
         return sum + (product ? product.price * item.quantity : 0);
       }, 0),
-    [withdrawal.items, productMap]
+    [withdrawal?.items, productMap]
   );
 
   const totalExpenseAmount = useMemo(
-    () => withdrawal.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0,
-    [withdrawal.expenses]
+    () => withdrawal?.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0,
+    [withdrawal?.expenses]
   );
 
   const grandTotal = totalGoodsAmount + totalExpenseAmount;
+
+  if (!isOpen || !withdrawal) return null;
 
   return (
     <Modal

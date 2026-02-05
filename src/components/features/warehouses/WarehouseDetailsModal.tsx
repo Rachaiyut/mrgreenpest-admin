@@ -6,6 +6,7 @@ import {
   DetailsList,
   DetailsItem,
 } from '../../common/FormControls';
+import { WarehouseType } from '@/src/types';
 
 interface WarehouseDetailsModalProps {
   isOpen: boolean;
@@ -24,7 +25,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
 }) => {
   if (!isOpen || !warehouse) return null;
   const productsInWarehouse = products.filter(
-    (p) => p.type === 'สินค้า' && (stockMap[warehouse.id]?.[p.id] ?? 0) >= 0
+    (p) => (stockMap[warehouse.id]?.[p.id] ?? 0) > 0
   );
 
   return (
@@ -41,17 +42,16 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
             <DetailsItem label="ชื่อคลัง" valueClassName="font-semibold">
               {warehouse.name}
             </DetailsItem>
-            <DetailsItem label="ประเภท">{warehouse.type}</DetailsItem>
-            <DetailsItem label="ที่ตั้ง">{warehouse.location}</DetailsItem>
+            <DetailsItem label="ประเภท">{warehouse.type === WarehouseType.VEHICLE ? 'รถ' : 'คลัง'}</DetailsItem>
           </DetailsList>
-          {warehouse.type === 'รถ' && (
+          {warehouse.type === WarehouseType.VEHICLE && (
             <DetailsList cols={4} className="mt-2 pt-2 border-t text-sm">
               <DetailsItem label="ทะเบียนรถ">
-                {warehouse.licensePlate || '-'}
+                {warehouse.vehicle?.vehicle_registration || '-'}
               </DetailsItem>
-              <DetailsItem label="ยี่ห้อ">{warehouse.brand || '-'}</DetailsItem>
-              <DetailsItem label="รุ่น">{warehouse.model || '-'}</DetailsItem>
-              <DetailsItem label="สี">{warehouse.color || '-'}</DetailsItem>
+              <DetailsItem label="ยี่ห้อ">{warehouse.vehicle?.brand || '-'}</DetailsItem>
+              <DetailsItem label="รุ่น">{warehouse.vehicle?.model || '-'}</DetailsItem>
+              <DetailsItem label="สี">{warehouse.vehicle?.color || '-'}</DetailsItem>
             </DetailsList>
           )}
         </div>
@@ -106,7 +106,7 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                   productsInWarehouse.map((product) => (
                     <tr key={product.id}>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                        {product.id}
+                        {product.code}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {product.barcode || '-'}
@@ -118,10 +118,10 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                         {stockMap[warehouse.id]?.[product.id] ?? 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {product.lowStockThreshold}
+                        {product.min_stock}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {product.unit}
+                        {product.unit?.name || '-'}
                       </td>
                     </tr>
                   ))

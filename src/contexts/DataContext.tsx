@@ -55,6 +55,26 @@ import { CategoryApi } from '@/src/api/category';
 import { PackageApi } from '@/src/api/package';
 import { RequisitionApi } from '@/src/api/requisition';
 
+export type ResourceType =
+  | 'users'
+  | 'jobs'
+  | 'assessments'
+  | 'contracts'
+  | 'quotations'
+  | 'invoices'
+  | 'receipts'
+  | 'customers'
+  | 'products'
+  | 'warehouses'
+  | 'suppliers'
+  | 'goodsReceipts'
+  | 'withdrawals'
+  | 'transfers'
+  | 'stockAdjustments'
+  | 'productReturns'
+  | 'returnToSuppliers'
+  | 'requisitions';
+
 export interface DataContextType {
   users: User[];
   jobs: Job[];
@@ -74,6 +94,8 @@ export interface DataContextType {
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
   requisitions: Requisition[];
+
+  fetchData: (resources?: ResourceType[]) => Promise<void>;
 
   handlers: {
     users: {
@@ -188,86 +210,101 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   >([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
 
-  const refreshData = async () => {
-    // Helper to safely fetch data - returns empty array if API fails
-    const safeFetch = async <T,>(
-      fetchFn: () => Promise<any>
-    ): Promise<T[]> => {
-      try {
-        const res = await fetchFn();
-        if (Array.isArray(res)) return res;
-        return res.data || [];
-      } catch {
-        return [];
-      }
-    };
+  // Helper to safely fetch data - returns empty array if API fails
+  const safeFetch = async <T,>(
+    fetchFn: () => Promise<any>
+  ): Promise<T[]> => {
+    try {
+      const res = await fetchFn();
+      if (Array.isArray(res)) return res;
+      return res.data || [];
+    } catch {
+      return [];
+    }
+  };
+
+  const fetchData = async (resources?: ResourceType[]) => {
+    // If no resources specified, fetch defaults (or all that are currently active)
+    const shouldFetch = (resource: ResourceType) =>
+      !resources || resources.includes(resource);
+
+    const promises: Promise<void>[] = [];
+
+    if (shouldFetch('users')) {
+      promises.push(safeFetch(() => UserApi.getAll({ limit: 100 })).then((data: any) => setUsers(data)));
+    }
+    if (shouldFetch('jobs')) {
+      // promises.push(safeFetch(() => JobApi.getAll({ limit: 100 })).then((data: any) => setJobs(data)));
+    }
+    if (shouldFetch('assessments')) {
+      // promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 100 })).then((data: any) => setAssessments(data)));
+    }
+    if (shouldFetch('contracts')) {
+      // promises.push(safeFetch(() => ContractApi.getAll({ limit: 100 })).then((data: any) => setContracts(data)));
+    }
+    if (shouldFetch('quotations')) {
+      // promises.push(safeFetch(() => QuotationApi.getAll({ limit: 100 })).then(setQuotations));
+      setQuotations([]);
+    }
+    if (shouldFetch('invoices')) {
+      // promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 100 })).then(setInvoices));
+      setInvoices([]);
+    }
+    if (shouldFetch('receipts')) {
+      // promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 100 })).then(setReceipts));
+      setReceipts([]);
+    }
+    if (shouldFetch('customers')) {
+      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 100 })).then((data: any) => setCustomers(data)));
+    }
+    if (shouldFetch('products')) {
+      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 100 })).then((data: any) => setProducts(data)));
+    }
+    if (shouldFetch('warehouses')) {
+      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 100 })).then((data: any) => setWarehouses(data)));
+    }
+    if (shouldFetch('suppliers')) {
+      // promises.push(safeFetch(() => SupplierApi.getSuppliers({ limit: 100 })).then(setSuppliers));
+      setSuppliers([]);
+    }
+    if (shouldFetch('goodsReceipts')) {
+      // promises.push(safeFetch(() => GoodsReceiptApi.getAll({ limit: 100 })).then(setGoodsReceipts));
+      setGoodsReceipts([]);
+    }
+    if (shouldFetch('withdrawals')) {
+      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 100 })).then((data: any) => setWithdrawals(data)));
+    }
+    if (shouldFetch('transfers')) {
+      // promises.push(safeFetch(() => TransferApi.getAll({ limit: 100 })).then(setTransfers));
+      setTransfers([]);
+    }
+    if (shouldFetch('stockAdjustments')) {
+      // promises.push(safeFetch(() => StockAdjustmentApi.getAll({ limit: 100 })).then(setStockAdjustments));
+      setStockAdjustments([]);
+    }
+    if (shouldFetch('productReturns')) {
+      // promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 100 })).then(setProductReturns));
+      setProductReturns([]);
+    }
+    if (shouldFetch('returnToSuppliers')) {
+      // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 100 })).then(setReturnToSuppliers));
+      setReturnToSuppliers([]);
+    }
+    if (shouldFetch('requisitions')) {
+      // promises.push(safeFetch(() => RequisitionApi.getAll({ limit: 100 })).then(setRequisitions));
+      setRequisitions([]);
+    }
 
     try {
-      const [
-        usersData,
-        jobsData,
-        assessmentsData,
-        contractsData,
-        quotationsData,
-        invoicesData,
-        receiptsData,
-        customersData,
-        productsData,
-        warehousesData,
-        suppliersData,
-        goodsReceiptsData,
-        withdrawalsData,
-        transfersData,
-        stockAdjustmentsData,
-        productReturnsData,
-        returnToSuppliersData,
-        requisitionsData,
-      ] = await Promise.all([
-        safeFetch(() => UserApi.getAll({ limit: 1000 })),
-        safeFetch(() => JobApi.getAll({ limit: 1000 })),
-        safeFetch(() => AssessmentApi.getAll({ limit: 1000 })),
-        safeFetch(() => ContractApi.getAll({ limit: 1000 })),
-        safeFetch(() => QuotationApi.getAll({ limit: 1000 })),
-        safeFetch(() => InvoiceApi.getAll({ limit: 1000 })),
-        safeFetch(() => ReceiptApi.getAll({ limit: 1000 })),
-        safeFetch(() => CustomerApi.getCustomers({ limit: 1000 })),
-        safeFetch(() => ProductApi.getProducts({ limit: 1000 })),
-        safeFetch(() => WarehouseApi.getWarehouses({ limit: 1000 })),
-        safeFetch(() => SupplierApi.getSuppliers({ limit: 1000 })),
-        safeFetch(() => GoodsReceiptApi.getAll({ limit: 1000 })),
-        safeFetch(() => WithdrawalApi.getAll({ limit: 1000 })),
-        safeFetch(() => TransferApi.getAll({ limit: 1000 })),
-        safeFetch(() => StockAdjustmentApi.getAll({ limit: 1000 })),
-        safeFetch(() => ProductReturnApi.getAll({ limit: 1000 })),
-        safeFetch(() => ReturnToSupplierApi.getAll({ limit: 1000 })),
-        safeFetch(() => RequisitionApi.getAll({ limit: 1000 })),
-      ]);
-
-      setUsers(usersData);
-      setJobs(jobsData);
-      setAssessments(assessmentsData);
-      setContracts(contractsData);
-      setQuotations(quotationsData);
-      setInvoices(invoicesData);
-      setReceipts(receiptsData);
-      setCustomers(customersData);
-      setProducts(productsData);
-      setWarehouses(warehousesData);
-      setSuppliers(suppliersData);
-      setGoodsReceipts(goodsReceiptsData);
-      setWithdrawals(withdrawalsData);
-      setTransfers(transfersData);
-      setStockAdjustments(stockAdjustmentsData);
-      setProductReturns(productReturnsData);
-      setReturnToSuppliers(returnToSuppliersData);
-      setRequisitions(requisitionsData);
+      await Promise.all(promises);
     } catch (error) {
       console.error('Failed to fetch data', error);
     }
   };
 
   useEffect(() => {
-    refreshData();
+    // Initial fetch of active modules
+    fetchData();
   }, []);
 
   const handlers = useMemo(
@@ -275,232 +312,229 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       users: {
         create: async (data: any) => {
           await UserApi.create(data);
-          refreshData();
+          fetchData(['users']);
         },
         update: async (data: any) => {
           await UserApi.update(data.id, data);
-          refreshData();
+          fetchData(['users']);
         },
         delete: async (id: string) => {
           await UserApi.delete(id);
-          refreshData();
+          fetchData(['users']);
         },
       },
       jobs: {
         create: async (data: any) => {
           await JobApi.create(data);
-          refreshData();
+          fetchData(['jobs']);
         },
         update: async (data: any) => {
           await JobApi.update(data.id, data);
-          refreshData();
+          fetchData(['jobs']);
         },
         delete: async (id: string) => {
           await JobApi.delete(id);
-          refreshData();
+          fetchData(['jobs']);
         },
       },
       assessments: {
         create: async (data: any) => {
           await AssessmentApi.create(data);
-          refreshData();
+          fetchData(['assessments']);
         },
         update: async (data: any) => {
           await AssessmentApi.update(data.id, data);
-          refreshData();
+          fetchData(['assessments']);
         },
         delete: async (id: string) => {
           await AssessmentApi.delete(id);
-          refreshData();
+          fetchData(['assessments']);
         },
       },
       contracts: {
         create: async (data: any) => {
           await ContractApi.create(data);
-          refreshData();
+          fetchData(['contracts']);
         },
         update: async (data: any) => {
           await ContractApi.update(data.id, data);
-          refreshData();
+          fetchData(['contracts']);
         },
         delete: async (id: string) => {
           await ContractApi.delete(id);
-          refreshData();
+          fetchData(['contracts']);
         },
       },
       quotations: {
         create: async (data: any) => {
           await QuotationApi.create(data);
-          refreshData();
+          // fetchData(['quotations']);
         },
         update: async (data: any) => {
           await QuotationApi.update(data.id, data);
-          refreshData();
+          // fetchData(['quotations']);
         },
         delete: async (id: string) => {
           await QuotationApi.delete(id);
-          refreshData();
+          // fetchData(['quotations']);
         },
         revise: async (id: string) => {
-          // Implement revise logic if API supports it, otherwise create new version
           console.log('Revise quotation', id);
-          refreshData();
+          // fetchData(['quotations']);
         },
       },
       invoices: {
         create: async (data: any) => {
           await InvoiceApi.create(data);
-          refreshData();
+          // fetchData(['invoices']);
         },
         update: async (data: any) => {
           await InvoiceApi.update(data.id, data);
-          refreshData();
+          // fetchData(['invoices']);
         },
         delete: async (id: string) => {
           await InvoiceApi.delete(id);
-          refreshData();
+          // fetchData(['invoices']);
         },
       },
       receipts: {
         create: async (data: any) => {
           await ReceiptApi.create(data);
-          refreshData();
+          // fetchData(['receipts']);
         },
         update: async (data: any) => {
           await ReceiptApi.update(data.id, data);
-          refreshData();
+          // fetchData(['receipts']);
         },
         delete: async (id: string) => {
           await ReceiptApi.delete(id);
-          refreshData();
+          // fetchData(['receipts']);
         },
       },
       warehouses: {
         create: async (data: any) => {
           await WarehouseApi.create(data);
-          refreshData();
+          fetchData(['warehouses']);
         },
         update: async (data: any) => {
           await WarehouseApi.update(data.id, data);
-          refreshData();
-        }, // Ensure API has update method
+          fetchData(['warehouses']);
+        },
         delete: async (id: string) => {
           await WarehouseApi.delete(id);
-          refreshData();
-        }, // Ensure API has delete method
+          fetchData(['warehouses']);
+        },
         updateLimits: async (id: string, limits: any) => {
-          // Custom update for limits
           await WarehouseApi.update(id, { withdrawal_limits: limits });
-          refreshData();
+          fetchData(['warehouses']);
         },
       },
       goodsReceipts: {
         create: async (data: any) => {
           await GoodsReceiptApi.create(data);
-          refreshData();
+          // fetchData(['goodsReceipts']);
         },
         update: async (data: any) => {
           await GoodsReceiptApi.update(data.id, data);
-          refreshData();
+          // fetchData(['goodsReceipts']);
         },
         delete: async (id: string) => {
           await GoodsReceiptApi.delete(id);
-          refreshData();
+          // fetchData(['goodsReceipts']);
         },
       },
       withdrawals: {
         create: async (data: any) => {
           await WithdrawalApi.create(data);
-          refreshData();
+          fetchData(['withdrawals', 'products', 'warehouses']); // Creating withdrawal affects stock and products logic potentially
         },
         update: async (data: any) => {
           await WithdrawalApi.update(data.id, data);
-          refreshData();
+          fetchData(['withdrawals']);
         },
         delete: async (id: string) => {
           await WithdrawalApi.delete(id);
-          refreshData();
+          fetchData(['withdrawals']);
         },
       },
       transfers: {
         create: async (data: any) => {
           await TransferApi.create(data);
-          refreshData();
+          // fetchData(['transfers']);
         },
         update: async (data: any) => {
           await TransferApi.update(data.id, data);
-          refreshData();
+          // fetchData(['transfers']);
         },
         delete: async (id: string) => {
           await TransferApi.delete(id);
-          refreshData();
+          // fetchData(['transfers']);
         },
       },
       stockAdjustments: {
         create: async (data: any) => {
           await StockAdjustmentApi.create(data);
-          refreshData();
+          // fetchData(['stockAdjustments']);
         },
         update: async (data: any) => {
           await StockAdjustmentApi.update(data.id, data);
-          refreshData();
+          // fetchData(['stockAdjustments']);
         },
         delete: async (id: string) => {
           await StockAdjustmentApi.delete(id);
-          refreshData();
+          // fetchData(['stockAdjustments']);
         },
       },
       productReturns: {
         create: async (data: any) => {
           await ProductReturnApi.create(data);
-          refreshData();
+          // fetchData(['productReturns']);
         },
         update: async (data: any) => {
           await ProductReturnApi.update(data.id, data);
-          refreshData();
+          // fetchData(['productReturns']);
         },
         delete: async (id: string) => {
           await ProductReturnApi.delete(id);
-          refreshData();
+          // fetchData(['productReturns']);
         },
       },
       returnToSuppliers: {
         create: async (data: any) => {
           await ReturnToSupplierApi.create(data);
-          refreshData();
+          // fetchData(['returnToSuppliers']);
         },
         update: async (data: any) => {
           await ReturnToSupplierApi.update(data.id, data);
-          refreshData();
+          // fetchData(['returnToSuppliers']);
         },
         delete: async (id: string) => {
           await ReturnToSupplierApi.delete(id);
-          refreshData();
+          // fetchData(['returnToSuppliers']);
         },
       },
       requisitions: {
         create: async (data: any) => {
           await RequisitionApi.create(data);
-          refreshData();
+          // fetchData(['requisitions']);
         },
         update: async (data: any) => {
           await RequisitionApi.update(data.id, data);
-          refreshData();
+          // fetchData(['requisitions']);
         },
         delete: async (id: string) => {
           await RequisitionApi.delete(id);
-          refreshData();
+          // fetchData(['requisitions']);
         },
         approve: async (id: string, data: any) => {
           await RequisitionApi.approve(id, data);
-          refreshData();
+          // fetchData(['requisitions']);
         }
       },
       userWallets: {
         createTransaction: async (userId: string, data: any) => {
-          // Needs Wallet API
           console.log('Create wallet transaction', userId, data);
-          refreshData();
+          // fetchData(['users']);
         },
       },
     }),
@@ -528,6 +562,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         productReturns,
         returnToSuppliers,
         requisitions,
+        fetchData,
         handlers,
       }}
     >
@@ -543,4 +578,3 @@ export const useData = () => {
   }
   return context;
 };
-

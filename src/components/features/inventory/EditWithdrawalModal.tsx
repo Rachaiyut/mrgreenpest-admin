@@ -378,13 +378,20 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
             reference_ids: referenceType === 'JOB' ? referenceIds : undefined,
             assessment_id: referenceType === 'ASSESSMENT' ? selectedAssessmentId : undefined,
             contract_id: referenceType === 'CONTRACT' ? selectedContractId : undefined,
+            purpose: withdrawal.purpose || 'เบิกสินค้าสำหรับงานบริการ', // Preserve existing or default
             status: status,
             created_by: withdrawal!.created_by,
 
-            items: goodsItems.map((item) => ({
-                product_id: item.productId,
-                quantity: Number(item.quantity),
-            })),
+            items: goodsItems.map((item) => {
+                const product = productMap.get(item.productId);
+                return {
+                    product_id: item.productId,
+                    product_name: product?.name || '-',
+                    quantity: Number(item.quantity),
+                    unit: product?.unit?.name || '-',
+                    // Preserve other fields if necessary, but WithdrawalType items are usually simpler on FE input
+                };
+            }),
 
             expenses: expenseItems
                 .filter(
