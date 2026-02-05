@@ -174,9 +174,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                   setIsOpen(false);
                 }}
               >
-                <span className="block truncate">{option.label}</span>
+                <span className="block break-words">{option.label}</span>
                 {option.description && (
-                  <span className="block truncate text-xs text-slate-500">
+                  <span className="block break-words text-xs text-slate-500">
                     {option.description}
                   </span>
                 )}

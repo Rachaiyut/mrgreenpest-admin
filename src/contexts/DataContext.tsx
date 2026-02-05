@@ -94,6 +94,7 @@ export interface DataContextType {
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
   requisitions: Requisition[];
+  categories: any[];
 
   fetchData: (resources?: ResourceType[]) => Promise<void>;
 
@@ -209,6 +210,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     ReturnToSupplier[]
   >([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   // Helper to safely fetch data - returns empty array if API fails
   const safeFetch = async <T,>(
@@ -237,7 +239,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       // promises.push(safeFetch(() => JobApi.getAll({ limit: 100 })).then((data: any) => setJobs(data)));
     }
     if (shouldFetch('assessments')) {
-      // promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 100 })).then((data: any) => setAssessments(data)));
+      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 100 })).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
       // promises.push(safeFetch(() => ContractApi.getAll({ limit: 100 })).then((data: any) => setContracts(data)));
@@ -441,7 +443,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
           fetchData(['goodsReceipts']);
         },
         update: async (data: any) => {
-          await GoodsReceiptApi.update(data.id, data);
+          // Check if it's a status update (Approve/Reject)
+          if (data.status === 'RECEIVED' || data.status === 'CANCELLED') {
+            await GoodsReceiptApi.updateStatus(data.id, data);
+          } else {
+            await GoodsReceiptApi.update(data.id, data);
+          }
           fetchData(['goodsReceipts']);
         },
         delete: async (id: string) => {
@@ -568,6 +575,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         productReturns,
         returnToSuppliers,
         requisitions,
+        categories,
         fetchData,
         handlers,
       }}

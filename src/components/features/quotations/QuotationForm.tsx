@@ -41,8 +41,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     onCancel,
     assessmentId,
 }) => {
-    const { customers, products, assessments } = useData();
+    const { customers, products, assessments, categories } = useData();
     const isReadOnly = mode === 'detail';
+
+    // Service Type Options
+    const serviceTypeOptions = useMemo(() => {
+        return (categories || [])
+            .filter((c: any) => c.type === 'SERVICE')
+            .map((c: any) => ({
+                value: c.name, // Use name as value to match backend expectation of string
+                label: c.name,
+            }));
+    }, [categories]);
 
     // Customer Search Handling
     const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
@@ -205,6 +215,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [packageName, setPackageName] = useState('');
     const [usePackagePricing, setUsePackagePricing] = useState(false);
 
+    // Installment Logic
+    const [isInstallment, setIsInstallment] = useState(false);
+    const [manualInstallmentCount, setManualInstallmentCount] = useState(2);
+    const [installments, setInstallments] = useState<any[]>([]);
+
     // Auto-fill from assessment when selected
     useEffect(() => {
         if (selectedAssessment) {
@@ -225,6 +240,77 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     .filter(Boolean)
                     .join(' ');
                 setServiceLocation(address);
+            }
+
+            // Auto-fill Service Type (ประเภทบริการ)
+            if (!serviceType && selectedAssessment.package?.category?.name) {
+                const categoryName = selectedAssessment.package.category.name;
+                // Map category name to dropdown values
+                const foundCategory = (categories || []).find((c: any) => c.name === categoryName);
+                if (foundCategory) {
+                    setServiceType(foundCategory.name);
+                } else if (categoryName.includes('ปลวก') && categoryName.includes('มด') && categoryName.includes('แมลงสาบ') && categoryName.includes('หนู')) {
+                    setServiceType('ควบคุมป้องกันกำจัดปลวก มด แมลงสาบ หนู');
+                } else if (categoryName.includes('ปลวก')) {
+                    setServiceType('ควบคุมป้องกันกำจัดปลวก');
+                } else if (categoryName.includes('มด')) {
+                    setServiceType('ควบคุมป้องกันกำจัดมด');
+                } else if (categoryName.includes('แมลงสาบ')) {
+                    setServiceType('ควบคุมป้องกันกำจัดแมลงสาบ');
+                } else if (categoryName.includes('หนู')) {
+                    setServiceType('ควบคุมป้องกันกำจัดหนู');
+                } else {
+                    setServiceType(categoryName);
+                }
+            }
+
+            // Auto-fill System Used (ระบบที่ใช้)
+            if (!systemUsed && selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
+                const systems = Array.from(new Set(
+                    selectedAssessment.assessment_areas
+                        .map((area: any) => area.service_system)
+                        .filter(Boolean)
+                ));
+
+                if (systems.length > 0) {
+                    const systemLabels = systems.map((s: any) => {
+                        if (s === 'PREY') return 'ระบบเหยื่อ';
+                        if (s === 'CHEMICAL') return 'ระบบสารเคมีกึ่งชีวภาพ';
+                        return s;
+                    });
+                    // Select value has single options, if mixed we might need a better logic or 'ระบบเหยื่อ' as priority if exists?
+                    // For now, if multiple, prioritize Bait > Chemical
+                    if (systemLabels.includes('ระบบเหยื่อ')) {
+                        setSystemUsed('ระบบเหยื่อ');
+                    } else if (systemLabels.includes('ระบบสารเคมีกึ่งชีวภาพ')) {
+                        setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
+                    } else {
+                        setSystemUsed(systemLabels[0]);
+                    }
+                }
+            }
+
+            // Auto-fill Payment Terms / Installment
+            if (selectedAssessment.payment_installment_count && selectedAssessment.payment_installment_count > 1) {
+                setIsInstallment(true);
+                setPaymentTerms('แบ่งชำระเป็นงวด (Installment)');
+            } else {
+                setIsInstallment(false);
+                if (selectedAssessment.payment_condition) {
+                    // Map Enum to Text
+                    let conditionText = '';
+                    switch (selectedAssessment.payment_condition as any) {
+                        case 'CASH': conditionText = 'ชำระเงินสด'; break;
+                        case 'TRANSFER': conditionText = 'ชำระโดยการโอนเงิน'; break;
+                        case 'CREDIT_CARD': conditionText = 'ชำระด้วยบัตรเครดิต'; break;
+                        case 'CHEQUE': conditionText = 'ชำระด้วยเช็ค'; break;
+                        case 'QR_PAYMENT': conditionText = 'ชำระด้วย QR Code'; break;
+                        default: conditionText = selectedAssessment.payment_condition;
+                    }
+                    setPaymentTerms(conditionText);
+                } else {
+                    setPaymentTerms('ชำระเต็มจำนวน (Full Payment)');
+                }
             }
 
             // Check for Package
@@ -438,6 +524,37 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const netTotal = useMemo(() => {
         return subtotal + vatAmount;
     }, [subtotal, vatAmount]);
+
+    // Recalculate installments when netTotal changes or isInstallment flag is set
+    useEffect(() => {
+        if (isInstallment && netTotal > 0) {
+            const count = (selectedAssessment?.payment_installment_count && selectedAssessment.payment_installment_count > 1)
+                ? selectedAssessment.payment_installment_count
+                : manualInstallmentCount;
+
+            const amountPerTerm = Math.floor(netTotal / count);
+            const remainder = netTotal - (amountPerTerm * count);
+            
+            const newInstallments = Array.from({ length: count }).map((_, idx) => ({
+                installment_no: idx + 1,
+                amount: idx === count - 1 ? amountPerTerm + remainder : amountPerTerm,
+                service_date: '', // User to fill
+                notes: ''
+            }));
+            
+            setInstallments(newInstallments);
+        } else if (!isInstallment) {
+            setInstallments([]);
+        }
+    }, [isInstallment, selectedAssessment, netTotal, manualInstallmentCount]);
+
+    const handleInstallmentChange = (index: number, field: string, value: any) => {
+        setInstallments(prev => {
+            const newInst = [...prev];
+            newInst[index] = { ...newInst[index], [field]: value };
+            return newInst;
+        });
+    };
 
 
     const handleSubmit = async (e: FormEvent) => {
@@ -889,17 +1006,101 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             {/* Terms & Totals Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-6 border-t border-slate-200">
                 <div className="lg:col-span-7 space-y-6">
-                    <FormField label="เงื่อนไขการชำระเงิน (Payment Terms)" htmlFor="payment-terms">
-                        <Textarea
-                            id="payment-terms"
-                            value={paymentTerms}
-                            onChange={(e) => setPaymentTerms(e.target.value)}
-                            rows={3}
-                            placeholder="ระบุเงื่อนไขการชำระเงิน..."
-                            className="font-sans"
-                            disabled={isReadOnly}
-                        />
-                    </FormField>
+                    <div className="flex items-center justify-between">
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            เงื่อนไขการชำระเงิน (Payment Terms)
+                        </label>
+                        <div className="flex items-center gap-2 mb-2">
+                            <input 
+                                type="checkbox" 
+                                id="is-installment" 
+                                checked={isInstallment} 
+                                onChange={(e) => setIsInstallment(e.target.checked)}
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <label htmlFor="is-installment" className="text-sm text-slate-600 cursor-pointer select-none">
+                                แบ่งชำระเป็นงวด (Installment)
+                            </label>
+                        </div>
+                    </div>
+
+                    {isInstallment ? (
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
+                            {/* Manual Count Control */}
+                            {(!selectedAssessment?.payment_installment_count || selectedAssessment.payment_installment_count <= 1) && (
+                                <div className="p-3 border-b border-slate-200 bg-white flex items-center gap-3">
+                                    <label htmlFor="manual-installment-count" className="text-sm font-medium text-slate-700">
+                                        จำนวนงวดที่ต้องการแบ่งชำระ:
+                                    </label>
+                                    <select 
+                                        id="manual-installment-count"
+                                        value={manualInstallmentCount}
+                                        onChange={(e) => setManualInstallmentCount(Number(e.target.value))}
+                                        className="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-24 p-2"
+                                    >
+                                        {[2,3,4,5,6,9,10,12].map(n => (
+                                            <option key={n} value={n}>{n} งวด</option>
+                                        ))}
+                                    </select>
+                                    <span className="text-xs text-slate-500">(ระบบจะคำนวณยอดแบ่งจ่ายให้อัตโนมัติ)</span>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-12 gap-2 bg-slate-100 p-2 text-xs font-semibold text-slate-600 border-b border-slate-200">
+                                <div className="col-span-1 text-center">งวดที่</div>
+                                <div className="col-span-4">วันที่เข้าบริการ (โดยประมาณ)</div>
+                                <div className="col-span-3 text-right">จำนวนเงิน</div>
+                                <div className="col-span-4">หมายเหตุ</div>
+                            </div>
+                            {installments.map((inst, idx) => (
+                                <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center border-b border-slate-100 last:border-0">
+                                    <div className="col-span-1 text-center font-medium text-slate-700">
+                                        {inst.installment_no}
+                                    </div>
+                                    <div className="col-span-4">
+                                        <Input
+                                            type="date"
+                                            value={inst.service_date}
+                                            onChange={(e) => handleInstallmentChange(idx, 'service_date', e.target.value)}
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                    <div className="col-span-3">
+                                        <Input
+                                            type="number"
+                                            value={inst.amount}
+                                            onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
+                                            className="h-8 text-sm text-right font-mono"
+                                        />
+                                    </div>
+                                    <div className="col-span-4">
+                                        <Input
+                                            type="text"
+                                            value={inst.notes}
+                                            onChange={(e) => handleInstallmentChange(idx, 'notes', e.target.value)}
+                                            placeholder="ระบุ..."
+                                            className="h-8 text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="p-2 bg-blue-50 text-right text-xs text-blue-700 font-medium">
+                                รวม: {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()} / {netTotal.toLocaleString()}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 flex items-start gap-3">
+                            <div className="p-1.5 bg-green-100 text-green-600 rounded-full mt-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div>
+                                <span className="font-bold text-slate-800 block mb-1">รายละเอียดการชำระเงิน</span>
+                                <span className="text-slate-600">{paymentTerms}</span>
+                            </div>
+                        </div>
+                    )}
+                    
                     <FormField label="หมายเหตุ (Notes)" htmlFor="notes">
                         <Textarea
                             id="notes"

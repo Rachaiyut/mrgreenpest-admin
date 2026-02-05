@@ -150,11 +150,9 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       onUpdateReceipt({
         ...receiptToUpdate,
         status:
-          approvalAction === 'approve' ? Status.Approved : Status.Rejected,
+          approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
         remarks: remarks,
-        // approved_by: 'ผู้ดูแลระบบ', // Interface might not have this yet
-        updated_by: 'ผู้ดูแลระบบ',
-      });
+      } as any);
     }
     setIsApprovalModalOpen(false);
     setOpenDropdownId(null);
@@ -167,10 +165,10 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
     if (receiptToUpdate) {
       onUpdateReceipt({
         ...receiptToUpdate,
-        status: Status.Cancelled,
+        status: 'CANCELLED',
         remarks: 'ยกเลิกโดยผู้ใช้',
         updated_by: 'ผู้ดูแลระบบ',
-      });
+      } as any);
     }
     setOpenDropdownId(null);
   };
@@ -215,7 +213,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       </a>,
     ];
 
-    if (selectedReceipt.status === Status.PendingApproval) {
+    if (selectedReceipt.status === 'PENDING' || selectedReceipt.status === Status.PendingApproval) {
       actions.push(
         <a
           key="approve"

@@ -11,6 +11,7 @@ export interface ServiceReport {
   id?: string;
   job_id?: string;
   customer_id?: string;
+  quotation_id?: string;
   report_date?: string;
   customer_name?: string;
   is_service_termite?: boolean;
@@ -96,6 +97,7 @@ export interface FieldJob {
   technicians: User[];
   work_areas: FieldJobWorkArea[];
   status: JobMainStatus;
+  api_status?: string;
   vehicle_id: string;
   service_report?: ServiceReport;
   remarks?: string;

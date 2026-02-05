@@ -291,7 +291,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       total_price: totalEstimatedCost,
 
       // Installments
-      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? installments : [],
+      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? (installments as AssessmentInstallment[]) : [],
 
       // Ensure required fields
       customer_id: formData.customer_id || '',
@@ -589,13 +589,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         </div>
 
         {/* Payment Condition Section (Moved to Bottom) */}
-        {/* Payment Condition Section (Moved to Bottom) */}
-        <div className="w-full md:w-1/2 ml-auto">
-          <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-slate-50">
+        <div className="w-full">
+          <div className="border border-slate-200 p-6 rounded-xl space-y-6 bg-slate-50 shadow-sm">
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-3">
                 เงื่อนไขการชำระเงิน
-              </label>
+              </h3>
 
               <div className="flex gap-4 mb-4">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -644,28 +643,35 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
                   {/* Installment Details */}
                   {installments.length > 0 && (
-                    <div className="border border-slate-200 rounded-md p-3 bg-white">
-                      <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
-                      <div className="space-y-3">
+                    <div className="border border-slate-200 rounded-xl p-4 bg-white shadow-sm">
+                      <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <span className="w-1 h-5 bg-primary rounded-full"></span>
+                        รายละเอียดการแบ่งชำระ
+                      </h4>
+                      <div className="space-y-4">
                         {installments.map((inst, idx) => (
-                          <div key={idx} className="flex gap-3 items-end">
-                            <div className="w-20 pt-2 text-sm text-slate-600">
+                          <div key={idx} className="grid grid-cols-12 gap-4 items-end pb-4 border-b border-slate-100 last:border-0 last:pb-0">
+                            <div className="col-span-2 pt-2 text-sm font-medium text-slate-700">
                               งวดที่ {inst.installment_no}
                             </div>
-                            <div className="flex-1">
-                              <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
-                              <Input
-                                type="number"
-                                value={inst.amount}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  handleInstallmentAmountChange(idx, val);
-                                }}
-                                step="0.01"
-                              />
+                            <div className="col-span-5">
+                              <label className="block text-xs font-medium text-slate-500 mb-1">จำนวนเงิน</label>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  value={inst.amount}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value) || 0;
+                                    handleInstallmentAmountChange(idx, val);
+                                  }}
+                                  step="0.01"
+                                  className="pr-8 font-medium text-slate-800"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">฿</span>
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
+                            <div className="col-span-5">
+                              <label className="block text-xs font-medium text-slate-500 mb-1">หมายเหตุ</label>
                               <Input
                                 type="text"
                                 value={inst.note || ''}
@@ -673,15 +679,27 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
                                 onChange={(e) => {
                                   handleInstallmentNoteChange(idx, e.target.value);
                                 }}
+                                className="text-slate-600"
                               />
                             </div>
                           </div>
                         ))}
-                        <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                          <span>รวม</span>
-                          <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
-                            {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
-                          </span>
+                        
+                        <div className="pt-4 mt-2 flex justify-between items-center bg-slate-50 -mx-4 -mb-4 px-4 py-3 rounded-b-xl border-t border-slate-100">
+                          <span className="text-sm font-semibold text-slate-700">รวมทั้งหมด</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`text-lg font-bold ${
+                              Math.abs(installments.reduce((sum, i) => sum + (i.amount || 0), 0) - totalEstimatedCost) < 1 
+                                ? 'text-green-600' 
+                                : 'text-red-500'
+                            }`}>
+                              {installments.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-slate-400 text-sm font-medium">/</span>
+                            <span className="text-slate-500 text-sm font-medium">
+                              {totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

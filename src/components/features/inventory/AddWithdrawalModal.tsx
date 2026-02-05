@@ -2,7 +2,16 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { PlusIcon, TrashIcon, XCircleIcon } from '../../../assets/icons/Icons';
+import {
+  PlusIcon,
+  TrashIcon,
+  XCircleIcon,
+  ArrowRightIcon,
+  UserIcon,
+  TruckIcon,
+  DocumentCheckIcon,
+  CalendarDaysIcon,
+} from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Withdrawal as WithdrawalType,
@@ -15,7 +24,7 @@ import {
   Assessment,
   Contract,
 } from '@/src/types/entity/app.interface';
-import { WarehouseType as InventoryWarehouseType } from '@/src/types/enums/inventory';
+import { WarehouseType as InventoryWarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { JobApi } from '../../../api/job';
@@ -70,6 +79,29 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
   const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
+  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
+
+  // Fetch destination warehouse limits when toWarehouseId changes
+  useEffect(() => {
+    if (toWarehouseId) {
+      WarehouseApi.getWarehouseById(toWarehouseId).then((warehouse) => {
+        const limits = new Map<string, number>();
+        if (warehouse && Array.isArray(warehouse.withdrawal_limits)) {
+          warehouse.withdrawal_limits.forEach((limit: any) => {
+            if (limit.product_id) {
+              limits.set(limit.product_id, Number(limit.max_quantity));
+            }
+          });
+        }
+        setDestinationLimits(limits);
+      }).catch(err => {
+        console.error("Failed to fetch destination warehouse limits", err);
+        setDestinationLimits(new Map());
+      });
+    } else {
+      setDestinationLimits(new Map());
+    }
+  }, [toWarehouseId]);
 
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
@@ -89,6 +121,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [referenceType, setReferenceType] = useState<'JOB' | 'ASSESSMENT' | 'CONTRACT'>('JOB');
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>('');
   const [selectedContractId, setSelectedContractId] = useState<string>('');
+  const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
+  const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
@@ -177,6 +211,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     () => withdrawals.flatMap((w) => w.reference_ids || []),
     [withdrawals]
   );
+
+  const isAnyItemOverLimit = useMemo(() => {
+    return goodsItems.some(item => {
+      const limit = destinationLimits.get(item.productId);
+      return limit !== undefined && item.quantity > limit;
+    });
+  }, [goodsItems, destinationLimits]);
 
   const generatedGoodsId = useMemo(() => {
     if (!isOpen) return '';
@@ -346,7 +387,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   };
 
   const createWithdrawalObject = (
-    status: Status,
+    status: Status | WithdrawalStatus,
     formData: FormData
   ): Omit<WithdrawalType, 'id'> => {
     return {
@@ -389,17 +430,30 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    if (!fromWarehouseId) {
+      alert('กรุณาเลือกคลังสินค้า (ต้นทาง)');
+      return;
+    }
+
     const formData = new FormData(e.currentTarget);
+    // If over limit -> PENDING, otherwise -> COMPLETED
+    const status = (isAnyItemOverLimit || isOverLimit) ? WithdrawalStatus.PENDING : WithdrawalStatus.COMPLETED;
     onCreateWithdrawal(
-      createWithdrawalObject(Status.PendingApproval, formData)
+      createWithdrawalObject(status, formData)
     );
     onClose();
   };
 
   const handleSaveDraft = () => {
+    if (!fromWarehouseId) {
+      alert('กรุณาเลือกคลังสินค้า (ต้นทาง) ก่อนบันทึกฉบับร่าง');
+      return;
+    }
+
     if (goodsFormRef.current) {
       const formData = new FormData(goodsFormRef.current);
-      onCreateWithdrawal(createWithdrawalObject(Status.Draft, formData));
+      onCreateWithdrawal(createWithdrawalObject(WithdrawalStatus.DRAFT, formData));
     }
     onClose();
   };
@@ -408,9 +462,35 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     () => goodsItems.map((item) => item.productId),
     [goodsItems]
   );
+  // Fetch user details and wallet when requesterId changes
+  useEffect(() => {
+    if (requesterId) {
+      // Fetch from API to get the latest creditLimit
+      UserApi.getById(requesterId).then(u => {
+        setFetchedRequester(u);
+      }).catch(err => {
+        console.error("Failed to fetch requester details", err);
+        // Fallback to finding in users prop
+        const found = users.find(u => u.id === requesterId);
+        if (found) setFetchedRequester(found);
+      });
+
+      // Fetch wallet info
+      UserApi.getWallet(requesterId).then(wallet => {
+        setWalletInfo(wallet);
+      }).catch(err => {
+        console.error("Failed to fetch wallet info", err);
+        setWalletInfo(null);
+      });
+    } else {
+      setFetchedRequester(null);
+      setWalletInfo(null);
+    }
+  }, [requesterId, users]);
+
   const selectedRequester = useMemo(
-    () => users.find((u) => u.id === requesterId),
-    [requesterId, users]
+    () => fetchedRequester || users.find((u) => u.id === requesterId),
+    [fetchedRequester, requesterId, users]
   );
   const totalExpenses = useMemo(
     () =>
@@ -418,46 +498,68 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     [expenseItems]
   );
   const isOverLimit = useMemo(() => {
+    // If we have wallet info, check against balance
+    if (walletInfo && typeof walletInfo.balance === 'number') {
+      return totalExpenses > walletInfo.balance;
+    }
+    // Fallback to creditLimit (total limit) if wallet info is missing
     if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number')
       return false;
     return totalExpenses > selectedRequester.creditLimit;
-  }, [totalExpenses, selectedRequester]);
+  }, [totalExpenses, selectedRequester, walletInfo]);
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="สร้างใบเบิกสินค้า/อุปกรณ์และค่าใช้จ่าย"
-        size="5xl"
+        title="สร้างใบเบิกสินค้า/อุปกรณ์"
+        size="7xl"
         footer={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={onClose}
-              className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={handleSaveDraft}
-              className="py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold"
-            >
-              บันทึกฉบับร่าง
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              form="add-goods-withdrawal-form"
-              className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
-              disabled={isOverLimit}
-              title={isOverLimit ? 'ยอดรวมค่าใช้จ่ายเกินวงเงินที่กำหนด' : ''}
-            >
-              ส่งเพื่ออนุมัติ
-            </Button>
+          <div className="flex w-full justify-between items-center">
+            <div className="flex items-center gap-4 text-sm text-slate-500">
+              <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
+              {(isOverLimit || isAnyItemOverLimit) && (
+                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  ⚠️ การดำเนินการนี้จะต้องได้รับการอนุมัติ
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onClose}
+                className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={handleSaveDraft}
+                className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium"
+              >
+                บันทึกฉบับร่าง
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                form="add-goods-withdrawal-form"
+                className={`py-2 px-6 rounded-lg text-white font-semibold shadow-sm disabled:bg-slate-300 disabled:cursor-not-allowed transition-all ${
+                  isOverLimit || isAnyItemOverLimit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
+                }`}
+                title={
+                  isOverLimit
+                    ? 'ยอดรวมค่าใช้จ่ายเกินวงเงินที่กำหนด (ต้องรอการอนุมัติ)'
+                    : isAnyItemOverLimit
+                      ? 'มีรายการสินค้าที่เกินลิมิตของรถ (ต้องรอการอนุมัติ)'
+                      : ''
+                }
+              >
+                {isAnyItemOverLimit || isOverLimit ? 'ส่งเพื่อขออนุมัติ' : 'บันทึกและตัดสต็อก'}
+              </Button>
+            </div>
           </div>
         }
       >
@@ -465,309 +567,426 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
           ref={goodsFormRef}
           id="add-goods-withdrawal-form"
           onSubmit={handleSubmit}
-          className="space-y-6"
+          className="h-full"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="เลขที่ใบเบิก" htmlFor="withdrawal-id">
-              <Input
-                id="withdrawal-id"
-                type="text"
-                value={generatedGoodsId}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="วันที่เบิก" htmlFor="withdrawal-date">
-              <Input
-                id="withdrawal-date"
-                name="createdAt"
-                type="date"
-                defaultValue={new Date().toISOString().substring(0, 10)}
-                required
-              />
-            </FormField>
-          </div>
+          <div className="grid grid-cols-12 gap-6 h-full">
+            {/* Left Column: Items & Logistics (Main Content) - span 8 */}
+            <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+              
+              {/* Logistics Header Card */}
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <TruckIcon className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-semibold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
+                  <div className="ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                    <CalendarDaysIcon className="w-4 h-4 text-slate-400" />
+                    <span className="text-xs text-slate-500">วันที่เบิก:</span>
+                    <input
+                      type="date"
+                      name="createdAt"
+                      defaultValue={new Date().toISOString().substring(0, 10)}
+                      className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 text-sm w-32"
+                      required
+                    />
+                  </div>
+                </div>
 
-          <FormField label="ลูกค้า">
-            <div className="p-2 border rounded-md bg-slate-50 min-h-[5rem] flex flex-wrap gap-2 items-start">
-              {selectedCustomers.length > 0 ? (
-                selectedCustomers.map((customer) => (
-                  <span
-                    key={customer.id}
-                    className="flex items-center gap-1.5 bg-slate-200 text-slate-800 text-sm font-medium px-2 py-1 rounded-md"
-                  >
-                    {customer.first_name} {customer.last_name}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveCustomer(customer.id)}
-                      className="text-slate-500 hover:text-slate-700"
-                    >
-                      <XCircleIcon className="h-4 w-4" />
-                    </button>
-                  </span>
-                ))
-              ) : (
-                <p className="text-slate-500 text-sm p-2">
-                  ยังไม่ได้เลือกลูกค้า
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={() => setIsCustomerSelectionModalOpen(true)}
-                className="text-sm text-primary hover:underline font-semibold p-2"
-              >
-                + เพิ่ม/แก้ไขลูกค้า
-              </button>
-            </div>
-          </FormField>
+                <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
+                  <div className="flex-1 w-full">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                      เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      required
+                      value={fromWarehouseId}
+                      onChange={setFromWarehouseId}
+                      placeholder="เลือกคลังสินค้า"
+                      options={sourceWarehouseOptions}
+                      className="w-full bg-white"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-center pt-6 text-slate-300">
+                    <ArrowRightIcon className="w-5 h-5 hidden md:block" />
+                    <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden" />
+                  </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1">
-              <FormField label="ผู้เบิก" htmlFor="requester-id">
-                <SearchableSelect
-                  value={requesterId}
-                  onChange={setRequesterId}
-                  onSearchChange={handleUserSearch}
-                  options={userOptions}
-                  placeholder="-- ค้นหาผู้เบิก --"
-                  required={expenseItems.length > 0}
-                />
-              </FormField>
-            </div>
-            <div className="md:col-span-1">
-              <FormField label="ผู้รับเงิน" htmlFor="recipient-id">
-                <SearchableSelect
-                  value={recipientId}
-                  onChange={setRecipientId}
-                  onSearchChange={handleUserSearch}
-                  options={userOptions}
-                  placeholder="-- ค้นหาผู้รับเงิน --"
-                />
-              </FormField>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="เบิกจากคลัง" htmlFor="from-warehouse">
-              <SearchableSelect
-                required
-                value={fromWarehouseId}
-                onChange={setFromWarehouseId}
-                placeholder="-- เลือกคลังต้นทาง --"
-                options={sourceWarehouseOptions}
-              />
-            </FormField>
-            <FormField label="ไปยังคลัง (รถ)" htmlFor="to-warehouse">
-              <SearchableSelect
-                value={toWarehouseId}
-                onChange={setToWarehouseId}
-                placeholder="-- เลือกคลังปลายทาง --"
-                options={vehicleWarehouseOptions}
-              />
-            </FormField>
-          </div>
-
-          <FormField label="อ้างอิง (Reference)">
-            <div className="space-y-3">
-              <select
-                className="w-full border border-slate-300 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                value={referenceType}
-                onChange={(e) => setReferenceType(e.target.value as any)}
-              >
-                <option value="JOB">ใบงาน (Job)</option>
-              </select>
-
-              {referenceType === 'JOB' && (
-                <SearchableSelect
-                  value={referenceIds[0] || ''}
-                  onChange={(value) => setReferenceIds(value ? [value] : [])}
-                  options={(fetchedJobs.length > 0 ? fetchedJobs : jobs).map(j => {
-                    const c = (j as any).customer;
-                    const customerName = c
-                      ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
-                      : (j as any).customer_name || 'Unknown Customer';
-                    return {
-                      value: j.id,
-                      label: customerName
-                    };
-                  })}
-                  placeholder="-- เลือกใบงาน --"
-                />
-              )}
-            </div>
-          </FormField>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium text-slate-900">
-                รายการสินค้า/อุปกรณ์
-              </h3>
-              <Button
-                type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                variant="outline"
-                className="text-primary border-primary hover:bg-primary/10"
-                disabled={!fromWarehouseId}
-                title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
-              >
-                <PlusIcon className="w-4 h-4 mr-1" />
-                เพิ่มสินค้า
-              </Button>
-            </div>
-            {goodsItems.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed rounded-lg text-slate-500">
-                ยังไม่มีรายการสินค้า
+                  <div className="flex-1 w-full">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                      ไปยังคลัง/รถ (ปลายทาง)
+                    </label>
+                    <SearchableSelect
+                      value={toWarehouseId}
+                      onChange={setToWarehouseId}
+                      placeholder="เลือกรถบริการ (ถ้ามี)"
+                      options={vehicleWarehouseOptions}
+                      className="w-full bg-white"
+                    />
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {goodsItems.map((item, index) => {
-                  const product = productMap.get(item.productId);
-                  const available = sourceWarehouse
-                    ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
-                    : 0;
-                  return (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg bg-white shadow-sm"
-                    >
-                      <div className="col-span-6 md:col-span-7">
-                        <div className="font-medium text-slate-900">
-                          {product?.name || 'Unknown Product'}
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          รหัส: {product?.id} | คงเหลือ: {available}{' '}
-                          {product?.unit?.name || '-'}
-                        </div>
-                      </div>
-                      <div className="col-span-4 md:col-span-4">
-                        <Input
-                          type="number"
-                          min="1"
-                          max={available}
-                          value={item.quantity}
-                          onChange={(e) =>
-                            handleGoodsItemChange(
-                              item.id,
-                              'quantity',
-                              Number(e.target.value)
-                            )
-                          }
-                          placeholder="จำนวน"
-                          className={`w-full text-right ${item.quantity > available ? 'border-red-500 focus:ring-red-500' : ''}`}
-                        />
-                        {item.quantity > available && (
-                          <div className="text-xs text-red-500 mt-1 text-right">
-                            เกินจำนวนคงเหลือ ({available})
-                          </div>
-                        )}
-                      </div>
-                      <div className="col-span-2 md:col-span-1 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveGoodsItem(item.id)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
-                        >
-                          <TrashIcon className="w-5 h-5" />
-                        </button>
-                      </div>
+
+              {/* Items List Card */}
+              <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex-grow flex flex-col min-h-[400px]">
+                <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                      <DocumentCheckIcon className="w-5 h-5" />
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <div className="pt-4 border-t">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-medium text-slate-900">
-                ค่าใช้จ่ายอื่นๆ
-              </h3>
-              <Button
-                type="button"
-                onClick={handleAddExpense}
-                variant="outline"
-                className="text-primary border-primary hover:bg-primary/10"
-              >
-                <PlusIcon className="w-4 h-4 mr-1" />
-                เพิ่มค่าใช้จ่าย
-              </Button>
-            </div>
-            {expenseItems.length === 0 ? (
-              <div className="p-4 text-center border border-slate-200 rounded-lg text-slate-500 text-sm">
-                ไม่มีค่าใช้จ่ายเพิ่มเติม
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {expenseItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="grid grid-cols-12 gap-2 items-center p-3 border rounded-lg bg-white shadow-sm"
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-800">รายการสินค้า</h3>
+                      <p className="text-xs text-slate-500">สินค้าที่ต้องการเบิกออกจากคลัง</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => setIsProductModalOpen(true)}
+                    variant="outline"
+                    className="text-primary border-primary hover:bg-primary/5 active:bg-primary/10 transition-colors text-sm"
+                    disabled={!fromWarehouseId}
+                    title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
                   >
-                    <div className="col-span-6 md:col-span-7">
-                      <Input
-                        type="text"
-                        value={item.description}
-                        onChange={(e) =>
-                          handleExpenseItemChange(
-                            item.id,
-                            'description',
-                            e.target.value
-                          )
-                        }
-                        placeholder="รายละเอียดค่าใช้จ่าย"
-                        className="w-full"
+                    <PlusIcon className="w-4 h-4 mr-1.5" />
+                    เพิ่มสินค้า
+                  </Button>
+                </div>
+
+                <div className="flex-grow overflow-y-auto bg-slate-50/30 p-4">
+                  {goodsItems.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 py-12">
+                      <div className="bg-slate-50 p-6 rounded-full mb-4 border border-dashed border-slate-200">
+                        <TruckIcon className="w-10 h-10 text-slate-300" />
+                      </div>
+                      <p className="font-medium text-slate-600">ยังไม่มีรายการสินค้า</p>
+                      <p className="text-sm mt-1 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        <div className="col-span-6">รายละเอียดสินค้า</div>
+                        <div className="col-span-3 text-right">จำนวน</div>
+                        <div className="col-span-3 text-center">จัดการ</div>
+                      </div>
+                      
+                      {goodsItems.map((item, index) => {
+                        const product = productMap.get(item.productId);
+                        const available = sourceWarehouse
+                          ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
+                          : 0;
+                        const limit = destinationLimits.get(item.productId);
+                        const isItemOverLimit = limit !== undefined && item.quantity > limit;
+                        
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-4 rounded-xl border transition-all shadow-sm ${
+                              isItemOverLimit 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-white border-slate-200 hover:border-indigo-200 hover:shadow-md'
+                            }`}
+                          >
+                            <div className="grid grid-cols-12 gap-4 items-center">
+                              <div className="col-span-6">
+                                <div className="font-semibold text-slate-900 text-sm">
+                                  {product?.name || 'Unknown Product'}
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-1.5">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                                    Code: {product?.id}
+                                  </span>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                                    Stock: {available} {product?.unit?.name || '-'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="col-span-3 flex flex-col items-end gap-1">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max={available}
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    handleGoodsItemChange(
+                                      item.id,
+                                      'quantity',
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                  className={`w-24 text-right transition-all h-9 text-sm font-semibold ${
+                                    item.quantity > available 
+                                      ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                      : isItemOverLimit
+                                        ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
+                                        : 'border-slate-200'
+                                  }`}
+                                />
+                                {(item.quantity > available || isItemOverLimit) && (
+                                  <span className={`text-[10px] font-medium ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}>
+                                    {item.quantity > available ? 'เกินสต็อก' : `เกินลิมิตรถ (${limit})`}
+                                  </span>
+                                )}
+                              </div>
+                              
+                              <div className="col-span-3 flex justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveGoodsItem(item.id)}
+                                  className="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                  title="ลบรายการ"
+                                >
+                                  <TrashIcon className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Context & Finance - span 4 */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+              
+              {/* People Card */}
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                  <UserIcon className="w-4 h-4 text-slate-400" />
+                  ผู้เกี่ยวข้อง
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                      ผู้เบิก (Requester) <span className="text-red-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      value={requesterId}
+                      onChange={setRequesterId}
+                      onSearchChange={handleUserSearch}
+                      options={userOptions}
+                      placeholder="ค้นหาชื่อผู้เบิก"
+                      required={expenseItems.length > 0}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                      ผู้รับเงิน (Recipient)
+                    </label>
+                    <SearchableSelect
+                      value={recipientId}
+                      onChange={setRecipientId}
+                      onSearchChange={handleUserSearch}
+                      options={userOptions}
+                      placeholder="ค้นหาชื่อผู้รับเงิน"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Finance Card (Wallet & Expenses) */}
+              <div className={`p-5 rounded-xl border shadow-sm transition-all ${
+                isOverLimit 
+                  ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' 
+                  : 'bg-white border-slate-200'
+              }`}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+                    <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200">฿</span>
+                    การเงิน & ค่าใช้จ่าย
+                  </h3>
+                  <Button
+                    type="button"
+                    onClick={handleAddExpense}
+                    variant="ghost"
+                    className="text-xs text-primary hover:text-primary/80 hover:bg-primary/5 px-2 py-1 h-auto"
+                  >
+                    + เพิ่มรายการ
+                  </Button>
+                </div>
+
+                {/* Wallet Status Widget */}
+                {walletInfo && (
+                  <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-xs font-semibold text-slate-500">สถานะวงเงิน</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        isOverLimit ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+                      }`}>
+                        {isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-end justify-between mb-1">
+                      <span className="text-xs text-slate-400">คงเหลือสุทธิ</span>
+                      <span className={`text-lg font-bold ${
+                        (walletInfo.balance - totalExpenses) < 0 ? 'text-red-600' : 'text-slate-800'
+                      }`}>
+                        {(walletInfo.balance - totalExpenses).toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+                      </span>
+                    </div>
+
+                    <div className="w-full bg-slate-100 rounded-full h-2 mb-2 overflow-hidden">
+                      <div 
+                        style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, (((walletInfo.expense_limit - walletInfo.balance) + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }}
+                        className={`h-full transition-all duration-500 ${isOverLimit ? 'bg-red-500' : 'bg-emerald-500'}`}
                       />
                     </div>
-                    <div className="col-span-4 md:col-span-4">
-                      <Input
+                    
+                    <div className="flex justify-between text-[10px] text-slate-400">
+                      <span>ใช้ไป: {((walletInfo.expense_limit - walletInfo.balance) + totalExpenses).toLocaleString()}</span>
+                      <span>วงเงิน: {walletInfo.expense_limit.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Expense Items List */}
+                <div className="space-y-2">
+                  {expenseItems.map((item) => (
+                    <div key={item.id} className="flex gap-2 items-start bg-white p-2 rounded border border-slate-200">
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                        placeholder="รายละเอียด"
+                        className="flex-grow min-w-0 border-0 border-b border-slate-200 focus:border-primary focus:ring-0 text-xs px-0 py-1"
+                      />
+                      <input
                         type="number"
                         min="0"
                         value={item.amount}
-                        onChange={(e) =>
-                          handleExpenseItemChange(
-                            item.id,
-                            'amount',
-                            e.target.value
-                          )
-                        }
-                        placeholder="จำนวนเงิน"
-                        className="w-full text-right"
+                        onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                        placeholder="บาท"
+                        className="w-20 border-0 border-b border-slate-200 focus:border-primary focus:ring-0 text-xs text-right px-0 py-1 font-medium"
                       />
-                    </div>
-                    <div className="col-span-2 md:col-span-1 flex justify-end">
                       <button
                         type="button"
                         onClick={() => handleRemoveExpenseItem(item.id)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
+                        className="text-slate-400 hover:text-red-500 p-1"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <XCircleIcon className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
-                <div className="flex justify-end pt-2 text-slate-700 font-medium">
-                  รวมเป็นเงิน: {totalExpenses.toLocaleString()} บาท
-                  {selectedRequester &&
-                    typeof selectedRequester.creditLimit === 'number' && (
-                      <span
-                        className={`ml-2 text-sm ${isOverLimit ? 'text-red-600' : 'text-green-600'}`}
-                      >
-                        (วงเงิน:{' '}
-                        {selectedRequester.creditLimit.toLocaleString()} บาท)
-                      </span>
-                    )}
+                  ))}
+                  
+                  {expenseItems.length === 0 && (
+                    <div className="text-center py-4 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs">
+                      ไม่มีรายการค่าใช้จ่ายเพิ่มเติม
+                    </div>
+                  )}
+
+                  {expenseItems.length > 0 && (
+                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 mt-2">
+                      <span className="text-xs font-semibold text-slate-600">รวมค่าใช้จ่าย</span>
+                      <span className="text-sm font-bold text-slate-800">{totalExpenses.toLocaleString()} บาท</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
 
-          <FormField label="หมายเหตุ" htmlFor="remarks">
-            <Input
-              id="remarks"
-              name="remarks"
-              type="text"
-              placeholder="ระบุหมายเหตุ (ถ้ามี)"
-            />
-          </FormField>
+              {/* Reference Card */}
+              <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide">
+                  <DocumentCheckIcon className="w-4 h-4 text-slate-400" />
+                  ข้อมูลอ้างอิง
+                </h3>
+                
+                <div className="space-y-4">
+                  {/* Customer */}
+                  <div>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="text-xs font-semibold text-slate-500">ลูกค้า</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsCustomerSelectionModalOpen(true)}
+                        className="text-[10px] font-bold text-primary hover:text-primary/80 uppercase tracking-wider"
+                      >
+                        + เลือกลูกค้า
+                      </button>
+                    </div>
+                    {selectedCustomers.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedCustomers.map((customer) => (
+                          <div
+                            key={customer.id}
+                            className="flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded-md border border-slate-200"
+                          >
+                            <span className="truncate max-w-[150px]">{customer.first_name} {customer.last_name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomer(customer.id)}
+                              className="text-slate-400 hover:text-red-500"
+                            >
+                              <XCircleIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-400 italic">ยังไม่ได้ระบุลูกค้า</div>
+                    )}
+                  </div>
+
+                  {/* Reference Doc */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                      เอกสารอ้างอิง
+                    </label>
+                    <div className="flex gap-2 mb-2">
+                      <select
+                        className="w-1/3 border border-slate-300 rounded-lg p-1.5 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        value={referenceType}
+                        onChange={(e) => setReferenceType(e.target.value as any)}
+                      >
+                        <option value="JOB">ใบงาน (Job)</option>
+                      </select>
+                      <div className="w-2/3">
+                         {referenceType === 'JOB' && (
+                          <SearchableSelect
+                            value={referenceIds[0] || ''}
+                            onChange={(value) => setReferenceIds(value ? [value] : [])}
+                            options={(fetchedJobs.length > 0 ? fetchedJobs : jobs).map(j => {
+                              const c = (j as any).customer;
+                              const customerName = c
+                                ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+                                : (j as any).customer_name || 'Unknown';
+                              const jobDate = (j as any).start_date || (j as any).created_at;
+                              const dateStr = jobDate ? new Date(jobDate).toLocaleDateString('th-TH') : '-';
+                              return {
+                                value: j.id,
+                                label: `${customerName} (${dateStr})`
+                              };
+                            })}
+                            placeholder="เลือกใบงาน..."
+                            className="text-xs"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                      หมายเหตุ
+                    </label>
+                    <textarea
+                      name="remarks"
+                      rows={3}
+                      className="w-full border border-slate-300 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none bg-slate-50"
+                      placeholder="ระบุหมายเหตุเพิ่มเติม..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </form>
       </Modal>
 

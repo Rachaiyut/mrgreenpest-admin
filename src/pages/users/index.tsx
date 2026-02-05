@@ -734,11 +734,6 @@ const Users: React.FC<UsersProps> = ({
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
         user={selectedUserForWallet}
-        wallet={{
-          user_id: selectedUserForWallet?.id || '',
-          transactions: [],
-        }}
-        onCreateTransaction={onCreateWalletTransaction}
       />
     </>
   );

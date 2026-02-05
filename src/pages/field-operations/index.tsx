@@ -127,7 +127,7 @@ const JobCard: React.FC<{
           <div className="flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
-                {job.customer_name}
+                {job.customerName}
               </h4>
               {job.work_areas.length > 0 && (
                 <p className="text-xs text-slate-500 mt-1 truncate">
@@ -171,7 +171,7 @@ const JobCard: React.FC<{
               title={job.technicians.map((t) => t.name).join(', ')}
             >
               {job.technicians.length > 0
-                ? job.technicians.map((t) => t.nickname || t.name).join(', ')
+                ? job.technicians.map((t) => t.name).join(', ')
                 : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
             </span>
           </div>
@@ -402,7 +402,7 @@ const CalendarView: React.FC<{
                         <span className="text-[10px] opacity-70 mr-1">
                           {new Date(job.start_time).toTimeString().substring(0, 5)}
                         </span>
-                        {job.customer_name}
+                        {job.customerName}
                       </p>
                     </div>
                   ))}
@@ -483,9 +483,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         await Promise.all([
           VehicleApi.getVehiclesWithUserJobs(),
           CategoryApi.getCategories({}),
-          ServiceReportApi.getAll({}),
-          ProductApi.getProducts({ limit: 1000 }),
-          PackageApi.getPackages({ limit: 100 }),
+          ServiceReportApi.getAll({ limit: 10 }),
+          ProductApi.getProducts({ limit: 10 }),
+          PackageApi.getPackages({ limit: 10 }),
         ]);
 
       // Ensure warehousesData is an array
@@ -556,19 +556,34 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               mapped_status: mappedStatus,
               start_date: job.start_date,
               end_date: job.end_date,
-              customer_name: customerName,
+              customerName: customerName,
               vehicle_id: warehouse.id,
               primary_tech_id: job.primary_technician?.id || null,
             });
 
-            const techniciansList =
-              Array.isArray(job.technicians) && job.technicians.length > 0
-                ? job.technicians
-                : Array.isArray(job.job_team_members) && job.job_team_members.length > 0
-                  ? job.job_team_members
-                  : job.primary_technician
-                    ? [job.primary_technician]
-                    : [];
+            const techniciansList = [];
+            
+            if (job.primary_technician) {
+              techniciansList.push({ 
+                ...job.primary_technician, 
+                role: 'LEAD_TECH',
+                name: job.primary_technician.first_name ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''}`.trim() : job.primary_technician.name 
+              });
+            }
+
+            if (Array.isArray(job.job_team_members) && job.job_team_members.length > 0) {
+               const teamMembers = job.job_team_members.filter((t: any) => t.id !== job.primary_technician?.id);
+               techniciansList.push(...teamMembers.map((t: any) => ({
+                 ...t,
+                 role: 'TECH',
+                 name: t.first_name ? `${t.first_name} ${t.last_name || ''}`.trim() : t.name
+               })));
+            }
+            
+            // Fallback to existing technicians if API structure changes or different endpoint
+            if (techniciansList.length === 0 && Array.isArray(job.technicians) && job.technicians.length > 0) {
+                techniciansList.push(...job.technicians);
+            }
 
             return {
               api_status: rawStatus,
@@ -576,17 +591,19 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               assessment_id: job.assessment_id || undefined,
               contract_id: job.contract_id || undefined,
               customer_id: job.customer_id || customer.id,
-              customer_name: customerName,
+              customerName: customerName,
               address,
               google_map_link: customer.google_map_link || undefined,
               start_time: job.start_date,
               end_time: job.end_date,
+              actual_start_time: job.actual_start_time,
+              actual_end_time: job.actual_end_time,
               primary_technician: job.primary_technician || null,
               technicians: techniciansList,
               work_areas: [],
               status: mappedStatus,
               vehicle_id: warehouse.id,
-              service_report: undefined,
+              service_report: reportsData.find((r: any) => r.job_id === job.id),
               remarks: job.remark,
               quotation_id: undefined,
               operation_details: undefined,
@@ -965,7 +982,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleWriteReport = (job: FieldJob) => {
     setJobForReport(job);
     setReportFinalStatus(
-      job.status === JobMainStatus.COMPLETED ? JobStatus.Completed : JobStatus.Draft
+      job.status === JobMainStatus.COMPLETE ? JobStatus.Completed : JobStatus.Draft
     );
     setIsReportModalOpen(true);
     setOpenDropdownId(null);
@@ -1247,182 +1264,184 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full bg-slate-50/30 min-h-screen">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Section */}
-        <div className="flex-shrink-0 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 tracking-tight">ภาคสนาม</h1>
-              <p className="mt-1 text-slate-500 text-sm">จัดการและติดตามงานภาคสนามทั้งหมด</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative">
-                <Input
-                  type="search"
-                  placeholder="ค้นหาทะเบียนรถ, วันที่..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-64 pl-10 bg-white border-slate-200 shadow-sm"
-                />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
-              {authUser?.role &&
-                [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
-                  authUser.role as Role
-                ) && (
-                  <Button
-                    onClick={() => setIsAddModalOpen(true)}
-                    variant="primary"
-                    className="shadow-md shadow-primary/20"
-                  >
-                    <PlusIcon className="h-5 w-5" />
-                    สร้างนัดหมาย
-                  </Button>
-                )}
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
+            <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
           </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-50 rounded-lg">
-                  <CalendarDaysIcon className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{jobStats.today}</p>
-                  <p className="text-xs text-slate-500">งานวันนี้</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-50 rounded-lg">
-                  <PlayIcon className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{jobStats.inProgress}</p>
-                  <p className="text-xs text-slate-500">กำลังดำเนินการ</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-50 rounded-lg">
-                  <ClipboardDocumentListIcon className="h-5 w-5 text-purple-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{jobStats.pending}</p>
-                  <p className="text-xs text-slate-500">รอดำเนินการ</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-4 border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-green-50 rounded-lg">
-                  <DocumentCheckIcon className="h-5 w-5 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-slate-800">{serviceReports.length}</p>
-                  <p className="text-xs text-slate-500">รายงานทั้งหมด</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs and View Toggle */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-1.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex gap-1">
-              <button
-                onClick={() => setActiveTab('schedule')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'schedule'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+          {authUser?.role &&
+            [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
+              authUser.role as Role
+            ) && (
+              <Button
+                onClick={() => setIsAddModalOpen(true)}
+                variant="primary"
+                className="shadow-md shadow-primary/20"
               >
-                <span className="flex items-center gap-2">
-                  <CalendarDaysIcon className="h-4 w-4" />
-                  นัดหมาย
-                </span>
-              </button>
-              <button
-                onClick={() => setActiveTab('reports')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'reports'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-              >
-                <span className="flex items-center gap-2">
-                  <DocumentCheckIcon className="h-4 w-4" />
-                  รายงานบริการ
-                </span>
-              </button>
-              <button
-                onClick={() => setActiveTab('work-schedule')}
-                className={`px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === 'work-schedule'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-              >
-                <span className="flex items-center gap-2">
-                  <ListBulletIcon className="h-4 w-4" />
-                  ตารางงาน
-                </span>
-              </button>
-            </div>
-
-            {activeTab === 'schedule' && (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <TechnicianIcon className="h-4 w-4 text-slate-400" />
-                  <Select
-                    id="technician-filter"
-                    value={selectedTechnicianId}
-                    onChange={(e) => setSelectedTechnicianId(e.target.value)}
-                    className="w-full sm:w-48 text-sm border-slate-200"
-                  >
-                    <option value="all">ช่างทั้งหมด</option>
-                    {technicians.map((tech) => (
-                      <option key={tech.id} value={tech.id}>
-                        {tech.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="flex items-center rounded-lg bg-slate-100 p-1">
-                  <Button
-                    onClick={() => setView('kanban')}
-                    variant="ghost"
-                    className={`p-2 rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
-                    title="มุมมอง Kanban"
-                  >
-                    <ViewColumnsIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => setView('list')}
-                    variant="ghost"
-                    className={`p-2 rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
-                    title="มุมมองรายการ"
-                  >
-                    <ListBulletIcon className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => setView('calendar')}
-                    variant="ghost"
-                    className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
-                    title="มุมมองปฏิทิน"
-                  >
-                    <CalendarDaysIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
+                <PlusIcon className="h-5 w-5" />
+                สร้างนัดหมาย
+              </Button>
             )}
-          </div>
         </div>
 
-        <div className="flex-grow min-h-0 mt-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <CalendarDaysIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-blue-600 font-medium">งานวันนี้</p>
+                <p className="text-2xl font-bold text-blue-800">{jobStats.today}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <PlayIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-amber-600 font-medium">กำลังดำเนินการ</p>
+                <p className="text-2xl font-bold text-amber-800">{jobStats.inProgress}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500 rounded-lg">
+                <ClipboardDocumentListIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-purple-600 font-medium">รอดำเนินการ</p>
+                <p className="text-2xl font-bold text-purple-800">{jobStats.pending}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <DocumentCheckIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-green-600 font-medium">รายงานทั้งหมด</p>
+                <p className="text-2xl font-bold text-green-800">{serviceReports.length}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col gap-4">
+            {/* Top Row: Search & Filters (Left) - Tabs (Right) */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              {/* Search & Filters Area */}
+              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                <div className="relative flex-1 sm:min-w-[240px]">
+                  <Input
+                    type="search"
+                    placeholder="ค้นหาทะเบียนรถ, วันที่..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10"
+                  />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+
+                {activeTab === 'schedule' && (
+                  <div className="flex items-center gap-2">
+                    <TechnicianIcon className="h-4 w-4 text-slate-400 hidden sm:block" />
+                    <Select
+                      id="technician-filter"
+                      value={selectedTechnicianId}
+                      onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                      className="w-full sm:w-48 text-sm"
+                    >
+                      <option value="all">ช่างทั้งหมด</option>
+                      {technicians.map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* Tabs & View Toggles */}
+              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+                 {/* View Toggles (Only for Schedule Tab) */}
+                 {activeTab === 'schedule' && (
+                  <div className="flex items-center rounded-lg bg-slate-100 p-1 order-2 lg:order-1">
+                    <Button
+                      onClick={() => setView('kanban')}
+                      variant="ghost"
+                      className={`p-2 rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                      title="มุมมอง Kanban"
+                    >
+                      <ViewColumnsIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => setView('list')}
+                      variant="ghost"
+                      className={`p-2 rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                      title="มุมมองรายการ"
+                    >
+                      <ListBulletIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => setView('calendar')}
+                      variant="ghost"
+                      className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                      title="มุมมองปฏิทิน"
+                    >
+                      <CalendarDaysIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Tab Switcher */}
+                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg order-1 lg:order-2 overflow-x-auto max-w-full">
+                  <button
+                    onClick={() => setActiveTab('schedule')}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    นัดหมาย
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('reports')}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    รายงาน
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('work-schedule')}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    ตารางงาน
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <div className="flex-grow min-h-0">
           {activeTab === 'schedule' && view === 'kanban' && (
             <div className="relative">
               {/* Scroll Buttons */}
@@ -1538,12 +1557,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-sm">
-                                  {job.customer_name.charAt(0).toUpperCase()}
+                                  {job.customerName?.charAt(0).toUpperCase() || '-'}
                                 </span>
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-slate-800 truncate">
-                                  {job.customer_name}
+                                  {job.customerName || '-'}
                                 </p>
                                 <p className="text-xs text-slate-500 truncate max-w-[200px]" title={job.address}>
                                   {job.address || '-'}
@@ -1577,7 +1596,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                             <div className="flex items-center gap-2">
                               <TechnicianIcon className="h-4 w-4 text-slate-400" />
                               <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                {job.technicians.map((t) => t.nickname || t.name).join(', ') || '-'}
+                                {job.technicians.map((t) => t.nick_name || t.name).join(', ') || '-'}
                               </span>
                             </div>
                           </td>
@@ -1659,7 +1678,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                       paginatedReports.map((report, idx) => {
                         const job = jobs.find((j) => j.id === report.job_id);
                         const reportDate = report.report_date || report.created_at || '';
-                        const customerName = report.customer_name || job?.customer_name || '-';
+                        const customerName = report.customer_name || job?.customerName || '-';
 
                         return (
                           <tr
@@ -1719,7 +1738,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                               <div className="flex items-center gap-2">
                                 <TechnicianIcon className="h-4 w-4 text-slate-400" />
                                 <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                  {job?.technicians?.map(t => t.nickname || t.name).join(', ') ||
+                                  {job?.technicians?.map(t => t.nick_name || t.name).join(', ') ||
                                     report.signatures?.technician_name ||
                                     '-'}
                                 </span>
@@ -1910,7 +1929,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm font-semibold text-slate-800">{job.customer_name}</p>
+                                <p className="text-sm font-semibold text-slate-800">{job.customerName || '-'} </p>
                               </td>
                               <td className="px-4 py-3">
                                 <p className="text-sm text-slate-500 max-w-[200px] truncate" title={job.address}>

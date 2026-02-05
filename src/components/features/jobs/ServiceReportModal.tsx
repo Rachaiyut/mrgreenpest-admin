@@ -9,7 +9,7 @@ import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
-import { AssessmentApi, QuotationApi } from '@/src/api';
+import { QuotationApi } from '@/src/api';
 import { SearchableSelect } from '../../common';
 
 interface ServiceReportModalProps {
@@ -71,7 +71,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   useEffect(() => {
     const fetchQuotation = async () => {
       try {
-        const res = await QuotationApi.getAll();
+        const res = await QuotationApi.getAll({ limit: 10 });
         setQuotation(res.data);
       } catch (error) {
         console.error('Failed to fetch quotation:', error);
@@ -127,7 +127,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     if (!job || !job.contract_id) return undefined;
     const c = (contracts || []).find((ct) => ct.id === job.contract_id);
     if (!c) return undefined;
-    const pkg = packageMapByName.get(c.service_package) as any;
+    const pkg = packageMapByName.get(c.servicePackage || '') as any;
     const visitsRequired = pkg?.number_of_visits ?? 0;
     if (!visitsRequired) return undefined;
     const parseDurationMonths = (text?: string) => {
@@ -182,9 +182,120 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   useEffect(() => {
     if (isOpen && job) {
       // If the job already has a draft report, load it. Otherwise, create a new one.
-      const initialReport = job.service_report
-        ? { ...job.service_report }
-        : {
+      let initialReport: Partial<ServiceReport>;
+
+      if (job.service_report) {
+        const r = job.service_report;
+        const d = r.service_report_pest_detail || {};
+
+        // Reconstruct service_types
+        const types: string[] = [];
+        if (r.is_service_termite) types.push('กำจัดปลวก');
+        if (r.is_service_ant_roach) { types.push('กำจัดมด'); types.push('กำจัดแมลงสาบ'); }
+        if (r.is_service_rodent) types.push('กำจัดหนู');
+        if (r.is_service_mosquito) types.push('กำจัดยุง');
+        if (r.service_other) types.push('กำจัดอื่นๆ');
+
+        // Reconstruct service_actions
+        const actions: string[] = [];
+        if (r.is_op_station) actions.push('ฝังสถานี');
+        if (r.is_op_refill) actions.push('เติมเหยื่อ');
+        if (r.is_op_chemical) actions.push('อัดน้ำยา');
+        if (r.is_op_check) actions.push('ตรวจเช็ค');
+        if (r.is_op_renew) actions.push('ต่อสัญญา');
+        if (r.is_op_underground) actions.push('อัดลงดิน');
+        if (r.is_op_spray) actions.push('สเปรย์');
+        if (r.is_op_fogging) actions.push('พ่นหมอกควัน');
+        if (r.is_op_powder) actions.push('โรยผง');
+        if (r.is_op_bait) actions.push('วางเหยื่อ');
+        if (r.is_op_trap) actions.push('วางกับดัก');
+
+
+        // Reconstruct next_appointment reasons
+        const nextReasons: string[] = [];
+        if (r.is_next_refill) nextReasons.push('วางเหยื่อ');
+        if (r.is_next_chemical) nextReasons.push('ฉีดปลวก');
+        if (r.is_next_check) nextReasons.push('ตรวจเช็ค');
+        if (r.is_next_renew) nextReasons.push('ครบรอบบริการ');
+        
+        if (r.next_service_purpose) {
+          const purposes = r.next_service_purpose.split(',').map(s => s.trim());
+          purposes.forEach(p => {
+            if (!nextReasons.includes(p)) nextReasons.push(p);
+          });
+        }
+
+        initialReport = {
+          ...r,
+          service_types: types,
+          service_actions: actions,
+          check_in_time: r.time_in,
+          check_out_time: r.time_out,
+          next_appointment: {
+            notes: r.work_note || '',
+            reasons: nextReasons,
+            scheduled_at: r.next_service_schedule,
+          },
+          ant: {
+            apply_gel: d.ant_bait,
+            other: d.pest_other
+          },
+          cockroach: {
+            apply_gel: d.roach_bait,
+            other: d.pest_other
+          },
+          rat: {
+            glue_traps: d.rat_glue_trap,
+            mechanical_traps: d.rat_mechanical_trap,
+            bait_stations: d.rat_bait_station,
+            refill_bait: d.rat_refill_bait,
+            other: d.pest_other
+          },
+          lizard: {
+            place_traps: d.lizard_trap,
+            other: d.pest_other
+          },
+          termite: {
+            status: d.termite_status || (r.is_service_termite ? 'present' : 'absent'),
+            actions: {
+              installStations: { 
+                enabled: r.is_op_station, 
+                count: d.termite_install_stations_count 
+              },
+              addBait: { 
+                enabled: r.is_op_refill, 
+                count: d.termite_add_bait_count 
+              },
+              foundTermites: {
+                enabled: d.termite_found_enabled,
+                count: d.termite_found_count
+              },
+              placeBoxes: {
+                enabled: d.termite_place_boxes_enabled,
+                count: d.termite_place_boxes_count,
+                area: d.termite_place_boxes_area
+              },
+              injectPipes: { 
+                enabled: r.is_op_chemical, 
+                count: d.termite_inject_pipes_count 
+              },
+              injectSoil: { enabled: r.is_op_underground },
+              sprayGarden: { enabled: r.is_op_spray },
+              changeWood: { enabled: d.termite_change_wood },
+              changeLid: { enabled: d.termite_change_lid },
+              addFocusBait: { enabled: d.termite_add_focus_bait },
+              injectShaft: { enabled: d.termite_inject_shaft },
+              sprayBio: { enabled: d.termite_spray_bio },
+              aroundBuilding: { enabled: d.termite_around_building },
+              inShaft: { enabled: d.termite_in_shaft },
+              insideBuilding: { enabled: d.termite_inside_building },
+              other: d.termite_other
+            }
+          }
+        };
+        setSelectedQuotationId(r.quotation_id || job.quotation_id || '');
+      } else {
+        initialReport = {
           created_at: new Date().toISOString().substring(0, 10),
           check_in_time: job.actual_start_time
             ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
@@ -206,6 +317,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             mechanical_traps: false,
             bait_stations: false,
             refill_bait: false,
+            other: '',
           },
           lizard: { place_traps: false },
           next_appointment: {
@@ -215,8 +327,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           },
           status: JobStatus.Draft,
         };
+        setSelectedQuotationId(job.quotation_id || '');
+      }
+
       setReportState(initialReport);
-      setSelectedQuotationId(job.quotation_id || '');
     }
   }, [isOpen, job, recommendedNextIso]);
 
@@ -239,7 +353,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       customer_id: job.customer_id,
       quotation_id: selectedQuotationId,
       report_date: new Date().toISOString(),
-      customer_name: job.customer_name,
+      customer_name: (job as any).customerName || (job as any).customer_name,
 
       // Service Types
       is_service_termite: reportState.service_types?.includes('กำจัดปลวก'),
@@ -308,7 +422,27 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         rat_bait_station: reportState.rat?.bait_stations || false,
         rat_refill_bait: reportState.rat?.refill_bait || false,
         lizard_trap: reportState.lizard?.place_traps || false,
-        pest_other: null,
+        pest_other: reportState.ant?.other || reportState.cockroach?.other || reportState.rat?.other || reportState.lizard?.other,
+        
+        // Termite details
+        termite_status: reportState.termite?.status,
+        termite_install_stations_count: reportState.termite?.actions?.installStations?.count,
+        termite_add_bait_count: reportState.termite?.actions?.addBait?.count,
+        termite_found_enabled: reportState.termite?.actions?.foundTermites?.enabled,
+        termite_found_count: reportState.termite?.actions?.foundTermites?.count,
+        termite_place_boxes_enabled: reportState.termite?.actions?.placeBoxes?.enabled,
+        termite_place_boxes_count: reportState.termite?.actions?.placeBoxes?.count,
+        termite_place_boxes_area: reportState.termite?.actions?.placeBoxes?.area,
+        termite_inject_pipes_count: reportState.termite?.actions?.injectPipes?.count,
+        termite_change_wood: reportState.termite?.actions?.changeWood,
+        termite_change_lid: reportState.termite?.actions?.changeLid,
+        termite_add_focus_bait: reportState.termite?.actions?.addFocusBait,
+        termite_inject_shaft: reportState.termite?.actions?.injectShaft,
+        termite_spray_bio: reportState.termite?.actions?.sprayBio,
+        termite_around_building: reportState.termite?.actions?.aroundBuilding,
+        termite_in_shaft: reportState.termite?.actions?.inShaft,
+        termite_inside_building: reportState.termite?.actions?.insideBuilding,
+        termite_other: reportState.termite?.actions?.other,
       },
     } as ServiceReport;
     onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
@@ -470,7 +604,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const title =
     finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
-      : `บันทึกรายงานบริการ: ${job.id}`;
+      : `บันทึกรายงานบริการ: ${job.code}`;
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
@@ -1054,7 +1188,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           <div>
             <dt className="font-medium text-slate-500">ลูกค้า</dt>
             <dd className="mt-1 text-slate-900 font-semibold">
-              {job.customer_name}
+              {(job as any).customerName || (job as any).customer_name}
             </dd>
           </div>
           <div>

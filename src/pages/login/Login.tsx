@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Checkbox, message, ConfigProvider } from 'antd';
+import { Form, Input, Button, Checkbox, message, ConfigProvider, Select } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,6 +16,7 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [demoUsers, setDemoUsers] = useState<any[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +30,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         });
       }
     } catch { }
+
+    // Fetch demo users
+    Auth.getDemoUsers()
+      .then((users) => {
+        if (Array.isArray(users)) {
+          setDemoUsers(users);
+        }
+      })
+      .catch((err) => console.error('Failed to fetch demo users', err));
   }, [form]);
 
   const onFinish = async (values: any) => {
@@ -184,18 +194,39 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               เข้าสู่ระบบ
             </Button>
 
-            <Button
-              type="dashed"
-              className="w-full h-10 text-sm font-medium text-slate-600 border-slate-300 hover:border-green-500 hover:text-green-600 rounded-md transition-all duration-200"
-              onClick={() => {
-                form.setFieldsValue({
-                  citizenId: '1000000000001',
-                  password: 'password123',
-                });
-              }}
-            >
-              🧪 ใช้ Demo Credential
-            </Button>
+            <div className="pt-4 border-t border-slate-100">
+              <p className="text-xs text-slate-400 mb-3 text-center">เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)</p>
+              {demoUsers.length > 0 ? (
+                <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
+                  <Select
+                    placeholder="ค้นหาผู้ใช้งาน (Role, ชื่อ, นามสกุล)"
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                    }
+                    className="w-full"
+                    size="large"
+                    onChange={(value) => {
+                      const selectedUser = demoUsers.find(u => u.citizen_id === value);
+                      if (selectedUser) {
+                        form.setFieldsValue({
+                          citizenId: selectedUser.citizen_id,
+                          password: 'password123',
+                        });
+                      }
+                    }}
+                    options={demoUsers.map(user => ({
+                      value: user.citizen_id,
+                      label: `${user.role} - ${user.first_name} ${user.last_name} (${user.nick_name || '-'})`
+                    }))}
+                  />
+                </div>
+              ) : (
+                <div className="text-center text-xs text-slate-400 italic py-2">
+                  กำลังโหลดรายชื่อผู้ใช้งาน...
+                </div>
+              )}
+            </div>
           </Form>
 
           <div className="mt-10 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">

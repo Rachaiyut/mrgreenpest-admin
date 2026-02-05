@@ -16,6 +16,7 @@ class UserService extends AuthService {
     const mapUser = (u: any): User => ({
       ...u,
       name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
+      creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
     });
 
     if (res.data && Array.isArray(res.data.data)) {
@@ -35,8 +36,13 @@ class UserService extends AuthService {
   }
 
   async getById(id: string): Promise<User> {
-    const res = await this.http.get<User>(`${this.path}/${id}`);
-    return res.data;
+    const res = await this.http.get<any>(`${this.path}/${id}`);
+    const u = res.data;
+    return {
+      ...u,
+      name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
+      creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
+    };
   }
 
   async create(data: any): Promise<User> {
@@ -51,6 +57,16 @@ class UserService extends AuthService {
 
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
+  }
+
+  async getWallet(userId: string): Promise<any> {
+    const res = await this.http.get(`${this.path}/${userId}/wallet`);
+    return res.data.data;
+  }
+
+  async createExpense(userId: string, data: any): Promise<any> {
+    const res = await this.http.post(`${this.path}/${userId}/expenses`, data);
+    return res.data;
   }
 }
 

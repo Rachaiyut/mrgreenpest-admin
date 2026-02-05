@@ -5,6 +5,7 @@ import {
   Withdrawal,
   Warehouse as WarehouseType,
   Product,
+  User,
 } from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
@@ -15,6 +16,7 @@ interface WithdrawalDetailsModalProps {
   withdrawal: Withdrawal | null;
   warehouses: WarehouseType[];
   products: Product[];
+  users?: User[];
 }
 
 export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
@@ -23,6 +25,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
   withdrawal,
   warehouses,
   products,
+  users = [],
 }) => {
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w])),
@@ -31,6 +34,10 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
+  );
+  const userMap = useMemo(
+    () => new Map(users.map((u) => [u.id, u.name])),
+    [users]
   );
 
   const fromWarehouse = withdrawal ? warehouseMap.get(withdrawal.warehouse_id) : undefined;
@@ -89,7 +96,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">เลขที่ใบเบิก</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {withdrawal.code}
+                {withdrawal.id}
               </dd>
             </div>
             <div>
@@ -134,7 +141,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{withdrawal.created_by}</dd>
+              <dd className="mt-1 text-slate-900">{withdrawal.created_by ? (userMap.get(withdrawal.created_by) || withdrawal.created_by) : '-'}</dd>
             </div>
             {/* 
             {withdrawal.approvedBy && (

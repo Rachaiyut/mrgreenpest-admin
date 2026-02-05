@@ -1,18 +1,24 @@
-import React from 'react';
+import { FC, ReactNode, ReactElement, cloneElement } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import {
   Assessment,
   AssessmentWorkArea,
-  AssessmentWorkAreaItem,
   Customer,
   Package,
   Product,
 } from '@/src/types/entity/app.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
-import { GoogleMapIcon } from '../../../assets/icons/Icons';
-import { PaymentMethod, ServiceReport, ServiceSystem } from '@/src/types';
+import {
+  GoogleMapIcon,
+  DocumentTextIcon,
+  HomeIcon,
+  MapIcon,
+  ClipboardDocumentListIcon,
+  UserGroupIcon,
+} from '../../../assets/icons/Icons';
+import { PaymentMethod, ServiceSystem } from '@/src/types';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -23,122 +29,121 @@ interface AssessmentDetailsModalProps {
   packages?: Package[];
 }
 
-const WorkAreaDetails: React.FC<{
+const DetailItem: FC<{ label: string; value: ReactNode; fullWidth?: boolean }> = ({
+  label,
+  value,
+  fullWidth = false,
+}) => (
+  <div className={`${fullWidth ? 'col-span-full' : ''}`}>
+    <dt className="text-xs font-medium text-slate-500 mb-1">{label}</dt>
+    <dd className="text-sm font-medium text-slate-900 break-words">{value || '-'}</dd>
+  </div>
+);
+
+const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
+  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+    <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
+      {cloneElement(icon as ReactElement<any>, { className: 'w-4 h-4' })}
+    </div>
+    <h4 className="font-semibold text-slate-800">{title}</h4>
+  </div>
+);
+
+const WorkAreaDetails: FC<{
   area: AssessmentWorkArea;
   products: Product[];
-}> = ({ area, products }) => {
-  const productMap = new Map(products.map((p) => [p.id, p]));
-
+}> = ({ area }) => {
   return (
-    <div className="space-y-4 p-4 border border-slate-200 rounded-lg bg-slate-50">
-      <h5 className="text-md font-bold text-primary">{area.area_name}</h5>
-      <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
-        <div>
-          <dt className="font-medium text-slate-500">ประเภทสิ่งปลูกสร้าง</dt>
-          <dd className="mt-1 text-slate-900">{area.building_type || '-'}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-slate-500">พื้นที่ (ตร.ม.)</dt>
-          <dd className="mt-1 text-slate-900">{area.area_size}</dd>
-        </div>
-        <div>
-          <dt className="font-medium text-slate-500">ประเภทบริการ</dt>
-          <dd className="mt-1 text-slate-900">
-            {/* {(area.service_type || []).join(', ')} */}
-          </dd>
-        </div>
-        <div>
-          <dt className="font-medium text-slate-500">ระบบที่ใช้</dt>
-          <dd className="mt-1 text-slate-900">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ' }</dd>
-        </div>
-      </dl>
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+      <div className="bg-slate-50/50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+        <h5 className="font-bold text-slate-800 flex items-center gap-2">
+          <span className="w-2 h-6 bg-primary rounded-full"></span>
+          {area.area_name}
+        </h5>
+        <span className="text-sm font-semibold text-primary bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
+          ฿{(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+        </span>
+      </div>
 
-      <div className="pt-4 border-t">
-        <h6 className="font-semibold text-slate-700 mb-2">
-          ราคาบริการหลัก: ฿{(area.base_service_price || 0).toLocaleString()}
-        </h6>
+      <div className="p-4 space-y-4">
+        <dl className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <DetailItem label="ประเภทสิ่งปลูกสร้าง" value={area.building_type} />
+          <DetailItem label="พื้นที่ (ตร.ม.)" value={area.area_size} />
+          <DetailItem 
+            label="ระบบที่ใช้" 
+            value={
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                area.service_system === ServiceSystem.CHEMICAL 
+                  ? 'bg-orange-100 text-orange-800' 
+                  : 'bg-green-100 text-green-800'
+              }`}>
+                {area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ'}
+              </span>
+            } 
+          />
+          <DetailItem 
+            label="ราคาบริการหลัก" 
+            value={`฿${(area.base_service_price || 0).toLocaleString()}`} 
+          />
+        </dl>
 
         {area.items && area.items.length > 0 && (
-          <div className="overflow-x-auto border border-slate-200 rounded-md">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="p-2 text-left font-medium text-slate-600">
-                    สินค้า/บริการเพิ่มเติม
-                  </th>
-                  <th className="p-2 text-center font-medium text-slate-600">
-                    จำนวน
-                  </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
-                    ราคาต่อหน่วย
-                  </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
-                    รวม
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {area.items.map((item, index) => {
-                  const productName = item.product_name
-                  const quantity = item.quantity || 0;
-                  const price = item.product_price || 0;
-                  const total = quantity * price;
+          <div className="mt-4">
+            <h6 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              สินค้า/บริการเพิ่มเติม
+            </h6>
+            <div className="overflow-hidden border border-slate-200 rounded-lg">
+              <table className="min-w-full text-sm divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium text-slate-600">รายการ</th>
+                    <th className="px-3 py-2 text-center font-medium text-slate-600">จำนวน</th>
+                    <th className="px-3 py-2 text-right font-medium text-slate-600">ราคา/หน่วย</th>
+                    <th className="px-3 py-2 text-right font-medium text-slate-600">รวม</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {area.items.map((item, index) => {
+                    const quantity = item.quantity || 0;
+                    const price = item.product_price || 0;
+                    const total = quantity * price;
 
-                  return (
-                    <tr
-                      key={index}
-                      className="border-b border-slate-200 last:border-b-0"
-                    >
-                      <td className="p-2 font-medium text-slate-800">
-                        {productName || 'N/A'}
-                      </td>
-                      <td className="p-2 text-center">{quantity}</td>
-                      <td className="p-2 text-right">
-                        {price.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="p-2 text-right">
-                        {total.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={index} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 text-slate-800">{item.product_name || 'N/A'}</td>
+                        <td className="px-3 py-2 text-center text-slate-600">{quantity}</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {price.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-800">
+                          {total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
-      <div className="text-right font-semibold text-slate-800 pt-2 border-t">
-        ยอดรวมพื้นที่นี้: ฿
-        {(area.total_price || 0).toLocaleString('th-TH', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}
       </div>
     </div>
   );
 };
 
-export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
+export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
   isOpen,
   onClose,
   assessment,
   products,
   customers = [],
-  packages = [],
 }) => {
   if (!isOpen || !assessment) return null;
 
-  const customerName = customers.find((c) => c.id === assessment.customer_id)
-    ? `${customers.find((c) => c.id === assessment.customer_id)?.first_name} ${customers.find((c) => c.id === assessment.customer_id)?.last_name}`
+  const customer = customers.find((c) => c.id === assessment.customer_id);
+  const customerName = customer
+    ? `${customer.first_name} ${customer.last_name}`
     : assessment.customer_id;
-
-  const selectedPackage = packages.find((p) => p.id === assessment.package_id);
 
   return (
     <Modal
@@ -147,177 +152,106 @@ export const AssessmentDetailsModal: React.FC<AssessmentDetailsModalProps> = ({
       title={`รายละเอียดใบประเมิน: ${assessment.code || assessment.id}`}
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-between">
-          <p className="text-lg font-semibold text-slate-800">
-            ยอดรวมทั้งหมด:{' '}
-            <span className="text-primary">
-              ฿
-              {assessment.total_price.toLocaleString('th-TH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
+        <div className="flex w-full items-center justify-between bg-slate-50 -m-6 p-6 border-t border-slate-200 rounded-b-xl">
+          <div className="flex flex-col">
+            <span className="text-sm text-slate-500">ยอดรวมทั้งหมดสุทธิ</span>
+            <span className="text-2xl font-bold text-primary">
+              ฿{assessment.total_price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-          </p>
-          <Button type="button" onClick={onClose} variant="primary">
+          </div>
+          <Button onClick={onClose} variant="primary" className="px-8">
             ปิด
           </Button>
         </div>
       }
     >
-      <div className="space-y-6 text-sm">
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
-            ข้อมูลทั่วไป
-          </h4>
-          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
-            <div>
-              <dt className="font-medium text-slate-500">รหัสใบประเมิน</dt>
-              <dd className="mt-1 text-slate-900 font-semibold">
-                {assessment.code || assessment.id}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">ลูกค้า</dt>
-              <dd className="mt-1 text-slate-900 font-semibold">
-                {customerName}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">สถานะ</dt>
-              <dd className="mt-1">
-                <StatusBadge status={assessment.status} />
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
-              <dd className="mt-1 text-slate-900">
-                {formatThaiDate(assessment.created_at)}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">วันที่นัดหมาย</dt>
-              <dd className="mt-1 text-slate-900">
-                {formatThaiDate((assessment.appointment_date).toLocaleString())}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">
-                เงื่อนไขการชำระเงิน
-              </dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.payment_condition === PaymentMethod.CASH ? 'เงินสด' : 'โอน'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{assessment.created_by}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">ผู้แก้ไขล่าสุด</dt>
-              <dd className="mt-1 text-slate-900">{assessment.updated_by}</dd>
-            </div>
-          </dl>
-        </div>
-        <hr />
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
-            ข้อมูลที่อยู่
-          </h4>
-          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
-            <div className="md:col-span-3">
-              <dt className="font-medium text-slate-500">ที่อยู่</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.address || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">แขวง/ตำบล</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.sub_district || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">เขต/อำเภอ</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.district || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">จังหวัด</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.province || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">รหัสไปรษณีย์</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.zipcode || '-'}
-              </dd>
-            </div>
-          </dl>
-          {assessment.google_map_link && (
-            <dl className="mt-4">
-              <div>
-                <dt className="font-medium text-slate-500">Link Google Map</dt>
-                <dd className="mt-1 text-slate-900">
-                  <a
-                    href={assessment.google_map_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-primary hover:underline truncate"
-                  >
-                    <GoogleMapIcon className="h-4 w-4" />
-                    <span>{assessment.google_map_link}</span>
-                  </a>
-                </dd>
-              </div>
-            </dl>
-          )}
-        </div>
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3 mt-4 pt-4 border-t">
-            กลุ่มเส้นทาง/พื้นที่บริการ
-          </h4>
-          <dl className="grid grid-cols-1 md:grid-cols-4 gap-x-4 gap-y-4">
-            <div>
-              <dt className="font-medium text-slate-500">
-                เขต (พื้นที่บริการ)
-              </dt>
-              <dd className="mt-1 text-slate-900">{assessment.zone || '-'}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">Group</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.route_group || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">สายถนนที่</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.road_line || '-'}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-500">ลำดับที่</dt>
-              <dd className="mt-1 text-slate-900">
-                {assessment.sequence || '-'}
-              </dd>
-            </div>
-          </dl>
-        </div>
-        <hr />
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
-            รายละเอียดพื้นที่ประเมิน
-          </h4>
-          <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 -mr-2">
-            {assessment.assessment_areas.map((area, index) => (
-              <WorkAreaDetails
-                key={index}
-                area={area}
-                products={products}
+      <div className="space-y-6">
+        {/* Top Section: Info & Address */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* General Info */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
+            <dl className="grid grid-cols-2 gap-4">
+              <DetailItem label="รหัสใบประเมิน" value={assessment.code || assessment.id} />
+              <DetailItem 
+                label="สถานะ" 
+                value={<StatusBadge status={assessment.status} />} 
               />
-            ))}
+              <DetailItem 
+                label="ลูกค้า" 
+                value={
+                  <div className="flex items-center gap-2">
+                    <UserGroupIcon className="w-4 h-4 text-slate-400" />
+                    <span>{customerName}</span>
+                  </div>
+                }
+                fullWidth 
+              />
+              <DetailItem label="วันที่สร้าง" value={formatThaiDate(assessment.created_at?.toString())} />
+              <DetailItem label="วันที่นัดหมาย" value={formatThaiDate(assessment.appointment_date?.toString())} />
+              <DetailItem 
+                label="เงื่อนไขการชำระเงิน" 
+                value={assessment.payment_condition === PaymentMethod.CASH ? 'เงินสด' : 'โอนเงิน'} 
+              />
+              <DetailItem label="ผู้สร้าง" value={assessment.created_by} />
+            </dl>
+          </div>
+
+          {/* Address Info */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
+            <dl className="grid grid-cols-2 gap-4">
+              <DetailItem label="ที่อยู่" value={assessment.address} fullWidth />
+              <DetailItem label="แขวง/ตำบล" value={assessment.sub_district} />
+              <DetailItem label="เขต/อำเภอ" value={assessment.district} />
+              <DetailItem label="จังหวัด" value={assessment.province} />
+              <DetailItem label="รหัสไปรษณีย์" value={assessment.zipcode} />
+              
+              {assessment.google_map_link && (
+                <div className="col-span-full mt-2 pt-2 border-t border-slate-100">
+                  <dt className="text-xs font-medium text-slate-500 mb-1">Google Map</dt>
+                  <dd>
+                    <a
+                      href={assessment.google_map_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-primary hover:text-primary-dark hover:underline bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 transition-colors w-full justify-center sm:justify-start"
+                    >
+                      <GoogleMapIcon className="h-4 w-4" />
+                      <span className="truncate text-sm font-medium">เปิดแผนที่นำทาง</span>
+                    </a>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+
+        {/* Route Info */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <SectionHeader icon={<MapIcon />} title="กลุ่มเส้นทาง/พื้นที่บริการ" />
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <DetailItem label="เขต (พื้นที่บริการ)" value={assessment.zone} />
+            <DetailItem label="Group" value={assessment.route_group} />
+            <DetailItem label="สายถนนที่" value={assessment.road_line} />
+            <DetailItem label="ลำดับที่" value={assessment.sequence} />
+          </dl>
+        </div>
+
+        {/* Work Areas */}
+        <div>
+          <SectionHeader icon={<ClipboardDocumentListIcon />} title="รายละเอียดพื้นที่ประเมิน" />
+          <div className="grid grid-cols-1 gap-4">
+            {assessment.assessment_areas && assessment.assessment_areas.length > 0 ? (
+              assessment.assessment_areas.map((area, index) => (
+                <WorkAreaDetails key={index} area={area} products={products} />
+              ))
+            ) : (
+              <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                <ClipboardDocumentListIcon className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                <p className="text-slate-500">ไม่พบข้อมูลพื้นที่ประเมิน</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

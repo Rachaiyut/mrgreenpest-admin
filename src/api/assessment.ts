@@ -30,6 +30,13 @@ class AssessmentService extends AuthService {
     return res.data;
   }
 
+  async exportPdf(id: string): Promise<Blob> {
+    const res = await this.http.get<Blob>(`${this.path}/${id}/pdf`, {
+      responseType: 'blob' as any,
+    });
+    return res.data;
+  }
+
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }

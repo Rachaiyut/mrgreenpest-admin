@@ -15,29 +15,19 @@ import {
 	CheckCircleIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
-import { Contract } from '../../types';
+import { Contract, ContractStatus } from '../../types';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { ContractDetailsModal } from '../../components/features/contracts/ContractDetailsModal';
 
-// Contract Status from API
-enum ContractStatusEnum {
-	DRAFT = 'DRAFT',
-	PENDING = 'PENDING',
-	ACTIVE = 'ACTIVE',
-	COMPLETED = 'COMPLETED',
-	CANCELLED = 'CANCELLED',
-	EXPIRED = 'EXPIRED',
-}
-
-const statusLabels: Record<ContractStatusEnum, string> = {
-	[ContractStatusEnum.DRAFT]: 'ร่าง',
-	[ContractStatusEnum.PENDING]: 'รอดำเนินการ',
-	[ContractStatusEnum.ACTIVE]: 'ดำเนินการ',
-	[ContractStatusEnum.COMPLETED]: 'เสร็จสิ้น',
-	[ContractStatusEnum.CANCELLED]: 'ยกเลิก',
-	[ContractStatusEnum.EXPIRED]: 'หมดอายุ',
+const statusLabels: Record<ContractStatus, string> = {
+	[ContractStatus.DRAFT]: 'ร่าง',
+	[ContractStatus.PENDING]: 'รอดำเนินการ',
+	[ContractStatus.ACTIVE]: 'ดำเนินการ',
+	[ContractStatus.COMPLETED]: 'เสร็จสิ้น',
+	[ContractStatus.CANCELLED]: 'ยกเลิก',
+	[ContractStatus.EXPIRED]: 'หมดอายุ',
 };
 
 interface ContractsPageProps {
@@ -64,16 +54,16 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	const [currentPage, setCurrentPage] = useState(1);
 	const [itemsPerPage, setItemsPerPage] = useState(10);
 	const [searchQuery, setSearchQuery] = useState('');
-	const [statusFilter, setStatusFilter] = useState<'ทั้งหมด' | ContractStatusEnum>('ทั้งหมด');
+	const [statusFilter, setStatusFilter] = useState<'ทั้งหมด' | ContractStatus>('ทั้งหมด');
 	const [startDate, setStartDate] = useState('');
 	const [endDate, setEndDate] = useState('');
 
 	// Stats calculations
 	const stats = useMemo(() => {
 		const total = contracts.length;
-		const draft = contracts.filter(c => c.status === ContractStatusEnum.DRAFT).length;
-		const active = contracts.filter(c => c.status === ContractStatusEnum.ACTIVE).length;
-		const completed = contracts.filter(c => c.status === ContractStatusEnum.COMPLETED).length;
+		const draft = contracts.filter(c => c.status === ContractStatus.DRAFT).length;
+		const active = contracts.filter(c => c.status === ContractStatus.ACTIVE).length;
+		const completed = contracts.filter(c => c.status === ContractStatus.COMPLETED).length;
 		const totalValue = contracts.reduce((sum, c) => sum + (Number(c.total_amount) || 0), 0);
 
 		return { total, draft, active, completed, totalValue };
@@ -192,89 +182,88 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	};
 
 	return (
-		<div className="space-y-6">
+		<div className="p-4 sm:p-6 lg:p-8 space-y-6">
 			{/* Header */}
-			<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+			<div className="flex flex-wrap items-center justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-bold text-slate-800">ใบสัญญา</h1>
-					<p className="text-slate-500 mt-1">จัดการและติดตามใบสัญญาทั้งหมด พร้อมระบบแบ่งงวดชำระ</p>
+					<h1 className="text-3xl font-bold text-slate-800">ใบสัญญา</h1>
+					<p className="mt-1 text-slate-600">จัดการและติดตามใบสัญญาทั้งหมด พร้อมระบบแบ่งงวดชำระ</p>
 				</div>
 				<Button
 					onClick={() => navigate('/contracts/new')}
-					className="flex items-center gap-2"
+					className="shadow-md shadow-primary/20"
 				>
-					<PlusIcon className="w-5 h-5" />
+					<PlusIcon className="w-5 h-5 mr-2" />
 					สร้างใบสัญญา
 				</Button>
 			</div>
 
 			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-				<Card className="!p-4">
+			<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+				<Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-blue-100 rounded-lg">
-							<DocumentTextIcon className="w-6 h-6 text-blue-600" />
+						<div className="p-2 bg-blue-500 rounded-lg">
+							<DocumentTextIcon className="w-5 h-5 text-white" />
 						</div>
 						<div>
-							<p className="text-sm text-slate-500">สัญญาทั้งหมด</p>
-							<p className="text-xl font-bold text-slate-800">{stats.total}</p>
+							<p className="text-sm text-blue-600 font-medium">สัญญาทั้งหมด</p>
+							<p className="text-2xl font-bold text-blue-800">{stats.total}</p>
 						</div>
 					</div>
 				</Card>
-				<Card className="!p-4">
+				<Card className="!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-slate-100 rounded-lg">
-							<ClockIcon className="w-6 h-6 text-slate-600" />
+						<div className="p-2 bg-slate-500 rounded-lg">
+							<ClockIcon className="w-5 h-5 text-white" />
 						</div>
 						<div>
-							<p className="text-sm text-slate-500">ร่าง</p>
-							<p className="text-xl font-bold text-slate-800">{stats.draft}</p>
+							<p className="text-sm text-slate-600 font-medium">ร่าง</p>
+							<p className="text-2xl font-bold text-slate-800">{stats.draft}</p>
 						</div>
 					</div>
 				</Card>
-				<Card className="!p-4">
+				<Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-amber-100 rounded-lg">
-							<ClockIcon className="w-6 h-6 text-amber-600" />
+						<div className="p-2 bg-amber-500 rounded-lg">
+							<ClockIcon className="w-5 h-5 text-white" />
 						</div>
 						<div>
-							<p className="text-sm text-slate-500">กำลังดำเนินการ</p>
-							<p className="text-xl font-bold text-amber-600">{stats.active}</p>
+							<p className="text-sm text-amber-600 font-medium">กำลังดำเนินการ</p>
+							<p className="text-2xl font-bold text-amber-800">{stats.active}</p>
 						</div>
 					</div>
 				</Card>
-				<Card className="!p-4">
+				<Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-green-100 rounded-lg">
-							<CheckCircleIcon className="w-6 h-6 text-green-600" />
+						<div className="p-2 bg-green-500 rounded-lg">
+							<CheckCircleIcon className="w-5 h-5 text-white" />
 						</div>
 						<div>
-							<p className="text-sm text-slate-500">เสร็จสิ้น</p>
-							<p className="text-xl font-bold text-green-600">{stats.completed}</p>
+							<p className="text-sm text-green-600 font-medium">เสร็จสิ้น</p>
+							<p className="text-2xl font-bold text-green-800">{stats.completed}</p>
 						</div>
 					</div>
 				</Card>
-				<Card className="!p-4">
+				<Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 col-span-2 md:col-span-4 lg:col-span-1">
 					<div className="flex items-center gap-3">
-						<div className="p-2 bg-purple-100 rounded-lg">
-							<CurrencyDollarIcon className="w-6 h-6 text-purple-600" />
+						<div className="p-2 bg-purple-500 rounded-lg">
+							<CurrencyDollarIcon className="w-5 h-5 text-white" />
 						</div>
 						<div>
-							<p className="text-sm text-slate-500">มูลค่ารวม</p>
-							<p className="text-xl font-bold text-purple-600">
-								฿{stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+							<p className="text-sm text-purple-600 font-medium">มูลค่ารวม</p>
+							<p className="text-xl font-bold text-purple-800 truncate" title={`฿${stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}>
+								฿{stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
 							</p>
 						</div>
 					</div>
 				</Card>
 			</div>
 
-			{/* Filters & Table */}
-			<Card
-				className="!p-0"
-				actions={
-					<div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-						<div className="w-full sm:w-64">
+			{/* Toolbar */}
+			<Card className="!p-4">
+				<div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+					<div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
+						<div className="relative flex-1 sm:min-w-[240px]">
 							<Input
 								type="search"
 								placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
@@ -283,97 +272,124 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 									setSearchQuery(e.target.value);
 									setCurrentPage(1);
 								}}
+								className="w-full pl-10"
 							/>
+							<svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
 						</div>
-						<div className="flex items-center gap-2">
+						
+						<div className="flex items-center gap-2 w-full sm:w-auto">
 							<Input
 								type="date"
 								value={startDate}
 								onChange={(e) => setStartDate(e.target.value)}
-								className="w-40"
+								className="w-full sm:w-40"
 							/>
 							<span className="text-slate-400">-</span>
 							<Input
 								type="date"
 								value={endDate}
 								onChange={(e) => setEndDate(e.target.value)}
-								className="w-40"
+								className="w-full sm:w-40"
 							/>
 						</div>
-						<div className="w-full sm:w-48">
-							<Select
-								value={statusFilter}
-								onChange={(e) => {
-									setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatusEnum);
-									setCurrentPage(1);
-								}}
-							>
-								<option value="ทั้งหมด">ทั้งหมด</option>
-								{Object.values(ContractStatusEnum).map((status) => (
-									<option key={status} value={status}>
-										{statusLabels[status]}
-									</option>
-								))}
-							</Select>
-						</div>
 					</div>
-				}
-			>
+
+					<div className="w-full lg:w-48">
+						<Select
+							value={statusFilter}
+							onChange={(e) => {
+								setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatus);
+								setCurrentPage(1);
+							}}
+							className="w-full"
+						>
+							<option value="ทั้งหมด">สถานะทั้งหมด</option>
+							{Object.values(ContractStatus).map((status) => (
+								<option key={status} value={status}>
+									{statusLabels[status]}
+								</option>
+							))}
+						</Select>
+					</div>
+				</div>
+			</Card>
+
+			{/* Table */}
+			<div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
 				<div className="overflow-x-auto">
-					<table className="min-w-full divide-y divide-slate-200">
-						<thead className="bg-slate-50">
-							<tr>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ลำดับ</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">เลขที่สัญญา</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ลูกค้า</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ประเภทบริการ</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ระยะเวลา</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">วันเริ่มต้น</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">วันสิ้นสุด</th>
-								<th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">สถานะ</th>
-								<th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">มูลค่า</th>
-								<th className="relative px-4 py-3"><span className="sr-only">จัดการ</span></th>
+					<table className="min-w-full">
+						<thead>
+							<tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
+								<th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
+								<th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">มูลค่า</th>
+								<th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
 							</tr>
 						</thead>
-						<tbody className="bg-white divide-y divide-slate-200">
+						<tbody className="divide-y divide-slate-100">
 							{paginatedContracts.length === 0 ? (
 								<tr>
-									<td colSpan={10} className="px-4 py-12 text-center text-slate-500">
-										<DocumentTextIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-										<p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
-										<p className="text-sm">ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่</p>
+									<td colSpan={10} className="px-6 py-16 text-center">
+										<div className="flex flex-col items-center text-slate-400">
+											<DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+											<p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
+											<p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่</p>
+										</div>
 									</td>
 								</tr>
 							) : (
 								paginatedContracts.map((c, index) => (
-									<tr key={c.id} className="hover:bg-slate-50 transition-colors">
-										<td className="px-4 py-3 text-sm text-slate-500">
+									<tr key={c.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+										<td className="px-6 py-4 text-sm text-slate-500">
 											{(currentPage - 1) * itemsPerPage + index + 1}
 										</td>
-										<td
-											className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
-											onClick={() => handleViewDetails(c)}
-											title={c.id}
-										>
-											{c.code || `CT-${c.id.slice(0, 8).toUpperCase()}`}
+										<td className="px-6 py-4">
+											<span
+												className="text-sm font-semibold text-primary hover:text-primary-dark cursor-pointer transition-colors"
+												onClick={() => handleViewDetails(c)}
+												title={c.id}
+											>
+												{c.code || `CT-${c.id.slice(0, 8).toUpperCase()}`}
+											</span>
 										</td>
-										<td className="px-4 py-3 text-sm text-slate-700 font-medium">{c.customer_name}</td>
-										<td className="px-4 py-3 text-sm text-slate-500">{c.service_type || '-'}</td>
-										<td className="px-4 py-3 text-sm text-slate-500">{c.contract_duration || '-'}</td>
-										<td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(c.start_date)}</td>
-										<td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(c.end_date)}</td>
-										<td className="px-4 py-3">
-											<StatusBadge status={statusLabels[c.status as ContractStatusEnum] || c.status} />
+										<td className="px-6 py-4">
+											<div className="flex items-center gap-3">
+												<div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+													<span className="text-primary font-bold text-xs">
+														{c.customer_name.charAt(0).toUpperCase()}
+													</span>
+												</div>
+												<div className="min-w-0">
+													<p className="text-sm font-semibold text-slate-800 truncate">
+														{c.customer_name}
+													</p>
+												</div>
+											</div>
 										</td>
-										<td className="px-4 py-3 text-sm text-slate-700 text-right font-semibold">
+										<td className="px-6 py-4 text-sm text-slate-600">{c.service_type || '-'}</td>
+										<td className="px-6 py-4 text-sm text-slate-600">{c.contract_duration || '-'}</td>
+										<td className="px-6 py-4 text-sm text-slate-600">{formatThaiDate(c.start_date)}</td>
+										<td className="px-6 py-4 text-sm text-slate-600">{formatThaiDate(c.end_date)}</td>
+										<td className="px-6 py-4">
+											<StatusBadge status={statusLabels[c.status as ContractStatus] || c.status} />
+										</td>
+										<td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
 											฿{(Number(c.total_amount) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 										</td>
-										<td className="px-4 py-3 text-right">
+										<td className="px-6 py-4 text-right">
 											<Button
 												data-contract-id={c.id}
 												onClick={(e) => handleDropdownToggle(e, c.id)}
-												variant="icon"
-												title="ตัวเลือก"
+												variant="ghost"
+												className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
 											>
 												<ManageIcon className="w-5 h-5" />
 											</Button>
@@ -387,7 +403,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
 				{/* Pagination */}
 				{totalItems > 0 && (
-					<div className="px-4 py-3 border-t border-slate-200">
+					<div className="border-t border-slate-100">
 						<Pagination
 							currentPage={currentPage}
 							totalItems={totalItems}
@@ -397,47 +413,51 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 						/>
 					</div>
 				)}
-			</Card>
+			</div>
 
 			{/* Dropdown Menu (Portal) */}
 			{openDropdownId && dropdownPosition && selectedContract && (
 				<div
 					ref={dropdownRef}
-					className="fixed z-50 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1"
 					style={{
-						top: dropdownPosition.top,
-						left: dropdownPosition.left - 192,
+						position: 'absolute',
+						top: `${dropdownPosition.top}px`,
+						left: `${dropdownPosition.left}px`,
+						transform: 'translateX(-100%)',
 					}}
+					className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
 				>
-					<button
-						onClick={() => handleViewDetails(selectedContract)}
-						className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-					>
-						<EyeIcon className="w-4 h-4" />
-						ดูรายละเอียด
-					</button>
-					<button
-						onClick={() => handleEdit(selectedContract)}
-						className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-					>
-						<PencilIcon className="w-4 h-4" />
-						แก้ไข
-					</button>
-					<button
-						onClick={() => handleCreateInvoice(selectedContract)}
-						className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-slate-50 flex items-center gap-2"
-					>
-						<CurrencyDollarIcon className="w-4 h-4" />
-						สร้างใบแจ้งหนี้
-					</button>
-					<hr className="my-1" />
-					<button
-						onClick={() => handleDeleteClick(selectedContract)}
-						className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-					>
-						<TrashIcon className="w-4 h-4" />
-						ลบ
-					</button>
+					<div className="py-1">
+						<button
+							onClick={() => handleViewDetails(selectedContract)}
+							className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+						>
+							<EyeIcon className="w-4 h-4 text-slate-400" />
+							ดูรายละเอียด
+						</button>
+						<button
+							onClick={() => handleEdit(selectedContract)}
+							className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+						>
+							<PencilIcon className="w-4 h-4 text-slate-400" />
+							แก้ไข
+						</button>
+						<button
+							onClick={() => handleCreateInvoice(selectedContract)}
+							className="w-full px-4 py-2.5 text-left text-sm text-primary hover:bg-slate-50 flex items-center gap-3 transition-colors"
+						>
+							<CurrencyDollarIcon className="w-4 h-4" />
+							สร้างใบแจ้งหนี้
+						</button>
+						<hr className="my-1 border-slate-100" />
+						<button
+							onClick={() => handleDeleteClick(selectedContract)}
+							className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+						>
+							<TrashIcon className="w-4 h-4 text-red-500" />
+							ลบ
+						</button>
+					</div>
 				</div>
 			)}
 
@@ -461,8 +481,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 				onConfirm={handleConfirmDelete}
 				title="ลบใบสัญญา"
 				message={`คุณแน่ใจหรือไม่ว่าต้องการลบใบสัญญา ${selectedContract?.code || selectedContract?.id}?`}
-				confirmText="ลบ"
-				confirmVariant="danger"
+				confirmButtonText="ลบ"
+				confirmButtonClass="bg-red-600 hover:bg-red-700"
 			/>
 		</div>
 	);

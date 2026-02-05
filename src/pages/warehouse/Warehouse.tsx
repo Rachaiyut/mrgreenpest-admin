@@ -119,7 +119,7 @@ const Warehouse: React.FC = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await ProductApi.getProducts({ page: 1, limit: 100 });
+      const res = await ProductApi.getProducts({ page: 1, limit: 1000 });
       setProducts(res.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -202,6 +202,10 @@ const Warehouse: React.FC = () => {
     warehouseId: string,
     limits: { [productId: string]: number }
   ) => {
+    if (!warehouseId) {
+      console.error('Cannot update limits: Warehouse ID is missing');
+      return;
+    }
     try {
       const limitsArray = Object.entries(limits).map(
         ([productId, max_quantity]) => ({
@@ -214,10 +218,12 @@ const Warehouse: React.FC = () => {
       // Fetch the authoritative warehouse (in case backend enriches / transforms limits)
       try {
         const full = await WarehouseApi.getWarehouseById(warehouseId);
-        setWarehouses((prev) => prev.map((w) => (w.id === warehouseId ? (full as any) : w)));
-        setWarehouseForLimits((prev) =>
-          prev && prev.id === warehouseId ? (full as any) : prev
-        );
+        if (full && full.id) {
+          setWarehouses((prev) => prev.map((w) => (w.id === warehouseId ? (full as any) : w)));
+          setWarehouseForLimits((prev) =>
+            prev && prev.id === warehouseId ? (full as any) : prev
+          );
+        }
       } catch (e) {
         console.error('Failed to refetch warehouse after limits update; falling back to local state', e);
         // Fallback: update local state with what we just sent
@@ -318,6 +324,10 @@ const Warehouse: React.FC = () => {
   };
 
   const handleSetLimits = async (warehouse: WarehouseType) => {
+    if (!warehouse?.id) {
+      console.error('Cannot set limits: Warehouse ID is missing', warehouse);
+      return;
+    }
     setOpenDropdownId(null);
     setIsLimitModalOpen(true);
     setWarehouseForLimits(null);
@@ -325,7 +335,11 @@ const Warehouse: React.FC = () => {
     // Ensure we have latest withdrawal_limits from API (list endpoint may omit).
     try {
       const full = await WarehouseApi.getWarehouseById(warehouse.id);
-      setWarehouseForLimits(full as any);
+      if (full && full.id) {
+        setWarehouseForLimits(full as any);
+      } else {
+        throw new Error('Warehouse data is invalid or missing ID');
+      }
     } catch (e) {
       console.error('Failed to fetch warehouse limits', warehouse.id, e);
       // Fallback to whatever we already had.

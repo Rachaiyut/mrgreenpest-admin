@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
@@ -20,7 +21,7 @@ import {
   Withdrawal as WithdrawalType,
   Warehouse as WarehouseEntity,
 } from '@/src/types/entity/inventory.interface';
-import { WarehouseType } from '@/src/types/enums/inventory';
+import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
 import {
   Status,
   User,
@@ -53,9 +54,13 @@ const Withdrawals: React.FC = () => {
     try {
       await handlers.withdrawals.create(data);
       // Optional: Show success toast
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create withdrawal', error);
-      // Optional: Show error toast
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert('ไม่สามารถสร้างใบเบิกได้');
+      }
     }
   };
 
@@ -219,7 +224,9 @@ const Withdrawals: React.FC = () => {
       onUpdateWithdrawal({
         ...withdrawalToUpdate,
         status:
-          approvalAction === 'approve' ? Status.Approved : Status.Rejected,
+          approvalAction === 'approve'
+            ? WithdrawalStatus.APPROVED
+            : WithdrawalStatus.REJECTED,
         notes: remarks,
         // approvedBy: 'ผู้ดูแลระบบ', // Mock approver - field might not exist in type
         updated_by: 'ผู้ดูแลระบบ',
@@ -235,7 +242,7 @@ const Withdrawals: React.FC = () => {
     if (withdrawalToUpdate) {
       onUpdateWithdrawal({
         ...withdrawalToUpdate,
-        status: Status.Cancelled,
+        status: WithdrawalStatus.CANCELLED,
         notes: 'ยกเลิกโดยผู้ใช้',
       });
     }
@@ -294,7 +301,13 @@ const Withdrawals: React.FC = () => {
     ];
 
     // Allow editing for Draft and PendingApproval statuses
-    if (withdrawal.status === Status.Draft || withdrawal.status === Status.PendingApproval) {
+    // Check both Enum values (DRAFT, PENDING) and Thai strings (Status.Draft, Status.PendingApproval) for compatibility
+    if (
+      withdrawal.status === WithdrawalStatus.DRAFT ||
+      withdrawal.status === WithdrawalStatus.PENDING ||
+      withdrawal.status === Status.Draft ||
+      withdrawal.status === Status.PendingApproval
+    ) {
       actions.push(
         <a
           key="edit"
@@ -312,7 +325,10 @@ const Withdrawals: React.FC = () => {
       );
     }
 
-    if (withdrawal.status === Status.PendingApproval) {
+    if (
+      withdrawal.status === WithdrawalStatus.PENDING ||
+      withdrawal.status === Status.PendingApproval
+    ) {
       actions.push(
         <a
           key="approve"
@@ -625,7 +641,7 @@ const Withdrawals: React.FC = () => {
                         <StatusBadge status={withdrawal.status} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {withdrawal.created_by}
+                        {userMap.get(withdrawal.created_by) || withdrawal.created_by}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {recipientName}
@@ -665,7 +681,7 @@ const Withdrawals: React.FC = () => {
         </Card>
       </div>
 
-      {openDropdownId && dropdownPosition && (
+      {openDropdownId && dropdownPosition && createPortal(
         <div
           ref={dropdownRef}
           style={{
@@ -674,14 +690,15 @@ const Withdrawals: React.FC = () => {
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]"
           role="menu"
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
             {renderActions()}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <AddWithdrawalModal
@@ -712,6 +729,7 @@ const Withdrawals: React.FC = () => {
         withdrawal={selectedWithdrawal}
         warehouses={warehouses}
         products={products}
+        users={users}
       />
       <EditWithdrawalModal
         isOpen={isEditModalOpen}

@@ -29,12 +29,28 @@ export const SetWithdrawalLimitModal: React.FC<
 
   useEffect(() => {
     if (warehouse) {
+      console.log('SetWithdrawalLimitModal: warehouse updated', warehouse);
       const initialLimits: { [productId: string]: number | '' } = {};
 
       if (Array.isArray(warehouse.withdrawal_limits)) {
+        console.log('SetWithdrawalLimitModal: found limits', warehouse.withdrawal_limits);
         warehouse.withdrawal_limits.forEach((limit) => {
-          initialLimits[limit.product_id] = limit.max_quantity;
+          if (limit.product_id) {
+             initialLimits[limit.product_id] = Number(limit.max_quantity);
+          }
         });
+      } else {
+        console.log('SetWithdrawalLimitModal: no limits array found');
+      }
+
+      console.log('SetWithdrawalLimitModal: initialLimits', initialLimits);
+      
+      // Debug: Check for ID match
+      if (availableProducts.length > 0) {
+        const sampleProd = availableProducts[0];
+        console.log('SetWithdrawalLimitModal: Sample Product ID', sampleProd.id);
+        console.log('SetWithdrawalLimitModal: Is Sample in Limits?', sampleProd.id in initialLimits);
+        console.log('SetWithdrawalLimitModal: Limit keys', Object.keys(initialLimits));
       }
 
       setLimits(initialLimits);

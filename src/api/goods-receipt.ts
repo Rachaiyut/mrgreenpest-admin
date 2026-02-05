@@ -35,6 +35,11 @@ class GoodsReceiptService extends AuthService {
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async updateStatus(id: string, data: Partial<GoodsReceipt>): Promise<GoodsReceipt> {
+    const res = await this.http.patch<GoodsReceipt>(`${this.path}/${id}/status`, data);
+    return res.data;
+  }
 }
 
 export const GoodsReceiptApi = new GoodsReceiptService();

@@ -42,8 +42,8 @@ class WarehouseService extends AuthService {
   }
 
   async getWarehouseById(id: string): Promise<Warehouse> {
-    const res = await this.http.get<Warehouse>(`${this.path}/${id}`);
-    return res.data;
+    const res = await this.http.get<any>(`${this.path}/${id}`);
+    return res.data.data;
   }
 
   async create(data: Omit<Warehouse, 'id'>): Promise<Warehouse> {

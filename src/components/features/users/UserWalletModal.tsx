@@ -1,62 +1,110 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import {
   User,
   UserWallet,
-  WalletTransaction,
 } from '@/src/types/entity/app.interface';
-import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { FormField, Input, Button } from '../../common/FormControls';
 import { formatThaiDateTime } from '../../../utils/date';
-import { PlusIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, PencilIcon } from '../../../assets/icons/Icons';
+import { UserApi } from '../../../api/user';
 
 interface UserWalletModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  wallet: UserWallet;
-  onCreateTransaction: (
-    userId: string,
-    transactionData: Omit<WalletTransaction, 'id'>
-  ) => void;
 }
 
 export const UserWalletModal: React.FC<UserWalletModalProps> = ({
   isOpen,
   onClose,
   user,
-  wallet,
-  onCreateTransaction,
 }) => {
   const [showForm, setShowForm] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState<number | ''>('');
 
+  const [showLimitForm, setShowLimitForm] = useState(false);
+  const [limitAmount, setLimitAmount] = useState<number | ''>('');
+
+  const [wallet, setWallet] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && user) {
+      fetchWallet();
+    }
+  }, [isOpen, user]);
+
+  const fetchWallet = async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const data = await UserApi.getWallet(user.id);
+      setWallet(data);
+      setLimitAmount(data.expense_limit || 0);
+    } catch (error) {
+      console.error('Failed to fetch wallet:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const balance = useMemo(() => {
-    return wallet.transactions.reduce((acc, txn) => {
-      return txn.type === 'รายรับ' ? acc + txn.amount : acc - txn.amount;
-    }, 0);
-  }, [wallet.transactions]);
+    if (wallet && 'balance' in wallet) {
+      return wallet.balance;
+    }
+    return 0;
+  }, [wallet]);
 
   const sortedTransactions = useMemo(() => {
+    if (!wallet || !wallet.transactions) return [];
     return [...wallet.transactions].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-  }, [wallet.transactions]);
+  }, [wallet]);
 
-  const handleAddTransaction = (e: React.FormEvent) => {
+  const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
-    // FIX: Cast amount to a number before comparison to handle cases where it's an empty string.
     if (user && description && Number(amount) > 0) {
-      onCreateTransaction(user.id, {
-        date: new Date().toISOString(),
-        description,
-        type: 'รายจ่าย',
-        amount: Number(amount),
-      });
-      // Reset form
-      setDescription('');
-      setAmount('');
-      setShowForm(false);
+      try {
+        await UserApi.createExpense(user.id, {
+          description,
+          amount: Number(amount),
+        });
+
+        // Refresh wallet
+        await fetchWallet();
+
+        // Reset form
+        setDescription('');
+        setAmount('');
+        setShowForm(false);
+      } catch (error: any) {
+        console.error('Failed to create expense:', error);
+        if (error.response && error.response.data && error.response.data.message) {
+            alert(error.response.data.message);
+        } else {
+            alert('ไม่สามารถบันทึกรายการได้');
+        }
+      }
+    }
+  };
+
+  const handleUpdateLimit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (user) {
+      try {
+        await UserApi.update(user.id, {
+          expense_limit: Number(limitAmount),
+        });
+
+        // Refresh wallet
+        await fetchWallet();
+        setShowLimitForm(false);
+      } catch (error) {
+        console.error('Failed to update limit:', error);
+      }
     }
   };
 
@@ -80,7 +128,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
       }
     >
       <div className="space-y-6">
-        <div className="p-4 bg-primary/10 rounded-lg text-center">
+        <div className="p-4 bg-primary/10 rounded-lg text-center relative">
           <p className="text-sm font-medium text-primary/80">ยอดเงินคงเหลือ</p>
           <p className="text-4xl font-bold text-primary">
             ฿
@@ -89,7 +137,56 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
               maximumFractionDigits: 2,
             })}
           </p>
+
+          <button
+            onClick={() => setShowLimitForm(!showLimitForm)}
+            className="absolute top-4 right-4 text-primary hover:text-primary/80 flex items-center gap-1 text-sm font-medium"
+          >
+            <PencilIcon className="w-4 h-4" />
+            แก้ไขวงเงิน
+          </button>
         </div>
+
+        {showLimitForm && (
+          <form
+            onSubmit={handleUpdateLimit}
+            className="p-4 border rounded-lg bg-slate-50 space-y-4"
+          >
+            <h3 className="font-semibold text-slate-800">
+              แก้ไขวงเงินอนุมัติ
+            </h3>
+            <FormField label="วงเงิน (บาท)" htmlFor="limit-amount">
+              <Input
+                id="limit-amount"
+                type="number"
+                value={limitAmount}
+                onChange={(e) =>
+                  setLimitAmount(e.target.value === '' ? '' : Number(e.target.value))
+                }
+                min="0"
+                step="0.01"
+                required
+              />
+            </FormField>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                onClick={() => setShowLimitForm(false)}
+                className="py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold"
+                variant="secondary"
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="submit"
+                className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold"
+                variant="primary"
+              >
+                บันทึกวงเงิน
+              </Button>
+            </div>
+          </form>
+        )}
 
         <div className="flex justify-end">
           <Button
@@ -170,7 +267,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {sortedTransactions.length > 0 ? (
-                  sortedTransactions.map((txn) => (
+                  sortedTransactions.map((txn: any) => (
                     <tr key={txn.id}>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {formatThaiDateTime(txn.date)}
@@ -179,7 +276,8 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                         {txn.description}
                       </td>
                       <td
-                        className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-right ${txn.type === 'รายรับ' ? 'text-green-600' : 'text-red-600'}`}
+                        className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-right ${txn.type === 'รายรับ' ? 'text-green-600' : 'text-red-600'
+                          }`}
                       >
                         {txn.type === 'รายรับ' ? '+' : '-'}
                         {txn.amount.toLocaleString('th-TH', {
@@ -195,7 +293,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                       colSpan={3}
                       className="text-center py-10 text-slate-500"
                     >
-                      ยังไม่มีรายการ
+                      {loading ? 'กำลังโหลด...' : 'ยังไม่มีรายการ'}
                     </td>
                   </tr>
                 )}
@@ -207,5 +305,3 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
     </Modal>
   );
 };
-
-

@@ -13,7 +13,8 @@ export const FormField: FC<{
   label: string;
   children: ReactNode;
   htmlFor?: string;
-}> = ({ label, children, htmlFor }) => {
+  className?: string;
+}> = ({ label, children, htmlFor, className }) => {
   const isRequired = Children.toArray(children).some(
     // FIX: Property 'required' does not exist on type 'unknown'. Cast child.props to any to check for the required prop.
     (child) => isValidElement(child) && (child.props as any).required
@@ -40,7 +41,7 @@ export const FormField: FC<{
   }
 
   return (
-    <div>
+    <div className={className}>
       <label
         htmlFor={htmlFor}
         className="block text-sm font-medium text-slate-700 mb-1"

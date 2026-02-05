@@ -23,6 +23,14 @@ import {
   ArrowRightIcon,
   TrashIcon,
   ManageIcon,
+  CalendarDaysIcon,
+  PlayIcon,
+  ClipboardDocumentListIcon,
+  DocumentCheckIcon,
+  JobDateIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  CheckCircleIcon,
 } from '@/src/assets/icons/Icons';
 import { Pagination } from '@/src/components/common/Pagination';
 import { formatThaiDate } from '@/src/utils/date';
@@ -109,6 +117,32 @@ const Assessments: React.FC = () => {
     );
   }, [customers]);
 
+  // Stats Calculations
+  const stats = useMemo(() => {
+    const total = assessments.length;
+
+    const draft = assessments.filter(
+      (a) => a.status === AsessmentStatus.DRAFT
+    ).length;
+
+    const pending = assessments.filter(
+      (a) =>
+        a.status === AsessmentStatus.PENDING ||
+        a.status === AsessmentStatus.APPOINTMENT
+    ).length;
+
+    const completed = assessments.filter(
+      (a) => a.status === AsessmentStatus.COMPLETE
+    ).length;
+
+    return {
+      total,
+      draft,
+      pending,
+      completed,
+    };
+  }, [assessments]);
+
   const reversedAssessments = useMemo(
     () => [...assessments].reverse(),
     [assessments]
@@ -192,6 +226,23 @@ const Assessments: React.FC = () => {
       fetchData();
     } catch (error) {
       console.error('Error creating assessment:', error);
+    }
+  };
+
+  const handleExportPdf = async (assessment: Assessment) => {
+    try {
+      setIsLoading(true);
+      const blob = await AssessmentApi.exportPdf(assessment.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      
+      // Cleanup after a delay to ensure it opened
+      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      alert('ไม่สามารถดาวน์โหลด PDF ได้');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -294,6 +345,11 @@ const Assessments: React.FC = () => {
           onClick: () => handleViewDetails(selectedAssessment),
         },
         {
+          label: 'พิมพ์ใบประเมิน',
+          icon: DocumentTextIcon,
+          onClick: () => handleExportPdf(selectedAssessment),
+        },
+        {
           label: 'แก้ไข',
           icon: PencilIcon,
           onClick: () => handleEdit(selectedAssessment),
@@ -335,218 +391,299 @@ const Assessments: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Header Section */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ใบประเมิน</h1>
-            <p className="mt-1 text-slate-600">
-              ติดตามและจัดการใบประเมินบริการตั้งแต่ต้นจนจบ
-            </p>
+            <p className="mt-1 text-slate-600">จัดการและติดตามใบประเมินทั้งหมด</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
-              <Input
-                type="search"
-                placeholder="ค้นหา (ลูกค้า, ประเภท, บริการ, วันที่)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset page on search
-                }}
-                title="ค้นหาด้วย: รหัส/ชื่อลูกค้า, ประเภทสิ่งปลูกสร้าง, ประเภทบริการ, วันที่นัดหมาย"
-              />
-            </div>
-            <div className="flex items-center rounded-lg bg-slate-200 p-1">
-              <Button
-                onClick={() => setView('list')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-              >
-                <ListBulletIcon className="h-5 w-5" />
-              </Button>
-              <Button
-                onClick={() => setView('kanban')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-              >
-                <ViewColumnsIcon className="h-5 w-5" />
-              </Button>
-            </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างใบประเมิน
-            </Button>
-          </div>
+          <Button
+            onClick={() => setIsAddModalOpen(true)}
+            variant="primary"
+            className="shadow-md shadow-primary/20"
+          >
+            <PlusIcon className="h-5 w-5" />
+            สร้างใบประเมิน
+          </Button>
         </div>
 
-        {view === 'kanban' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {kanbanColumns.map((col) => (
-              <div
-                key={col.title}
-                className="bg-slate-100 rounded-lg p-4 h-fit"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold text-slate-700 truncate">
-                    {col.title}
-                  </h2>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-semibold bg-sky-100 text-sky-800">
-                    {col.assessments.length}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {col.assessments.map((assessment) => (
-                    <AssessmentCard
-                      key={assessment.id}
-                      assessment={assessment}
-                      customerName={customerMap.get(assessment.customer_id)}
-                      onDropdownToggle={handleDropdownToggle}
-                      onViewDetails={handleViewDetails}
-                    />
-                  ))}
-                  {col.assessments.length === 0 && (
-                    <div className="flex items-center justify-center h-24 text-sm text-slate-500 rounded-lg border-2 border-dashed border-slate-300">
-                      ไม่มีใบประเมิน
-                    </div>
-                  )}
-                </div>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <DocumentTextIcon className="h-5 w-5 text-white" />
               </div>
-            ))}
+              <div>
+                <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
+                <p className="text-2xl font-bold text-blue-800">{stats.total}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-slate-500 rounded-lg">
+                <PencilIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-slate-600 font-medium">แบบร่าง</p>
+                <p className="text-2xl font-bold text-slate-800">{stats.draft}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <ClockIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-amber-600 font-medium">รอดำเนินการ</p>
+                <p className="text-2xl font-bold text-amber-800">{stats.pending}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <CheckCircleIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-green-600 font-medium">เสร็จสิ้น</p>
+                <p className="text-2xl font-bold text-green-800">{stats.completed}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto flex-1">
+              <div className="relative flex-1 sm:max-w-xs">
+                <Input
+                  type="search"
+                  placeholder="ค้นหา (ลูกค้า, ประเภท, บริการ, วันที่)..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-lg bg-slate-100 p-1">
+                <Button
+                  onClick={() => setView('kanban')}
+                  variant="ghost"
+                  className={`p-2 rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                  title="มุมมอง Kanban"
+                >
+                  <ViewColumnsIcon className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={() => setView('list')}
+                  variant="ghost"
+                  className={`p-2 rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'}`}
+                  title="มุมมองรายการ"
+                >
+                  <ListBulletIcon className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        ) : (
-          <Card className="!p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ลำดับ
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      รหัสใบประเมิน
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ลูกค้า
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      รหัสลูกค้า
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      วันที่นัดหมาย
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ประเภทสิ่งปลูกสร้าง
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ประเภทบริการ
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      สถานะ
-                    </th>
-                    <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ค่าใช้จ่ายประมาณการ
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ผู้สร้าง
-                    </th>
-                    <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                      ผู้แก้ไข
-                    </th>
-                    <th className="relative px-4 py-2.5">
-                      <span className="sr-only">จัดการ</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {paginatedAssessments.map((assessment, index) => {
-                    const allServiceTypes = [
-                      ...new Set(
-                        assessment.assessment_areas.flatMap(
-                          (area) => area.category_services || []
-                        )
-                      ),
-                    ];
-                    const allBuildingTypes = [
-                      ...new Set(
-                        assessment.assessment_areas
-                          .map((area) => area.building_type)
-                          .filter(Boolean)
-                      ),
-                    ];
-                    return (
-                      <tr key={assessment.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {assessment.code || assessment.id}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {customerMap.get(assessment.customer_id) || '-'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.customer_id}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {2026}
-                        </td>
-                        <td
-                          className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm"
-                          title={allBuildingTypes.join(', ')}
-                        >
-                          {allBuildingTypes.join(', ')}
-                        </td>
-                        <td
-                          className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm"
-                          title={allServiceTypes.join(', ')}
-                        >
-                          {allServiceTypes.join(', ')}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <StatusBadge status={assessment.status as any} />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
-                          ฿
-                          {assessment.total_price.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.created_by}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                          {assessment.updated_by}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="inline-block text-left">
+        </Card>
+
+        <div className="flex-grow min-h-0">
+          {view === 'kanban' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+              {kanbanColumns.map((col) => (
+                <div
+                  key={col.title}
+                  className="bg-slate-100/80 rounded-xl p-4 flex flex-col min-h-[500px]"
+                >
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        col.title === AsessmentStatus.DRAFT ? 'bg-slate-400' :
+                        col.title === AsessmentStatus.APPOINTMENT ? 'bg-blue-500' :
+                        col.title === AsessmentStatus.PENDING ? 'bg-amber-500' :
+                        'bg-green-500'
+                      }`} />
+                      <h3 className="font-bold text-slate-700 text-sm truncate">
+                        {col.title === AsessmentStatus.DRAFT ? 'แบบร่าง' :
+                         col.title === AsessmentStatus.APPOINTMENT ? 'นัดหมายแล้ว' :
+                         col.title === AsessmentStatus.PENDING ? 'รอดำเนินการ' :
+                         col.title === AsessmentStatus.COMPLETE ? 'เสร็จสิ้น' :
+                         col.title}
+                      </h3>
+                    </div>
+                    <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
+                      {col.assessments.length}
+                    </span>
+                  </div>
+                  <div className="space-y-3 flex-grow">
+                    {col.assessments.map((assessment) => (
+                      <AssessmentCard
+                        key={assessment.id}
+                        assessment={assessment}
+                        customerName={customerMap.get(assessment.customer_id)}
+                        onDropdownToggle={handleDropdownToggle}
+                        onViewDetails={handleViewDetails}
+                      />
+                    ))}
+                    {col.assessments.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-10 text-slate-400 h-full">
+                        <ClipboardDocumentListIcon className="h-10 w-10 mb-2 opacity-50" />
+                        <p className="text-sm">ไม่มีใบประเมิน</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ลำดับ
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        รหัสใบประเมิน
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ลูกค้า
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        วันที่นัดหมาย
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ประเภท
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        สถานะ
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ค่าใช้จ่าย
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        จัดการ
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {paginatedAssessments.map((assessment, index) => {
+                      const allServiceTypes = [
+                        ...new Set(
+                          assessment.assessment_areas.flatMap(
+                            (area) => area.category_services || []
+                          )
+                        ),
+                      ];
+                      const allBuildingTypes = [
+                        ...new Set(
+                          assessment.assessment_areas
+                            .map((area) => area.building_type)
+                            .filter(Boolean)
+                        ),
+                      ];
+                      return (
+                        <tr key={assessment.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-semibold text-primary">
+                              {assessment.code || assessment.id}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-primary font-bold text-xs">
+                                  {(customerMap.get(assessment.customer_id) || '?').charAt(0).toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-800 truncate">
+                                  {customerMap.get(assessment.customer_id) || '-'}
+                                </p>
+                                <p className="text-xs text-slate-500 truncate">
+                                  {assessment.customer_id}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1 bg-blue-50 rounded">
+                                <JobDateIcon className="h-3.5 w-3.5 text-blue-500" />
+                              </div>
+                              <span className="text-sm text-slate-700">
+                                {formatThaiDate(new Date(assessment.appointment_date).toDateString())}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-medium text-slate-700">
+                                {allBuildingTypes.join(', ') || '-'}
+                              </span>
+                              <span className="text-xs text-slate-500">
+                                {allServiceTypes.join(', ') || '-'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <StatusBadge status={assessment.status as any} />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">
+                            ฿{assessment.total_price.toLocaleString('th-TH', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
                             <Button
                               data-assessment-id={assessment.id}
                               onClick={(e) =>
                                 handleDropdownToggle(e, assessment.id)
                               }
-                              variant="icon"
-                              title="ตัวเลือก"
+                              variant="ghost"
+                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
                             >
                               <ManageIcon className="h-5 w-5" />
                             </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {paginatedAssessments.length > 0 && (
+                <div className="border-t border-slate-100">
+                  <Pagination
+                    currentPage={currentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={totalItems}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={handleItemsPerPageChange}
+                  />
+                </div>
+              )}
             </div>
-            <Pagination
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </Card>
-        )}
+          )}
+        </div>
       </div>
       {openDropdownId && dropdownPosition && (
         <div
@@ -557,11 +694,11 @@ const Assessments: React.FC = () => {
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
         >
-          <div className="py-1" role="none">
+          <div className="py-2" role="none">
             {renderActions()}
           </div>
         </div>
@@ -602,17 +739,20 @@ const Assessments: React.FC = () => {
         onConfirm={handleConfirmDelete}
         title="ยืนยันการลบ"
         message={
-          <p>
+          <div className="text-slate-600">
             คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินนี้?
             <br />
             {assessmentToDelete &&
-              `รหัส: ${assessmentToDelete.code || assessmentToDelete.id}`}
+              <span className="font-semibold text-slate-800 mt-2 block">
+                รหัส: {assessmentToDelete.code || assessmentToDelete.id}
+              </span>
+            }
             <br />
             การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
+          </div>
         }
         confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
     </>
   );

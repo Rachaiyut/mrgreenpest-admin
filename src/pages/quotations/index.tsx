@@ -46,6 +46,7 @@ import { QuotationModal } from '../../components/features/quotations/QuotationMo
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
+import { QuotationApi } from '../../api/quotation';
 
 interface QuotationsPageProps {
     onCreateQuotation?: (data: Omit<Quotation, 'id'>, assessmentId?: string) => void;
@@ -60,8 +61,26 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     onDeleteQuotation,
     onReviseQuotation,
 }) => {
-    const { quotations, customers } = useData();
+    const { customers } = useData();
+    const [quotations, setQuotations] = useState<Quotation[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
+
+    const fetchQuotations = async () => {
+        setIsLoading(true);
+        try {
+            const res = await QuotationApi.getAll({ limit: 100 });
+            setQuotations(res.data || []);
+        } catch (error) {
+            console.error('Failed to fetch quotations:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchQuotations();
+    }, []);
 
     // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -218,12 +237,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         try {
             if (modalMode === 'create') {
                 if (onCreateQuotation) await onCreateQuotation(data, selectedAssessmentId || undefined);
+                else await QuotationApi.create(data);
             } else if (modalMode === 'edit' && selectedQuotation) {
                 if (onUpdateQuotation) await onUpdateQuotation({ ...selectedQuotation, ...data });
+                else await QuotationApi.update(selectedQuotation.id, data);
             } else if (modalMode === 'revise') {
                 if (onCreateQuotation) await onCreateQuotation(data);
+                else await QuotationApi.create(data); // Revise is technically creating a new one
             }
             setIsModalOpen(false);
+            fetchQuotations(); // Refresh data after mutation
         } catch (err) {
             console.error(err);
         }
@@ -235,8 +258,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     };
 
     const handleConfirmDelete = async () => {
-        if (selectedQuotation && onDeleteQuotation) {
-            await onDeleteQuotation(selectedQuotation.id);
+        if (selectedQuotation) {
+            if (onDeleteQuotation) await onDeleteQuotation(selectedQuotation.id);
+            else await QuotationApi.delete(selectedQuotation.id);
+            fetchQuotations(); // Refresh data after delete
         }
         setIsDeleteModalOpen(false);
         setSelectedQuotation(null);
