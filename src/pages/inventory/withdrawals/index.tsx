@@ -36,17 +36,7 @@ import { Input, Select, Button } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
 
-interface WithdrawalsProps {
-  onCreateWithdrawal: (data: Omit<WithdrawalType, 'id'>) => void;
-  onUpdateWithdrawal: (updatedItem: WithdrawalType) => void;
-  onDeleteWithdrawal: (id: string) => void;
-}
-
-const Withdrawals: React.FC<WithdrawalsProps> = ({
-  onCreateWithdrawal,
-  onUpdateWithdrawal,
-  onDeleteWithdrawal,
-}) => {
+const Withdrawals: React.FC = () => {
   const {
     withdrawals,
     users,
@@ -56,7 +46,36 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
     products,
     assessments,
     contracts,
+    handlers,
   } = useData();
+
+  const onCreateWithdrawal = async (data: Omit<WithdrawalType, 'id'>) => {
+    try {
+      await handlers.withdrawals.create(data);
+      // Optional: Show success toast
+    } catch (error) {
+      console.error('Failed to create withdrawal', error);
+      // Optional: Show error toast
+    }
+  };
+
+  const onUpdateWithdrawal = async (updatedItem: WithdrawalType) => {
+    try {
+      await handlers.withdrawals.update(updatedItem);
+      // Optional: Show success toast
+    } catch (error) {
+      console.error('Failed to update withdrawal', error);
+    }
+  };
+
+  const onDeleteWithdrawal = async (id: string) => {
+    try {
+      await handlers.withdrawals.delete(id);
+      // Optional: Show success toast
+    } catch (error) {
+      console.error('Failed to delete withdrawal', error);
+    }
+  };
 
   const stockMap = useMemo(() => new Map<string, Map<string, number>>(), []);
   const currentUser = users.length > 0 ? users[0] : null;
@@ -118,7 +137,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
           return sum + (product ? product.price * item.quantity : 0);
         }, 0) || 0;
         const totalExpenseAmount =
-          withdrawal.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0;
+          withdrawal.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
         const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
         const productNames = (withdrawal.items || [])
@@ -403,7 +422,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
               return sum + (product ? product.price * item.quantity : 0);
             }, 0) || 0;
             const totalExpenseAmount =
-              withdrawal.expenses?.reduce((sum, exp) => sum + exp.amount, 0) ||
+              withdrawal.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) ||
               0;
             const totalAmount = totalGoodsAmount + totalExpenseAmount;
             const recipientName = withdrawal.recipient_id
@@ -567,7 +586,7 @@ const Withdrawals: React.FC<WithdrawalsProps> = ({
                   ) || 0;
                   const totalExpenseAmount =
                     withdrawal.expenses?.reduce(
-                      (sum, exp) => sum + exp.amount,
+                      (sum, exp) => sum + Number(exp.amount),
                       0
                     ) || 0;
                   const totalAmount = totalGoodsAmount + totalExpenseAmount;

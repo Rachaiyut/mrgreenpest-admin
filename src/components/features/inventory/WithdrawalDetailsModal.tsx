@@ -48,7 +48,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
   );
 
   const totalExpenseAmount = useMemo(
-    () => withdrawal?.expenses?.reduce((sum, exp) => sum + exp.amount, 0) || 0,
+    () => withdrawal?.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0,
     [withdrawal?.expenses]
   );
 
@@ -89,7 +89,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">เลขที่ใบเบิก</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {withdrawal.id}
+                {withdrawal.code}
               </dd>
             </div>
             <div>

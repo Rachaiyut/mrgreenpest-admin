@@ -240,7 +240,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                     withdrawal.expenses.map((exp, index) => ({
                         id: `exp-${index}-${Date.now()}`,
                         description: exp.description,
-                        amount: exp.amount,
+                        amount: exp.amount, // Keep as is, Input usually handles string/number. Or Number(exp.amount) if strict.
                     }))
                 );
             } else {

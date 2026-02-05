@@ -1,7 +1,7 @@
 import { lazy, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { DataContextType } from '../contexts/DataContext';
-import Product from '../pages/inventory';
+// import Product from '../pages/inventory';
 
 // Lazy Imports
 const Dashboard = lazy(() => import('../pages/dashboard'));
@@ -18,7 +18,7 @@ const CreateQuotationPage = lazy(() => import('../pages/financials/CreateQuotati
 // DetailQuotationPage was used in /quotations/:id.
 
 const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
-const Inventory = lazy(() => import('../pages/inventory'));
+// const Inventory = lazy(() => import('../pages/inventory'));
 const Users = lazy(() => import('../pages/users'));
 const Warehouse = lazy(() => import('../pages/warehouse/Warehouse'));
 const GoodsReceipt = lazy(() => import('../pages/inventory/goods-receipt'));
@@ -191,7 +191,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     },
     {
       path: '/products',
-      element: <Product />,
+      element: <div>Products Page (Not Found)</div>, // <Product />
       roles: [Role.SUPERADMIN, Role.ADMIN],
     },
     {
@@ -239,9 +239,9 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       path: '/withdrawals',
       element: (
         <Withdrawals
-          onCreateWithdrawal={handlers.withdrawals.create}
-          onUpdateWithdrawal={handlers.withdrawals.update}
-          onDeleteWithdrawal={handlers.withdrawals.delete}
+        // onCreateWithdrawal={handlers.withdrawals.create}
+        // onUpdateWithdrawal={handlers.withdrawals.update}
+        // onDeleteWithdrawal={handlers.withdrawals.delete}
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],

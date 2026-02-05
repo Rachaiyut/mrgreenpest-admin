@@ -9,14 +9,13 @@ import {
   AssessmentWorkArea,
   Customer,
   Category,
+  AssessmentInstallment,
 } from '@/src/types/entity/app.interface';
 import { ServiceSystem, AsessmentStatus } from '@/src/types/enums/assessment';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
 import { WorkAreaForm } from './WorkAreaForm';
 import { SearchableSelect } from '../../common/SearchableSelect';
-
-// ... (existing imports)
 
 interface EditAssessmentModalProps {
   isOpen: boolean;
@@ -54,6 +53,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
+  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
 
   // Use packages prop directly - filter to only those with price tiers
   const suggestedPackageOptions = useMemo(() => {
@@ -84,6 +84,22 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
   };
 
+  const handleInstallmentAmountChange = (index: number, amount: number) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], amount };
+      return newInst;
+    });
+  };
+
+  const handleInstallmentNoteChange = (index: number, note: string) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], note };
+      return newInst;
+    });
+  };
+
   useEffect(() => {
     if (assessment && isOpen) {
       const { assessment_areas, ...rest } = assessment;
@@ -102,6 +118,14 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       // but if logic was work_area based, we might need to check work_areas.
       // Current interface has package_id on Assessment.
       setSelectedPackageId(assessment.package_id || null);
+
+      if (assessment.installments && assessment.installments.length > 0) {
+        setInstallments(assessment.installments.map(i => ({ ...i })));
+      } else if (assessment.payment_condition === PaymentMethod.INSTALLMENT && assessment.payment_installment_count) {
+        setInstallments([]);
+      } else {
+        setInstallments([]);
+      }
 
       const rawAreas = assessment_areas || assessment.assessment_areas || [];
 
@@ -145,6 +169,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       setFormData({});
       setWorkAreas([]);
       setOriginalWorkAreas([]);
+      setInstallments([]);
     }
   }, [assessment, isOpen, products]);
 
@@ -152,6 +177,39 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
     [workAreas]
   );
+
+  // Auto-calculate installments Effect
+  useEffect(() => {
+    if (formData.payment_condition === PaymentMethod.INSTALLMENT && formData.payment_installment_count && formData.payment_installment_count > 0) {
+      const count = formData.payment_installment_count;
+      const total = totalEstimatedCost || 0;
+
+      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
+      const isSumMismatch = Math.abs(currentSum - total) > 1; // Tolerance 1 baht
+      const isCountMismatch = installments.length !== count;
+
+      if (isSumMismatch || isCountMismatch) {
+        const amountPerInst = Math.floor((total / count) * 100) / 100;
+        const lastAmount = total - (amountPerInst * (count - 1));
+
+        setInstallments(prev => {
+          const newInst: Partial<AssessmentInstallment>[] = [];
+          for (let i = 0; i < count; i++) {
+            newInst.push({
+              installment_no: i + 1,
+              amount: i === count - 1 ? lastAmount : amountPerInst,
+              note: prev[i]?.note || '',
+            });
+          }
+          return newInst;
+        });
+      }
+    } else {
+      if (installments.length > 0 && formData.payment_condition !== PaymentMethod.INSTALLMENT) {
+        setInstallments([]);
+      }
+    }
+  }, [formData.payment_condition, formData.payment_installment_count, totalEstimatedCost]);
 
   const handleFieldChange = (
     e: React.ChangeEvent<
@@ -233,7 +291,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           (c: any) => c.area_range >= area.area_size!
         );
         if (bestFit) {
-          // Check if any category service matches 'กำจัดปลวก'
           const termiteCategory = categories.find((c) =>
             c.name.includes('กำจัดปลวก')
           );
@@ -259,22 +316,15 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
     // Prepare work areas: remove temp IDs and ensure correct types
     const sanitizedWorkAreas = workAreas.map((area) => {
-      // Create a shallow copy to avoid mutating state
       const newArea: any = { ...area };
-
-      // Remove temporary IDs (starting with "area-") so backend creates new records
       if (newArea.id && newArea.id.startsWith('area-')) {
         delete newArea.id;
       }
-
-      // Ensure area_size is a number (required by backend)
       if (newArea.area_size === undefined || newArea.area_size === '') {
         newArea.area_size = 0;
       } else {
         newArea.area_size = Number(newArea.area_size);
       }
-
-      // Ensure total_price is calculated correctly
       const itemsCost = (newArea.items || []).reduce(
         (sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
         0
@@ -282,8 +332,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       const baseCost = Number(newArea.base_service_price) || 0;
       newArea.total_price = baseCost + itemsCost;
 
-      // Sanitize items - ensure correct field types and remove temp IDs
-      newArea.items = (newArea.items || []).map((item: any, idx: number) => {
+      newArea.items = (newArea.items || []).map((item: any) => {
         const sanitizedItem: any = {
           product_id: item.product_id,
           product_name: item.product_name || '',
@@ -291,20 +340,17 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           quantity: Number(item.quantity) || 1,
           total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
         };
-        // Keep existing item ID if valid UUID, otherwise remove
         if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) {
           sanitizedItem.id = item.id;
         }
         return sanitizedItem;
       });
 
-      // Sanitize category_services - keep only category_id
       newArea.category_services = (newArea.category_services || []).map((cat: any) => ({
         category_id: cat.category_id,
         ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
       }));
 
-      // Remove frontend-only fields that backend doesn't expect
       delete newArea.base_service_price;
 
       return newArea;
@@ -315,14 +361,13 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
       assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
+      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? installments as AssessmentInstallment[] : [],
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
       status: statusOverride || (formData.status as AsessmentStatus) || assessment.status,
     };
 
     onUpdateAssessment(updatedAssessment);
-
-    // Only close if it's a normal save or explicit action usually implies closing or refreshing
     onClose();
   };
 
@@ -331,7 +376,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     await handleSave();
   };
 
-  if (!isOpen) return null; // Only return null if not open
+  if (!isOpen) return null;
 
   return (
     <Modal
@@ -558,8 +603,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </div>
         )}
 
-
-
         <div className="space-y-4">
           {workAreas.map((area, index) => (
             <WorkAreaForm
@@ -581,7 +624,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               isEditing={true}
               originalArea={originalWorkAreas[index]}
               onApprove={assessment?.status === AsessmentStatus.PENDING ? () => {
-                if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\nConfirm approval and status change to Appointment?')) {
+                if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\\nConfirm approval and status change to Appointment?')) {
                   setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
                   handleSave(AsessmentStatus.APPOINTMENT);
                 }
@@ -601,7 +644,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </button>
         </div>
 
-        {/* Payment Condition Section (Moved to Bottom) */}
+        {/* Payment Condition Section */}
         <div className="w-full md:w-1/2 ml-auto">
           <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-slate-50">
             <div className="space-y-4">
@@ -633,29 +676,76 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
               </div>
 
               {formData.payment_condition === PaymentMethod.INSTALLMENT && (
-                <div className="grid grid-cols-1 gap-4">
-                  <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                    <Input
-                      name="payment_installment_count"
-                      type="number"
-                      placeholder="ระบุจำนวนงวด"
-                      value={formData.payment_installment_count || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          payment_installment_count: parseInt(e.target.value, 10) || 0,
-                        }))
-                      }
-                      required
-                    />
-                  </FormField>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                      <Input
+                        name="payment_installment_count"
+                        type="number"
+                        placeholder="ระบุจำนวนงวด"
+                        value={formData.payment_installment_count || ''}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value, 10) || 0;
+                          setFormData((prev) => ({
+                            ...prev,
+                            payment_installment_count: count,
+                          }));
+                        }}
+                        required
+                        min={2}
+                      />
+                    </FormField>
+                  </div>
+
+                  {/* Installment Details */}
+                  {installments.length > 0 && (
+                    <div className="border border-slate-200 rounded-md p-3 bg-white">
+                      <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
+                      <div className="space-y-3">
+                        {installments.map((inst, idx) => (
+                          <div key={idx} className="flex gap-3 items-end">
+                            <div className="w-20 pt-2 text-sm text-slate-600">
+                              งวดที่ {inst.installment_no}
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
+                              <Input
+                                type="number"
+                                value={inst.amount}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  handleInstallmentAmountChange(idx, val);
+                                }}
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
+                              <Input
+                                type="text"
+                                value={inst.note || ''}
+                                placeholder="เช่น มัดจำ"
+                                onChange={(e) => {
+                                  handleInstallmentNoteChange(idx, e.target.value);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                          <span>รวม</span>
+                          <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
+                            {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
-
-
       </form>
     </Modal>
   );

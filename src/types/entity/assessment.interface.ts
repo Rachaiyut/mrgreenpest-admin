@@ -56,5 +56,14 @@ export interface Assessment extends IBase {
   assessment_areas?: AssessmentWorkArea[];
   customer?: Customer;
   package?: Package;
+  installments?: AssessmentInstallment[];
+}
+
+export interface AssessmentInstallment extends IBase {
+  assessment_id: string;
+  installment_no: number;
+  amount: number;
+  due_date?: string;
+  note?: string;
 }
 

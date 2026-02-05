@@ -8,6 +8,7 @@ import {
   AssessmentWorkArea,
   Customer,
   Category,
+  AssessmentInstallment,
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
@@ -19,7 +20,7 @@ import { CategoryType } from '@/src/types';
 interface AddAssessmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateAssessment: (assessmentData: Omit<Assessment, 'id' | 'code'>) => void;
+  onCreateAssessment: (assessmentData: Omit<Assessment, 'id' | 'code'> & { installments?: Partial<AssessmentInstallment>[] }) => void;
 }
 
 const SERVICE_TYPES = [
@@ -39,154 +40,65 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
   const [formData, setFormData] = useState<
     Partial<Omit<Assessment, 'workAreas' | 'totalEstimatedCost'>>
   >({});
-  const [customers, setCustomer] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-
-  const [searchQuery, setSearchQuery] = useState('');
-
+  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
-    null
-  );
-
-  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-    [PaymentMethod.CASH]: 'เงินสด',
-    [PaymentMethod.TRANSFER]: 'โอนเงิน',
-    [PaymentMethod.CREDIT_CARD]: 'บัตรเครดิต',
-    [PaymentMethod.CHEQUE]: 'เช็ค',
-    [PaymentMethod.QR_PAYMENT]: 'QR Payment',
-    [PaymentMethod.DIVIDED]: 'แบ่งจ่าย',
-    [PaymentMethod.INSTALLMENT]: 'งวด',
-  };
-
-  const paymentOptions = Object.values(PaymentMethod).map((value) => ({
-    value,
-    label: PAYMENT_LABELS[value as PaymentMethod] || value,
-  }));
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await CategoryApi.getCategories({
-        page: 1,
-        limit: 10,
-        type: CategoryType.SERVICE,
-      });
-
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  }, []);
-
-  const fetchCustomers = useCallback(async () => {
-    try {
-      const response = await CustomerApi.getCustomers({
-        page: 1,
-        limit: 10,
-        search: searchQuery,
-      });
-
-      setCustomer(response.data);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    }
-  }, [searchQuery]);
-
-  const fetchPackages = useCallback(async () => {
-    try {
-      const response = await PackageApi.getPackages({
-        page: 1,
-        limit: 10,
-      });
-      setPackages(response.data);
-    } catch (error) {
-      console.error('Error fetching packages:', error);
-    }
-  }, []);
-
-  const fetchProducts = useCallback(async () => {
-    try {
-      const response = await ProductApi.getProducts({
-        page: 1,
-        limit: 100,
-      });
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchCategories();
-      fetchCustomers();
-      fetchPackages();
-      fetchProducts();
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [fetchCustomers, fetchPackages, fetchProducts, fetchCategories]);
-
-  const suggestedPackageOptions = useMemo(() => {
-    return packages.filter(
-      (pkg) => pkg.package_price && pkg.package_price.length > 0
-    );
-  }, [packages]);
-
-  useEffect(() => {
-    if (
-      selectedPackageId &&
-      !suggestedPackageOptions.some((p) => p.id === selectedPackageId)
-    ) {
-      handlePackageSelect(null);
-    }
-  }, [suggestedPackageOptions, selectedPackageId]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
+      const fetchData = async () => {
+        try {
+          const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
+            CustomerApi.getCustomers({ limit: 1000 }),
+            PackageApi.getPackages({ limit: 100 }),
+            ProductApi.getProducts({ limit: 100 }),
+            CategoryApi.getCategories({ limit: 100, type: CategoryType.SERVICE })
+          ]);
+          setCustomers(customersRes.data);
+          setPackages(packagesRes.data);
+          setProducts(productsRes.data);
+          setCategories(categoriesRes.data);
+        } catch (error) {
+          console.error("Error fetching data for assessment modal", error);
+        }
+      };
+      fetchData();
+
+      // Reset form
       setFormData({
-        appointment_date: new Date(),
-        payment_condition: PaymentMethod.CASH, // Default payment condition
+        status: AsessmentStatus.DRAFT,
+        created_at: new Date().toISOString(),
+        payment_condition: PaymentMethod.CASH,
       });
-      setWorkAreas([
-        {
-          area_name: 'พื้นที่ 1',
-          items: [],
-        },
-      ]);
+      setWorkAreas([{
+        id: `area-${Date.now()}`,
+        area_name: 'พื้นที่ 1',
+        items: [],
+        category_services: [],
+        base_service_price: 0,
+        total_price: 0
+      }]);
+      setInstallments([]);
       setSelectedPackageId(null);
     }
   }, [isOpen]);
+
+  const suggestedPackageOptions = useMemo(() => {
+    return packages.filter(
+      (pkg) =>
+        pkg.package_price &&
+        pkg.package_price.length > 0
+    );
+  }, [packages]);
 
   const totalEstimatedCost = useMemo(
     () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
     [workAreas]
   );
-
-  const handleCustomerSelect = (customerId: string) => {
-    const customer = customers.find((c) => c.id === customerId);
-    if (customer) {
-      setFormData((prev) => ({
-        ...prev,
-        customer_id: customerId,
-        address: customer.address_house_no,
-        sub_district: customer.sub_district,
-        status: AsessmentStatus.DRAFT,
-        district: customer.district,
-        province: customer.province,
-        zipcode: customer.postal_code,
-        google_map_link: customer.google_map_link,
-        zone: customer.service_area || '',
-        route_group: customer.service_group || '',
-        road_line: customer.road_line || '',
-        sequence: customer.sequence_no || '',
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, customer_id: customerId }));
-    }
-  };
 
   const handleFieldChange = (
     e: React.ChangeEvent<
@@ -202,23 +114,43 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
   };
 
-  const handleNumberOfAreasChange = (count: number) => {
-    setWorkAreas((currentAreas) => {
-      const currentCount = currentAreas.length;
-      if (count > currentCount) {
-        const newAreas = Array.from(
-          { length: count - currentCount },
-          (_, i) => ({
-            area_name: `พื้นที่ ${currentCount + i + 1}`,
-            items: [],
-            categories: [],
-          })
-        );
-        return [...currentAreas, ...newAreas];
-      } else if (count < currentCount) {
-        return currentAreas.slice(0, count);
+  const handleCustomerSelect = (customerId: string | null) => {
+    if (!customerId) {
+      setFormData(prev => ({ ...prev, customer_id: '' }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, customer_id: customerId }));
+    const customer = customers.find(c => c.id === customerId);
+    if (customer) {
+      // Auto-fill address if available and empty
+      setFormData(prev => ({
+        ...prev,
+        customer_id: customerId,
+        address: prev.address || customer.address_house_no || '',
+        sub_district: prev.sub_district || customer.sub_district || '',
+        district: prev.district || customer.district || '',
+        province: prev.province || customer.province || '',
+        zipcode: prev.zipcode || customer.zipcode || '',
+      }));
+    }
+  };
+
+  const handleNumberOfAreasChange = (num: number) => {
+    setWorkAreas(prev => {
+      const current = [...prev];
+      if (num > current.length) {
+        const added = Array.from({ length: num - current.length }, (_, i) => ({
+          id: `area-${Date.now()}-${i}`,
+          area_name: `พื้นที่ ${current.length + i + 1}`,
+          items: [],
+          category_services: [],
+          base_service_price: 0,
+          total_price: 0
+        }));
+        return [...current, ...added];
+      } else {
+        return current.slice(0, num);
       }
-      return currentAreas;
     });
   };
 
@@ -239,11 +171,12 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         newAreas[index] = {
           id: areaToClear.id,
           area_name: areaToClear.area_name,
+          building_type: '',
           area_size: undefined,
-          service_system: undefined,
-          total_price: 0,
-          items: [],
           category_services: [],
+          service_system: undefined,
+          base_service_price: 0,
+          total_price: 0,
         };
       }
       return newAreas;
@@ -252,21 +185,22 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
 
   const handlePackageSelect = (pkgId: string | null) => {
     setSelectedPackageId(pkgId);
-    const selectedPkg = pkgId ? packages.find((p) => p.id === pkgId) : null;
-
-    // Update form data
     setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
+
+    const selectedPkg = pkgId
+      ? packages.find((p) => p.id === pkgId)
+      : null;
 
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) {
           return { ...area };
         }
-        const sortedConditions = [...(selectedPkg.package_price || [])].sort(
-          (a, b) => a.area_range - b.area_range
-        );
+        const sortedConditions = [
+          ...((selectedPkg as any).package_price || []),
+        ].sort((a: any, b: any) => a.area_range - b.area_range);
         const bestFit = sortedConditions.find(
-          (c) => c.area_range >= area.area_size!
+          (c: any) => c.area_range >= area.area_size!
         );
         if (bestFit) {
           const termiteCategory = categories.find((c) =>
@@ -281,19 +215,69 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
           return {
             ...area,
             base_service_price: priceToUse,
-            package_price_id: bestFit.id,
           };
         } else {
-          return { ...area, package_price_id: undefined };
+          return { ...area };
         }
       })
     );
   };
 
+  // Handlers for Installments
+  const handleInstallmentAmountChange = (index: number, amount: number) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], amount };
+      return newInst;
+    });
+  };
+
+  const handleInstallmentNoteChange = (index: number, note: string) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], note };
+      return newInst;
+    });
+  };
+
+  // Auto-calculate installments logic
+  useEffect(() => {
+    if (formData.payment_condition === PaymentMethod.INSTALLMENT && formData.payment_installment_count && formData.payment_installment_count > 0) {
+      const count = formData.payment_installment_count;
+      const total = totalEstimatedCost || 0;
+
+      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
+      const isSumMismatch = Math.abs(currentSum - total) > 1;
+      const isCountMismatch = installments.length !== count;
+
+      if (isSumMismatch || isCountMismatch) {
+        const amountPerInst = Math.floor((total / count) * 100) / 100;
+        const lastAmount = total - (amountPerInst * (count - 1));
+
+        setInstallments(prev => {
+          const newInst: Partial<AssessmentInstallment>[] = [];
+          for (let i = 0; i < count; i++) {
+            newInst.push({
+              installment_no: i + 1,
+              amount: i === count - 1 ? lastAmount : amountPerInst,
+              note: prev[i]?.note || '',
+            });
+          }
+          return newInst;
+        });
+      }
+    } else {
+      if (installments.length > 0 && formData.payment_condition !== PaymentMethod.INSTALLMENT) {
+        setInstallments([]);
+      }
+    }
+  }, [formData.payment_condition, formData.payment_installment_count, totalEstimatedCost]);
+
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const newAssessment: Omit<Assessment, 'id' | 'code'> = {
+    const newAssessment: Omit<Assessment, 'id' | 'code'> & { installments?: Partial<AssessmentInstallment>[] } = {
       // Defaults
       status: AsessmentStatus.DRAFT,
       created_by: 'ผู้ดูแลระบบ',
@@ -305,6 +289,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
       // Overrides/Calculated
       assessment_areas: workAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
+
+      // Installments
+      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? installments : [],
 
       // Ensure required fields
       customer_id: formData.customer_id || '',
@@ -330,6 +317,9 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
     onCreateAssessment(newAssessment);
     onClose();
   };
+
+  // Set search query state
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <Modal
@@ -631,22 +621,71 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
               </div>
 
               {formData.payment_condition === PaymentMethod.INSTALLMENT && (
-                <div className="grid grid-cols-1 gap-4">
-                  <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                    <Input
-                      name="payment_installment_count"
-                      type="number"
-                      placeholder="ระบุจำนวนงวด"
-                      value={formData.payment_installment_count || ''}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          payment_installment_count: parseInt(e.target.value, 10) || 0,
-                        }))
-                      }
-                      required
-                    />
-                  </FormField>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                      <Input
+                        name="payment_installment_count"
+                        type="number"
+                        placeholder="ระบุจำนวนงวด"
+                        value={formData.payment_installment_count || ''}
+                        onChange={(e) => {
+                          const count = parseInt(e.target.value, 10) || 0;
+                          setFormData((prev) => ({
+                            ...prev,
+                            payment_installment_count: count,
+                          }));
+                        }}
+                        required
+                        min={2}
+                      />
+                    </FormField>
+                  </div>
+
+                  {/* Installment Details */}
+                  {installments.length > 0 && (
+                    <div className="border border-slate-200 rounded-md p-3 bg-white">
+                      <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
+                      <div className="space-y-3">
+                        {installments.map((inst, idx) => (
+                          <div key={idx} className="flex gap-3 items-end">
+                            <div className="w-20 pt-2 text-sm text-slate-600">
+                              งวดที่ {inst.installment_no}
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
+                              <Input
+                                type="number"
+                                value={inst.amount}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  handleInstallmentAmountChange(idx, val);
+                                }}
+                                step="0.01"
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
+                              <Input
+                                type="text"
+                                value={inst.note || ''}
+                                placeholder="เช่น มัดจำ"
+                                onChange={(e) => {
+                                  handleInstallmentNoteChange(idx, e.target.value);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                          <span>รวม</span>
+                          <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
+                            {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
