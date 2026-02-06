@@ -145,11 +145,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
     {
-      path: '/contracts/new',
-      element: <CreateContractPage />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
-    },
-    {
       path: '/billing',
       element: (
         <Financials
