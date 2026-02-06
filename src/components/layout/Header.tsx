@@ -12,20 +12,11 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
   const currentUser = useCurrentUser();
 
+  console.log("current USer", currentUser)
+
   return (
     <header className="bg-white shadow-sm z-10">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            onClick={toggleSidebar}
-            className="text-slate-500 hover:text-slate-700 mr-4 md:hidden"
-            aria-label="เปิด/พับแถบด้านข้าง"
-          >
-            <MenuIcon className="h-6 w-6" />
-          </Button>
-        </div>
-
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end h-16">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <NotificationMenu />
 
@@ -33,16 +24,13 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
             <div className="relative">
               <Button variant="ghost" className="flex items-center space-x-2">
                 <img
-                  src={'https://ui-avatars.com/api/?name=' + currentUser.name}
-                  alt={currentUser.name}
+                  src={'https://ui-avatars.com/api/?name=' + currentUser.firstName + ' ' + (currentUser.lastName || '')}
+                  alt={currentUser.firstName + ' ' + (currentUser.lastName || '')}
                   className="h-9 w-9 rounded-full object-cover"
                 />
                 <div className="hidden sm:flex flex-col items-start">
                   <span className="text-sm font-medium text-slate-700">
-                    {currentUser.name}
-                  </span>
-                  <span className="text-xs text-slate-500">
-                    {currentUser.role}
+                    {currentUser.firstName + ' ' + (currentUser.lastName || '')}
                   </span>
                 </div>
                 <ChevronDownIcon className="hidden sm:block h-4 w-4 text-slate-500" />
