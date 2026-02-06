@@ -68,6 +68,11 @@ class UserService extends AuthService {
     const res = await this.http.post(`${this.path}/${userId}/expenses`, data);
     return res.data;
   }
+
+  async checkLimit(userId: string, amount: number): Promise<{ isOverLimit: boolean; balance: number; limit: number; message: string }> {
+    const res = await this.http.post(`${this.path}/${userId}/expenses/check-limit`, { amount });
+    return res.data.data;
+  }
 }
 
 export const UserApi = new UserService();

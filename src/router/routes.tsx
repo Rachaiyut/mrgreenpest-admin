@@ -31,11 +31,11 @@ const Requisitions = lazy(() => import('../pages/inventory/requisitions'));
 const ReturnToSupplier = lazy(() => import('../pages/inventory/return-to-supplier'));
 const Packages = lazy(() => import('../pages/packages/Package'));
 const Categories = lazy(() => import('../pages/categories/Category'));
+const Products = lazy(() => import('../pages/inventory/products/Product'));
 const Reports = lazy(() => import('../pages/reports'));
 const Notifications = lazy(() => import('../pages/notifications'));
 const Forms = lazy(() => import('../pages/forms'));
 const ContractsPage = lazy(() => import('../pages/contracts'));
-const CreateContractPage = lazy(() => import('../pages/contracts/CreateContract'));
 const CreateInvoicePage = lazy(() => import('../pages/billing/CreateInvoice'));
 
 // Reports Sub-pages
@@ -191,7 +191,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     },
     {
       path: '/products',
-      element: <div>Products Page (Not Found)</div>, // <Product />
+      element: <Products />,
       roles: [Role.SUPERADMIN, Role.ADMIN],
     },
     {

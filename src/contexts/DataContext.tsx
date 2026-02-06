@@ -242,11 +242,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 100 })).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
-      // promises.push(safeFetch(() => ContractApi.getAll({ limit: 100 })).then((data: any) => setContracts(data)));
+      promises.push(safeFetch(() => ContractApi.getAll({ limit: 100 })).then((data: any) => setContracts(data)));
     }
     if (shouldFetch('quotations')) {
-      // promises.push(safeFetch(() => QuotationApi.getAll({ limit: 100 })).then(setQuotations));
-      setQuotations([]);
+      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 100 })).then((data: any) => setQuotations(data)));
+      // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
       // promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 100 })).then(setInvoices));

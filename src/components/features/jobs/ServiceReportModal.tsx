@@ -1225,14 +1225,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
 
         <FormField label="อ้างอิงใบเสนอราคา (ถ้ามี)" htmlFor="quotation-ref">
-          <FormField label="เลือกใบประเมิน" htmlFor="assessment-select">
             <SearchableSelect
               value={selectedQuotationId}
               onChange={(value) => setSelectedQuotationId(value)}
-              placeholder="-- เลือกใบประเมิน (ไม่บังคับ) --"
+              placeholder="-- เลือกใบเสนอราคา (ไม่บังคับ) --"
               options={quotationOptions}
             />
-          </FormField>
         </FormField>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

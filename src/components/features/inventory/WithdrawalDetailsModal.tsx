@@ -125,6 +125,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               <dt className="font-medium text-slate-500">เลขที่อ้างอิง</dt>
               <dd className="mt-1 flex flex-wrap gap-2">
                 {withdrawal.reference_ids &&
+                  Array.isArray(withdrawal.reference_ids) &&
                   withdrawal.reference_ids.length > 0 ? (
                   withdrawal.reference_ids.map((id) => (
                     <span

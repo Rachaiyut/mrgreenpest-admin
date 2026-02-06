@@ -3,12 +3,12 @@ import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Quotation, Contract, Status } from '@/src/types/entity/app.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
+import { QuotationApi } from '../../../api/quotation';
 
 interface AddContractModalProps {
   isOpen: boolean;
   onClose: () => void;
   customer: Customer;
-  quotations: Quotation[];
   onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
 }
 
@@ -16,10 +16,10 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   isOpen,
   onClose,
   customer,
-  quotations,
   onCreateContract,
 }) => {
   const [selectedQuotationId, setSelectedQuotationId] = useState('');
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [address, setAddress] = useState('');
@@ -28,9 +28,9 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   const approvedQuotations = useMemo(
     () =>
       quotations.filter(
-        (q) => q.id === customer.id && q.status === Status.Approved
+        (q) => q.status === Status.Approved
       ),
-    [quotations, customer]
+    [quotations]
   );
 
   const selectedQuotation = useMemo(
@@ -39,7 +39,22 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   );
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && customer) {
+        const fetchQuotations = async () => {
+            try {
+                const res = await QuotationApi.getAll({ 
+                    customer_id: customer.id, 
+                    status: 'APPROVED' 
+                });
+                if (res && res.data) {
+                    setQuotations(res.data);
+                }
+            } catch (error) {
+                console.error("Error fetching quotations:", error);
+            }
+        };
+        fetchQuotations();
+
       setSelectedQuotationId('');
       setStartDate(new Date().toISOString().substring(0, 10));
       setEndDate('');
@@ -78,7 +93,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
       address: address,
       status: status,
       total_amount: quotation.total,
-      service_package: servicePackage,
+      servicePackage: servicePackage,
       customer_name: customer.first_name + ' ' + (customer.last_name || ''),
     };
   };

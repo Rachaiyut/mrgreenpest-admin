@@ -84,6 +84,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
     // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+    const [targetStatus, setTargetStatus] = useState<QuotationStatus>(QuotationStatus.DRAFT);
     const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'revise' | 'detail'>('create');
@@ -255,6 +257,30 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     const handleDelete = () => {
         setIsDeleteModalOpen(true);
         setOpenDropdownId(null);
+    };
+
+    const handleStatusClick = () => {
+        if (selectedQuotation) {
+            setTargetStatus(selectedQuotation.status as QuotationStatus);
+            setIsStatusModalOpen(true);
+        }
+        setOpenDropdownId(null);
+    };
+
+    const handleStatusConfirm = async () => {
+        if (selectedQuotation) {
+            try {
+                if (onUpdateQuotation) {
+                     await onUpdateQuotation({ ...selectedQuotation, status: targetStatus });
+                } else {
+                    await QuotationApi.update(selectedQuotation.id, { status: targetStatus });
+                }
+                fetchQuotations();
+            } catch (error) {
+                console.error('Failed to update status:', error);
+            }
+        }
+        setIsStatusModalOpen(false);
     };
 
     const handleConfirmDelete = async () => {
@@ -500,6 +526,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                             <DocumentTextIcon className="mr-3 h-5 w-5 text-slate-400" />
                             Revise (สร้างฉบับใหม่)
                         </button>
+                        <button
+                            onClick={handleStatusClick}
+                            className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                        >
+                            <CheckCircleIcon className="mr-3 h-5 w-5 text-slate-400" />
+                            เปลี่ยนสถานะ
+                        </button>
                         <div className="border-t border-slate-100 my-1"></div>
                         <button
                             onClick={handleDelete}
@@ -527,6 +560,34 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 quotation={selectedQuotation}
                 allQuotations={quotations}
             /> */}
+
+            <ConfirmationModal
+                isOpen={isStatusModalOpen}
+                onClose={() => setIsStatusModalOpen(false)}
+                onConfirm={handleStatusConfirm}
+                title="อัปเดตสถานะ"
+                message={
+                    <div className="space-y-4 text-left">
+                        <p>กรุณาเลือกสถานะใหม่สำหรับใบเสนอราคา <strong>{selectedQuotation?.code}</strong></p>
+                        <div className="mt-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
+                            <Select
+                                value={targetStatus}
+                                onChange={(e) => setTargetStatus(e.target.value as QuotationStatus)}
+                                className="w-full"
+                            >
+                                {Object.values(QuotationStatus).map((status) => (
+                                    <option key={status} value={status}>
+                                        {statusLabels[status]}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+                    </div>
+                }
+                confirmButtonText="บันทึก"
+                confirmButtonClass="bg-primary hover:bg-primary/90"
+            />
 
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}

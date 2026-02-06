@@ -13,7 +13,6 @@ interface CustomerContractsListModalProps {
   onClose: () => void;
   customer: Customer | null;
   contracts: Contract[];
-  quotations: Quotation[];
   onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
   onCreateJob?: (jobData: any) => void;
 }
@@ -25,7 +24,6 @@ export const CustomerContractsListModal: React.FC<
   onClose,
   customer,
   contracts,
-  quotations,
   onCreateContract,
   onCreateJob,
 }) => {
@@ -99,7 +97,7 @@ export const CustomerContractsListModal: React.FC<
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={`สัญญาของ ${customer.name}`}
+        title={`สัญญาของ ${customer.first_name} ${customer.last_name || ''}`}
         size="4xl"
         footer={
           <div className="flex w-full justify-between items-center">
@@ -204,7 +202,6 @@ export const CustomerContractsListModal: React.FC<
           isOpen={isAddContractModalOpen}
           onClose={() => setIsAddContractModalOpen(false)}
           customer={customer}
-          quotations={quotations}
           onCreateContract={handleCreateContractSuccess}
         />
       )}

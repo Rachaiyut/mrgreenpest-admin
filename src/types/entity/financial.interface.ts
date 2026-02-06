@@ -48,6 +48,7 @@ export interface Quotation {
   original_id?: string;
   status: QuotationStatus | Status; // Support both for backwards compatibility
   expires_at: string;
+  is_installment?: boolean;
   created_at?: string;
   updated_at?: string;
   created_by?: string;
@@ -125,6 +126,7 @@ export interface Contract {
   endDate?: string;
   address?: string;
   servicePackage?: string;
+  installments?: InstallmentPlan[];
 }
 
 export interface WalletTransaction {

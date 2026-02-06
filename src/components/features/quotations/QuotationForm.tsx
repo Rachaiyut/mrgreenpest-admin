@@ -216,9 +216,24 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [usePackagePricing, setUsePackagePricing] = useState(false);
 
     // Installment Logic
-    const [isInstallment, setIsInstallment] = useState(false);
-    const [manualInstallmentCount, setManualInstallmentCount] = useState(2);
-    const [installments, setInstallments] = useState<any[]>([]);
+    const [isInstallment, setIsInstallment] = useState(
+        !!(initialValues?.is_installment || (initialValues?.installments && initialValues.installments.length > 0))
+    );
+    const [manualInstallmentCount, setManualInstallmentCount] = useState(
+        (initialValues?.installments && initialValues.installments.length > 0)
+            ? initialValues.installments.length
+            : 2
+    );
+    const [installments, setInstallments] = useState<any[]>(
+        (initialValues?.installments && initialValues.installments.length > 0)
+            ? initialValues.installments.map((inst: any) => ({
+                installment_no: inst.installment_no,
+                amount: inst.amount,
+                service_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
+                notes: inst.notes || ''
+            }))
+            : []
+    );
 
     // Auto-fill from assessment when selected
     useEffect(() => {
@@ -535,12 +550,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             const amountPerTerm = Math.floor(netTotal / count);
             const remainder = netTotal - (amountPerTerm * count);
             
-            const newInstallments = Array.from({ length: count }).map((_, idx) => ({
-                installment_no: idx + 1,
-                amount: idx === count - 1 ? amountPerTerm + remainder : amountPerTerm,
-                service_date: '', // User to fill
-                notes: ''
-            }));
+            const newInstallments = Array.from({ length: count }).map((_, idx) => {
+                // Default date logic: Start from today, add months based on index
+                // Even though hidden from UI, we might need a default value if backend requires it.
+                // But we will try to send null/empty if backend allows, or just dummy.
+                // Since user said "remove it", they probably don't care about the date.
+                // We'll keep the internal logic generating a date just in case, but won't show it.
+                // Actually, if we send it, it might show up in contract. 
+                // Let's set it to empty string if we update backend to be optional.
+                
+                return {
+                    installment_no: idx + 1,
+                    amount: idx === count - 1 ? amountPerTerm + remainder : amountPerTerm,
+                    service_date: '', // No date by default
+                    notes: ''
+                };
+            });
             
             setInstallments(newInstallments);
         } else if (!isInstallment) {
@@ -571,6 +596,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             alert('กรุณาเพิ่มรายการสินค้าหรือเลือกแพ็กเกจ');
             return;
         }
+
+        // Validation: If installments enabled, check dates
+        /*
+        if (isInstallment) {
+            const hasInvalidDate = installments.some(inst => !inst.service_date);
+            if (hasInvalidDate) {
+                alert('กรุณาระบุวันที่เข้าบริการสำหรับทุกงวด (Installment Dates are required)');
+                return;
+            }
+        }
+        */
 
         // Prepare items: If usePackagePricing is true, add it as the first item
         let finalItems = items.map((item, index) => ({
@@ -626,6 +662,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             vat_amount: vatAmount,
             include_vat: includeVat,
             items: finalItems,
+            installments: isInstallment ? installments.map(inst => ({
+                installment_no: Number(inst.installment_no),
+                service_date: inst.service_date || new Date().toISOString().substring(0, 10), // Fallback to today if empty, until backend supports null
+                amount: Number(inst.amount),
+                notes: inst.notes || ''
+            })) : [],
         };
 
         await onSubmit(quotationData);
@@ -1046,25 +1088,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                 </div>
                             )}
                             <div className="grid grid-cols-12 gap-2 bg-slate-100 p-2 text-xs font-semibold text-slate-600 border-b border-slate-200">
-                                <div className="col-span-1 text-center">งวดที่</div>
-                                <div className="col-span-4">วันที่เข้าบริการ (โดยประมาณ)</div>
-                                <div className="col-span-3 text-right">จำนวนเงิน</div>
-                                <div className="col-span-4">หมายเหตุ</div>
+                                <div className="col-span-2 text-center">งวดที่</div>
+                                <div className="col-span-4 text-right">จำนวนเงิน</div>
+                                <div className="col-span-6">หมายเหตุ</div>
                             </div>
                             {installments.map((inst, idx) => (
                                 <div key={idx} className="grid grid-cols-12 gap-2 p-2 items-center border-b border-slate-100 last:border-0">
-                                    <div className="col-span-1 text-center font-medium text-slate-700">
+                                    <div className="col-span-2 text-center font-medium text-slate-700">
                                         {inst.installment_no}
                                     </div>
                                     <div className="col-span-4">
-                                        <Input
-                                            type="date"
-                                            value={inst.service_date}
-                                            onChange={(e) => handleInstallmentChange(idx, 'service_date', e.target.value)}
-                                            className="h-8 text-sm"
-                                        />
-                                    </div>
-                                    <div className="col-span-3">
                                         <Input
                                             type="number"
                                             value={inst.amount}
@@ -1072,7 +1105,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                             className="h-8 text-sm text-right font-mono"
                                         />
                                     </div>
-                                    <div className="col-span-4">
+                                    <div className="col-span-6">
                                         <Input
                                             type="text"
                                             value={inst.notes}

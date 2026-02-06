@@ -167,7 +167,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       .map((j) => ({
         start: new Date(j.start_time).toTimeString().substring(0, 5),
         end: new Date(j.end_time).toTimeString().substring(0, 5),
-        customer: j.customer_name,
+        customer: j.customerName,
       }))
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [formData.vehicle_id, workDate, jobs, job]);
@@ -216,7 +216,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      ProductApi.getProducts({ page: 1, limit: 100 })
+      ProductApi.getProducts({ page: 1, limit: 10 })
         .then((res: any) => {
           setProducts(res.data || []);
         })
@@ -325,7 +325,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
     if (conflictingJob) {
       setTimeConflictError(
-        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customer_name} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
+        `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customerName} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
       );
     } else {
       setTimeConflictError(null);
@@ -726,9 +726,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         <FormField label="ลูกค้า" htmlFor="customerName">
           <Input
             id="customerName"
-            name="customer_name"
+            name="customerName"
             type="text"
-            value={formData.customer_name || ''}
+            value={formData.customerName || ''}
             onChange={handleChange}
             required
             readOnly

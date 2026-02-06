@@ -358,7 +358,6 @@ const Customers: React.FC = () => {
         onClose={() => setIsContractsModalOpen(false)}
         customer={selectedCustomer}
         contracts={contracts}
-        quotations={quotations}
         onCreateContract={() => { }}
         onCreateJob={() => { }}
       />

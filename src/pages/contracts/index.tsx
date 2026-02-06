@@ -20,6 +20,8 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { ContractDetailsModal } from '../../components/features/contracts/ContractDetailsModal';
+import { CreateContractModal } from '../../components/features/contracts/CreateContractModal';
+import { EditContractModal } from '../../components/features/contracts/EditContractModal';
 
 const statusLabels: Record<ContractStatus, string> = {
 	[ContractStatus.DRAFT]: 'ร่าง',
@@ -45,6 +47,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	const navigate = useNavigate();
 
 	const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -190,7 +194,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 					<p className="mt-1 text-slate-600">จัดการและติดตามใบสัญญาทั้งหมด พร้อมระบบแบ่งงวดชำระ</p>
 				</div>
 				<Button
-					onClick={() => navigate('/contracts/new')}
+					onClick={() => setIsCreateModalOpen(true)}
 					className="shadow-md shadow-primary/20"
 				>
 					<PlusIcon className="w-5 h-5 mr-2" />
@@ -473,6 +477,20 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 					}}
 				/>
 			)}
+
+			<CreateContractModal
+				isOpen={isCreateModalOpen}
+				onClose={() => setIsCreateModalOpen(false)}
+			/>
+
+			<EditContractModal
+				isOpen={isEditModalOpen}
+				onClose={() => {
+					setIsEditModalOpen(false);
+					setSelectedContract(null);
+				}}
+				contract={selectedContract}
+			/>
 
 			{/* Delete Confirmation Modal */}
 			<ConfirmationModal

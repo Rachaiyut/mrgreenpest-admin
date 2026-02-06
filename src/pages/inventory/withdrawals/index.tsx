@@ -116,7 +116,13 @@ const Withdrawals: React.FC = () => {
   );
 
   const userMap = useMemo(
-    () => new Map(users.map((u) => [u.id, u.name])),
+    () => new Map(users.map((u) => {
+      let name = u.name;
+      if (typeof name !== 'string' || name === '[object Object]') {
+        name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown';
+      }
+      return [u.id, name];
+    })),
     [users]
   );
 
@@ -607,7 +613,7 @@ const Withdrawals: React.FC = () => {
                     ) || 0;
                   const totalAmount = totalGoodsAmount + totalExpenseAmount;
                   const recipientName = withdrawal.recipient_id
-                    ? userMap.get(withdrawal.recipient_id)
+                    ? (userMap.get(withdrawal.recipient_id) || '-')
                     : '-';
 
                   return (
@@ -635,16 +641,19 @@ const Withdrawals: React.FC = () => {
                         })}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {withdrawal.reference_ids?.length || 0} รายการ
+                        {(Array.isArray(withdrawal.reference_ids) ? withdrawal.reference_ids.length : 0)} รายการ
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={withdrawal.status} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {userMap.get(withdrawal.created_by) || withdrawal.created_by}
+                        {(() => {
+                          const creatorName = userMap.get(withdrawal.created_by) || withdrawal.created_by;
+                          return creatorName === '[object Object]' ? 'Unknown' : creatorName;
+                        })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {recipientName}
+                        {recipientName === '[object Object]' ? 'Unknown' : recipientName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

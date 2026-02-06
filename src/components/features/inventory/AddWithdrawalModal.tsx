@@ -208,7 +208,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   }, [sourceWarehouse, products, effectiveStockMap]);
 
   const allUsedReferenceIds = useMemo(
-    () => withdrawals.flatMap((w) => w.reference_ids || []),
+    () => withdrawals.flatMap((w) => (Array.isArray(w.reference_ids) ? w.reference_ids : [])),
     [withdrawals]
   );
 
@@ -273,7 +273,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       setToWarehouseId('');
       setReferenceIds([]);
       setSelectedCustomerIds([]);
-      setCreatedBy(currentUser?.name || '-');
+      let userName = currentUser?.name;
+      if (typeof userName !== 'string' || userName === '[object Object]') {
+        userName = currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : '-';
+        if (!userName || userName === ' ') userName = currentUser?.email || 'Unknown';
+      }
+      setCreatedBy(userName || '-');
       setRequesterId('');
       setRecipientId('');
       // Fetch warehouses when modal opens
@@ -436,9 +441,36 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       return;
     }
 
+    // 1. Check Over Limit Condition
+    if (isOverLimit || isAnyItemOverLimit) {
+      // 2. Check Reference (Sub-condition)
+      const hasReference = referenceIds.length > 0;
+
+      if (hasReference) {
+        // 2.1 Over Limit + Has Reference -> Standard Pending Flow
+        // Proceed normally, status will be PENDING
+      } else {
+        // 2.2 Over Limit + No Reference -> Exception Flow (Notify)
+        // Check what type of over limit
+        if (isOverLimit) {
+           // Case A: Expense Over -> Notify CFO & CEO
+           if (!confirm('คุณกำลังเบิกค่าใช้จ่ายเกินวงเงินโดยไม่มีการอ้างอิงงาน \nระบบจะส่งการแจ้งเตือนไปยัง CFO และ CEO \nต้องการดำเนินการต่อหรือไม่?')) {
+             return;
+           }
+        } else if (isAnyItemOverLimit) {
+           // Case B: Stock Over -> Notify COO & CEO
+           if (!confirm('คุณกำลังเบิกสินค้าเกินลิมิตโดยไม่มีการอ้างอิงงาน \nระบบจะส่งการแจ้งเตือนไปยัง COO และ CEO \nต้องการดำเนินการต่อหรือไม่?')) {
+             return;
+           }
+        }
+      }
+    }
+
     const formData = new FormData(e.currentTarget);
-    // If over limit -> PENDING, otherwise -> COMPLETED
-    const status = (isAnyItemOverLimit || isOverLimit) ? WithdrawalStatus.PENDING : WithdrawalStatus.COMPLETED;
+    // Always set status to PENDING as per requirement "Set Status = รออนุมัติการเบิก"
+    // Whether it's normal flow, over limit with ref, or over limit without ref.
+    const status = WithdrawalStatus.PENDING;
+    
     onCreateWithdrawal(
       createWithdrawalObject(status, formData)
     );
