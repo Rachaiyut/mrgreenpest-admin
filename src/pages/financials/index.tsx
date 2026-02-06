@@ -33,6 +33,7 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 
 import { useData } from '../../contexts/DataContext';
+import { QuotationApi } from '../../api';
 
 type FinancialTab = 'ใบเสนอราคา' | 'ใบแจ้งหนี้' | 'ใบกำกับภาษี/ใบเสร็จรับเงิน';
 
@@ -825,19 +826,62 @@ const Financials: React.FC<FinancialsProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="inline-block text-left">
+                          <div className="flex items-center justify-end gap-2">
                             <Button
-                              data-quotation-id={q.id}
-                              onClick={(e) => handleDropdownToggle(e, q.id)}
-                              variant="icon"
-                              title="ตัวเลือก"
+                              className="px-3 py-1.5 text-sm font-medium rounded-lg bg-amber-500 text-white hover:bg-amber-600 h-auto shadow-sm border-none flex items-center gap-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/quotations/${q.id}/edit`);
+                              }}
                             >
-                              <span className="sr-only">Open options</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
+                              <PencilIcon className="w-4 h-4" />
+                              แก้ไข
                             </Button>
+                            <Button
+                                className="px-3 py-1.5 text-sm font-bold rounded-lg shadow-md border-none flex items-center gap-2 hover:shadow-lg transition-shadow"
+                                style={{ backgroundColor: '#10B981', color: 'white' }}
+                                disabled={loadingPdfId === q.id}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (loadingPdfId === q.id) return;
+                                    
+                                    setSelectedQuotation(q);
+                                    setLoadingPdfId(q.id);
+                                    (async () => {
+                                        try {
+                                            const blob = await QuotationApi.getPDF(q.id);
+                                            const url = window.URL.createObjectURL(blob);
+                                            window.open(url, '_blank');
+                                        } catch (error) {
+                                            console.error('Error viewing PDF:', error);
+                                            alert('ไม่สามารถเปิด PDF ได้');
+                                        } finally {
+                                            setLoadingPdfId(null);
+                                        }
+                                    })();
+                                }}
+                            >
+                                {loadingPdfId === q.id ? (
+                                    <LoadingIcon className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <EyeIcon className="w-4 h-4" />
+                                )}
+                                {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                            </Button>
+                            <div className="inline-block text-left">
+                              <Button
+                                data-quotation-id={q.id}
+                                onClick={(e) => handleDropdownToggle(e, q.id)}
+                                variant="icon"
+                                title="ตัวเลือก"
+                              >
+                                <span className="sr-only">Open options</span>
+                                <ManageIcon
+                                  className="h-5 w-5 text-slate-400 hover:text-slate-500"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -1321,6 +1365,12 @@ const Financials: React.FC<FinancialsProps> = ({
       handler: handleViewDetails,
       isDanger: false,
     },
+    // {
+    //   label: 'ดู PDF',
+    //   icon: DocumentTextIcon,
+    //   handler: handleViewPdf,
+    //   isDanger: false,
+    // },
     {
       label: 'แก้ไขสถานะ',
       icon: PencilIcon,

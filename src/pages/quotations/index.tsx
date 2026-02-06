@@ -13,6 +13,7 @@ import {
     CurrencyDollarIcon,
     ClockIcon,
     CheckCircleIcon,
+    LoadingIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Quotation } from '../../types';
@@ -90,6 +91,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMode, setModalMode] = useState<'create' | 'edit' | 'revise' | 'detail'>('create');
     const [selectedAssessmentId, setSelectedAssessmentId] = useState<string | null>(null);
+    const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
     const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
@@ -414,22 +416,22 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead className="bg-slate-50">
                                 <tr>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ลำดับ</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">เลขที่ใบเสนอราคา</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">ลูกค้า</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">เบอร์โทร</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">อ้างอิงใบประเมิน</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">วันที่สร้าง</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">หมดอายุ</th>
-                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">สถานะ</th>
-                                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">ยอดรวม</th>
-                                    <th className="relative px-4 py-3"><span className="sr-only">จัดการ</span></th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">เลขที่ใบเสนอราคา</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทร</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">อ้างอิงใบประเมิน</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">หมดอายุ</th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">ยอดรวม</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-slate-200">
                                 {paginatedQuotations.length === 0 ? (
                                     <tr>
-                                        <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
+                                        <td colSpan={10} className="px-6 py-12 text-center text-slate-500">
                                             <DocumentTextIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                                             <p className="text-lg font-medium">ไม่พบข้อมูลใบเสนอราคา</p>
                                             <p className="text-sm">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</p>
@@ -438,15 +440,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 ) : (
                                     paginatedQuotations.map((q, index) => {
                                         const customer = customers?.find((c) => c.id === q.customer_id);
-                                        console.log(q);
-
                                         return (
                                             <tr key={q.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-4 py-3 text-sm text-slate-500">
+                                                <td className="px-6 py-4 text-sm text-slate-500">
                                                     {(currentPage - 1) * itemsPerPage + index + 1}
                                                 </td>
                                                 <td
-                                                    className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
+                                                    className="px-6 py-4 text-sm font-medium text-primary hover:underline cursor-pointer"
                                                     onClick={() => {
                                                         setSelectedQuotation(q);
                                                         setModalMode('detail');
@@ -456,24 +456,57 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                 >
                                                     {q.code}
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-slate-700 font-medium">{q.customer_name}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-500">{customer?.phone || '-'}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-500">{q['assessment']?.code || '-'}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(q.created_at)}</td>
-                                                <td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(q.expires_at)}</td>
-                                                <td className="px-4 py-3"><StatusBadge status={statusLabels[q.status as QuotationStatus] || q.status} /></td>
-                                                <td className="px-4 py-3 text-sm text-slate-700 text-right font-semibold">
+                                                <td className="px-6 py-4 text-sm text-slate-700 font-medium">{q.customer_name}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{customer?.phone || '-'}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{q['assessment']?.code || '-'}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.created_at)}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.expires_at)}</td>
+                                                <td className="px-6 py-4"><StatusBadge status={statusLabels[q.status as QuotationStatus] || q.status} /></td>
+                                                <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
                                                     ฿{(Number(q.total) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <Button
-                                                        data-quotation-id={q.id}
-                                                        onClick={(e) => handleDropdownToggle(e, q.id)}
-                                                        variant="icon"
-                                                        title="ตัวเลือก"
-                                                    >
-                                                        <ManageIcon className="h-5 w-5" />
-                                                    </Button>
+                                                <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            className="px-4 py-2 text-sm font-bold rounded-lg shadow-md border-none flex items-center gap-2 hover:shadow-lg transition-shadow"
+                                                            style={{ backgroundColor: '#10B981', color: 'white' }}
+                                                            disabled={loadingPdfId === q.id}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (loadingPdfId === q.id) return;
+                                                                
+                                                                setSelectedQuotation(q);
+                                                                setLoadingPdfId(q.id);
+                                                                (async () => {
+                                                                    try {
+                                                                        const blob = await QuotationApi.getPDF(q.id);
+                                                                        const url = window.URL.createObjectURL(blob);
+                                                                        window.open(url, '_blank');
+                                                                    } catch (error) {
+                                                                        console.error('Error viewing PDF:', error);
+                                                                        alert('ไม่สามารถเปิด PDF ได้');
+                                                                    } finally {
+                                                                        setLoadingPdfId(null);
+                                                                    }
+                                                                })();
+                                                            }}
+                                                        >
+                                                            {loadingPdfId === q.id ? (
+                                                                <LoadingIcon className="w-5 h-5 animate-spin" />
+                                                            ) : (
+                                                                <EyeIcon className="w-5 h-5" />
+                                                            )}
+                                                            {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                                                        </Button>
+                                                        <Button
+                                                            data-quotation-id={q.id}
+                                                            onClick={(e) => handleDropdownToggle(e, q.id)}
+                                                            variant="icon"
+                                                            title="ตัวเลือก"
+                                                        >
+                                                            <ManageIcon className="h-5 w-5" />
+                                                        </Button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );

@@ -20,7 +20,6 @@ import {
   ListBulletIcon,
   EyeIcon,
   PencilIcon,
-  ArrowRightIcon,
   TrashIcon,
   ManageIcon,
   CalendarDaysIcon,
@@ -31,6 +30,7 @@ import {
   DocumentTextIcon,
   ClockIcon,
   CheckCircleIcon,
+  LoadingIcon,
 } from '@/src/assets/icons/Icons';
 import { Pagination } from '@/src/components/common/Pagination';
 import { formatThaiDate } from '@/src/utils/date';
@@ -73,6 +73,7 @@ const Assessments: React.FC = () => {
     useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -229,23 +230,6 @@ const Assessments: React.FC = () => {
     }
   };
 
-  const handleExportPdf = async (assessment: Assessment) => {
-    try {
-      setIsLoading(true);
-      const blob = await AssessmentApi.exportPdf(assessment.id);
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      
-      // Cleanup after a delay to ensure it opened
-      setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-      alert('ไม่สามารถดาวน์โหลด PDF ได้');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleUpdateAssessment = async (assessment: Assessment) => {
     try {
       await AssessmentApi.update(assessment.id, assessment);
@@ -345,24 +329,11 @@ const Assessments: React.FC = () => {
           onClick: () => handleViewDetails(selectedAssessment),
         },
         {
-          label: 'พิมพ์ใบประเมิน',
-          icon: DocumentTextIcon,
-          onClick: () => handleExportPdf(selectedAssessment),
-        },
-        {
           label: 'แก้ไข',
           icon: PencilIcon,
           onClick: () => handleEdit(selectedAssessment),
         },
       ];
-
-    if (selectedAssessment.status === AsessmentStatus.COMPLETE) {
-      actions.push({
-        label: 'แปลงเป็นใบเสนอราคา',
-        icon: ArrowRightIcon,
-        onClick: () => console.log('Convert', selectedAssessment.id),
-      });
-    }
 
     actions.push({
       label: 'ลบ',
@@ -653,16 +624,48 @@ const Assessments: React.FC = () => {
                             })}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <Button
-                              data-assessment-id={assessment.id}
-                              onClick={(e) =>
-                                handleDropdownToggle(e, assessment.id)
-                              }
-                              variant="ghost"
-                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                            >
-                              <ManageIcon className="h-5 w-5" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                onClick={async () => {
+                                  try {
+                                    if (assessment.id) {
+                                      setLoadingPdfId(assessment.id);
+                                      const blob = await AssessmentApi.exportPdf(assessment.id);
+                                      const url = window.URL.createObjectURL(blob);
+                                      window.open(url, '_blank');
+                                      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                                    }
+                                  } catch (error) {
+                                    console.error('Error fetching PDF:', error);
+                                    alert('ไม่สามารถดาวน์โหลด PDF ได้');
+                                  } finally {
+                                    setLoadingPdfId(null);
+                                  }
+                                }}
+                                className="px-3 py-1.5 text-sm font-medium rounded-lg bg-green-500 text-white hover:bg-green-600 h-auto shadow-sm"
+                                title="ดู PDF"
+                                disabled={loadingPdfId === assessment.id}
+                              >
+                                {loadingPdfId === assessment.id ? (
+                                  <LoadingIcon className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <span className="flex items-center gap-1.5">
+                                    <EyeIcon className="h-4 w-4" />
+                                    ดู PDF
+                                  </span>
+                                )}
+                              </Button>
+                              <Button
+                                data-assessment-id={assessment.id}
+                                onClick={(e) =>
+                                  handleDropdownToggle(e, assessment.id)
+                                }
+                                variant="ghost"
+                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                              >
+                                <ManageIcon className="h-5 w-5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       );

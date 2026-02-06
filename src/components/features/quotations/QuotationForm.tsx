@@ -122,7 +122,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     // Line items
     const [items, setItems] = useState<QuotationItem[]>(
         initialValues?.items
-            ?.filter((item: any) => !(item.unit === 'พื้นที่' && !item.product_id)) // Filter legacy artifacts from bug
+            ?.filter((item: any) => {
+                // Filter legacy artifacts from bug
+                if (item.unit === 'พื้นที่' && !item.product_id) return false;
+                // Filter out package items if they are accidentally in the list (identified by unit 'งาน/แพ็กเกจ' or description starting with 'แพ็กเกจ:')
+                if (item.unit === 'งาน/แพ็กเกจ' || item.description?.startsWith('แพ็กเกจ:')) return false;
+                return true;
+            })
             ?.map((item: any) => ({
                 id: crypto.randomUUID(),
                 productId: item.product_id || '',
@@ -148,13 +154,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
     const vatRate = 0.07;
 
-    // Product options for dropdown
+    // Product options for dropdown (filter out PACKAGE items)
     const productOptions = useMemo(() => {
-        return products.map((p) => ({
-            value: p.id,
-            label: `${p.code} - ${p.name}`,
-            description: p.unit?.name || '',
-        }));
+        return products
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            .filter((p) => p.type !== 'PACKAGE') // Filter out products with type 'PACKAGE'
+            .map((p) => ({
+                value: p.id,
+                label: `${p.code} - ${p.name}`,
+                description: p.unit?.name || '',
+            }));
     }, [products]);
 
     // Assessment options for dropdown

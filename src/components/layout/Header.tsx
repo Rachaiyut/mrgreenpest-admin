@@ -11,9 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
   const currentUser = useCurrentUser();
-
-  console.log("current USer", currentUser)
-
+  
   return (
     <header className="bg-white shadow-sm z-10">
       <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end h-16">

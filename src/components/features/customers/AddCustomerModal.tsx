@@ -39,7 +39,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     const data = Object.fromEntries(formData.entries());
 
     const requiredFields = [
-      'name',
+      // 'name', // Removing combined name check
       'phone',
       'address-street',
       'address-subdistrict',
@@ -48,8 +48,12 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       'address-postalcode',
       'taxId',
     ];
-    if (customerType === 'นิติบุคคล') {
-      requiredFields.push('contactPerson', 'contactPersonPhone');
+
+    if (customerType === 'บุคคลธรรมดา') {
+        requiredFields.push('first_name', 'last_name');
+    } else {
+        requiredFields.push('name'); // Corporate name
+        requiredFields.push('contactPerson', 'contactPersonPhone');
     }
 
     for (const field of requiredFields) {
@@ -59,15 +63,14 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       }
     }
 
-    let firstName = data.name as string;
+    let firstName = '';
     let lastName = '';
 
     if (customerType === 'บุคคลธรรมดา') {
-      const parts = firstName.trim().split(/\s+/);
-      if (parts.length > 1) {
-        firstName = parts[0];
-        lastName = parts.slice(1).join(' ');
-      }
+        firstName = data.first_name as string;
+        lastName = data.last_name as string;
+    } else {
+        firstName = data.name as string; // Use company name as first name for now or adjust based on backend expectations
     }
 
     const newCustomer: Omit<Customer, 'id' | 'code'> = {
@@ -91,6 +94,13 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
       google_map_link: data.googleMapLink as string | undefined,
       status: '' as any,
       updated_at: '',
+      gendder: (data.gender as any) || 'ไม่ระบุ',
+      road_line: (data['address-roadLine'] as string) || '',
+      sequence_no: (data['address-sequence'] as string) || '',
+      service_area: (data['address-zone'] as string) || '',
+      service_group: (data['address-group'] as string) || '',
+      assessments: [],
+      contracts: [],
     };
 
     onCreateCustomer(newCustomer);
@@ -163,20 +173,25 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
         {customerType === 'บุคคลธรรมดา' ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ชื่อ-นามสกุล" htmlFor="name">
-                <Input id="name" name="name" type="text" required />
+              <FormField label="ชื่อจริง" htmlFor="first_name">
+                <Input id="first_name" name="first_name" type="text" required />
               </FormField>
+              <FormField label="นามสกุล" htmlFor="last_name">
+                <Input id="last_name" name="last_name" type="text" required />
+              </FormField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ชื่อเล่น" htmlFor="nickname">
                 <Input id="nickname" name="nickname" type="text" />
               </FormField>
+              <FormField label="เพศ" htmlFor="gender">
+                <Select id="gender" name="gender">
+                  <option>ไม่ระบุ</option>
+                  <option>ชาย</option>
+                  <option>หญิง</option>
+                </Select>
+              </FormField>
             </div>
-            <FormField label="เพศ" htmlFor="gender">
-              <Select id="gender" name="gender">
-                <option>ไม่ระบุ</option>
-                <option>ชาย</option>
-                <option>หญิง</option>
-              </Select>
-            </FormField>
           </>
         ) : (
           <>

@@ -63,6 +63,8 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         name:
           customer.first_name +
           (customer.last_name ? ` ${customer.last_name}` : ''),
+        first_name: customer.first_name,
+        last_name: customer.last_name,
         type:
           customer.customer_type === CustomerType.CORPORATE
             ? 'นิติบุคคล'
@@ -97,7 +99,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     e.preventDefault();
     if (customer) {
       const requiredFields = [
-        'name',
+        // 'name',
         'phone',
         'address-street',
         'address-subdistrict',
@@ -105,6 +107,13 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         'address-province',
         'address-postalcode',
       ];
+
+      if (formData.type === 'บุคคลธรรมดา') {
+          requiredFields.push('first_name', 'last_name');
+      } else {
+          requiredFields.push('name'); // Corporate name
+      }
+
       // Check taxId manually since it's not in the requiredFields array for loop but is now required
       if (!formData.taxId) {
         alert('กรุณากรอกเลขประจำตัวผู้เสียภาษี');
@@ -118,22 +127,21 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         }
       }
 
-      let firstName = formData.name || '';
+      let firstName = '';
       let lastName = '';
 
       if (formData.type === 'บุคคลธรรมดา') {
-        const parts = firstName.trim().split(/\s+/);
-        if (parts.length > 1) {
-          firstName = parts[0];
-          lastName = parts.slice(1).join(' ');
-        }
+          firstName = formData.first_name || '';
+          lastName = formData.last_name || '';
+      } else {
+          firstName = formData.name || '';
       }
 
       const updatedData: Customer = {
         ...customer,
         first_name: firstName,
         last_name: lastName,
-        customer_type:
+        type:
           formData.type === 'นิติบุคคล'
             ? CustomerType.CORPORATE
             : CustomerType.INDIVIDUAL,
@@ -221,16 +229,28 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         {formData.type === 'บุคคลธรรมดา' ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ชื่อ-นามสกุล" htmlFor="name">
+              <FormField label="ชื่อจริง" htmlFor="first_name">
                 <Input
-                  id="name"
-                  name="name"
+                  id="first_name"
+                  name="first_name"
                   type="text"
-                  value={formData.name || ''}
+                  value={formData.first_name || ''}
                   onChange={handleChange}
                   required
                 />
               </FormField>
+              <FormField label="นามสกุล" htmlFor="last_name">
+                <Input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  value={formData.last_name || ''}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ชื่อเล่น" htmlFor="nickname">
                 <Input
                   id="nickname"
@@ -240,19 +260,19 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                   onChange={handleChange}
                 />
               </FormField>
+              <FormField label="เพศ" htmlFor="gender">
+                <Select
+                  id="gender"
+                  name="gender"
+                  value={formData.gender || 'ไม่ระบุ'}
+                  onChange={handleChange}
+                >
+                  <option>ไม่ระบุ</option>
+                  <option>ชาย</option>
+                  <option>หญิง</option>
+                </Select>
+              </FormField>
             </div>
-            <FormField label="เพศ" htmlFor="gender">
-              <Select
-                id="gender"
-                name="gender"
-                value={formData.gender || 'ไม่ระบุ'}
-                onChange={handleChange}
-              >
-                <option>ไม่ระบุ</option>
-                <option>ชาย</option>
-                <option>หญิง</option>
-              </Select>
-            </FormField>
           </>
         ) : (
           <>

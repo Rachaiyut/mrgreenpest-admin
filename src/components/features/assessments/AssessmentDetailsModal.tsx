@@ -1,4 +1,4 @@
-import { FC, ReactNode, ReactElement, cloneElement } from 'react';
+import { FC, ReactNode, ReactElement, cloneElement, useState } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import {
@@ -17,8 +17,11 @@ import {
   MapIcon,
   ClipboardDocumentListIcon,
   UserGroupIcon,
+  EyeIcon,
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 import { PaymentMethod, ServiceSystem } from '@/src/types';
+import { AssessmentApi } from '@/src/api';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -138,12 +141,31 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
   products,
   customers = [],
 }) => {
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
   if (!isOpen || !assessment) return null;
 
   const customer = customers.find((c) => c.id === assessment.customer_id);
   const customerName = customer
     ? `${customer.first_name} ${customer.last_name}`
     : assessment.customer_id;
+
+  const handleViewPdf = async () => {
+    try {
+      if (assessment?.id) {
+        setLoadingPdf(true);
+        const blob = await AssessmentApi.exportPdf(assessment.id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      }
+    } catch (error) {
+      console.error('Error fetching PDF:', error);
+      alert('ไม่สามารถดาวน์โหลด PDF ได้');
+    } finally {
+      setLoadingPdf(false);
+    }
+  };
 
   return (
     <Modal
