@@ -52,7 +52,7 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     if (customerType === 'บุคคลธรรมดา') {
         requiredFields.push('first_name', 'last_name');
     } else {
-        requiredFields.push('name'); // Corporate name
+        requiredFields.push('name');
         requiredFields.push('contactPerson', 'contactPersonPhone');
     }
 

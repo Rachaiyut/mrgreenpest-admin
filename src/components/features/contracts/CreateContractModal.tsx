@@ -163,7 +163,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
             .filter((q) => q.status === 'APPROVED')
             .map((q) => ({
                 value: q.id,
-                label: `QT-${q.id.slice(0, 8)} - ${q.customer_name}`,
+                label: `${q.code || `QT-${q.id.slice(0, 8)}`} - ${q.customer_name}`,
                 description: `฿${Number(q.total).toLocaleString('th-TH')}`,
             }));
     }, [quotations]);
@@ -174,7 +174,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
     }, [quotations, selectedQuotationId]);
 
     // Selected customer details
-    const selectedCustomer = useMemo(() => {
+    const selectedCustomer = useMemo(() => {  
         return customers.find((c) => c.id === selectedCustomerId) || searchedCustomers.find((c) => c.id === selectedCustomerId);
     }, [customers, searchedCustomers, selectedCustomerId]);
 

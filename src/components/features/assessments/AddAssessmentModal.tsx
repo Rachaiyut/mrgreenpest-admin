@@ -130,7 +130,7 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({
         sub_district: prev.sub_district || customer.sub_district || '',
         district: prev.district || customer.district || '',
         province: prev.province || customer.province || '',
-        zipcode: prev.zipcode || customer.zipcode || '',
+        zipcode: prev.zipcode || customer.postal_code || '',
       }));
     }
   };
