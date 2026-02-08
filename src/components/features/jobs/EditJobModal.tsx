@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, FC, ChangeEvent, FormEvent } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button, FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Assessment, User, UserRole, Warehouse, Product, Category, AssessmentWorkArea, AssessmentInstallment } from '@/src/types/entity/app.interface';
@@ -7,23 +7,23 @@ import {
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
 import { JobStatus, JobMainStatus } from '@/src/types/enums/job';
-import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon, CreditCardIcon } from '../../../assets/icons/Icons';
 import { WarehouseType, CategoryType } from '@/src/types';
-import { AssessmentApi, ProductApi, CategoryApi, PackageApi, JobApi } from '@/src/api';
+import { AssessmentApi, ProductApi, CategoryApi, PackageApi, JobApi, CustomerApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
 import { Package } from '@/src/types/entity/package.interface';
 
 // A component to manage a single work area within the job form
-const JobWorkAreaForm: React.FC<{
+const JobWorkAreaForm: FC<{
   area: Partial<FieldJobWorkArea>;
   index: number;
   onAreaChange: (index: number, updatedArea: Partial<FieldJobWorkArea>) => void;
   onClearArea: (index: number) => void;
   isReadOnly: boolean;
 }> = ({ area, index, onAreaChange, onClearArea, isReadOnly }) => {
-  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     onAreaChange(index, { ...area, [name]: value });
   };
@@ -93,7 +93,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   [PaymentMethod.INSTALLMENT]: 'งวด',
 };
 
-export const EditJobModal: React.FC<EditJobModalProps> = ({
+export const EditJobModal: FC<EditJobModalProps> = ({
   isOpen,
   onClose,
   job,
@@ -145,7 +145,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   // Handle Assessment field changes
   const handleAssessmentChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     if (!assessment) return;
     const { name, value } = e.target;
@@ -290,32 +290,52 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   useEffect(() => {
     if (currentJob) {
       const { work_areas, technicians, ...rest } = currentJob;
-      const initialFormData = { ...rest };
+      const initialFormData: any = { ...rest };
       
-      // Map customer name if available in the relation
+      // Resolve Customer Name
+      let cName = (currentJob as any).customerName || (currentJob as any).customer_name;
+      
       if ((currentJob as any).customer) {
          const c = (currentJob as any).customer;
-         // Prefer a display name logic if available, or construct it
-         initialFormData.customerName = c.name || `${c.first_name || ''} ${c.last_name || ''} ${c.nickname ? `(${c.nickname})` : ''}`.trim();
-         
-         // Construct address from customer fields if job address is empty
-         if (!initialFormData.address) {
-            const addressParts = [
-              c.address_house_no,
-              c.address_soi,
-              c.address_road,
-              c.sub_district,
-              c.district,
-              c.province,
-              c.postal_code,
-            ].filter(Boolean);
-            initialFormData.address = addressParts.join(' ');
-         }
+         const constructedName = c.name || `${c.first_name || ''} ${c.last_name || ''} ${c.nickname ? `(${c.nickname})` : ''}`.trim();
+         if (constructedName) cName = constructedName;
+      }
+      
+      initialFormData.customerName = cName;
 
-         // Map google_map_link from customer if empty
-         if (!initialFormData.google_map_link && c.google_map_link) {
-            initialFormData.google_map_link = c.google_map_link;
-         }
+      // If still no name but we have ID, fetch it
+      if (!cName && currentJob.customer_id) {
+           CustomerApi.getCustomerById(currentJob.customer_id).then(res => {
+               const c = res as any; // The response might be the object directly or have data property
+               const customerData = c.data || c; 
+               if (customerData) {
+                   const fetchedName = `${customerData.first_name || ''} ${customerData.last_name || ''} ${customerData.nickname ? `(${customerData.nickname})` : ''}`.trim();
+                   setFormData(prev => ({ ...prev, customerName: fetchedName }));
+               }
+           }).catch(err => console.error("Error fetching customer for job:", err));
+       }
+         
+      // Construct address from customer fields if job address is empty
+      if (!initialFormData.address && (currentJob as any).customer) {
+        const c = (currentJob as any).customer;
+        const addressParts = [
+          c.address_house_no,
+          c.address_soi,
+          c.address_road,
+          c.sub_district,
+          c.district,
+          c.province,
+          c.postal_code,
+        ].filter(Boolean);
+        initialFormData.address = addressParts.join(' ');
+      }
+      
+      // If still empty and we fetch customer later, we might want to update address too?
+      // For now let's keep it simple.
+
+      // Map google_map_link from customer if empty
+      if (!initialFormData.google_map_link && (currentJob as any).customer?.google_map_link) {
+        initialFormData.google_map_link = (currentJob as any).customer.google_map_link;
       }
 
       setFormData(initialFormData);
@@ -450,7 +470,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     const total = (assessment as any).total_price || 0;
 
     if (paymentCondition === PaymentMethod.INSTALLMENT && installmentCount && installmentCount > 0) {
-      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
+      const currentSum = installments.reduce((s, i) => s + Number(i.amount || 0), 0);
       const isSumMismatch = Math.abs(currentSum - total) > 1; // Tolerance 1 baht
       const isCountMismatch = installments.length !== installmentCount;
 
@@ -478,7 +498,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   }, [assessment?.payment_condition, assessment?.payment_installment_count, assessment?.total_price]);
 
   const handleChange = (
-    e: React.ChangeEvent<
+    e: ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
@@ -628,7 +648,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (timeConflictError) return;
     await handleSaveAndClose(formData.status || JobStatus.Planned);
@@ -856,7 +876,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขงาน: ${(currentJob as any).customer_name || (currentJob as any).customerName || 'ลูกค้าไม่ระบุ'}`}
+      title={`แก้ไขงาน: ${formData.customerName || (currentJob as any).customer_name || 'ลูกค้าไม่ระบุ'}`}
       size="5xl"
       footer={
         <div className="flex gap-2">
@@ -1090,7 +1110,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           )}
 
           {assessment && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">รายการพื้นที่บริการ</h3>
@@ -1100,7 +1120,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                    <button
                     type="button"
                     onClick={handleAddArea}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-all"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium shadow-sm transition-all"
                   >
                     <PlusIcon className="h-4 w-4" />
                     เพิ่มพื้นที่
@@ -1108,7 +1128,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 </div>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {(assessment.assessment_areas || []).map((area, index) => (
                   <WorkAreaForm
                     key={area.id || index}
@@ -1135,96 +1155,127 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
 
               {/* Payment Condition Section moved here as it relates to the service agreement */}
-              <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-8">
-                <h3 className="text-base font-semibold text-slate-800 mb-4">เงื่อนไขการชำระเงิน</h3>
+              <div className="bg-white p-6 rounded-xl border border-slate-200 mt-8 shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                    <CreditCardIcon className="w-5 h-5 text-primary" />
+                    เงื่อนไขการชำระเงิน
+                </h3>
+                
                 <div className="flex flex-col md:flex-row gap-6">
-                  <div className="flex items-center gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer p-3 bg-white border border-slate-200 rounded-lg hover:border-primary transition-colors min-w-[150px]">
-                      <input
-                        type="radio"
-                        name="payment_type_edit_job"
-                        className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                        checked={!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT}
-                        onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                      />
-                      <span className="text-slate-700 font-medium">ชำระเต็มจำนวน</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer p-3 bg-white border border-slate-200 rounded-lg hover:border-primary transition-colors min-w-[150px]">
-                      <input
-                        type="radio"
-                        name="payment_type_edit_job"
-                        className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                        checked={(assessment as any).payment_condition === PaymentMethod.INSTALLMENT}
-                        onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                      />
-                      <span className="text-slate-700 font-medium">แบ่งชำระ (งวด)</span>
-                    </label>
-                  </div>
+                   <div className="flex-1 space-y-4">
+                      <div className="flex gap-4">
+                        <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                          <input
+                            type="radio"
+                            name="payment_type_edit_job"
+                            className="hidden"
+                            checked={!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT}
+                            onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
+                          />
+                          <div className="font-semibold">ชำระเต็มจำนวน</div>
+                        </label>
+                        <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${(assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                          <input
+                            type="radio"
+                            name="payment_type_edit_job"
+                            className="hidden"
+                            checked={(assessment as any).payment_condition === PaymentMethod.INSTALLMENT}
+                            onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
+                          />
+                          <div className="font-semibold">แบ่งชำระ (งวด)</div>
+                        </label>
+                      </div>
 
-                  {(assessment as any).payment_condition === PaymentMethod.INSTALLMENT && (
-                    <div className="w-full md:w-1/2 space-y-4">
-                      <Input
-                        name="payment_installment_count"
-                        type="number"
-                        placeholder="ระบุจำนวนงวด"
-                        value={(assessment as any).payment_installment_count || ''}
-                        onChange={(e) =>
-                          setAssessment((prev: any) => ({
-                            ...prev,
-                            payment_installment_count: parseInt(e.target.value, 10) || 0,
-                          }))
-                        }
-                        className="bg-white"
-                        required
-                        min={2}
-                      />
-                      
-                      {/* Installment Details */}
-                      {installments.length > 0 && (
-                        <div className="border border-slate-200 rounded-md p-3 bg-white">
-                          <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
-                          <div className="space-y-3">
-                            {installments.map((inst, idx) => (
-                              <div key={idx} className="flex gap-3 items-end">
-                                <div className="w-20 pt-2 text-sm text-slate-600">
-                                  งวดที่ {inst.installment_no}
-                                </div>
-                                <div className="flex-1">
-                                  <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
-                                  <Input
-                                    type="number"
-                                    value={inst.amount}
-                                    onChange={(e) => {
-                                      const val = parseFloat(e.target.value) || 0;
-                                      handleInstallmentAmountChange(idx, val);
-                                    }}
-                                    step="0.01"
-                                  />
-                                </div>
-                                <div className="flex-1">
-                                  <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
-                                  <Input
-                                    type="text"
-                                    value={inst.note || ''}
-                                    placeholder="เช่น มัดจำ"
-                                    onChange={(e) => {
-                                      handleInstallmentNoteChange(idx, e.target.value);
-                                    }}
-                                  />
+                      {(assessment as any).payment_condition === PaymentMethod.INSTALLMENT && (
+                        <div className="space-y-4 animate-fadeIn">
+                          <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                            <Input
+                              name="payment_installment_count"
+                              type="number"
+                              placeholder="ระบุจำนวนงวด"
+                              value={(assessment as any).payment_installment_count || ''}
+                              onChange={(e) =>
+                                setAssessment((prev: any) => ({
+                                  ...prev,
+                                  payment_installment_count: parseInt(e.target.value, 10) || 0,
+                                }))
+                              }
+                              className="bg-white max-w-[200px]"
+                              required
+                              min={2}
+                            />
+                          </FormField>
+                          
+                          {/* Installment Details */}
+                          {installments.length > 0 && (
+                            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                              <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
+                              <div className="space-y-3">
+                                {installments.map((inst, idx) => (
+                                  <div key={idx} className="flex gap-3 items-end">
+                                    <div className="w-16 pt-2 text-sm font-medium text-slate-500">
+                                      งวดที่ {inst.installment_no}
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
+                                      <Input
+                                        type="number"
+                                        value={inst.amount}
+                                        onChange={(e) => {
+                                          const val = parseFloat(e.target.value) || 0;
+                                          handleInstallmentAmountChange(idx, val);
+                                        }}
+                                        step="0.01"
+                                        className="bg-white"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
+                                      <Input
+                                        type="text"
+                                        value={inst.note || ''}
+                                        placeholder="เช่น มัดจำ"
+                                        onChange={(e) => {
+                                          handleInstallmentNoteChange(idx, e.target.value);
+                                        }}
+                                        className="bg-white"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                                <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                                  <span>รวม</span>
+                                  <span className={installments.reduce((sum, i) => sum + Number(i.amount || 0), 0) === (assessment as any).total_price ? 'text-green-600' : 'text-red-500'}>
+                                    {installments.reduce((sum, i) => sum + Number(i.amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {((assessment as any).total_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
                                 </div>
                               </div>
-                            ))}
-                            <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                              <span>รวม</span>
-                              <span className={installments.reduce((sum, i) => sum + (i.amount || 0), 0) === (assessment as any).total_price ? 'text-green-600' : 'text-red-500'}>
-                                {installments.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} / {((assessment as any).total_price || 0).toLocaleString()}
-                              </span>
                             </div>
-                          </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
+                   </div>
+
+                   {/* Summary for Job Edit */}
+                   <div className="w-full md:w-1/3">
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                          <h4 className="font-semibold text-slate-800 mb-2">สรุปค่าบริการ</h4>
+                          <div className="space-y-2 text-sm">
+                             <div className="flex justify-between text-slate-600">
+                                <span>พื้นที่ทั้งหมด</span>
+                                <span>{(assessment.assessment_areas || []).length} จุด</span>
+                             </div>
+                             <div className="flex justify-between text-slate-600">
+                                <span>ประเภทราคา</span>
+                                <span>{(assessment as any).package_id ? 'Package' : 'Custom'}</span>
+                             </div>
+                             <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg text-primary">
+                                <span>รวมสุทธิ</span>
+                                <span>฿{((assessment as any).total_price || 0).toLocaleString()}</span>
+                             </div>
+                          </div>
+                      </div>
+                   </div>
                 </div>
               </div>
             </div>

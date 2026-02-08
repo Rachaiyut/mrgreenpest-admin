@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     FormField,
     Input,
@@ -22,6 +22,7 @@ interface InstallmentPlan {
     percentage: number;
     amount: number;
     due_date: string;
+    status: 'PENDING' | 'PAID' | 'OVERDUE';
 }
 
 interface CreateContractModalProps {
@@ -103,6 +104,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
                     percentage: 30,
                     amount: 0,
                     due_date: '',
+                    status: 'PENDING',
                 },
                 {
                     id: crypto.randomUUID(),
@@ -111,6 +113,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
                     percentage: 35,
                     amount: 0,
                     due_date: '',
+                    status: 'PENDING',
                 },
                 {
                     id: crypto.randomUUID(),
@@ -119,6 +122,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
                     percentage: 35,
                     amount: 0,
                     due_date: '',
+                    status: 'PENDING',
                 },
             ]);
         }
@@ -132,7 +136,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
 
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleCustomerSearch = (query: string) => {
+    const handleCustomerSearch = useCallback((query: string) => {
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
         }
@@ -152,7 +156,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
                 console.error("Error searching customers:", error);
             }
         }, 500);
-    };
+    }, [customers]);
 
     // Installment plan
     const [installments, setInstallments] = useState<InstallmentPlan[]>([]);
@@ -175,67 +179,192 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
 
     // Selected customer details
     const selectedCustomer = useMemo(() => {  
+        if (!selectedCustomerId) return undefined;
         return customers.find((c) => c.id === selectedCustomerId) || searchedCustomers.find((c) => c.id === selectedCustomerId);
     }, [customers, searchedCustomers, selectedCustomerId]);
+
+    // Fetched quotation full details
+    const [fetchedQuotation, setFetchedQuotation] = useState<any>(null);
 
     // Auto-fill from quotation when selected
     useEffect(() => {
         const fetchQuotationDetails = async () => {
             if (selectedQuotationId) {
                 try {
-                    const fullQuotation = await QuotationApi.getById(selectedQuotationId);
+                    const response = await QuotationApi.getById(selectedQuotationId);
+                    // Handle response wrapping (if API returns { data: ... })
+                    const fullQuotation = (response as any).data || response;
                     
                     if (fullQuotation) {
+                        setFetchedQuotation(fullQuotation);
                         setSelectedCustomerId(fullQuotation.customer_id);
                         setTotalAmount(Number(fullQuotation.total) || 0);
                         
                         // Auto-fill other fields from quotation if available
                         if (fullQuotation.service_location) setServiceLocation(fullQuotation.service_location);
                         if (fullQuotation.service_type) setServiceType(fullQuotation.service_type);
-                        if (fullQuotation.system_used) setSystemUsed(fullQuotation.system_used);
+                        
+                        // Auto-fill System Used
+                        if (fullQuotation.system_used) {
+                            setSystemUsed(fullQuotation.system_used);
+                        } else if (fullQuotation.service_type) {
+                            // Try to infer system from service type if system_used is empty
+                            if (fullQuotation.service_type.includes('เหยื่อ') || fullQuotation.service_type.includes('Bait')) {
+                                setSystemUsed('ระบบเหยื่อ');
+                            } else if (fullQuotation.service_type.includes('เคมี') || fullQuotation.service_type.includes('Chemical')) {
+                                setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
+                            } else if (fullQuotation.service_type.includes('ฉีดพ่น') || fullQuotation.service_type.includes('Spray')) {
+                                setSystemUsed('ระบบฉีดพ่น');
+                            }
+                        }
+
                         if (fullQuotation.contract_duration) setContractDuration(fullQuotation.contract_duration);
-                        if (fullQuotation.service_count) setServiceCount(Number(fullQuotation.service_count));
+                        if (fullQuotation.service_count) setServiceCount(parseInt(String(fullQuotation.service_count)));
                         if (fullQuotation.notes) setNotes(fullQuotation.notes);
 
-                        // Auto-fill installments
-                        if (fullQuotation.installments && fullQuotation.installments.length > 0) {
-                            // Cast to any because the backend response structure might differ from the strict frontend interface
-                            // Backend returns: installment_no, service_date, amount, notes
-                            const backendInstallments = fullQuotation.installments as any[];
-                            
-                            const mappedInstallments: InstallmentPlan[] = backendInstallments.map((inst) => {
-                                let dueDate = '';
-                                try {
-                                    if (inst.service_date) {
-                                        dueDate = new Date(inst.service_date).toISOString().substring(0, 10);
-                                    } else if (inst.due_date) {
-                                        dueDate = new Date(inst.due_date).toISOString().substring(0, 10);
-                                    }
-                                } catch (e) {
-                                    console.warn('Invalid date in installment', inst);
-                                }
+                        // Fetch specific customer if not in list
+                        if (fullQuotation.customer_id) {
+                            // First, set the ID immediately so UI reacts if it's already in the list
+                            setSelectedCustomerId(fullQuotation.customer_id);
 
-                                return {
-                                    id: crypto.randomUUID(), // Generate new ID for contract installment
-                                    term: Number(inst.installment_no || inst.term || 0),
-                                    description: inst.notes || inst.description || `งวดที่ ${inst.installment_no || inst.term}`,
-                                    percentage: fullQuotation.total > 0 ? (Number(inst.amount) / Number(fullQuotation.total)) * 100 : 0,
-                                    amount: Number(inst.amount),
-                                    due_date: dueDate,
-                                    status: 'PENDING' as any
-                                };
-                            });
-                            setInstallments(mappedInstallments);
+                            // Then ensure we have the data
+                            try {
+                                // Check if we already have it in the combined lists to avoid unnecessary fetch
+                                const alreadyHasCustomer = customers.some(c => c.id === fullQuotation.customer_id) || 
+                                                         searchedCustomers.some(c => c.id === fullQuotation.customer_id);
+                                
+                                if (!alreadyHasCustomer) {
+                                     const res = await CustomerApi.getCustomerById(fullQuotation.customer_id);
+                                     // The response might be wrapped in { data: ... } or return the object directly depending on API client
+                                     const customerData = (res as any).data || res;
+                                     
+                                     if (customerData && customerData.id) {
+                                         setSearchedCustomers(prev => {
+                                             if (prev.find(c => c.id === customerData.id)) return prev;
+                                             return [customerData, ...prev];
+                                         });
+                                     }
+                                }
+                            } catch (err) {
+                                console.error("Error fetching specific customer for contract:", err);
+                            }
                         }
                     }
                 } catch (error) {
                     console.error("Failed to fetch quotation details:", error);
                 }
+            } else {
+                setFetchedQuotation(null);
+                // Optional: Reset fields if quotation is deselected?
+                // For now, we keep them to allow manual edit, or maybe reset installments?
             }
         };
 
         fetchQuotationDetails();
     }, [selectedQuotationId]);
+
+    // Calculate Installments based on Fetched Quotation & Current Form State
+    useEffect(() => {
+        if (fetchedQuotation) {
+             // Auto-fill installments
+             // Check if installments exist and is an array
+             if (Array.isArray(fetchedQuotation.installments) && fetchedQuotation.installments.length > 0) {
+                 // Cast to any because the backend response structure might differ from the strict frontend interface
+                 // Backend returns: installment_no, service_date, amount, notes
+                 const backendInstallments = fetchedQuotation.installments as any[];
+                 
+                 // Parsing Duration to Months
+                 let durationMonths = 12;
+                 if (contractDuration.includes('ปี')) {
+                     durationMonths = parseFloat(contractDuration) * 12;
+                 } else if (contractDuration.includes('เดือน')) {
+                     durationMonths = parseFloat(contractDuration);
+                 }
+
+                 // Extract credit term from payment_terms (e.g. "Credit 30 Days")
+                 let creditTermDays = 30; // Default
+                 if (fetchedQuotation.payment_terms) {
+                     const match = fetchedQuotation.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
+                     if (match) {
+                         creditTermDays = parseInt(match[1]);
+                     }
+                 }
+
+                 const totalVisits = serviceCount || 1;
+                 const totalInst = backendInstallments.length;
+                 const visitsPerInst = Math.ceil(totalVisits / totalInst);
+                 const startDateObj = startDate ? new Date(startDate) : new Date();
+
+                 const mappedInstallments: InstallmentPlan[] = backendInstallments.map((inst, index) => {
+                     // Calculate Visit Coverage
+                     const startVisit = (index * visitsPerInst) + 1;
+                     const endVisit = Math.min((index + 1) * visitsPerInst, totalVisits);
+                     
+                     // Calculate Due Date
+                     // Logic: Due Date = Estimated Service Completion Date + Credit Term
+                     // Estimated Service Date = StartDate + (EndVisit / TotalVisits * Duration)
+                     
+                     let calculatedDueDate = '';
+                     if (startDate) {
+                        const monthsToAdd = (endVisit / totalVisits) * durationMonths;
+                        const serviceDateObj = new Date(startDateObj);
+                        // Add months (approximate)
+                        serviceDateObj.setMonth(serviceDateObj.getMonth() + Math.floor(monthsToAdd));
+                        // Add remaining days fraction? Simplify to months for now.
+                        // Add credit term
+                        serviceDateObj.setDate(serviceDateObj.getDate() + creditTermDays);
+                        calculatedDueDate = serviceDateObj.toISOString().substring(0, 10);
+                     } else {
+                         // Fallback to existing date if start date not set
+                         if (inst.service_date) {
+                             calculatedDueDate = new Date(inst.service_date).toISOString().substring(0, 10);
+                         } else if (inst.due_date) {
+                             calculatedDueDate = new Date(inst.due_date).toISOString().substring(0, 10);
+                         }
+                     }
+
+                     const term = Number(inst.installment_no || inst.term || 0);
+                     // Append coverage info to description if not already there
+                     let description = inst.notes || inst.description || `งวดที่ ${term}`;
+                     const coverageText = `(ครอบคลุมบริการครั้งที่ ${startVisit}-${endVisit})`;
+                     if (!description.includes('ครอบคลุมบริการ')) {
+                         description = `${description} ${coverageText}`;
+                     }
+
+                     const amount = Number(inst.amount);
+                     const total = Number(fetchedQuotation.total) || 0;
+                     const percentage = total > 0 ? Number(((amount / total) * 100).toFixed(2)) : 0;
+
+                     return {
+                         id: crypto.randomUUID(), // Generate new ID for contract installment
+                         term: term,
+                         description: description,
+                         percentage: percentage,
+                         amount: amount,
+                         due_date: calculatedDueDate,
+                         status: 'PENDING' as any
+                     };
+                 });
+                 
+                 // Sort by term to ensure order
+                 mappedInstallments.sort((a, b) => a.term - b.term);
+                 
+                 setInstallments(mappedInstallments);
+             } else {
+                 // If no installments defined in quotation, assume full payment or generate default based on terms
+                 // Default to single installment of 100%
+                 setInstallments([{
+                     id: crypto.randomUUID(),
+                     term: 1,
+                     description: 'งวดที่ 1 - ชำระเต็มจำนวน (Full Payment)',
+                     percentage: 100,
+                     amount: Number(fetchedQuotation.total) || 0,
+                     due_date: '',
+                     status: 'PENDING'
+                 }]);
+             }
+        }
+    }, [fetchedQuotation, startDate, contractDuration, serviceCount]);
 
     // Auto-fill customer info
     useEffect(() => {
@@ -686,13 +815,22 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
                                                     }
                                                     min={0}
                                                     max={100}
+                                                    step={0.01}
                                                     className="!py-1 text-center h-9 pr-6"
                                                 />
                                                 <span className="absolute right-2 top-2 text-xs text-slate-400">%</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 text-right text-sm font-bold text-slate-800 font-mono bg-slate-50/30 border-r border-slate-200">
-                                            {inst.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <td className="px-4 py-2 border-r border-slate-200">
+                                            <Input
+                                                type="number"
+                                                value={inst.amount}
+                                                onChange={(e) =>
+                                                    handleInstallmentChange(inst.id, 'amount', Number(e.target.value))
+                                                }
+                                                step={0.01}
+                                                className="!py-1 text-right h-9 font-mono"
+                                            />
                                         </td>
                                         <td className="px-4 py-2 border-r border-slate-200">
                                             <Input

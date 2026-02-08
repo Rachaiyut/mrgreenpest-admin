@@ -33,6 +33,13 @@ class ContractService extends AuthService {
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async getPdf(id: string): Promise<Blob> {
+    const res = await this.http.get(`${this.path}/${id}/pdf`, {
+      responseType: 'blob',
+    });
+    return res.data;
+  }
 }
 
 export const ContractApi = new ContractService();

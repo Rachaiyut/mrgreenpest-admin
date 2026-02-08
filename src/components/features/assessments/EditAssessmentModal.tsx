@@ -1,21 +1,18 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, FC, ChangeEvent, FormEvent } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Textarea, Button } from '../../common/FormControls';
+import { FormField, Input, Textarea } from '../../common/FormControls';
 import {
   Assessment,
   Product,
-  AssessmentWorkAreaItem,
-  PackageCondition,
   AssessmentWorkArea,
   Customer,
   Category,
   AssessmentInstallment,
 } from '@/src/types/entity/app.interface';
-import { ServiceSystem, AsessmentStatus } from '@/src/types/enums/assessment';
+import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { PaymentMethod } from '@/src/types/enums/financial';
-import { PlusIcon, TrashIcon, RefreshIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, UserIcon, DocumentIcon, CreditCardIcon } from '../../../assets/icons/Icons';
 import { WorkAreaForm } from './WorkAreaForm';
-import { SearchableSelect } from '../../common/SearchableSelect';
 
 interface EditAssessmentModalProps {
   isOpen: boolean;
@@ -28,16 +25,7 @@ interface EditAssessmentModalProps {
   categories: Category[];
 }
 
-const SERVICE_TYPES = [
-  'กำจัดปลวก',
-  'กำจัดมด',
-  'กำจัดแมลงสาบ',
-  'กำจัดหนู',
-  'กำจัดยุง',
-  'อื่นๆ',
-];
-
-export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
+export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   isOpen,
   onClose,
   assessment,
@@ -47,6 +35,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   customers = [],
   categories = [],
 }) => {
+  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'payment'>('info');
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
@@ -55,31 +44,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   );
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
 
-  // Use packages prop directly - filter to only those with price tiers
-  const suggestedPackageOptions = useMemo(() => {
-    return packages.filter(
-      (pkg) =>
-        pkg.package_price &&
-        pkg.package_price.length > 0
-    );
-  }, [packages]);
-
-  const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-    [PaymentMethod.CASH]: 'เงินสด',
-    [PaymentMethod.TRANSFER]: 'โอนเงิน',
-    [PaymentMethod.CREDIT_CARD]: 'บัตรเครดิต',
-    [PaymentMethod.CHEQUE]: 'เช็ค',
-    [PaymentMethod.QR_PAYMENT]: 'QR Payment',
-    [PaymentMethod.DIVIDED]: 'แบ่งจ่าย',
-    [PaymentMethod.INSTALLMENT]: 'งวด',
-  };
-
-  const paymentOptions = Object.values(PaymentMethod).map((value) => ({
-    value,
-    label: PAYMENT_LABELS[value as PaymentMethod] || value,
-  }));
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
   };
@@ -114,9 +79,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         payment_condition: assessment.payment_condition,
         payment_installment_count: assessment.payment_installment_count,
       });
-      // Assume package_id is on assessment level if we want to pre-select,
-      // but if logic was work_area based, we might need to check work_areas.
-      // Current interface has package_id on Assessment.
       setSelectedPackageId(assessment.package_id || null);
 
       if (assessment.installments && assessment.installments.length > 0) {
@@ -131,7 +93,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
 
       // Helper to derive base price
       const enrichArea = (wa: any) => {
-        // Fetch missing details from product/package if available
         const enrichedItems = (wa.items || []).map((item: any) => {
           if (item.product_id && (!item.product_name || !item.product_price)) {
             const product = products.find((p) => p.id === item.product_id);
@@ -146,7 +107,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           return item;
         });
 
-        // Calculate base_service_price if not present
         const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
         const derivedBasePrice = wa.base_service_price !== undefined
           ? wa.base_service_price
@@ -160,16 +120,16 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         };
       };
 
-      // Apply logic to BOTH initial and original areas
       const enrichedAreas = rawAreas.map(enrichArea);
 
       setWorkAreas(enrichedAreas);
-      setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a }))); // Deep copy
+      setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a })));
     } else if (!isOpen) {
       setFormData({});
       setWorkAreas([]);
       setOriginalWorkAreas([]);
       setInstallments([]);
+      setActiveTab('info');
     }
   }, [assessment, isOpen, products]);
 
@@ -185,7 +145,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
       const total = totalEstimatedCost || 0;
 
       const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
-      const isSumMismatch = Math.abs(currentSum - total) > 1; // Tolerance 1 baht
+      const isSumMismatch = Math.abs(currentSum - total) > 1;
       const isCountMismatch = installments.length !== count;
 
       if (isSumMismatch || isCountMismatch) {
@@ -212,7 +172,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   }, [formData.payment_condition, formData.payment_installment_count, totalEstimatedCost]);
 
   const handleFieldChange = (
-    e: React.ChangeEvent<
+    e: ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
@@ -314,7 +274,6 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
   const handleSave = async (statusOverride?: AsessmentStatus) => {
     if (!assessment) return;
 
-    // Prepare work areas: remove temp IDs and ensure correct types
     const sanitizedWorkAreas = workAreas.map((area) => {
       const newArea: any = { ...area };
       if (newArea.id && newArea.id.startsWith('area-')) {
@@ -371,7 +330,7 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     onClose();
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     await handleSave();
   };
@@ -382,21 +341,20 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขใบประเมิน: ${assessment?.code || assessment?.id || ''
-        }`}
+      title={`แก้ไขใบประเมิน: ${assessment?.code || assessment?.id || ''}`}
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-end gap-6">
-          <p className="text-lg font-semibold text-slate-800">
+        <div className="flex w-full items-center justify-between">
+            <div className="text-lg font-semibold text-slate-800">
             ยอดรวมทั้งหมด:{' '}
-            <span className="text-green-600">
+            <span className="text-primary font-bold">
               ฿
               {totalEstimatedCost.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </span>
-          </p>
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -416,296 +374,399 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
         </div>
       }
     >
+      <div className="mb-6 border-b border-slate-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`
+              group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+              ${activeTab === 'info'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }
+            `}
+          >
+            <UserIcon className={`
+              -ml-0.5 mr-2 h-5 w-5
+              ${activeTab === 'info' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
+            `} />
+            ข้อมูลทั่วไป
+          </button>
+          <button
+            onClick={() => setActiveTab('areas')}
+            className={`
+              group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+              ${activeTab === 'areas'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }
+            `}
+          >
+            <DocumentIcon className={`
+              -ml-0.5 mr-2 h-5 w-5
+              ${activeTab === 'areas' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
+            `} />
+            พื้นที่บริการ ({workAreas.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('payment')}
+            className={`
+              group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+              ${activeTab === 'payment'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              }
+            `}
+          >
+            <CreditCardIcon className={`
+              -ml-0.5 mr-2 h-5 w-5
+              ${activeTab === 'payment' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
+            `} />
+            การชำระเงิน
+          </button>
+        </nav>
+      </div>
+
       <form
         id="edit-assessment-form"
         onSubmit={handleSubmit}
         className="space-y-6"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="วันที่สร้าง" htmlFor="created_at">
-            <Input
-              name="created_at"
-              type="date"
-              value={formData.created_at || ''}
-              onChange={handleFieldChange}
-              required
-            />
-          </FormField>
-          <FormField label="ลูกค้า" htmlFor="customer_id">
-            <Input
-              value={
-                customers.find((c) => c.id === formData.customer_id)
-                  ? `${customers.find((c) => c.id === formData.customer_id)?.first_name} ${customers.find((c) => c.id === formData.customer_id)?.last_name}`
-                  : formData.customer_id || ''
-              }
-              readOnly
-              className="bg-slate-100"
-            />
-          </FormField>
-        </div>
-        {/* Worksite Info */}
-        <div className="border border-slate-200 p-4 rounded-lg space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">
-            ข้อมูลที่อยู่หลัก
-          </h3>
-          <FormField label="ที่อยู่ (บ้านเลขที่, ถนน)" htmlFor="address">
-            <Textarea
-              name="address"
-              value={formData.address || ''}
-              onChange={handleFieldChange}
-              required
-            />
-          </FormField>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="แขวง/ตำบล" htmlFor="sub_district">
-              <Input
-                name="sub_district"
-                value={formData.sub_district || ''}
-                onChange={handleFieldChange}
-                required
-              />
-            </FormField>
-            <FormField label="เขต/อำเภอ" htmlFor="district">
-              <Input
-                name="district"
-                value={formData.district || ''}
-                onChange={handleFieldChange}
-                required
-              />
-            </FormField>
-            <FormField label="จังหวัด" htmlFor="province">
-              <Input
-                name="province"
-                value={formData.province || ''}
-                onChange={handleFieldChange}
-                required
-              />
-            </FormField>
-            <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
-              <Input
-                name="zipcode"
-                value={formData.zipcode || ''}
-                onChange={handleFieldChange}
-                required
-              />
-            </FormField>
-          </div>
-          <div className="pt-4 border-t">
-            <h3 className="text-base font-semibold text-slate-800 mb-2">
-              กลุ่มเส้นทาง/พื้นที่บริการ
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <FormField label="เขต (พื้นที่บริการ)" htmlFor="zone">
-                <Input
-                  name="zone"
-                  value={formData.zone || ''}
-                  onChange={handleFieldChange}
-                />
-              </FormField>
-              <FormField label="Group" htmlFor="route_group">
-                <Input
-                  name="route_group"
-                  value={formData.route_group || ''}
-                  onChange={handleFieldChange}
-                />
-              </FormField>
-              <FormField label="สายถนนที่" htmlFor="road_line">
-                <Input
-                  name="road_line"
-                  value={formData.road_line || ''}
-                  onChange={handleFieldChange}
-                />
-              </FormField>
-              <FormField label="ลำดับที่" htmlFor="sequence">
-                <Input
-                  name="sequence"
-                  value={formData.sequence || ''}
-                  onChange={handleFieldChange}
-                />
-              </FormField>
-            </div>
-          </div>
-          <FormField label="Link Google Map" htmlFor="google_map_link">
-            <Input
-              name="google_map_link"
-              type="url"
-              placeholder="https://maps.app.goo.gl/..."
-              value={formData.google_map_link || ''}
-              onChange={handleFieldChange}
-            />
-          </FormField>
-        </div>
-        {/* Common Info */}
-        <div className="border border-slate-200 p-4 rounded-lg space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
-              <Input
-                name="appointment_date"
-                type="date"
-                value={
-                  formData.appointment_date
-                    ? new Date(formData.appointment_date)
-                      .toISOString()
-                      .substring(0, 10)
-                    : ''
-                }
-                onChange={handleDateChange}
-                required
-              />
-            </FormField>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between border-b pb-2 mb-4">
-             <h3 className="text-lg font-semibold text-slate-800">
-              พื้นที่ให้บริการ (Work Areas)
-            </h3>
-          </div>
-          {workAreas.map((area, index) => (
-            <WorkAreaForm
-              key={area.id || index}
-              area={area}
-              index={index}
-              onAreaChange={handleAreaChange}
-              onRemoveArea={handleRemoveArea}
-              onClearArea={handleClearArea}
-              products={products}
-              selectedPackage={
-                selectedPackageId
-                  ? (packages.find(
-                    (p) => p.id === selectedPackageId
-                  ) as any)!
-                  : null
-              }
-              availablePackages={packages}
-              onSelectPackage={handlePackageSelect}
-              categories={categories}
-              isEditing={true}
-              originalArea={originalWorkAreas[index]}
-              onApprove={assessment?.status === AsessmentStatus.PENDING ? () => {
-                if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\\nConfirm approval and status change to Appointment?')) {
-                  setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
-                  handleSave(AsessmentStatus.APPOINTMENT);
-                }
-              } : undefined}
-            />
-          ))}
-        </div>
-
-        <div className="mb-6">
-          <button
-            type="button"
-            onClick={handleAddArea}
-            className="w-full py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-primary hover:border-primary hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 font-medium"
-          >
-            <PlusIcon className="h-5 w-5" />
-            เพิ่มพื้นที่ใหม่
-          </button>
-        </div>
-
-        {/* Payment Condition Section */}
-        <div className="w-full md:w-1/2 ml-auto">
-          <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-slate-50">
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                เงื่อนไขการชำระเงิน
-              </label>
-
-              <div className="flex gap-4 mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="payment_type_edit"
-                    className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                    checked={!formData.payment_condition || (formData.payment_condition !== PaymentMethod.INSTALLMENT && formData.payment_condition !== PaymentMethod.DIVIDED)}
-                    onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                  />
-                  <span className="text-slate-700">ชำระเต็มจำนวน</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="payment_type_edit"
-                    className="w-4 h-4 text-primary border-slate-300 focus:ring-primary"
-                    checked={formData.payment_condition === PaymentMethod.INSTALLMENT}
-                    onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                  />
-                  <span className="text-slate-700">แบ่งชำระ (งวด)</span>
-                </label>
-              </div>
-
-              {formData.payment_condition === PaymentMethod.INSTALLMENT && (
+        {/* TAB 1: General Info */}
+        <div className={activeTab === 'info' ? 'block' : 'hidden'}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                      <Input
-                        name="payment_installment_count"
-                        type="number"
-                        placeholder="ระบุจำนวนงวด"
-                        value={formData.payment_installment_count || ''}
-                        onChange={(e) => {
-                          const count = parseInt(e.target.value, 10) || 0;
-                          setFormData((prev) => ({
-                            ...prev,
-                            payment_installment_count: count,
-                          }));
-                        }}
-                        required
-                        min={2}
-                      />
-                    </FormField>
-                  </div>
-
-                  {/* Installment Details */}
-                  {installments.length > 0 && (
-                    <div className="border border-slate-200 rounded-md p-3 bg-white">
-                      <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
-                      <div className="space-y-3">
-                        {installments.map((inst, idx) => (
-                          <div key={idx} className="flex gap-3 items-end">
-                            <div className="w-20 pt-2 text-sm text-slate-600">
-                              งวดที่ {inst.installment_no}
-                            </div>
-                            <div className="flex-1">
-                              <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
-                              <Input
-                                type="number"
-                                value={inst.amount}
-                                onChange={(e) => {
-                                  const val = parseFloat(e.target.value) || 0;
-                                  handleInstallmentAmountChange(idx, val);
-                                }}
-                                step="0.01"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
-                              <Input
-                                type="text"
-                                value={inst.note || ''}
-                                placeholder="เช่น มัดจำ"
-                                onChange={(e) => {
-                                  handleInstallmentNoteChange(idx, e.target.value);
-                                }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                        <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                          <span>รวม</span>
-                          <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
-                            {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลเบื้องต้น</h3>
+                        <FormField label="วันที่สร้าง" htmlFor="created_at">
+                            <Input
+                            name="created_at"
+                            type="date"
+                            value={formData.created_at || ''}
+                            onChange={handleFieldChange}
+                            required
+                            />
+                        </FormField>
+                        <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
+                            <Input
+                            name="appointment_date"
+                            type="date"
+                            value={
+                                formData.appointment_date
+                                ? new Date(formData.appointment_date)
+                                    .toISOString()
+                                    .substring(0, 10)
+                                : ''
+                            }
+                            onChange={handleDateChange}
+                            required
+                            />
+                        </FormField>
+                        <FormField label="ลูกค้า" htmlFor="customer_id">
+                            <Input
+                            value={
+                                customers.find((c) => c.id === formData.customer_id)
+                                ? `${customers.find((c) => c.id === formData.customer_id)?.first_name} ${customers.find((c) => c.id === formData.customer_id)?.last_name}`
+                                : formData.customer_id || ''
+                            }
+                            readOnly
+                            className="bg-slate-200 text-slate-600"
+                            />
+                        </FormField>
                     </div>
-                  )}
                 </div>
-              )}
+
+                <div className="space-y-4">
+                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                             <span className="w-2 h-2 rounded-full bg-primary"></span>
+                             ที่อยู่ให้บริการ
+                        </h3>
+                        <FormField label="ที่อยู่" htmlFor="address">
+                            <Textarea
+                            name="address"
+                            value={formData.address || ''}
+                            onChange={handleFieldChange}
+                            required
+                            className="min-h-[100px]"
+                            />
+                        </FormField>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField label="แขวง/ตำบล" htmlFor="sub_district">
+                            <Input
+                                name="sub_district"
+                                value={formData.sub_district || ''}
+                                onChange={handleFieldChange}
+                                required
+                            />
+                            </FormField>
+                            <FormField label="เขต/อำเภอ" htmlFor="district">
+                            <Input
+                                name="district"
+                                value={formData.district || ''}
+                                onChange={handleFieldChange}
+                                required
+                            />
+                            </FormField>
+                            <FormField label="จังหวัด" htmlFor="province">
+                            <Input
+                                name="province"
+                                value={formData.province || ''}
+                                onChange={handleFieldChange}
+                                required
+                            />
+                            </FormField>
+                            <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
+                            <Input
+                                name="zipcode"
+                                value={formData.zipcode || ''}
+                                onChange={handleFieldChange}
+                                required
+                            />
+                            </FormField>
+                        </div>
+                         <div className="pt-2">
+                             <FormField label="Link Google Map" htmlFor="google_map_link">
+                                <Input
+                                name="google_map_link"
+                                type="url"
+                                placeholder="https://maps.app.goo.gl/..."
+                                value={formData.google_map_link || ''}
+                                onChange={handleFieldChange}
+                                />
+                            </FormField>
+                         </div>
+                    </div>
+                </div>
             </div>
-          </div>
+            
+            <div className="mt-6 border border-slate-200 p-4 rounded-xl bg-slate-50">
+                 <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลเส้นทาง (Routing)</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <FormField label="เขต" htmlFor="zone">
+                        <Input
+                        name="zone"
+                        value={formData.zone || ''}
+                        onChange={handleFieldChange}
+                        className="bg-white"
+                        />
+                    </FormField>
+                    <FormField label="Group" htmlFor="route_group">
+                        <Input
+                        name="route_group"
+                        value={formData.route_group || ''}
+                        onChange={handleFieldChange}
+                        className="bg-white"
+                        />
+                    </FormField>
+                    <FormField label="สายถนน" htmlFor="road_line">
+                        <Input
+                        name="road_line"
+                        value={formData.road_line || ''}
+                        onChange={handleFieldChange}
+                        className="bg-white"
+                        />
+                    </FormField>
+                    <FormField label="ลำดับ" htmlFor="sequence">
+                        <Input
+                        name="sequence"
+                        value={formData.sequence || ''}
+                        onChange={handleFieldChange}
+                        className="bg-white"
+                        />
+                    </FormField>
+                 </div>
+            </div>
+        </div>
+
+        {/* TAB 2: Work Areas */}
+        <div className={activeTab === 'areas' ? 'block' : 'hidden'}>
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h3 className="text-lg font-bold text-slate-800">พื้นที่ให้บริการ</h3>
+                    <p className="text-sm text-slate-500">จัดการรายละเอียดพื้นที่และสินค้า/บริการ</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleAddArea}
+                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 shadow-sm transition-all font-medium"
+                >
+                    <PlusIcon className="w-5 h-5" />
+                    เพิ่มพื้นที่
+                </button>
+            </div>
+
+            <div className="space-y-4 animate-fadeIn">
+                {workAreas.map((area, index) => (
+                    <WorkAreaForm
+                    key={area.id || index}
+                    area={area}
+                    index={index}
+                    onAreaChange={handleAreaChange}
+                    onRemoveArea={handleRemoveArea}
+                    onClearArea={handleClearArea}
+                    products={products}
+                    selectedPackage={
+                        selectedPackageId
+                        ? (packages.find(
+                            (p) => p.id === selectedPackageId
+                            ) as any)!
+                        : null
+                    }
+                    availablePackages={packages}
+                    onSelectPackage={handlePackageSelect}
+                    categories={categories}
+                    isEditing={true}
+                    originalArea={originalWorkAreas[index]}
+                    onApprove={assessment?.status === AsessmentStatus.PENDING ? () => {
+                        if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\\nConfirm approval and status change to Appointment?')) {
+                        setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
+                        handleSave(AsessmentStatus.APPOINTMENT);
+                        }
+                    } : undefined}
+                    />
+                ))}
+                 {workAreas.length === 0 && (
+                    <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
+                        ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น
+                    </div>
+                )}
+            </div>
+        </div>
+
+        {/* TAB 3: Payment */}
+        <div className={activeTab === 'payment' ? 'block' : 'hidden'}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
+                 <div className="space-y-6">
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                            <CreditCardIcon className="w-5 h-5 text-primary" />
+                            เงื่อนไขการชำระเงิน
+                        </h3>
+
+                        <div className="flex gap-4 mb-6">
+                            <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!formData.payment_condition || (formData.payment_condition !== PaymentMethod.INSTALLMENT) ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                                <input
+                                type="radio"
+                                name="payment_type_edit"
+                                className="hidden"
+                                checked={!formData.payment_condition || (formData.payment_condition !== PaymentMethod.INSTALLMENT)}
+                                onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
+                                />
+                                <div className="font-semibold">ชำระเต็มจำนวน</div>
+                            </label>
+                            <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                                <input
+                                type="radio"
+                                name="payment_type_edit"
+                                className="hidden"
+                                checked={formData.payment_condition === PaymentMethod.INSTALLMENT}
+                                onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
+                                />
+                                <div className="font-semibold">แบ่งชำระ (งวด)</div>
+                            </label>
+                        </div>
+
+                        {formData.payment_condition === PaymentMethod.INSTALLMENT && (
+                            <div className="space-y-4 animate-fadeIn">
+                                <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                                    <Input
+                                    name="payment_installment_count"
+                                    type="number"
+                                    placeholder="ระบุจำนวนงวด"
+                                    value={formData.payment_installment_count || ''}
+                                    onChange={(e) => {
+                                        const count = parseInt(e.target.value, 10) || 0;
+                                        setFormData((prev) => ({
+                                        ...prev,
+                                        payment_installment_count: count,
+                                        }));
+                                    }}
+                                    required
+                                    min={2}
+                                    className="max-w-[200px]"
+                                    />
+                                </FormField>
+
+                                {installments.length > 0 && (
+                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                                        <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
+                                        <div className="space-y-3">
+                                            {installments.map((inst, idx) => (
+                                            <div key={idx} className="flex gap-3 items-end">
+                                                <div className="w-16 pt-2 text-sm font-medium text-slate-500">
+                                                งวดที่ {inst.installment_no}
+                                                </div>
+                                                <div className="flex-1">
+                                                <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
+                                                <Input
+                                                    type="number"
+                                                    value={inst.amount}
+                                                    onChange={(e) => {
+                                                    const val = parseFloat(e.target.value) || 0;
+                                                    handleInstallmentAmountChange(idx, val);
+                                                    }}
+                                                    step="0.01"
+                                                    className="bg-white"
+                                                />
+                                                </div>
+                                                <div className="flex-1">
+                                                <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
+                                                <Input
+                                                    type="text"
+                                                    value={inst.note || ''}
+                                                    placeholder="เช่น มัดจำ"
+                                                    onChange={(e) => {
+                                                    handleInstallmentNoteChange(idx, e.target.value);
+                                                    }}
+                                                    className="bg-white"
+                                                />
+                                                </div>
+                                            </div>
+                                            ))}
+                                            <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                                            <span>รวม</span>
+                                            <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
+                                                {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
+                                            </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                 </div>
+
+                 {/* Summary Card */}
+                 <div>
+                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm sticky top-0">
+                        <div className="p-4 border-b bg-slate-50 rounded-t-xl">
+                            <h3 className="font-bold text-slate-800">สรุปรายการ</h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">จำนวนพื้นที่บริการ</span>
+                                <span className="font-medium">{workAreas.length} แห่ง</span>
+                            </div>
+                            <div className="space-y-2">
+                                {workAreas.map((area, idx) => (
+                                    <div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100">
+                                        <span className="truncate max-w-[150px]">{area.area_name}</span>
+                                        <span>฿{(area.total_price || 0).toLocaleString()}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="pt-4 border-t flex justify-between items-end">
+                                <span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span>
+                                <span className="text-2xl font-bold text-primary">
+                                    ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
         </div>
       </form>
     </Modal>

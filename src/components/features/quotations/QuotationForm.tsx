@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, ChangeEvent, FormEvent, FC } from 'react';
+import { useState, useEffect, useMemo, useRef, ChangeEvent, FormEvent, FC, useCallback } from 'react';
 import { Card } from '../../common/Card';
 import {
     FormField,
@@ -13,6 +13,7 @@ import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
 import { Assessment } from '../../../types/entity/assessment.interface';
 import { Quotation } from '../../../types/entity/financial.interface';
+import { AssessmentApi } from '../../../api/assessment';
 import { CustomerApi } from '../../../api/customer';
 import { Customer } from '../../../types/entity/customer.interface';
 
@@ -41,8 +42,30 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     onCancel,
     assessmentId,
 }) => {
-    const { customers, products, assessments, categories } = useData();
+    const { products, categories } = useData();
     const isReadOnly = mode === 'detail';
+
+    // Local state for fetched data
+    const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
+    const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
+    
+    // Initial data fetching
+    useEffect(() => {
+        const initData = async () => {
+            try {
+                const [custRes, assessRes] = await Promise.all([
+                    CustomerApi.getCustomers({ limit: 50 }),
+                    AssessmentApi.getAll({ limit: 50 })
+                ]);
+                
+                if (custRes?.data) setFetchedCustomers(custRes.data);
+                if (assessRes?.data) setFetchedAssessments(assessRes.data);
+            } catch (err) {
+                console.error("Error fetching initial data:", err);
+            }
+        };
+        initData();
+    }, []);
 
     // Service Type Options
     const serviceTypeOptions = useMemo(() => {
@@ -54,46 +77,65 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             }));
     }, [categories]);
 
+    // Customer info
+    const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
+
     // Customer Search Handling
-    const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
-
-    useEffect(() => {
-        // Initialize with context data
-        if (customers.length > 0 && searchedCustomers.length === 0) {
-            setSearchedCustomers(customers);
-        }
-    }, [customers]);
-
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleCustomerSearch = (query: string) => {
+    const handleCustomerSearch = useCallback((query: string) => {
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
         }
 
         searchTimeoutRef.current = setTimeout(async () => {
-            // If query is empty, revert to default context list
-            if (!query.trim()) {
-                setSearchedCustomers(customers);
-                return;
-            }
-
             try {
                 const res = await CustomerApi.getCustomers({ search: query, limit: 50 });
                 if (res && res.data) {
-                    setSearchedCustomers(res.data);
+                    setFetchedCustomers(prev => {
+                        const selected = prev.find(c => c.id === selectedCustomerId);
+                        if (selected && !res.data.find(c => c.id === selected.id)) {
+                            return [selected, ...res.data];
+                        }
+                        return res.data;
+                    });
                 }
             } catch (error) {
                 console.error("Error searching customers:", error);
             }
         }, 500);
-    };
-
+    }, [selectedCustomerId]);
 
     // Assessment reference
     const [selectedAssessmentId, setSelectedAssessmentId] = useState(
         assessmentId || initialValues?.assessment_id || ''
     );
+
+    // Assessment Search Handling
+    const assessmentSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleAssessmentSearch = useCallback((query: string) => {
+        if (assessmentSearchTimeoutRef.current) {
+            clearTimeout(assessmentSearchTimeoutRef.current);
+        }
+
+        assessmentSearchTimeoutRef.current = setTimeout(async () => {
+            try {
+                const res = await AssessmentApi.getAll({ search: query, limit: 50 });
+                if (res && res.data) {
+                    setFetchedAssessments(prev => {
+                        const selected = prev.find(a => a.id === selectedAssessmentId);
+                        if (selected && !res.data.find(a => a.id === selected.id)) {
+                            return [selected, ...res.data];
+                        }
+                        return res.data;
+                    });
+                }
+            } catch (error) {
+                console.error("Error searching assessments:", error);
+            }
+        }, 500);
+    }, [selectedAssessmentId]);
 
     // Quotation info
     const [quotationDate, setQuotationDate] = useState(
@@ -103,9 +145,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [expiresAt, setExpiresAt] = useState(
         initialValues?.expires_at ? new Date(initialValues.expires_at).toISOString().substring(0, 10) : ''
     );
-
-    // Customer info
-    const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
 
     // Service info
     const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
@@ -118,6 +157,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [notes, setNotes] = useState(initialValues?.notes || '');
     const [contractDuration, setContractDuration] = useState(initialValues?.contract_duration || '1 ปี');
     const [serviceCount, setServiceCount] = useState(initialValues?.service_count || '7 ครั้ง');
+
+    // Reset when usePackagePricing changes back to false if needed, but usually we keep last valid or default
+    // Logic to sync package defaults if package changes is handled in useEffect[selectedAssessment]
+
 
     // Line items
     const [items, setItems] = useState<QuotationItem[]>(
@@ -150,6 +193,23 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         ]
     );
 
+    // Standard service counts for dropdown
+    const standardServiceCounts = ["1 ครั้ง", "3 ครั้ง", "5 ครั้ง", "7 ครั้ง", "8 ครั้ง", "12 ครั้ง", "24 ครั้ง"];
+
+    // Ensure custom service count is available in options
+    const serviceCountOptions = useMemo(() => {
+        const options = [...standardServiceCounts];
+        if (serviceCount && !options.includes(serviceCount)) {
+            options.push(serviceCount);
+            options.sort((a, b) => {
+                const numA = parseInt(a) || 0;
+                const numB = parseInt(b) || 0;
+                return numA - numB;
+            });
+        }
+        return options;
+    }, [serviceCount]);
+
     // VAT settings
     const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
     const vatRate = 0.07;
@@ -169,7 +229,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
     // Assessment options for dropdown
     const assessmentOptions = useMemo(() => {
-        return (assessments || []).map((a) => {
+        return (fetchedAssessments || []).map((a) => {
             const customerName = a.customer
                 ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
                 : 'ไม่ระบุลูกค้า';
@@ -179,17 +239,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 description: a.address || '',
             };
         });
-    }, [assessments]);
+    }, [fetchedAssessments]);
 
     // Selected assessment details
     const selectedAssessment = useMemo(() => {
-        return assessments?.find((a) => a.id === selectedAssessmentId);
-    }, [assessments, selectedAssessmentId]);
+        return fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
+    }, [fetchedAssessments, selectedAssessmentId]);
 
     // Selected customer details
     const selectedCustomer = useMemo(() => {
-        return customers.find((c) => c.id === selectedCustomerId) || searchedCustomers.find((c) => c.id === selectedCustomerId);
-    }, [customers, searchedCustomers, selectedCustomerId]);
+        return fetchedCustomers.find((c) => c.id === selectedCustomerId);
+    }, [fetchedCustomers, selectedCustomerId]);
 
 
 
@@ -344,6 +404,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 setPackageName(selectedAssessment.package.name);
                 // Use assessment total price as the package price (Base price)
                 setPackagePrice(Number(selectedAssessment.total_price) || 0);
+
+                // Auto-fill Contract Duration & Service Count from Package
+                if (selectedAssessment.package.contract_period) {
+                    setContractDuration(`${selectedAssessment.package.contract_period} ปี`);
+                }
+                if (selectedAssessment.package.visit_limit) {
+                    setServiceCount(`${selectedAssessment.package.visit_limit} ครั้ง`);
+                }
 
                 // If using package pricing, we DON'T populate items from areas, 
                 // we leave items empty for "Additional" products
@@ -557,8 +625,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 ? selectedAssessment.payment_installment_count
                 : manualInstallmentCount;
 
-            const amountPerTerm = Math.floor(netTotal / count);
-            const remainder = netTotal - (amountPerTerm * count);
+            // Calculate with 2 decimal places precision
+            // Use Number.toFixed(2) then parse back to ensure we don't get floating point artifacts
+            const amountPerTerm = Number((Math.floor((netTotal / count) * 100) / 100).toFixed(2));
+            
+            // Calculate total allocated so far
+            const totalAllocated = amountPerTerm * count;
+            
+            // Calculate remainder to ensure sum equals netTotal exactly
+            // Use Number.toFixed(2) to avoid floating point precision issues (e.g. 0.009999999)
+            const remainder = Number((netTotal - totalAllocated).toFixed(2));
             
             const newInstallments = Array.from({ length: count }).map((_, idx) => {
                 // Default date logic: Start from today, add months based on index
@@ -569,9 +645,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 // Actually, if we send it, it might show up in contract. 
                 // Let's set it to empty string if we update backend to be optional.
                 
+                let installmentAmount = amountPerTerm;
+                
+                // Add remainder to the last installment
+                if (idx === count - 1) {
+                    installmentAmount = Number((amountPerTerm + remainder).toFixed(2));
+                }
+                
                 return {
                     installment_no: idx + 1,
-                    amount: idx === count - 1 ? amountPerTerm + remainder : amountPerTerm,
+                    amount: installmentAmount,
                     service_date: '', // No date by default
                     notes: ''
                 };
@@ -729,6 +812,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         <SearchableSelect
                             value={selectedAssessmentId}
                             onChange={(value) => setSelectedAssessmentId(value)}
+                            onSearchChange={handleAssessmentSearch}
                             placeholder="-- เลือกใบประเมินที่ต้องการอ้างอิง --"
                             options={assessmentOptions}
                         />
@@ -821,7 +905,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                     onSearchChange={handleCustomerSearch}
                                     placeholder="ค้นหาและเลือกลูกค้า..."
                                     required
-                                    options={(searchedCustomers.length > 0 ? searchedCustomers : customers).map((c) => ({
+                                    options={fetchedCustomers.map((c) => ({
                                         value: c.id,
                                         label: `${c.code} - ${c.first_name} ${c.last_name}`,
                                         description: c.phone || '',
@@ -935,11 +1019,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                         value={serviceCount}
                                         onChange={(e) => setServiceCount(e.target.value)}
                                     >
-                                        <option value="1 ครั้ง">1 ครั้ง</option>
-                                        <option value="3 ครั้ง">3 ครั้ง</option>
-                                        <option value="5 ครั้ง">5 ครั้ง</option>
-                                        <option value="7 ครั้ง">7 ครั้ง</option>
-                                        <option value="12 ครั้ง">12 ครั้ง</option>
+                                        {serviceCountOptions.map((option) => (
+                                            <option key={option} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
                                     </Select>
                                 </FormField>
                             </div>

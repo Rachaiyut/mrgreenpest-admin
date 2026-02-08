@@ -194,10 +194,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       <input
         type="text"
         name={name}
-        value={value}
+        value={value || ''}
         required={required}
         readOnly
         disabled={disabled}
+        className="sr-only"
+        tabIndex={-1}
         style={{
           opacity: 0,
           width: 0,

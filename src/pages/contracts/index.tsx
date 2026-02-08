@@ -13,12 +13,14 @@ import {
 	CurrencyDollarIcon,
 	ClockIcon,
 	CheckCircleIcon,
+	LoadingIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Contract, ContractStatus } from '../../types';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
+import { ContractApi } from '../../api';
 import { ContractDetailsModal } from '../../components/features/contracts/ContractDetailsModal';
 import { CreateContractModal } from '../../components/features/contracts/CreateContractModal';
 import { EditContractModal } from '../../components/features/contracts/EditContractModal';
@@ -51,6 +53,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+	const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 	const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 	const dropdownRef = useRef<HTMLDivElement>(null);
@@ -162,7 +165,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	};
 
 	const handleEdit = (contract: Contract) => {
-		navigate(`/contracts/${contract.id}/edit`);
+		setSelectedContract(contract);
+		setIsEditModalOpen(true);
 		setOpenDropdownId(null);
 	};
 
@@ -389,14 +393,45 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 											฿{(Number(c.total_amount) || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 										</td>
 										<td className="px-6 py-4 text-right">
-											<Button
-												data-contract-id={c.id}
-												onClick={(e) => handleDropdownToggle(e, c.id)}
-												variant="ghost"
-												className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-											>
-												<ManageIcon className="w-5 h-5" />
-											</Button>
+											<div className="flex items-center justify-end gap-2">
+												<Button
+													className="px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm border-none flex items-center gap-2 hover:shadow-md transition-shadow bg-emerald-500 text-white hover:bg-emerald-600"
+													disabled={loadingPdfId === c.id}
+													onClick={(e) => {
+														e.stopPropagation();
+														if (loadingPdfId === c.id) return;
+														
+														setLoadingPdfId(c.id);
+														(async () => {
+															try {
+																const blob = await ContractApi.getPdf(c.id);
+																const url = window.URL.createObjectURL(blob);
+																window.open(url, '_blank');
+															} catch (error) {
+																console.error('Error viewing PDF:', error);
+																alert('ไม่สามารถเปิด PDF ได้');
+															} finally {
+																setLoadingPdfId(null);
+															}
+														})();
+													}}
+												>
+													{loadingPdfId === c.id ? (
+														<LoadingIcon className="w-3 h-3 animate-spin" />
+													) : (
+														<EyeIcon className="w-3 h-3" />
+													)}
+													{loadingPdfId === c.id ? 'กำลังโหลด...' : 'ดู PDF'}
+												</Button>
+												<Button
+													data-contract-id={c.id}
+													onClick={(e) => handleDropdownToggle(e, c.id)}
+													variant="ghost"
+													className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+												>
+													<ManageIcon className="w-5 h-5" />
+												</Button>
+											</div>
 										</td>
 									</tr>
 								))

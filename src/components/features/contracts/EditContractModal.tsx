@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     FormField,
     Input,
@@ -130,7 +130,7 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
 
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleCustomerSearch = (query: string) => {
+    const handleCustomerSearch = useCallback((query: string) => {
         if (searchTimeoutRef.current) {
             clearTimeout(searchTimeoutRef.current);
         }
@@ -150,7 +150,7 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
                 console.error("Error searching customers:", error);
             }
         }, 500);
-    };
+    }, [customers]);
 
     // Quotation options for dropdown
     const quotationOptions = useMemo(() => {
@@ -189,7 +189,8 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
                 }
 
                 try {
-                    const fullQuotation = await QuotationApi.getById(selectedQuotationId);
+                    const response = await QuotationApi.getById(selectedQuotationId);
+                    const fullQuotation = (response as any).data || response;
                     
                     if (fullQuotation) {
                         setSelectedCustomerId(fullQuotation.customer_id);
@@ -197,9 +198,23 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
                         
                         if (fullQuotation.service_location) setServiceLocation(fullQuotation.service_location);
                         if (fullQuotation.service_type) setServiceType(fullQuotation.service_type);
-                        if (fullQuotation.system_used) setSystemUsed(fullQuotation.system_used);
+                        
+                        // Auto-fill System Used
+                        if (fullQuotation.system_used) {
+                            setSystemUsed(fullQuotation.system_used);
+                        } else if (fullQuotation.service_type) {
+                            // Try to infer system from service type if system_used is empty
+                            if (fullQuotation.service_type.includes('เหยื่อ') || fullQuotation.service_type.includes('Bait')) {
+                                setSystemUsed('ระบบเหยื่อ');
+                            } else if (fullQuotation.service_type.includes('เคมี') || fullQuotation.service_type.includes('Chemical')) {
+                                setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
+                            } else if (fullQuotation.service_type.includes('ฉีดพ่น') || fullQuotation.service_type.includes('Spray')) {
+                                setSystemUsed('ระบบฉีดพ่น');
+                            }
+                        }
+
                         if (fullQuotation.contract_duration) setContractDuration(fullQuotation.contract_duration);
-                        if (fullQuotation.service_count) setServiceCount(Number(fullQuotation.service_count));
+                        if (fullQuotation.service_count) setServiceCount(parseInt(String(fullQuotation.service_count)));
                         if (fullQuotation.notes) setNotes(fullQuotation.notes);
 
                         if (fullQuotation.installments && fullQuotation.installments.length > 0) {
@@ -223,7 +238,7 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
                                     id: crypto.randomUUID(),
                                     term: Number(inst.installment_no || inst.term || 0),
                                     description: inst.notes || inst.description || `งวดที่ ${inst.installment_no || inst.term}`,
-                                    percentage: fullQuotation.total > 0 ? (Number(inst.amount) / Number(fullQuotation.total)) * 100 : 0,
+                                    percentage: fullQuotation.total > 0 ? Number(((Number(inst.amount) / Number(fullQuotation.total)) * 100).toFixed(2)) : 0,
                                     amount: Number(inst.amount),
                                     due_date: dueDate,
                                     status: 'PENDING' as any
@@ -693,13 +708,22 @@ export const EditContractModal: React.FC<EditContractModalProps> = ({
                                                     }
                                                     min={0}
                                                     max={100}
+                                                    step={0.01}
                                                     className="!py-1 text-center h-9 pr-6"
                                                 />
                                                 <span className="absolute right-2 top-2 text-xs text-slate-400">%</span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 text-right text-sm font-bold text-slate-800 font-mono bg-slate-50/30 border-r border-slate-200">
-                                            {inst.amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        <td className="px-4 py-2 border-r border-slate-200">
+                                            <Input
+                                                type="number"
+                                                value={inst.amount}
+                                                onChange={(e) =>
+                                                    handleInstallmentChange(inst.id, 'amount', Number(e.target.value))
+                                                }
+                                                step={0.01}
+                                                className="!py-1 text-right h-9 font-mono"
+                                            />
                                         </td>
                                         <td className="px-4 py-2 border-r border-slate-200">
                                             <Input

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, FC, ChangeEvent } from 'react';
 import { FormField, Input, Select } from '../../common/FormControls';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
-import { PlusIcon, TrashIcon, RefreshIcon, ShieldCheckIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, TrashIcon, RefreshIcon, ShieldCheckIcon, ChevronDownIcon } from '../../../assets/icons/Icons';
 import {
   AssessmentWorkArea,
   AssessmentWorkAreaItem,
@@ -33,7 +33,7 @@ interface WorkAreaFormProps {
   onApprove?: (index: number) => void;
 }
 
-export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
+export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   area,
   index,
   onAreaChange,
@@ -52,6 +52,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   const isInitialLoad = useRef(true);
   const hasUserMadeChanges = useRef(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
@@ -452,7 +454,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   ]);
 
   const handleFieldChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     const updatedArea: Partial<AssessmentWorkArea> = { ...area };
@@ -499,6 +501,7 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     onAreaChange(index, {
       ...area,
       items: currentItems,
+      total_price: currentItems.reduce((sum, i) => sum + (i.total_price || 0), 0) + (area.base_service_price || 0),
     });
     setIsProductModalOpen(false);
   };
@@ -562,28 +565,60 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
 
   return (
     <>
-      <div className="border border-slate-300 p-4 rounded-lg space-y-4 bg-slate-50 relative">
-        <div className="absolute top-2 right-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onClearArea(index)}
-            className="flex items-center gap-1 text-slate-500 hover:text-slate-700 py-1 px-2 rounded-md hover:bg-slate-200 text-sm"
-            title="ล้างค่าในพื้นที่นี้"
-          >
-            <RefreshIcon className="h-4 w-4" />
-            <span>ล้างค่า</span>
-          </button>
-          {onRemoveArea && (
-            <button
-              type="button"
-              onClick={() => onRemoveArea(index)}
-              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
-              title="ลบพื้นที่นี้"
-            >
-              <TrashIcon className="h-5 w-5" />
-            </button>
-          )}
+      <div className="border border-slate-300 rounded-lg bg-slate-50 relative transition-all duration-200 shadow-sm hover:shadow-md mb-4">
+        {/* Header Section */}
+        <div 
+            className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100 transition-colors ${!isCollapsed ? 'rounded-t-lg' : 'rounded-lg'}`}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`transform transition-transform duration-200 text-slate-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
+                    <ChevronDownIcon className="h-5 w-5" />
+                </div>
+                <div>
+                    <h3 className="font-semibold text-slate-800 text-lg flex items-center gap-2">
+                        {area.area_name || `พื้นที่ #${index + 1}`}
+                        {area.total_price && area.total_price > 0 && isCollapsed && (
+                           <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                              ฿{area.total_price.toLocaleString()}
+                           </span>
+                        )}
+                    </h3>
+                    {isCollapsed && (
+                        <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                            <span>{area.area_size ? `${area.area_size} ตร.ม.` : 'ไม่ระบุขนาด'}</span>
+                            {area.building_type && <span>• {area.building_type}</span>}
+                            {selectedPackage && <span>• {selectedPackage.name}</span>}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <button
+                    type="button"
+                    onClick={() => onClearArea(index)}
+                    className="flex items-center gap-1 text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-200 transition-colors"
+                    title="ล้างค่าในพื้นที่นี้"
+                >
+                    <RefreshIcon className="h-4 w-4" />
+                </button>
+                {onRemoveArea && (
+                    <button
+                        type="button"
+                        onClick={() => onRemoveArea(index)}
+                        className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
+                        title="ลบพื้นที่นี้"
+                    >
+                        <TrashIcon className="h-5 w-5" />
+                    </button>
+                )}
+            </div>
         </div>
+
+        {!isCollapsed && (
+        <div className="p-4 pt-0 border-t border-slate-200 animate-fadeIn">
+        <div className="mt-4 space-y-4">
 
         <FormField
           label={`ชื่อพื้นที่ #${index + 1}`}
@@ -920,6 +955,9 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
             maximumFractionDigits: 2,
           })}
         </div>
+        </div>
+        </div>
+        )}
       </div>
       <ProductSelectionModal
         isOpen={isProductModalOpen}

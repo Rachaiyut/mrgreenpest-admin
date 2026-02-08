@@ -34,6 +34,10 @@ const EditQuotationPage: React.FC = () => {
 
             // Fallback to API
             try {
+                const res = await QuotationApi.getById(id);
+                if (res) {
+                    setQuotation(res);
+                }
                 setLoading(false);
             } catch (error) {
                 console.error('Failed to fetch quotation:', error);
