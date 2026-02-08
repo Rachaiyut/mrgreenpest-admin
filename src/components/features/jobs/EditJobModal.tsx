@@ -1,16 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button, FormField, Input, Select, Textarea } from '../../common/FormControls';
-import { SearchableSelect } from '../../common/SearchableSelect';
-import { Assessment, User, UserRole, Warehouse, Product, Category, AssessmentWorkArea } from '@/src/types/entity/app.interface';
+import { Assessment, User, UserRole, Warehouse, Product, Category, AssessmentWorkArea, AssessmentInstallment } from '@/src/types/entity/app.interface';
 import {
   FieldJob,
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
-import { JobStatus } from '@/src/types/enums/job';
-import { PlusIcon, RefreshIcon } from '../../../assets/icons/Icons';
+import { JobStatus, JobMainStatus } from '@/src/types/enums/job';
+import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon } from '../../../assets/icons/Icons';
 import { WarehouseType, CategoryType } from '@/src/types';
-import { AssessmentApi, ProductApi, CategoryApi, PackageApi } from '@/src/api';
+import { AssessmentApi, ProductApi, CategoryApi, PackageApi, JobApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
@@ -104,6 +103,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   warehouses,
   currentUser,
 }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'service' | 'team'>('overview');
+  const [currentJob, setCurrentJob] = useState<FieldJob | null>(job);
   const [formData, setFormData] = useState<Partial<FieldJob>>({});
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>(
@@ -123,6 +124,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
 
   const servicePackages = useMemo(
     () => products.filter((p) => (p as any)?.category?.type === CategoryType.SERVICE),
@@ -156,11 +158,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
 
   const bookedSlots = useMemo(() => {
-    if (!formData.vehicle_id || !workDate || !job) return [];
+    if (!formData.vehicle_id || !workDate || !currentJob) return [];
     return jobs
       .filter(
         (j) =>
-          j.id !== job.id &&
+          j.id !== currentJob.id &&
           j.vehicle_id === formData.vehicle_id &&
           new Date(j.start_time).toISOString().substring(0, 10) === workDate
       )
@@ -170,13 +172,29 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         customer: j.customerName,
       }))
       .sort((a, b) => a.start.localeCompare(b.start));
-  }, [formData.vehicle_id, workDate, jobs, job]);
+  }, [formData.vehicle_id, workDate, jobs, currentJob]);
+
+  // Sync prop to state and fetch full details
+  useEffect(() => {
+    setCurrentJob(job);
+    if (isOpen && job?.id) {
+      JobApi.getById(job.id)
+        .then((res: any) => {
+          const freshJob = res.data || res;
+          setCurrentJob(freshJob);
+        })
+        .catch((err) => console.error('Error fetching job details:', err));
+    }
+  }, [isOpen, job]);
 
   useEffect(() => {
-    if (isOpen && job?.assessment_id) {
-      AssessmentApi.getById(job.assessment_id)
+    if (isOpen && (currentJob?.assessment_id || (currentJob as any)?.assessment?.id)) {
+      const idToFetch = currentJob?.assessment_id || (currentJob as any)?.assessment?.id;
+      console.log('EditJobModal: Fetching assessment', idToFetch);
+      AssessmentApi.getById(idToFetch)
         .then((res: any) => {
           const rawAssessment = res.data || res || null;
+          console.log('EditJobModal: Fetched assessment', rawAssessment);
           if (rawAssessment) {
             // Helper to derive base price (Logic sync with EditAssessmentModal)
             const enrichArea = (wa: any) => {
@@ -200,19 +218,35 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               ...rawAssessment,
               assessment_areas: enrichedAreas
             });
+            
+            if (rawAssessment.installments && rawAssessment.installments.length > 0) {
+               setInstallments(rawAssessment.installments.map((i: any) => ({ ...i })));
+            } else {
+               setInstallments([]);
+            }
+
             // Set original areas for comparison/protection
             setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
           } else {
             setAssessment(null);
+            setInstallments([]);
             setOriginalWorkAreas([]);
           }
-          console.log('Fetched assessment:', res.data || null);
         })
         .catch((err) => {
           console.error('Error fetching assessment:', err);
         });
+    } else if (isOpen) {
+      // Fallback: If job has no assessment_id, try to find it via API (sometimes the prop is stale)
+       if (currentJob && !currentJob.assessment_id && (currentJob as any).assessmentId) {
+          // If assessmentId exists in a different casing or property
+          // This block is just a safeguard, usually job.assessment_id is correct
+       } else {
+         console.log('EditJobModal: No assessment_id in job object', currentJob);
+         setAssessment(null);
+       }
     }
-  }, [isOpen, job?.assessment_id]);
+  }, [isOpen, currentJob]);
 
   useEffect(() => {
     if (isOpen) {
@@ -254,9 +288,37 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   }, [assessment]);
 
   useEffect(() => {
-    if (job) {
-      const { work_areas, technicians, ...rest } = job;
-      setFormData(rest);
+    if (currentJob) {
+      const { work_areas, technicians, ...rest } = currentJob;
+      const initialFormData = { ...rest };
+      
+      // Map customer name if available in the relation
+      if ((currentJob as any).customer) {
+         const c = (currentJob as any).customer;
+         // Prefer a display name logic if available, or construct it
+         initialFormData.customerName = c.name || `${c.first_name || ''} ${c.last_name || ''} ${c.nickname ? `(${c.nickname})` : ''}`.trim();
+         
+         // Construct address from customer fields if job address is empty
+         if (!initialFormData.address) {
+            const addressParts = [
+              c.address_house_no,
+              c.address_soi,
+              c.address_road,
+              c.sub_district,
+              c.district,
+              c.province,
+              c.postal_code,
+            ].filter(Boolean);
+            initialFormData.address = addressParts.join(' ');
+         }
+
+         // Map google_map_link from customer if empty
+         if (!initialFormData.google_map_link && c.google_map_link) {
+            initialFormData.google_map_link = c.google_map_link;
+         }
+      }
+
+      setFormData(initialFormData);
 
       // Helper to derive base price (Logic sync with EditAssessmentModal)
       const enrichArea = (wa: any) => {
@@ -282,21 +344,52 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       // Deep copy to ensure independence for edit detection
       setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
 
-      const lead = technicians[0];
-      const additional = technicians.slice(1);
-      setLeadTechnicianId(lead?.id || '');
-      setSelectedTechnicianIds(additional.map((t) => t.id));
+      // Handle technicians safely from multiple possible sources
+      const jobAny = currentJob as any;
+      let leadId = '';
+      let memberIds: string[] = [];
 
-      const startDate = new Date(job.start_time);
-      setWorkDate(startDate.toISOString().substring(0, 10));
-      setStartTime(startDate.toTimeString().substring(0, 5));
-      setEndTime(new Date(job.end_time).toTimeString().substring(0, 5));
+      if (jobAny.primary_technician) {
+        leadId = jobAny.primary_technician.id;
+      } else if (technicians && technicians.length > 0) {
+        leadId = technicians[0].id;
+      }
+
+      if (jobAny.job_team_members && Array.isArray(jobAny.job_team_members)) {
+        memberIds = jobAny.job_team_members.map((m: any) => m.id);
+      } else if (technicians && technicians.length > 1) {
+        memberIds = technicians.slice(1).map((t: any) => t.id);
+      }
+
+      setLeadTechnicianId(leadId);
+      setSelectedTechnicianIds(memberIds);
+
+      if (currentJob.start_time) {
+        const startDate = new Date(currentJob.start_time);
+        if (!isNaN(startDate.getTime())) {
+          setWorkDate(startDate.toISOString().substring(0, 10));
+          setStartTime(startDate.toTimeString().substring(0, 5));
+        } else {
+           setWorkDate('');
+           setStartTime('');
+        }
+      }
+
+      if (currentJob.end_time) {
+         const endDate = new Date(currentJob.end_time);
+         if (!isNaN(endDate.getTime())) {
+            setEndTime(endDate.toTimeString().substring(0, 5));
+         } else {
+            setEndTime('');
+         }
+      }
+
       setTimeConflictError(null);
     }
-  }, [job]);
+  }, [currentJob]);
 
   useEffect(() => {
-    if (!job || !formData.vehicle_id || !workDate || !startTime || !endTime) {
+    if (!currentJob || !formData.vehicle_id || !workDate || !startTime || !endTime) {
       setTimeConflictError(null);
       return;
     }
@@ -310,7 +403,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     }
 
     const conflictingJob = jobs.find((existingJob) => {
-      if (existingJob.id === job.id) return false;
+      if (existingJob.id === currentJob.id) return false;
       if (existingJob.vehicle_id !== formData.vehicle_id) return false;
 
       const existingJobStart = new Date(existingJob.start_time);
@@ -330,7 +423,59 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     } else {
       setTimeConflictError(null);
     }
-  }, [formData.vehicle_id, workDate, startTime, endTime, jobs, job]);
+  }, [formData.vehicle_id, workDate, startTime, endTime, jobs, currentJob]);
+
+  const handleInstallmentAmountChange = (index: number, amount: number) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], amount };
+      return newInst;
+    });
+  };
+
+  const handleInstallmentNoteChange = (index: number, note: string) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], note };
+      return newInst;
+    });
+  };
+
+  // Auto-calculate installments Effect
+  useEffect(() => {
+    if (!assessment) return;
+    
+    const paymentCondition = (assessment as any).payment_condition;
+    const installmentCount = (assessment as any).payment_installment_count;
+    const total = (assessment as any).total_price || 0;
+
+    if (paymentCondition === PaymentMethod.INSTALLMENT && installmentCount && installmentCount > 0) {
+      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
+      const isSumMismatch = Math.abs(currentSum - total) > 1; // Tolerance 1 baht
+      const isCountMismatch = installments.length !== installmentCount;
+
+      if (isSumMismatch || isCountMismatch) {
+        const amountPerInst = Math.floor((total / installmentCount) * 100) / 100;
+        const lastAmount = total - (amountPerInst * (installmentCount - 1));
+
+        setInstallments(prev => {
+          const newInst: Partial<AssessmentInstallment>[] = [];
+          for (let i = 0; i < installmentCount; i++) {
+            newInst.push({
+              installment_no: i + 1,
+              amount: i === installmentCount - 1 ? lastAmount : amountPerInst,
+              note: prev[i]?.note || '',
+            });
+          }
+          return newInst;
+        });
+      }
+    } else {
+      if (installments.length > 0 && paymentCondition !== PaymentMethod.INSTALLMENT) {
+        setInstallments([]);
+      }
+    }
+  }, [assessment?.payment_condition, assessment?.payment_installment_count, assessment?.total_price]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -358,20 +503,20 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     );
   };
 
-  const createJobObject = (status: JobStatus): any | null => {
-    if (!job || !workDate || !startTime || !endTime) return null;
+  const createJobObject = (status: JobStatus | JobMainStatus): any | null => {
+    if (!currentJob || !workDate || !startTime || !endTime) return null;
 
     const startDateTime = new Date(`${workDate}T${startTime}`).toISOString();
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
-    const apiStatus =
-      status === JobStatus.InProgress
-        ? 'IN_PROGRESS'
-        : status === JobStatus.Completed
-          ? 'COMPLETE'
-          : 'PENDING';
+    
+    let apiStatus = 'PENDING';
+    if (status === JobStatus.InProgress || status === JobMainStatus.IN_PROGRESS) apiStatus = 'IN_PROGRESS';
+    else if (status === JobStatus.Completed || status === JobMainStatus.COMPLETE) apiStatus = 'COMPLETE';
+    else if (status === JobStatus.Cancelled || status === JobMainStatus.CANCELLED) apiStatus = 'CANCELLED';
+    else if (status === JobStatus.Failed || status === JobMainStatus.FAILED) apiStatus = 'FAILED';
 
     const primaryTechId =
-      (job as any)?.primary_technician?.id || leadTechnicianId || undefined;
+      (currentJob as any)?.primary_technician?.id || leadTechnicianId || undefined;
 
     const teamMembers = (selectedTechnicianIds || []).map((id) => ({
       user_id: id,
@@ -380,7 +525,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     }));
 
     const payload: any = {
-      id: job.id,
+      id: currentJob.id,
       primary_tech_id: primaryTechId,
       vehicle_id: formData.vehicle_id,
       start_date: startDateTime,
@@ -418,7 +563,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               area_size: area.area_size,
               base_service_price: area.base_service_price,
               total_price: area.total_price,
-              category_services: area.category_services || [],
+              category_services: (area.category_services || []).map((c: any) => ({
+                category_id: c.category_id
+              })),
               items: (area.items || []).map((it: any) => ({
                 product_id: it.product_id,
                 product_name: it.product_name,
@@ -431,24 +578,26 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         );
 
         return {
-          customer_id: job.customer_id,
+          customer_id: currentJob.customer_id,
           package_id: (assessment as any).package_id,
           appointment_date: assessment.appointment_date
             ? new Date(assessment.appointment_date).toISOString().substring(0, 10)
             : undefined,
-          address: job.address,
-          sub_district: (assessment as any).sub_district || (job as any).sub_district,
-          district: (assessment as any).district || (job as any).district,
-          province: (assessment as any).province || (job as any).province,
-          zipcode: (assessment as any).zipcode || (job as any).postal_code,
-          zone: (job as any).zone,
-          route_group: (job as any).group,
-          road_line: (job as any).road_line,
-          sequence: (job as any).sequence,
-          google_map_link: job.google_map_link,
+          address: currentJob.address,
+          sub_district: (assessment as any).sub_district || (currentJob as any).sub_district,
+          district: (assessment as any).district || (currentJob as any).district,
+          province: (assessment as any).province || (currentJob as any).province,
+          zipcode: (assessment as any).zipcode || (currentJob as any).postal_code,
+          zone: (currentJob as any).zone,
+          route_group: (currentJob as any).group,
+          road_line: (currentJob as any).road_line,
+          sequence: (currentJob as any).sequence,
+          google_map_link: currentJob.google_map_link,
           // If price condition met, force PENDING, otherwise use existing status
           status: shouldBePending ? AsessmentStatus.PENDING : (assessment as any).status,
           payment_condition: (assessment as any).payment_condition,
+          payment_installment_count: (assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? (assessment as any).payment_installment_count : undefined,
+          installments: (assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? installments : [],
           total_price: (assessment as any).total_price,
           created_by: currentUser?.name,
           updated_by: currentUser?.name,
@@ -460,24 +609,33 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     return payload;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (timeConflictError) return;
-
-    const updatedPayload = createJobObject(formData.status || JobStatus.Planned);
+  const handleSaveAndClose = async (status: JobStatus | JobMainStatus) => {
+    const updatedPayload = createJobObject(status);
     if (updatedPayload) {
+      // Explicitly update assessment if present
+      if (updatedPayload.assessment && assessment && assessment.id) {
+        try {
+          await AssessmentApi.update(assessment.id, updatedPayload.assessment);
+        } catch (err) {
+          console.error('Failed to update assessment:', err);
+          alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลใบประเมิน');
+          return;
+        }
+      }
+      
       onUpdateJob(updatedPayload);
       onClose();
     }
   };
 
-  const handleSaveDraft = () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (timeConflictError) return;
+    await handleSaveAndClose(formData.status || JobStatus.Planned);
+  };
 
-    const updatedJob = createJobObject(JobStatus.Draft);
-    if (updatedJob) {
-      onUpdateJob(updatedJob);
-      onClose();
-    }
+  const handleSaveDraft = async () => {
+    await handleSaveAndClose(JobStatus.Draft);
   };
 
   const handleNumberOfAreasChange = (count: number) => {
@@ -636,15 +794,15 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     });
   };
 
-  if (!job) return null;
+  if (!currentJob) return null;
 
-  const isReadOnly = !!job.assessment_id || !!job.contract_id;
+  const isReadOnly = !!currentJob.assessment_id || !!currentJob.contract_id;
   const additionalTechnicians = technicians.filter(
     (tech) => tech.id !== leadTechnicianId
   );
 
   const primaryTechnicianDisplay = (() => {
-    const pt = (job as any)?.primary_technician;
+    const pt = (currentJob as any)?.primary_technician;
     const parts = [
       pt?.first_name || '',
       pt?.last_name || '',
@@ -688,11 +846,17 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     });
   };
 
+  const tabs = [
+    { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
+    { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
+    { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
+  ];
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`แก้ไขงาน-: ${job.customer_name || 'ลูกค้าไม่ระบุ'}`}
+      title={`แก้ไขงาน: ${(currentJob as any).customer_name || (currentJob as any).customerName || 'ลูกค้าไม่ระบุ'}`}
       size="5xl"
       footer={
         <div className="flex gap-2">
@@ -703,14 +867,6 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           >
             ยกเลิก
           </button>
-          {/* <button
-            type="button"
-            onClick={handleSaveDraft}
-            className="py-2 px-4 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold disabled:bg-slate-300 disabled:cursor-not-allowed"
-            disabled={!!timeConflictError}
-          >
-            บันทึกเป็นฉบับร่าง
-          </button> */}
           <button
             type="submit"
             form="edit-job-form"
@@ -722,301 +878,237 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         </div>
       }
     >
-      <form id="edit-job-form" onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="ลูกค้า" htmlFor="customerName">
-          <Input
-            id="customerName"
-            name="customerName"
-            type="text"
-            value={formData.customerName || ''}
-            onChange={handleChange}
-            required
-            readOnly
-            className="bg-slate-100"
-          />
-        </FormField>
+      <div className="mb-6 border-b border-slate-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`
+                flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                ${activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }
+              `}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-        <FormField label="ที่อยู่" htmlFor="address">
-          <Textarea
-            id="address"
-            name="address"
-            value={formData.address || ''}
-            onChange={handleChange}
-            required
-          />
-        </FormField>
-
-        <div className="pt-4 mt-4 border-t">
-          <h3 className="text-base font-semibold text-slate-800 mb-2">
-            กลุ่มเส้นทาง/พื้นที่บริการ (ข้อมูลอ้างอิง)
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <FormField label="เขต (พื้นที่บริการ)" htmlFor="zone">
-              <Input
-                name="zone"
-                value={formData.zone || ''}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="Group" htmlFor="group">
-              <Input
-                name="group"
-                value={formData.group || ''}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="สายถนนที่" htmlFor="roadLine">
-              <Input
-                name="road_line"
-                value={formData.road_line || ''}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="ลำดับที่" htmlFor="sequence">
-              <Input
-                name="sequence"
-                value={formData.sequence || ''}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-          </div>
-        </div>
-
-        <FormField label="Link Google Map" htmlFor="googleMapLink">
-          <Input
-            name="google_map_link"
-            type="url"
-            value={formData.google_map_link || ''}
-            onChange={handleChange}
-            placeholder="https://maps.app.goo.gl/..."
-          />
-        </FormField>
-
-        {workAreas.length > 0 && (
-          <div className="space-y-4 pt-4 mt-4 border-t">
-            <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-              รายละเอียดพื้นที่บริการ
-            </h3>
-            {isReadOnly ? (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
-                ข้อมูลพื้นที่ถูกดึงมาจาก{' '}
-                {job.assessment_id ? 'ใบประเมิน' : 'สัญญา'} เลขที่:{' '}
-                <strong>{job.assessment_id || job.contract_id}</strong>
-              </div>
-            ) : (
-              <FormField
-                label="จำนวนพื้นที่ที่ต้องการเข้าบริการ"
-                htmlFor="numberOfAreas"
-              >
-                <Select
-                  id="numberOfAreas"
-                  value={workAreas.length}
-                  onChange={(e) =>
-                    handleNumberOfAreasChange(parseInt(e.target.value, 10))
-                  }
-                >
-                  {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            )}
-            {workAreas.map((area, index) => (
-              <JobWorkAreaForm
-                key={area.id || index}
-                area={area}
-                index={index}
-                onAreaChange={handleAreaChange}
-                onClearArea={handleClearArea}
-                isReadOnly={isReadOnly}
-              />
-            ))}
-          </div>
-        )}
-
-        <FormField
-          label="รายละเอียดการปฏิบัติงาน"
-          htmlFor="operation-details-edit"
-        >
-          <Textarea
-            id="operation-details-edit"
-            name="operation_details"
-            value={formData.operation_details || ''}
-            onChange={handleChange}
-            placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
-            rows={8}
-          />
-        </FormField>
-
-        <FormField label="เลือกรถที่ปฏิบัติงาน" htmlFor="vehicleId">
-          <Select
-            id="vehicleId"
-            name="vehicle_id"
-            value={formData.vehicle_id || ''}
-            onChange={handleChange}
-            required
-          >
-            <option value="">-- เลือกรถบริการ --</option>
-            {vehicleWarehouses.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name} ({v.vehicle?.vehicle_registration || '-'})
-              </option>
-            ))}
-          </Select>
-        </FormField>
-
-        <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
-          <Input
-            id="work-date"
-            type="date"
-            value={workDate}
-            onChange={(e) => setWorkDate(e.target.value)}
-            required
-          />
-        </FormField>
-
-        {bookedSlots.length > 0 && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
-            <p className="font-semibold text-amber-800">
-              ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้ในวันที่เลือก:
-            </p>
-            <ul className="list-disc list-inside mt-1 text-amber-700">
-              {bookedSlots.map((slot) => (
-                <li key={slot.start}>
-                  {slot.start} - {slot.end} (งาน: {slot.customer})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="เวลาเริ่มต้น" htmlFor="start-time">
-            <Input
-              id="start-time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
-          </FormField>
-          <FormField label="เวลาสิ้นสุด" htmlFor="end-time">
-            <Input
-              id="end-time"
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-            />
-          </FormField>
-        </div>
-
-        {timeConflictError && (
-          <p className="text-sm text-red-600 -mt-2">{timeConflictError}</p>
-        )}
-
-        <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-display">
-          <Input
-            id="lead-technician-display"
-            value={primaryTechnicianDisplay}
-            readOnly
-            className="bg-slate-100"
-          />
-        </FormField>
-
-        <FormField label="ช่างเทคนิคเพิ่มเติม (ถ้ามี)">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md max-h-40 overflow-y-auto">
-            {additionalTechnicians.map((tech) => (
-              <label
-                key={tech.id}
-                className="flex items-center space-x-2 p-2 rounded-md hover:bg-slate-100 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedTechnicianIds.includes(tech.id)}
-                  onChange={() => handleTechnicianToggle(tech.id)}
-                />
-                <span className="text-slate-800">{tech.name}</span>
-              </label>
-            ))}
-          </div>
-        </FormField>
-
-        {assessment && (
-          <>
-            <div className="border border-slate-200 p-4 rounded-lg space-y-4">
-              <h3 className="text-lg font-semibold text-slate-800">ข้อมูลภาพรวม</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
+      <form id="edit-job-form" onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* TAB: OVERVIEW */}
+        <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลลูกค้า</h3>
+                <FormField label="ลูกค้า" htmlFor="customerName">
                   <Input
-                    name="appointment_date"
-                    type="date"
-                    value={
-                      assessment.appointment_date
-                        ? new Date(assessment.appointment_date)
-                          .toISOString()
-                          .substring(0, 10)
-                        : ''
-                    }
-                    onChange={handleAssessmentChange}
+                    id="customerName"
+                    name="customerName"
+                    type="text"
+                    value={formData.customerName || ''}
+                    onChange={handleChange}
+                    required
+                    readOnly
+                    className="bg-white"
+                  />
+                </FormField>
+
+
+                <FormField label="ที่อยู่" htmlFor="address">
+                  <Textarea
+                    id="address"
+                    name="address"
+                    value={formData.address || ''}
+                    onChange={handleChange}
+                    required
+                    className="bg-white"
+                    rows={3}
+                  />
+                </FormField>
+
+                <FormField label="Link Google Map" htmlFor="googleMapLink">
+                  <Input
+                    name="google_map_link"
+                    type="url"
+                    value={formData.google_map_link || ''}
+                    onChange={handleChange}
+                    placeholder="https://maps.app.goo.gl/..."
                     className="bg-white"
                   />
                 </FormField>
               </div>
 
-              {suggestedPackageOptions.length > 0 && (
-                <div className="pt-4 border-t">
-                  <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-                      <label
-                        className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                      >
-                        <input
-                          type="radio"
-                          name="packageId-main-job-edit"
-                          className="sr-only"
-                          onChange={() => handlePackageSelect(null)}
-                          checked={!selectedPackageId}
-                        />
-                        <span className="font-semibold text-slate-800">
-                          ไม่ใช้แพ็กเกจ
-                        </span>
-                      </label>
-                      {suggestedPackageOptions.map((option) => (
-                        <label
-                          key={option.id}
-                          className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                        >
-                          <input
-                            type="radio"
-                            name="packageId-main-job-edit"
-                            value={option.id}
-                            className="sr-only"
-                            onChange={() => handlePackageSelect(option.id)}
-                            checked={selectedPackageId === option.id}
-                          />
-                          <div className="font-semibold text-slate-800">
-                            {option.name}
-                          </div>
-                          <div className="text-xs text-slate-500 mt-1">
-                            {option.visit_limit} ครั้ง /{' '}
-                            {option.contract_period} เดือน
-                          </div>
-                        </label>
-                      ))}
-                    </div>
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">พื้นที่บริการ (ข้อมูลอ้างอิง)</h3>
+                
+                <div className="mb-4">
+                   <FormField label="อ้างอิงใบประเมิน (Code)" htmlFor="assessmentCode">
+                      <Input 
+                        value={assessment ? (assessment as any).code || '-' : '-'} 
+                        readOnly 
+                        className="bg-white font-medium text-primary" 
+                      />
+                   </FormField>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="เขต" htmlFor="zone">
+                    <Input name="zone" value={formData.zone || ''} readOnly className="bg-white" />
+                  </FormField>
+                  <FormField label="Group" htmlFor="group">
+                    <Input name="group" value={formData.group || ''} readOnly className="bg-white" />
+                  </FormField>
+                  <FormField label="สายถนน" htmlFor="roadLine">
+                    <Input name="road_line" value={formData.road_line || ''} readOnly className="bg-white" />
+                  </FormField>
+                  <FormField label="ลำดับ" htmlFor="sequence">
+                    <Input name="sequence" value={formData.sequence || ''} readOnly className="bg-white" />
                   </FormField>
                 </div>
-              )}
+              </div>
+            </div>
 
-              {/* Work Areas */}
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  กำหนดการปฏิบัติงาน
+                </h3>
+                
+                <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
+                  <Input
+                    id="work-date"
+                    type="date"
+                    value={workDate}
+                    onChange={(e) => setWorkDate(e.target.value)}
+                    required
+                  />
+                </FormField>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="เวลาเริ่มต้น" htmlFor="start-time">
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      required
+                    />
+                  </FormField>
+                  <FormField label="เวลาสิ้นสุด" htmlFor="end-time">
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      required
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="ยานพาหนะ" htmlFor="vehicleId">
+                  <Select
+                    id="vehicleId"
+                    name="vehicle_id"
+                    value={formData.vehicle_id || ''}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">-- เลือกรถบริการ --</option>
+                    {vehicleWarehouses.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name} ({v.vehicle?.vehicle_registration || '-'})
+                      </option>
+                    ))}
+                  </Select>
+                </FormField>
+
+                {timeConflictError && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md flex items-start gap-2">
+                    <div className="text-red-500 mt-0.5">⚠️</div>
+                    <p className="text-sm text-red-600">{timeConflictError}</p>
+                  </div>
+                )}
+
+                {bookedSlots.length > 0 && (
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                    <p className="font-semibold text-amber-800 mb-1">
+                      ตารางงานอื่นของรถคันนี้:
+                    </p>
+                    <ul className="space-y-1">
+                      {bookedSlots.map((slot, idx) => (
+                        <li key={idx} className="text-amber-700 flex justify-between">
+                          <span>{slot.start} - {slot.end}</span>
+                          <span className="opacity-75 truncate max-w-[150px]">{slot.customer}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <FormField
+                label="รายละเอียด/หมายเหตุการปฏิบัติงาน"
+                htmlFor="operation-details-edit"
+              >
+                <Textarea
+                  id="operation-details-edit"
+                  name="operation_details"
+                  value={formData.operation_details || ''}
+                  onChange={handleChange}
+                  placeholder="รายละเอียดเพิ่มเติมสำหรับช่าง..."
+                  rows={4}
+                />
+              </FormField>
+            </div>
+          </div>
+        </div>
+
+        {/* TAB: SERVICE */}
+        <div className={activeTab === 'service' ? 'block' : 'hidden'}>
+          {!currentJob.assessment_id && (
+            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+              <div className="text-slate-400 mb-2">📄</div>
+              <p className="text-slate-500 font-medium">งานนี้ไม่ได้อ้างอิงใบประเมิน</p>
+              <p className="text-sm text-slate-400">คุณสามารถจัดการข้อมูลพื้นที่ได้ในส่วนการแก้ไขงานทั่วไป (ถ้ามี)</p>
+            </div>
+          )}
+          
+          {currentJob.assessment_id && !assessment && (
+            <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
+              <p className="text-slate-600">กำลังโหลดข้อมูลใบประเมิน...</p>
+            </div>
+          )}
+
+          {assessment && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">รายการพื้นที่บริการ</h3>
+                  <p className="text-sm text-slate-500">จัดการพื้นที่และสินค้าที่ใช้ในแต่ละจุด</p>
+                </div>
+                <div className="flex gap-2">
+                   <button
+                    type="button"
+                    onClick={handleAddArea}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-all"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    เพิ่มพื้นที่
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-6">
                 {(assessment.assessment_areas || []).map((area, index) => (
                   <WorkAreaForm
                     key={area.id || index}
@@ -1033,6 +1125,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         ) as any)!
                         : null
                     }
+                    availablePackages={packages}
+                    onSelectPackage={handlePackageSelect}
                     categories={categories}
                     isEditing={true}
                     originalArea={originalWorkAreas[index]}
@@ -1040,27 +1134,12 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 ))}
               </div>
 
-              <div className="mb-6">
-                <button
-                  type="button"
-                  onClick={handleAddArea}
-                  className="w-full py-3 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-primary hover:border-primary hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 font-medium"
-                >
-                  <PlusIcon className="h-5 w-5" />
-                  เพิ่มพื้นที่ใหม่
-                </button>
-              </div>
-            </div>
-
-            <div className="w-full md:w-1/2 ml-auto mt-4">
-              <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-slate-50">
-                <div className="space-y-4">
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    เงื่อนไขการชำระเงิน
-                  </label>
-
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+              {/* Payment Condition Section moved here as it relates to the service agreement */}
+              <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mt-8">
+                <h3 className="text-base font-semibold text-slate-800 mb-4">เงื่อนไขการชำระเงิน</h3>
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer p-3 bg-white border border-slate-200 rounded-lg hover:border-primary transition-colors min-w-[150px]">
                       <input
                         type="radio"
                         name="payment_type_edit_job"
@@ -1068,9 +1147,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         checked={!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT}
                         onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
                       />
-                      <span className="text-slate-700">ชำระเต็มจำนวน</span>
+                      <span className="text-slate-700 font-medium">ชำระเต็มจำนวน</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label className="flex items-center gap-2 cursor-pointer p-3 bg-white border border-slate-200 rounded-lg hover:border-primary transition-colors min-w-[150px]">
                       <input
                         type="radio"
                         name="payment_type_edit_job"
@@ -1078,36 +1157,135 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         checked={(assessment as any).payment_condition === PaymentMethod.INSTALLMENT}
                         onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
                       />
-                      <span className="text-slate-700">แบ่งชำระ (งวด)</span>
+                      <span className="text-slate-700 font-medium">แบ่งชำระ (งวด)</span>
                     </label>
                   </div>
 
                   {(assessment as any).payment_condition === PaymentMethod.INSTALLMENT && (
-                    <div className="grid grid-cols-1 gap-4">
-                      <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                        <Input
-                          name="payment_installment_count"
-                          type="number"
-                          placeholder="ระบุจำนวนงวด"
-                          value={(assessment as any).payment_installment_count || ''}
-                          onChange={(e) =>
-                            setAssessment((prev: any) => ({
-                              ...prev,
-                              payment_installment_count: parseInt(e.target.value, 10) || 0,
-                            }))
-                          }
-                          required
-                        />
-                      </FormField>
+                    <div className="w-full md:w-1/2 space-y-4">
+                      <Input
+                        name="payment_installment_count"
+                        type="number"
+                        placeholder="ระบุจำนวนงวด"
+                        value={(assessment as any).payment_installment_count || ''}
+                        onChange={(e) =>
+                          setAssessment((prev: any) => ({
+                            ...prev,
+                            payment_installment_count: parseInt(e.target.value, 10) || 0,
+                          }))
+                        }
+                        className="bg-white"
+                        required
+                        min={2}
+                      />
+                      
+                      {/* Installment Details */}
+                      {installments.length > 0 && (
+                        <div className="border border-slate-200 rounded-md p-3 bg-white">
+                          <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
+                          <div className="space-y-3">
+                            {installments.map((inst, idx) => (
+                              <div key={idx} className="flex gap-3 items-end">
+                                <div className="w-20 pt-2 text-sm text-slate-600">
+                                  งวดที่ {inst.installment_no}
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-xs text-slate-500 mb-1">จำนวนเงิน</label>
+                                  <Input
+                                    type="number"
+                                    value={inst.amount}
+                                    onChange={(e) => {
+                                      const val = parseFloat(e.target.value) || 0;
+                                      handleInstallmentAmountChange(idx, val);
+                                    }}
+                                    step="0.01"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-xs text-slate-500 mb-1">หมายเหตุ</label>
+                                  <Input
+                                    type="text"
+                                    value={inst.note || ''}
+                                    placeholder="เช่น มัดจำ"
+                                    onChange={(e) => {
+                                      handleInstallmentNoteChange(idx, e.target.value);
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                            <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                              <span>รวม</span>
+                              <span className={installments.reduce((sum, i) => sum + (i.amount || 0), 0) === (assessment as any).total_price ? 'text-green-600' : 'text-red-500'}>
+                                {installments.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()} / {((assessment as any).total_price || 0).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        {/* TAB: TEAM */}
+        <div className={activeTab === 'team' ? 'block' : 'hidden'}>
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2">หัวหน้าทีม (Leader)</h3>
+              <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-display">
+                <Input
+                  id="lead-technician-display"
+                  value={primaryTechnicianDisplay}
+                  readOnly
+                  className="bg-slate-50 font-medium text-slate-700"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  * หัวหน้าช่างถูกกำหนดจากการสร้างงาน หากต้องการเปลี่ยนกรุณาติดต่อผู้ดูแลระบบ
+                </p>
+              </FormField>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2">ลูกทีม (Members)</h3>
+              <div className="space-y-2">
+                <p className="text-sm text-slate-600 mb-2">เลือกช่างเทคนิคเพิ่มเติมที่เข้าร่วมงานนี้:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                  {additionalTechnicians.map((tech) => (
+                    <label
+                      key={tech.id}
+                      className={`
+                        flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
+                        ${selectedTechnicianIds.includes(tech.id) 
+                          ? 'bg-primary/5 border-primary ring-1 ring-primary' 
+                          : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedTechnicianIds.includes(tech.id)}
+                        onChange={() => handleTechnicianToggle(tech.id)}
+                        className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-700">{tech.name}</span>
+                        {tech.nick_name && <span className="text-xs text-slate-500">({tech.nick_name})</span>}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {additionalTechnicians.length === 0 && (
+                  <p className="text-center text-slate-400 py-4 italic">ไม่พบรายชื่อช่างอื่นๆ</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
       </form>
-    </Modal >
+    </Modal>
   );
 };

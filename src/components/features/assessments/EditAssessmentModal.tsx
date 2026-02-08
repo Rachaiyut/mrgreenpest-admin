@@ -557,53 +557,12 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
           </div>
         </div>
 
-        {/* Package Selection */}
-        {suggestedPackageOptions.length > 0 && (
-          <div className="pt-4 border-t">
-            <FormField label="เลือกแพ็กเกจสำหรับทุกพื้นที่ (ไม่บังคับ)">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1">
-                <label
-                  className={`relative block p-3 border rounded-lg cursor-pointer ${!selectedPackageId ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                >
-                  <input
-                    type="radio"
-                    name="packageId-main-edit"
-                    className="sr-only"
-                    onChange={() => handlePackageSelect(null)}
-                    checked={!selectedPackageId}
-                  />
-                  <span className="font-semibold text-slate-800">
-                    ไม่ใช้แพ็กเกจ
-                  </span>
-                </label>
-                {suggestedPackageOptions.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`relative block p-3 border rounded-lg cursor-pointer ${selectedPackageId === option.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="packageId-main-edit"
-                      value={option.id}
-                      className="sr-only"
-                      onChange={() => handlePackageSelect(option.id)}
-                      checked={selectedPackageId === option.id}
-                    />
-                    <div className="font-semibold text-slate-800">
-                      {option.name}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-1">
-                      {(option as any).visits_per_month} ครั้ง /{' '}
-                      {(option as any).contract_duration}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </FormField>
-          </div>
-        )}
-
         <div className="space-y-4">
+          <div className="flex items-center justify-between border-b pb-2 mb-4">
+             <h3 className="text-lg font-semibold text-slate-800">
+              พื้นที่ให้บริการ (Work Areas)
+            </h3>
+          </div>
           {workAreas.map((area, index) => (
             <WorkAreaForm
               key={area.id || index}
@@ -620,6 +579,8 @@ export const EditAssessmentModal: React.FC<EditAssessmentModalProps> = ({
                   ) as any)!
                   : null
               }
+              availablePackages={packages}
+              onSelectPackage={handlePackageSelect}
               categories={categories}
               isEditing={true}
               originalArea={originalWorkAreas[index]}

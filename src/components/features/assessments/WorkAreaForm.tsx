@@ -23,6 +23,8 @@ interface WorkAreaFormProps {
   onRemoveArea?: (index: number) => void;
   products: Product[];
   selectedPackage: Package | null;
+  availablePackages?: Package[];
+  onSelectPackage?: (pkgId: string) => void;
   categories: Category[];
   /** Original area data for comparison when editing (optional) */
   originalArea?: Partial<AssessmentWorkArea>;
@@ -39,6 +41,8 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   onRemoveArea,
   products,
   selectedPackage,
+  availablePackages = [],
+  onSelectPackage,
   categories,
   originalArea,
   isEditing = false,
@@ -76,8 +80,51 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
   const renderPriceSection = () => {
     if (!selectedPackage) {
       return (
-        <div className="pt-4 border-t">
-          <FormField label="ราคาบริการหลัก" htmlFor={`manual-price-${index}`}>
+        <div className="pt-4 border-t space-y-4">
+          {/* Package Recommendation Section */}
+          {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">📦</span>
+                เลือกแพ็กเกจที่เหมาะสม (แนะนำ)
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availablePackages.map(pkg => {
+                  const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                  const fit = conditions.find(c => c.area_range >= area.area_size!);
+                  
+                  if (!fit) return null;
+
+                  const hasTermites = (area.category_services || []).some((cat) =>
+                    categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+                  );
+                  const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
+
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => onSelectPackage?.(pkg.id)}
+                      className="group relative flex flex-col items-start p-3 rounded-lg border-2 border-slate-200 hover:border-primary hover:bg-primary/5 transition-all bg-white text-left w-full"
+                    >
+                      <div className="font-semibold text-slate-800 group-hover:text-primary">{pkg.name}</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                         {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
+                      </div>
+                      <div className="mt-2 text-lg font-bold text-slate-700 group-hover:text-primary">
+                        ฿{price.toLocaleString()}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1">
+                        สำหรับพื้นที่ไม่เกิน {fit.area_range} ตร.ม.
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <FormField label="ราคาบริการหลัก (กำหนดเอง)" htmlFor={`manual-price-${index}`}>
             <Input
               id={`manual-price-${index}`}
               type="number"
@@ -106,10 +153,49 @@ export const WorkAreaForm: React.FC<WorkAreaFormProps> = ({
     if (selectedCondition) {
       return (
         <div className="pt-4 border-t">
-          <h4 className="text-base font-semibold text-slate-700">
+          <h4 className="text-base font-semibold text-slate-700 mb-3">
             แพ็กเกจที่เลือก
           </h4>
-          <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-2">
+          
+          {/* Show other package options as switchable tabs/cards */}
+          {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                {availablePackages.map(pkg => {
+                  const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                  const fit = conditions.find(c => c.area_range >= area.area_size!);
+                  if (!fit) return null;
+
+                  const hasTermites = (area.category_services || []).some((cat) =>
+                    categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+                  );
+                  const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
+                  const isSelected = selectedPackage.id === pkg.id;
+
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => !isSelected && onSelectPackage?.(pkg.id)}
+                      className={`relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${
+                        isSelected 
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary' 
+                          : 'border-slate-200 hover:border-slate-300 bg-white opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'}`}>{pkg.name}</div>
+                      <div className="mt-1 text-base font-bold text-slate-700">
+                        ฿{price.toLocaleString()}
+                      </div>
+                      {isSelected && (
+                         <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                      )}
+                    </button>
+                  );
+                })}
+             </div>
+          )}
+
+          <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
             <div className="flex justify-between items-start">
               <div>
                 <div className="font-semibold text-slate-800">

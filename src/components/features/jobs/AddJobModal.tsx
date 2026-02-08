@@ -11,18 +11,17 @@ import { SearchableSelect } from '../../common/SearchableSelect';
 import { User } from '@/src/types/entity/core.interface';
 import {
   Job,
-  TeamMember,
   ServiceSystem,
 } from '@/src/types/entity/job.interface';
-import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
-import { RefreshIcon } from '../../../assets/icons/Icons';
-import { JobApi, WarehouseApi, UserApi, CustomerApi } from '@/src/api';
+import { RefreshIcon, UserIcon, CalendarIcon, TruckIcon, DocumentIcon } from '../../../assets/icons/Icons';
+import { AssessmentApi, ContractApi, CustomerApi, WarehouseApi, UserApi } from '@/src/api';
 import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
+import { Assessment } from '@/src/types/entity/app.interface';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -38,22 +37,26 @@ const JobWorkAreaForm: React.FC<{
   };
 
   return (
-    <div className="border border-slate-300 p-4 rounded-lg space-y-4 bg-slate-50 relative">
+    <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-white shadow-sm relative transition-all hover:shadow-md">
+      <div className="absolute -top-3 left-3 bg-slate-100 px-2 text-xs font-semibold text-slate-500 rounded-full border border-slate-200">
+        พื้นที่ #{index + 1}
+      </div>
       {!isReadOnly && (
         <button
           type="button"
           onClick={() => onClearArea(index)}
-          className="absolute top-2 right-2 flex items-center gap-1 text-slate-500 hover:text-slate-700 py-1 px-2 rounded-md hover:bg-slate-200 text-sm"
+          className="absolute top-2 right-2 flex items-center gap-1 text-slate-400 hover:text-red-500 py-1 px-2 rounded-md hover:bg-red-50 text-xs transition-colors"
           title="ล้างค่าในพื้นที่นี้"
         >
-          <RefreshIcon className="h-4 w-4" />
+          <RefreshIcon className="h-3 w-3" />
           <span>ล้างค่า</span>
         </button>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <FormField
-          label={`ชื่อพื้นที่ #${index + 1}`}
+          label="ชื่อพื้นที่"
           htmlFor={`areaName-${index}`}
+          className="mb-0"
         >
           <Input
             name="name"
@@ -62,17 +65,21 @@ const JobWorkAreaForm: React.FC<{
             placeholder="เช่น ชั้น 1, โซน A"
             required
             readOnly={isReadOnly}
+            className="bg-slate-50 focus:bg-white"
           />
         </FormField>
         <FormField
           label="แพ็กเกจ/ประเภทบริการ"
           htmlFor={`servicePackage-${index}`}
+          className="mb-0"
         >
           <Input
             name="service_package"
             value={area.service_package || ''}
             onChange={handleFieldChange}
+            placeholder="ระบุประเภทบริการ"
             readOnly={isReadOnly}
+            className="bg-slate-50 focus:bg-white"
           />
         </FormField>
       </div>
@@ -103,10 +110,17 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   initialContractId,
   initialWorkDateIso,
 }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'service' | 'team'>('overview');
+  
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedReference, setSelectedReference] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
+  
+  // Explicitly fetch assessments and contracts
+  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
+  const [fetchedContracts, setFetchedContracts] = useState<Contract[]>([]);
+
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>(
     []
@@ -254,38 +268,58 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const isAssessment = selectedReference.startsWith('asm-');
 
   const availableAssessments = useMemo(() => {
+    // Prefer fetched assessments if available
+    if (fetchedAssessments.length > 0) {
+      return fetchedAssessments.filter(
+        (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT
+      );
+    }
+
     if (selectedCustomerId) {
       const customer =
-        customers.find((c) => c.id === selectedCustomerId) ||
         (selectedCustomerData?.id === selectedCustomerId
           ? selectedCustomerData
-          : undefined);
+          : undefined) ||
+        customers.find((c) => c.id === selectedCustomerId);
+
       if (customer?.assessments) {
         return customer.assessments.filter(
-          (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE
+          (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT
         );
       }
     }
     return [];
-  }, [customers, selectedCustomerId, selectedCustomerData]);
+  }, [customers, selectedCustomerId, selectedCustomerData, fetchedAssessments]);
 
   const availableContracts = useMemo(() => {
+    // Prefer fetched contracts if available
+    if (fetchedContracts.length > 0) {
+      return fetchedContracts.filter(
+        (a) =>
+          (a.status as any) === AsessmentStatus.DRAFT ||
+          (a.status as any) === AsessmentStatus.COMPLETE ||
+          (a.status as any) === 'ACTIVE'
+      );
+    }
+
     if (selectedCustomerId) {
       const customer =
-        customers.find((c) => c.id === selectedCustomerId) ||
         (selectedCustomerData?.id === selectedCustomerId
           ? selectedCustomerData
-          : undefined);
+          : undefined) ||
+        customers.find((c) => c.id === selectedCustomerId);
+
       if (customer?.contracts) {
         return customer.contracts.filter(
           (a) =>
-            a.status === AsessmentStatus.DRAFT ||
-            a.status === AsessmentStatus.COMPLETE
+            (a.status as any) === AsessmentStatus.DRAFT ||
+            (a.status as any) === AsessmentStatus.COMPLETE ||
+            (a.status as any) === 'ACTIVE'
         );
       }
     }
     return [];
-  }, [customers, selectedCustomerId, selectedCustomerData]);
+  }, [customers, selectedCustomerId, selectedCustomerData, fetchedContracts]);
 
   const filteredReferences = useMemo(() => {
     const refs = [
@@ -334,6 +368,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       setWorkAreas([]);
       setOperationDetails('');
       setServiceSystem('');
+      setActiveTab('overview');
     }
   }, [isOpen]);
 
@@ -368,11 +403,28 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
     setSelectedReference('');
     setWorkAreas([]);
+    
+    // Clear previous fetched data
+    setFetchedAssessments([]);
+    setFetchedContracts([]);
 
     if (customerId) {
       try {
+        // Fetch full customer details
         const fullCustomer = await CustomerApi.getCustomerById(customerId);
         setSelectedCustomerData(fullCustomer);
+        
+        // Parallel fetch for assessments and contracts
+        Promise.all([
+          AssessmentApi.getAll({ customer_id: customerId }),
+          ContractApi.getAll({ customer_id: customerId })
+        ]).then(([assessmentRes, contractRes]) => {
+          setFetchedAssessments(assessmentRes.data || []);
+          setFetchedContracts(contractRes.data || []);
+        }).catch(err => {
+          console.error('Error fetching customer documents:', err);
+        });
+
       } catch (error) {
         console.error('Error fetching full customer details:', error);
       }
@@ -425,6 +477,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     if (timeConflictError) return;
     if (!leadTechnicianId) {
       alert('กรุณาเลือกหัวหน้าช่าง');
+      setActiveTab('team');
       return;
     }
     const jobData = createJobObject(JobMainStatus.PENDING);
@@ -514,6 +567,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     [additionalTechnicianOptions, leadTechnicianId]
   );
 
+  const tabs = [
+    { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
+    { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
+    { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
+  ];
+
   return (
     <Modal
       isOpen={isOpen}
@@ -536,223 +595,521 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         </div>
       }
     >
-      <form id="add-job-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-b pb-4 mb-4">
-          <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
-            <Input
-              id="work-date"
-              type="date"
-              value={workDate}
-              onChange={(e) => setWorkDate(e.target.value)}
-              required
-            />
-          </FormField>
-          <FormField label="เวลาเริ่มต้น" htmlFor="start-time">
-            <Input
-              id="start-time"
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
-          </FormField>
-          <FormField label="เวลาสิ้นสุด" htmlFor="end-time">
-            <Input
-              id="end-time"
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-            />
-          </FormField>
-        </div>
+      <div className="mb-6 border-b border-slate-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`
+                flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
+                ${activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }
+              `}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-        {bookedSlots.length > 0 && (
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm mb-4">
-            <p className="font-semibold text-amber-800">
-              ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้ในวันที่เลือก:
-            </p>
-            <ul className="list-disc list-inside mt-1 text-amber-700">
-              {bookedSlots.map((slot) => (
-                <li key={slot.start}>
-                  {slot.start} - {slot.end} (งาน: {slot.customer})
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
-            <SearchableSelect
-              label="เลือกลูกค้า"
-              options={filteredCustomers.map((c) => ({
-                value: c.id,
-                label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
-                description: c.phone || '',
-              }))}
-              value={selectedCustomerId}
-              onChange={handleCustomerChange}
-              onSearchChange={setCustomerSearch}
-              placeholder="ค้นหาลูกค้า..."
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <SearchableSelect
-              label="หรือ อ้างอิง (ใบประเมิน/สัญญา)"
-              options={filteredReferences}
-              value={selectedReference}
-              onChange={handleReferenceChange}
-              onSearchChange={setReferenceSearch}
-              placeholder={
-                selectedCustomerId
-                  ? 'เลือกรายการอ้างอิง...'
-                  : 'กรุณาเลือกลูกค้าก่อน'
-              }
-              className={
-                !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-              }
-            />
-          </div>
-        </div>
-
-        {workAreas.length > 0 && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">
-              รายละเอียดพื้นที่บริการ
-            </h3>
-            {selectedReference ? (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
-                ข้อมูลพื้นที่ถูกดึงมาจาก {isAssessment ? 'ใบประเมิน' : 'สัญญา'}{' '}
-                เลขที่:{' '}
-                <strong>
-                  {selectedReference}
-                </strong>
-              </div>
-            ) : (
-              selectedCustomerId && (
-                <FormField
-                  label="จำนวนพื้นที่ที่ต้องการเข้าบริการ"
-                  htmlFor="numberOfAreas"
-                >
-                  <Select
-                    id="numberOfAreas"
-                    value={workAreas.length}
-                    onChange={(e) =>
-                      handleNumberOfAreasChange(parseInt(e.target.value, 10))
+      <form id="add-job-form" onSubmit={handleSubmit} className="space-y-6">
+        
+        {/* TAB: OVERVIEW */}
+        <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <UserIcon className="w-4 h-4" />
+                  ข้อมูลลูกค้า
+                </h3>
+                
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="เลือกลูกค้า"
+                    options={filteredCustomers.map((c) => ({
+                      value: c.id,
+                      label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
+                      description: c.phone || '',
+                    }))}
+                    value={selectedCustomerId}
+                    onChange={handleCustomerChange}
+                    onSearchChange={setCustomerSearch}
+                    placeholder="ค้นหาลูกค้า..."
+                    required
+                  />
+                </div>
+                
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="หรือ อ้างอิง (ใบประเมิน/สัญญา)"
+                    options={filteredReferences}
+                    value={selectedReference}
+                    onChange={handleReferenceChange}
+                    onSearchChange={setReferenceSearch}
+                    placeholder={
+                      selectedCustomerId
+                        ? 'เลือกรายการอ้างอิง...'
+                        : 'กรุณาเลือกลูกค้าก่อน'
                     }
-                  >
-                    {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
-                      <option key={num} value={num}>
-                        {num}
-                      </option>
-                    ))}
-                  </Select>
+                    className={
+                      !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+                    }
+                  />
+                </div>
+
+                {selectedCustomerData && (
+                  <div className="text-sm text-slate-600 bg-white p-3 rounded border border-slate-200">
+                    <p className="font-semibold">{selectedCustomerData.first_name} {selectedCustomerData.last_name}</p>
+                    <p>{selectedCustomerData.phone}</p>
+                    <p className="mt-1 text-slate-500">
+                      {[
+                        selectedCustomerData.address_house_no,
+                        selectedCustomerData.sub_district,
+                        selectedCustomerData.district,
+                        selectedCustomerData.province,
+                        selectedCustomerData.postal_code
+                      ].filter(Boolean).join(' ') || '-'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  กำหนดการ
+                </h3>
+                
+                <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
+                  <Input
+                    id="work-date"
+                    type="date"
+                    value={workDate}
+                    onChange={(e) => setWorkDate(e.target.value)}
+                    required
+                  />
                 </FormField>
-              )
-            )}
-            {workAreas.map((area, index) => (
-              <JobWorkAreaForm
-                key={area.id || index}
-                area={area}
-                index={index}
-                onAreaChange={handleAreaChange}
-                onClearArea={handleClearArea}
-                isReadOnly={!!selectedReference}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="เวลาเริ่มต้น" htmlFor="start-time">
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                      required
+                    />
+                  </FormField>
+                  <FormField label="เวลาสิ้นสุด" htmlFor="end-time">
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                      required
+                    />
+                  </FormField>
+                </div>
+
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="เลือกรถที่ปฏิบัติงาน"
+                    options={filteredVehicles}
+                    value={selectedVehicleId}
+                    onChange={setSelectedVehicleId}
+                    onSearchChange={setVehicleSearch}
+                    placeholder="ค้นหารถบริการ..."
+                    required
+                  />
+                </div>
+
+                {timeConflictError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
+                    <span className="text-lg">⚠️</span>
+                    <p>{timeConflictError}</p>
+                  </div>
+                )}
+
+                {bookedSlots.length > 0 && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                    <p className="font-semibold text-amber-800 mb-1">
+                      ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
+                    </p>
+                    <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
+                      {bookedSlots.map((slot) => (
+                        <li key={slot.start}>
+                          {slot.start} - {slot.end} ({slot.customer})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* TAB: SERVICE DETAILS */}
+        <div className={activeTab === 'service' ? 'block' : 'hidden'}>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField label="ระบบบริการ" htmlFor="service-system">
+                <Select
+                  id="service-system"
+                  value={serviceSystem}
+                  onChange={(e) => setServiceSystem(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>
+                    -- เลือกระบบบริการ --
+                  </option>
+                  {Object.values(ServiceSystem).map((sys) => (
+                    <option key={sys} value={sys}>
+                      {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
+                    </option>
+                  ))}
+                </Select>
+              </FormField>
+            </div>
+
+            <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
+              <Textarea
+                id="operation-details"
+                name="operationDetails"
+                value={operationDetails}
+                onChange={(e) => setOperationDetails(e.target.value)}
+                placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
+                rows={4}
+                className="bg-slate-50 focus:bg-white transition-colors"
               />
-            ))}
+            </FormField>
+
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 className="text-lg font-semibold text-slate-800">
+                  รายละเอียดพื้นที่บริการ
+                </h3>
+                {selectedReference && (
+                  <div className="text-sm text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+                     อ้างอิง: {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                  </div>
+                )}
+              </div>
+              
+              {selectedReference ? (
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                        <DocumentIcon className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          ข้อมูลอ้างอิง: {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          {isAssessment ? 'ใบประเมิน' : 'สัญญา'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {isAssessment && availableAssessments.length > 0 && (
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        {(() => {
+                          const asmId = selectedReference.replace('asm-', '');
+                          const asm = availableAssessments.find(a => a.id === asmId);
+                          if (!asm) return null;
+
+                          return (
+                            <>
+                              <div className="space-y-3 text-sm">
+                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
+                                <div className="grid grid-cols-[100px_1fr] gap-2">
+                                  <span className="text-slate-500">ที่อยู่:</span>
+                                  <span className="text-slate-800">
+                                    {[asm.address, asm.sub_district, asm.district, asm.province, asm.zipcode].filter(Boolean).join(' ')}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-[100px_1fr] gap-2">
+                                  <span className="text-slate-500">โซน/สาย:</span>
+                                  <span className="text-slate-800">
+                                    {asm.zone} / {asm.road_line} (Seq: {asm.sequence})
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-[100px_1fr] gap-2">
+                                  <span className="text-slate-500">วันนัดหมาย:</span>
+                                  <span className="text-slate-800">
+                                    {asm.appointment_date ? new Date(asm.appointment_date).toLocaleDateString('th-TH') : '-'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="space-y-3 text-sm">
+                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
+                                <div className="grid grid-cols-[100px_1fr] gap-2">
+                                  <span className="text-slate-500">การชำระเงิน:</span>
+                                  <span className="text-slate-800">
+                                    {asm.payment_condition === 'CASH' ? 'ชำระเต็มจำนวน' : 
+                                     asm.payment_condition === 'INSTALLMENT' ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)` : 
+                                     asm.payment_condition}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-[100px_1fr] gap-2">
+                                  <span className="text-slate-500">ราคารวม:</span>
+                                  <span className="font-bold text-primary">
+                                    ฿{(asm.total_price || 0).toLocaleString()}
+                                  </span>
+                                </div>
+                                {asm.google_map_link && (
+                                  <div className="grid grid-cols-[100px_1fr] gap-2">
+                                    <span className="text-slate-500">Google Map:</span>
+                                    <a href={asm.google_map_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">
+                                      เปิดแผนที่
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      <h4 className="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wider flex items-center justify-between">
+                        <span>พื้นที่บริการในเอกสาร</span>
+                        <span className="text-xs font-normal normal-case bg-slate-100 px-2 py-1 rounded text-slate-500">
+                          {(() => {
+                             const asmId = selectedReference.replace('asm-', '');
+                             const asm = availableAssessments.find(a => a.id === asmId);
+                             return asm?.assessment_areas?.length || 0;
+                          })()} พื้นที่
+                        </span>
+                      </h4>
+                      <div className="space-y-4">
+                        {(() => {
+                          const asmId = selectedReference.replace('asm-', '');
+                          const asm = availableAssessments.find(a => a.id === asmId);
+                          if (!asm || !asm.assessment_areas) return <p className="text-slate-400 italic">ไม่พบข้อมูลพื้นที่</p>;
+                          
+                          return asm.assessment_areas.map((area, idx) => (
+                            <div key={idx} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                              <div className="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                  <span className="bg-white border border-slate-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold text-slate-600">
+                                    {idx + 1}
+                                  </span>
+                                  <h5 className="font-semibold text-slate-800">{area.area_name}</h5>
+                                </div>
+                                <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
+                                  {area.building_type}
+                                </span>
+                              </div>
+                              
+                              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
+                                    <span className="font-semibold text-slate-600">ข้อมูลพื้นที่</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">ขนาด:</span>
+                                    <span className="font-medium">{area.area_size || '-'} ตร.ม.</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">ระบบ:</span>
+                                    <span className="font-medium">
+                                      {area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">ราคาบริการ:</span>
+                                    <span className="font-medium">฿{(area.base_service_price || 0).toLocaleString()}</span>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
+                                    <span className="font-semibold text-slate-600">รายละเอียดเพิ่มเติม</span>
+                                  </div>
+                                  
+                                  {/* Products/Items used */}
+                                  <div className="mb-2">
+                                    <span className="text-slate-500 block mb-1 text-xs">สินค้า/อุปกรณ์ที่ใช้:</span>
+                                    {area.items && area.items.length > 0 ? (
+                                      <ul className="list-disc list-inside space-y-0.5">
+                                        {area.items.map((item, i) => (
+                                          <li key={i} className="text-slate-700 text-xs">
+                                            {item.product_name} x {item.quantity}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    ) : (
+                                      <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>
+                                    )}
+                                  </div>
+
+                                  {/* Problems/Pests found */}
+                                  <div>
+                                    <span className="text-slate-500 block mb-1 text-xs">ปัญหาที่พบ:</span>
+                                    {area.category_services && area.category_services.length > 0 ? (
+                                      <div className="flex flex-wrap gap-1">
+                                        {area.category_services.map((cat, i) => (
+                                          <span key={i} className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[10px]">
+                                            {cat.name || 'Unknown'}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback info box */}
+                  <div className="p-4 bg-blue-50 text-blue-800 text-sm border-t border-blue-100 flex items-start gap-2">
+                    <span className="text-lg">ℹ️</span>
+                    <p>
+                      ข้อมูลพื้นที่และสินค้าจะถูกบันทึกโดยอัตโนมัติตามเอกสารอ้างอิงที่เลือก
+                      คุณไม่จำเป็นต้องกรอกข้อมูลซ้ำในส่วนนี้
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {selectedCustomerId ? (
+                    <div className="flex items-end gap-4">
+                      <FormField
+                        label="จำนวนพื้นที่ที่ต้องการเข้าบริการ"
+                        htmlFor="numberOfAreas"
+                        className="mb-0 flex-1"
+                      >
+                        <Select
+                          id="numberOfAreas"
+                          value={workAreas.length}
+                          onChange={(e) =>
+                            handleNumberOfAreasChange(parseInt(e.target.value, 10))
+                          }
+                        >
+                          <option value="0">ยังไม่ระบุพื้นที่</option>
+                          {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                            <option key={num} value={num}>
+                              {num} พื้นที่
+                            </option>
+                          ))}
+                        </Select>
+                      </FormField>
+                    </div>
+                  ) : (
+                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
+                      กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    {workAreas.map((area, index) => (
+                      <JobWorkAreaForm
+                        key={area.id || index}
+                        area={area}
+                        index={index}
+                        onAreaChange={handleAreaChange}
+                        onClearArea={handleClearArea}
+                        isReadOnly={!!selectedReference}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
-
-        <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
-          <Textarea
-            id="operation-details"
-            name="operationDetails"
-            value={operationDetails}
-            onChange={(e) => setOperationDetails(e.target.value)}
-            placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
-            rows={8}
-          />
-        </FormField>
-
-        <FormField label="ระบบบริการ" htmlFor="service-system">
-          <Select
-            id="service-system"
-            value={serviceSystem}
-            onChange={(e) => setServiceSystem(e.target.value)}
-            required
-          >
-            <option value="" disabled>
-              -- เลือกระบบบริการ --
-            </option>
-            {Object.values(ServiceSystem).map((sys) => (
-              <option key={sys} value={sys}>
-                {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
-              </option>
-            ))}
-          </Select>
-        </FormField>
-
-        <div className="mb-4">
-          <SearchableSelect
-            label="เลือกรถที่ปฏิบัติงาน"
-            options={filteredVehicles}
-            value={selectedVehicleId}
-            onChange={setSelectedVehicleId}
-            onSearchChange={setVehicleSearch}
-            placeholder="ค้นหารถบริการ..."
-            required
-          />
         </div>
 
-        {timeConflictError && (
-          <p className="text-sm text-red-600 -mt-2">{timeConflictError}</p>
-        )}
-
-        <div className="mb-4">
-          <SearchableSelect
-            label="หัวหน้าช่าง *"
-            name="primary_tech_id"
-            options={leadTechnicianOptions.map((tech) => ({
-              value: tech.id,
-              label: `${getTechnicianName(tech)}`,
-              description: tech.phone || '',
-            }))}
-            value={leadTechnicianId}
-            onChange={handleLeadTechnicianChange}
-            onSearchChange={setLeadTechSearch}
-            placeholder="ค้นหาหัวหน้าช่าง..."
-            required
-          />
-        </div>
-
-        <FormField label="ช่างเทคนิคเพิ่มเติม (ถ้ามี)">
-          <div className="mb-2">
-            <Input
-              placeholder="ค้นหาช่างเพิ่มเติม..."
-              value={additionalTechSearch}
-              onChange={(e) => setAdditionalTechSearch(e.target.value)}
-            />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 p-2 border rounded-md max-h-40 overflow-y-auto">
-            {additionalTechnicians.map((tech) => (
-              <label
-                key={tech.id}
-                className="flex items-center space-x-2 p-2 rounded-md hover:bg-slate-100 cursor-pointer"
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedTechnicianIds.includes(tech.id)}
-                  onChange={() => handleTechnicianToggle(tech.id)}
+        {/* TAB: TEAM */}
+        <div className={activeTab === 'team' ? 'block' : 'hidden'}>
+          <div className="max-w-3xl mx-auto space-y-6">
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">1</span>
+                หัวหน้าทีม (Leader)
+              </h3>
+              <div className="mb-4">
+                <SearchableSelect
+                  label="หัวหน้าช่าง *"
+                  name="primary_tech_id"
+                  options={leadTechnicianOptions.map((tech) => ({
+                    value: tech.id,
+                    label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`,
+                    description: tech.phone || '',
+                  }))}
+                  value={leadTechnicianId}
+                  onChange={handleLeadTechnicianChange}
+                  onSearchChange={setLeadTechSearch}
+                  placeholder="ค้นหาหัวหน้าช่าง..."
+                  required
                 />
-                <span className="text-slate-800">
-                  {getTechnicianName(tech)}
-                </span>
-              </label>
-            ))}
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">2</span>
+                ลูกทีม (Members)
+              </h3>
+              
+              <div className="mb-4">
+                 <Input
+                    placeholder="ค้นหาช่างเพิ่มเติม..."
+                    value={additionalTechSearch}
+                    onChange={(e) => setAdditionalTechSearch(e.target.value)}
+                    className="bg-slate-50"
+                  />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
+                {additionalTechnicians.map((tech) => (
+                  <label
+                    key={tech.id}
+                    className={`
+                      flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
+                      ${selectedTechnicianIds.includes(tech.id) 
+                        ? 'bg-primary/5 border-primary ring-1 ring-primary' 
+                        : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
+                    `}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedTechnicianIds.includes(tech.id)}
+                      onChange={() => handleTechnicianToggle(tech.id)}
+                      className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-700">{getTechnicianName(tech)}</span>
+                      {tech.nick_name && <span className="text-xs text-slate-500">({tech.nick_name})</span>}
+                    </div>
+                  </label>
+                ))}
+              </div>
+              {additionalTechnicians.length === 0 && (
+                <p className="text-center text-slate-400 py-8 italic bg-slate-50 rounded-lg">ไม่พบรายชื่อช่างอื่นๆ</p>
+              )}
+            </div>
           </div>
-        </FormField>
+        </div>
+
       </form>
     </Modal>
   );

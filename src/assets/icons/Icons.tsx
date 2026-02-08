@@ -76,6 +76,8 @@ export const CalendarDaysIcon: React.FC<IconProps> = (props) => (
   </svg>
 );
 
+export const CalendarIcon = CalendarDaysIcon;
+
 // --- New Icons ---
 
 export const ExclamationTriangleIcon: React.FC<IconProps> = (props) => (
@@ -156,7 +158,7 @@ export const NewAssessmentIcon: React.FC<IconProps> = (props) => (
       <path
         stroke="currentColor"
         strokeWidth="1.5"
-        d="M13 2.5V5c0 2.357 0 3.536.732 4.268S15.643 10 18 10h4"
+        d="M13 2.5V5c0 2.357 0 3.536.732 4.248S15.643 10 18 10h4"
       />
       <path
         fill="currentColor"
@@ -558,6 +560,8 @@ export const DocumentTextIcon: React.FC<IconProps> = (props) => (
     />
   </svg>
 );
+
+export const DocumentIcon = DocumentTextIcon;
 
 export const CurrencyDollarIcon: React.FC<IconProps> = (props) => (
   <svg

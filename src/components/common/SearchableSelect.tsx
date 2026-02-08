@@ -165,9 +165,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </div>
           </div>
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
+            filteredOptions.map((option, index) => (
               <div
-                key={option.value}
+                key={`${option.value}-${index}`}
                 className={`relative cursor-default select-none py-2 pl-3 pr-9 hover:bg-slate-100 ${option.value === value ? 'bg-primary/10 text-primary font-semibold' : 'text-slate-900'}`}
                 onClick={() => {
                   onChange(option.value);
