@@ -764,6 +764,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 })()}
 
                 {/* Service Details - Full Width */}
+                {!selectedQuotationId && (
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
                     <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ (Service Details)" />
                     
@@ -843,6 +844,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* Payment & Installments - Full Width */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
