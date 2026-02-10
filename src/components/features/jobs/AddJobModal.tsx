@@ -17,7 +17,7 @@ import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
-import { RefreshIcon, UserIcon, CalendarIcon, TruckIcon, DocumentIcon } from '../../../assets/icons/Icons';
+import { RefreshIcon, UserIcon, CalendarIcon, TruckIcon, DocumentIcon, CheckCircleIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowLeftIcon, ArrowRightIcon } from '../../../assets/icons/Icons';
 import { AssessmentApi, ContractApi, CustomerApi, WarehouseApi, UserApi } from '@/src/api';
 import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
@@ -110,8 +110,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   initialContractId,
   initialWorkDateIso,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'service' | 'team'>('overview');
-  
+  const [currentStep, setCurrentStep] = useState(0);
+  const [visitedSteps, setVisitedSteps] = useState<number[]>([0]);
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedReference, setSelectedReference] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -368,7 +369,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       setWorkAreas([]);
       setOperationDetails('');
       setServiceSystem('');
-      setActiveTab('overview');
+      setCurrentStep(0);
+      setVisitedSteps([0]);
     }
   }, [isOpen]);
 
@@ -412,7 +414,11 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       try {
         // Fetch full customer details
         const fullCustomer = await CustomerApi.getCustomerById(customerId);
-        setSelectedCustomerData(fullCustomer);
+        if (fullCustomer) {
+             // Handle potential API response wrapper
+             const customerData = (fullCustomer as any).data || fullCustomer;
+             setSelectedCustomerData(customerData);
+        }
         
         // Parallel fetch for assessments and contracts
         Promise.all([
@@ -490,7 +496,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     if (timeConflictError) return;
     if (!leadTechnicianId) {
       alert('กรุณาเลือกหัวหน้าช่าง');
-      setActiveTab('team');
+      setCurrentStep(2);
       return;
     }
     const jobData = createJobObject(JobMainStatus.PENDING);
@@ -580,11 +586,37 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     [additionalTechnicianOptions, leadTechnicianId]
   );
 
-  const tabs = [
-    { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
-    { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
-    { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
+  const steps = [
+    {
+      id: 0,
+      label: 'ข้อมูลลูกค้า & กำหนดการ',
+      icon: <UserIcon className="w-5 h-5" />,
+      isValid: !!selectedCustomerId && !!workDate && !!startTime && !!endTime
+    },
+    {
+      id: 1,
+      label: 'รายละเอียดบริการ',
+      icon: <DocumentIcon className="w-5 h-5" />,
+      isValid: !!serviceSystem
+    },
+    {
+      id: 2,
+      label: 'ทีมช่าง & ยานพาหนะ',
+      icon: <TruckIcon className="w-5 h-5" />,
+      isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError
+    },
   ];
+
+  const handleNextStep = () => {
+    if (steps[currentStep].isValid) {
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+      setVisitedSteps((prev) => [...new Set([...prev, currentStep + 1])]);
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  };
 
   return (
     <Modal
@@ -593,58 +625,105 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       title="สร้างงานภาคสนามใหม่"
       size="5xl"
       footer={
-        <div className="flex gap-2">
-          <Button type="button" onClick={onClose} variant="secondary">
-            ยกเลิก
-          </Button>
-          <Button
-            type="submit"
-            form="add-job-form"
-            variant="primary"
-            disabled={!!timeConflictError}
-          >
-            บันทึก
-          </Button>
+        <div className="flex justify-between items-center w-full px-2">
+          {/* Left: Step Indicator */}
+          <div className="text-slate-500 font-medium">
+             ขั้นตอนที่ {currentStep + 1} จาก {steps.length}
+          </div>
+
+          {/* Right: Navigation Buttons */}
+          <div className="flex gap-3">
+             {currentStep > 0 && (
+              <Button
+                type="button"
+                onClick={handlePrevStep}
+                variant="outline"
+                className="px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 text-base font-bold rounded-lg"
+              >
+                <ArrowLeftIcon className="w-4 h-4" />
+                ย้อนกลับ
+              </Button>
+            )}
+
+            {currentStep < steps.length - 1 ? (
+              <Button
+                type="button"
+                onClick={handleNextStep}
+                variant="primary"
+                disabled={!steps[currentStep].isValid}
+                className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
+              >
+                ถัดไป
+                <ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                form="add-job-form"
+                variant="primary"
+                disabled={!steps[currentStep].isValid || !!timeConflictError}
+                className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
+              >
+                บันทึกงาน
+                <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+              </Button>
+            )}
+          </div>
         </div>
       }
     >
-      <div className="mb-6 border-b border-slate-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`
-                flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                }
-              `}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+      <div className="mb-8">
+        <div className="relative after:absolute after:inset-x-0 after:top-1/2 after:block after:h-0.5 after:-translate-y-1/2 after:rounded-lg after:bg-slate-100">
+          <ol className="relative z-10 flex justify-between text-sm font-medium text-slate-500">
+            {steps.map((step, index) => {
+              const isCompleted = visitedSteps.includes(index) && step.isValid;
+              const isCurrent = currentStep === index;
+              
+              return (
+                <li key={step.id} className="flex items-center gap-2 bg-white p-2">
+                  <span
+                    className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                      isCurrent
+                        ? 'border-primary bg-primary text-white'
+                        : isCompleted
+                        ? 'border-green-500 bg-green-500 text-white'
+                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                    }`}
+                  >
+                    {isCompleted && !isCurrent ? (
+                      <CheckCircleIcon className="w-5 h-5" />
+                    ) : (
+                      <span className="text-sm font-bold">{index + 1}</span>
+                    )}
+                  </span>
+                  <span className={`${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-green-600' : 'text-slate-500'}`}>
+                    {step.label}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
       </div>
 
       <form id="add-job-form" onSubmit={handleSubmit} className="space-y-6">
         
-        {/* TAB: OVERVIEW */}
-        <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
-                  <UserIcon className="w-4 h-4" />
+        {/* STEP 0: Customer & Schedule */}
+        <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Customer Section */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
                   ข้อมูลลูกค้า
                 </h3>
                 
-                <div className="mb-4">
+                <div className="space-y-6 flex-1 flex flex-col">
                   <SearchableSelect
-                    label="เลือกลูกค้า"
+                    label="ค้นหาลูกค้า"
                     options={filteredCustomers.map((c) => ({
                       value: c.id,
                       label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
@@ -653,157 +732,180 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                     value={selectedCustomerId}
                     onChange={handleCustomerChange}
                     onSearchChange={setCustomerSearch}
-                    placeholder="ค้นหาลูกค้า..."
+                    placeholder="พิมพ์ชื่อ, เบอร์โทร หรือที่อยู่..."
                     required
                   />
-                </div>
-                
-                <div className="mb-4">
-                  <SearchableSelect
-                    label="หรือ อ้างอิง (ใบประเมิน/สัญญา)"
-                    options={filteredReferences}
-                    value={selectedReference}
-                    onChange={handleReferenceChange}
-                    onSearchChange={setReferenceSearch}
-                    placeholder={
-                      selectedCustomerId
-                        ? 'เลือกรายการอ้างอิง...'
-                        : 'กรุณาเลือกลูกค้าก่อน'
-                    }
-                    className={
-                      !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-                    }
-                  />
-                </div>
 
-                {selectedCustomerData && (
-                  <div className="text-sm text-slate-600 bg-white p-3 rounded border border-slate-200">
-                    <p className="font-semibold">{selectedCustomerData.first_name} {selectedCustomerData.last_name}</p>
-                    <p>{selectedCustomerData.phone}</p>
-                    <p className="mt-1 text-slate-500">
-                      {[
-                        selectedCustomerData.address_house_no,
-                        selectedCustomerData.sub_district,
-                        selectedCustomerData.district,
-                        selectedCustomerData.province,
-                        selectedCustomerData.postal_code
-                      ].filter(Boolean).join(' ') || '-'}
-                    </p>
-                  </div>
-                )}
-              </div>
+                  {selectedCustomerData ? (
+                    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                           <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-lg font-bold text-slate-700 shadow-sm">
+                              {selectedCustomerData.first_name?.[0]}
+                           </div>
+                           <div>
+                              <h4 className="text-base font-bold text-slate-800">
+                                {selectedCustomerData.first_name} {selectedCustomerData.last_name}
+                              </h4>
+                              {selectedCustomerData.nickname && (
+                                <span className="text-xs text-slate-500 font-medium bg-white px-2 py-0.5 rounded-full border border-slate-200 inline-block mt-1">
+                                  ชื่อเล่น: {selectedCustomerData.nickname}
+                                </span>
+                              )}
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 space-y-3">
+                        {selectedCustomerData.phone && (
+                          <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                            <PhoneIcon className="w-4 h-4 text-slate-400" />
+                            <span className="font-medium">{selectedCustomerData.phone}</span>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-start gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                           <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
+                           <span className="leading-relaxed">
+                              {[
+                                selectedCustomerData.address_house_no,
+                                selectedCustomerData.sub_district,
+                                selectedCustomerData.district,
+                                selectedCustomerData.province,
+                                selectedCustomerData.postal_code
+                              ].filter(Boolean).join(' ') || '-'}
+                           </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center flex-1">
+                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                          <UserIcon className="w-6 h-6 text-slate-300" />
+                       </div>
+                       <p className="text-slate-500 font-medium">กรุณาเลือกลูกค้า</p>
+                       <p className="text-xs text-slate-400 mt-1">เพื่อดำเนินการต่อในขั้นตอนถัดไป</p>
+                    </div>
+                  )}
+                </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  กำหนดการ
+            {/* Schedule Section */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                    <CalendarIcon className="w-5 h-5" />
+                  </div>
+                  กำหนดการปฏิบัติงาน
                 </h3>
                 
-                <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
-                  <Input
-                    id="work-date"
-                    type="date"
-                    value={workDate}
-                    onChange={(e) => setWorkDate(e.target.value)}
-                    required
-                  />
-                </FormField>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField label="เวลาเริ่มต้น" htmlFor="start-time">
-                    <Input
-                      id="start-time"
-                      type="time"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      required
-                    />
-                  </FormField>
-                  <FormField label="เวลาสิ้นสุด" htmlFor="end-time">
-                    <Input
-                      id="end-time"
-                      type="time"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      required
-                    />
-                  </FormField>
-                </div>
-
-                <div className="mb-4">
-                  <SearchableSelect
-                    label="เลือกรถที่ปฏิบัติงาน"
-                    options={filteredVehicles}
-                    value={selectedVehicleId}
-                    onChange={setSelectedVehicleId}
-                    onSearchChange={setVehicleSearch}
-                    placeholder="ค้นหารถบริการ..."
-                    required
-                  />
-                </div>
-
-                {timeConflictError && (
-                  <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
-                    <span className="text-lg">⚠️</span>
-                    <p>{timeConflictError}</p>
+                <div className="space-y-6">
+                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                     <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date" className="mb-0">
+                        <div className="relative">
+                          <Input
+                            id="work-date"
+                            type="date"
+                            value={workDate}
+                            onChange={(e) => setWorkDate(e.target.value)}
+                            required
+                            className="pl-10 h-12"
+                          />
+                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                        </div>
+                     </FormField>
                   </div>
-                )}
 
-                {bookedSlots.length > 0 && (
-                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
-                    <p className="font-semibold text-amber-800 mb-1">
-                      ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
-                    </p>
-                    <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
-                      {bookedSlots.map((slot) => (
-                        <li key={slot.start}>
-                          {slot.start} - {slot.end} ({slot.customer})
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                        <FormField label="เวลาเริ่มต้น" htmlFor="start-time" className="mb-0">
+                           <div className="relative">
+                              <Input
+                                id="start-time"
+                                type="time"
+                                value={startTime}
+                                onChange={(e) => setStartTime(e.target.value)}
+                                required
+                                className="pl-10 h-12 text-center font-medium"
+                              />
+                              <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                           </div>
+                        </FormField>
+                    </div>
+                    
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                        <FormField label="เวลาสิ้นสุด" htmlFor="end-time" className="mb-0">
+                           <div className="relative">
+                              <Input
+                                id="end-time"
+                                type="time"
+                                value={endTime}
+                                onChange={(e) => setEndTime(e.target.value)}
+                                required
+                                className="pl-10 h-12 text-center font-medium"
+                              />
+                              <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                           </div>
+                        </FormField>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
             </div>
           </div>
         </div>
 
-        {/* TAB: SERVICE DETAILS */}
-        <div className={activeTab === 'service' ? 'block' : 'hidden'}>
+        {/* STEP 1: Service Details */}
+        <div className={currentStep === 1 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField label="ระบบที่ใช้บริการ" htmlFor="service-system">
-                <Select
-                  id="service-system"
-                  value={serviceSystem}
-                  onChange={(e) => setServiceSystem(e.target.value)}
-                  required
-                >
-                  <option value="" disabled>
-                    -- เลือกระบบบริการ --
-                  </option>
-                  {Object.values(ServiceSystem).map((sys) => (
-                    <option key={sys} value={sys}>
-                      {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            </div>
+               <div className="space-y-4">
+                  <SearchableSelect
+                     label="อ้างอิง (ใบประเมิน/สัญญา)"
+                     options={filteredReferences}
+                     value={selectedReference}
+                     onChange={handleReferenceChange}
+                     onSearchChange={setReferenceSearch}
+                     placeholder={
+                       selectedCustomerId
+                         ? 'เลือกรายการอ้างอิง...'
+                         : 'กรุณาเลือกลูกค้าก่อน'
+                     }
+                     className={
+                       !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+                     }
+                   />
+                   
+                   <FormField label="ระบบที่ใช้บริการ" htmlFor="service-system">
+                    <Select
+                      id="service-system"
+                      value={serviceSystem}
+                      onChange={(e) => setServiceSystem(e.target.value)}
+                      required
+                    >
+                      <option value="" disabled>
+                        -- เลือกระบบบริการ --
+                      </option>
+                      {Object.values(ServiceSystem).map((sys) => (
+                        <option key={sys} value={sys}>
+                          {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+               </div>
 
-            <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
-              <Textarea
-                id="operation-details"
-                name="operationDetails"
-                value={operationDetails}
-                onChange={(e) => setOperationDetails(e.target.value)}
-                placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
-                rows={4}
-                className="bg-slate-50 focus:bg-white transition-colors"
-              />
-            </FormField>
+                <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
+                  <Textarea
+                    id="operation-details"
+                    name="operationDetails"
+                    value={operationDetails}
+                    onChange={(e) => setOperationDetails(e.target.value)}
+                    placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
+                    rows={4}
+                    className="bg-slate-50 focus:bg-white transition-colors h-full"
+                  />
+                </FormField>
+            </div>
 
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
@@ -1051,73 +1153,133 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
           </div>
         </div>
 
-        {/* TAB: TEAM */}
-        <div className={activeTab === 'team' ? 'block' : 'hidden'}>
-          <div className="max-w-3xl mx-auto space-y-6">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">1</span>
-                หัวหน้าทีม (Leader)
-              </h3>
-              <div className="mb-4">
-                <SearchableSelect
-                  label="หัวหน้าช่าง *"
-                  name="primary_tech_id"
-                  options={leadTechnicianOptions.map((tech) => ({
-                    value: tech.id,
-                    label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`,
-                    description: tech.phone || '',
-                  }))}
-                  value={leadTechnicianId}
-                  onChange={handleLeadTechnicianChange}
-                  onSearchChange={setLeadTechSearch}
-                  placeholder="ค้นหาหัวหน้าช่าง..."
-                  required
-                />
+        {/* STEP 2: Team & Vehicle */}
+        <div className={currentStep === 2 ? 'block animate-fadeIn' : 'hidden'}>
+          <div className="space-y-6">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Vehicle Selection */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                    <TruckIcon className="w-5 h-5" />
+                  </div>
+                  ยานพาหนะ
+                </h3>
+                
+                <div className="space-y-4">
+                  <SearchableSelect
+                      label="เลือกรถที่ปฏิบัติงาน"
+                      options={filteredVehicles}
+                      value={selectedVehicleId}
+                      onChange={setSelectedVehicleId}
+                      onSearchChange={setVehicleSearch}
+                      placeholder="ค้นหารถบริการ..."
+                      required
+                    />
+
+                    {timeConflictError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
+                        <span className="text-lg">⚠️</span>
+                        <p>{timeConflictError}</p>
+                      </div>
+                    )}
+
+                    {bookedSlots.length > 0 && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                        <p className="font-semibold text-amber-800 mb-1">
+                          ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
+                        </p>
+                        <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
+                          {bookedSlots.map((slot) => (
+                            <li key={slot.start}>
+                              {slot.start} - {slot.end} ({slot.customer})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              </div>
+
+              {/* Leader Selection */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  หัวหน้าทีม (Leader)
+                </h3>
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="หัวหน้าช่าง *"
+                    name="primary_tech_id"
+                    options={leadTechnicianOptions.map((tech) => ({
+                      value: tech.id,
+                      label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`,
+                      description: tech.phone || '',
+                    }))}
+                    value={leadTechnicianId}
+                    onChange={handleLeadTechnicianChange}
+                    onSearchChange={setLeadTechSearch}
+                    placeholder="ค้นหาหัวหน้าช่าง..."
+                    required
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Member Selection */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs">2</span>
+              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                  <UserIcon className="w-5 h-5" />
+                </div>
                 ลูกทีม (Members)
               </h3>
               
-              <div className="mb-4">
+              <div className="mb-6">
                  <Input
                     placeholder="ค้นหาช่างเพิ่มเติม..."
                     value={additionalTechSearch}
                     onChange={(e) => setAdditionalTechSearch(e.target.value)}
-                    className="bg-slate-50"
+                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
                   />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {additionalTechnicians.map((tech) => (
                   <label
                     key={tech.id}
                     className={`
-                      flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
+                      relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
                       ${selectedTechnicianIds.includes(tech.id) 
-                        ? 'bg-primary/5 border-primary ring-1 ring-primary' 
-                        : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
+                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' 
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
                     `}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedTechnicianIds.includes(tech.id)}
-                      onChange={() => handleTechnicianToggle(tech.id)}
-                      className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
-                    />
+                    <div className="pt-1">
+                      <input
+                        type="checkbox"
+                        checked={selectedTechnicianIds.includes(tech.id)}
+                        onChange={() => handleTechnicianToggle(tech.id)}
+                        className="w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary transition-colors cursor-pointer"
+                      />
+                    </div>
                     <div className="flex flex-col">
-                      <span className="font-medium text-slate-700">{getTechnicianName(tech)}</span>
-                      {tech.nick_name && <span className="text-xs text-slate-500">({tech.nick_name})</span>}
+                      <span className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}>
+                        {getTechnicianName(tech)}
+                      </span>
+                      {tech.nick_name && <span className="text-xs text-slate-500 font-medium">({tech.nick_name})</span>}
+                      {tech.phone && <span className="text-xs text-slate-400 mt-1">{tech.phone}</span>}
                     </div>
                   </label>
                 ))}
               </div>
               {additionalTechnicians.length === 0 && (
-                <p className="text-center text-slate-400 py-8 italic bg-slate-50 rounded-lg">ไม่พบรายชื่อช่างอื่นๆ</p>
+                <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-slate-400">ไม่พบรายชื่อช่างอื่นๆ</p>
+                </div>
               )}
             </div>
           </div>

@@ -35,6 +35,10 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  
+  // Keep track of the selected label even if it's not in the options anymore
+  const [persistedLabel, setPersistedLabel] = useState('');
+
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -66,6 +70,14 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   const safeOptions = options || [];
   const selectedOption = safeOptions.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (selectedOption) {
+      setPersistedLabel(selectedOption.label);
+    }
+  }, [selectedOption]);
+
+  const displayLabel = selectedOption ? selectedOption.label : (value ? persistedLabel : placeholder);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -119,9 +131,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <div
           className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 min-h-[38px] transition-colors
             ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white cursor-pointer'} 
-            ${!selectedOption && !disabled ? 'text-slate-400' : ''}`}
+            ${!selectedOption && !value && !disabled ? 'text-slate-400' : ''}`}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {displayLabel}
         </div>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg

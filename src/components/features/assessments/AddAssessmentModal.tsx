@@ -1,7 +1,7 @@
 // Re-trigger build
 import { useState, useEffect, useMemo, useCallback, FC, ChangeEvent, FormEvent, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { FormField, Input, Select, Textarea, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import {
   Assessment,
@@ -17,7 +17,18 @@ import { AsessmentStatus, ServiceSystem } from '@/src/types/enums/assessment';
 import { CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { CategoryType } from '@/src/types';
-import { UserIcon, DocumentIcon, CreditCardIcon, CheckCircleIcon, ArrowRightIcon, ArrowLeftIcon, PlusIcon } from '../../../assets/icons/Icons';
+import { 
+  UserIcon, 
+  DocumentIcon, 
+  CreditCardIcon, 
+  CheckCircleIcon, 
+  ArrowRightIcon, 
+  ArrowLeftIcon, 
+  PlusIcon,
+  CalendarIcon,
+  MapPinIcon,
+  PhoneIcon
+} from '../../../assets/icons/Icons';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
@@ -25,22 +36,18 @@ interface AddAssessmentModalProps {
   onCreateAssessment: (assessmentData: Omit<Assessment, 'id' | 'code'> & { installments?: Partial<AssessmentInstallment>[] }) => void;
 }
 
-const STEPS = [
-  { id: 0, label: 'ข้อมูลลูกค้า', icon: UserIcon },
-  { id: 1, label: 'พื้นที่บริการ', icon: DocumentIcon },
-  { id: 2, label: 'การชำระเงิน', icon: CreditCardIcon },
-];
-
 export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   isOpen,
   onClose,
   onCreateAssessment,
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [visitedSteps, setVisitedSteps] = useState<number[]>([0]);
   const [formData, setFormData] = useState<
     Partial<Omit<Assessment, 'workAreas' | 'totalEstimatedCost'>>
   >({});
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -87,6 +94,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       setInstallments([]);
       setPaymentCondition(PaymentMethod.TRANSFER);
       setSelectedPackageId(null);
+      setVisitedSteps([0]);
+      setSelectedCustomerData(null);
     }
   }, [isOpen]);
 
@@ -120,11 +129,13 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   const handleCustomerSelect = (customerId: string | null) => {
     if (!customerId) {
       setFormData(prev => ({ ...prev, customer_id: '' }));
+      setSelectedCustomerData(null);
       return;
     }
     setFormData(prev => ({ ...prev, customer_id: customerId }));
     const customer = customers.find(c => c.id === customerId);
     if (customer) {
+      setSelectedCustomerData(customer);
       // Auto-fill address if available and empty
       setFormData(prev => ({
         ...prev,
@@ -349,6 +360,12 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     onClose();
   };
 
+  const STEPS = [
+    { id: 0, label: 'ข้อมูลลูกค้า', icon: UserIcon },
+    { id: 1, label: 'พื้นที่บริการ', icon: DocumentIcon },
+    { id: 2, label: 'การชำระเงิน', icon: CreditCardIcon },
+  ];
+
   const handleNext = () => {
     if (currentStep === 0) {
       // Validate Step 1
@@ -391,7 +408,11 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     }
     
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => {
+        const next = prev + 1;
+        setVisitedSteps(v => [...new Set([...v, next])]);
+        return next;
+      });
     }
   };
 
@@ -404,34 +425,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   // Set search query state
   const [searchQuery, setSearchQuery] = useState('');
 
-  const renderStepIndicator = () => (
-      <div className="flex items-center justify-center mb-8 px-4">
-          {STEPS.map((step, index) => (
-              <Fragment key={step.id}>
-                  <div className="flex flex-col items-center relative z-10">
-                      <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 border-2 ${
-                            currentStep === index 
-                                ? 'bg-primary text-white border-primary shadow-md' 
-                                : currentStep > index 
-                                    ? 'bg-green-500 text-white border-green-500' 
-                                    : 'bg-white text-slate-400 border-slate-200'
-                        }`}
-                      >
-                          {currentStep > index ? <CheckCircleIcon className="w-6 h-6" /> : <step.icon className="w-5 h-5" />}
-                      </div>
-                      <span className={`text-xs font-medium mt-2 absolute -bottom-6 w-32 text-center ${currentStep === index ? 'text-primary' : 'text-slate-500'}`}>
-                          {step.label}
-                      </span>
-                  </div>
-                  {index < STEPS.length - 1 && (
-                      <div className={`h-0.5 w-16 md:w-32 -mx-2 mb-4 transition-colors duration-300 ${currentStep > index ? 'bg-green-500' : 'bg-slate-200'}`} />
-                  )}
-              </Fragment>
-          ))}
-      </div>
-  );
-
   return (
     <Modal
       isOpen={isOpen}
@@ -439,104 +432,209 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       title="สร้างใบประเมินใหม่"
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-between">
-           <div className="text-sm text-slate-500">
+        <div className="flex justify-between items-center w-full px-2">
+           <div className="text-slate-500 font-medium">
                ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}
            </div>
            <div className="flex items-center gap-3">
             {currentStep > 0 && (
-                <button
+                <Button
                     type="button"
                     onClick={handleBack}
-                    className="flex items-center gap-2 py-2 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-semibold border border-slate-300 transition-colors"
+                    variant="outline"
+                    className="px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 text-base font-bold rounded-lg"
                 >
                     <ArrowLeftIcon className="w-4 h-4" />
                     ย้อนกลับ
-                </button>
+                </Button>
             )}
             
             {currentStep < STEPS.length - 1 ? (
-                 <button
+                 <Button
                  type="button"
                  onClick={handleNext}
-                 className="flex items-center gap-2 py-2 px-6 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm transition-colors"
+                 variant="primary"
+                 className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
              >
                  ถัดไป
-                 <ArrowRightIcon className="w-4 h-4" />
-             </button>
+                 <ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+             </Button>
             ) : (
-                <button
+                <Button
                 type="button"
                 onClick={() => handleSubmit()}
-                className="flex items-center gap-2 py-2 px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm transition-colors"
+                variant="primary"
+                className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
             >
-                <CheckCircleIcon className="w-4 h-4" />
                 บันทึกใบประเมิน
-            </button>
+                <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+            </Button>
             )}
            </div>
         </div>
       }
     >
-      <div className="pt-2 pb-6">
-        {renderStepIndicator()}
+      <div className="mb-8">
+        <div className="relative after:absolute after:inset-x-0 after:top-1/2 after:block after:h-0.5 after:-translate-y-1/2 after:rounded-lg after:bg-slate-100">
+          <ol className="relative z-10 flex justify-between text-sm font-medium text-slate-500">
+            {STEPS.map((step, index) => {
+              const isCompleted = visitedSteps.includes(index) && currentStep > index;
+              const isCurrent = currentStep === index;
+              
+              return (
+                 <li key={step.id} className="flex items-center gap-2 bg-white p-2">
+                   <span
+                     className={`h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                       isCurrent
+                         ? 'border-primary bg-primary text-white'
+                         : isCompleted
+                         ? 'border-green-500 bg-green-500 text-white'
+                         : 'border-slate-200 bg-slate-50 text-slate-500'
+                     }`}
+                   >
+                     {isCompleted ? (
+                       <CheckCircleIcon className="w-6 h-6" />
+                     ) : (
+                       <step.icon className="w-5 h-5" />
+                     )}
+                   </span>
+                   <span className={`${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-green-600' : 'text-slate-500'}`}>
+                     {step.label}
+                   </span>
+                 </li>
+               );
+             })}
+          </ol>
+        </div>
       </div>
 
       <div className="min-h-[400px]">
         {/* STEP 1: CUSTOMER INFO */}
         {currentStep === 0 && (
             <div className="space-y-6 animate-fadeIn">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">ข้อมูลเบื้องต้น</h3>
-                        <FormField label="วันที่สร้าง" htmlFor="created_at">
-                            <Input
-                            name="created_at"
-                            type="date"
-                            value={formData.created_at?.substring(0, 10) || ''}
-                            onChange={handleFieldChange}
-                            required
-                            />
-                        </FormField>
-                        <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
-                            <Input
-                                name="appointment_date"
-                                type="date"
-                                value={
-                                formData.appointment_date && !isNaN(new Date(formData.appointment_date).getTime())
-                                    ? new Date(formData.appointment_date)
-                                    .toISOString()
-                                    .substring(0, 10)
-                                    : ''
-                                }
-                                onChange={handleDateChange}
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Customer Selection (Left) */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                           <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                             <UserIcon className="w-5 h-5" />
+                           </div>
+                           ข้อมูลลูกค้า
+                        </h3>
+                        <div className="space-y-6 flex-1 flex flex-col">
+                            <SearchableSelect
+                                label="ค้นหาลูกค้า"
+                                options={(customers || []).map((c) => ({
+                                    value: c.id,
+                                    label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.phone}`,
+                                    description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
+                                }))}
+                                value={formData.customer_id || ''}
+                                onChange={handleCustomerSelect}
+                                onSearchChange={setSearchQuery}
                                 required
                             />
-                        </FormField>
+
+                            {selectedCustomerData ? (
+                                <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-lg font-bold text-slate-700 shadow-sm">
+                                                {selectedCustomerData.first_name?.[0]}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-base font-bold text-slate-800">
+                                                    {selectedCustomerData.first_name} {selectedCustomerData.last_name}
+                                                </h4>
+                                                {selectedCustomerData.nickname && (
+                                                    <span className="text-xs text-slate-500 font-medium bg-white px-2 py-0.5 rounded-full border border-slate-200 inline-block mt-1">
+                                                        ชื่อเล่น: {selectedCustomerData.nickname}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-5 space-y-3">
+                                        {selectedCustomerData.phone && (
+                                            <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                                                <PhoneIcon className="w-4 h-4 text-slate-400" />
+                                                <span className="font-medium">{selectedCustomerData.phone}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex items-start gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                                            <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
+                                            <span className="leading-relaxed">
+                                                {[
+                                                    selectedCustomerData.address_house_no,
+                                                    selectedCustomerData.sub_district,
+                                                    selectedCustomerData.district,
+                                                    selectedCustomerData.province,
+                                                    selectedCustomerData.postal_code
+                                                ].filter(Boolean).join(' ') || '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-12 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center flex-1">
+                                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                                        <UserIcon className="w-6 h-6 text-slate-300" />
+                                    </div>
+                                    <p className="text-slate-500 font-medium">กรุณาเลือกลูกค้า</p>
+                                    <p className="text-xs text-slate-400 mt-1">เพื่อดำเนินการต่อ</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">เลือกลูกค้า</h3>
-                        <SearchableSelect
-                            label="ค้นหาลูกค้า"
-                            options={(customers || []).map((c) => ({
-                                value: c.id,
-                                label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''
-                                } - ${c.phone}`,
-                                description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
-                            }))}
-                            value={formData.customer_id || ''}
-                            onChange={handleCustomerSelect}
-                            onSearchChange={setSearchQuery}
-                            required
-                        />
+                    {/* Basic Info (Right) */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                           <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                             <CalendarIcon className="w-5 h-5" />
+                           </div>
+                           ข้อมูลนัดหมาย
+                        </h3>
+                        <div className="space-y-6">
+                             <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                                <FormField label="วันที่สร้าง" htmlFor="created_at" className="mb-0">
+                                    <Input
+                                    name="created_at"
+                                    type="date"
+                                    value={formData.created_at?.substring(0, 10) || ''}
+                                    onChange={handleFieldChange}
+                                    required
+                                    className="bg-white h-12"
+                                    />
+                                </FormField>
+                             </div>
+                             <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                                <FormField label="วันที่นัดหมาย" htmlFor="appointment_date" className="mb-0">
+                                    <Input
+                                        name="appointment_date"
+                                        type="date"
+                                        value={
+                                        formData.appointment_date && !isNaN(new Date(formData.appointment_date).getTime())
+                                            ? new Date(formData.appointment_date)
+                                            .toISOString()
+                                            .substring(0, 10)
+                                            : ''
+                                        }
+                                        onChange={handleDateChange}
+                                        required
+                                        className="bg-white h-12"
+                                    />
+                                </FormField>
+                             </div>
+                        </div>
                     </div>
                  </div>
 
-                 <div className="border border-slate-200 p-5 rounded-xl bg-slate-50 space-y-4 mt-4">
-                    <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                 {/* Address Details (Bottom) */}
+                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-4">
+                    <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 mb-4">
                         <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                        ข้อมูลที่อยู่ให้บริการ
+                        ที่อยู่สำหรับเข้าประเมิน (สามารถแก้ไขได้)
                     </h3>
                     <FormField label="ที่อยู่ (บ้านเลขที่, ถนน)" htmlFor="address">
                         <Textarea
@@ -544,7 +642,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                         value={formData.address || ''}
                         onChange={handleFieldChange}
                         required
-                        className="bg-white"
+                        className="bg-slate-50 focus:bg-white"
+                        rows={2}
                         />
                     </FormField>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -554,7 +653,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                             value={formData.sub_district || ''}
                             onChange={handleFieldChange}
                             required
-                            className="bg-white"
+                            className="bg-slate-50 focus:bg-white"
                         />
                         </FormField>
                         <FormField label="เขต/อำเภอ" htmlFor="district">
@@ -563,7 +662,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                             value={formData.district || ''}
                             onChange={handleFieldChange}
                             required
-                            className="bg-white"
+                            className="bg-slate-50 focus:bg-white"
                         />
                         </FormField>
                         <FormField label="จังหวัด" htmlFor="province">
@@ -572,7 +671,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                             value={formData.province || ''}
                             onChange={handleFieldChange}
                             required
-                            className="bg-white"
+                            className="bg-slate-50 focus:bg-white"
                         />
                         </FormField>
                         <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
@@ -581,34 +680,34 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                             value={formData.zipcode || ''}
                             onChange={handleFieldChange}
                             required
-                            className="bg-white"
+                            className="bg-slate-50 focus:bg-white"
                         />
                         </FormField>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t mt-4 border-slate-100">
                         <FormField label="เขต (Zone)" htmlFor="zone">
-                            <Input name="zone" value={formData.zone || ''} onChange={handleFieldChange} className="bg-white" />
+                            <Input name="zone" value={formData.zone || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" />
                         </FormField>
                         <FormField label="Group" htmlFor="route_group">
-                            <Input name="route_group" value={formData.route_group || ''} onChange={handleFieldChange} className="bg-white" />
+                            <Input name="route_group" value={formData.route_group || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" />
                         </FormField>
                         <FormField label="สายถนน" htmlFor="road_line">
-                            <Input name="road_line" value={formData.road_line || ''} onChange={handleFieldChange} className="bg-white" />
+                            <Input name="road_line" value={formData.road_line || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" />
                         </FormField>
                         <FormField label="ลำดับ" htmlFor="sequence">
-                            <Input name="sequence" value={formData.sequence || ''} onChange={handleFieldChange} className="bg-white" />
+                            <Input name="sequence" value={formData.sequence || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" />
                         </FormField>
                     </div>
 
-                    <FormField label="Link Google Map" htmlFor="google_map_link">
+                    <FormField label="Link Google Map" htmlFor="google_map_link" className="mt-4">
                         <Input
                         name="google_map_link"
                         type="url"
                         placeholder="https://maps.app.goo.gl/..."
                         value={formData.google_map_link || ''}
                         onChange={handleFieldChange}
-                        className="bg-white"
+                        className="bg-slate-50 focus:bg-white"
                         />
                     </FormField>
                 </div>
@@ -724,14 +823,15 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                 <div className="space-y-4 animate-fadeIn">
                                     <div className="flex justify-between items-center mb-2">
                                         <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
-                                        <button 
+                                        <Button 
                                             type="button" 
                                             onClick={handleAddInstallment}
-                                            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium"
+                                            variant="ghost"
+                                            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium hover:bg-primary/5"
                                         >
                                             <PlusIcon className="w-4 h-4" />
                                             เพิ่มงวด
-                                        </button>
+                                        </Button>
                                     </div>
 
                                     <div className="overflow-hidden border border-slate-200 rounded-lg">
@@ -749,14 +849,16 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                                 {installments.map((inst, idx) => (
                                                     <tr key={inst.id || idx}>
                                                         <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
-                                                            {inst.installment_no}
+                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-xs font-bold text-slate-600">
+                                                                {inst.installment_no}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             <Input 
                                                                 value={inst.note || ''}
                                                                 onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)}
                                                                 placeholder="รายละเอียด..."
-                                                                className="h-9 text-sm"
+                                                                className="h-9 text-sm border-slate-200 focus:border-primary"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-2">
@@ -764,7 +866,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                                                 type="number"
                                                                 value={inst.amount}
                                                                 onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
-                                                                className="h-9 text-right text-sm font-mono"
+                                                                className="h-9 text-right text-sm font-mono font-medium border-slate-200 focus:border-primary"
                                                             />
                                                         </td>
                                                         <td className="px-4 py-2">
@@ -772,14 +874,14 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                                                 type="date"
                                                                 value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''}
                                                                 onChange={(e) => handleInstallmentChange(idx, 'due_date', new Date(e.target.value))}
-                                                                className="h-9 text-sm"
+                                                                className="h-9 text-sm text-center border-slate-200 focus:border-primary"
                                                             />
                                                         </td>
                                                         <td className="px-2 py-2 text-center">
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => handleRemoveInstallment(idx)}
-                                                                className="text-slate-400 hover:text-red-500"
+                                                                className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                                                                 disabled={installments.length <= 1}
                                                             >
                                                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
