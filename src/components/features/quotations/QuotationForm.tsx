@@ -442,7 +442,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 // Service System
                 if (!serviceSystem && firstArea.service_system) {
                     let ss = firstArea.service_system.toUpperCase();
-                    if (ss === 'PREY') ss = 'PREY';
+                    if (ss === 'PREY') ss = 'BAIT';
+                    if (ss === 'BAIT') ss = 'BAIT';
                     if (ss === 'SPRAY') ss = 'CHEMICAL';
                     setServiceSystem(ss);
                 }
@@ -1085,7 +1086,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
                     <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ" />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <FormField label="ประเภทสิ่งปลูกสร้าง">
                             <Select
                                 value={buildingType}
@@ -1111,9 +1112,31 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                             </Select>
                         </FormField>
 
-                         <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                         <FormField label="ระยะเวลาสัญญา">
+                            <Input
+                                value={contractDuration}
+                                onChange={(e) => setContractDuration(e.target.value)}
+                                disabled={isReadOnly}
+                                placeholder="เช่น 1 ปี"
+                            />
+                        </FormField>
+
+                        <FormField label="จำนวนครั้งเข้าบริการ">
+                             <Select
+                                value={serviceCount}
+                                onChange={(e) => setServiceCount(e.target.value)}
+                                disabled={isReadOnly}
+                            >
+                                <option value="">เลือกจำนวนครั้ง</option>
+                                {serviceCountOptions.map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                            </Select>
+                        </FormField>
+
+                         <div className="col-span-1 md:col-span-2 lg:col-span-4">
                             <label className="block text-sm font-medium text-slate-700 mb-2">
-                                ประเภทบริการ (Service Type) <span className="text-red-500">*</span>
+                                ประเภทบริการ <span className="text-red-500">*</span>
                             </label>
                             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -1142,27 +1165,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                             </div>
                         </div>
 
-                        <FormField label="ระยะเวลาสัญญา">
-                            <Input
-                                value={contractDuration}
-                                onChange={(e) => setContractDuration(e.target.value)}
-                                disabled={isReadOnly}
-                                placeholder="เช่น 1 ปี"
-                            />
-                        </FormField>
-
-                        <FormField label="จำนวนครั้งเข้าบริการ">
-                             <Select
-                                value={serviceCount}
-                                onChange={(e) => setServiceCount(e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="">เลือกจำนวนครั้ง</option>
-                                {serviceCountOptions.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                            </Select>
-                        </FormField>
+                
                     </div>
                 </div>
 

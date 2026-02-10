@@ -253,7 +253,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         ? new Date(formData.created_at).toISOString()
         : new Date().toISOString(),
       appointment_date: formData.appointment_date,
-      payment_condition: formData.payment_condition as PaymentMethod,
 
       // Other fields
       zone: formData.zone || '',

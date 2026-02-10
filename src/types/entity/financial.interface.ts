@@ -121,6 +121,7 @@ export interface Contract {
   customer_id: string;
   customer_name: string;
   service_location?: string;
+  building_type?: string;
   service_type?: string;
   system_used?: string;
   contract_duration?: string;

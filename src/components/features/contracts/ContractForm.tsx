@@ -17,6 +17,8 @@ import {
     MapPinIcon
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
+import { CategoryApi } from '../../../api/category';
+import { CategoryType } from '../../../types';
 import { CustomerApi } from '../../../api/customer';
 import { QuotationApi } from '../../../api/quotation';
 import { Customer } from '../../../types/entity/customer.interface';
@@ -39,8 +41,11 @@ export const ContractForm: FC<ContractFormProps> = ({
     onCancel,
     isSaving = false,
 }) => {
-    const { customers } = useData();
+    const { customers, categories } = useData();
     const [quotations, setQuotations] = useState<Quotation[]>([]);
+    
+    // Local state for fetched data
+    const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
 
     // Contract info
     const [contractCode, setContractCode] = useState(initialValues?.code || '');
@@ -59,7 +64,21 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Service info
     const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
+    
+    // Convert comma-separated string back to array if needed, or default to empty array
+    const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
+        initialValues?.service_type 
+            ? initialValues.service_type.split(',').map(s => s.trim()).filter(Boolean)
+            : []
+    );
     const [serviceType, setServiceType] = useState(initialValues?.service_type || '');
+    const [buildingType, setBuildingType] = useState(initialValues?.building_type || '');
+    
+    // Sync serviceType string when selectedServiceTypes changes
+    useEffect(() => {
+        setServiceType(selectedServiceTypes.join(', '));
+    }, [selectedServiceTypes]);
+
     const [systemUsed, setSystemUsed] = useState(initialValues?.system_used || '');
     const [serviceCount, setServiceCount] = useState(initialValues?.service_count || 7);
     const [notes, setNotes] = useState(initialValues?.notes || '');
@@ -76,6 +95,19 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Initialize logic
     useEffect(() => {
+        // Fetch categories
+        const fetchCategories = async () => {
+            try {
+                const res = await CategoryApi.getCategories({ type: CategoryType.SERVICE });
+                if (res && res.data) {
+                    setFetchedCategories(res.data);
+                }
+            } catch (error) {
+                console.error("Error fetching categories:", error);
+            }
+        };
+        fetchCategories();
+
         // Fetch approved quotations
         const fetchQuotations = async () => {
             try {
@@ -171,6 +203,31 @@ export const ContractForm: FC<ContractFormProps> = ({
         }, 500);
     }, [customers]);
 
+    // Service Type Options derived from categories
+    const serviceTypeOptions = useMemo(() => {
+        const sourceCategories = fetchedCategories.length > 0 ? fetchedCategories : (categories || []);
+        const options = sourceCategories
+            .filter((c: any) => c.type === 'SERVICE')
+            .map((c: any) => ({
+                value: c.name, // Use name as value to match backend expectation of string
+                label: c.name,
+                id: c.id // Keep ID for reference if needed
+            }));
+
+        // Add "Other" option if not present
+        // Check for Thai "อื่นๆ" or English "Other"
+        const hasOther = options.some(o => o.value === 'อื่นๆ' || o.value === 'Other');
+        if (!hasOther) {
+            options.push({
+                value: 'อื่นๆ',
+                label: 'อื่นๆ',
+                id: 'other-option'
+            });
+        }
+
+        return options;
+    }, [categories, fetchedCategories]);
+
     // Quotation options
     const quotationOptions = useMemo(() => {
         return quotations.map((q) => ({
@@ -179,11 +236,6 @@ export const ContractForm: FC<ContractFormProps> = ({
             description: `฿${Number(q.total).toLocaleString('th-TH')}`,
         }));
     }, [quotations]);
-
-    // Selected quotation
-    const selectedQuotation = useMemo(() => {
-        return quotations.find((q) => q.id === selectedQuotationId);
-    }, [quotations, selectedQuotationId]);
 
     // Selected customer
     const selectedCustomer = useMemo(() => {
@@ -213,7 +265,11 @@ export const ContractForm: FC<ContractFormProps> = ({
                         
                         setTotalAmount(Number(fullQuotation.total) || 0);
                         if (fullQuotation.service_location) setServiceLocation(fullQuotation.service_location);
-                        if (fullQuotation.service_type) setServiceType(fullQuotation.service_type);
+                        if (fullQuotation.building_type) setBuildingType(fullQuotation.building_type);
+                        if (fullQuotation.service_type) {
+                            setServiceType(fullQuotation.service_type);
+                            setSelectedServiceTypes(fullQuotation.service_type.split(',').map((s: string) => s.trim()).filter(Boolean));
+                        }
                         
                         if (fullQuotation.system_used) {
                             setSystemUsed(fullQuotation.system_used);
@@ -402,6 +458,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             customer_id: selectedCustomerId,
             customer_name: selectedCustomerObj ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name}` : 'Unknown',
             service_location: serviceLocation,
+            building_type: buildingType,
             service_type: serviceType,
             system_used: systemUsed,
             contract_duration: contractDuration,
@@ -417,7 +474,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 description: inst.description,
                 percentage: inst.percentage,
                 amount: inst.amount,
-                due_date: inst.due_date,
+                due_date: inst.due_date ? inst.due_date : undefined,
                 status: inst.status
             }))
         };
@@ -552,22 +609,18 @@ export const ContractForm: FC<ContractFormProps> = ({
                     <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ (Service Details)" />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                         <div className="col-span-1 md:col-span-2">
-                            <FormField label="ประเภทบริการ" htmlFor="serviceType">
-                                <Select
-                                    id="serviceType"
-                                    value={serviceType}
-                                    onChange={(e) => setServiceType(e.target.value)}
-                                >
-                                    <option value="">-- ระบุ --</option>
-                                    <option value="กำจัดปลวก">กำจัดปลวก</option>
-                                    <option value="กำจัดแมลง">กำจัดแมลง</option>
-                                    <option value="กำจัดหนู">กำจัดหนู</option>
-                                    <option value="กำจัดมด">กำจัดมด</option>
-                                    <option value="บริการครบวงจร">บริการครบวงจร</option>
-                                </Select>
-                            </FormField>
-                        </div>
+                        <FormField label="ประเภทสิ่งปลูกสร้าง" htmlFor="buildingType">
+                            <Select
+                                id="buildingType"
+                                value={buildingType}
+                                onChange={(e) => setBuildingType(e.target.value)}
+                            >
+                                <option value="">เลือกประเภทสิ่งปลูกสร้าง</option>
+                                <option value="HOUSE">บ้าน</option>
+                                <option value="OFFICE">ออฟฟิศ</option>
+                            </Select>
+                        </FormField>
+
 
                         <FormField label="ระบบที่ใช้" htmlFor="systemUsed">
                             <Input
@@ -599,6 +652,36 @@ export const ContractForm: FC<ContractFormProps> = ({
                                 onChange={(e) => setServiceCount(Number(e.target.value))}
                             />
                         </FormField>
+
+												  <div className="col-span-1 md:col-span-2 lg:col-span-4">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                                ประเภทบริการ<span className="text-red-500">*</span>
+                            </label>
+                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                    {serviceTypeOptions.map((option) => (
+                                        <label key={option.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedServiceTypes.includes(option.value)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedServiceTypes([...selectedServiceTypes, option.value]);
+                                                    } else {
+                                                        setSelectedServiceTypes(selectedServiceTypes.filter(t => t !== option.value));
+                                                    }
+                                                }}
+                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                            />
+                                            <span className="text-sm text-slate-700">{option.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {selectedServiceTypes.length === 0 && (
+                                    <p className="text-xs text-red-500 mt-2">กรุณาเลือกอย่างน้อย 1 รายการ</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
