@@ -46,8 +46,8 @@ export interface Assessment extends IBase {
   sequence: string;
   google_map_link: string;
   status: AsessmentStatus;
-  payment_condition: PaymentMethod;
-  payment_installment_count?: number;
+  // payment_condition: PaymentMethod;
+  // payment_installment_count?: number;
   total_price: number;
   created_by: string;
   updated_by: string;

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
+import { Button } from '../../common/FormControls';
 import { QuotationForm } from './QuotationForm';
 import { Quotation } from '@/src/types/entity/financial.interface';
 
@@ -28,13 +29,26 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
         return 'ใบเสนอราคา';
     };
 
+    const footer = (
+        <div className="flex gap-3 w-full justify-end">
+            <Button variant="secondary" onClick={onClose} type="button">
+                ยกเลิก
+            </Button>
+            {mode !== 'detail' && (
+                <Button variant="primary" type="submit" form="quotation-form">
+                    บันทึก
+                </Button>
+            )}
+        </div>
+    );
+
     return (
         <Modal
             isOpen={isOpen}
             onClose={onClose}
             title={getTitle()}
-            size="5xl"
-            footer={null} // Use QuotationForm's own buttons
+            size="6xl"
+            footer={footer}
         >
             <QuotationForm
                 mode={mode}

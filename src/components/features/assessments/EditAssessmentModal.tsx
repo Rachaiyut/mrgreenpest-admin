@@ -35,34 +35,18 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   customers = [],
   categories = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'payment'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'areas'>('info');
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
-  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
+  // const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
 
   const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
-  };
-
-  const handleInstallmentAmountChange = (index: number, amount: number) => {
-    setInstallments(prev => {
-      const newInst = [...prev];
-      newInst[index] = { ...newInst[index], amount };
-      return newInst;
-    });
-  };
-
-  const handleInstallmentNoteChange = (index: number, note: string) => {
-    setInstallments(prev => {
-      const newInst = [...prev];
-      newInst[index] = { ...newInst[index], note };
-      return newInst;
-    });
   };
 
   useEffect(() => {
@@ -76,18 +60,10 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         appointment_date: assessment.appointment_date
           ? new Date(assessment.appointment_date)
           : undefined,
-        payment_condition: assessment.payment_condition,
-        payment_installment_count: assessment.payment_installment_count,
       });
       setSelectedPackageId(assessment.package_id || null);
 
-      if (assessment.installments && assessment.installments.length > 0) {
-        setInstallments(assessment.installments.map(i => ({ ...i })));
-      } else if (assessment.payment_condition === PaymentMethod.INSTALLMENT && assessment.payment_installment_count) {
-        setInstallments([]);
-      } else {
-        setInstallments([]);
-      }
+      // setInstallments([]);
 
       const rawAreas = assessment_areas || assessment.assessment_areas || [];
 
@@ -128,7 +104,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       setFormData({});
       setWorkAreas([]);
       setOriginalWorkAreas([]);
-      setInstallments([]);
+      // setInstallments([]);
       setActiveTab('info');
     }
   }, [assessment, isOpen, products]);
@@ -138,38 +114,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     [workAreas]
   );
 
-  // Auto-calculate installments Effect
-  useEffect(() => {
-    if (formData.payment_condition === PaymentMethod.INSTALLMENT && formData.payment_installment_count && formData.payment_installment_count > 0) {
-      const count = formData.payment_installment_count;
-      const total = totalEstimatedCost || 0;
-
-      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
-      const isSumMismatch = Math.abs(currentSum - total) > 1;
-      const isCountMismatch = installments.length !== count;
-
-      if (isSumMismatch || isCountMismatch) {
-        const amountPerInst = Math.floor((total / count) * 100) / 100;
-        const lastAmount = total - (amountPerInst * (count - 1));
-
-        setInstallments(prev => {
-          const newInst: Partial<AssessmentInstallment>[] = [];
-          for (let i = 0; i < count; i++) {
-            newInst.push({
-              installment_no: i + 1,
-              amount: i === count - 1 ? lastAmount : amountPerInst,
-              note: prev[i]?.note || '',
-            });
-          }
-          return newInst;
-        });
-      }
-    } else {
-      if (installments.length > 0 && formData.payment_condition !== PaymentMethod.INSTALLMENT) {
-        setInstallments([]);
-      }
-    }
-  }, [formData.payment_condition, formData.payment_installment_count, totalEstimatedCost]);
+  // Auto-calculate installments Effect (Removed)
 
   const handleFieldChange = (
     e: ChangeEvent<
@@ -320,7 +265,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
       assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
-      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? installments as AssessmentInstallment[] : [],
+      // installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? installments as AssessmentInstallment[] : [],
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
       status: statusOverride || (formData.status as AsessmentStatus) || assessment.status,
@@ -407,22 +352,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
               ${activeTab === 'areas' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
             `} />
             พื้นที่บริการ ({workAreas.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('payment')}
-            className={`
-              group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${activeTab === 'payment'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-              }
-            `}
-          >
-            <CreditCardIcon className={`
-              -ml-0.5 mr-2 h-5 w-5
-              ${activeTab === 'payment' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
-            `} />
-            การชำระเงิน
           </button>
         </nav>
       </div>
@@ -634,138 +563,37 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             </div>
         </div>
 
-        {/* TAB 3: Payment */}
-        <div className={activeTab === 'payment' ? 'block' : 'hidden'}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-                 <div className="space-y-6">
-                    <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <CreditCardIcon className="w-5 h-5 text-primary" />
-                            เงื่อนไขการชำระเงิน
-                        </h3>
+        {/* TAB 3: Payment (Removed) */}
+        {/* <div className={activeTab === 'payment' ? 'block' : 'hidden'}> ... </div> */}
 
-                        <div className="flex gap-4 mb-6">
-                            <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!formData.payment_condition || (formData.payment_condition !== PaymentMethod.INSTALLMENT) ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                                <input
-                                type="radio"
-                                name="payment_type_edit"
-                                className="hidden"
-                                checked={!formData.payment_condition || (formData.payment_condition !== PaymentMethod.INSTALLMENT)}
-                                onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                                />
-                                <div className="font-semibold">ชำระเต็มจำนวน</div>
-                            </label>
-                            <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                                <input
-                                type="radio"
-                                name="payment_type_edit"
-                                className="hidden"
-                                checked={formData.payment_condition === PaymentMethod.INSTALLMENT}
-                                onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                                />
-                                <div className="font-semibold">แบ่งชำระ (งวด)</div>
-                            </label>
-                        </div>
-
-                        {formData.payment_condition === PaymentMethod.INSTALLMENT && (
-                            <div className="space-y-4 animate-fadeIn">
-                                <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                                    <Input
-                                    name="payment_installment_count"
-                                    type="number"
-                                    placeholder="ระบุจำนวนงวด"
-                                    value={formData.payment_installment_count || ''}
-                                    onChange={(e) => {
-                                        const count = parseInt(e.target.value, 10) || 0;
-                                        setFormData((prev) => ({
-                                        ...prev,
-                                        payment_installment_count: count,
-                                        }));
-                                    }}
-                                    required
-                                    min={2}
-                                    className="max-w-[200px]"
-                                    />
-                                </FormField>
-
-                                {installments.length > 0 && (
-                                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                        <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
-                                        <div className="space-y-3">
-                                            {installments.map((inst, idx) => (
-                                            <div key={idx} className="flex gap-3 items-end">
-                                                <div className="w-16 pt-2 text-sm font-medium text-slate-500">
-                                                งวดที่ {inst.installment_no}
-                                                </div>
-                                                <div className="flex-1">
-                                                <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
-                                                <Input
-                                                    type="number"
-                                                    value={inst.amount}
-                                                    onChange={(e) => {
-                                                    const val = parseFloat(e.target.value) || 0;
-                                                    handleInstallmentAmountChange(idx, val);
-                                                    }}
-                                                    step="0.01"
-                                                    className="bg-white"
-                                                />
-                                                </div>
-                                                <div className="flex-1">
-                                                <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
-                                                <Input
-                                                    type="text"
-                                                    value={inst.note || ''}
-                                                    placeholder="เช่น มัดจำ"
-                                                    onChange={(e) => {
-                                                    handleInstallmentNoteChange(idx, e.target.value);
-                                                    }}
-                                                    className="bg-white"
-                                                />
-                                                </div>
-                                            </div>
-                                            ))}
-                                            <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                                            <span>รวม</span>
-                                            <span className={installments.reduce((sum, i) => sum + i.amount, 0) === totalEstimatedCost ? 'text-green-600' : 'text-red-500'}>
-                                                {installments.reduce((sum, i) => sum + i.amount, 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
-                                            </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+        {/* Summary Card (Moved or Removed) */}
+        <div className={activeTab === 'areas' ? 'block' : 'hidden'}>
+            <div className="mt-6">
+                <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+                    <div className="p-4 border-b bg-slate-50 rounded-t-xl">
+                        <h3 className="font-bold text-slate-800">สรุปรายการ</h3>
                     </div>
-                 </div>
-
-                 {/* Summary Card */}
-                 <div>
-                     <div className="bg-white border border-slate-200 rounded-xl shadow-sm sticky top-0">
-                        <div className="p-4 border-b bg-slate-50 rounded-t-xl">
-                            <h3 className="font-bold text-slate-800">สรุปรายการ</h3>
+                    <div className="p-4 space-y-4">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">จำนวนพื้นที่บริการ</span>
+                            <span className="font-medium">{workAreas.length} แห่ง</span>
                         </div>
-                        <div className="p-4 space-y-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">จำนวนพื้นที่บริการ</span>
-                                <span className="font-medium">{workAreas.length} แห่ง</span>
-                            </div>
-                            <div className="space-y-2">
-                                {workAreas.map((area, idx) => (
-                                    <div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100">
-                                        <span className="truncate max-w-[150px]">{area.area_name}</span>
-                                        <span>฿{(area.total_price || 0).toLocaleString()}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="pt-4 border-t flex justify-between items-end">
-                                <span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span>
-                                <span className="text-2xl font-bold text-primary">
-                                    ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
+                        <div className="space-y-2">
+                            {workAreas.map((area, idx) => (
+                                <div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100">
+                                    <span className="truncate max-w-[150px]">{area.area_name}</span>
+                                    <span>฿{(area.total_price || 0).toLocaleString()}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="pt-4 border-t flex justify-between items-end">
+                            <span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span>
+                            <span className="text-2xl font-bold text-primary">
+                                ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                            </span>
                         </div>
                     </div>
-                 </div>
+                </div>
             </div>
         </div>
       </form>

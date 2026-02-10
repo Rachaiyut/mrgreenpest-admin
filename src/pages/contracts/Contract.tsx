@@ -52,6 +52,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 	const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+	const [targetStatus, setTargetStatus] = useState<ContractStatus>(ContractStatus.DRAFT);
 	const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
 	const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 	const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -187,6 +189,25 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 	const handleCreateInvoice = (contract: Contract) => {
 		navigate(`/billing/new?contractId=${contract.id}`);
 		setOpenDropdownId(null);
+	};
+
+	const handleStatusClick = (contract: Contract) => {
+		setSelectedContract(contract);
+		setTargetStatus((contract.status as ContractStatus) || ContractStatus.DRAFT);
+		setIsStatusModalOpen(true);
+		setOpenDropdownId(null);
+	};
+
+	const handleStatusConfirm = async () => {
+		if (selectedContract && onUpdateContract) {
+			try {
+				await onUpdateContract({ ...selectedContract, status: targetStatus });
+			} catch (error) {
+				console.error('Failed to update status:', error);
+			}
+		}
+		setIsStatusModalOpen(false);
+		setSelectedContract(null);
 	};
 
 	return (
@@ -488,6 +509,13 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 							<CurrencyDollarIcon className="w-4 h-4" />
 							สร้างใบแจ้งหนี้
 						</button>
+						<button
+							onClick={() => handleStatusClick(selectedContract)}
+							className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+						>
+							<CheckCircleIcon className="w-4 h-4 text-slate-400" />
+							เปลี่ยนสถานะ
+						</button>
 						<hr className="my-1 border-slate-100" />
 						<button
 							onClick={() => handleDeleteClick(selectedContract)}
@@ -536,6 +564,35 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 				message={`คุณแน่ใจหรือไม่ว่าต้องการลบใบสัญญา ${selectedContract?.code || selectedContract?.id}?`}
 				confirmButtonText="ลบ"
 				confirmButtonClass="bg-red-600 hover:bg-red-700"
+			/>
+
+			{/* Status Update Modal */}
+			<ConfirmationModal
+				isOpen={isStatusModalOpen}
+				onClose={() => setIsStatusModalOpen(false)}
+				onConfirm={handleStatusConfirm}
+				title="อัปเดตสถานะ"
+				message={
+					<div className="space-y-4 text-left">
+						<p>กรุณาเลือกสถานะใหม่สำหรับใบสัญญา <strong>{selectedContract?.code || selectedContract?.id}</strong></p>
+						<div className="mt-2">
+							<label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
+							<Select
+								value={targetStatus}
+								onChange={(e) => setTargetStatus(e.target.value as ContractStatus)}
+								className="w-full"
+							>
+								{Object.values(ContractStatus).map((status) => (
+									<option key={status} value={status}>
+										{statusLabels[status]}
+									</option>
+								))}
+							</Select>
+						</div>
+					</div>
+				}
+				confirmButtonText="บันทึก"
+				confirmButtonClass="bg-primary hover:bg-primary/90"
 			/>
 		</div>
 	);

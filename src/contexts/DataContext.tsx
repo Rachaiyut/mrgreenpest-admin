@@ -249,12 +249,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
-      // promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 100 })).then(setInvoices));
-      setInvoices([]);
+      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 100 })).then((data: any) => setInvoices(data)));
     }
     if (shouldFetch('receipts')) {
-      // promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 100 })).then(setReceipts));
-      setReceipts([]);
+      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 100 })).then((data: any) => setReceipts(data)));
     }
     if (shouldFetch('customers')) {
       promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 100 })).then((data: any) => setCustomers(data)));
@@ -392,33 +390,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         },
       },
       invoices: {
-        create: async (data: any) => {
-          await InvoiceApi.create(data);
-          // fetchData(['invoices']);
-        },
-        update: async (data: any) => {
-          await InvoiceApi.update(data.id, data);
-          // fetchData(['invoices']);
-        },
-        delete: async (id: string) => {
-          await InvoiceApi.delete(id);
-          // fetchData(['invoices']);
-        },
+      create: async (data: any) => {
+        await InvoiceApi.create(data);
+        fetchData(['invoices']);
       },
-      receipts: {
-        create: async (data: any) => {
-          await ReceiptApi.create(data);
-          // fetchData(['receipts']);
-        },
-        update: async (data: any) => {
-          await ReceiptApi.update(data.id, data);
-          // fetchData(['receipts']);
-        },
-        delete: async (id: string) => {
-          await ReceiptApi.delete(id);
-          // fetchData(['receipts']);
-        },
+      update: async (data: any) => {
+        await InvoiceApi.update(data.id, data);
+        fetchData(['invoices']);
       },
+      delete: async (id: string) => {
+        await InvoiceApi.delete(id);
+        fetchData(['invoices']);
+      },
+    },
+    receipts: {
+      create: async (data: any) => {
+        await ReceiptApi.create(data);
+        fetchData(['receipts']);
+      },
+      update: async (data: any) => {
+        await ReceiptApi.update(data.id, data);
+        fetchData(['receipts']);
+      },
+      delete: async (id: string) => {
+        await ReceiptApi.delete(id);
+        fetchData(['receipts']);
+      },
+    },
       warehouses: {
         create: async (data: any) => {
           await WarehouseApi.create(data);

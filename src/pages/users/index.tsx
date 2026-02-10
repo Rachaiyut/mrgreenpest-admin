@@ -22,6 +22,7 @@ import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
 import { RoleApi, Role } from '../../api/role';
+import { UserApi } from '../../api/user';
 
 const ROLE_NAME_MAPPING: Record<string, string> = {
   admin: 'ผู้ดูแลระบบ',
@@ -56,8 +57,6 @@ const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | stri
   const normalizedName = typeof roleNameRaw === 'string' ? roleNameRaw : String(roleNameRaw);
   const roleName = ROLE_NAME_MAPPING[normalizedName.toLowerCase()] || normalizedName;
 
-  // ... rest of the component
-
   const roleColors: Record<string, string> = {
     [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
     [UserRole.SALES]: 'bg-blue-100 text-blue-700',
@@ -83,8 +82,6 @@ const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | stri
   );
 };
 
-import { useData } from '../../contexts/DataContext';
-
 interface UsersProps {
   onCreateUser: (user: Omit<User, 'id'>) => void;
   onUpdateUser: (user: User) => void;
@@ -103,7 +100,7 @@ const Users: React.FC<UsersProps> = ({
   defaultView = 'users',
   onCreateWalletTransaction,
 }) => {
-  const { users } = useData();
+  const [users, setUsers] = useState<User[]>([]);
   const [view, setView] = useState<'users' | 'roles'>(defaultView);
   const [isAddRoleModalOpen, setIsAddRoleModalOpen] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -146,8 +143,18 @@ const Users: React.FC<UsersProps> = ({
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await UserApi.getAll();
+      setUsers(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    }
+  };
+
   useEffect(() => {
     fetchRoles();
+    fetchUsers();
   }, []);
 
   useEffect(() => {
@@ -187,6 +194,26 @@ const Users: React.FC<UsersProps> = ({
     setCurrentPage(1);
   };
 
+  const handleCreateUser = async (data: any) => {
+    try {
+      await UserApi.create(data);
+      fetchUsers();
+    } catch (error) {
+      console.error('Failed to create user:', error);
+    }
+  };
+
+  const handleUpdateUser = async (data: any) => {
+    try {
+      if (data.id) {
+        await UserApi.update(data.id, data);
+        fetchUsers();
+      }
+    } catch (error) {
+      console.error('Failed to update user:', error);
+    }
+  };
+
   const handleViewDetails = (user: User) => {
     setSelectedUser(user);
     setIsDetailsModalOpen(true);
@@ -213,7 +240,12 @@ const Users: React.FC<UsersProps> = ({
 
   const handleConfirmDelete = async () => {
     if (userToDelete) {
-      onDeleteUser(userToDelete.id);
+      try {
+        await UserApi.delete(userToDelete.id);
+        fetchUsers();
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+      }
     }
     setIsDeleteModalOpen(false);
     setUserToDelete(null);
@@ -680,14 +712,14 @@ const Users: React.FC<UsersProps> = ({
       <AddUserModal
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
-        onCreateUser={onCreateUser}
+        onCreateUser={handleCreateUser}
         roles={roles as any}
       />
       <EditUserModal
         isOpen={isEditUserModalOpen}
         onClose={() => setIsEditUserModalOpen(false)}
         user={userToEdit}
-        onUpdateUser={onUpdateUser}
+        onUpdateUser={handleUpdateUser}
         roles={roles as any}
       />
       <UserDetailsModal

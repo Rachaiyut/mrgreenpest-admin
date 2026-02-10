@@ -11,6 +11,8 @@ import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
 import { QuotationApi } from '@/src/api';
 import { SearchableSelect } from '../../common';
+import { PaymentMethod } from '@/src/types/enums/financial';
+import { CreditCardIcon } from '../../../assets/icons/Icons';
 
 interface ServiceReportModalProps {
   isOpen: boolean;
@@ -1232,6 +1234,85 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               options={quotationOptions}
             />
         </FormField>
+
+        {/* Payment Condition */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+                <CreditCardIcon className="w-4 h-4 text-primary" />
+                เงื่อนไขการชำระเงิน
+            </h3>
+            
+            <div className="flex gap-4 mb-4">
+                <label className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${reportState.payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                        type="radio"
+                        name="payment_condition_type"
+                        className="hidden"
+                        checked={reportState.payment_condition !== PaymentMethod.INSTALLMENT}
+                        onChange={() => setReportState(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
+                    />
+                    <div className="font-semibold text-sm">ชำระเต็มจำนวน</div>
+                </label>
+                <label className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${reportState.payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                    <input
+                        type="radio"
+                        name="payment_condition_type"
+                        className="hidden"
+                        checked={reportState.payment_condition === PaymentMethod.INSTALLMENT}
+                        onChange={() => setReportState(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
+                    />
+                    <div className="font-semibold text-sm">แบ่งชำระ (งวด)</div>
+                </label>
+            </div>
+
+            {reportState.payment_condition !== PaymentMethod.INSTALLMENT && (
+                <div className="animate-fadeIn mb-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <label className="block text-xs font-medium text-slate-500 mb-2">ช่องทางการชำระเงิน</label>
+                    <div className="flex flex-wrap gap-3">
+                        {[
+                            { value: PaymentMethod.CASH, label: 'เงินสด' },
+                            { value: PaymentMethod.TRANSFER, label: 'โอนเงิน' },
+                            { value: PaymentMethod.CREDIT_CARD, label: 'บัตรเครดิต' },
+                            { value: PaymentMethod.QR_PAYMENT, label: 'QR Code' },
+                            { value: PaymentMethod.CHEQUE, label: 'เช็ค' },
+                        ].map((method) => (
+                            <label key={method.value} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="payment_method_detail"
+                                    value={method.value}
+                                    checked={reportState.payment_condition === method.value}
+                                    onChange={() => setReportState(prev => ({ ...prev, payment_condition: method.value }))}
+                                    className="text-primary focus:ring-primary"
+                                />
+                                <span className="text-sm text-slate-700">{method.label}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {reportState.payment_condition === PaymentMethod.INSTALLMENT && (
+                <div className="animate-fadeIn">
+                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
+                        <Input
+                            name="payment_installment_count"
+                            type="number"
+                            value={reportState.payment_installment_count || ''}
+                            onChange={(e) => {
+                                const count = parseInt(e.target.value, 10) || 0;
+                                setReportState((prev) => ({
+                                    ...prev,
+                                    payment_installment_count: count,
+                                }));
+                            }}
+                            min={2}
+                            className="max-w-[200px]"
+                        />
+                    </FormField>
+                </div>
+            )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField label="ประเภทบริการ">

@@ -44,7 +44,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   const [packages, setPackages] = useState<Package[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
 
@@ -54,10 +53,10 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       const fetchData = async () => {
         try {
           const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
-            CustomerApi.getCustomers({ limit: 1000 }),
-            PackageApi.getPackages({ limit: 100 }),
-            ProductApi.getProducts({ limit: 100 }),
-            CategoryApi.getCategories({ limit: 100, type: CategoryType.SERVICE })
+            CustomerApi.getCustomers({ limit: 10 }),
+            PackageApi.getPackages({ limit: 10 }),
+            ProductApi.getProducts({ limit: 10 }),
+            CategoryApi.getCategories({ type: CategoryType.SERVICE })
           ]);
           setCustomers(customersRes.data);
           setPackages(packagesRes.data);
@@ -73,7 +72,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       setFormData({
         status: AsessmentStatus.DRAFT,
         created_at: new Date().toISOString(),
-        payment_condition: PaymentMethod.CASH,
       });
       setWorkAreas([{
         id: `area-${Date.now()}`,
@@ -83,7 +81,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         base_service_price: 0,
         total_price: 0
       }]);
-      setInstallments([]);
+      // setInstallments([]);
       setSelectedPackageId(null);
     }
   }, [isOpen]);
@@ -226,55 +224,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   };
 
   // Handlers for Installments
-  const handleInstallmentAmountChange = (index: number, amount: number) => {
-    setInstallments(prev => {
-      const newInst = [...prev];
-      newInst[index] = { ...newInst[index], amount };
-      return newInst;
-    });
-  };
-
-  const handleInstallmentNoteChange = (index: number, note: string) => {
-    setInstallments(prev => {
-      const newInst = [...prev];
-      newInst[index] = { ...newInst[index], note };
-      return newInst;
-    });
-  };
-
-  // Auto-calculate installments logic
-  useEffect(() => {
-    if (formData.payment_condition === PaymentMethod.INSTALLMENT && formData.payment_installment_count && formData.payment_installment_count > 0) {
-      const count = formData.payment_installment_count;
-      const total = totalEstimatedCost || 0;
-
-      const currentSum = installments.reduce((s, i) => s + (i.amount || 0), 0);
-      const isSumMismatch = Math.abs(currentSum - total) > 1;
-      const isCountMismatch = installments.length !== count;
-
-      if (isSumMismatch || isCountMismatch) {
-        const amountPerInst = Math.floor((total / count) * 100) / 100;
-        const lastAmount = total - (amountPerInst * (count - 1));
-
-        setInstallments(prev => {
-          const newInst: Partial<AssessmentInstallment>[] = [];
-          for (let i = 0; i < count; i++) {
-            newInst.push({
-              installment_no: i + 1,
-              amount: i === count - 1 ? lastAmount : amountPerInst,
-              note: prev[i]?.note || '',
-            });
-          }
-          return newInst;
-        });
-      }
-    } else {
-      if (installments.length > 0 && formData.payment_condition !== PaymentMethod.INSTALLMENT) {
-        setInstallments([]);
-      }
-    }
-  }, [formData.payment_condition, formData.payment_installment_count, totalEstimatedCost]);
-
+  // Removed installments logic
 
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -291,9 +241,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       // Overrides/Calculated
       assessment_areas: workAreas as AssessmentWorkArea[],
       total_price: totalEstimatedCost,
-
-      // Installments
-      installments: formData.payment_condition === PaymentMethod.INSTALLMENT ? (installments as AssessmentInstallment[]) : [],
 
       // Ensure required fields
       customer_id: formData.customer_id || '',
@@ -327,6 +274,38 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         alert('กรุณากรอกข้อมูลให้ครบถ้วน');
         return;
       }
+    } else if (currentStep === 1) {
+        // Validate Step 2: Work Areas
+        const invalidArea = workAreas.find(area => {
+            // Check for required fields in each area
+            // 1. Must have an area name (usually auto-filled, but good to check)
+            if (!area.area_name) return true;
+            
+            // 2. Must have a building type selected
+            if (!area.building_type) return true;
+
+            // 3. Must have a service system (usually from package or manual selection, but in UI it's inside WorkAreaForm and might not be directly in 'area' object if not lifted up properly, 
+            //    BUT looking at WorkAreaForm, it updates 'area' via 'onAreaChange'. 
+            //    Wait, 'service_system' is NOT in the top-level WorkAreaForm props, it seems it might be part of the package logic or just missing?
+            //    Let's check AssessmentWorkArea interface. It usually has 'service_system'.
+            //    However, the user asked to validate "input every step".
+            //    In WorkAreaForm, we added 'required' to building_type select and service categories checkboxes.
+            //    We need to check if 'category_services' has at least one item.
+            
+            if (!area.category_services || area.category_services.length === 0) return true;
+
+            // 4. Must have area_size or perimeter depending on measurement type?
+            //    The interface has 'area_size'. If it's 0, it might be invalid if it's required.
+            //    Let's enforce area_size > 0 for now as a basic check.
+            if (!area.area_size || area.area_size <= 0) return true;
+
+            return false;
+        });
+
+        if (invalidArea) {
+            alert(`กรุณากรอกข้อมูลพื้นที่ "${invalidArea.area_name}" ให้ครบถ้วน (ประเภทสิ่งปลูกสร้าง, ประเภทบริการ, ขนาดพื้นที่)`);
+            return;
+        }
     }
     
     if (currentStep < STEPS.length - 1) {
@@ -442,7 +421,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                 name="appointment_date"
                                 type="date"
                                 value={
-                                formData.appointment_date
+                                formData.appointment_date && !isNaN(new Date(formData.appointment_date).getTime())
                                     ? new Date(formData.appointment_date)
                                     .toISOString()
                                     .substring(0, 10)
@@ -601,100 +580,29 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
              </div>
         )}
 
-        {/* STEP 3: PAYMENT & REVIEW */}
+        {/* STEP 3: REVIEW */}
         {currentStep === 2 && (
             <div className="space-y-6 animate-fadeIn">
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Payment Config */}
+                    {/* Summary (Left Column) */}
                     <div className="lg:col-span-2 space-y-6">
+                         {/* Removed Payment Condition Section */}
+
                          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                                <CreditCardIcon className="w-5 h-5 text-primary" />
-                                เงื่อนไขการชำระเงิน
-                            </h3>
-                            
-                            <div className="flex gap-4 mb-6">
-                                <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                                    <input
-                                        type="radio"
-                                        name="payment_type"
-                                        className="hidden"
-                                        checked={formData.payment_condition !== PaymentMethod.INSTALLMENT}
-                                        onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                                    />
-                                    <div className="font-semibold">ชำระเต็มจำนวน</div>
-                                </label>
-                                <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${formData.payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                                    <input
-                                        type="radio"
-                                        name="payment_type"
-                                        className="hidden"
-                                        checked={formData.payment_condition === PaymentMethod.INSTALLMENT}
-                                        onChange={() => setFormData(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                                    />
-                                    <div className="font-semibold">แบ่งชำระ (งวด)</div>
-                                </label>
-                            </div>
-
-                            {formData.payment_condition === PaymentMethod.INSTALLMENT && (
-                                <div className="space-y-4 animate-fadeIn">
-                                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                                        <Input
-                                            name="payment_installment_count"
-                                            type="number"
-                                            value={formData.payment_installment_count || ''}
-                                            onChange={(e) => {
-                                                const count = parseInt(e.target.value, 10) || 0;
-                                                setFormData((prev) => ({
-                                                    ...prev,
-                                                    payment_installment_count: count,
-                                                }));
-                                            }}
-                                            min={2}
-                                            className="max-w-[200px]"
-                                        />
-                                    </FormField>
-
-                                    {installments.length > 0 && (
-                                        <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                                            <div className="space-y-3">
-                                                {installments.map((inst, idx) => (
-                                                <div key={idx} className="flex gap-3 items-end">
-                                                    <div className="w-16 pt-2 text-sm font-medium text-slate-500">
-                                                    งวดที่ {inst.installment_no}
-                                                    </div>
-                                                    <div className="flex-1">
-                                                    <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
-                                                    <Input
-                                                        type="number"
-                                                        value={inst.amount}
-                                                        onChange={(e) => {
-                                                        const val = parseFloat(e.target.value) || 0;
-                                                        handleInstallmentAmountChange(idx, val);
-                                                        }}
-                                                        step="0.01"
-                                                        className="bg-white"
-                                                    />
-                                                    </div>
-                                                    <div className="flex-1">
-                                                    <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
-                                                    <Input
-                                                        type="text"
-                                                        value={inst.note || ''}
-                                                        placeholder="เช่น มัดจำ"
-                                                        onChange={(e) => {
-                                                        handleInstallmentNoteChange(idx, e.target.value);
-                                                        }}
-                                                        className="bg-white"
-                                                    />
-                                                    </div>
-                                                </div>
-                                                ))}
-                                            </div>
+                            <h3 className="text-lg font-semibold text-slate-800 mb-4">สรุปรายการพื้นที่</h3>
+                            <div className="space-y-3">
+                                {workAreas.map((area, index) => (
+                                    <div key={index} className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                                        <div>
+                                            <div className="font-medium text-slate-700">{area.area_name}</div>
+                                            <div className="text-sm text-slate-500">{area.items?.length || 0} รายการ</div>
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                        <div className="font-semibold text-slate-700">
+                                            {area.total_price?.toLocaleString()} บาท
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                          </div>
                     </div>
 
@@ -723,16 +631,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                         ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                                     </span>
                                 </div>
-                                
-                                {formData.payment_condition === PaymentMethod.INSTALLMENT && (
-                                     <div className={`text-xs text-right mt-1 ${
-                                        Math.abs(installments.reduce((sum, i) => sum + (i.amount || 0), 0) - totalEstimatedCost) < 1 
-                                          ? 'text-green-600' 
-                                          : 'text-red-500'
-                                      }`}>
-                                        ยอดแบ่งชำระ: ฿{installments.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()}
-                                     </div>
-                                )}
                             </div>
                         </div>
                     </div>

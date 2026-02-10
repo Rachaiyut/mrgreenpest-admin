@@ -8,10 +8,11 @@ const Dashboard = lazy(() => import('../pages/dashboard'));
 const Customers = lazy(() => import('../pages/customers/Customer'));
 const Assessments = lazy(() => import('../pages/assessments/Assessments'));
 const FieldOperations = lazy(() => import('../pages/field-operations'));
-const Financials = lazy(() => import('../pages/financials'));
 const QuotationsPage = lazy(() => import('../pages/quotations'));
+const InvoicesPage = lazy(() => import('../pages/invoices/Invoice'));
+const ReceiptsPage = lazy(() => import('../pages/receipts/Receipt'));
 const EditQuotation = lazy(() => import('../pages/quotations/EditQuotation'));
-const EditInvoicePage = lazy(() => import('../pages/financials/EditInvoicePage'));
+const EditInvoicePage = lazy(() => import('../components/features/invoices/EditInvoiceModal'));
 const Users = lazy(() => import('../pages/users'));
 const Warehouse = lazy(() => import('../pages/warehouse/Warehouse'));
 const GoodsReceipt = lazy(() => import('../pages/inventory/goods-receipt'));
@@ -28,7 +29,7 @@ const Products = lazy(() => import('../pages/inventory/products/Product'));
 const Reports = lazy(() => import('../pages/reports'));
 const Notifications = lazy(() => import('../pages/notifications'));
 const Forms = lazy(() => import('../pages/forms'));
-const ContractsPage = lazy(() => import('../pages/contracts'));
+const ContractsPage = lazy(() => import('../pages/contracts/Contract'));
 const CreateInvoicePage = lazy(() => import('../pages/billing/CreateInvoice'));
 
 // Reports Sub-pages
@@ -145,12 +146,10 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/billing',
       element: (
-        <Financials
-          defaultTab="ใบแจ้งหนี้"
+        <InvoicesPage
           onCreateInvoice={handlers.invoices.create}
           onUpdateInvoice={handlers.invoices.update}
           onDeleteInvoice={handlers.invoices.delete}
-          onCreateReceipt={handlers.receipts.create}
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
@@ -163,8 +162,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/receipts',
       element: (
-        <Financials
-          defaultTab="ใบกำกับภาษี/ใบเสร็จรับเงิน"
+        <ReceiptsPage
           onCreateReceipt={handlers.receipts.create}
           onUpdateReceipt={handlers.receipts.update}
           onDeleteReceipt={handlers.receipts.delete}
@@ -232,9 +230,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       path: '/withdrawals',
       element: (
         <Withdrawals
-        // onCreateWithdrawal={handlers.withdrawals.create}
-        // onUpdateWithdrawal={handlers.withdrawals.update}
-        // onDeleteWithdrawal={handlers.withdrawals.delete}
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],

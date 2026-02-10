@@ -31,9 +31,12 @@ export interface Quotation {
   assessment_id?: string;
   customer_id: string;
   customer_name: string;
+  contact_phone?: string;
   service_location?: string;
+  building_type?: string;
   service_area?: string;
   service_type?: string;
+  service_system?: string;
   system_used?: string;
   contract_duration?: string;
   service_count?: string;
@@ -57,9 +60,21 @@ export interface Quotation {
   installments?: InstallmentPlan[];
 }
 
+export interface InvoiceItem {
+  id: string;
+  invoice_id?: string;
+  sequence?: number;
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+  amount: number;
+}
+
 export interface Invoice {
   id: string;
   code?: string;
+  contract_id?: string;
   quotation_id?: string;
   installment_id?: string;
   term?: number;
@@ -77,6 +92,7 @@ export interface Invoice {
   updated_by?: string;
   created_at?: string;
   updated_at?: string;
+  items?: InvoiceItem[];
 }
 
 export interface Receipt {

@@ -435,6 +435,19 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const handleReferenceChange = (reference: string) => {
     setSelectedReference(reference);
+
+    if (reference.startsWith('asm-')) {
+      const assessmentId = reference.replace('asm-', '');
+      const assessment = availableAssessments.find((a) => a.id === assessmentId);
+      if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
+        // Auto-populate service system from the first area of the assessment
+        // Assuming all areas in an assessment usually share the same service system
+        const system = assessment.assessment_areas[0].service_system;
+        if (system) {
+          setServiceSystem(system);
+        }
+      }
+    }
   };
 
   const createJobObject = (status: JobMainStatus): any => {
@@ -761,7 +774,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         <div className={activeTab === 'service' ? 'block' : 'hidden'}>
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField label="ระบบบริการ" htmlFor="service-system">
+              <FormField label="ระบบที่ใช้บริการ" htmlFor="service-system">
                 <Select
                   id="service-system"
                   value={serviceSystem}

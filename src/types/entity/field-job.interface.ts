@@ -1,5 +1,6 @@
 import { User } from './core.interface';
 import { JobMainStatus, JobStatus } from '../enums/job';
+import { PaymentMethod } from '../enums/financial';
 
 export interface FieldJobWorkArea {
   id: string;
@@ -21,6 +22,8 @@ export interface ServiceReport {
   service_other?: string;
   time_in?: string;
   time_out?: string;
+  payment_condition?: PaymentMethod;
+  payment_installment_count?: number;
   is_op_station?: boolean;
   is_op_refill?: boolean;
   is_op_chemical?: boolean;

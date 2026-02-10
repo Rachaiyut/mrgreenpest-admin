@@ -638,12 +638,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             label="ประเภทสิ่งปลูกสร้าง"
             htmlFor={`buildingType-${index}`}
           >
-            <Input
+            <Select
               name="building_type"
               value={area.building_type || ''}
               onChange={handleFieldChange}
-              placeholder="บ้านเดี่ยวชั้นเดียว ,บ้านเดี่ยว 2 ชั้น , ทาวโฮม , อาคารพาณิชย์"
-            />
+              required
+            >
+              <option value="">-- เลือกประเภท --</option>
+              <option value="OFFICE">ออฟฟิศ (Office)</option>
+              <option value="HOUSE">บ้าน (House)</option>
+            </Select>
           </FormField>
           <FormField label="ระบบใช้บริการ" htmlFor={`serviceSystem-${index}`}>
             <Select
@@ -786,15 +790,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           )}
         </div>
 
-        <FormField label="ประเภทบริการ">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1 border p-2 rounded-md bg-white">
+        <FormField label="ประเภทบริการ *">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
             {categories.map((category) => (
               <label key={category.id} className="flex items-center space-x-2">
                 <input
-                  name='service-type'
                   type="checkbox"
+                  className="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
                   checked={area.category_services?.some((c) => c.category_id === category.id) || false}
                   onChange={() => handleServiceTypeChange(category.id)}
+                  required={!area.category_services || area.category_services.length === 0}
                 />
                 <span className="text-sm text-slate-800">{category.name}</span>
               </label>
