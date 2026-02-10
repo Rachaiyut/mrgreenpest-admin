@@ -36,6 +36,12 @@ interface AddAssessmentModalProps {
   onCreateAssessment: (assessmentData: Omit<Assessment, 'id' | 'code'> & { installments?: Partial<AssessmentInstallment>[] }) => void;
 }
 
+const STEPS = [
+  { id: 0, label: 'ข้อมูลลูกค้า', icon: UserIcon },
+  { id: 1, label: 'พื้นที่บริการ', icon: DocumentIcon },
+  { id: 2, label: 'การชำระเงิน', icon: CreditCardIcon },
+];
+
 export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   isOpen,
   onClose,
@@ -360,53 +366,41 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     onClose();
   };
 
-  const STEPS = [
-    { id: 0, label: 'ข้อมูลลูกค้า', icon: UserIcon },
-    { id: 1, label: 'พื้นที่บริการ', icon: DocumentIcon },
-    { id: 2, label: 'การชำระเงิน', icon: CreditCardIcon },
-  ];
+  const isStepValid = useMemo(() => {
+    if (currentStep === 0) {
+      return !!(
+        formData.created_at &&
+        formData.appointment_date &&
+        formData.customer_id &&
+        formData.address &&
+        formData.sub_district &&
+        formData.district &&
+        formData.province &&
+        formData.zipcode
+      );
+    }
+    if (currentStep === 1) {
+      if (workAreas.length === 0) return false;
+      return workAreas.every((area) => 
+        area.area_name &&
+        area.building_type &&
+        area.category_services && area.category_services.length > 0 &&
+        (area.area_size && area.area_size > 0)
+      );
+    }
+    if (currentStep === 2) {
+        if (paymentCondition === PaymentMethod.INSTALLMENT) {
+             const totalInstallment = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+             return Math.abs(totalInstallment - totalEstimatedCost) < 1;
+        }
+        return true;
+    }
+    return false;
+  }, [currentStep, formData, workAreas, paymentCondition, installments, totalEstimatedCost]);
 
   const handleNext = () => {
-    if (currentStep === 0) {
-      // Validate Step 1
-      if (!formData.created_at || !formData.appointment_date || !formData.customer_id || !formData.address || !formData.sub_district || !formData.district || !formData.province || !formData.zipcode) {
-        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-        return;
-      }
-    } else if (currentStep === 1) {
-        // Validate Step 2: Work Areas
-        const invalidArea = workAreas.find(area => {
-            // Check for required fields in each area
-            // 1. Must have an area name (usually auto-filled, but good to check)
-            if (!area.area_name) return true;
-            
-            // 2. Must have a building type selected
-            if (!area.building_type) return true;
+    if (!isStepValid) return;
 
-            // 3. Must have a service system (usually from package or manual selection, but in UI it's inside WorkAreaForm and might not be directly in 'area' object if not lifted up properly, 
-            //    BUT looking at WorkAreaForm, it updates 'area' via 'onAreaChange'. 
-            //    Wait, 'service_system' is NOT in the top-level WorkAreaForm props, it seems it might be part of the package logic or just missing?
-            //    Let's check AssessmentWorkArea interface. It usually has 'service_system'.
-            //    However, the user asked to validate "input every step".
-            //    In WorkAreaForm, we added 'required' to building_type select and service categories checkboxes.
-            //    We need to check if 'category_services' has at least one item.
-            
-            if (!area.category_services || area.category_services.length === 0) return true;
-
-            // 4. Must have area_size or perimeter depending on measurement type?
-            //    The interface has 'area_size'. If it's 0, it might be invalid if it's required.
-            //    Let's enforce area_size > 0 for now as a basic check.
-            if (!area.area_size || area.area_size <= 0) return true;
-
-            return false;
-        });
-
-        if (invalidArea) {
-            alert(`กรุณากรอกข้อมูลพื้นที่ "${invalidArea.area_name}" ให้ครบถ้วน (ประเภทสิ่งปลูกสร้าง, ประเภทบริการ, ขนาดพื้นที่)`);
-            return;
-        }
-    }
-    
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(prev => {
         const next = prev + 1;
@@ -454,6 +448,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                  type="button"
                  onClick={handleNext}
                  variant="primary"
+                 disabled={!isStepValid}
                  className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
              >
                  ถัดไป
@@ -464,6 +459,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                 type="button"
                 onClick={() => handleSubmit()}
                 variant="primary"
+                disabled={!isStepValid}
                 className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
             >
                 บันทึกใบประเมิน

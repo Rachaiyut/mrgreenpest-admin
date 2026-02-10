@@ -7,7 +7,8 @@ import {
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
 import { JobStatus, JobMainStatus } from '@/src/types/enums/job';
-import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon, CreditCardIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon, CreditCardIcon, TruckIcon } from '../../../assets/icons/Icons';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import { WarehouseType, CategoryType } from '@/src/types';
 import { AssessmentApi, ProductApi, CategoryApi, PackageApi, JobApi, CustomerApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
@@ -125,6 +126,16 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
+  const [leadTechSearch, setLeadTechSearch] = useState('');
+  const [additionalTechSearch, setAdditionalTechSearch] = useState('');
+  const [vehicleSearch, setVehicleSearch] = useState('');
+
+  const getTechnicianName = (tech: User | any) => {
+    if (tech.name) return tech.name;
+    if (tech.first_name)
+      return `${tech.first_name} ${tech.last_name || ''}`.trim();
+    return tech.username || tech.email || tech.phone || 'Unknown';
+  };
 
   const servicePackages = useMemo(
     () => products.filter((p) => (p as any)?.category?.type === CategoryType.SERVICE),
@@ -155,6 +166,32 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     () => warehouses.filter((w) => w.type === WarehouseType.VEHICLE),
     [warehouses]
   );
+
+  const filteredVehicles = useMemo(() => {
+    return vehicleWarehouses
+      .filter((v) => {
+        const name = v.name.toLowerCase();
+        const reg = (v.vehicle?.vehicle_registration || '').toLowerCase();
+        const search = vehicleSearch.toLowerCase();
+        return name.includes(search) || reg.includes(search);
+      })
+      .map((v) => ({
+        value: v.id,
+        label: v.name,
+        description: v.vehicle?.vehicle_registration
+          ? `ทะเบียน: ${v.vehicle.vehicle_registration}`
+          : undefined,
+      }));
+  }, [vehicleWarehouses, vehicleSearch]);
+
+  const leadTechnicianOptions = useMemo(() => {
+    return technicians.filter((t) => {
+      const name = getTechnicianName(t).toLowerCase();
+      const nickname = (t.nick_name || (t as any).nickname || '').toLowerCase();
+      const search = leadTechSearch.toLowerCase();
+      return name.includes(search) || nickname.includes(search);
+    });
+  }, [technicians, leadTechSearch]);
 
 
   const bookedSlots = useMemo(() => {
@@ -845,12 +882,46 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     });
   };
 
+  const additionalTechnicians = useMemo(() => {
+    return technicians
+      .filter((tech) => tech.id !== leadTechnicianId)
+      .filter((tech) => {
+        if (!additionalTechSearch) return true;
+        const name = getTechnicianName(tech).toLowerCase();
+        const nickname = (tech.nick_name || (tech as any).nickname || '').toLowerCase();
+        const search = additionalTechSearch.toLowerCase();
+        return name.includes(search) || nickname.includes(search);
+      });
+  }, [technicians, leadTechnicianId, additionalTechSearch]);
+
+  const tabs = useMemo(() => {
+    const allTabs = [
+      { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
+      { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
+      { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
+    ];
+
+    const roleName = typeof currentUser?.role === 'object'
+      ? (currentUser.role as any).name
+      : currentUser?.role;
+
+    // Hide team tab for Lead Tech and Technician
+    if (roleName === UserRole.LEAD_TECH || roleName === UserRole.TECH) {
+      return allTabs.filter((t) => t.id !== 'team');
+    }
+
+    return allTabs;
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (activeTab === 'team' && !tabs.find((t) => t.id === 'team')) {
+      setActiveTab('overview');
+    }
+  }, [tabs, activeTab]);
+
   if (!currentJob) return null;
 
   const isReadOnly = !!currentJob.assessment_id || !!currentJob.contract_id;
-  const additionalTechnicians = technicians.filter(
-    (tech) => tech.id !== leadTechnicianId
-  );
 
   const primaryTechnicianDisplay = (() => {
     const pt = (currentJob as any)?.primary_technician;
@@ -896,12 +967,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       } as Assessment;
     });
   };
-
-  const tabs = [
-    { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
-    { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
-    { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
-  ];
 
   return (
     <Modal
@@ -1327,54 +1392,131 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
         {/* TAB: TEAM */}
         <div className={activeTab === 'team' ? 'block' : 'hidden'}>
-          <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2">หัวหน้าทีม (Leader)</h3>
-              <FormField label="หัวหน้าช่าง" htmlFor="lead-technician-display">
-                <Input
-                  id="lead-technician-display"
-                  value={primaryTechnicianDisplay}
-                  readOnly
-                  className="bg-slate-50 font-medium text-slate-700"
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  * หัวหน้าช่างถูกกำหนดจากการสร้างงาน หากต้องการเปลี่ยนกรุณาติดต่อผู้ดูแลระบบ
-                </p>
-              </FormField>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Vehicle Selection */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                    <TruckIcon className="w-5 h-5" />
+                  </div>
+                  ยานพาหนะ
+                </h3>
+                
+                <div className="space-y-4">
+                  <SearchableSelect
+                      label="เลือกรถที่ปฏิบัติงาน"
+                      options={filteredVehicles}
+                      value={formData.vehicle_id || ''}
+                      onChange={(val) => setFormData(prev => ({ ...prev, vehicle_id: val || '' }))}
+                      onSearchChange={setVehicleSearch}
+                      placeholder="ค้นหารถบริการ..."
+                      required
+                    />
+
+                    {timeConflictError && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
+                        <span className="text-lg">⚠️</span>
+                        <p>{timeConflictError}</p>
+                      </div>
+                    )}
+
+                    {bookedSlots.length > 0 && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                        <p className="font-semibold text-amber-800 mb-1">
+                          ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
+                        </p>
+                        <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
+                          {bookedSlots.map((slot) => (
+                            <li key={slot.start}>
+                              {slot.start} - {slot.end} ({slot.customer})
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                </div>
+              </div>
+
+              {/* Leader Selection */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
+                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <UserIcon className="w-5 h-5" />
+                  </div>
+                  หัวหน้าทีม (Leader)
+                </h3>
+                <div className="mb-4">
+                  <SearchableSelect
+                    label="หัวหน้าช่าง *"
+                    name="primary_tech_id"
+                    options={leadTechnicianOptions.map((tech) => ({
+                      value: tech.id,
+                      label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`,
+                      description: tech.phone || '',
+                    }))}
+                    value={leadTechnicianId}
+                    onChange={handleLeadTechnicianChange}
+                    onSearchChange={setLeadTechSearch}
+                    placeholder="ค้นหาหัวหน้าช่าง..."
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
+            {/* Member Selection */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4 border-b pb-2">ลูกทีม (Members)</h3>
-              <div className="space-y-2">
-                <p className="text-sm text-slate-600 mb-2">เลือกช่างเทคนิคเพิ่มเติมที่เข้าร่วมงานนี้:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-2">
-                  {additionalTechnicians.map((tech) => (
-                    <label
-                      key={tech.id}
-                      className={`
-                        flex items-center space-x-3 p-3 rounded-lg border cursor-pointer transition-all
-                        ${selectedTechnicianIds.includes(tech.id) 
-                          ? 'bg-primary/5 border-primary ring-1 ring-primary' 
-                          : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300'}
-                      `}
-                    >
+              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                ลูกทีม (Members)
+              </h3>
+              
+              <div className="mb-6">
+                 <Input
+                    placeholder="ค้นหาช่างเพิ่มเติม..."
+                    value={additionalTechSearch}
+                    onChange={(e) => setAdditionalTechSearch(e.target.value)}
+                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                  />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                {additionalTechnicians.map((tech) => (
+                  <label
+                    key={tech.id}
+                    className={`
+                      relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
+                      ${selectedTechnicianIds.includes(tech.id) 
+                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' 
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
+                    `}
+                  >
+                    <div className="pt-1">
                       <input
                         type="checkbox"
                         checked={selectedTechnicianIds.includes(tech.id)}
                         onChange={() => handleTechnicianToggle(tech.id)}
-                        className="w-5 h-5 text-primary rounded border-gray-300 focus:ring-primary"
+                        className="w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary transition-colors cursor-pointer"
                       />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-slate-700">{tech.name}</span>
-                        {tech.nick_name && <span className="text-xs text-slate-500">({tech.nick_name})</span>}
-                      </div>
-                    </label>
-                  ))}
-                </div>
-                {additionalTechnicians.length === 0 && (
-                  <p className="text-center text-slate-400 py-4 italic">ไม่พบรายชื่อช่างอื่นๆ</p>
-                )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}>
+                        {getTechnicianName(tech)}
+                      </span>
+                      {tech.nick_name && <span className="text-xs text-slate-500 font-medium">({tech.nick_name})</span>}
+                      {tech.phone && <span className="text-xs text-slate-400 mt-1">{tech.phone}</span>}
+                    </div>
+                  </label>
+                ))}
               </div>
+              {additionalTechnicians.length === 0 && (
+                <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-slate-400">ไม่พบรายชื่อช่างอื่นๆ</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
