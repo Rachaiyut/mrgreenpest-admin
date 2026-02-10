@@ -46,6 +46,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   const [categories, setCategories] = useState<Category[]>([]);
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
+  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,12 +78,14 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       setWorkAreas([{
         id: `area-${Date.now()}`,
         area_name: 'พื้นที่ 1',
+        building_type: '',
         items: [],
         category_services: [],
         base_service_price: 0,
         total_price: 0
       }]);
-      // setInstallments([]);
+      setInstallments([]);
+      setPaymentCondition(PaymentMethod.TRANSFER);
       setSelectedPackageId(null);
     }
   }, [isOpen]);
@@ -95,7 +99,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   }, [packages]);
 
   const totalEstimatedCost = useMemo(
-    () => workAreas.reduce((sum, area) => sum + (area.total_price || 0), 0),
+    () => workAreas.reduce((sum, area) => sum + (Number(area.total_price) || 0), 0),
     [workAreas]
   );
 
@@ -140,6 +144,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       {
         id: `area-${Date.now()}`,
         area_name: `พื้นที่ ${prev.length + 1}`,
+        building_type: '',
         items: [],
         category_services: [],
         base_service_price: 0,
@@ -230,7 +235,67 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   };
 
   // Handlers for Installments
-  // Removed installments logic
+  const handleAddInstallment = () => {
+    setInstallments(prev => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        installment_no: prev.length + 1,
+        amount: 0,
+        note: `งวดที่ ${prev.length + 1}`,
+      }
+    ]);
+  };
+
+  const handleRemoveInstallment = (index: number) => {
+    setInstallments(prev => {
+      const filtered = prev.filter((_, i) => i !== index);
+      return filtered.map((inst, i) => ({
+        ...inst,
+        installment_no: i + 1,
+        note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
+      }));
+    });
+  };
+
+  const handleInstallmentChange = (index: number, field: keyof AssessmentInstallment, value: any) => {
+    setInstallments(prev => prev.map((inst, i) => {
+      if (i === index) {
+        return { ...inst, [field]: value };
+      }
+      return inst;
+    }));
+  };
+
+  // Auto-calculate installments when total price changes or payment condition changes
+  useEffect(() => {
+    if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && totalEstimatedCost > 0) {
+      // Default to 2 installments if none exist
+      // Calculate dates: 1st installment on appointment date (or today), 2nd installment next month
+      const date1 = formData.appointment_date ? new Date(formData.appointment_date) : new Date();
+      const date2 = new Date(date1);
+      date2.setMonth(date2.getMonth() + 1);
+
+      setInstallments([
+        { 
+            id: crypto.randomUUID(), 
+            installment_no: 1, 
+            amount: totalEstimatedCost / 2, 
+            note: 'งวดที่ 1',
+            due_date: date1.toISOString().substring(0, 10)
+        },
+        { 
+            id: crypto.randomUUID(), 
+            installment_no: 2, 
+            amount: totalEstimatedCost / 2, 
+            note: 'งวดที่ 2',
+            due_date: date2.toISOString().substring(0, 10)
+        }
+      ]);
+    } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
+      setInstallments([]);
+    }
+  }, [paymentCondition, totalEstimatedCost]);
 
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
@@ -257,6 +322,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       // Overrides/Calculated
       assessment_areas: sanitizedWorkAreas,
       total_price: totalEstimatedCost,
+      payment_condition: paymentCondition,
+      installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments as any : [],
 
       // Ensure required fields
       customer_id: formData.customer_id || '',
@@ -556,14 +623,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                         <h3 className="text-xl font-bold text-slate-800">พื้นที่ให้บริการ</h3>
                         <p className="text-sm text-slate-500">จัดการพื้นที่และเลือกแพ็กเกจบริการ</p>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleAddArea}
-                        className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 shadow-sm transition-all"
-                    >
-                        <PlusIcon className="w-5 h-5" />
-                        เพิ่มพื้นที่
-                    </button>
                  </div>
 
                  <div className="space-y-4">
@@ -591,6 +650,17 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                             ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น
                         </div>
                     )}
+
+                    <div className="flex justify-center mt-6">
+                        <button
+                            type="button"
+                            onClick={handleAddArea}
+                            className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                        >
+                            <PlusIcon className="h-5 w-5" />
+                            เพิ่มพื้นที่ให้บริการ
+                        </button>
+                    </div>
                  </div>
              </div>
         )}
@@ -601,7 +671,148 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Summary (Left Column) */}
                     <div className="lg:col-span-2 space-y-6">
-                         {/* Removed Payment Condition Section */}
+                         {/* Payment Condition Section */}
+                         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                            <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                                <CreditCardIcon className="w-5 h-5 text-primary" />
+                                เงื่อนไขการชำระเงิน
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <label className={`
+                                    relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                    ${paymentCondition === PaymentMethod.TRANSFER 
+                                        ? 'border-primary bg-primary/5 shadow-md' 
+                                        : 'border-slate-200 hover:border-slate-300 bg-white'}
+                                `}>
+                                    <input 
+                                        type="radio" 
+                                        name="paymentCondition" 
+                                        value={PaymentMethod.TRANSFER}
+                                        checked={paymentCondition === PaymentMethod.TRANSFER}
+                                        onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
+                                        className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
+                                    />
+                                    <div className="ml-3">
+                                        <span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span>
+                                        <span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span>
+                                    </div>
+                                </label>
+
+                                <label className={`
+                                    relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                    ${paymentCondition === PaymentMethod.INSTALLMENT 
+                                        ? 'border-primary bg-primary/5 shadow-md' 
+                                        : 'border-slate-200 hover:border-slate-300 bg-white'}
+                                `}>
+                                    <input 
+                                        type="radio" 
+                                        name="paymentCondition" 
+                                        value={PaymentMethod.INSTALLMENT}
+                                        checked={paymentCondition === PaymentMethod.INSTALLMENT}
+                                        onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)}
+                                        className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
+                                    />
+                                    <div className="ml-3">
+                                        <span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span>
+                                        <span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span>
+                                    </div>
+                                </label>
+                            </div>
+
+                            {paymentCondition === PaymentMethod.INSTALLMENT && (
+                                <div className="space-y-4 animate-fadeIn">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
+                                        <button 
+                                            type="button" 
+                                            onClick={handleAddInstallment}
+                                            className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium"
+                                        >
+                                            <PlusIcon className="w-4 h-4" />
+                                            เพิ่มงวด
+                                        </button>
+                                    </div>
+
+                                    <div className="overflow-hidden border border-slate-200 rounded-lg">
+                                        <table className="min-w-full divide-y divide-slate-200">
+                                            <thead className="bg-slate-50">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
+                                                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
+                                                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
+                                                    <th className="px-2 py-3 w-10"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-slate-200">
+                                                {installments.map((inst, idx) => (
+                                                    <tr key={inst.id || idx}>
+                                                        <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
+                                                            {inst.installment_no}
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input 
+                                                                value={inst.note || ''}
+                                                                onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)}
+                                                                placeholder="รายละเอียด..."
+                                                                className="h-9 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input 
+                                                                type="number"
+                                                                value={inst.amount}
+                                                                onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
+                                                                className="h-9 text-right text-sm font-mono"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <Input 
+                                                                type="date"
+                                                                value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''}
+                                                                onChange={(e) => handleInstallmentChange(idx, 'due_date', new Date(e.target.value))}
+                                                                className="h-9 text-sm"
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-2 text-center">
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => handleRemoveInstallment(idx)}
+                                                                className="text-slate-400 hover:text-red-500"
+                                                                disabled={installments.length <= 1}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                                                    <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
+                                                                </svg>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            <tfoot className="bg-slate-50">
+                                                <tr>
+                                                    <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
+                                                    <td className={`px-4 py-2 text-right text-sm font-bold ${
+                                                        Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 
+                                                        ? 'text-green-600' 
+                                                        : 'text-red-600'
+                                                    }`}>
+                                                        {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}
+                                                    </td>
+                                                    <td colSpan={2}></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) >= 1 && (
+                                        <p className="text-xs text-red-500 text-right">
+                                            * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({totalEstimatedCost.toLocaleString()} บาท)
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                         </div>
 
                          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                             <h3 className="text-lg font-semibold text-slate-800 mb-4">สรุปรายการพื้นที่</h3>

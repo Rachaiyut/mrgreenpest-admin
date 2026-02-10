@@ -8,6 +8,7 @@ import {
     Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { PaymentMethod } from '@/src/types/enums/financial';
 import {
     PlusIcon,
     TrashIcon,
@@ -18,7 +19,8 @@ import {
     CurrencyDollarIcon,
     CalendarIcon,
     MapPinIcon,
-    NewFieldOpsIcon
+    NewFieldOpsIcon,
+    CreditCardIcon
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
@@ -387,30 +389,38 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [packagePrice, setPackagePrice] = useState(0);
     const [packageName, setPackageName] = useState('');
     const [usePackagePricing, setUsePackagePricing] = useState(false);
+    
+    // Payment Condition
+    const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
 
     // Installment Logic
     const [isInstallment, setIsInstallment] = useState(
         !!(initialValues?.is_installment || (initialValues?.installments && initialValues.installments.length > 0))
     );
-    const [manualInstallmentCount, setManualInstallmentCount] = useState(
-        (initialValues?.installments && initialValues.installments.length > 0)
-            ? initialValues.installments.length
-            : 2
-    );
     const [installments, setInstallments] = useState<any[]>(
         (initialValues?.installments && initialValues.installments.length > 0)
-            ? initialValues.installments.map((inst: any) => ({
-                installment_no: inst.installment_no,
-                amount: inst.amount,
-                service_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
-                notes: inst.notes || ''
-            }))
+            ? [...initialValues.installments]
+                .sort((a: any, b: any) => a.installment_no - b.installment_no)
+                .map((inst: any) => ({
+                    installment_no: inst.installment_no,
+                    amount: inst.amount,
+                    service_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
+                    notes: inst.notes || ''
+                }))
             : []
     );
+
+    // Effect to init paymentCondition based on initialValues
+    useEffect(() => {
+        if (initialValues?.installments && initialValues.installments.length > 0) {
+            setPaymentCondition(PaymentMethod.INSTALLMENT);
+        }
+    }, [initialValues]);
 
     // Auto-fill from assessment when selected
     useEffect(() => {
         if (selectedAssessment) {
+
             // Set customer
             if (selectedAssessment.customer_id && (mode === 'create' || !selectedCustomerId)) {
                 setSelectedCustomerId(selectedAssessment.customer_id);
@@ -617,6 +627,72 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     setItems(newItems.length > 0 ? newItems : []);
                 }
             }
+
+            // Auto-fill Installments
+            if (selectedAssessment.installments && selectedAssessment.installments.length > 0) {
+                console.log('✅ Auto-filling installments from assessment:', selectedAssessment.installments);
+                setPaymentCondition(PaymentMethod.INSTALLMENT);
+                
+                // If includeVat is true, we need to scale the installments to match Net Total
+                // Calculate total assessment amount to use as base for proportion
+                const totalAssessmentAmount = selectedAssessment.installments.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
+                
+                // Determine target total:
+                // Since items/packagePrice are set above, we can estimate the subtotal
+                // Logic mirrors the 'subtotal' useMemo
+                let estimatedSubtotal = 0;
+                
+                // If package pricing is used (set above)
+                if (selectedAssessment.package) {
+                   estimatedSubtotal = Number(selectedAssessment.total_price) || 0; 
+                   // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
+                   // If we can't perfectly replicate it here without code duplication, 
+                   // we can rely on totalAssessmentAmount if it matches total_price.
+                } else {
+                   // Items sum
+                   // We just created 'newItems' above or have existing items
+                   // If we just set items, we can't access 'items' state immediately here
+                   // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
+                   estimatedSubtotal = Number(selectedAssessment.total_price) || totalAssessmentAmount;
+                }
+                
+                const shouldIncludeVat = mode === 'create' ? true : includeVat;
+                const targetTotal = shouldIncludeVat ? estimatedSubtotal * 1.07 : estimatedSubtotal;
+                
+                // Scale factor
+                const scale = (totalAssessmentAmount > 0) ? (targetTotal / totalAssessmentAmount) : 1;
+                
+                let accumulatedAmount = 0;
+                
+                // Sort installments by installment_no before processing
+                const sortedAssessmentInstallments = [...selectedAssessment.installments].sort((a: any, b: any) => a.installment_no - b.installment_no);
+
+                const newInstallments = sortedAssessmentInstallments.map((inst: any, index: number) => {
+                    const originalAmount = Number(inst.amount);
+                    let newAmount = 0;
+                    
+                    if (index === sortedAssessmentInstallments.length - 1) {
+                        // Last installment takes the remainder to ensure exact match
+                        newAmount = targetTotal - accumulatedAmount;
+                    } else {
+                        newAmount = originalAmount * scale;
+                        // Round to 2 decimals usually, but let's keep precision until display? 
+                        // No, form inputs need defined values.
+                        newAmount = Math.round(newAmount * 100) / 100;
+                        accumulatedAmount += newAmount;
+                    }
+
+                    return {
+                        id: inst.id || crypto.randomUUID(),
+                        installment_no: inst.installment_no,
+                        amount: newAmount > 0 ? newAmount : 0,
+                        service_date: inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : '',
+                        notes: inst.note || `งวดที่ ${inst.installment_no}`
+                    };
+                });
+
+                setInstallments(newInstallments);
+            }
         }
     }, [selectedAssessment, mode, categories, fetchedCategories, fetchedPackage, serviceArea]);
 
@@ -811,15 +887,72 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         return subtotal + vatAmount;
     }, [subtotal, vatAmount]);
 
-    // Recalculate installments - REMOVED
-    useEffect(() => {
-        // Logic removed
-        setInstallments([]);
-    }, []);
+    const handleAddInstallment = () => {
+        setInstallments(prev => [
+            ...prev,
+            {
+                id: crypto.randomUUID(),
+                installment_no: prev.length + 1,
+                amount: 0,
+                service_date: '',
+                notes: `งวดที่ ${prev.length + 1}`,
+            }
+        ]);
+    };
+
+    const handleRemoveInstallment = (index: number) => {
+        setInstallments(prev => {
+            const filtered = prev.filter((_, i) => i !== index);
+            return filtered.map((inst, i) => ({
+                ...inst,
+                installment_no: i + 1,
+                notes: inst.notes?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.notes
+            }));
+        });
+    };
 
     const handleInstallmentChange = (index: number, field: string, value: any) => {
-        // Logic removed
+        setInstallments(prev => prev.map((inst, i) => {
+            if (i === index) {
+                return { ...inst, [field]: value };
+            }
+            return inst;
+        }));
     };
+    
+    // Auto-calculate installments when netTotal changes or payment condition changes
+    useEffect(() => {
+        if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && netTotal > 0) {
+            // Default to 2 installments if none exist
+            // Calculate dates: 1st installment on quotation date (or today), 2nd installment next month
+            const date1 = quotationDate ? new Date(quotationDate) : new Date();
+            const date2 = new Date(date1);
+            date2.setMonth(date2.getMonth() + 1);
+
+            setInstallments([
+                { 
+                    id: crypto.randomUUID(), 
+                    installment_no: 1, 
+                    amount: netTotal / 2, 
+                    service_date: date1.toISOString().substring(0, 10), 
+                    notes: 'งวดที่ 1' 
+                },
+                { 
+                    id: crypto.randomUUID(), 
+                    installment_no: 2, 
+                    amount: netTotal / 2, 
+                    service_date: date2.toISOString().substring(0, 10), 
+                    notes: 'งวดที่ 2' 
+                }
+            ]);
+        } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
+             // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
+             // For now, let's just clear if user explicitly switches. 
+             // Ideally we need a flag to know if this is user action vs initial load.
+             // But simpler: if condition is Transfer, we just don't show the table. 
+             // When submitting, we check the condition.
+        }
+    }, [paymentCondition, netTotal]);
 
 
     const handleSubmit = async (e: FormEvent) => {
@@ -855,16 +988,20 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return;
         }
 
-        // Validation: If installments enabled, check dates
-        /*
-        if (isInstallment) {
+        // Validation: If installments enabled, check totals and dates
+        if (paymentCondition === PaymentMethod.INSTALLMENT) {
             const hasInvalidDate = installments.some(inst => !inst.service_date);
             if (hasInvalidDate) {
                 alert('กรุณาระบุวันที่เข้าบริการสำหรับทุกงวด (Installment Dates are required)');
                 return;
             }
+           
+            const totalInstallment = installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+            if (Math.abs(totalInstallment - netTotal) >= 1) {
+                alert(`ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})`);
+                return;
+            }
         }
-        */
 
         // Prepare items: If usePackagePricing is true, add it as the first item
         let finalItems = items.map((item, index) => ({
@@ -922,7 +1059,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             vat_amount: vatAmount,
             include_vat: includeVat,
             items: finalItems,
-            installments: [], // Installments are now handled in Contract
+            installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments : [],
+            is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
         };
 
         await onSubmit(quotationData);
@@ -1342,6 +1480,155 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                {/* 6. Payment Terms */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
+                    <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
+
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <label className={`
+                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                ${paymentCondition === PaymentMethod.TRANSFER
+                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                    : 'border-slate-200 hover:border-slate-300 bg-white'}
+                            `}>
+                                <input
+                                    type="radio"
+                                    name="paymentCondition"
+                                    value={PaymentMethod.TRANSFER}
+                                    checked={paymentCondition === PaymentMethod.TRANSFER}
+                                    onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
+                                    className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
+                                    disabled={isReadOnly}
+                                />
+                                <div className="ml-3">
+                                    <span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span>
+                                    <span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span>
+                                </div>
+                            </label>
+
+                            <label className={`
+                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                ${paymentCondition === PaymentMethod.INSTALLMENT
+                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                    : 'border-slate-200 hover:border-slate-300 bg-white'}
+                            `}>
+                                <input
+                                    type="radio"
+                                    name="paymentCondition"
+                                    value={PaymentMethod.INSTALLMENT}
+                                    checked={paymentCondition === PaymentMethod.INSTALLMENT}
+                                    onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)}
+                                    className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
+                                    disabled={isReadOnly}
+                                />
+                                <div className="ml-3">
+                                    <span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span>
+                                    <span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        {paymentCondition === PaymentMethod.INSTALLMENT && (
+                            <div className="space-y-4 animate-fadeIn">
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
+                                    {!isReadOnly && (
+                                        <button
+                                            type="button"
+                                            onClick={handleAddInstallment}
+                                            className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"
+                                        >
+                                            <PlusIcon className="w-4 h-4" />
+                                            เพิ่มงวด
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="overflow-hidden border border-slate-200 rounded-lg">
+                                    <table className="min-w-full divide-y divide-slate-200">
+                                        <thead className="bg-slate-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
+                                                <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
+                                                <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
+                                                {!isReadOnly && <th className="px-2 py-3 w-10"></th>}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-slate-200">
+                                            {installments.map((inst, idx) => (
+                                                <tr key={inst.id || idx}>
+                                                    <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
+                                                        {inst.installment_no}
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <Input
+                                                            value={inst.notes || ''}
+                                                            onChange={(e) => handleInstallmentChange(idx, 'notes', e.target.value)}
+                                                            placeholder="รายละเอียด..."
+                                                            className="h-9 text-sm"
+                                                            disabled={isReadOnly}
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            value={inst.amount}
+                                                            onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
+                                                            className="h-9 text-right text-sm font-mono"
+                                                            disabled={isReadOnly}
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-2">
+                                                        <Input
+                                                            type="date"
+                                                            value={inst.service_date}
+                                                            onChange={(e) => handleInstallmentChange(idx, 'service_date', e.target.value)}
+                                                            className="h-9 text-sm"
+                                                            disabled={isReadOnly}
+                                                        />
+                                                    </td>
+                                                    {!isReadOnly && (
+                                                        <td className="px-2 py-2 text-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveInstallment(idx)}
+                                                                className="text-slate-400 hover:text-red-500"
+                                                                disabled={installments.length <= 1}
+                                                            >
+                                                                <TrashIcon className="w-4 h-4" />
+                                                            </button>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-slate-50">
+                                            <tr>
+                                                <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
+                                                <td className={`px-4 py-2 text-right text-sm font-bold ${
+                                                    Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) < 1
+                                                        ? 'text-green-600'
+                                                        : 'text-red-600'
+                                                    }`}>
+                                                    {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}
+                                                </td>
+                                                <td colSpan={!isReadOnly ? 2 : 1}></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) >= 1 && (
+                                    <p className="text-xs text-red-500 text-right">
+                                        * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({netTotal.toLocaleString()} บาท)
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
 

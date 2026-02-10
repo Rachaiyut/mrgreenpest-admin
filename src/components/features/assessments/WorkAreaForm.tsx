@@ -83,49 +83,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (!selectedPackage) {
       return (
         <div className="pt-4 border-t space-y-4">
-          {/* Package Recommendation Section */}
-          {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-              <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">📦</span>
-                เลือกแพ็กเกจที่เหมาะสม (แนะนำ)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {availablePackages.map(pkg => {
-                  const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
-                  const fit = conditions.find(c => c.area_range >= area.area_size!);
-
-                  if (!fit) return null;
-
-                  const hasTermites = (area.category_services || []).some((cat) =>
-                    categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
-                  );
-                  const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
-
-                  return (
-                    <button
-                      key={pkg.id}
-                      type="button"
-                      onClick={() => onSelectPackage?.(pkg.id)}
-                      className="group relative flex flex-col items-start p-3 rounded-lg border-2 border-slate-200 hover:border-primary hover:bg-primary/5 transition-all bg-white text-left w-full"
-                    >
-                      <div className="font-semibold text-slate-800 group-hover:text-primary">{pkg.name}</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
-                      </div>
-                      <div className="mt-2 text-lg font-bold text-slate-700 group-hover:text-primary">
-                        ฿{price.toLocaleString()}
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-1">
-                        สำหรับพื้นที่ไม่เกิน {fit.area_range} ตร.ม.
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
+          {/* Package Recommendation Section Removed from here */}
           <FormField label="ราคาบริการหลัก (กำหนดเอง)" htmlFor={`manual-price-${index}`}>
             <Input
               id={`manual-price-${index}`}
@@ -159,42 +117,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             แพ็กเกจที่เลือก
           </h4>
 
-          {/* Show other package options as switchable tabs/cards */}
-          {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-              {availablePackages.map(pkg => {
-                const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
-                const fit = conditions.find(c => c.area_range >= area.area_size!);
-                if (!fit) return null;
-
-                const hasTermites = (area.category_services || []).some((cat) =>
-                  categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
-                );
-                const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
-                const isSelected = selectedPackage.id === pkg.id;
-
-                return (
-                  <button
-                    key={pkg.id}
-                    type="button"
-                    onClick={() => !isSelected && onSelectPackage?.(pkg.id)}
-                    className={`relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-slate-200 hover:border-slate-300 bg-white opacity-70 hover:opacity-100'
-                      }`}
-                  >
-                    <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'}`}>{pkg.name}</div>
-                    <div className="mt-1 text-base font-bold text-slate-700">
-                      ฿{price.toLocaleString()}
-                    </div>
-                    {isSelected && (
-                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* Package Selection Cards Removed from here */}
 
           <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
             <div className="flex justify-between items-start">
@@ -573,6 +496,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     setMeasurementType(type);
   };
 
+  const displayIndex = useMemo(() => {
+    const idx = typeof index === 'number' ? index : parseInt(index as any, 10);
+    return isNaN(idx) ? index : idx + 1;
+  }, [index]);
+
   return (
     <>
       <div className="border border-slate-300 rounded-lg bg-slate-50 relative transition-all duration-200 shadow-sm hover:shadow-md mb-4">
@@ -587,15 +515,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             </div>
             <div>
               <h3 className="font-semibold text-slate-800 text-lg flex items-center gap-2">
-                {area.area_name || `พื้นที่ #${index + 1}`}
-                {area.total_price && area.total_price > 0 && isCollapsed && (
+                พื้นที่ {displayIndex}
+                {(area.total_price || 0) > 0 && isCollapsed && (
                   <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    ฿{area.total_price.toLocaleString()}
+                    ฿{area.total_price?.toLocaleString()}
                   </span>
                 )}
               </h3>
               {isCollapsed && (
                 <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                  <span>{area.area_name || `พื้นที่ #${displayIndex}`}</span>
                   <span>{area.area_size ? `${area.area_size} ตร.ม.` : 'ไม่ระบุขนาด'}</span>
                   {area.building_type && <span>• {area.building_type}</span>}
                   {selectedPackage && <span>• {selectedPackage.name}</span>}
@@ -631,7 +560,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             <div className="mt-4 space-y-4">
 
               <FormField
-                label={`ชื่อพื้นที่ #${index + 1}`}
+                label={`ชื่อพื้นที่ #${displayIndex}`}
                 htmlFor={`areaName-${index}`}
               >
                 <Input
@@ -737,37 +666,67 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       พื้นที่ (ตร.ม.) <span className="text-red-500">*</span>
                     </label>
 
-                    {/* Always show input for custom area size */}
-                    <div className="relative mb-3">
-                      <Input
-                        name="area_size"
-                        type="number"
-                        value={area.area_size || ''}
-                        onChange={handleFieldChange}
-                        placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
-                        required
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">ตร.ม.</span>
-                      </div>
-                    </div>
 
-                    {/* Show current package price if calculated */}
-                    {selectedPackage && area.area_size && area.area_size > 0 && (
-                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
-                        <span className="text-sm text-blue-800 font-medium">
-                          ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
-                        </span>
-                        <span className="text-lg text-blue-900 font-bold">
-                          ฿{(area.base_service_price || 0).toLocaleString()}
-                        </span>
+
+                    {/* Package Selection Cards */}
+                    {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
+                      <div className="mb-4 animate-fadeIn">
+                        <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                          <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">📦</span>
+                          เลือกแพ็กเกจ
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {availablePackages.map(pkg => {
+                            const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                            const fit = area.area_size ? conditions.find(c => c.area_range >= area.area_size!) : null;
+                            
+                            const hasTermites = (area.category_services || []).some((cat) =>
+                              categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+                            );
+                            const price = fit ? (hasTermites ? fit.price_with_termite : fit.price_without_termite) : null;
+                            const isSelected = selectedPackage?.id === pkg.id;
+
+                            return (
+                              <button
+                                key={pkg.id}
+                                type="button"
+                                onClick={() => onSelectPackage?.(pkg.id)}
+                                className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
+                                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                  : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
+                                  }`}
+                              >
+                                <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>{pkg.name}</div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
+                                </div>
+                                {price !== null ? (
+                                    <div className={`mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>
+                                    ฿{price.toLocaleString()}
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 text-xs text-slate-400">
+                                        ระบุขนาดเพื่อคำนวณราคา
+                                    </div>
+                                )}
+                                <div className="text-[10px] text-slate-400 mt-1">
+                                  {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ตร.ม.` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}
+                                </div>
+                                {isSelected && (
+                                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
 
+                    {/* Standard Size Options */}
                     {selectedPackage && sortedConditions.length > 0 && (
-                      <div className="mt-3">
+                      <div className="mb-4">
                         <p className="text-xs text-slate-500 mb-2">
-                          หรือเลือกจากขนาดมาตรฐาน:
+                          เลือกจากขนาดมาตรฐาน:
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           {sortedConditions.map((condition, idx) => (
@@ -794,6 +753,41 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                             </label>
                           ))}
                         </div>
+                      </div>
+                    )}
+
+
+
+
+
+
+                    {area.area_size && area.area_size > 0 && (
+                      <p className="text-xs text-slate-500 mb-2">หรือระบุขนาดเอง:</p>
+                    )}
+                    {/* Always show input for custom area size */}
+                    <div className="relative mb-3">
+                      <Input
+                        name="area_size"
+                        type="number"
+                        value={area.area_size || ''}
+                        onChange={handleFieldChange}
+                        placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
+                        required
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">ตร.ม.</span>
+                      </div>
+                    </div>
+
+                    {/* Show current package price if calculated */}
+                    {selectedPackage && area.area_size && area.area_size > 0 && (
+                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
+                        <span className="text-sm text-blue-800 font-medium">
+                          ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
+                        </span>
+                        <span className="text-lg text-blue-900 font-bold">
+                          ฿{(area.base_service_price || 0).toLocaleString()}
+                        </span>
                       </div>
                     )}
                   </div>

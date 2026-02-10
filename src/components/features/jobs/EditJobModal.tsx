@@ -219,8 +219,19 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               assessment_areas: enrichedAreas
             });
             
+            // Fix: Populate installments even if payment_condition is null, infer from installments length
+            let loadedPaymentCondition = rawAssessment.payment_condition || PaymentMethod.TRANSFER;
+            if (rawAssessment.installments && rawAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
+               loadedPaymentCondition = PaymentMethod.INSTALLMENT;
+            }
+            // We need to update assessment state with this inferred condition for the UI to show correct radio button
+            setAssessment(prev => prev ? { ...prev, payment_condition: loadedPaymentCondition } : null);
+
             if (rawAssessment.installments && rawAssessment.installments.length > 0) {
-               setInstallments(rawAssessment.installments.map((i: any) => ({ ...i })));
+               setInstallments(rawAssessment.installments.map((i: any) => ({ 
+                   ...i,
+                   due_date: i.due_date ? new Date(i.due_date).toISOString().substring(0, 10) : undefined
+               })));
             } else {
                setInstallments([]);
             }
@@ -461,6 +472,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     });
   };
 
+  const handleInstallmentDateChange = (index: number, date: string) => {
+    setInstallments(prev => {
+      const newInst = [...prev];
+      newInst[index] = { ...newInst[index], due_date: date };
+      return newInst;
+    });
+  };
+
   // Auto-calculate installments Effect
   useEffect(() => {
     if (!assessment) return;
@@ -469,33 +488,43 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     const installmentCount = (assessment as any).payment_installment_count;
     const total = (assessment as any).total_price || 0;
 
-    if (paymentCondition === PaymentMethod.INSTALLMENT && installmentCount && installmentCount > 0) {
-      const currentSum = installments.reduce((s, i) => s + Number(i.amount || 0), 0);
-      const isSumMismatch = Math.abs(currentSum - total) > 1; // Tolerance 1 baht
-      const isCountMismatch = installments.length !== installmentCount;
+    // Logic: If installments exist, keep them. If not, generate if count > 0.
+    // If installments exist but total mismatch, we MIGHT want to adjust, but be careful not to overwrite user edits if in edit mode.
+    // For now, let's trust the loaded installments if they exist.
+    
+    if (paymentCondition === PaymentMethod.INSTALLMENT) {
+        if (installments.length === 0 && installmentCount > 0) {
+             // Generate new if none exist
+             const amountPerInst = Math.floor((total / installmentCount) * 100) / 100;
+             const lastAmount = total - (amountPerInst * (installmentCount - 1));
+             
+             // Auto-date logic (Start date + 1 month increment)
+             const startDate = assessment.appointment_date ? new Date(assessment.appointment_date) : new Date();
 
-      if (isSumMismatch || isCountMismatch) {
-        const amountPerInst = Math.floor((total / installmentCount) * 100) / 100;
-        const lastAmount = total - (amountPerInst * (installmentCount - 1));
+             const newInst: Partial<AssessmentInstallment>[] = [];
+             for (let i = 0; i < installmentCount; i++) {
+                const dueDate = new Date(startDate);
+                dueDate.setMonth(dueDate.getMonth() + i);
 
-        setInstallments(prev => {
-          const newInst: Partial<AssessmentInstallment>[] = [];
-          for (let i = 0; i < installmentCount; i++) {
-            newInst.push({
-              installment_no: i + 1,
-              amount: i === installmentCount - 1 ? lastAmount : amountPerInst,
-              note: prev[i]?.note || '',
-            });
-          }
-          return newInst;
-        });
-      }
+                newInst.push({
+                  id: crypto.randomUUID(),
+                  installment_no: i + 1,
+                  amount: i === installmentCount - 1 ? lastAmount : amountPerInst,
+                  note: `งวดที่ ${i + 1}`,
+                  due_date: dueDate.toISOString().substring(0, 10)
+                });
+             }
+             setInstallments(newInst);
+        } else if (installments.length > 0) {
+             // If exists, ensure they are sorted
+             setInstallments(prev => [...prev].sort((a: any, b: any) => a.installment_no - b.installment_no));
+        }
     } else {
       if (installments.length > 0 && paymentCondition !== PaymentMethod.INSTALLMENT) {
         setInstallments([]);
       }
     }
-  }, [assessment?.total_price]);
+  }, [assessment?.payment_condition, assessment?.payment_installment_count, assessment?.total_price]);
 
   const handleChange = (
     e: ChangeEvent<
@@ -1118,16 +1147,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                   <h3 className="text-lg font-bold text-slate-800">รายการพื้นที่บริการ</h3>
                   <p className="text-sm text-slate-500">จัดการพื้นที่และสินค้าที่ใช้ในแต่ละจุด</p>
                 </div>
-                <div className="flex gap-2">
-                   <button
-                    type="button"
-                    onClick={handleAddArea}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 font-medium shadow-sm transition-all"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    เพิ่มพื้นที่
-                  </button>
-                </div>
               </div>
 
               <div className="space-y-4">
@@ -1154,6 +1173,17 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     originalArea={originalWorkAreas[index]}
                   />
                 ))}
+              </div>
+
+              <div className="flex justify-center mt-6">
+                 <button
+                  type="button"
+                  onClick={handleAddArea}
+                  className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  เพิ่มพื้นที่ให้บริการ
+                </button>
               </div>
 
               {/* Payment Condition Section moved here as it relates to the service agreement */}
@@ -1228,6 +1258,17 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                                           handleInstallmentAmountChange(idx, val);
                                         }}
                                         step="0.01"
+                                        className="bg-white"
+                                      />
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="block text-xs text-slate-400 mb-1">วันครบกำหนด</label>
+                                      <Input
+                                        type="date"
+                                        value={inst.due_date ? inst.due_date.substring(0, 10) : ''}
+                                        onChange={(e) => {
+                                          handleInstallmentDateChange(idx, e.target.value);
+                                        }}
                                         className="bg-white"
                                       />
                                     </div>

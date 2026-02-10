@@ -19,6 +19,7 @@ import {
   UserGroupIcon,
   EyeIcon,
   LoadingIcon,
+  CreditCardIcon,
 } from '../../../assets/icons/Icons';
 import { PaymentMethod, ServiceSystem } from '@/src/types';
 import { AssessmentApi } from '@/src/api';
@@ -223,7 +224,15 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
               <DetailItem label="วันที่นัดหมาย" value={formatThaiDate(assessment.appointment_date?.toString())} />
               <DetailItem 
                 label="เงื่อนไขการชำระเงิน" 
-                value={assessment.payment_condition === PaymentMethod.CASH ? 'เงินสด' : 'โอนเงิน'} 
+                value={
+                  assessment.payment_condition === PaymentMethod.INSTALLMENT 
+                    ? 'แบ่งชำระ (งวดงาน)' 
+                    : assessment.payment_condition === PaymentMethod.TRANSFER 
+                      ? 'โอนเงิน (เต็มจำนวน)' 
+                      : assessment.payment_condition === PaymentMethod.CASH 
+                        ? 'เงินสด' 
+                        : assessment.payment_condition || '-'
+                } 
               />
               <DetailItem label="ผู้สร้าง" value={assessment.created_by} />
             </dl>
@@ -269,6 +278,43 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
             <DetailItem label="ลำดับที่" value={assessment.sequence} />
           </dl>
         </div>
+
+        {/* Installment Info */}
+        {assessment.payment_condition === PaymentMethod.INSTALLMENT && assessment.installments && assessment.installments.length > 0 && (
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <SectionHeader icon={<CreditCardIcon />} title="รายละเอียดงวดชำระ (Installments)" />
+            <div className="overflow-hidden border border-slate-200 rounded-lg">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {assessment.installments.map((inst, idx) => (
+                    <tr key={inst.id || idx}>
+                      <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
+                        {inst.installment_no}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-slate-700">
+                        {inst.note || '-'}
+                      </td>
+                      <td className="px-4 py-2 text-right text-sm font-mono text-slate-700">
+                        {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-2 text-center text-sm text-slate-700">
+                        {inst.due_date ? formatThaiDate(inst.due_date.toString()) : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Work Areas */}
         <div>
