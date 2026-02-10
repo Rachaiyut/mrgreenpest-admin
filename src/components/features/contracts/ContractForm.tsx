@@ -14,7 +14,8 @@ import {
     HomeIcon, 
     MapIcon, 
     CurrencyDollarIcon,
-    MapPinIcon
+    MapPinIcon,
+    ClipboardDocumentListIcon
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
 import { CategoryApi } from '../../../api/category';
@@ -61,6 +62,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     // References
     const [selectedQuotationId, setSelectedQuotationId] = useState(initialValues?.quotation_id || '');
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
+    const [fullQuotation, setFullQuotation] = useState<any>(null);
 
     // Service info
     const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
@@ -255,41 +257,42 @@ export const ContractForm: FC<ContractFormProps> = ({
             if (selectedQuotationId) {
                 try {
                     const response = await QuotationApi.getById(selectedQuotationId);
-                    const fullQuotation = (response as any).data || response;
+                    const fullQuotationData = (response as any).data || response;
+                    setFullQuotation(fullQuotationData);
                     
-                    if (fullQuotation) {
+                    if (fullQuotationData) {
                         // Only set if not already set or if explicitly changing quotation
                         if (mode === 'create' || !selectedCustomerId) {
-                            setSelectedCustomerId(fullQuotation.customer_id);
+                            setSelectedCustomerId(fullQuotationData.customer_id);
                         }
                         
-                        setTotalAmount(Number(fullQuotation.total) || 0);
-                        if (fullQuotation.service_location) setServiceLocation(fullQuotation.service_location);
-                        if (fullQuotation.building_type) setBuildingType(fullQuotation.building_type);
-                        if (fullQuotation.service_type) {
-                            setServiceType(fullQuotation.service_type);
-                            setSelectedServiceTypes(fullQuotation.service_type.split(',').map((s: string) => s.trim()).filter(Boolean));
+                        setTotalAmount(Number(fullQuotationData.total) || 0);
+                        if (fullQuotationData.service_location) setServiceLocation(fullQuotationData.service_location);
+                        if (fullQuotationData.building_type) setBuildingType(fullQuotationData.building_type);
+                        if (fullQuotationData.service_type) {
+                            setServiceType(fullQuotationData.service_type);
+                            setSelectedServiceTypes(fullQuotationData.service_type.split(',').map((s: string) => s.trim()).filter(Boolean));
                         }
                         
-                        if (fullQuotation.system_used) {
-                            setSystemUsed(fullQuotation.system_used);
-                        } else if (fullQuotation.service_type) {
-                             if (fullQuotation.service_type.includes('เหยื่อ') || fullQuotation.service_type.includes('Bait')) {
+                        if (fullQuotationData.system_used) {
+                            setSystemUsed(fullQuotationData.system_used);
+                        } else if (fullQuotationData.service_type) {
+                             if (fullQuotationData.service_type.includes('เหยื่อ') || fullQuotationData.service_type.includes('Bait')) {
                                 setSystemUsed('ระบบเหยื่อ');
-                            } else if (fullQuotation.service_type.includes('เคมี') || fullQuotation.service_type.includes('Chemical')) {
+                            } else if (fullQuotationData.service_type.includes('เคมี') || fullQuotationData.service_type.includes('Chemical')) {
                                 setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
-                            } else if (fullQuotation.service_type.includes('ฉีดพ่น') || fullQuotation.service_type.includes('Spray')) {
+                            } else if (fullQuotationData.service_type.includes('ฉีดพ่น') || fullQuotationData.service_type.includes('Spray')) {
                                 setSystemUsed('ระบบฉีดพ่น');
                             }
                         }
 
-                        if (fullQuotation.contract_duration) setContractDuration(fullQuotation.contract_duration);
-                        if (fullQuotation.service_count) setServiceCount(parseInt(String(fullQuotation.service_count)) || 7);
-                        if (fullQuotation.notes) setNotes(fullQuotation.notes);
+                        if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
+                        if (fullQuotationData.service_count) setServiceCount(parseInt(String(fullQuotationData.service_count)) || 7);
+                        if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
 
                         // Auto-fill installments from quotation if available
-                        if (fullQuotation.installments && fullQuotation.installments.length > 0) {
-                             const backendInstallments = fullQuotation.installments as any[];
+                        if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
+                             const backendInstallments = fullQuotationData.installments as any[];
                              
                              // Parsing Duration
                              let durationMonths = 12;
@@ -300,12 +303,12 @@ export const ContractForm: FC<ContractFormProps> = ({
                              }
 
                              let creditTermDays = 30;
-                             if (fullQuotation.payment_terms) {
-                                 const match = fullQuotation.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
+                             if (fullQuotationData.payment_terms) {
+                                 const match = fullQuotationData.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
                                  if (match) creditTermDays = parseInt(match[1]);
                              }
 
-                             const totalVisits = Number(fullQuotation.service_count) || 1;
+                             const totalVisits = Number(fullQuotationData.service_count) || 1;
                              const totalInst = backendInstallments.length;
                              const visitsPerInst = Math.ceil(totalVisits / totalInst);
                              const startDateObj = startDate ? new Date(startDate) : new Date();
@@ -334,7 +337,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                  }
 
                                  const amount = Number(inst.amount);
-                                 const total = Number(fullQuotation.total) || 0;
+                                 const total = Number(fullQuotationData.total) || 0;
                                  const percentage = total > 0 ? Number(((amount / total) * 100).toFixed(2)) : 0;
 
                                  return {
@@ -357,7 +360,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                  term: 1,
                                  description: 'งวดที่ 1 - ชำระเต็มจำนวน (Full Payment)',
                                  percentage: 100,
-                                 amount: Number(fullQuotation.total) || 0,
+                                 amount: Number(fullQuotationData.total) || 0,
                                  due_date: '',
                                  status: 'PENDING' as any
                              }]);
@@ -366,6 +369,8 @@ export const ContractForm: FC<ContractFormProps> = ({
                 } catch (error) {
                     console.error("Failed to fetch quotation details:", error);
                 }
+            } else {
+                setFullQuotation(null);
             }
         };
         fetchQuotationDetails();
@@ -603,6 +608,160 @@ export const ContractForm: FC<ContractFormProps> = ({
                         </div>
                     </div>
                 </div>
+
+                {(() => {
+                    const areasToDisplay = fullQuotation?.quotation_areas?.length > 0
+                        ? fullQuotation.quotation_areas
+                        : fullQuotation?.assessment?.assessment_areas;
+
+                    if (!areasToDisplay || areasToDisplay.length === 0) return null;
+
+                    return (
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+                            <SectionHeader icon={ClipboardDocumentListIcon} title="รายละเอียดพื้นที่ (Area Breakdown)" />
+
+                            <div className="space-y-4">
+                                {areasToDisplay.map((area: any, index: number) => {
+                                    const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
+                                    const basePrice = (Number(area.total_price) || 0) - itemsTotal;
+                                    return (
+                                        <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                                                    <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
+                                                </div>
+                                                <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
+                                                    ฿{Number(area.total_price || 0).toLocaleString()}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
+                                                        <div className="font-medium text-slate-800">{area.building_type || '-'}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
+                                                        <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
+                                                        <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                                            {area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
+                                                        <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
+                                                    </div>
+                                                </div>
+
+
+                                                {/* Package Information */}
+                                                {area.packagePriceRelation && (
+                                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                            <div className="text-sm font-semibold text-blue-900">แพ็กเกจที่เลือก</div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">ชื่อแพ็กเกจ</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.name || area.packagePriceRelation.name || '-'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">จำนวนครั้งบริการ</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">ระยะเวลาสัญญา</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.contract_period
+                                                                        ? `${area.packagePriceRelation.package.contract_period >= 12
+                                                                            ? (area.packagePriceRelation.package.contract_period / 12) + ' ปี'
+                                                                            : area.packagePriceRelation.package.contract_period + ' เดือน'}`
+                                                                        : '-'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="mb-4">
+                                                    <label className="block text-xs text-slate-500 mb-2">
+                                                        ประเภทบริการ
+                                                    </label>
+                                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                                            {serviceTypeOptions.map((option) => {
+                                                                const isChecked = area.category_services?.some((cat: any) => {
+                                                                    const matchId = (cat.category_id && cat.category_id === option.id) ||
+                                                                        (cat.category?.id && cat.category.id === option.id);
+                                                                    const matchName = (cat.name && cat.name === option.value) ||
+                                                                        (cat.category?.name && cat.category.name === option.value);
+                                                                    return matchId || matchName;
+                                                                });
+
+                                                                return (
+                                                                    <label key={option.id} className="flex items-center gap-2 cursor-default">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isChecked}
+                                                                            disabled={true}
+                                                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500 disabled:opacity-100 bg-white"
+                                                                            readOnly
+                                                                        />
+                                                                        <span className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
+                                                                            {option.label}
+                                                                        </span>
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {area.items && area.items.length > 0 && (
+                                                    <div className="mt-4 border rounded-lg overflow-hidden">
+                                                        <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
+                                                            สินค้า/บริการเพิ่มเติม
+                                                        </div>
+                                                        <table className="w-full text-sm text-left">
+                                                            <thead className="text-xs text-slate-500 bg-white border-b">
+                                                                <tr>
+                                                                    <th className="px-4 py-2 font-medium">รายการ</th>
+                                                                    <th className="px-4 py-2 font-medium text-center w-20">จำนวน</th>
+                                                                    <th className="px-4 py-2 font-medium text-right w-32">ราคา/หน่วย</th>
+                                                                    <th className="px-4 py-2 font-medium text-right w-32">รวม</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-100">
+                                                                {area.items.map((item: any, i: number) => (
+                                                                    <tr key={i} className="hover:bg-slate-50">
+                                                                        <td className="px-4 py-2 text-slate-800">{item.product_name || item.description}</td>
+                                                                        <td className="px-4 py-2 text-center text-slate-600">{item.quantity}</td>
+                                                                        <td className="px-4 py-2 text-right text-slate-600">{Number(item.product_price || item.unit_price).toLocaleString()}</td>
+                                                                        <td className="px-4 py-2 text-right font-medium text-slate-800">{Number(item.total_price || item.amount).toLocaleString()}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
 
                 {/* Service Details - Full Width */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">

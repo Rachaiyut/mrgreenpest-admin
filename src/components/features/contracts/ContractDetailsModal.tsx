@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
-import { Contract, Customer, Quotation } from '../../../types';
+import { Contract, Customer, Quotation, CategoryType } from '../../../types';
+import { QuotationApi } from '../../../api/quotation';
+import { CategoryApi } from '../../../api/category';
 import {
   UserIcon,
   MapPinIcon,
@@ -10,6 +12,7 @@ import {
   ClockIcon,
   CalendarDaysIcon,
   PhoneIcon,
+  ClipboardDocumentListIcon
 } from '../../../assets/icons/Icons';
 
 interface ContractDetailsModalProps {
@@ -30,6 +33,30 @@ export const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({
 	const quotation = quotations.find((q) => q.id === contract.quotation_id);
 
 	const installments = contract.installments || [];
+    
+    const [fullQuotation, setFullQuotation] = useState<any>(null);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (contract.quotation_id) {
+            QuotationApi.getById(contract.quotation_id).then(res => {
+                setFullQuotation((res as any).data || res);
+            }).catch(console.error);
+        }
+        CategoryApi.getCategories({ type: CategoryType.SERVICE }).then(res => {
+             if (res && res.data) setCategories(res.data);
+        }).catch(console.error);
+    }, [contract.quotation_id]);
+
+    const serviceTypeOptions = useMemo(() => {
+        return categories
+            .filter((c: any) => c.type === 'SERVICE')
+            .map((c: any) => ({
+                value: c.name,
+                label: c.name,
+                id: c.id
+            }));
+    }, [categories]);
 
 	return (
 		<Modal
@@ -128,6 +155,162 @@ export const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({
 							)}
 						</div>
 					</div>
+
+                    {/* Area Breakdown */}
+                    {(() => {
+                        const areasToDisplay = fullQuotation?.quotation_areas?.length > 0
+                            ? fullQuotation.quotation_areas
+                            : fullQuotation?.assessment?.assessment_areas;
+
+                        if (!areasToDisplay || areasToDisplay.length === 0) return null;
+
+                        return (
+                            <div className="mb-8 overflow-hidden rounded-lg border border-slate-200">
+                                <div className="bg-slate-50 px-6 py-3 border-b border-slate-200 flex items-center gap-2">
+                                    <ClipboardDocumentListIcon className="w-5 h-5 text-slate-600" />
+                                    <h3 className="text-sm font-semibold text-slate-700">รายละเอียดพื้นที่ (Area Breakdown)</h3>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    {areasToDisplay.map((area: any, index: number) => {
+                                        const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
+                                        const basePrice = (Number(area.total_price) || 0) - itemsTotal;
+                                        return (
+                                            <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+                                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                                                        <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
+                                                    </div>
+                                                    <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
+                                                        ฿{Number(area.total_price || 0).toLocaleString()}
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-4">
+                                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                        <div>
+                                                            <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
+                                                            <div className="font-medium text-slate-800">{area.building_type || '-'}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
+                                                            <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
+                                                            <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                                                {area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
+                                                            <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Package Information */}
+                                                    {area.packagePriceRelation && (
+                                                        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                                <div className="text-sm font-semibold text-blue-900">แพ็กเกจที่เลือก</div>
+                                                            </div>
+                                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                                <div>
+                                                                    <div className="text-xs text-blue-600 mb-1">ชื่อแพ็กเกจ</div>
+                                                                    <div className="font-medium text-blue-900">
+                                                                        {area.packagePriceRelation.package?.name || area.packagePriceRelation.name || '-'}
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-blue-600 mb-1">จำนวนครั้งบริการ</div>
+                                                                    <div className="font-medium text-blue-900">
+                                                                        {area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง
+                                                                    </div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="text-xs text-blue-600 mb-1">ระยะเวลาสัญญา</div>
+                                                                    <div className="font-medium text-blue-900">
+                                                                        {area.packagePriceRelation.package?.contract_period
+                                                                            ? `${area.packagePriceRelation.package.contract_period >= 12
+                                                                                ? (area.packagePriceRelation.package.contract_period / 12) + ' ปี'
+                                                                                : area.packagePriceRelation.package.contract_period + ' เดือน'}`
+                                                                            : '-'}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    <div className="mb-4">
+                                                        <label className="block text-xs text-slate-500 mb-2">
+                                                            ประเภทบริการ
+                                                        </label>
+                                                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                                                {serviceTypeOptions.map((option) => {
+                                                                    const isChecked = area.category_services?.some((cat: any) => {
+                                                                        const matchId = (cat.category_id && cat.category_id === option.id) ||
+                                                                            (cat.category?.id && cat.category.id === option.id);
+                                                                        const matchName = (cat.name && cat.name === option.value) ||
+                                                                            (cat.category?.name && cat.category.name === option.value);
+                                                                        return matchId || matchName;
+                                                                    });
+
+                                                                    return (
+                                                                        <label key={option.id} className="flex items-center gap-2 cursor-default">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={isChecked}
+                                                                                disabled={true}
+                                                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500 disabled:opacity-100 bg-white"
+                                                                                readOnly
+                                                                            />
+                                                                            <span className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
+                                                                                {option.label}
+                                                                            </span>
+                                                                        </label>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {area.items && area.items.length > 0 && (
+                                                        <div className="mt-4 border rounded-lg overflow-hidden">
+                                                            <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
+                                                                สินค้า/บริการเพิ่มเติม
+                                                            </div>
+                                                            <table className="w-full text-sm text-left">
+                                                                <thead className="text-xs text-slate-500 bg-white border-b">
+                                                                    <tr>
+                                                                        <th className="px-4 py-2 font-medium">รายการ</th>
+                                                                        <th className="px-4 py-2 font-medium text-center w-20">จำนวน</th>
+                                                                        <th className="px-4 py-2 font-medium text-right w-32">ราคา/หน่วย</th>
+                                                                        <th className="px-4 py-2 font-medium text-right w-32">รวม</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-100">
+                                                                    {area.items.map((item: any, i: number) => (
+                                                                        <tr key={i} className="hover:bg-slate-50">
+                                                                            <td className="px-4 py-2 text-slate-800">{item.product_name || item.description}</td>
+                                                                            <td className="px-4 py-2 text-center text-slate-600">{item.quantity}</td>
+                                                                            <td className="px-4 py-2 text-right text-slate-600">{Number(item.product_price || item.unit_price).toLocaleString()}</td>
+                                                                            <td className="px-4 py-2 text-right font-medium text-slate-800">{Number(item.total_price || item.amount).toLocaleString()}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
 					{/* Items Table (From Quotation) */}
 					{quotation && quotation.items && quotation.items.length > 0 && (
