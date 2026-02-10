@@ -257,7 +257,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         .catch((err: any) => {
           console.error('Error fetching products:', err);
         });
-      CategoryApi.getCategories({ type: CategoryType.SERVICE, page: 1, limit: 100 })
+      CategoryApi.getCategories({ type: CategoryType.SERVICE, page: 1, limit: 10 })
         .then((res: any) => {
           setCategories(res.data || []);
         })
@@ -270,7 +270,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setIsLoadingPackages(true);
-      PackageApi.getPackages({ limit: 100 })
+      PackageApi.getPackages({ limit: 10 })
         .then((res) => {
           setPackages(res.data || []);
         })
@@ -495,7 +495,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         setInstallments([]);
       }
     }
-  }, [assessment?.payment_condition, assessment?.payment_installment_count, assessment?.total_price]);
+  }, [assessment?.total_price]);
 
   const handleChange = (
     e: ChangeEvent<
@@ -577,11 +577,12 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
             return {
               package_price_id: area.package_price_id,
+              package_price: area.package_price !== undefined && area.package_price !== null ? Number(area.package_price) : undefined, // Include package price in payload
               area_name: area.area_name,
               building_type: area.building_type,
               service_system: area.service_system,
               area_size: area.area_size,
-              base_service_price: area.base_service_price,
+              // base_service_price: area.base_service_price, // Removed as requested
               total_price: area.total_price,
               category_services: (area.category_services || []).map((c: any) => ({
                 category_id: c.category_id
@@ -801,6 +802,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             return {
               ...area,
               base_service_price: basePrice,
+              package_price: basePrice, // Set package price snapshot
               total_price: basePrice + itemsTotal
             };
           }) as any;

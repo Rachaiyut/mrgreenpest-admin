@@ -50,7 +50,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
   const fetchPackages = async () => {
     setIsLoadingPackages(true);
     try {
-      const res = await PackageApi.getPackages({ limit: 100 });
+      const res = await PackageApi.getPackages({ limit: 10 });
       const packagesData = (res as any).data || res || [];
       setPackages(Array.isArray(packagesData) ? packagesData : []);
     } catch (error) {
@@ -255,6 +255,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
           return {
             ...area,
             base_service_price: priceToUse,
+            package_price: priceToUse, // Set package price snapshot
             package_price_id: bestFit.id,
             total_price: priceToUse + itemsTotal,
           };
@@ -270,10 +271,14 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     if (!assessment) return;
 
     const sanitizedWorkAreas = workAreas.map((area) => {
-      const newArea = { ...area };
+      const newArea: any = { ...area };
       if (newArea.id && newArea.id.startsWith('area-')) {
         delete newArea.id;
       }
+      if (newArea.package_price !== undefined && newArea.package_price !== null) {
+        newArea.package_price = Number(newArea.package_price);
+      }
+      delete newArea.base_service_price;
       return newArea;
     });
 

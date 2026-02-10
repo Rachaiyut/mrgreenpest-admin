@@ -53,7 +53,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const hasUserMadeChanges = useRef(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
@@ -94,7 +94,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 {availablePackages.map(pkg => {
                   const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
                   const fit = conditions.find(c => c.area_range >= area.area_size!);
-                  
+
                   if (!fit) return null;
 
                   const hasTermites = (area.category_services || []).some((cat) =>
@@ -111,7 +111,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     >
                       <div className="font-semibold text-slate-800 group-hover:text-primary">{pkg.name}</div>
                       <div className="text-xs text-slate-500 mt-1">
-                         {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
+                        {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
                       </div>
                       <div className="mt-2 text-lg font-bold text-slate-700 group-hover:text-primary">
                         ฿{price.toLocaleString()}
@@ -158,43 +158,42 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           <h4 className="text-base font-semibold text-slate-700 mb-3">
             แพ็กเกจที่เลือก
           </h4>
-          
+
           {/* Show other package options as switchable tabs/cards */}
           {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                {availablePackages.map(pkg => {
-                  const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
-                  const fit = conditions.find(c => c.area_range >= area.area_size!);
-                  if (!fit) return null;
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              {availablePackages.map(pkg => {
+                const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                const fit = conditions.find(c => c.area_range >= area.area_size!);
+                if (!fit) return null;
 
-                  const hasTermites = (area.category_services || []).some((cat) =>
-                    categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
-                  );
-                  const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
-                  const isSelected = selectedPackage.id === pkg.id;
+                const hasTermites = (area.category_services || []).some((cat) =>
+                  categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
+                );
+                const price = hasTermites ? fit.price_with_termite : fit.price_without_termite;
+                const isSelected = selectedPackage.id === pkg.id;
 
-                  return (
-                    <button
-                      key={pkg.id}
-                      type="button"
-                      onClick={() => !isSelected && onSelectPackage?.(pkg.id)}
-                      className={`relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${
-                        isSelected 
-                          ? 'border-primary bg-primary/5 ring-1 ring-primary' 
-                          : 'border-slate-200 hover:border-slate-300 bg-white opacity-70 hover:opacity-100'
+                return (
+                  <button
+                    key={pkg.id}
+                    type="button"
+                    onClick={() => !isSelected && onSelectPackage?.(pkg.id)}
+                    className={`relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                        : 'border-slate-200 hover:border-slate-300 bg-white opacity-70 hover:opacity-100'
                       }`}
-                    >
-                      <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'}`}>{pkg.name}</div>
-                      <div className="mt-1 text-base font-bold text-slate-700">
-                        ฿{price.toLocaleString()}
-                      </div>
-                      {isSelected && (
-                         <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                      )}
-                    </button>
-                  );
-                })}
-             </div>
+                  >
+                    <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'}`}>{pkg.name}</div>
+                    <div className="mt-1 text-base font-bold text-slate-700">
+                      ฿{price.toLocaleString()}
+                    </div>
+                    {isSelected && (
+                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
@@ -408,14 +407,25 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             ...area,
             base_service_price: priceToUse,
             package_price_id: condition.id,
+            package_price: priceToUse, // Save the calculated package price
+            total_price: priceToUse + (area.items || []).reduce(
+              (sum, item) =>
+                sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+              0
+            ),
           });
         }
       } else {
-        if (area.base_service_price !== 0 || area.package_price_id) {
+        if (area.base_service_price !== 0 || area.package_price_id || area.package_price) {
           onAreaChange(index, {
             ...area,
             base_service_price: 0,
             package_price_id: undefined,
+            package_price: undefined,
+            total_price: (area.items || []).reduce(
+              (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+              0
+            ),
           });
         }
       }
@@ -567,401 +577,401 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     <>
       <div className="border border-slate-300 rounded-lg bg-slate-50 relative transition-all duration-200 shadow-sm hover:shadow-md mb-4">
         {/* Header Section */}
-        <div 
-            className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100 transition-colors ${!isCollapsed ? 'rounded-t-lg' : 'rounded-lg'}`}
-            onClick={() => setIsCollapsed(!isCollapsed)}
+        <div
+          className={`flex items-center justify-between p-4 cursor-pointer hover:bg-slate-100 transition-colors ${!isCollapsed ? 'rounded-t-lg' : 'rounded-lg'}`}
+          onClick={() => setIsCollapsed(!isCollapsed)}
         >
-            <div className="flex items-center gap-3">
-                <div className={`transform transition-transform duration-200 text-slate-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
-                    <ChevronDownIcon className="h-5 w-5" />
-                </div>
-                <div>
-                    <h3 className="font-semibold text-slate-800 text-lg flex items-center gap-2">
-                        {area.area_name || `พื้นที่ #${index + 1}`}
-                        {area.total_price && area.total_price > 0 && isCollapsed && (
-                           <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                              ฿{area.total_price.toLocaleString()}
-                           </span>
-                        )}
-                    </h3>
-                    {isCollapsed && (
-                        <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                            <span>{area.area_size ? `${area.area_size} ตร.ม.` : 'ไม่ระบุขนาด'}</span>
-                            {area.building_type && <span>• {area.building_type}</span>}
-                            {selectedPackage && <span>• {selectedPackage.name}</span>}
-                        </div>
-                    )}
-                </div>
+          <div className="flex items-center gap-3">
+            <div className={`transform transition-transform duration-200 text-slate-400 ${isCollapsed ? '-rotate-90' : 'rotate-0'}`}>
+              <ChevronDownIcon className="h-5 w-5" />
             </div>
-
-            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <button
-                    type="button"
-                    onClick={() => onClearArea(index)}
-                    className="flex items-center gap-1 text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-200 transition-colors"
-                    title="ล้างค่าในพื้นที่นี้"
-                >
-                    <RefreshIcon className="h-4 w-4" />
-                </button>
-                {onRemoveArea && (
-                    <button
-                        type="button"
-                        onClick={() => onRemoveArea(index)}
-                        className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
-                        title="ลบพื้นที่นี้"
-                    >
-                        <TrashIcon className="h-5 w-5" />
-                    </button>
+            <div>
+              <h3 className="font-semibold text-slate-800 text-lg flex items-center gap-2">
+                {area.area_name || `พื้นที่ #${index + 1}`}
+                {area.total_price && area.total_price > 0 && isCollapsed && (
+                  <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                    ฿{area.total_price.toLocaleString()}
+                  </span>
                 )}
+              </h3>
+              {isCollapsed && (
+                <div className="text-xs text-slate-500 mt-1 flex gap-3">
+                  <span>{area.area_size ? `${area.area_size} ตร.ม.` : 'ไม่ระบุขนาด'}</span>
+                  {area.building_type && <span>• {area.building_type}</span>}
+                  {selectedPackage && <span>• {selectedPackage.name}</span>}
+                </div>
+              )}
             </div>
+          </div>
+
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => onClearArea(index)}
+              className="flex items-center gap-1 text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-200 transition-colors"
+              title="ล้างค่าในพื้นที่นี้"
+            >
+              <RefreshIcon className="h-4 w-4" />
+            </button>
+            {onRemoveArea && (
+              <button
+                type="button"
+                onClick={() => onRemoveArea(index)}
+                className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
+                title="ลบพื้นที่นี้"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            )}
+          </div>
         </div>
 
         {!isCollapsed && (
-        <div className="p-4 pt-0 border-t border-slate-200 animate-fadeIn">
-        <div className="mt-4 space-y-4">
+          <div className="p-4 pt-0 border-t border-slate-200 animate-fadeIn">
+            <div className="mt-4 space-y-4">
 
-        <FormField
-          label={`ชื่อพื้นที่ #${index + 1}`}
-          htmlFor={`areaName-${index}`}
-        >
-          <Input
-            name="area_name"
-            value={area.area_name || ''}
-            onChange={handleFieldChange}
-            placeholder="เช่น บ้าน A-1, อาคาร Lobby"
-            required
-          />
-        </FormField>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <FormField
-            label="ประเภทสิ่งปลูกสร้าง"
-            htmlFor={`buildingType-${index}`}
-          >
-            <Select
-              name="building_type"
-              value={area.building_type || ''}
-              onChange={handleFieldChange}
-              required
-            >
-              <option value="">-- เลือกประเภท --</option>
-              <option value="OFFICE">ออฟฟิศ (Office)</option>
-              <option value="HOUSE">บ้าน (House)</option>
-            </Select>
-          </FormField>
-          <FormField label="ระบบใช้บริการ" htmlFor={`serviceSystem-${index}`}>
-            <Select
-              name="service_system"
-              value={area.service_system || ''}
-              onChange={handleFieldChange}
-              required
-            >
-              <option value="">-- เลือกระบบ --</option>
-              {Object.values(ServiceSystem).map((type) => (
-                <option key={type} value={type}>
-                  {serviceLabels[type]}
-                </option>
-              ))}
-            </Select>
-          </FormField>
-        </div>
-
-        {/* Measurement Selection */}
-        <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            เลือกหน่วยวัดพื้นที่ <span className="text-red-500">*</span>
-          </label>
-          <div className="flex space-x-4 mb-4">
-            <label
-              className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'sqm' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
-            >
-              <input
-                type="radio"
-                name={`measurementType-${index}`}
-                checked={measurementType === 'sqm'}
-                onChange={() => handleMeasurementTypeChange('sqm')}
-                className="text-primary focus:ring-primary h-4 w-4"
-              />
-              <span className="ml-2 text-sm font-medium text-slate-700">
-                พื้นที่ (ตร.ม.)
-              </span>
-            </label>
-            <label
-              className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'meter' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
-            >
-              <input
-                type="radio"
-                name={`measurementType-${index}`}
-                checked={measurementType === 'meter'}
-                onChange={() => handleMeasurementTypeChange('meter')}
-                className="text-primary focus:ring-primary h-4 w-4"
-              />
-              <span className="ml-2 text-sm font-medium text-slate-700">
-                ความยาวรอบรูป (เมตร)
-              </span>
-            </label>
-          </div>
-
-          {measurementType === 'meter' && (
-            <FormField label="พื้นที่ (ม.)" htmlFor={`linearMeters-${index}`}>
-              <div className="relative">
+              <FormField
+                label={`ชื่อพื้นที่ #${index + 1}`}
+                htmlFor={`areaName-${index}`}
+              >
                 <Input
-                  id={`linearMeters-${index}`}
-                  name="perimeter"
-                  type="number"
-                  value={area.perimeter || ''}
+                  name="area_name"
+                  value={area.area_name || ''}
                   onChange={handleFieldChange}
-                  placeholder="ความยาวรอบรูป (ม.)"
+                  placeholder="เช่น บ้าน A-1, อาคาร Lobby"
                   required
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">ม.</span>
-                </div>
-              </div>
-            </FormField>
-          )}
+              </FormField>
 
-          {measurementType === 'sqm' && (
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                พื้นที่ (ตร.ม.) <span className="text-red-500">*</span>
-              </label>
-
-              {/* Always show input for custom area size */}
-              <div className="relative mb-3">
-                <Input
-                  name="area_size"
-                  type="number"
-                  value={area.area_size || ''}
-                  onChange={handleFieldChange}
-                  placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
-                  required
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">ตร.ม.</span>
-                </div>
-              </div>
-
-              {/* Show current package price if calculated */}
-              {selectedPackage && area.area_size && area.area_size > 0 && (
-                <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
-                  <span className="text-sm text-blue-800 font-medium">
-                    ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
-                  </span>
-                  <span className="text-lg text-blue-900 font-bold">
-                    ฿{(area.base_service_price || 0).toLocaleString()}
-                  </span>
-                </div>
-              )}
-
-              {selectedPackage && sortedConditions.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-slate-500 mb-2">
-                    หรือเลือกจากขนาดมาตรฐาน:
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {sortedConditions.map((condition, idx) => (
-                      <label
-                        key={condition.id || idx}
-                        className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
-                          ? 'border-primary ring-2 ring-primary bg-primary/5'
-                          : 'bg-white hover:border-slate-400'
-                          }`}
-                      >
-                        <input
-                          type="radio"
-                          name={`areaSize-${index}`}
-                          value={condition.area_range}
-                          className="sr-only"
-                          onChange={() =>
-                            handleAreaSizeRadioChange(condition.area_range)
-                          }
-                          checked={area.area_size === condition.area_range}
-                        />
-                        <div className="font-semibold text-slate-800">
-                          {condition.area_range.toLocaleString()} ตร.ม.
-                        </div>
-                      </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <FormField
+                  label="ประเภทสิ่งปลูกสร้าง"
+                  htmlFor={`buildingType-${index}`}
+                >
+                  <Select
+                    name="building_type"
+                    value={area.building_type || ''}
+                    onChange={handleFieldChange}
+                    required
+                  >
+                    <option value="">-- เลือกประเภท --</option>
+                    <option value="OFFICE">ออฟฟิศ (Office)</option>
+                    <option value="HOUSE">บ้าน (House)</option>
+                  </Select>
+                </FormField>
+                <FormField label="ระบบใช้บริการ" htmlFor={`serviceSystem-${index}`}>
+                  <Select
+                    name="service_system"
+                    value={area.service_system || ''}
+                    onChange={handleFieldChange}
+                    required
+                  >
+                    <option value="">-- เลือกระบบ --</option>
+                    {Object.values(ServiceSystem).map((type) => (
+                      <option key={type} value={type}>
+                        {serviceLabels[type]}
+                      </option>
                     ))}
-                  </div>
+                  </Select>
+                </FormField>
+              </div>
+
+              {/* Measurement Selection */}
+              <div className="bg-white p-3 rounded-lg border border-slate-200">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  เลือกหน่วยวัดพื้นที่ <span className="text-red-500">*</span>
+                </label>
+                <div className="flex space-x-4 mb-4">
+                  <label
+                    className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'sqm' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`measurementType-${index}`}
+                      checked={measurementType === 'sqm'}
+                      onChange={() => handleMeasurementTypeChange('sqm')}
+                      className="text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <span className="ml-2 text-sm font-medium text-slate-700">
+                      พื้นที่ (ตร.ม.)
+                    </span>
+                  </label>
+                  <label
+                    className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'meter' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`measurementType-${index}`}
+                      checked={measurementType === 'meter'}
+                      onChange={() => handleMeasurementTypeChange('meter')}
+                      className="text-primary focus:ring-primary h-4 w-4"
+                    />
+                    <span className="ml-2 text-sm font-medium text-slate-700">
+                      ความยาวรอบรูป (เมตร)
+                    </span>
+                  </label>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
 
-        <FormField label="ประเภทบริการ *">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-            {categories.map((category) => (
-              <label key={category.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
-                  checked={area.category_services?.some((c) => c.category_id === category.id) || false}
-                  onChange={() => handleServiceTypeChange(category.id)}
-                  required={!area.category_services || area.category_services.length === 0}
-                />
-                <span className="text-sm text-slate-800">{category.name}</span>
-              </label>
-            ))}
-          </div>
-        </FormField>
+                {measurementType === 'meter' && (
+                  <FormField label="พื้นที่ (ม.)" htmlFor={`linearMeters-${index}`}>
+                    <div className="relative">
+                      <Input
+                        id={`linearMeters-${index}`}
+                        name="perimeter"
+                        type="number"
+                        value={area.perimeter || ''}
+                        onChange={handleFieldChange}
+                        placeholder="ความยาวรอบรูป (ม.)"
+                        required
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">ม.</span>
+                      </div>
+                    </div>
+                  </FormField>
+                )}
 
-        {renderPriceSection()}
+                {measurementType === 'sqm' && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      พื้นที่ (ตร.ม.) <span className="text-red-500">*</span>
+                    </label>
 
-        <div className="border border-slate-200 p-2 rounded-lg bg-white">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold text-slate-800">
-              รายการสินค้า/บริการ (เพิ่มเติม)
-            </h3>
-            <button
-              type="button"
-              onClick={() => setIsProductModalOpen(true)}
-              className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
-            >
-              <PlusIcon className="h-4 w-4" />
-              เพิ่ม
-            </button>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="p-2 text-left font-medium text-slate-600 w-10">
-                    ลำดับ
-                  </th>
-                  <th className="p-2 text-left font-medium text-slate-600">
-                    รหัสสินค้า
-                  </th>
-                  <th className="p-2 text-left font-medium text-slate-600">
-                    สินค้า/บริการ
-                  </th>
-                  <th className="p-2 text-center font-medium text-slate-600">
-                    จำนวน
-                  </th>
-                  <th className="p-2 text-left font-medium text-slate-600">
-                    หน่วย
-                  </th>
-                  <th className="p-2 text-right font-medium text-slate-600">
-                    ราคารวม
-                  </th>
-                  <th className="p-2 w-10"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {(area.items || []).length > 0 ? (
-                  area.items?.map((item, itemIndex) => {
-                    const product = productMap.get(item.product_id!);
-                    return (
-                      <tr key={item.id || itemIndex}>
-                        <td className="p-1 text-center text-slate-600">
-                          {itemIndex + 1}
-                        </td>
-                        <td className="p-1 text-slate-600">{product?.code}</td>
-                        <td className="p-1 font-medium text-slate-800">
-                          {product?.name || item.product_name}
-                        </td>
-                        <td className="p-1 w-24">
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) =>
-                              handleItemChange(
-                                itemIndex,
-                                'quantity',
-                                parseInt(e.target.value) || 0
-                              )
-                            }
-                            className="h-8 text-center"
-                            min="1"
-                          />
-                        </td>
-                        <td className="p-1 text-slate-600">
-                          {product?.unit?.name || '-'}
-                        </td>
-                        <td className="p-1 w-32 text-right text-slate-800">
-                          ฿
-                          {(
-                            (item.product_price || 0) * (item.quantity || 0)
-                          ).toLocaleString('th-TH', {
+                    {/* Always show input for custom area size */}
+                    <div className="relative mb-3">
+                      <Input
+                        name="area_size"
+                        type="number"
+                        value={area.area_size || ''}
+                        onChange={handleFieldChange}
+                        placeholder="ระบุขนาดพื้นที่ (ตร.ม.)"
+                        required
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">ตร.ม.</span>
+                      </div>
+                    </div>
+
+                    {/* Show current package price if calculated */}
+                    {selectedPackage && area.area_size && area.area_size > 0 && (
+                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
+                        <span className="text-sm text-blue-800 font-medium">
+                          ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
+                        </span>
+                        <span className="text-lg text-blue-900 font-bold">
+                          ฿{(area.base_service_price || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    {selectedPackage && sortedConditions.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs text-slate-500 mb-2">
+                          หรือเลือกจากขนาดมาตรฐาน:
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {sortedConditions.map((condition, idx) => (
+                            <label
+                              key={condition.id || idx}
+                              className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
+                                ? 'border-primary ring-2 ring-primary bg-primary/5'
+                                : 'bg-white hover:border-slate-400'
+                                }`}
+                            >
+                              <input
+                                type="radio"
+                                name={`areaSize-${index}`}
+                                value={condition.area_range}
+                                className="sr-only"
+                                onChange={() =>
+                                  handleAreaSizeRadioChange(condition.area_range)
+                                }
+                                checked={area.area_size === condition.area_range}
+                              />
+                              <div className="font-semibold text-slate-800">
+                                {condition.area_range.toLocaleString()} ตร.ม.
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <FormField label="ประเภทบริการ *">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {categories.map((category) => (
+                    <label key={category.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        className="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
+                        checked={area.category_services?.some((c) => c.category_id === category.id) || false}
+                        onChange={() => handleServiceTypeChange(category.id)}
+                        required={!area.category_services || area.category_services.length === 0}
+                      />
+                      <span className="text-sm text-slate-800">{category.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+
+              {renderPriceSection()}
+
+              <div className="border border-slate-200 p-2 rounded-lg bg-white">
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-semibold text-slate-800">
+                    รายการสินค้า/บริการ (เพิ่มเติม)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsProductModalOpen(true)}
+                    className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
+                  >
+                    <PlusIcon className="h-4 w-4" />
+                    เพิ่ม
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="p-2 text-left font-medium text-slate-600 w-10">
+                          ลำดับ
+                        </th>
+                        <th className="p-2 text-left font-medium text-slate-600">
+                          รหัสสินค้า
+                        </th>
+                        <th className="p-2 text-left font-medium text-slate-600">
+                          สินค้า/บริการ
+                        </th>
+                        <th className="p-2 text-center font-medium text-slate-600">
+                          จำนวน
+                        </th>
+                        <th className="p-2 text-left font-medium text-slate-600">
+                          หน่วย
+                        </th>
+                        <th className="p-2 text-right font-medium text-slate-600">
+                          ราคารวม
+                        </th>
+                        <th className="p-2 w-10"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(area.items || []).length > 0 ? (
+                        area.items?.map((item, itemIndex) => {
+                          const product = productMap.get(item.product_id!);
+                          return (
+                            <tr key={item.id || itemIndex}>
+                              <td className="p-1 text-center text-slate-600">
+                                {itemIndex + 1}
+                              </td>
+                              <td className="p-1 text-slate-600">{product?.code}</td>
+                              <td className="p-1 font-medium text-slate-800">
+                                {product?.name || item.product_name}
+                              </td>
+                              <td className="p-1 w-24">
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      itemIndex,
+                                      'quantity',
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className="h-8 text-center"
+                                  min="1"
+                                />
+                              </td>
+                              <td className="p-1 text-slate-600">
+                                {product?.unit?.name || '-'}
+                              </td>
+                              <td className="p-1 w-32 text-right text-slate-800">
+                                ฿
+                                {(
+                                  (item.product_price || 0) * (item.quantity || 0)
+                                ).toLocaleString('th-TH', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </td>
+                              <td className="p-1 w-10 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveItem(itemIndex)}
+                                  className="text-red-500"
+                                >
+                                  <TrashIcon className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={7} className="text-center py-4 text-slate-700">
+                            ยังไม่มีรายการ
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Original Values Display (when editing) */}
+              {isEditing && originalArea && (
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
+                  <h4 className="text-sm font-semibold text-amber-800 mb-2">
+                    📋 ค่าก่อนหน้า (Previous Values)
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                    {originalArea.area_size && (
+                      <div>
+                        <span className="text-amber-600">พื้นที่:</span>{' '}
+                        <span className="font-medium text-amber-900">
+                          {originalArea.area_size} ตร.ม.
+                        </span>
+                      </div>
+                    )}
+                    {typeof originalArea.base_service_price === 'number' && (
+                      <div>
+                        <span className="text-amber-600">ราคาบริการ:</span>{' '}
+                        <span className="font-medium text-amber-900">
+                          ฿{originalArea.base_service_price.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
-                        </td>
-                        <td className="p-1 w-10 text-center">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItem(itemIndex)}
-                            className="text-red-500"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="text-center py-4 text-slate-700">
-                      ยังไม่มีรายการ
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                        </span>
+                      </div>
+                    )}
+                    {typeof originalArea.total_price === 'number' && (
+                      <div>
+                        <span className="text-amber-600">ยอดรวม:</span>{' '}
+                        <span className="font-medium text-amber-900">
+                          ฿{originalArea.total_price.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
-        {/* Original Values Display (when editing) */}
-        {isEditing && originalArea && (
-          <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg">
-            <h4 className="text-sm font-semibold text-amber-800 mb-2">
-              📋 ค่าก่อนหน้า (Previous Values)
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-              {originalArea.area_size && (
-                <div>
-                  <span className="text-amber-600">พื้นที่:</span>{' '}
-                  <span className="font-medium text-amber-900">
-                    {originalArea.area_size} ตร.ม.
-                  </span>
-                </div>
-              )}
-              {typeof originalArea.base_service_price === 'number' && (
-                <div>
-                  <span className="text-amber-600">ราคาบริการ:</span>{' '}
-                  <span className="font-medium text-amber-900">
-                    ฿{originalArea.base_service_price.toLocaleString('th-TH', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              )}
-              {typeof originalArea.total_price === 'number' && (
-                <div>
-                  <span className="text-amber-600">ยอดรวม:</span>{' '}
-                  <span className="font-medium text-amber-900">
-                    ฿{originalArea.total_price.toLocaleString('th-TH', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              )}
+              <div className="text-right font-semibold text-slate-800 pt-2 border-t">
+                ยอดรวมพื้นที่นี้: ฿
+                {(area.total_price || 0).toLocaleString('th-TH', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </div>
             </div>
           </div>
-        )}
-
-        <div className="text-right font-semibold text-slate-800 pt-2 border-t">
-          ยอดรวมพื้นที่นี้: ฿
-          {(area.total_price || 0).toLocaleString('th-TH', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </div>
-        </div>
-        </div>
         )}
       </div>
       <ProductSelectionModal

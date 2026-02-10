@@ -53,7 +53,7 @@ const Packages: React.FC = () => {
     try {
       const response = await CategoryApi.getCategories({
         type: CategoryType.SERVICE,
-        limit: 100,
+        limit: 10,
       });
       setCategories(response.data);
     } catch (error) {

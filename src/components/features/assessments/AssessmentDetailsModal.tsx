@@ -56,6 +56,16 @@ const WorkAreaDetails: FC<{
   area: AssessmentWorkArea;
   products: Product[];
 }> = ({ area }) => {
+  // Calculate Base Price (Total - Items)
+  const itemsTotal = area.items?.reduce((sum, item) => {
+     const qty = Number(item.quantity) || 0;
+     const price = Number(item.product_price) || 0;
+     const total = Number(item.total_price) || (qty * price);
+     return sum + total;
+  }, 0) || 0;
+
+  const basePrice = (Number(area.total_price) || 0) - itemsTotal;
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
       <div className="bg-slate-50/50 px-4 py-3 border-b border-slate-100 flex justify-between items-center">
@@ -86,7 +96,7 @@ const WorkAreaDetails: FC<{
           />
           <DetailItem 
             label="ราคาบริการหลัก" 
-            value={`฿${(area.base_service_price || 0).toLocaleString()}`} 
+            value={`฿${(basePrice).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`} 
           />
         </dl>
 

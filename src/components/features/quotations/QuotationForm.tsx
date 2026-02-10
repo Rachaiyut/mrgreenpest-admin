@@ -8,14 +8,14 @@ import {
     Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { 
-    PlusIcon, 
-    TrashIcon, 
-    DocumentTextIcon, 
-    HomeIcon, 
-    MapIcon, 
-    ClipboardDocumentListIcon, 
-    CurrencyDollarIcon, 
+import {
+    PlusIcon,
+    TrashIcon,
+    DocumentTextIcon,
+    HomeIcon,
+    MapIcon,
+    ClipboardDocumentListIcon,
+    CurrencyDollarIcon,
     CalendarIcon,
     MapPinIcon,
     NewFieldOpsIcon
@@ -65,7 +65,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
     const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
     const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
-    
+
     // Initial data fetching
     useEffect(() => {
         const initData = async () => {
@@ -75,11 +75,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     AssessmentApi.getAll({ limit: 10 }),
                     CategoryApi.getCategories({ type: CategoryType.SERVICE })
                 ]);
-                
+
                 if (custRes?.data) setFetchedCustomers(custRes.data);
                 if (assessRes?.data) setFetchedAssessments(assessRes.data);
                 if (catRes?.data) setFetchedCategories(catRes.data);
-        
+
             } catch (err) {
                 console.error("Error fetching initial data:", err);
             }
@@ -90,7 +90,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     // Ensure we use the most complete list of categories (Context + potentially fetched)
     // For now, relying on Context 'categories' is standard pattern in this app.
     // If 'categories' is empty, we might want to trigger a fetch in DataContext or here.
-    
+
     // Service Type Options derived from categories
     const serviceTypeOptions = useMemo(() => {
         const sourceCategories = fetchedCategories.length > 0 ? fetchedCategories : (categories || []);
@@ -171,7 +171,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [expiresAt, setExpiresAt] = useState(
         initialValues?.expires_at ? new Date(initialValues.expires_at).toISOString().substring(0, 10) : ''
     );
-    
+
     // Contact Phone (Editable)
     const [contactPhone, setContactPhone] = useState(initialValues?.contact_phone || '');
 
@@ -181,10 +181,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [serviceArea, setServiceArea] = useState(initialValues?.service_area || '');
     const [serviceSystem, setServiceSystem] = useState(initialValues?.service_system || '');
     const [systemUsed, setSystemUsed] = useState(initialValues?.system_used || '');
-    
+
     // Convert comma-separated string back to array if needed, or default to empty array
     const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
-        initialValues?.service_type 
+        initialValues?.service_type
             ? initialValues.service_type.split(',').map(s => s.trim()).filter(Boolean)
             : []
     );
@@ -297,10 +297,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 try {
                     const res = await AssessmentApi.getById(selectedAssessmentId);
                     setFullAssessment(res);
-                    
+
                     // If assessment has package_id (or nested package object with ID), fetch package details explicitly
                     const packageId = res.package_id || (res.package && res.package.id);
-                    
+
                     if (packageId) {
                         try {
                             const pkgRes = await PackageApi.getPackageById(packageId);
@@ -331,10 +331,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             : fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
 
         if (assessment && fetchedPackage) {
-             // Check if assessment links to this package either via package_id OR if the nested package object has the same ID
-             const assessmentPkgId = assessment.package_id || (assessment.package && assessment.package.id);
-             
-             if (assessmentPkgId === fetchedPackage.id) {
+            // Check if assessment links to this package either via package_id OR if the nested package object has the same ID
+            const assessmentPkgId = assessment.package_id || (assessment.package && assessment.package.id);
+
+            if (assessmentPkgId === fetchedPackage.id) {
                 return {
                     ...assessment,
                     package: {
@@ -344,7 +344,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         package_price: fetchedPackage.package_price || (fetchedPackage as any).package_prices || assessment.package?.package_price
                     }
                 };
-             }
+            }
         }
         return assessment;
     }, [fetchedAssessments, selectedAssessmentId, fullAssessment, fetchedPackage]);
@@ -430,107 +430,59 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 setServiceLocation(address);
             }
 
-            // Auto-fill from first assessment area if available
+            // Auto-fill buildingType, serviceArea, serviceType, serviceSystem from assessment_areas
+            // These are needed for validation and backward compatibility
             if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                const firstArea = selectedAssessment.assessment_areas[0];
-                
-                // Building Type
-                if (!buildingType && firstArea.building_type) {
-                    setBuildingType(firstArea.building_type.toUpperCase());
+                console.log('🔍 Auto-filling from assessment_areas:', selectedAssessment.assessment_areas);
+
+                // Aggregate from all areas - always set when assessment is selected
+                const buildingTypes = selectedAssessment.assessment_areas
+                    .map(a => a.building_type)
+                    .filter(Boolean);
+                if (buildingTypes.length > 0) {
+                    const uniqueTypes = [...new Set(buildingTypes)];
+                    console.log('✅ Setting buildingType:', uniqueTypes[0]);
+                    setBuildingType(uniqueTypes[0]);
                 }
 
-                // Service System
-                if (!serviceSystem && firstArea.service_system) {
-                    let ss = firstArea.service_system.toUpperCase();
-                    if (ss === 'PREY') ss = 'BAIT';
-                    if (ss === 'BAIT') ss = 'BAIT';
-                    if (ss === 'SPRAY') ss = 'CHEMICAL';
-                    setServiceSystem(ss);
+                // Sum all areas
+                const totalArea = selectedAssessment.assessment_areas.reduce((sum, a) => sum + (Number(a.area_size) || 0), 0);
+                if (totalArea > 0) {
+                    console.log('✅ Setting serviceArea:', `${totalArea.toFixed(2)} ตร.ม.`);
+                    setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
                 }
 
-                // Area Size (Sum of all areas)
-                if (!serviceArea) {
-                     const totalSize = selectedAssessment.assessment_areas.reduce((sum: number, a: any) => sum + (Number(a.area_size) || 0), 0);
-                     if (totalSize > 0) {
-                         setServiceArea(`${totalSize.toLocaleString()} ตร.ม.`);
-                     }
-                }
-            }
-
-            // Auto-fill Service Type (ประเภทบริการ)
-            // We re-evaluate this if selectedServiceTypes is empty OR if we have new categories loaded 
-            // (e.g. initial load of categories might happen after assessment is selected)
-            if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                const newSelectedTypes: string[] = [];
-                
-                // Extract all category IDs from all areas
-                const allCategoryIds = selectedAssessment.assessment_areas.flatMap(area => 
-                    (area.category_services || []).map(cs => cs.category_id)
-                ).filter(Boolean);
-                
-                const uniqueIds = Array.from(new Set(allCategoryIds));
-                
-                if (uniqueIds.length > 0) {
-                    // Use the most complete list of categories available
-                    const sourceCategories = fetchedCategories.length > 0 ? fetchedCategories : (categories || []);
-                    
-                    // Filter valid categories from master data using IDs
-                    const matchedCategories = sourceCategories.filter((c: any) => uniqueIds.includes(c.id) && c.type === 'SERVICE');
-                    
-                    if (matchedCategories.length > 0) {
-                            // Add all matched names
-                            matchedCategories.forEach(c => {
-                                if (c.name && !newSelectedTypes.includes(c.name)) {
-                                    newSelectedTypes.push(c.name);
-                                }
-                            });
-                    }
-                }
-
-                // Only update if we found something and it's different from current
-                if (newSelectedTypes.length > 0) {
-                    // Check if different to avoid infinite loop
-                    const isDifferent = newSelectedTypes.length !== selectedServiceTypes.length || 
-                                        !newSelectedTypes.every(t => selectedServiceTypes.includes(t));
-                    
-                    if (isDifferent) {
-                         // If user hasn't manually selected anything yet (empty), overwrite.
-                         // Or if we want to merge? User said "doesn't show up", implying it's empty initially.
-                         // Let's just set it.
-                         if (selectedServiceTypes.length === 0) {
-                             setSelectedServiceTypes(newSelectedTypes);
-                         }
-                    }
-                }
-            }
-
-            // Auto-fill System Used (ระบบที่ใช้)
-            if (!systemUsed && selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                const systems = Array.from(new Set(
-                    selectedAssessment.assessment_areas
-                        .map((area: any) => area.service_system)
-                        .filter(Boolean)
-                ));
-
+                // Aggregate service systems
+                const systems = selectedAssessment.assessment_areas
+                    .map(a => a.service_system)
+                    .filter(Boolean);
                 if (systems.length > 0) {
-                    const systemLabels = systems.map((s: any) => {
-                        if (s === 'PREY') return 'ระบบเหยื่อ';
-                        if (s === 'CHEMICAL') return 'ระบบสารเคมีกึ่งชีวภาพ';
-                        return s;
+                    const uniqueSystems = [...new Set(systems)];
+                    console.log('✅ Setting serviceSystem:', uniqueSystems[0]);
+                    setServiceSystem(uniqueSystems[0]);
+                }
+
+                // Aggregate all category_services
+                const allCategories = new Set<string>();
+                selectedAssessment.assessment_areas.forEach(area => {
+                    console.log('📋 Area category_services:', area.category_services);
+                    area.category_services?.forEach(cat => {
+                        const categoryName = cat.category?.name || cat.name;
+                        if (categoryName) {
+                            allCategories.add(categoryName);
+                        }
                     });
-                    // Select value has single options, if mixed we might need a better logic or 'ระบบเหยื่อ' as priority if exists?
-                    // For now, if multiple, prioritize Bait > Chemical
-                    if (systemLabels.includes('ระบบเหยื่อ')) {
-                        setSystemUsed('ระบบเหยื่อ');
-                    } else if (systemLabels.includes('ระบบสารเคมีกึ่งชีวภาพ')) {
-                        setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
-                    } else {
-                        setSystemUsed(systemLabels[0]);
-                    }
+                });
+                console.log('📋 All categories found:', Array.from(allCategories));
+                if (allCategories.size > 0) {
+                    const categoryString = Array.from(allCategories).join(', ');
+                    console.log('✅ Setting serviceType:', categoryString);
+                    setServiceType(categoryString);
+                    setSelectedServiceTypes(Array.from(allCategories));
+                } else {
+                    console.warn('⚠️ No categories found in assessment_areas!');
                 }
             }
-
-            // Auto-fill Payment Terms / Installment - REMOVED
 
             // Check for Package
             if (selectedAssessment.package) {
@@ -538,7 +490,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 setPackageName(selectedAssessment.package.name);
                 // Use Master Package Price instead of Assessment Total
                 let masterPrice = 0;
-                
+
                 // Prioritize fetchedPackage (Master Data) over selectedAssessment.package
                 // Because selectedAssessment.package might have stale or incomplete data (e.g. missing prices)
                 const pkg = fetchedPackage || selectedAssessment.package;
@@ -546,68 +498,60 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 if (pkg) {
                     // Check for both property names just in case (backend inconsistency between finding by ID vs relation)
                     const pkgPrices = pkg.package_price || (pkg as any).package_prices;
-                    
+
                     // Determine Area Size: Use form value (editable) or fallback to assessment area
                     // Parse "68.00 ตร.ม." -> 68.00
                     let areaSize = 0;
                     if (serviceArea) {
                         areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-                    } 
-                    
+                    }
+
                     if (areaSize === 0 && selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
                         areaSize = Number(selectedAssessment.assessment_areas[0].area_size) || 0;
                     }
 
                     if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
-                         // Sort by area_range ASC
-                         const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
-                         
-                         // Find first tier where area_range >= area_size
-                         const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
-                         
-                         if (condition) {
-                             // Check for Termite service
-                             // We check the assessment area categories to see if "Termite" service is required
-                             let hasTermite = false;
-                             
-                             if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                                 const area = selectedAssessment.assessment_areas[0];
-                                 hasTermite = area.category_services?.some((c: any) => {
-                                     if (c.name && /ปลวก|termite/i.test(c.name)) return true;
-                                     const masterCat = fetchedCategories.find((cat: any) => cat.id === c.category_id);
-                                     return masterCat && /ปลวก|termite/i.test(masterCat.name);
-                                 }) || false;
-                             }
-                             
-                             const priceWith = Number(condition.price_with_termite);
-                             const priceWithout = Number(condition.price_without_termite);
-                             
-                             masterPrice = hasTermite 
+                        // Sort by area_range ASC
+                        const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
+
+                        // Find first tier where area_range >= area_size
+                        const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
+
+                        if (condition) {
+                            // Check for Termite service
+                            // We check the assessment area categories to see if "Termite" service is required
+                            let hasTermite = false;
+
+                            if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
+                                const area = selectedAssessment.assessment_areas[0];
+                                hasTermite = area.category_services?.some((c: any) => {
+                                    if (c.name && /ปลวก|termite/i.test(c.name)) return true;
+                                    const masterCat = fetchedCategories.find((cat: any) => cat.id === c.category_id);
+                                    return masterCat && /ปลวก|termite/i.test(masterCat.name);
+                                }) || false;
+                            }
+
+                            const priceWith = Number(condition.price_with_termite);
+                            const priceWithout = Number(condition.price_without_termite);
+
+                            masterPrice = hasTermite
                                 ? (priceWith > 0 ? priceWith : priceWithout)
                                 : (priceWithout > 0 ? priceWithout : priceWith);
-                         }
+                        }
                     }
                 }
-                
+
                 // Fallback to assessment total if calculation failed or returned 0 (and we have no package data)
                 if (masterPrice === 0 && selectedAssessment.total_price) {
-                     masterPrice = Number(selectedAssessment.total_price);
+                    masterPrice = Number(selectedAssessment.total_price);
                 }
 
                 setPackagePrice(masterPrice);
 
-                // Auto-fill Contract Duration & Service Count from Package
-                if (selectedAssessment.package.contract_period) {
-                    setContractDuration(`${selectedAssessment.package.contract_period} ปี`);
-                }
-                if (selectedAssessment.package.visit_limit) {
-                    setServiceCount(`${selectedAssessment.package.visit_limit} ครั้ง`);
-                }
-
                 // If using package pricing, we also populate items from areas if available (as additional items)
                 if (mode === 'create' && (!items || items.length === 0)) {
-                     // Check if there are items in assessment areas
-                     if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
+                    // Check if there are items in assessment areas
+                    if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
                         const newItems: QuotationItem[] = [];
 
                         selectedAssessment.assessment_areas.forEach(area => {
@@ -836,9 +780,28 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
     // Calculate totals
     const subtotal = useMemo(() => {
+        // 1. If Assessment is selected (or we have quotation areas from initialValues)
+        if (selectedAssessmentId) {
+             // 1a. Global Package Pricing (Override)
+             if (usePackagePricing) {
+                 return packagePrice;
+             }
+             
+             // 1b. Per-Area Pricing (Sum of Areas)
+             // Prioritize quotation_areas (saved state) over assessment_areas (source state)
+             const areas = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
+                        ? initialValues.quotation_areas
+                        : selectedAssessment?.assessment_areas;
+             
+             if (areas && areas.length > 0) {
+                 return areas.reduce((sum: number, area: any) => sum + (Number(area.total_price) || 0), 0);
+             }
+        }
+
+        // 2. Manual Quotation (or fallback if no areas found)
         const itemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
         return itemsTotal + (usePackagePricing ? packagePrice : 0);
-    }, [items, usePackagePricing, packagePrice]);
+    }, [items, usePackagePricing, packagePrice, selectedAssessmentId, selectedAssessment, initialValues]);
 
     const vatAmount = useMemo(() => {
         return includeVat ? subtotal * vatRate : 0;
@@ -850,8 +813,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
     // Recalculate installments - REMOVED
     useEffect(() => {
-       // Logic removed
-       setInstallments([]);
+        // Logic removed
+        setInstallments([]);
     }, []);
 
     const handleInstallmentChange = (index: number, field: string, value: any) => {
@@ -867,18 +830,27 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return;
         }
 
-        if (!buildingType) {
-            alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)');
-            return;
-        }
-        if (!serviceType) {
-            alert('กรุณาระบุประเภทบริการ (Service Type is required)');
-            return;
+        // Skip buildingType and serviceType validation if creating from assessment
+        // Backend will copy the data from assessment_areas
+        if (!selectedAssessmentId) {
+            if (!buildingType) {
+                alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)');
+                return;
+            }
+            if (!serviceType) {
+                alert('กรุณาระบุประเภทบริการ (Service Type is required)');
+                return;
+            }
         }
 
         // Validation: If no items AND no package, alert
         const hasValidItems = items.some((item) => item.description && item.amount > 0);
-        if (!hasValidItems && (!usePackagePricing || packagePrice <= 0)) {
+        
+        // Relax validation: Allow if assessment is linked (data might come from backend or be draft)
+        // Also allow if package pricing is selected, even if calculated price is 0 (can be edited later)
+        const isAssessmentLinked = !!selectedAssessmentId;
+
+        if (!hasValidItems && !usePackagePricing && !isAssessmentLinked) {
             alert('กรุณาเพิ่มรายการสินค้าหรือเลือกแพ็กเกจ');
             return;
         }
@@ -972,7 +944,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 {/* 1. General Information */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="col-span-1 md:col-span-2">
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -993,28 +965,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         </div>
 
                         <div className="col-span-1 md:col-span-2">
-                            <FormField label="เบอร์ติดต่อ (Contact Phone)">
-                                <Input
-                                    value={contactPhone}
-                                    onChange={(e) => setContactPhone(e.target.value)}
-                                    placeholder="ระบุเบอร์ติดต่อ..."
+                            <FormField label="ใบประเมินหน้างาน (อ้างอิง)">
+                                <SearchableSelect
+                                    value={selectedAssessmentId}
+                                    onChange={setSelectedAssessmentId}
+                                    options={fetchedAssessments.map((a: any) => ({
+                                        value: a.id,
+                                        label: `${a.code} - ${a.customer_name || a.customer?.first_name || 'N/A'}`,
+                                        description: a.service_location || 'N/A'
+                                    }))}
+                                    placeholder="เลือกใบประเมิน (ถ้ามี)"
                                     disabled={isReadOnly}
                                 />
                             </FormField>
-                        </div>
-
-                        <div className="col-span-1 md:col-span-2">
-                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                                อ้างอิงใบประเมิน
-                            </label>
-                            <SearchableSelect
-                                value={selectedAssessmentId}
-                                onChange={setSelectedAssessmentId}
-                                onSearchChange={handleAssessmentSearch}
-                                options={assessmentOptions}
-                                placeholder="เลือกใบประเมิน (ถ้ามี)"
-                                disabled={isReadOnly}
-                            />
                         </div>
 
                         <FormField label="วันที่เสนอราคา">
@@ -1028,7 +991,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         </FormField>
 
                         <FormField label="ยืนราคา (วัน)">
-                             <Input
+                            <Input
                                 type="number"
                                 value={validityDays}
                                 onChange={(e) => setValidityDays(Number(e.target.value))}
@@ -1051,7 +1014,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 {/* 2. Address Information */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <SectionHeader icon={HomeIcon} title="ข้อมูลที่อยู่" />
-                    
+
                     <div className="space-y-4">
                         <FormField label="สถานที่ให้บริการ">
                             <Textarea
@@ -1063,189 +1026,188 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                 required
                             />
                         </FormField>
-                        
+
                         <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                             <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
-                             {selectedCustomer?.google_map_link ? (
-                                 <a 
-                                    href={selectedCustomer.google_map_link} 
-                                    target="_blank" 
+                            <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
+                            {selectedCustomer?.google_map_link ? (
+                                <a
+                                    href={selectedCustomer.google_map_link}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                                 >
+                                >
                                     <MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า
-                                 </a>
-                             ) : (
-                                 <span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>
-                             )}
+                                </a>
+                            ) : (
+                                <span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>
+                            )}
                         </div>
                     </div>
                 </div>
 
-                {/* 3. Service Details */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                    <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ" />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <FormField label="ประเภทสิ่งปลูกสร้าง">
-                            <Select
-                                value={buildingType}
-                                onChange={(e) => setBuildingType(e.target.value)}
-                                disabled={isReadOnly}
-                                required
-                            >
-                                <option value="">เลือกประเภทสิ่งปลูกสร้าง</option>
-                                <option value="HOUSE">บ้าน</option>
-                                <option value="OFFICE">ออฟฟิศ</option>
-                            </Select>
-                        </FormField>
+                {/* Assessment/Quotation Area Details Section */}
+                {(() => {
+                    // Determine which areas to display
+                    const areasToDisplay = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
+                        ? initialValues.quotation_areas
+                        : selectedAssessment?.assessment_areas;
 
-                        <FormField label="ระบบที่ใช้บริการ">
-                            <Select
-                                value={serviceSystem}
-                                onChange={(e) => setServiceSystem(e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="">เลือกระบบบริการ</option>
-                                <option value="CHEMICAL">สารเคมีกชีวภาพ</option>
-                                <option value="PREY">เหยื่อ</option>                         
-                            </Select>
-                        </FormField>
+                    const sectionTitle = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
+                        ? 'รายละเอียดพื้นที่ในใบเสนอราคา'
+                        : 'รายละเอียดพื้นที่ที่ประเมิน';
 
-                         <FormField label="ระยะเวลาสัญญา">
-                            <Input
-                                value={contractDuration}
-                                onChange={(e) => setContractDuration(e.target.value)}
-                                disabled={isReadOnly}
-                                placeholder="เช่น 1 ปี"
-                            />
-                        </FormField>
+                    if (!areasToDisplay || areasToDisplay.length === 0) return null;
 
-                        <FormField label="จำนวนครั้งเข้าบริการ">
-                             <Select
-                                value={serviceCount}
-                                onChange={(e) => setServiceCount(e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="">เลือกจำนวนครั้ง</option>
-                                {serviceCountOptions.map(opt => (
-                                    <option key={opt} value={opt}>{opt}</option>
-                                ))}
-                            </Select>
-                        </FormField>
+                    return (
+                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
+                            <SectionHeader icon={ClipboardDocumentListIcon} title={sectionTitle} />
 
-                         <div className="col-span-1 md:col-span-2 lg:col-span-4">
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                ประเภทบริการ <span className="text-red-500">*</span>
-                            </label>
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {serviceTypeOptions.map((option) => (
-                                        <label key={option.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedServiceTypes.includes(option.value)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedServiceTypes([...selectedServiceTypes, option.value]);
-                                                    } else {
-                                                        setSelectedServiceTypes(selectedServiceTypes.filter(t => t !== option.value));
-                                                    }
-                                                }}
-                                                disabled={isReadOnly}
-                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                                            />
-                                            <span className="text-sm text-slate-700">{option.label}</span>
-                                        </label>
-                                    ))}
-                                </div>
-                                {selectedServiceTypes.length === 0 && (
-                                    <p className="text-xs text-red-500 mt-2">กรุณาเลือกอย่างน้อย 1 รายการ</p>
-                                )}
+                            <div className="space-y-4">
+                                {areasToDisplay.map((area: any, index: number) => {
+                                    const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
+                                    const basePrice = (Number(area.total_price) || 0) - itemsTotal;
+                                    return (
+                                        <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                                                    <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
+                                                </div>
+                                                <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
+                                                    ฿{Number(area.total_price || 0).toLocaleString()}
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
+                                                        <div className="font-medium text-slate-800">{area.building_type || '-'}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
+                                                        <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
+                                                        <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                                            {area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
+                                                        <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
+                                                    </div>
+                                                </div>
+
+
+                                                {/* Package Information */}
+                                                {area.packagePriceRelation && (
+                                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                                        <div className="flex items-center gap-2 mb-2">
+                                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                                            <div className="text-sm font-semibold text-blue-900">แพ็กเกจที่เลือก</div>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">ชื่อแพ็กเกจ</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.name || area.packagePriceRelation.name || '-'}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">จำนวนครั้งบริการ</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-xs text-blue-600 mb-1">ระยะเวลาสัญญา</div>
+                                                                <div className="font-medium text-blue-900">
+                                                                    {area.packagePriceRelation.package?.contract_period
+                                                                        ? `${area.packagePriceRelation.package.contract_period >= 12
+                                                                            ? (area.packagePriceRelation.package.contract_period / 12) + ' ปี'
+                                                                            : area.packagePriceRelation.package.contract_period + ' เดือน'}`
+                                                                        : '-'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                <div className="mb-4">
+                                                    <label className="block text-xs text-slate-500 mb-2">
+                                                        ประเภทบริการ
+                                                    </label>
+                                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                                            {serviceTypeOptions.map((option) => {
+                                                                const isChecked = area.category_services?.some((cat: any) => {
+                                                                    const matchId = (cat.category_id && cat.category_id === option.id) ||
+                                                                        (cat.category?.id && cat.category.id === option.id);
+                                                                    const matchName = (cat.name && cat.name === option.value) ||
+                                                                        (cat.category?.name && cat.category.name === option.value);
+                                                                    return matchId || matchName;
+                                                                });
+
+                                                                return (
+                                                                    <label key={option.id} className="flex items-center gap-2 cursor-default">
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={isChecked}
+                                                                            disabled={true}
+                                                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500 disabled:opacity-100 bg-white"
+                                                                            readOnly
+                                                                        />
+                                                                        <span className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
+                                                                            {option.label}
+                                                                        </span>
+                                                                    </label>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {area.items && area.items.length > 0 && (
+                                                    <div className="mt-4 border rounded-lg overflow-hidden">
+                                                        <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
+                                                            สินค้า/บริการเพิ่มเติม
+                                                        </div>
+                                                        <table className="w-full text-sm text-left">
+                                                            <thead className="text-xs text-slate-500 bg-white border-b">
+                                                                <tr>
+                                                                    <th className="px-4 py-2 font-medium">รายการ</th>
+                                                                    <th className="px-4 py-2 font-medium text-center w-20">จำนวน</th>
+                                                                    <th className="px-4 py-2 font-medium text-right w-32">ราคา/หน่วย</th>
+                                                                    <th className="px-4 py-2 font-medium text-right w-32">รวม</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-slate-100">
+                                                                {area.items.map((item: any, i: number) => (
+                                                                    <tr key={i} className="hover:bg-slate-50">
+                                                                        <td className="px-4 py-2 text-slate-800">{item.product_name || item.description}</td>
+                                                                        <td className="px-4 py-2 text-center text-slate-600">{item.quantity}</td>
+                                                                        <td className="px-4 py-2 text-right text-slate-600">{Number(item.product_price || item.unit_price).toLocaleString()}</td>
+                                                                        <td className="px-4 py-2 text-right font-medium text-slate-800">{Number(item.total_price || item.amount).toLocaleString()}</td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
-
-                
-                    </div>
-                </div>
-
-                {/* 4. Assessment Area Details */}
-                {selectedAssessment?.assessment_areas && selectedAssessment.assessment_areas.length > 0 && (
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                        <SectionHeader icon={ClipboardDocumentListIcon} title="รายละเอียดพื้นที่ประเมิน" />
-                        
-                        <div className="overflow-hidden border rounded-lg border-slate-200">
-                            <table className="min-w-full divide-y divide-slate-200">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">พื้นที่</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">ประเภท</th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">ขนาด (ตร.ม.)</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">รายละเอียด</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-slate-200">
-                                    {selectedAssessment.assessment_areas.map((area, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{area.area_name}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{area.building_type || '-'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">{(Number(area.area_size) || 0).toLocaleString()}</td>
-                                            <td className="px-6 py-4 text-sm text-slate-500">
-                                                {area.items && area.items.length > 0 ? (
-                                                    <ul className="list-disc list-inside text-xs text-slate-500">
-                                                        {area.items.map((item, i) => (
-                                                            <li key={i}>{item.product_name} (x{item.quantity})</li>
-                                                        ))}
-                                                    </ul>
-                                                ) : '-'}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {/* Total Row */}
-                                    <tr className="bg-slate-50 font-semibold">
-                                        <td colSpan={2} className="px-6 py-3 text-right text-sm text-slate-700">รวมพื้นที่ทั้งหมด</td>
-                                        <td className="px-6 py-3 text-right text-sm text-slate-900">
-                                            {selectedAssessment.assessment_areas.reduce((sum, a) => sum + (Number(a.area_size) || 0), 0).toLocaleString()}
-                                        </td>
-                                        <td></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
+                    );
+                })()}
 
                 {/* 5. Items & Pricing */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                     <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
-
-                     {selectedAssessment?.package && (
-                        <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-100 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    id="usePackagePricing"
-                                    checked={usePackagePricing}
-                                    onChange={handlePackagePricingToggle}
-                                    disabled={isReadOnly}
-                                    className="h-5 w-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                                />
-                                <div>
-                                    <label htmlFor="usePackagePricing" className="font-semibold text-green-900 cursor-pointer">
-                                        ใช้ราคาตามแพ็กเกจ ({packageName})
-                                    </label>
-                                    <p className="text-sm text-green-700">
-                                        ราคา: {packagePrice.toLocaleString()} บาท (รวมบริการมาตรฐาน)
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <span className="text-xs text-green-600 bg-white px-2 py-1 rounded border border-green-200">
-                                    แนะนำ
-                                </span>
-                            </div>
-                        </div>
-                    )}
+                    <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
 
                     <div className="space-y-4">
                         {!selectedAssessmentId && items.map((item, index) => {
@@ -1259,7 +1221,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                         <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
                                             {index + 1}
                                         </div>
-                                        
+
                                         <div className="md:col-span-4">
                                             <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
                                             <SearchableSelect
@@ -1270,7 +1232,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                 disabled={isReadOnly || usePackagePricing}
                                             />
                                         </div>
-                                        
+
                                         <div className="md:col-span-3">
                                             <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
                                             <Input
@@ -1282,7 +1244,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                         </div>
 
                                         <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                                                <div>
+                                            <div>
                                                 <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
                                                 <Input
                                                     type="number"
@@ -1292,8 +1254,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                     disabled={isReadOnly}
                                                     className="text-center"
                                                 />
-                                                </div>
-                                                <div>
+                                            </div>
+                                            <div>
                                                 <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
                                                 <Input
                                                     type="number"
@@ -1303,9 +1265,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                     disabled={isReadOnly}
                                                     className="text-right"
                                                 />
-                                                </div>
+                                            </div>
                                         </div>
-                                        
+
                                         <div className="md:col-span-2 text-right">
                                             <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
                                             <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
@@ -1353,13 +1315,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                     placeholder="หมายเหตุเพิ่มเติม..."
                                 />
                             </div>
-                            
+
                             <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                                 <div className="flex justify-between text-sm">
                                     <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
                                     <span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span>
                                 </div>
-                                
+
                                 <div className="flex justify-between items-center text-sm">
                                     <label className="flex items-center gap-2 cursor-pointer text-slate-600">
                                         <input
@@ -1373,7 +1335,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                     </label>
                                     <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
                                 </div>
-                                
+
                                 <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
                                     <span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span>
                                     <span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span>
@@ -1386,4 +1348,5 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 {/* Installment Plan Preview - REMOVED */}
             </div>
         </form>
-    );};
+    );
+};

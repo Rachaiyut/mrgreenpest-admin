@@ -111,7 +111,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         // Fetch approved quotations
         const fetchQuotations = async () => {
             try {
-                const res = await QuotationApi.getAll({ status: 'APPROVED', limit: 100 });
+                const res = await QuotationApi.getAll({ status: 'APPROVED', limit: 10 });
                 if (res && res.data) {
                     setQuotations(res.data);
                 }

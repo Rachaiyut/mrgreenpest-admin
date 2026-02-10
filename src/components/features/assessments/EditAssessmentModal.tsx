@@ -208,6 +208,12 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           return {
             ...area,
             base_service_price: priceToUse,
+            package_price: priceToUse, // Set package price snapshot
+            package_price_id: bestFit.id,
+            total_price: priceToUse + (area.items || []).reduce(
+              (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+              0
+            ),
           };
         } else {
           return { ...area };
@@ -235,6 +241,11 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       );
       const baseCost = Number(newArea.base_service_price) || 0;
       newArea.total_price = baseCost + itemsCost;
+
+      // Ensure package_price is number if present
+      if (newArea.package_price !== undefined && newArea.package_price !== null) {
+        newArea.package_price = Number(newArea.package_price);
+      }
 
       newArea.items = (newArea.items || []).map((item: any) => {
         const sanitizedItem: any = {

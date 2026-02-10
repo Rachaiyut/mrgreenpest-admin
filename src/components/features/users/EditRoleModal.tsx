@@ -39,7 +39,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
     try {
       // Fetch all permissions and role details in parallel
       const [permRes, roleRes] = await Promise.all([
-        PermissionApi.getAll({ limit: 1000 }),
+        PermissionApi.getAll(),
         RoleApi.getById(roleId)
       ]);
 

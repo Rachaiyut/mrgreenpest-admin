@@ -215,6 +215,12 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
           return {
             ...area,
             base_service_price: priceToUse,
+            package_price: priceToUse, // Set package price snapshot
+            package_price_id: bestFit.id,
+            total_price: priceToUse + (area.items || []).reduce(
+              (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+              0
+            ),
           };
         } else {
           return { ...area };
@@ -229,6 +235,16 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
 
+    // Sanitize work areas before submission
+    const sanitizedWorkAreas = (workAreas as AssessmentWorkArea[]).map(area => {
+      const newArea = { ...area };
+      if (newArea.package_price !== undefined && newArea.package_price !== null) {
+        newArea.package_price = Number(newArea.package_price);
+      }
+      delete newArea.base_service_price;
+      return newArea;
+    });
+
     const newAssessment: Omit<Assessment, 'id' | 'code'> & { installments?: Partial<AssessmentInstallment>[] } = {
       // Defaults
       status: AsessmentStatus.DRAFT,
@@ -239,7 +255,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       ...formData,
 
       // Overrides/Calculated
-      assessment_areas: workAreas as AssessmentWorkArea[],
+      assessment_areas: sanitizedWorkAreas,
       total_price: totalEstimatedCost,
 
       // Ensure required fields

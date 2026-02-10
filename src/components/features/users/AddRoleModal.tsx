@@ -33,7 +33,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess
   const fetchPermissions = async () => {
     setIsLoading(true);
     try {
-      const res = await PermissionApi.getAll({ limit: 1000 }); // Fetch all
+      const res = await PermissionApi.getAll({ limit: 10 }); // Fetch all
       setPermissions(res.data || []);
     } catch (error) {
       console.error('Failed to fetch permissions', error);

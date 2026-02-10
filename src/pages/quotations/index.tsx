@@ -70,7 +70,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     const fetchQuotations = async () => {
         setIsLoading(true);
         try {
-            const res = await QuotationApi.getAll({ limit: 100 });
+            const res = await QuotationApi.getAll({ limit: 10 });
             setQuotations(res.data || []);
         } catch (error) {
             console.error('Failed to fetch quotations:', error);

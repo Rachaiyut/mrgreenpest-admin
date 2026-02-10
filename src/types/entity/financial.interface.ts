@@ -58,6 +58,7 @@ export interface Quotation {
   updated_by?: string;
   items?: QuotationItem[];
   installments?: InstallmentPlan[];
+  quotation_areas?: any[];
 }
 
 export interface InvoiceItem {

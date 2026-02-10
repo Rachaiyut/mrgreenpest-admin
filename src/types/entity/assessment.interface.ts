@@ -2,7 +2,7 @@ import { AsessmentStatus, ServiceSystem } from '../enums/assessment';
 import { PaymentMethod } from '../enums/financial';
 import { IBase } from './base.interface';
 import { Customer } from './customer.interface';
-import { Package } from './package.interface';
+import { Package, PackagePrice } from './package.interface';
 
 export interface AssessmentWorkAreaItem extends IBase {
   product_id: string;
@@ -14,11 +14,17 @@ export interface AssessmentWorkAreaItem extends IBase {
 
 export interface AssessmentWorkAreaCategory extends IBase {
   category_id: string;
+  category?: {
+    id: string;
+    name: string;
+  };
   name?: string;
 }
 
 export interface AssessmentWorkArea extends IBase {
   package_price_id?: string;
+  packagePriceRelation?: PackagePrice;
+  package_price?: number; // Package price snapshot
   building_type: string;
   area_name: string;
   service_system?: ServiceSystem;
@@ -46,7 +52,7 @@ export interface Assessment extends IBase {
   sequence: string;
   google_map_link: string;
   status: AsessmentStatus;
-  // payment_condition: PaymentMethod;
+  payment_condition?: PaymentMethod;
   // payment_installment_count?: number;
   total_price: number;
   created_by: string;

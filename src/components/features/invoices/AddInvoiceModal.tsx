@@ -63,7 +63,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     useEffect(() => {
         const fetchContracts = async () => {
             try {
-                const res = await ContractApi.getAll({ status: 'ACTIVE', limit: 100 });
+                const res = await ContractApi.getAll({ status: 'ACTIVE', limit: 10 });
                 if (res && res.data) {
                     setContracts(res.data);
                 }
@@ -78,7 +78,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     useEffect(() => {
         const fetchQuotations = async () => {
             try {
-                const res = await QuotationApi.getAll({ status: 'APPROVED', limit: 100 });
+                const res = await QuotationApi.getAll({ status: 'APPROVED', limit: 10 });
                 if (res && res.data) {
                     setQuotations(res.data);
                 }

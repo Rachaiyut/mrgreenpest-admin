@@ -233,71 +233,71 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     const promises: Promise<void>[] = [];
 
     if (shouldFetch('users')) {
-      promises.push(safeFetch(() => UserApi.getAll({ limit: 100 })).then((data: any) => setUsers(data)));
+      promises.push(safeFetch(() => UserApi.getAll({ limit: 10})).then((data: any) => setUsers(data)));
     }
     if (shouldFetch('jobs')) {
-      // promises.push(safeFetch(() => JobApi.getAll({ limit: 100 })).then((data: any) => setJobs(data)));
+      // promises.push(safeFetch(() => JobApi.getAll({ limit: 10})).then((data: any) => setJobs(data)));
     }
     if (shouldFetch('assessments')) {
-      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 100 })).then((data: any) => setAssessments(data)));
+      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10})).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
-      promises.push(safeFetch(() => ContractApi.getAll({ limit: 100 })).then((data: any) => setContracts(data)));
+      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10})).then((data: any) => setContracts(data)));
     }
     if (shouldFetch('quotations')) {
-      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 100 })).then((data: any) => setQuotations(data)));
+      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10})).then((data: any) => setQuotations(data)));
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
-      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 100 })).then((data: any) => setInvoices(data)));
+      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10})).then((data: any) => setInvoices(data)));
     }
     if (shouldFetch('receipts')) {
-      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 100 })).then((data: any) => setReceipts(data)));
+      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10})).then((data: any) => setReceipts(data)));
     }
     if (shouldFetch('customers')) {
-      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 100 })).then((data: any) => setCustomers(data)));
+      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10})).then((data: any) => setCustomers(data)));
     }
     if (shouldFetch('products')) {
-      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 100 })).then((data: any) => setProducts(data)));
+      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10})).then((data: any) => setProducts(data)));
     }
     if (shouldFetch('warehouses')) {
-      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 100 })).then((data: any) => setWarehouses(data)));
+      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 10})).then((data: any) => setWarehouses(data)));
     }
     if (shouldFetch('suppliers')) {
       promises.push(
-        safeFetch(() => SupplierApi.getSuppliers({ limit: 100 })).then(
+        safeFetch(() => SupplierApi.getSuppliers({ limit: 10})).then(
           (data: any) => setSuppliers(data)
         )
       );
     }
     if (shouldFetch('goodsReceipts')) {
       promises.push(
-        safeFetch(() => GoodsReceiptApi.getAll({ limit: 100 })).then(
+        safeFetch(() => GoodsReceiptApi.getAll({ limit: 10})).then(
           (data: any) => setGoodsReceipts(data)
         )
       );
     }
     if (shouldFetch('withdrawals')) {
-      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 100 })).then((data: any) => setWithdrawals(data)));
+      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 10})).then((data: any) => setWithdrawals(data)));
     }
     if (shouldFetch('transfers')) {
-      // promises.push(safeFetch(() => TransferApi.getAll({ limit: 100 })).then(setTransfers));
+      // promises.push(safeFetch(() => TransferApi.getAll({ limit: 10})).then(setTransfers));
       setTransfers([]);
     }
     if (shouldFetch('stockAdjustments')) {
-      // promises.push(safeFetch(() => StockAdjustmentApi.getAll({ limit: 100 })).then(setStockAdjustments));
+      // promises.push(safeFetch(() => StockAdjustmentApi.getAll({ limit: 10})).then(setStockAdjustments));
       setStockAdjustments([]);
     }
     if (shouldFetch('productReturns')) {
-      // promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 100 })).then(setProductReturns));
+      // promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 10})).then(setProductReturns));
       setProductReturns([]);
     }
     if (shouldFetch('returnToSuppliers')) {
-      // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 100 })).then(setReturnToSuppliers));
+      // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 10})).then(setReturnToSuppliers));
       setReturnToSuppliers([]);
     }
     if (shouldFetch('requisitions')) {
-      // promises.push(safeFetch(() => RequisitionApi.getAll({ limit: 100 })).then(setRequisitions));
+      // promises.push(safeFetch(() => RequisitionApi.getAll({ limit: 10})).then(setRequisitions));
       setRequisitions([]);
     }
 

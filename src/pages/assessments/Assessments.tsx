@@ -94,7 +94,7 @@ const Assessments: React.FC = () => {
         CustomerApi.getCustomers({ limit: 10 }),
         ProductApi.getProducts({ limit: 10 }),
         PackageApi.getPackages({ limit: 10 }),
-        CategoryApi.getCategories({ limit: 100, type: CategoryType.SERVICE })
+        CategoryApi.getCategories({ type: CategoryType.SERVICE })
       ]);
       setAssessments(assessmentsRes.data);
       setCustomers(customersRes.data);

@@ -119,7 +119,7 @@ const Warehouse: React.FC = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await ProductApi.getProducts({ page: 1, limit: 1000 });
+      const res = await ProductApi.getProducts({ page: 1, limit: 10 });
       setProducts(res.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
