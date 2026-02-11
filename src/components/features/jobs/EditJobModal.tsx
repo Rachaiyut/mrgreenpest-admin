@@ -282,6 +282,24 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
             // Set original areas for comparison/protection
             setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
+          // If assessment fields are missing in job but present in assessment, fill them
+          if (rawAssessment) {
+             const assessmentAny = rawAssessment as any;
+             if (!initialFormData.zone && assessmentAny.zone) initialFormData.zone = assessmentAny.zone;
+             if (!initialFormData.group && assessmentAny.route_group) initialFormData.group = assessmentAny.route_group;
+             if (!initialFormData.road_line && assessmentAny.road_line) initialFormData.road_line = assessmentAny.road_line;
+             if (!initialFormData.sequence && assessmentAny.sequence) initialFormData.sequence = assessmentAny.sequence;
+             
+             // Update form data with these new values
+             setFormData(prev => ({
+                 ...prev,
+                 zone: initialFormData.zone,
+                 group: initialFormData.group,
+                 road_line: initialFormData.road_line,
+                 sequence: initialFormData.sequence
+             }));
+          }
+
           } else {
             setAssessment(null);
             setInstallments([]);
@@ -442,7 +460,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       if (currentJob.start_time) {
         const startDate = new Date(currentJob.start_time);
         if (!isNaN(startDate.getTime())) {
-          setWorkDate(startDate.toISOString().substring(0, 10));
+          // Use local date components to match the time picker's local context
+          const localDate = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
+          setWorkDate(localDate);
           setStartTime(startDate.toTimeString().substring(0, 5));
         } else {
            setWorkDate('');
@@ -478,20 +498,48 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     }
 
     const conflictingJob = jobs.find((existingJob) => {
-      if (existingJob.id === currentJob.id) return false;
+      // Robust ID comparison (string vs number handling)
+      if (String(existingJob.id) === String(currentJob.id)) return false;
       if (existingJob.vehicle_id !== formData.vehicle_id) return false;
 
       const existingJobStart = new Date(existingJob.start_time);
       const existingJobEnd = new Date(existingJob.end_time);
+      
+      // Handle invalid dates
+      if (isNaN(existingJobStart.getTime()) || isNaN(existingJobEnd.getTime())) return false;
 
-      if (existingJobStart.toISOString().substring(0, 10) !== workDate) {
+      // Robust Date comparison (Local vs Local)
+      // Use getFullYear(), getMonth(), getDate() to build local YYYY-MM-DD
+      const existingDateLocal = `${existingJobStart.getFullYear()}-${String(existingJobStart.getMonth() + 1).padStart(2, '0')}-${String(existingJobStart.getDate()).padStart(2, '0')}`;
+      
+      // Parse workDate parts to ensure format matches regardless of input type
+      // workDate comes from input[type="date"] so it should be YYYY-MM-DD
+      // But let's be safe
+      
+      if (existingDateLocal !== workDate) {
         return false;
       }
 
+      // Check for overlap: (StartA < EndB) and (EndA > StartB)
+      // Note: newJobStart/End are created with local time string "YYYY-MM-DDTHH:mm", so they are effectively local time
+      // But existingJobStart/End are typically UTC from DB.
+      // To compare correctly, we should compare time strings if date matches, OR convert everything to same basis.
+      // Since we already matched the date string (local day), we can just compare time-of-day?
+      // No, existingJob might span midnight (unlikely but possible).
+      
+      // BETTER APPROACH: Convert existing times to local date objects for comparison
+      // But we don't know the timezone of the browser vs the server intended time?
+      // Usually existingJob.start_time is an ISO string. new Date(iso) gives a Date object in browser's local time.
+      // So existingJobStart is in local time.
+      // newJobStart is constructed from "YYYY-MM-DD" + "THH:mm". This is parsed as local time by `new Date()`.
+      // So both are local. Comparison should be valid.
+      
       return newJobStart < existingJobEnd && newJobEnd > existingJobStart;
     });
 
     if (conflictingJob) {
+      // For debugging
+      console.log('Conflict found with job:', conflictingJob);
       setTimeConflictError(
         `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customerName} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
       );
@@ -718,7 +766,18 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (timeConflictError) return;
+
+    if (!currentJob || !workDate || !startTime || !endTime) {
+       console.log('Validation failed: missing required fields', { currentJob, workDate, startTime, endTime });
+       return;
+    }
+
+    if (timeConflictError) {
+        if (!confirm('พบช่วงเวลาทับซ้อน ต้องการบันทึกข้อมูลหรือไม่?')) {
+            return;
+        }
+    }
+    
     await handleSaveAndClose(formData.status || JobStatus.Planned);
   };
 
@@ -992,7 +1051,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             type="submit"
             form="edit-job-form"
             className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
-            disabled={!!timeConflictError}
           >
             บันทึกการเปลี่ยนแปลง
           </button>

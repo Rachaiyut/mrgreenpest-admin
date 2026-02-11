@@ -39,7 +39,16 @@ export const Sidebar: FC<SidebarProps> = ({
 
   useEffect(() => {
     const activeGroup = getActiveGroup();
-    setOpenGroups(activeGroup ? [activeGroup] : []);
+    setOpenGroups((prev) => {
+      const newGroups = activeGroup ? [activeGroup] : [];
+      if (
+        prev.length === newGroups.length &&
+        prev[0] === newGroups[0]
+      ) {
+        return prev;
+      }
+      return newGroups;
+    });
   }, [currentPage, getActiveGroup]);
 
   const toggleGroup = (groupName: string) => {
@@ -55,6 +64,12 @@ export const Sidebar: FC<SidebarProps> = ({
     startCloseTimer,
     clearCloseTimer,
   } = useFlyout(collapsed);
+
+  const closeMobileSidebar = () => {
+    if (window.innerWidth < 768) {
+      toggleSidebar();
+    }
+  };
 
   return (
     <>
@@ -131,6 +146,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   onFlyoutLeave={() => {
                     if (flyoutGroup) startCloseTimer();
                   }}
+                  onLinkClick={closeMobileSidebar}
                 />
               );
             }
@@ -140,6 +156,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 item={item}
                 isActive={currentPage === item.name}
                 collapsed={collapsed}
+                onClick={closeMobileSidebar}
               />
             );
           })}

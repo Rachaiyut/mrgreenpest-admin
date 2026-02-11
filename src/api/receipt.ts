@@ -33,6 +33,21 @@ class ReceiptService extends AuthService {
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async downloadPdf(id: string): Promise<void> {
+    const res = await this.http.get(`${this.path}/${id}/pdf`, {
+      responseType: 'blob',
+    });
+
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `receipt-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  }
 }
 
 export const ReceiptApi = new ReceiptService();

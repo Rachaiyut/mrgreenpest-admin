@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, FC, ChangeEvent, FormEvent } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea } from '../../common/FormControls';
+import { AssessmentApi } from '@/src/api';
 import {
   Assessment,
   Product,
@@ -51,81 +52,92 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   };
 
   useEffect(() => {
-    if (assessment && isOpen) {
-      const { assessment_areas, ...rest } = assessment;
-      setFormData({
-        ...rest,
-        created_at: assessment.created_at
-          ? new Date(assessment.created_at).toISOString().substring(0, 10)
-          : '',
-        appointment_date: assessment.appointment_date
-          ? new Date(assessment.appointment_date)
-          : undefined,
-      });
-      setSelectedPackageId(assessment.package_id || null);
-      
-      let loadedPaymentCondition = assessment.payment_condition || PaymentMethod.TRANSFER;
-      
-      // Fallback: If payment condition is TRANSFER but there are installments, assume INSTALLMENT
-      // This handles legacy data where payment_condition might not have been saved correctly
-      if (assessment.installments && assessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
-         loadedPaymentCondition = PaymentMethod.INSTALLMENT;
-      }
+    const loadData = async () => {
+      if (assessment && isOpen) {
+        let loadedAssessment = assessment;
+        try {
+           const res = await AssessmentApi.getById(assessment.id);
+           loadedAssessment = (res as any).data || res;
+        } catch (error) {
+           console.error("Failed to fetch assessment details", error);
+        }
 
-      setPaymentCondition(loadedPaymentCondition);
-
-      if (assessment.installments && assessment.installments.length > 0) {
-        setInstallments(assessment.installments.map(inst => ({
-           ...inst
-        })));
-      } else {
-        setInstallments([]);
-      }
-
-      const rawAreas = assessment_areas || assessment.assessment_areas || [];
-
-      // Helper to derive base price
-      const enrichArea = (wa: any) => {
-        const enrichedItems = (wa.items || []).map((item: any) => {
-          if (item.product_id && (!item.product_name || !item.product_price)) {
-            const product = products.find((p) => p.id === item.product_id);
-            if (product) {
-              return {
-                ...item,
-                product_name: product.name,
-                product_price: product.cost_price ? Number(product.cost_price) : 0,
-              };
-            }
-          }
-          return item;
+        const { assessment_areas, ...rest } = loadedAssessment;
+        setFormData({
+          ...rest,
+          created_at: loadedAssessment.created_at
+            ? new Date(loadedAssessment.created_at).toISOString().substring(0, 10)
+            : '',
+          appointment_date: loadedAssessment.appointment_date
+            ? new Date(loadedAssessment.appointment_date)
+            : undefined,
         });
+        setSelectedPackageId(loadedAssessment.package_id || null);
+        
+        let loadedPaymentCondition = loadedAssessment.payment_condition || PaymentMethod.TRANSFER;
+        
+        // Fallback: If payment condition is TRANSFER but there are installments, assume INSTALLMENT
+        // This handles legacy data where payment_condition might not have been saved correctly
+        if (loadedAssessment.installments && loadedAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
+           loadedPaymentCondition = PaymentMethod.INSTALLMENT;
+        }
 
-        const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
-        const derivedBasePrice = wa.base_service_price !== undefined
-          ? wa.base_service_price
-          : (Number(wa.total_price) || 0) - itemsTotal;
+        setPaymentCondition(loadedPaymentCondition);
 
-        return {
-          ...wa,
-          items: enrichedItems,
-          category_services: wa.category_services || [],
-          base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+        if (loadedAssessment.installments && loadedAssessment.installments.length > 0) {
+          setInstallments(loadedAssessment.installments.map(inst => ({
+             ...inst
+          })));
+        } else {
+          setInstallments([]);
+        }
+
+        const rawAreas = assessment_areas || loadedAssessment.assessment_areas || [];
+
+        // Helper to derive base price
+        const enrichArea = (wa: any) => {
+          const enrichedItems = (wa.items || []).map((item: any) => {
+            if (item.product_id && (!item.product_name || !item.product_price)) {
+              const product = products.find((p) => p.id === item.product_id);
+              if (product) {
+                return {
+                  ...item,
+                  product_name: product.name,
+                  product_price: product.cost_price ? Number(product.cost_price) : 0,
+                };
+              }
+            }
+            return item;
+          });
+
+          const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+          const derivedBasePrice = wa.base_service_price !== undefined
+            ? wa.base_service_price
+            : (Number(wa.total_price) || 0) - itemsTotal;
+
+          return {
+            ...wa,
+            items: enrichedItems,
+            category_services: wa.category_services || [],
+            base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+          };
         };
-      };
 
-      const enrichedAreas = rawAreas.map(enrichArea);
+        const enrichedAreas = rawAreas.map(enrichArea);
 
-      setWorkAreas(enrichedAreas);
-      setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a })));
-    } else if (!isOpen) {
-      setFormData({});
-      setWorkAreas([]);
-      setOriginalWorkAreas([]);
-      setInstallments([]);
-      setPaymentCondition(PaymentMethod.TRANSFER);
-      setActiveTab('info');
-    }
-  }, [assessment, isOpen, products]);
+        setWorkAreas(enrichedAreas);
+        setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a })));
+      } else if (!isOpen) {
+        setFormData({});
+        setWorkAreas([]);
+        setOriginalWorkAreas([]);
+        setInstallments([]);
+        setPaymentCondition(PaymentMethod.TRANSFER);
+        setActiveTab('info');
+      }
+    };
+    loadData();
+  }, [assessment?.id, isOpen, products]);
 
   const totalEstimatedCost = useMemo(
     () => workAreas.reduce((sum, area) => sum + (Number(area.total_price) || 0), 0),
@@ -134,25 +146,59 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
   // Handlers for Installments
   const handleAddInstallment = () => {
-    setInstallments(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        installment_no: prev.length + 1,
-        amount: 0,
-        note: `งวดที่ ${prev.length + 1}`,
-      }
-    ]);
+    setInstallments(prev => {
+      const newCount = prev.length + 1;
+      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
+      const remainder = totalEstimatedCost - (baseAmount * newCount);
+      
+      const newInstallments = [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          installment_no: newCount,
+          amount: 0, // Will be updated below
+          note: `งวดที่ ${newCount}`,
+        }
+      ];
+
+      return newInstallments.map((inst, index) => {
+        let amount = baseAmount;
+        // Add remainder to the last installment to ensure total matches exactly
+        if (index === newCount - 1) {
+          amount = Number((baseAmount + remainder).toFixed(2));
+        }
+        
+        return {
+          ...inst,
+          amount
+        };
+      });
+    });
   };
 
   const handleRemoveInstallment = (index: number) => {
     setInstallments(prev => {
       const filtered = prev.filter((_, i) => i !== index);
-      return filtered.map((inst, i) => ({
-        ...inst,
-        installment_no: i + 1,
-        note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
-      }));
+      const newCount = filtered.length;
+      
+      if (newCount === 0) return [];
+
+      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
+      const remainder = totalEstimatedCost - (baseAmount * newCount);
+
+      return filtered.map((inst, i) => {
+        let amount = baseAmount;
+        if (i === newCount - 1) {
+          amount = Number((baseAmount + remainder).toFixed(2));
+        }
+
+        return {
+          ...inst,
+          installment_no: i + 1,
+          amount,
+          note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
+        };
+      });
     });
   };
 
@@ -166,30 +212,71 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   };
 
   // Auto-calculate installments when total price changes or payment condition changes
+  // Remove installments from dependencies to prevent loop
   useEffect(() => {
-    if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && totalEstimatedCost > 0) {
-      // Default to 2 installments if none exist
-      setInstallments([
-        { 
-            id: crypto.randomUUID(), 
-            installment_no: 1, 
-            amount: totalEstimatedCost / 2, 
-            note: 'งวดที่ 1',
-        },
-        { 
-            id: crypto.randomUUID(), 
-            installment_no: 2, 
-            amount: totalEstimatedCost / 2, 
-            note: 'งวดที่ 2',
+    if (paymentCondition === PaymentMethod.INSTALLMENT) {
+      if (installments.length === 0 && totalEstimatedCost > 0) {
+        // Default to 2 installments if none exist
+        setInstallments([
+          { 
+              id: crypto.randomUUID(), 
+              installment_no: 1, 
+              amount: totalEstimatedCost / 2, 
+              note: 'งวดที่ 1',
+          },
+          { 
+              id: crypto.randomUUID(), 
+              installment_no: 2, 
+              amount: totalEstimatedCost / 2, 
+              note: 'งวดที่ 2',
+          }
+        ]);
+      } else if (installments.length > 0 && totalEstimatedCost > 0) {
+        // Recalculate existing installments based on new total
+        const currentTotal = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        
+        // Only update if the total doesn't match (precision issue tolerance)
+        if (Math.abs(currentTotal - totalEstimatedCost) > 0.05) {
+           const count = installments.length;
+           const baseAmount = Math.floor((totalEstimatedCost / count) * 100) / 100;
+           const remainder = totalEstimatedCost - (baseAmount * count);
+
+           setInstallments(prev => prev.map((inst, index) => {
+             let amount = baseAmount;
+             if (index === count - 1) {
+               amount = Number((baseAmount + remainder).toFixed(2));
+             }
+             return { ...inst, amount };
+           }));
         }
-      ]);
-    } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
+      }
+    } else {
       // Don't clear immediately on edit to prevent data loss if accidental switch, 
       // but if we follow Add logic, we should clear. 
       // Let's keep it consistent:
       setInstallments([]);
     }
   }, [paymentCondition, totalEstimatedCost]);
+
+  const updateInstallmentCount = (count: number) => {
+    const newCount = Math.max(1, Math.min(60, count));
+    const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
+    const remainder = totalEstimatedCost - (baseAmount * newCount);
+
+    const newInstallments = Array.from({ length: newCount }, (_, i) => {
+      let amount = baseAmount;
+      if (i === newCount - 1) {
+        amount = Number((baseAmount + remainder).toFixed(2));
+      }
+      return {
+        id: installments[i]?.id || crypto.randomUUID(),
+        installment_no: i + 1,
+        amount,
+        note: installments[i]?.note || `งวดที่ ${i + 1}`,
+      };
+    });
+    setInstallments(newInstallments);
+  };
 
   const handleFieldChange = (
     e: ChangeEvent<
@@ -668,9 +755,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
         {/* TAB 3: Payment */}
         <div className={activeTab === 'payment' ? 'block' : 'hidden'}>
-            <div className="space-y-6 animate-fadeIn">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
                  {/* Payment Condition Section */}
-                 <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+                 <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                     <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                         <CreditCardIcon className="w-5 h-5 text-primary" />
                         เงื่อนไขการชำระเงิน
@@ -678,9 +765,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <label className={`
-                            relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                            relative flex items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all h-14
                             ${paymentCondition === PaymentMethod.TRANSFER 
-                                ? 'border-primary bg-primary/5 shadow-md' 
+                                ? 'border-primary bg-primary/5 shadow-sm' 
                                 : 'border-slate-200 hover:border-slate-300 bg-white'}
                         `}>
                             <input 
@@ -689,18 +776,15 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                                 value={PaymentMethod.TRANSFER}
                                 checked={paymentCondition === PaymentMethod.TRANSFER}
                                 onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
-                                className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
+                                className="sr-only"
                             />
-                            <div className="ml-3">
-                                <span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span>
-                                <span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span>
-                            </div>
+                            <span className={`text-sm font-bold ${paymentCondition === PaymentMethod.TRANSFER ? 'text-primary' : 'text-slate-600'}`}>ชำระเต็มจำนวน</span>
                         </label>
 
                         <label className={`
-                            relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                            relative flex items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all h-14
                             ${paymentCondition === PaymentMethod.INSTALLMENT 
-                                ? 'border-primary bg-primary/5 shadow-md' 
+                                ? 'border-primary bg-primary/5 shadow-sm' 
                                 : 'border-slate-200 hover:border-slate-300 bg-white'}
                         `}>
                             <input 
@@ -709,99 +793,96 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                                 value={PaymentMethod.INSTALLMENT}
                                 checked={paymentCondition === PaymentMethod.INSTALLMENT}
                                 onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)}
-                                className="w-5 h-5 text-primary border-slate-300 focus:ring-primary"
+                                className="sr-only"
                             />
-                            <div className="ml-3">
-                                <span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span>
-                                <span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span>
-                            </div>
+                            <span className={`text-sm font-bold ${paymentCondition === PaymentMethod.INSTALLMENT ? 'text-primary' : 'text-slate-600'}`}>แบ่งชำระ (งวด)</span>
                         </label>
                     </div>
 
                     {paymentCondition === PaymentMethod.INSTALLMENT && (
                         <div className="space-y-4 animate-fadeIn">
-                            <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
-                                <button 
-                                    type="button" 
-                                    onClick={handleAddInstallment}
-                                    className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 font-medium"
-                                >
-                                    <PlusIcon className="w-4 h-4" />
-                                    เพิ่มงวด
-                                </button>
+                            <div>
+                              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                จำนวนงวด <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={60}
+                                  value={installments.length}
+                                  onChange={(e) => updateInstallmentCount(Number(e.target.value))}
+                                  className="font-semibold text-slate-700"
+                                />
+                              </div>
                             </div>
 
-                            <div className="overflow-hidden border border-slate-200 rounded-lg">
-                                <table className="min-w-full divide-y divide-slate-200">
-                                    <thead className="bg-slate-50">
-                                        <tr>
-                                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
-                                            <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
-                                            <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">วันที่ครบกำหนด</th>
-                                            <th className="px-2 py-3 w-10"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-slate-200">
-                                        {installments.map((inst, idx) => (
-                                            <tr key={inst.id || idx}>
-                                                <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
-                                                    {inst.installment_no}
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    <Input 
-                                                        value={inst.note || ''}
-                                                        onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)}
-                                                        placeholder="รายละเอียด..."
-                                                        className="h-9 text-sm"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        value={inst.amount}
-                                                        onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
-                                                        className="h-9 text-right text-sm font-mono"
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-2 text-center">
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleRemoveInstallment(idx)}
-                                                        className="text-slate-400 hover:text-red-500"
-                                                        disabled={installments.length <= 1}
-                                                    >
-                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                                                            <path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" />
-                                                        </svg>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                    <tfoot className="bg-slate-50">
-                                        <tr>
-                                            <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
-                                            <td className={`px-4 py-2 text-right text-sm font-bold ${
-                                                Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 
-                                                ? 'text-green-600' 
-                                                : 'text-red-600'
-                                            }`}>
-                                                {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}
-                                            </td>
-                                            <td colSpan={2}></td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                                <h4 className="text-sm font-semibold text-slate-700 mb-3">รายละเอียดการแบ่งชำระ:</h4>
+                                <div className="space-y-3">
+                                  {installments.map((inst, idx) => (
+                                    <div key={inst.id || idx} className="grid grid-cols-12 gap-3 items-start">
+                                      <div className="col-span-2 pt-2 text-sm font-medium text-slate-600">
+                                        งวดที่ {inst.installment_no}
+                                      </div>
+                                      <div className="col-span-5">
+                                        <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
+                                        <Input 
+                                          type="number"
+                                          value={inst.amount}
+                                          onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
+                                          className="text-sm font-medium"
+                                        />
+                                      </div>
+                                      <div className="col-span-5">
+                                        <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
+                                        <Input 
+                                          value={inst.note || ''}
+                                          onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)}
+                                          className="text-sm"
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
+                                    <span className="text-sm font-bold text-slate-700">รวม</span>
+                                    <span className={`text-sm font-bold ${
+                                        Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 
+                                        ? 'text-red-600' 
+                                        : 'text-red-600' // Using red per design requirement/image usually
+                                    }`}>
+                                        {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
+                                    </span>
+                                </div>
                             </div>
-                            {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) >= 1 && (
-                                <p className="text-xs text-red-500 text-right">
-                                    * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({totalEstimatedCost.toLocaleString()} บาท)
-                                </p>
-                            )}
                         </div>
                     )}
+                 </div>
+
+                 {/* Summary Side Card */}
+                 <div className="lg:col-span-1">
+                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm sticky top-6">
+                        <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
+                            <h3 className="font-bold text-slate-800">สรุปค่าบริการ</h3>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">พื้นที่ทั้งหมด</span>
+                                <span className="font-medium text-slate-900">{workAreas.length} จุด</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">ประเภทราคา</span>
+                                <span className="font-medium text-slate-900">{selectedPackageId ? 'Package' : 'Standard'}</span>
+                            </div>
+                            <div className="pt-4 border-t border-slate-100 flex justify-between items-center bg-green-50/50 -mx-4 px-4 py-3 mt-2 rounded-b-lg">
+                                <span className="font-bold text-slate-800">รวมสุทธิ</span>
+                                <span className="text-xl font-bold text-green-600">
+                                    ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                  </div>
             </div>
         </div>

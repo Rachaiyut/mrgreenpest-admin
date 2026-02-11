@@ -59,14 +59,15 @@ export const SidebarFlyout: FC<SidebarFlyoutProps> = ({
       <div className="py-2">
         {group.subItems.map((subItem: any) => {
           const isActive = currentPage === subItem.name;
+          const path = PAGE_PATH[subItem.name as Page];
+          const to = path ? `/${path}` : '#';
           return (
             <Link
               key={subItem.name}
-              to={`/${PAGE_PATH[subItem.name as Page]}`}
+              to={to}
               onClick={onClose}
-              className={`flex items-center w-full px-4 py-2 text-sm ${
-                isActive ? 'bg-slate-100 text-primary' : 'hover:bg-slate-50'
-              }`}
+              className={`flex items-center w-full px-4 py-2 text-sm ${isActive ? 'bg-slate-100 text-primary' : 'hover:bg-slate-50'
+                }`}
             >
               <span className="truncate">{subItem.name}</span>
             </Link>

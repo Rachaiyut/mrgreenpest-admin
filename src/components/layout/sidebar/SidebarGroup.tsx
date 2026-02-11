@@ -17,6 +17,7 @@ interface SidebarGroupProps {
   onFlyoutClose?: () => void;
   onFlyoutEnter?: () => void;
   onFlyoutLeave?: () => void;
+  onLinkClick?: () => void;
 }
 
 export const SidebarGroup: FC<SidebarGroupProps> = ({
@@ -29,8 +30,12 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
   onFlyoutOpen,
   onFlyoutEnter,
   onFlyoutLeave,
+  onLinkClick,
 }) => {
-  const getHref = (page: Page) => `/${PAGE_PATH[page]}`;
+  const getHref = (page: Page) => {
+    const path = PAGE_PATH[page];
+    return path ? `/${path}` : '#';
+  };
 
   return (
     <div key={item.name}>
@@ -38,23 +43,6 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
         onClick={(e) => {
           if (collapsed) {
             if (onFlyoutOpen) {
-              // Logic handled by parent or here?
-              // The original code toggles flyout if same group, or opens new one.
-              // Since we pass onFlyoutOpen, we assume the parent handles the logic or we just call it.
-              // But we need to know if THIS group is currently the flyout group.
-              // Let's assume the parent handles "toggle vs open" if we just say "I was clicked".
-              // But the original code had specific logic:
-              /*
-                if (flyoutGroup === item.name) {
-                  closeFlyout();
-                } else {
-                  clearCloseTimer();
-                  openFlyout(item.name, e.currentTarget);
-                }
-               */
-              // So we need to pass `isFlyoutOpen`?
-              // Let's simplify: pass `onClick` which handles everything.
-              // But for refactoring, let's keep it clean.
               onFlyoutOpen(item.name, e.currentTarget);
             }
           } else {
@@ -71,9 +59,8 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
             onFlyoutLeave();
           }
         }}
-        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${
-          isActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
-        } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
+        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${isActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
+          } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
         title={collapsed ? item.name : undefined}
       >
         <div className="flex items-center">
@@ -96,11 +83,11 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
               <Link
                 key={subItem.name}
                 to={getHref(subItem.name as Page)}
-                className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${
-                  isSubActive
+                onClick={onLinkClick}
+                className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${isSubActive
                     ? 'bg-[#08a93d] text-white'
                     : 'text-white/80 hover:bg-[#08a93d]/80 hover:text-white'
-                }`}
+                  }`}
               >
                 {subItem.name}
               </Link>

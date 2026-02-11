@@ -253,25 +253,58 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
 
   // Handlers for Installments
   const handleAddInstallment = () => {
-    setInstallments(prev => [
-      ...prev,
-      {
-        id: crypto.randomUUID(),
-        installment_no: prev.length + 1,
-        amount: 0,
-        note: `งวดที่ ${prev.length + 1}`,
-      }
-    ]);
+    setInstallments(prev => {
+      const newCount = prev.length + 1;
+      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
+      const remainder = totalEstimatedCost - (baseAmount * newCount);
+      
+      const newInstallments = [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          installment_no: newCount,
+          amount: 0, // Will be updated below
+          note: `งวดที่ ${newCount}`,
+        }
+      ];
+
+      return newInstallments.map((inst, index) => {
+        let amount = baseAmount;
+        if (index === newCount - 1) {
+          amount = Number((baseAmount + remainder).toFixed(2));
+        }
+        
+        return {
+          ...inst,
+          amount
+        };
+      });
+    });
   };
 
   const handleRemoveInstallment = (index: number) => {
     setInstallments(prev => {
       const filtered = prev.filter((_, i) => i !== index);
-      return filtered.map((inst, i) => ({
-        ...inst,
-        installment_no: i + 1,
-        note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
-      }));
+      const newCount = filtered.length;
+      
+      if (newCount === 0) return [];
+
+      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
+      const remainder = totalEstimatedCost - (baseAmount * newCount);
+
+      return filtered.map((inst, i) => {
+        let amount = baseAmount;
+        if (i === newCount - 1) {
+          amount = Number((baseAmount + remainder).toFixed(2));
+        }
+
+        return {
+          ...inst,
+          installment_no: i + 1,
+          amount,
+          note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
+        };
+      });
     });
   };
 
@@ -286,25 +319,47 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
 
   // Auto-calculate installments when total price changes or payment condition changes
   useEffect(() => {
-    if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && totalEstimatedCost > 0) {
-      // Default to 2 installments if none exist
-      setInstallments([
-        { 
-            id: crypto.randomUUID(), 
-            installment_no: 1, 
-            amount: totalEstimatedCost / 2, 
-            note: 'งวดที่ 1',
-        },
-        { 
-            id: crypto.randomUUID(), 
-            installment_no: 2, 
-            amount: totalEstimatedCost / 2, 
-            note: 'งวดที่ 2',
+    if (paymentCondition === PaymentMethod.INSTALLMENT) {
+      if (installments.length === 0 && totalEstimatedCost > 0) {
+        // Default to 2 installments if none exist
+        setInstallments([
+          { 
+              id: crypto.randomUUID(), 
+              installment_no: 1, 
+              amount: totalEstimatedCost / 2, 
+              note: 'งวดที่ 1', 
+          },
+          { 
+              id: crypto.randomUUID(), 
+              installment_no: 2, 
+              amount: totalEstimatedCost / 2, 
+              note: 'งวดที่ 2', 
+          }
+        ]);
+      } else if (installments.length > 0 && totalEstimatedCost > 0) {
+        // Recalculate existing installments based on new total
+        const currentTotal = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        
+        if (Math.abs(currentTotal - totalEstimatedCost) > 0.05) {
+           const count = installments.length;
+           const baseAmount = Math.floor((totalEstimatedCost / count) * 100) / 100;
+           const remainder = totalEstimatedCost - (baseAmount * count);
+
+           setInstallments(prev => prev.map((inst, index) => {
+             let amount = baseAmount;
+             if (index === count - 1) {
+               amount = Number((baseAmount + remainder).toFixed(2));
+             }
+             return { ...inst, amount };
+           }));
         }
-      ]);
-    } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
-      setInstallments([]);
+      }
+    } else {
+      if (installments.length > 0) {
+        setInstallments([]);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentCondition, totalEstimatedCost]);
 
   const handleSubmit = (e?: FormEvent) => {

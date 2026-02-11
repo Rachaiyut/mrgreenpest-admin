@@ -185,8 +185,8 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
       title={`รายละเอียดใบประเมิน: ${assessment.code || assessment.id}`}
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-between bg-slate-50 -m-6 p-6 border-t border-slate-200 rounded-b-xl">
-          <div className="flex flex-col">
+        <div className="flex w-full items-center justify-between">
+          <div className="flex flex-col text-left">
             <span className="text-sm text-slate-500">ยอดรวมทั้งหมดสุทธิ</span>
             <span className="text-2xl font-bold text-primary">
               ฿{assessment.total_price.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

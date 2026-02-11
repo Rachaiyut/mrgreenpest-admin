@@ -10,6 +10,7 @@ import {
   TrashIcon,
   PencilIcon,
   EyeIcon,
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Receipt, ReceiptStatus } from '../../types';
@@ -17,6 +18,7 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useData } from '../../contexts/DataContext';
+import { ReceiptApi } from '../../api/receipt';
 
 const statusLabels: Record<ReceiptStatus, string> = {
   [ReceiptStatus.DRAFT]: 'ร่าง',
@@ -72,6 +74,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     left: number;
   } | null>(null);
   const receiptDropdownRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
 
   // Form State
   const [receiptFormInvoiceId, setReceiptFormInvoiceId] = useState('');
@@ -421,30 +424,62 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                     </td>
                     {(onUpdateReceipt || onDeleteReceipt) && (
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="inline-block text-left">
+                        <div className="flex items-center justify-end gap-2">
                           <Button
-                            data-receipt-id={r.id}
-                            onClick={(e) => {
+                            variant="primary"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                              isDownloading === r.id
+                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              const rect = (
-                                e.currentTarget as HTMLButtonElement
-                              ).getBoundingClientRect();
-                              setSelectedReceipt(r);
-                              setOpenReceiptDropdownId(r.id);
-                              setReceiptDropdownPosition({
-                                top: rect.bottom + window.scrollY,
-                                left: rect.right + window.scrollX,
-                              });
+                              if (isDownloading === r.id) return;
+                              
+                              try {
+                                setIsDownloading(r.id);
+                                await ReceiptApi.downloadPdf(r.id);
+                              } catch (err) {
+                                console.error('Failed to download PDF', err);
+                                alert('ไม่สามารถดาวน์โหลด PDF ได้');
+                              } finally {
+                                setIsDownloading(null);
+                              }
                             }}
-                            variant="icon"
-                            title="ตัวเลือก"
+                            disabled={isDownloading === r.id}
                           >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
+                            {isDownloading === r.id ? (
+                              <LoadingIcon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4" />
+                            )}
+                            {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
                           </Button>
+                          <div className="inline-block text-left">
+                            <Button
+                              data-receipt-id={r.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = (
+                                  e.currentTarget as HTMLButtonElement
+                                ).getBoundingClientRect();
+                                setSelectedReceipt(r);
+                                setOpenReceiptDropdownId(r.id);
+                                setReceiptDropdownPosition({
+                                  top: rect.bottom + window.scrollY,
+                                  left: rect.right + window.scrollX,
+                                });
+                              }}
+                              variant="icon"
+                              title="ตัวเลือก"
+                            >
+                              <span className="sr-only">Open options</span>
+                              <ManageIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          </div>
                         </div>
                       </td>
                     )}

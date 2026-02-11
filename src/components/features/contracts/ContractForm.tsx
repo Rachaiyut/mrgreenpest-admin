@@ -186,7 +186,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         } else if (initialValues?.installments) {
             setInstallments(initialValues.installments.map(inst => ({
                 id: inst.id || crypto.randomUUID(),
-                term: inst.term || inst.installment_no,
+                term: inst.term || (inst as any).installment_no,
                 description: inst.description,
                 percentage: Number(inst.percentage),
                 amount: Number(inst.amount),
@@ -201,7 +201,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         if (customers.length > 0 && searchedCustomers.length === 0) {
             setSearchedCustomers(customers);
         }
-    }, [customers]);
+    }, [customers, searchedCustomers.length]);
 
     const handleCustomerSearch = useCallback((query: string) => {
         if (searchTimeoutRef.current) {
@@ -425,10 +425,17 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Recalculate Installments
     useEffect(() => {
-        setInstallments(prev => prev.map(inst => ({
-            ...inst,
-            amount: Math.round(totalAmount * (inst.percentage / 100))
-        })));
+        setInstallments(prev => {
+            const newInstallments = prev.map(inst => ({
+                ...inst,
+                amount: Math.round(totalAmount * (inst.percentage / 100))
+            }));
+            
+            // Check if amounts actually changed to prevent infinite loop
+            const hasChanged = prev.some((inst, idx) => inst.amount !== newInstallments[idx].amount);
+            
+            return hasChanged ? newInstallments : prev;
+        });
     }, [totalAmount]);
 
     const handleInstallmentChange = (id: string, field: keyof InstallmentPlan, value: any) => {

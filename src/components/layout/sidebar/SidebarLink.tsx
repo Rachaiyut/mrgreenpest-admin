@@ -9,21 +9,27 @@ interface SidebarLinkProps {
   item: NavLink;
   isActive: boolean;
   collapsed: boolean;
+  onClick?: () => void;
 }
 
 export const SidebarLink: FC<SidebarLinkProps> = ({
   item,
   isActive,
   collapsed,
+  onClick,
 }) => {
   const displayName = item.name === 'Dashboard' ? 'แดชบอร์ด' : item.name;
 
+  const path = PAGE_PATH[item.name as Page];
+  const to = path ? `/${path}` : '#';
+
   return (
     <Link
-      to={`/${PAGE_PATH[item.name as Page]}`}
+      to={to}
+      onClick={onClick}
       className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-2.5 text-base font-medium rounded-md transition-colors ${isActive
-          ? 'bg-[#08a93d] text-white'
-          : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
+        ? 'bg-[#08a93d] text-white'
+        : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
         }`}
       title={collapsed ? displayName : undefined}
     >

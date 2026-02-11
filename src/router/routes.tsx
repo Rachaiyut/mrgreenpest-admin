@@ -71,7 +71,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/dashboard',
       element: <Dashboard />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH],
     },
     {
       path: '/customers',
