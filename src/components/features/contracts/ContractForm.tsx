@@ -250,12 +250,26 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Quotation options
     const quotationOptions = useMemo(() => {
-        return quotations.map((q) => ({
+        const options = quotations.map((q) => ({
             value: q.id,
             label: `${q.code || `QT-${q.id.slice(0, 8)}`} - ${q.customer_name}`,
             description: `฿${Number(q.total).toLocaleString('th-TH')}`,
         }));
-    }, [quotations]);
+
+        // Add currently selected fullQuotation if not in the list
+        if (fullQuotation && fullQuotation.id === selectedQuotationId) {
+            const exists = options.some(o => o.value === fullQuotation.id);
+            if (!exists) {
+                options.unshift({
+                    value: fullQuotation.id,
+                    label: `${fullQuotation.code || `QT-${fullQuotation.id.slice(0, 8)}`} - ${fullQuotation.customer_name}`,
+                    description: `฿${Number(fullQuotation.total).toLocaleString('th-TH')}`,
+                });
+            }
+        }
+
+        return options;
+    }, [quotations, fullQuotation, selectedQuotationId]);
 
     // Auto-fill from Quotation
     const isInitialLoad = useRef(true);
@@ -321,6 +335,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                         // Auto-fill installments from quotation if available
                         if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
                             const backendInstallments = fullQuotationData.installments as any[];
+                            const totalVal = Number(fullQuotationData.total) || 0;
 
                             // Parsing Duration
                             let durationMonths = 12;
@@ -338,15 +353,20 @@ export const ContractForm: FC<ContractFormProps> = ({
 
                             // Logic to map quotation installments to contract installments could be complex
                             // For now, we use simple mapping
-                            setInstallments(backendInstallments.map((inst: any, index: number) => ({
-                                id: crypto.randomUUID(),
-                                term: inst.installment_no || index + 1,
-                                description: inst.description || `งวดที่ ${inst.installment_no || index + 1}`,
-                                percentage: Number(inst.percentage) || 0,
-                                amount: Number(inst.amount) || 0,
-                                due_date: '', // Recalculate based on start date?
-                                status: 'PENDING' as any
-                            })));
+                            setInstallments(backendInstallments.map((inst: any, index: number) => {
+                                const amount = Number(inst.amount) || 0;
+                                const calculatedPercentage = totalVal > 0 ? (amount / totalVal) * 100 : 0;
+
+                                return {
+                                    id: crypto.randomUUID(),
+                                    term: inst.installment_no || index + 1,
+                                    description: inst.description || inst.notes || `งวดที่ ${inst.installment_no || index + 1}`,
+                                    percentage: Number(inst.percentage) || calculatedPercentage,
+                                    amount: amount,
+                                    due_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
+                                    status: 'PENDING' as any
+                                };
+                            }));
                         }
                     }
                 } catch (error) {

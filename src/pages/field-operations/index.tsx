@@ -129,7 +129,7 @@ const JobCard: React.FC<{
               <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
                 {job.customerName}
               </h4>
-              {job.work_areas.length > 0 && (
+              {job.work_areas?.length > 0 && (
                 <p className="text-xs text-slate-500 mt-1 truncate">
                   {job.work_areas.map((wa) => wa.service_package).join(', ')}
                 </p>
@@ -168,9 +168,9 @@ const JobCard: React.FC<{
             <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
             <span
               className="text-slate-600 truncate"
-              title={job.technicians.map((t) => t.name).join(', ')}
+              title={job.technicians?.map((t) => t.name).join(', ')}
             >
-              {job.technicians.length > 0
+              {job.technicians?.length > 0
                 ? job.technicians.map((t) => t.name).join(', ')
                 : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
             </span>

@@ -151,10 +151,10 @@ export const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({
 									<p className="text-sm font-medium text-slate-800">{contract.service_count ? `${contract.service_count} ครั้ง` : '-'}</p>
 								</div>
 							</div>
-							{quotation && (
+							{(quotation || fullQuotation) && (
 								<div className="bg-slate-50 p-3 rounded-md border border-slate-100 flex items-center gap-2">
 									<DocumentTextIcon className="w-4 h-4 text-slate-500" />
-									<span className="text-sm text-slate-600">อ้างอิงใบเสนอราคา: <span className="font-medium text-slate-900">{quotation.code || `QT-${quotation.id.slice(0, 8)}`}</span></span>
+									<span className="text-sm text-slate-600">อ้างอิงใบเสนอราคา: <span className="font-medium text-slate-900">{(quotation || fullQuotation).code || `QT-${(quotation || fullQuotation).id.slice(0, 8)}`}</span></span>
 								</div>
 							)}
 						</div>
