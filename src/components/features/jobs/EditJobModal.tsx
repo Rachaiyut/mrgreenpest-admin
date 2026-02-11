@@ -285,19 +285,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           // If assessment fields are missing in job but present in assessment, fill them
           if (rawAssessment) {
              const assessmentAny = rawAssessment as any;
-             if (!initialFormData.zone && assessmentAny.zone) initialFormData.zone = assessmentAny.zone;
-             if (!initialFormData.group && assessmentAny.route_group) initialFormData.group = assessmentAny.route_group;
-             if (!initialFormData.road_line && assessmentAny.road_line) initialFormData.road_line = assessmentAny.road_line;
-             if (!initialFormData.sequence && assessmentAny.sequence) initialFormData.sequence = assessmentAny.sequence;
-             
-             // Update form data with these new values
-             setFormData(prev => ({
-                 ...prev,
-                 zone: initialFormData.zone,
-                 group: initialFormData.group,
-                 road_line: initialFormData.road_line,
-                 sequence: initialFormData.sequence
-             }));
+             setFormData(prev => {
+                 const newData = { ...prev };
+                 if (!newData.zone && assessmentAny.zone) newData.zone = assessmentAny.zone;
+                 if (!newData.group && assessmentAny.route_group) newData.group = assessmentAny.route_group;
+                 if (!newData.road_line && assessmentAny.road_line) newData.road_line = assessmentAny.road_line;
+                 if (!newData.sequence && assessmentAny.sequence) newData.sequence = assessmentAny.sequence;
+                 return newData;
+             });
           }
 
           } else {
@@ -343,7 +338,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setIsLoadingPackages(true);
-      PackageApi.getPackages({ limit: 10 })
+      PackageApi.getPackages({ limit: 1000 })
         .then((res) => {
           setPackages(res.data || []);
         })
