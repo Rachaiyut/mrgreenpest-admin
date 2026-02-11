@@ -2080,7 +2080,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         finalStatus={reportFinalStatus}
         onSubmit={handleReportSubmit}
         contracts={contracts}
-        quotations={quotations}
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}

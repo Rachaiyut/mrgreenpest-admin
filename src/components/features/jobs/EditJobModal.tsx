@@ -905,8 +905,12 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       ? (currentUser.role as any).name
       : currentUser?.role;
 
-    // Hide team tab for Lead Tech and Technician
-    if (roleName === UserRole.LEAD_TECH || roleName === UserRole.TECH) {
+    // Hide team tab if user is NOT Lead Tech, Technician, or Admin
+    if (
+      roleName !== UserRole.LEAD_TECH &&
+      roleName !== UserRole.TECH &&
+      roleName !== UserRole.ADMIN
+    ) {
       return allTabs.filter((t) => t.id !== 'team');
     }
 

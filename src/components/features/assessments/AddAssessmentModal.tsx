@@ -299,14 +299,12 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
             installment_no: 1, 
             amount: totalEstimatedCost / 2, 
             note: 'งวดที่ 1',
-            due_date: date1.toISOString().substring(0, 10)
         },
         { 
             id: crypto.randomUUID(), 
             installment_no: 2, 
             amount: totalEstimatedCost / 2, 
             note: 'งวดที่ 2',
-            due_date: date2.toISOString().substring(0, 10)
         }
       ]);
     } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
@@ -837,7 +835,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
                                                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
                                                     <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                                                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
                                                     <th className="px-2 py-3 w-10"></th>
                                                 </tr>
                                             </thead>
@@ -863,14 +860,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                                                                 value={inst.amount}
                                                                 onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
                                                                 className="h-9 text-right text-sm font-mono font-medium border-slate-200 focus:border-primary"
-                                                            />
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <Input 
-                                                                type="date"
-                                                                value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''}
-                                                                onChange={(e) => handleInstallmentChange(idx, 'due_date', new Date(e.target.value))}
-                                                                className="h-9 text-sm text-center border-slate-200 focus:border-primary"
                                                             />
                                                         </td>
                                                         <td className="px-2 py-2 text-center">

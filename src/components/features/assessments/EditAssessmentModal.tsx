@@ -747,7 +747,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                                             <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
                                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
                                             <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
                                             <th className="px-2 py-3 w-10"></th>
                                         </tr>
                                     </thead>

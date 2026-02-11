@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Textarea, Input, Select } from '../../common/FormControls';
+import { Textarea, Input, Select } from '../../common/FormControls';
 import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
-import { Status, User, UserRole } from '@/src/types/entity/core.interface';
-import { Quotation, Contract } from '@/src/types/entity/financial.interface';
+import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
-import { QuotationApi } from '@/src/api';
-import { SearchableSelect } from '../../common';
-import { PaymentMethod } from '@/src/types/enums/financial';
-import { CreditCardIcon } from '../../../assets/icons/Icons';
+import { 
+  CalendarIcon, 
+  DocumentIcon, 
+  CheckCircleIcon
+} from '../../../assets/icons/Icons';
 
 interface ServiceReportModalProps {
   isOpen: boolean;
@@ -25,9 +25,8 @@ interface ServiceReportModalProps {
     quotationId?: string
   ) => void;
   finalStatus: JobStatus;
-  quotations: Quotation[];
   currentUser: User;
-  contracts: Contract[];
+  contracts: any[]; // Changed from Contract[] to any[] or remove import if unused. Contract was imported.
   products: Product[];
   jobs?: FieldJob[];
 }
@@ -57,65 +56,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   job,
   onSubmit,
   finalStatus,
-  quotations,
   currentUser,
   contracts,
   products = [],
   jobs = [],
 }) => {
   const [reportState, setReportState] = useState<Partial<ServiceReport>>({});
-  const [selectedQuotationId, setSelectedQuotationId] = useState('');
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
 
-  const [quotation, setQuotation] = useState<Quotation[]>([]);
+  const [activePestTab, setActivePestTab] = useState<PestType>('termite');
 
-  useEffect(() => {
-    const fetchQuotation = async () => {
-      try {
-        const res = await QuotationApi.getAll({ limit: 10 });
-        setQuotation(res.data);
-      } catch (error) {
-        console.error('Failed to fetch quotation:', error);
-      }
-    };
-    fetchQuotation();
-  }, []);
-
-
-  // Quotation options for dropdown
-  const quotationOptions = useMemo(() => {
-    console.log('Quotations for options:', quotation);
-    return (quotation || [])
-      // .filter((a) => a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.PENDING)
-      .map((q) => {
-        const customerName = q.customer_name
-          ? `${q.customer_name}`.trim()
-          : 'ไม่ระบุลูกค้า';
-        return {
-          value: q.id,
-          label: `${q.code || 'No Code'} - ${customerName} [${q.status}]`,
-          description: q.code || '',
-        };
-      });
-  }, [quotation]);
-
-  // Selected assessment details
   const selectedAssessment = useMemo(() => {
     return assessments?.find((a) => a.id === selectedAssessmentId);
   }, [assessments, selectedAssessmentId]);
-
-
-  const availableQuotations = useMemo(() => {
-    if (!job) return [];
-    return (quotations || []).filter(
-      (q) =>
-        q.customer_id === job.customer_id &&
-        (q.status === Status.Draft ||
-          q.status === Status.Sent ||
-          q.id === job.quotation_id)
-    );
-  }, [quotations, job]);
 
   const packageMapByName = useMemo(
     () =>
@@ -183,14 +137,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   useEffect(() => {
     if (isOpen && job) {
-      // If the job already has a draft report, load it. Otherwise, create a new one.
       let initialReport: Partial<ServiceReport>;
 
       if (job.service_report) {
         const r = job.service_report;
         const d = r.service_report_pest_detail || {};
 
-        // Reconstruct service_types
         const types: string[] = [];
         if (r.is_service_termite) types.push('กำจัดปลวก');
         if (r.is_service_ant_roach) { types.push('กำจัดมด'); types.push('กำจัดแมลงสาบ'); }
@@ -198,7 +150,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         if (r.is_service_mosquito) types.push('กำจัดยุง');
         if (r.service_other) types.push('กำจัดอื่นๆ');
 
-        // Reconstruct service_actions
         const actions: string[] = [];
         if (r.is_op_station) actions.push('ฝังสถานี');
         if (r.is_op_refill) actions.push('เติมเหยื่อ');
@@ -212,8 +163,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         if (r.is_op_bait) actions.push('วางเหยื่อ');
         if (r.is_op_trap) actions.push('วางกับดัก');
 
-
-        // Reconstruct next_appointment reasons
         const nextReasons: string[] = [];
         if (r.is_next_refill) nextReasons.push('วางเหยื่อ');
         if (r.is_next_chemical) nextReasons.push('ฉีดปลวก');
@@ -295,7 +244,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             }
           }
         };
-        setSelectedQuotationId(r.quotation_id || job.quotation_id || '');
       } else {
         initialReport = {
           created_at: new Date().toISOString().substring(0, 10),
@@ -329,7 +277,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           },
           status: JobStatus.Draft,
         };
-        setSelectedQuotationId(job.quotation_id || '');
       }
 
       setReportState(initialReport);
@@ -342,7 +289,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     e.preventDefault();
 
     let nextStatus = reportState.status || JobStatus.Draft;
-    // If a non-admin user saves a draft, it moves to PendingApproval
     if (currentUser.role !== UserRole.ADMIN && nextStatus === JobStatus.Draft) {
       nextStatus = JobStatus.PendingApproval;
     }
@@ -350,25 +296,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     const finalReportData = {
       ...reportState,
       status: nextStatus,
-      // Map legacy fields to new payload structure
       job_id: job.id,
       customer_id: job.customer_id,
-      quotation_id: selectedQuotationId,
       report_date: new Date().toISOString(),
       customer_name: (job as any).customerName || (job as any).customer_name,
 
-      // Service Types
       is_service_termite: reportState.service_types?.includes('กำจัดปลวก'),
       is_service_ant_roach: reportState.service_types?.some(t => ['กำจัดมด', 'กำจัดแมลงสาบ'].includes(t)),
       is_service_rodent: reportState.service_types?.includes('กำจัดหนู'),
       is_service_mosquito: reportState.service_types?.includes('กำจัดยุง'),
       service_other: reportState.service_types?.includes('กำจัดอื่นๆ') ? 'Other' : null,
 
-      // Time
       time_in: reportState.check_in_time,
       time_out: reportState.check_out_time,
 
-      // Operations (Merging generic actions and pest-specific details)
       is_op_station: reportState.service_actions?.includes('ฝังสถานี') ||
         reportState.termite?.actions?.installStations?.enabled,
 
@@ -397,7 +338,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       is_op_powder: reportState.service_actions?.includes('โรยผง'),
 
-      is_op_bait: reportState.rat?.bait_stations, // Placing bait stations
+      is_op_bait: reportState.rat?.bait_stations, 
 
       is_op_trap: reportState.lizard?.place_traps ||
         reportState.rat?.glue_traps ||
@@ -405,7 +346,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       op_other: null,
 
-      // Next Service
       work_note: reportState.notes,
       next_service_schedule: reportState.next_appointment?.scheduled_at,
       next_service_purpose: reportState.next_appointment?.reasons?.join(', '),
@@ -415,7 +355,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       is_next_underground: reportState.next_appointment?.reasons?.includes('อัดลงดิน'),
       is_next_renew: reportState.next_appointment?.reasons?.includes('ครบรอบบริการ'),
 
-      // Pest Detail - nested object for backend
       pest_detail: {
         ant_bait: reportState.ant?.apply_gel || false,
         roach_bait: reportState.cockroach?.apply_gel || false,
@@ -426,7 +365,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         lizard_trap: reportState.lizard?.place_traps || false,
         pest_other: reportState.ant?.other || reportState.cockroach?.other || reportState.rat?.other || reportState.lizard?.other,
         
-        // Termite details
         termite_status: reportState.termite?.status,
         termite_install_stations_count: reportState.termite?.actions?.installStations?.count,
         termite_add_bait_count: reportState.termite?.actions?.addBait?.count,
@@ -447,26 +385,15 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         termite_other: reportState.termite?.actions?.other,
       },
     } as ServiceReport;
-    onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
+    onSubmit(job.id, finalReportData, finalStatus);
   };
 
   const handleApprove = () => {
     const finalReportData = {
       ...reportState,
-      status: JobStatus.Completed, // Or Approved? Assuming Completed or InProgress depending on workflow.
-      // Wait, ServiceReport status is JobStatus.
-      // If approved, usually job status becomes Completed or similar.
-      // But here we are setting REPORT status.
-      // Let's assume 'Approved' maps to something, but JobStatus doesn't have 'Approved'.
-      // It has 'Completed'.
-      // If the report is approved, maybe the job is completed.
+      status: JobStatus.Completed,
     } as ServiceReport;
-    // Actually the previous code used Status.Approved.
-    // If JobStatus doesn't have Approved, we should use Completed.
-    // Let's use Completed.
-    finalReportData.status = JobStatus.Completed;
-
-    onSubmit(job.id, finalReportData, finalStatus, selectedQuotationId);
+    onSubmit(job.id, finalReportData, finalStatus);
   };
 
   const handleMultiSelect = (
@@ -606,7 +533,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const title =
     finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
-      : `บันทึกรายงานบริการ: ${job.code}`;
+      : `บันทึกรายงานบริการ: ${job.code || 'N/A'}`;
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
@@ -615,518 +542,313 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const submitButtonText = isDraft ? 'ส่งเพื่ออนุมัติ' : 'บันทึกการเปลี่ยนแปลง';
 
   const renderTermiteForm = (): React.ReactElement => (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-x-6 gap-y-2 mb-2">
-        <label className="flex items-center gap-2 text-slate-800">
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+        <span className="text-sm font-semibold text-yellow-800 w-full">สถานะปลวก:</span>
+        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
             value="present"
+            className="w-4 h-4 text-primary"
             checked={reportState.termite?.status === 'present'}
             onChange={() =>
               handlePestDataChange('termite', 'status', 'present')
             }
           />{' '}
-          มี
+          <span className="font-medium">มีปลวก</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800">
+        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
             value="reduced"
+            className="w-4 h-4 text-primary"
             checked={reportState.termite?.status === 'reduced'}
             onChange={() =>
               handlePestDataChange('termite', 'status', 'reduced')
             }
           />{' '}
-          มี แต่ปริมาณลดลง
+          <span className="font-medium">มี แต่ปริมาณลดลง</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800">
+        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
             value="absent"
+            className="w-4 h-4 text-primary"
             checked={reportState.termite?.status === 'absent'}
             onChange={() => handlePestDataChange('termite', 'status', 'absent')}
           />{' '}
-          ไม่มี
+          <span className="font-medium">ไม่มี</span>
         </label>
       </div>
+      
       {reportState.termite?.status !== 'absent' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 p-3 bg-slate-50 rounded">
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.installStations?.enabled}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'installStations',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            ฝังสถานี
-            <div className="flex items-center gap-2">
-              <Select
-                className="w-24 h-9 !py-0"
-                value={
-                  reportState.termite?.actions?.installStations?.count || ''
-                }
-                onChange={(e) =>
-                  handleTermiteActionChange(
-                    'installStations',
-                    'count',
-                    e.target.value ? parseInt(e.target.value, 10) : undefined
-                  )
-                }
-              >
-                <option value="">จำนวน</option>
-                {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </Select>
-              <span className="text-slate-700">จุด</span>
-            </div>
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.changeWood}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'changeWood',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            เปลี่ยนไม้สถานี
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.changeLid}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'changeLid',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            เปลี่ยนฝาสถานี
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.addFocusBait}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'addFocusBait',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            เติมสาร focus ล่อปลวก
-          </label>
-
-          <div className="md:col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <label className="flex items-center gap-2 text-slate-800 flex-shrink-0">
-              <input
-                type="checkbox"
-                checked={!!reportState.termite?.actions?.placeBoxes?.enabled}
-                onChange={(e) =>
-                  handleTermiteActionChange(
-                    'placeBoxes',
-                    'enabled',
-                    e.target.checked
-                  )
-                }
-              />
-              <span>วางกล่อง</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <div className="flex items-center gap-2">
-                <Select
-                  className="w-24 h-9 !py-0"
-                  value={reportState.termite?.actions?.placeBoxes?.count || ''}
-                  onChange={(e) =>
-                    handleTermiteActionChange(
-                      'placeBoxes',
-                      'count',
-                      e.target.value ? parseInt(e.target.value, 10) : undefined
-                    )
-                  }
-                >
-                  <option value="">จำนวน</option>
-                  {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                    <option key={num} value={num}>
-                      {num}
-                    </option>
-                  ))}
-                </Select>
-                <span className="text-slate-700">กล่อง</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <label htmlFor="termite-area" className="text-slate-800">
-                  บริเวณ
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+          {/* Station Section */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">ระบบสถานี/เหยื่อ</h6>
+             <div className="space-y-3">
+                <label className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.installStations?.enabled} onChange={(e) => handleTermiteActionChange('installStations', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>ฝังสถานี</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <input type="number" placeholder="0" className="w-16 h-8 text-center border rounded" value={reportState.termite?.actions?.installStations?.count || ''} onChange={(e) => handleTermiteActionChange('installStations', 'count', e.target.value ? parseInt(e.target.value) : undefined)} />
+                     <span className="text-xs text-slate-500">จุด</span>
+                  </div>
                 </label>
-                <Input
-                  id="termite-area"
-                  type="text"
-                  className="h-9 w-48"
-                  value={reportState.termite?.actions?.placeBoxes?.area || ''}
-                  placeholder="เช่น ใต้ซิงค์, ห้องเก็บของ"
-                  onChange={(e) =>
-                    handleTermiteActionChange(
-                      'placeBoxes',
-                      'area',
-                      e.target.value
-                    )
-                  }
-                />
-              </div>
-            </div>
+                <label className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.addBait?.enabled} onChange={(e) => handleTermiteActionChange('addBait', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>เติมเหยื่อ</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <input type="number" placeholder="0" className="w-16 h-8 text-center border rounded" value={reportState.termite?.actions?.addBait?.count || ''} onChange={(e) => handleTermiteActionChange('addBait', 'count', e.target.value ? parseInt(e.target.value) : undefined)} />
+                     <span className="text-xs text-slate-500">กล่อง</span>
+                  </div>
+                </label>
+                <label className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.foundTermites?.enabled} onChange={(e) => handleTermiteActionChange('foundTermites', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>พบปลวกกินเหยื่อ</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <input type="number" placeholder="0" className="w-16 h-8 text-center border rounded" value={reportState.termite?.actions?.foundTermites?.count || ''} onChange={(e) => handleTermiteActionChange('foundTermites', 'count', e.target.value ? parseInt(e.target.value) : undefined)} />
+                     <span className="text-xs text-slate-500">กล่อง</span>
+                  </div>
+                </label>
+                 <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.changeWood} onChange={(e) => handleTermiteActionChange('changeWood', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>เปลี่ยนไม้สถานี</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.changeLid} onChange={(e) => handleTermiteActionChange('changeLid', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>เปลี่ยนฝาสถานี</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.addFocusBait} onChange={(e) => handleTermiteActionChange('addFocusBait', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>เติมสาร focus</span>
+                </label>
+             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.addBait?.enabled}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'addBait',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            เติมเหยื่อ
-            <div className="flex items-center gap-2">
-              <Select
-                className="w-24 h-9 !py-0"
-                value={reportState.termite?.actions?.addBait?.count || ''}
-                onChange={(e) =>
-                  handleTermiteActionChange(
-                    'addBait',
-                    'count',
-                    e.target.value ? parseInt(e.target.value, 10) : undefined
-                  )
-                }
-              >
-                <option value="">จำนวน</option>
-                {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </Select>
-              <span className="text-slate-700">กล่อง</span>
-            </div>
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.foundTermites?.enabled}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'foundTermites',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            พบปลวกกินเหยื่อ
-            <div className="flex items-center gap-2">
-              <Select
-                className="w-24 h-9 !py-0"
-                value={reportState.termite?.actions?.foundTermites?.count || ''}
-                onChange={(e) =>
-                  handleTermiteActionChange(
-                    'foundTermites',
-                    'count',
-                    e.target.value ? parseInt(e.target.value, 10) : undefined
-                  )
-                }
-              >
-                <option value="">จำนวน</option>
-                {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </Select>
-              <span className="text-slate-700">กล่อง</span>
-            </div>
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.injectSoil}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'injectSoil',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            อัดน้ำยารอบบ้าน
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.injectPipes?.enabled}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'injectPipes',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            อัดน้ำยาเข้าท่อปลวก
-            <div className="flex items-center gap-2">
-              <Select
-                className="w-24 h-9 !py-0"
-                value={reportState.termite?.actions?.injectPipes?.count || ''}
-                onChange={(e) =>
-                  handleTermiteActionChange(
-                    'injectPipes',
-                    'count',
-                    e.target.value ? parseInt(e.target.value, 10) : undefined
-                  )
-                }
-              >
-                <option value="">จำนวน</option>
-                {Array.from({ length: 50 }, (_, i) => i + 1).map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </Select>
-              <span className="text-slate-700">จุด</span>
-            </div>
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.injectShaft}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'injectShaft',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            อัดน้ำยาเข้าช่องชาร์ป
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.sprayGarden}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'sprayGarden',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            สเปรย์น้ำยาภายในสวน
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.sprayBio}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'sprayBio',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            สเปรย์น้ำยาชีวภาพ
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.aroundBuilding}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'aroundBuilding',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            รอบอาคาร
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.inShaft}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'inShaft',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            ช่องชาร์ป
-          </label>
-          <label className="flex items-center gap-2 text-slate-800">
-            <input
-              type="checkbox"
-              checked={!!reportState.termite?.actions?.insideBuilding}
-              onChange={(e) =>
-                handleTermiteActionChange(
-                  'insideBuilding',
-                  'enabled',
-                  e.target.checked
-                )
-              }
-            />
-            ภายในอาคาร
-          </label>
-          <div className="md:col-span-2">
+          {/* Chemical/Spray Section */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">ระบบน้ำยา/สเปรย์</h6>
+             <div className="space-y-3">
+               <label className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.injectPipes?.enabled} onChange={(e) => handleTermiteActionChange('injectPipes', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>อัดเข้าท่อ</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                     <input type="number" placeholder="0" className="w-16 h-8 text-center border rounded" value={reportState.termite?.actions?.injectPipes?.count || ''} onChange={(e) => handleTermiteActionChange('injectPipes', 'count', e.target.value ? parseInt(e.target.value) : undefined)} />
+                     <span className="text-xs text-slate-500">จุด</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.injectSoil} onChange={(e) => handleTermiteActionChange('injectSoil', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>อัดลงดินรอบบ้าน</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.injectShaft} onChange={(e) => handleTermiteActionChange('injectShaft', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>อัดเข้าช่องชาร์ป</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.sprayGarden} onChange={(e) => handleTermiteActionChange('sprayGarden', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>สเปรย์สวน</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.sprayBio} onChange={(e) => handleTermiteActionChange('sprayBio', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>สเปรย์น้ำยาชีวภาพ</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.aroundBuilding} onChange={(e) => handleTermiteActionChange('aroundBuilding', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>รอบอาคาร</span>
+                </label>
+                <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!reportState.termite?.actions?.insideBuilding} onChange={(e) => handleTermiteActionChange('insideBuilding', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                    <span>ภายในอาคาร</span>
+                </label>
+             </div>
+          </div>
+
+          {/* Box Placement */}
+          <div className="col-span-1 md:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">การวางกล่อง (Termite Box)</h6>
+             <div className="flex flex-wrap items-end gap-4">
+                <label className="flex items-center gap-2 mb-2">
+                  <input type="checkbox" checked={!!reportState.termite?.actions?.placeBoxes?.enabled} onChange={(e) => handleTermiteActionChange('placeBoxes', 'enabled', e.target.checked)} className="rounded text-primary focus:ring-primary" />
+                  <span>วางกล่อง</span>
+                </label>
+                <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm">จำนวน:</span>
+                     <input type="number" placeholder="0" className="w-16 h-8 text-center border rounded" value={reportState.termite?.actions?.placeBoxes?.count || ''} onChange={(e) => handleTermiteActionChange('placeBoxes', 'count', e.target.value ? parseInt(e.target.value) : undefined)} />
+                </div>
+                <div className="flex items-center gap-2 flex-1 mb-2">
+                    <span className="text-sm">บริเวณ:</span>
+                    <Input type="text" className="h-8 flex-1" placeholder="เช่น ใต้ซิงค์, ห้องเก็บของ" value={reportState.termite?.actions?.placeBoxes?.area || ''} onChange={(e) => handleTermiteActionChange('placeBoxes', 'area', e.target.value)} />
+                </div>
+             </div>
+          </div>
+
+          <div className="col-span-1 md:col-span-2">
             <Input
               type="text"
-              placeholder="อื่นๆ..."
+              placeholder="รายละเอียดอื่นๆ เพิ่มเติม..."
               value={reportState.termite?.actions?.other || ''}
               onChange={(e) => handleTermiteOtherChange(e.target.value)}
-              className="h-9"
+              className="h-10"
             />
           </div>
         </div>
       )}
     </div>
   );
+
   const renderAntForm = (): React.ReactElement => (
-    <div className="space-y-3">
-      <label className="flex items-center gap-2 text-slate-800">
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
         <input
           type="checkbox"
+          className="w-5 h-5 text-primary rounded"
           checked={reportState.ant?.apply_gel ?? false}
           onChange={(e) =>
             handlePestDataChange('ant', 'apply_gel', e.target.checked)
           }
         />
-        หยอดเหยื่อ
+        <span className="font-medium">หยอดเหยื่อ (Gel Bait)</span>
       </label>
-      <Input
-        type="text"
-        placeholder="อื่นๆ..."
-        value={reportState.ant?.other || ''}
-        onChange={(e) => handlePestDataChange('ant', 'other', e.target.value)}
-        className="h-9"
-      />
+      <div className="pt-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1">รายละเอียดอื่นๆ</label>
+        <Input
+            type="text"
+            placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+            value={reportState.ant?.other || ''}
+            onChange={(e) => handlePestDataChange('ant', 'other', e.target.value)}
+            className="h-10"
+        />
+      </div>
     </div>
   );
+
   const renderCockroachForm = (): React.ReactElement => (
-    <div className="space-y-3">
-      <label className="flex items-center gap-2 text-slate-800">
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
         <input
           type="checkbox"
+          className="w-5 h-5 text-primary rounded"
           checked={reportState.cockroach?.apply_gel ?? false}
           onChange={(e) =>
             handlePestDataChange('cockroach', 'apply_gel', e.target.checked)
           }
         />
-        หยอดเหยื่อ
+        <span className="font-medium">หยอดเหยื่อ (Gel Bait)</span>
       </label>
-      <Input
-        type="text"
-        placeholder="อื่นๆ..."
-        value={reportState.cockroach?.other || ''}
-        onChange={(e) =>
-          handlePestDataChange('cockroach', 'other', e.target.value)
-        }
-        className="h-9"
-      />
+      <div className="pt-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1">รายละเอียดอื่นๆ</label>
+        <Input
+            type="text"
+            placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+            value={reportState.cockroach?.other || ''}
+            onChange={(e) =>
+            handlePestDataChange('cockroach', 'other', e.target.value)
+            }
+            className="h-10"
+        />
+      </div>
     </div>
   );
+
   const renderLizardForm = (): React.ReactElement => (
-    <div className="space-y-3">
-      <label className="flex items-center gap-2 text-slate-800">
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
         <input
           type="checkbox"
+          className="w-5 h-5 text-primary rounded"
           checked={reportState.lizard?.place_traps ?? false}
           onChange={(e) =>
             handlePestDataChange('lizard', 'place_traps', e.target.checked)
           }
         />
-        วางบ้านดักจิ้งจก แมลงคลาน
+        <span className="font-medium">วางบ้านดักจิ้งจก แมลงคลาน</span>
       </label>
-      <Input
-        type="text"
-        placeholder="อื่นๆ..."
-        value={reportState.lizard?.other || ''}
-        onChange={(e) =>
-          handlePestDataChange('lizard', 'other', e.target.value)
-        }
-        className="h-9"
-      />
+      <div className="pt-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1">รายละเอียดอื่นๆ</label>
+        <Input
+            type="text"
+            placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+            value={reportState.lizard?.other || ''}
+            onChange={(e) =>
+            handlePestDataChange('lizard', 'other', e.target.value)
+            }
+            className="h-10"
+        />
+      </div>
     </div>
   );
+
   const renderRatForm = (): React.ReactElement => (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-x-6 gap-y-2">
-        <label className="flex items-center gap-2 text-slate-800">
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
             type="checkbox"
+            className="w-5 h-5 text-primary rounded"
             checked={reportState.rat?.glue_traps ?? false}
             onChange={(e) =>
               handlePestDataChange('rat', 'glue_traps', e.target.checked)
             }
           />
-          วางถาดกาว
+          <span className="font-medium">วางถาดกาว</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
             type="checkbox"
+            className="w-5 h-5 text-primary rounded"
             checked={reportState.rat?.mechanical_traps ?? false}
             onChange={(e) =>
               handlePestDataChange('rat', 'mechanical_traps', e.target.checked)
             }
           />
-          วางเครื่องดักหนู
+          <span className="font-medium">วางเครื่องดักหนู</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
             type="checkbox"
+            className="w-5 h-5 text-primary rounded"
             checked={reportState.rat?.bait_stations ?? false}
             onChange={(e) =>
               handlePestDataChange('rat', 'bait_stations', e.target.checked)
             }
           />
-          วางสถานีดักหนู
+          <span className="font-medium">วางสถานีดักหนู</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
             type="checkbox"
+            className="w-5 h-5 text-primary rounded"
             checked={reportState.rat?.refill_bait ?? false}
             onChange={(e) =>
               handlePestDataChange('rat', 'refill_bait', e.target.checked)
             }
           />
-          เติมเหยื่อสถานีดักหนู
+          <span className="font-medium">เติมเหยื่อสถานีดักหนู</span>
         </label>
       </div>
-      <Input
-        type="text"
-        placeholder="อื่นๆ..."
-        value={reportState.rat?.other || ''}
-        onChange={(e) => handlePestDataChange('rat', 'other', e.target.value)}
-        className="h-9"
-      />
+      <div className="pt-2">
+        <label className="block text-sm font-medium text-slate-700 mb-1">รายละเอียดอื่นๆ</label>
+        <Input
+            type="text"
+            placeholder="ระบุจุดที่พบหรือการดำเนินการอื่นๆ..."
+            value={reportState.rat?.other || ''}
+            onChange={(e) => handlePestDataChange('rat', 'other', e.target.value)}
+            className="h-10"
+        />
+      </div>
     </div>
   );
 
@@ -1148,30 +870,35 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       title={title}
       size="5xl"
       footer={
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
-          >
-            ยกเลิก
-          </button>
-          <button
-            type="submit"
-            form="service-report-form"
-            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
-          >
-            {submitButtonText}
-          </button>
-          {isAdmin && isPending && (
+        <div className="flex justify-between w-full">
+            <div className="text-sm text-slate-500 flex items-center">
+                * กรุณาตรวจสอบข้อมูลก่อนบันทึก
+            </div>
+            <div className="flex gap-2">
             <button
-              type="button"
-              onClick={handleApprove}
-              className="py-2 px-4 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm"
+                type="button"
+                onClick={onClose}
+                className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 transition-all"
             >
-              อนุมัติรายงาน
+                ยกเลิก
             </button>
-          )}
+            <button
+                type="submit"
+                form="service-report-form"
+                className="py-2.5 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+            >
+                {submitButtonText}
+            </button>
+            {isAdmin && isPending && (
+                <button
+                type="button"
+                onClick={handleApprove}
+                className="py-2.5 px-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                >
+                อนุมัติรายงาน
+                </button>
+            )}
+            </div>
         </div>
       }
     >
@@ -1180,305 +907,195 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         onSubmit={handleSubmit}
         className="space-y-6"
       >
-        <div className="p-4 bg-slate-50 rounded-lg border grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6 text-sm">
-          <div>
-            <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
-            <dd className="mt-1 text-slate-900 font-semibold">
-              {formatThaiDate(reportState.created_at)}
-            </dd>
-          </div>
-          <div>
-            <dt className="font-medium text-slate-500">ลูกค้า</dt>
-            <dd className="mt-1 text-slate-900 font-semibold">
-              {(job as any).customerName || (job as any).customer_name}
-            </dd>
-          </div>
-          <div>
-            <dt className="font-medium text-slate-500">เวลาเข้า</dt>
-            <dd className="mt-1 text-slate-900 font-semibold">
-              {reportState.check_in_time}
-            </dd>
-          </div>
-          <div>
-            <dt className="font-medium text-slate-500">เวลาออก</dt>
-            <dd className="mt-1 text-slate-900 font-semibold">
-              {reportState.check_out_time}
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="font-medium text-slate-500">สถานะรายงาน</dt>
-            <dd className="mt-1 font-semibold">
-              <StatusBadge status={reportState.status || JobStatus.Draft} />
-            </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="font-medium text-slate-500">
-              ช่างเทคนิคที่ปฏิบัติงาน
-            </dt>
-            <dd className="mt-1 text-slate-900 font-semibold">
-              {job.technicians.length > 0
-                ? job.technicians
-                  .map((t) => t.name || (t as any).first_name + ' ' + (t as any).last_name)
-                  .join(', ')
-                : 'ไม่มีช่างเทคนิค'}
-            </dd>
-          </div>
+        {/* Header Card */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                 <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                    <DocumentIcon className="w-5 h-5 text-primary" />
+                    ข้อมูลงานบริการ
+                 </h3>
+                 <StatusBadge status={reportState.status || JobStatus.Draft} />
+            </div>
+            <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+                <div>
+                    <dt className="text-slate-500 mb-1">ลูกค้า</dt>
+                    <dd className="font-semibold text-slate-900 text-base">{(job as any).customerName || (job as any).customer_name}</dd>
+                </div>
+                <div>
+                    <dt className="text-slate-500 mb-1">วันที่สร้าง</dt>
+                    <dd className="font-semibold text-slate-900">{formatThaiDate(reportState.created_at)}</dd>
+                </div>
+                <div>
+                    <dt className="text-slate-500 mb-1">เวลาเข้า</dt>
+                    <dd className="font-semibold text-slate-900">{reportState.check_in_time || '-'}</dd>
+                </div>
+                <div>
+                    <dt className="text-slate-500 mb-1">เวลาออก</dt>
+                    <dd className="font-semibold text-slate-900">{reportState.check_out_time || '-'}</dd>
+                </div>
+                <div className="col-span-2 md:col-span-4">
+                    <dt className="text-slate-500 mb-1">ช่างเทคนิค</dt>
+                    <dd className="font-semibold text-slate-900">
+                        {job.technicians.length > 0
+                        ? job.technicians
+                            .map((t) => t.name || (t as any).first_name + ' ' + (t as any).last_name)
+                            .join(', ')
+                        : 'ไม่มีช่างเทคนิค'}
+                    </dd>
+                </div>
+            </div>
         </div>
 
+        {/* Service Result Tabs */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+             <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+                 <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
+                    <CheckCircleIcon className="w-5 h-5 text-primary" />
+                    ผลการสำรวจและดำเนินการ
+                 </h3>
+             </div>
+             
+             {/* Tabs Header */}
+             <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
+                {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
+                    <button
+                        key={pest}
+                        type="button"
+                        onClick={() => setActivePestTab(pest)}
+                        className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                            activePestTab === pest
+                            ? 'bg-slate-800 text-white shadow-md'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                    >
+                        {pestRenderConfig[pest].label}
+                    </button>
+                ))}
+             </div>
 
-        <FormField label="อ้างอิงใบเสนอราคา (ถ้ามี)" htmlFor="quotation-ref">
-            <SearchableSelect
-              value={selectedQuotationId}
-              onChange={(value) => setSelectedQuotationId(value)}
-              placeholder="-- เลือกใบเสนอราคา (ไม่บังคับ) --"
-              options={quotationOptions}
-            />
-        </FormField>
+             {/* Tab Content */}
+             <div className="p-6 bg-slate-50/50 min-h-[300px]">
+                 {pestRenderConfig[activePestTab].render()}
+             </div>
+        </div>
 
-        {/* Payment Condition */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
-                <CreditCardIcon className="w-4 h-4 text-primary" />
-                เงื่อนไขการชำระเงิน
-            </h3>
-            
-            <div className="flex gap-4 mb-4">
-                <label className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${reportState.payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                    <input
-                        type="radio"
-                        name="payment_condition_type"
-                        className="hidden"
-                        checked={reportState.payment_condition !== PaymentMethod.INSTALLMENT}
-                        onChange={() => setReportState(prev => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                    />
-                    <div className="font-semibold text-sm">ชำระเต็มจำนวน</div>
-                </label>
-                <label className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${reportState.payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                    <input
-                        type="radio"
-                        name="payment_condition_type"
-                        className="hidden"
-                        checked={reportState.payment_condition === PaymentMethod.INSTALLMENT}
-                        onChange={() => setReportState(prev => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                    />
-                    <div className="font-semibold text-sm">แบ่งชำระ (งวด)</div>
-                </label>
+        {/* Global Service Checkboxes (Types & Actions) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                 <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการรวม</h4>
+                 <div className="grid grid-cols-2 gap-y-2">
+                    {ALL_SERVICE_TYPES.map((type) => (
+                        <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
+                            <input
+                                type="checkbox"
+                                className="rounded text-primary focus:ring-primary"
+                                checked={reportState.service_types?.includes(type)}
+                                onChange={() => handleMultiSelect('service_types', type)}
+                            />
+                            <span>{type}</span>
+                        </label>
+                    ))}
+                 </div>
             </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                 <h4 className="font-semibold text-slate-800 mb-3">การดำเนินการรวม</h4>
+                 <div className="grid grid-cols-2 gap-y-2">
+                    {ALL_SERVICE_ACTIONS.map((action) => (
+                        <label key={action} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
+                            <input
+                                type="checkbox"
+                                className="rounded text-primary focus:ring-primary"
+                                checked={reportState.service_actions?.includes(action)}
+                                onChange={() => handleMultiSelect('service_actions', action)}
+                            />
+                            <span>{action}</span>
+                        </label>
+                    ))}
+                 </div>
+            </div>
+        </div>
 
-            {reportState.payment_condition !== PaymentMethod.INSTALLMENT && (
-                <div className="animate-fadeIn mb-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
-                    <label className="block text-xs font-medium text-slate-500 mb-2">ช่องทางการชำระเงิน</label>
-                    <div className="flex flex-wrap gap-3">
-                        {[
-                            { value: PaymentMethod.CASH, label: 'เงินสด' },
-                            { value: PaymentMethod.TRANSFER, label: 'โอนเงิน' },
-                            { value: PaymentMethod.CREDIT_CARD, label: 'บัตรเครดิต' },
-                            { value: PaymentMethod.QR_PAYMENT, label: 'QR Code' },
-                            { value: PaymentMethod.CHEQUE, label: 'เช็ค' },
-                        ].map((method) => (
-                            <label key={method.value} className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="payment_method_detail"
-                                    value={method.value}
-                                    checked={reportState.payment_condition === method.value}
-                                    onChange={() => setReportState(prev => ({ ...prev, payment_condition: method.value }))}
-                                    className="text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm text-slate-700">{method.label}</span>
-                            </label>
+        {/* Next Appointment */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-primary" />
+                นัดหมายครั้งต่อไป
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">วันนัดหมาย</label>
+                    <div className="flex gap-2">
+                        <Input
+                            type="date"
+                            className="flex-1"
+                            value={reportState.next_appointment?.scheduled_at ? reportState.next_appointment.scheduled_at.substring(0, 10) : ''}
+                            onChange={(e) => setReportState((prev) => ({
+                                ...prev,
+                                next_appointment: {
+                                    ...(prev.next_appointment || { notes: '', reasons: [] }),
+                                    scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : undefined,
+                                },
+                            }))}
+                        />
+                         <Select
+                            onChange={handleDateCalculation}
+                            className="w-1/3 text-sm"
+                            defaultValue=""
+                        >
+                            <option value="" disabled>+ เพิ่มวัน</option>
+                            <option value="30">30 วัน</option>
+                            <option value="60">60 วัน</option>
+                            <option value="90">90 วัน</option>
+                            <option value="180">180 วัน</option>
+                        </Select>
+                    </div>
+                 </div>
+                 <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">เหตุผลการนัด</label>
+                    <div className="flex flex-wrap gap-2">
+                        {['ติดตามผล', 'ครบรอบบริการ', 'ฉีดปลวก', 'วางเหยื่อ', 'ตรวจเช็ค'].map((reason) => (
+                            <button
+                                key={reason}
+                                type="button"
+                                onClick={() => handleMultiSelect('next_appointment_reasons', reason)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                                    reportState.next_appointment?.reasons?.includes(reason)
+                                    ? 'bg-primary text-white border-primary'
+                                    : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                                }`}
+                            >
+                                {reason}
+                            </button>
                         ))}
                     </div>
-                </div>
-            )}
-
-            {reportState.payment_condition === PaymentMethod.INSTALLMENT && (
-                <div className="animate-fadeIn">
-                    <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                        <Input
-                            name="payment_installment_count"
-                            type="number"
-                            value={reportState.payment_installment_count || ''}
-                            onChange={(e) => {
-                                const count = parseInt(e.target.value, 10) || 0;
-                                setReportState((prev) => ({
-                                    ...prev,
-                                    payment_installment_count: count,
-                                }));
-                            }}
-                            min={2}
-                            className="max-w-[200px]"
-                        />
-                    </FormField>
-                </div>
-            )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField label="ประเภทบริการ">
-            <div className="grid grid-cols-2 gap-2 mt-1 border p-2 rounded-md">
-              {ALL_SERVICE_TYPES.map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center space-x-2 text-slate-800"
-                >
-                  <input
-                    type="checkbox"
-                    checked={reportState.service_types?.includes(type)}
-                    onChange={() => handleMultiSelect('service_types', type)}
-                  />
-                  <span>{type}</span>
-                </label>
-              ))}
-            </div>
-          </FormField>
-          <FormField label="การบริการ">
-            <div className="grid grid-cols-2 gap-2 mt-1 border p-2 rounded-md">
-              {ALL_SERVICE_ACTIONS.map((action) => (
-                <label
-                  key={action}
-                  className="flex items-center space-x-2 text-slate-800"
-                >
-                  <input
-                    type="checkbox"
-                    checked={reportState.service_actions?.includes(action)}
-                    onChange={() =>
-                      handleMultiSelect('service_actions', action)
-                    }
-                  />
-                  <span>{action}</span>
-                </label>
-              ))}
-            </div>
-          </FormField>
-        </div>
-
-        <div className="border-t pt-4">
-          <h4 className="text-md font-semibold text-slate-900 mb-4">
-            ผลการสำรวจและดำเนินการ
-          </h4>
-          <div className="space-y-4">
-            {Object.entries(pestRenderConfig).map(([key, config]) => (
-              <div key={key} className="border rounded-lg p-4 bg-white">
-                <h5 className="font-medium text-slate-800 mb-3 border-b pb-2">
-                  {config.label}
-                </h5>
-                {config.render()}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="border-t pt-4">
-          <h4 className="text-md font-semibold text-slate-900 mb-4">
-            นัดหมายครั้งต่อไป
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormField label="วันนัดหมาย">
-              <div className="space-y-2">
-                <Input
-                  type="date"
-                  value={
-                    reportState.next_appointment?.scheduled_at
-                      ? reportState.next_appointment.scheduled_at.substring(
-                        0,
-                        10
-                      )
-                      : ''
-                  }
-                  onChange={(e) =>
-                    setReportState((prev) => ({
-                      ...prev,
-                      next_appointment: {
-                        ...(prev.next_appointment || {
-                          notes: '',
-                          reasons: [],
-                        }),
-                        scheduled_at: e.target.value
-                          ? new Date(e.target.value).toISOString()
-                          : undefined,
-                      },
-                    }))
-                  }
-                />
-                <Select
-                  onChange={handleDateCalculation}
-                  className="text-sm text-slate-600"
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    คำนวณวันนัดอัตโนมัติ...
-                  </option>
-                  <option value="30">อีก 1 เดือน (30 วัน)</option>
-                  <option value="60">อีก 2 เดือน (60 วัน)</option>
-                  <option value="90">อีก 3 เดือน (90 วัน)</option>
-                  <option value="180">อีก 6 เดือน (180 วัน)</option>
-                </Select>
-              </div>
-            </FormField>
-            <FormField label="เหตุผลการนัด">
-              <div className="grid grid-cols-1 gap-2 mt-1 border p-2 rounded-md max-h-40 overflow-y-auto">
-                {[
-                  'ติดตามผล',
-                  'ครบรอบบริการ',
-                  'ฉีดปลวก',
-                  'วางเหยื่อ',
-                  'ตรวจเช็ค',
-                ].map((reason) => (
-                  <label
-                    key={reason}
-                    className="flex items-center space-x-2 text-slate-800"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={reportState.next_appointment?.reasons?.includes(
-                        reason
-                      )}
-                      onChange={() =>
-                        handleMultiSelect('next_appointment_reasons', reason)
-                      }
+                 </div>
+                 <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">หมายเหตุการนัด</label>
+                    <Input
+                        type="text"
+                        value={reportState.next_appointment?.notes || ''}
+                        onChange={(e) => setReportState((prev) => ({
+                            ...prev,
+                            next_appointment: { ...(prev.next_appointment || { notes: '', reasons: [] }), notes: e.target.value },
+                        }))}
+                        placeholder="รายละเอียดเพิ่มเติม..."
                     />
-                    <span>{reason}</span>
-                  </label>
-                ))}
-              </div>
-            </FormField>
-            <div className="md:col-span-2">
-              <FormField label="หมายเหตุการนัด">
-                <Input
-                  type="text"
-                  value={reportState.next_appointment?.notes || ''}
-                  onChange={(e) =>
-                    setReportState((prev) => ({
-                      ...prev,
-                      next_appointment: {
-                        ...(prev.next_appointment || {
-                          notes: '',
-                          reasons: [],
-                        }),
-                        notes: e.target.value,
-                      },
-                    }))
-                  }
-                  placeholder="รายละเอียดเพิ่มเติม..."
-                />
-              </FormField>
+                 </div>
             </div>
-          </div>
+        </div>
+        
+        {/* Additional Notes */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-md font-bold text-slate-800 mb-4">หมายเหตุเพิ่มเติม (Internal Note)</h3>
+            <Textarea
+                rows={3}
+                value={reportState.notes || ''}
+                onChange={(e) => setReportState((prev) => ({ ...prev, notes: e.target.value }))}
+                placeholder="บันทึกข้อความถึงทีมงาน..."
+            />
         </div>
 
-        <FormField label="หมายเหตุเพิ่มเติม">
-          <Textarea
-            rows={3}
-            value={reportState.notes || ''}
-            onChange={(e) =>
-              setReportState((prev) => ({ ...prev, notes: e.target.value }))
-            }
-          />
-        </FormField>
       </form>
     </Modal>
   );
 };
-
-

@@ -12,7 +12,6 @@ export interface ServiceReport {
   id?: string;
   job_id?: string;
   customer_id?: string;
-  quotation_id?: string;
   report_date?: string;
   customer_name?: string;
   is_service_termite?: boolean;
