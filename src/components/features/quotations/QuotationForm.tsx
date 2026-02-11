@@ -988,14 +988,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return;
         }
 
-        // Validation: If installments enabled, check totals and dates
+        // Validation: If installments enabled, check totals
         if (paymentCondition === PaymentMethod.INSTALLMENT) {
-            const hasInvalidDate = installments.some(inst => !inst.service_date);
-            if (hasInvalidDate) {
-                alert('กรุณาระบุวันที่เข้าบริการสำหรับทุกงวด (Installment Dates are required)');
-                return;
-            }
-           
             const totalInstallment = installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
             if (Math.abs(totalInstallment - netTotal) >= 1) {
                 alert(`ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})`);
@@ -1059,7 +1053,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             vat_amount: vatAmount,
             include_vat: includeVat,
             items: finalItems,
-            installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments : [],
+            installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map(inst => ({
+                ...inst,
+                service_date: inst.service_date || undefined
+            })) : [],
             is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
         };
 
@@ -1343,147 +1340,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     );
                 })()}
 
-                {/* 5. Items & Pricing */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                    <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
-
-                    <div className="space-y-4">
-                        {!selectedAssessmentId && items.map((item, index) => {
-                            // Find product name for display
-                            const product = products.find(p => p.id === item.productId);
-                            const productName = product ? `${product.code} - ${product.name}` : item.description;
-
-                            return (
-                                <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
-                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                        <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
-                                            {index + 1}
-                                        </div>
-
-                                        <div className="md:col-span-4">
-                                            <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
-                                            <SearchableSelect
-                                                value={item.productId}
-                                                onChange={(val) => handleProductSelect(item.id, val)}
-                                                options={productOptions}
-                                                placeholder="เลือกสินค้า..."
-                                                disabled={isReadOnly || usePackagePricing}
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-3">
-                                            <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
-                                            <Input
-                                                value={item.description}
-                                                onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                placeholder="รายละเอียด..."
-                                                disabled={isReadOnly}
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                                            <div>
-                                                <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
-                                                <Input
-                                                    type="number"
-                                                    min="1"
-                                                    value={item.quantity}
-                                                    onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                                                    disabled={isReadOnly}
-                                                    className="text-center"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
-                                                <Input
-                                                    type="number"
-                                                    min="0"
-                                                    value={item.unitPrice}
-                                                    onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))}
-                                                    disabled={isReadOnly}
-                                                    className="text-right"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="md:col-span-2 text-right">
-                                            <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
-                                            <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
-                                                {item.amount.toLocaleString()}
-                                            </div>
-                                        </div>
-
-                                        {!isReadOnly && items.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removeItem(item.id)}
-                                                className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
-                                                title="ลบรายการ"
-                                            >
-                                                <TrashIcon className="w-5 h-5" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {!isReadOnly && !usePackagePricing && !selectedAssessmentId && (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={addItem}
-                                className="w-full border-dashed border-2 border-slate-300 text-slate-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50"
-                            >
-                                <PlusIcon className="w-5 h-5 mr-2" /> เพิ่มรายการ
-                            </Button>
-                        )}
-                    </div>
-
-                    {/* Totals */}
-                    <div className="mt-8 border-t border-slate-200 pt-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                            <div className="w-full md:w-1/2">
-                                <label className="block text-sm font-medium text-slate-700 mb-2">หมายเหตุ</label>
-                                <Textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    rows={3}
-                                    disabled={isReadOnly}
-                                    placeholder="หมายเหตุเพิ่มเติม..."
-                                />
-                            </div>
-
-                            <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
-                                    <span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span>
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm">
-                                    <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                                        <input
-                                            type="checkbox"
-                                            checked={includeVat}
-                                            onChange={(e) => setIncludeVat(e.target.checked)}
-                                            disabled={isReadOnly}
-                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                                        />
-                                        ภาษีมูลค่าเพิ่ม 7% (VAT)
-                                    </label>
-                                    <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
-                                </div>
-
-                                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                                    <span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span>
-                                    <span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 6. Payment Terms */}
+                {/* 6. Payment Terms (Moved above Items & Pricing) */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
                     <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
 
@@ -1555,7 +1412,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                 <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
                                                 <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
                                                 <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                                                <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
                                                 {!isReadOnly && <th className="px-2 py-3 w-10"></th>}
                                             </tr>
                                         </thead>
@@ -1583,15 +1439,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                             disabled={isReadOnly}
                                                         />
                                                     </td>
-                                                    <td className="px-4 py-2">
-                                                        <Input
-                                                            type="date"
-                                                            value={inst.service_date}
-                                                            onChange={(e) => handleInstallmentChange(idx, 'service_date', e.target.value)}
-                                                            className="h-9 text-sm"
-                                                            disabled={isReadOnly}
-                                                        />
-                                                    </td>
                                                     {!isReadOnly && (
                                                         <td className="px-2 py-2 text-center">
                                                             <button
@@ -1607,20 +1454,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot className="bg-slate-50">
-                                            <tr>
-                                                <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
-                                                <td className={`px-4 py-2 text-right text-sm font-bold ${
-                                                    Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) < 1
-                                                        ? 'text-green-600'
-                                                        : 'text-red-600'
-                                                    }`}>
-                                                    {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}
-                                                </td>
-                                                <td colSpan={!isReadOnly ? 2 : 1}></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                    </table>
                                 </div>
                                 {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) >= 1 && (
                                     <p className="text-xs text-red-500 text-right">
@@ -1629,6 +1463,149 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                 )}
                             </div>
                         )}
+                    </div>
+                </div>
+
+                {/* 5. Items & Pricing */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+                    {!selectedAssessmentId && (
+                        <>
+                            <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
+                            <div className="space-y-4">
+                                {items.map((item, index) => {
+                                    // Find product name for display
+                                    const product = products.find(p => p.id === item.productId);
+                                    const productName = product ? `${product.code} - ${product.name}` : item.description;
+
+                                    return (
+                                        <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
+                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                                                <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
+                                                    {index + 1}
+                                                </div>
+
+                                                <div className="md:col-span-4">
+                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
+                                                    <SearchableSelect
+                                                        value={item.productId}
+                                                        onChange={(val) => handleProductSelect(item.id, val)}
+                                                        options={productOptions}
+                                                        placeholder="เลือกสินค้า..."
+                                                        disabled={isReadOnly || usePackagePricing}
+                                                    />
+                                                </div>
+
+                                                <div className="md:col-span-3">
+                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
+                                                    <Input
+                                                        value={item.description}
+                                                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
+                                                        placeholder="รายละเอียด..."
+                                                        disabled={isReadOnly}
+                                                    />
+                                                </div>
+
+                                                <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
+                                                        <Input
+                                                            type="number"
+                                                            min="1"
+                                                            value={item.quantity}
+                                                            onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
+                                                            disabled={isReadOnly}
+                                                            className="text-center"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            value={item.unitPrice}
+                                                            onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))}
+                                                            disabled={isReadOnly}
+                                                            className="text-right"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="md:col-span-2 text-right">
+                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
+                                                    <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
+                                                        {item.amount.toLocaleString()}
+                                                    </div>
+                                                </div>
+
+                                                {!isReadOnly && items.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeItem(item.id)}
+                                                        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                                                        title="ลบรายการ"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+
+                                {!isReadOnly && !usePackagePricing && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={addItem}
+                                        className="w-full border-dashed border-2 border-slate-300 text-slate-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50"
+                                    >
+                                        <PlusIcon className="w-5 h-5 mr-2" /> เพิ่มรายการ
+                                    </Button>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Totals */}
+                    <div className={selectedAssessmentId ? "pt-0" : "mt-8 border-t border-slate-200 pt-6"}>
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                            <div className="w-full md:w-1/2">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">หมายเหตุ</label>
+                                <Textarea
+                                    value={notes}
+                                    onChange={(e) => setNotes(e.target.value)}
+                                    rows={3}
+                                    disabled={isReadOnly}
+                                    placeholder="หมายเหตุเพิ่มเติม..."
+                                />
+                            </div>
+
+                            <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
+                                    <span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span>
+                                </div>
+
+                                <div className="flex justify-between items-center text-sm">
+                                    <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                                        <input
+                                            type="checkbox"
+                                            checked={includeVat}
+                                            onChange={(e) => setIncludeVat(e.target.checked)}
+                                            disabled={isReadOnly}
+                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                        />
+                                        ภาษีมูลค่าเพิ่ม 7% (VAT)
+                                    </label>
+                                    <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
+                                </div>
+
+                                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                                    <span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span>
+                                    <span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

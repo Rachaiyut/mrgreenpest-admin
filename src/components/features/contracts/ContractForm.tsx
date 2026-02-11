@@ -885,7 +885,6 @@ export const ContractForm: FC<ContractFormProps> = ({
                                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">รายละเอียด (Description)</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-24">%</th>
                                     <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">จำนวนเงิน</th>
-                                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-40">กำหนดชำระ</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-32">สถานะ</th>
                                     <th className="px-2 py-3 w-10"></th>
                                 </tr>
@@ -915,14 +914,6 @@ export const ContractForm: FC<ContractFormProps> = ({
                                                 value={inst.amount}
                                                 onChange={(e) => handleInstallmentChange(inst.id, 'amount', e.target.value)}
                                                 className="!py-1 text-right h-9 font-mono"
-                                            />
-                                        </td>
-                                        <td className="px-4 py-2">
-                                            <Input
-                                                type="date"
-                                                value={inst.due_date}
-                                                onChange={(e) => handleInstallmentChange(inst.id, 'due_date', e.target.value)}
-                                                className="!py-1 h-9"
                                             />
                                         </td>
                                         <td className="px-4 py-2">

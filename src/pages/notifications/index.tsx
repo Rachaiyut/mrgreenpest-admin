@@ -30,40 +30,61 @@ const Notifications: React.FC<NotificationsProps> = () => {
   >('ทั้งหมด');
 
   // Helper to find latest job
-  const getLatestJob = (contractId: string) => {
-    const contractJobs = jobs
+  const getLatestJob = (contract: any) => {
+    let jobList = contract.jobs || [];
+    
+    // Fallback to global jobs if not present in contract (legacy support)
+    if (jobList.length === 0) {
+        jobList = jobs.filter((j: any) => j.contract_id === contract.id || j.contractId === contract.id);
+    }
+
+    const contractJobs = jobList
       .filter(
-        (j) => j.contractId === contractId && j.status === Status.Completed
+        (j: any) => (j.status === Status.Completed || j.status === 'COMPLETE')
       )
       .sort(
-        (a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+        (a: any, b: any) => {
+            const dateA = new Date(a.end_date || a.endTime).getTime();
+            const dateB = new Date(b.end_date || b.endTime).getTime();
+            return dateB - dateA;
+        }
       );
     return contractJobs.length > 0 ? contractJobs[0] : null;
   };
 
   // Helper to find next job
-  const getNextJob = (contractId: string) => {
-    const contractJobs = jobs
+  const getNextJob = (contract: any) => {
+    let jobList = contract.jobs || [];
+    
+    // Fallback to global jobs if not present in contract
+    if (jobList.length === 0) {
+        jobList = jobs.filter((j: any) => j.contract_id === contract.id || j.contractId === contract.id);
+    }
+
+    const contractJobs = jobList
       .filter(
-        (j) =>
-          j.contractId === contractId &&
-          [Status.Scheduled, Status.Planned, Status.InProgress].includes(
+        (j: any) =>
+          [Status.Scheduled, Status.Planned, Status.InProgress, 'PENDING', 'IN_PROGRESS'].includes(
             j.status
           )
       )
       .sort(
-        (a, b) =>
-          new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+        (a: any, b: any) => {
+            const dateA = new Date(a.start_date || a.startTime).getTime();
+            const dateB = new Date(b.start_date || b.startTime).getTime();
+            return dateA - dateB;
+        }
       );
     return contractJobs.length > 0 ? contractJobs[0] : null;
   };
 
   // Process data for the table
   const tableData = useMemo(() => {
-    return contracts.map((contract) => {
-      const customer = customers.find((c) => c.id === contract.customerId);
-      const latestJob = getLatestJob(contract.id);
-      const nextJob = getNextJob(contract.id);
+    return contracts.map((contract: any) => {
+      const cId = contract.customer_id || contract.customerId;
+      const customer = customers.find((c) => c.id === cId);
+      const latestJob: any = getLatestJob(contract);
+      const nextJob: any = getNextJob(contract);
 
       // Safe date helper to prevent white screen on invalid dates
       const getValidDate = (d: any): Date => {
@@ -72,73 +93,106 @@ const Notifications: React.FC<NotificationsProps> = () => {
       };
 
       // Safe helper for address
-      const addr = customer?.address;
-      const fullAddress = addr
-        ? `${addr.street || ''} ${addr.subdistrict || ''} ${addr.district || ''} ${addr.province || ''}`
+      const fullAddress = customer
+        ? `${customer.address_house_no || ''} ${customer.road_line || ''} ${customer.sub_district || ''} ${customer.district || ''} ${customer.province || ''} ${customer.postal_code || ''}`.trim()
         : '-';
 
       // Calculate next due date logic
       let nextServiceDue: Date;
-      if (nextJob && nextJob.startTime) {
-        nextServiceDue = getValidDate(nextJob.startTime);
-      } else if (latestJob && latestJob.endTime) {
-        const lastEnd = getValidDate(latestJob.endTime);
+      let nextServiceDisplay: string | null = null;
+      
+      // 1. Try to get from Service Report of the latest completed job
+      if (latestJob && latestJob.service_report && latestJob.service_report.next_service_schedule) {
+         // Use the raw string from service report for display
+         nextServiceDisplay = latestJob.service_report.next_service_schedule;
+
+         const dateFromReport = getValidDate(latestJob.service_report.next_service_schedule);
+         if (!isNaN(dateFromReport.getTime()) && dateFromReport.getFullYear() > 1970) {
+            nextServiceDue = dateFromReport;
+         } else {
+             // Fallback logic for calculation only
+             if (nextJob && (nextJob.start_date || nextJob.startTime)) {
+                nextServiceDue = getValidDate(nextJob.start_date || nextJob.startTime);
+              } else if (latestJob && (latestJob.end_date || latestJob.endTime)) {
+                const lastEnd = getValidDate(latestJob.end_date || latestJob.endTime);
+                const d = new Date(lastEnd);
+                d.setDate(lastEnd.getDate() + 30);
+                nextServiceDue = d;
+              } else {
+                nextServiceDue = new Date();
+              }
+         }
+      } 
+      // 2. Try to get from Next Scheduled Job
+      else if (nextJob && (nextJob.start_date || nextJob.startTime)) {
+        nextServiceDue = getValidDate(nextJob.start_date || nextJob.startTime);
+      } 
+      // 3. Fallback: Latest Job + 30 days
+      else if (latestJob && (latestJob.end_date || latestJob.endTime)) {
+        const lastEnd = getValidDate(latestJob.end_date || latestJob.endTime);
         const d = new Date(lastEnd);
         d.setDate(lastEnd.getDate() + 30);
         nextServiceDue = d;
-      } else {
+      } 
+      // 4. Default
+      else {
         nextServiceDue = new Date(); // Default to today if no data
       }
 
       // Check invoices matching contract
       const contractInvoices = invoices.filter(
-        (i) => i.customerId === contract.customerId && i.status !== Status.Paid
+        (i: any) => (i.customer_id === cId || i.customerId === cId) && i.status !== Status.Paid
       );
       const latestUnpaidInvoice =
         contractInvoices.length > 0 ? contractInvoices[0] : null;
 
       const latestReceipt = receipts
-        .filter((r) => r.customerId === contract.customerId)
+        .filter((r: any) => (r.customer_id === cId || r.customerId === cId))
         .sort(
-          (a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime()
-        )[0];
+          (a: any, b: any) => new Date(b.paid_at || b.paidAt || b.received_at).getTime() - new Date(a.paid_at || a.paidAt || a.received_at).getTime()
+        )[0] as any;
 
       // Contract duration calculation
-      const start = getValidDate(contract.startDate);
-      const end = getValidDate(contract.endDate);
+      const startDate = contract.start_date || contract.startDate;
+      const endDate = contract.end_date || contract.endDate;
+      const start = getValidDate(startDate);
+      const end = getValidDate(endDate);
       const durationYears = (end.getFullYear() - start.getFullYear()).toFixed(
         1
       );
 
+      const displayPrice = contract.total_amount !== undefined ? contract.total_amount : contract.totalAmount || 0;
+      const displayPackage = contract.service_type || contract.servicePackage || '-';
+
       return {
-        contractId: contract.id,
-        customerName: contract.customerName || '-',
+        contractId: contract.code || contract.id, // Show Code if available, else ID
+        customerName: contract.customer_name || contract.customerName || '-',
         nickname: customer?.nickname || '-',
         address: fullAddress,
         phone: customer?.phone || '-',
-        contractDetails: contract.servicePackage || '-',
+        contractDetails: displayPackage,
         durationYears: durationYears,
-        visitsRequired: 12, // Mock or from pkg
-        startDate: contract.startDate,
-        endDate: contract.endDate,
-        buildingType: 'บ้านเดี่ยว', // Mock
-        // Price might be missing in old data/types
-        price: contract.totalAmount || 0,
+        visitsRequired: contract.service_count || 12,
+        startDate: startDate,
+        endDate: endDate,
+        buildingType: contract.building_type || 'บ้านเดี่ยว',
+        price: displayPrice,
 
         // Payment Info
         installment: latestUnpaidInvoice?.term || '-',
-        paymentMethod: latestReceipt?.paymentMethod || '-',
+        paymentMethod: latestReceipt?.payment_method || latestReceipt?.paymentMethod || '-',
         amountPaid: latestReceipt?.amount || 0,
-        paidDate: latestReceipt?.paidAt || '-',
+        paidDate: latestReceipt?.paid_at || latestReceipt?.paidAt || latestReceipt?.received_at || '-',
         receiver: 'Admin', // Mock
         approvePay: latestReceipt ? 'Yes' : 'No',
 
         nextPaymentPeriod: 30, // Mock days
 
         // Service Info
-        lastServiceDate: latestJob ? latestJob.endTime : '-',
+        lastServiceDate: latestJob ? (latestJob.end_date || latestJob.endTime) : '-',
         nextServiceDays: 30, // Mock interval
         nextServiceDate: nextServiceDue,
+        nextServiceDisplay: nextServiceDisplay,
         daysRemaining: Math.ceil(
           (nextServiceDue.getTime() - new Date().getTime()) /
             (1000 * 60 * 60 * 24)
@@ -318,7 +372,18 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       : '-'}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
-                    {formatThaiDate(row.nextServiceDate.toISOString())}
+                    {(() => {
+                        const display = row.nextServiceDisplay;
+                        if (display) {
+                            // Check if it's a valid date string (e.g. ISO format or YYYY-MM-DD)
+                            const d = new Date(display);
+                            if (!isNaN(d.getTime()) && display.includes('-')) {
+                                return formatThaiDate(display);
+                            }
+                            return display;
+                        }
+                        return formatThaiDate(row.nextServiceDate.toISOString());
+                    })()}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
                     <span
@@ -342,5 +407,3 @@ const Notifications: React.FC<NotificationsProps> = () => {
 };
 
 export default Notifications;
-
-

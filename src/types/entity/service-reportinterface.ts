@@ -5,9 +5,14 @@ import { Job } from "./job.interface";
 export interface ServiceReport extends IBase {
   job_id: string;
   customer_id: string;
+  payment_id?: string;
   
   report_date?: string;
   customer_name?: string;
+
+  // Payment
+  payment_condition?: string;
+  payment_installment_count?: number;
 
   // ประเภทบริการ
   is_service_termite: boolean;

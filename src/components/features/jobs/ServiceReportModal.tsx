@@ -5,13 +5,15 @@ import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface'
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
+import { PaymentMethod } from '@/src/types/enums/financial';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
 import { 
   CalendarIcon, 
   DocumentIcon, 
-  CheckCircleIcon
+  CheckCircleIcon,
+  CreditCardIcon
 } from '../../../assets/icons/Icons';
 
 interface ServiceReportModalProps {
@@ -545,7 +547,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     <div className="space-y-4">
       <div className="flex flex-wrap gap-4 mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-100">
         <span className="text-sm font-semibold text-yellow-800 w-full">สถานะปลวก:</span>
-        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
+        <label className="flex items-center gap-2 text-green-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
@@ -558,7 +560,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           />{' '}
           <span className="font-medium">มีปลวก</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
+        <label className="flex items-center gap-2 text-green-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
@@ -571,7 +573,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           />{' '}
           <span className="font-medium">มี แต่ปริมาณลดลง</span>
         </label>
-        <label className="flex items-center gap-2 text-slate-800 cursor-pointer">
+        <label className="flex items-center gap-2 text-green-800 cursor-pointer">
           <input
             type="radio"
             name="termiteStatus"
@@ -933,7 +935,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     <dt className="text-slate-500 mb-1">เวลาออก</dt>
                     <dd className="font-semibold text-slate-900">{reportState.check_out_time || '-'}</dd>
                 </div>
-                <div className="col-span-2 md:col-span-4">
+                
+                <div className="col-span-2 md:col-span-2">
                     <dt className="text-slate-500 mb-1">ช่างเทคนิค</dt>
                     <dd className="font-semibold text-slate-900">
                         {job.technicians.length > 0
@@ -942,6 +945,105 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                             .join(', ')
                         : 'ไม่มีช่างเทคนิค'}
                     </dd>
+                </div>
+            </div>
+        </div>
+
+        {/* Payment Info Section - Moved out for better UI */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100">
+            {/* Header with Gradient */}
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                 <h3 className="font-bold text-slate-800 flex items-center gap-2.5">
+                    <div className="p-1.5 bg-white rounded-lg shadow-sm text-green-600">
+                        <CreditCardIcon className="w-5 h-5" />
+                    </div>
+                    ข้อมูลการชำระเงิน
+                 </h3>
+            </div>
+            
+            <div className="p-6">
+                <div className="flex flex-col md:flex-row gap-8 items-stretch">
+                    {/* Invoice Details (if linked) */}
+                    {job.invoice ? (
+                        <div className="flex-1 w-full relative group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-white rounded-2xl transform transition-transform group-hover:scale-[1.01] duration-300 border border-green-100 shadow-sm"></div>
+                            <div className="relative p-5 space-y-5">
+                                <div className="flex items-center justify-between border-b border-green-100 pb-3">
+                                    <span className="text-green-700 font-medium">เลขที่ใบแจ้งหนี้</span>
+                                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-bold shadow-sm tracking-wide">
+                                        {job.invoice.code}
+                                    </span>
+                                </div>
+                                
+                                <div>
+                                    <div className="text-green-600 text-sm mb-1">ยอดชำระสุทธิ</div>
+                                    <div className="flex items-end gap-2">
+                                        <span className="text-3xl font-bold text-primary tracking-tight leading-none">
+                                            {job.invoice.total?.toLocaleString()}
+                                        </span>
+                                        <span className="text-base font-medium text-green-700 pb-0.5">บาท</span>
+                                    </div>
+                                </div>
+
+                                {job.invoice.term && (
+                                    <div className="pt-2 flex items-center justify-between bg-green-50/50 rounded-lg p-2 border border-green-100">
+                                        <span className="text-sm font-medium text-green-700">งวดการชำระ</span>
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-green-700 text-sm font-bold border border-green-200 shadow-sm">
+                                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                            งวดที่ {job.invoice.term} {job.invoice.installment_id ? '(ผ่อนชำระ)' : ''}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex-1 bg-green-50/50 rounded-2xl p-8 border-2 border-dashed border-green-200 flex flex-col items-center justify-center text-green-400 w-full min-h-[160px] gap-2">
+                            <CreditCardIcon className="w-8 h-8 opacity-20" />
+                            <span className="text-sm font-medium">ไม่มีข้อมูลใบแจ้งหนี้</span>
+                        </div>
+                    )}
+
+                    {/* Payment Action */}
+                    <div className="flex-1 w-full flex flex-col justify-center">
+                        <label className="block text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            ช่องทางการชำระเงิน <span className="text-slate-400 font-normal text-sm">(รับเงินหน้างาน)</span>
+                        </label>
+                        
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <Select 
+                                    value={reportState.payment_condition || ''}
+                                    onChange={(e) => setReportState(prev => ({ 
+                                        ...prev, 
+                                        payment_condition: e.target.value as any,
+                                        payment_installment_count: job.invoice?.term || prev.payment_installment_count
+                                    }))}
+                                    className="h-14 text-base w-full pl-4 pr-10 bg-white border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-slate-900"
+                                >
+                                    <option value="">ยังไม่ได้รับชำระ / วางบิล</option>
+                                    <option value="CASH">เงินสด</option>
+                                    <option value="TRANSFER">โอนเงิน</option>
+                                    <option value="CREDIT_CARD">บัตรเครดิต</option>
+                                    <option value="CHEQUE">เช็ค</option>
+                                </Select>
+                            </div>
+                            
+                            <div className={`
+                                transition-all duration-500 ease-in-out overflow-hidden
+                                ${reportState.payment_condition ? 'max-h-20 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'}
+                            `}>
+                                <div className="bg-green-50/80 border border-green-100 rounded-xl p-3 flex items-center gap-3 text-green-800">
+                                    <div className="bg-white p-1.5 rounded-full shadow-sm">
+                                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold">บันทึกการรับชำระเงินแล้ว</p>
+                                        <p className="text-xs text-green-600">ข้อมูลการเงินจะถูกอัปเดตเมื่อบันทึกรายงาน</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -964,8 +1066,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         onClick={() => setActivePestTab(pest)}
                         className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                             activePestTab === pest
-                            ? 'bg-slate-800 text-white shadow-md'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-primary text-white shadow-md'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                         }`}
                     >
                         {pestRenderConfig[pest].label}

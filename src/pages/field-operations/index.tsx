@@ -605,6 +605,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               vehicle_id: warehouse.id,
               service_report: reportsData.find((r: any) => r.job_id === job.id),
               remarks: job.remark,
+              invoice_id: job.invoice_id,
+              invoice: job.invoice,
               quotation_id: undefined,
               operation_details: undefined,
               zone: undefined,

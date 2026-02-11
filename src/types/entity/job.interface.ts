@@ -21,6 +21,7 @@ export interface Job extends IBase {
   customer_id?: string;
   contract_id?: string;
   assessment_id?: string;
+  invoice_id?: string;
   primary_tech_id: string;
   vehicle_id: string;
   start_date: Date | string;
@@ -35,4 +36,5 @@ export interface Job extends IBase {
   job_team_members?: TeamMember[];
   team_member?: TeamMember[]; // Legacy support
   vehicle?: any;
+  service_report?: any; // Added for notifications page
 }

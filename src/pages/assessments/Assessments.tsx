@@ -719,7 +719,6 @@ const Assessments: React.FC = () => {
           assessment={selectedAssessment}
           products={products}
           customers={customers}
-        // packages={packages} // Comment out if causing issues or update type
         />
       )}
       <EditAssessmentModal

@@ -1,6 +1,7 @@
 import { User } from './core.interface';
 import { JobMainStatus, JobStatus } from '../enums/job';
 import { PaymentMethod } from '../enums/financial';
+import { Invoice } from './financial.interface';
 
 export interface FieldJobWorkArea {
   id: string;
@@ -104,6 +105,8 @@ export interface FieldJob {
   service_report?: ServiceReport;
   remarks?: string;
   quotation_id?: string;
+  invoice_id?: string;
+  invoice?: Invoice;
   operation_details?: string;
   zone?: string;
   group?: string;

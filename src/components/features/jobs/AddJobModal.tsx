@@ -18,10 +18,11 @@ import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
 import { RefreshIcon, UserIcon, CalendarIcon, TruckIcon, DocumentIcon, CheckCircleIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowLeftIcon, ArrowRightIcon } from '../../../assets/icons/Icons';
-import { AssessmentApi, ContractApi, CustomerApi, WarehouseApi, UserApi } from '@/src/api';
+import { AssessmentApi, ContractApi, CustomerApi, WarehouseApi, UserApi, InvoiceApi } from '@/src/api';
 import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
 import { Assessment } from '@/src/types/entity/app.interface';
+import { Invoice } from '@/src/types/entity/financial.interface';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -115,12 +116,14 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedReference, setSelectedReference] = useState('');
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
   
   // Explicitly fetch assessments and contracts
   const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
   const [fetchedContracts, setFetchedContracts] = useState<Contract[]>([]);
+  const [fetchedInvoices, setFetchedInvoices] = useState<Invoice[]>([]);
 
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>(
@@ -139,6 +142,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   const [customerSearch, setCustomerSearch] = useState('');
   const [referenceSearch, setReferenceSearch] = useState('');
+  const [invoiceSearch, setInvoiceSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [vehicleOptions, setVehicleOptions] =
     useState<Warehouse[]>(initialWarehouses);
@@ -322,6 +326,24 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     return [];
   }, [customers, selectedCustomerId, selectedCustomerData, fetchedContracts]);
 
+  const availableInvoices = useMemo(() => {
+    if (fetchedInvoices.length > 0) {
+      return fetchedInvoices;
+    }
+    return [];
+  }, [fetchedInvoices]);
+
+  const filteredInvoices = useMemo(() => {
+    const refs = availableInvoices.map((inv) => ({
+      value: inv.id,
+      label: `ใบแจ้งหนี้: ${inv.code}`,
+    }));
+
+    if (!invoiceSearch) return refs;
+    const lower = invoiceSearch.toLowerCase();
+    return refs.filter((r) => r.label.toLowerCase().includes(lower));
+  }, [availableInvoices, invoiceSearch]);
+
   const filteredReferences = useMemo(() => {
     const refs = [
       ...availableAssessments.map((a) => ({
@@ -359,6 +381,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setSelectedReference('');
+      setSelectedInvoiceId('');
       setSelectedCustomerId('');
       setLeadTechnicianId('');
       setSelectedTechnicianIds([]);
@@ -423,10 +446,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         // Parallel fetch for assessments and contracts
         Promise.all([
           AssessmentApi.getAll({ customer_id: customerId }),
-          ContractApi.getAll({ customer_id: customerId })
-        ]).then(([assessmentRes, contractRes]) => {
+          ContractApi.getAll({ customer_id: customerId }),
+          InvoiceApi.getAll({ customer_id: customerId })
+        ]).then(([assessmentRes, contractRes, invoiceRes]) => {
           setFetchedAssessments(assessmentRes.data || []);
           setFetchedContracts(contractRes.data || []);
+          setFetchedInvoices(invoiceRes.data || []);
         }).catch(err => {
           console.error('Error fetching customer documents:', err);
         });
@@ -439,7 +464,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
   };
 
-  const handleReferenceChange = (reference: string) => {
+  const handleReferenceChange = async (reference: string) => {
     setSelectedReference(reference);
 
     if (reference.startsWith('asm-')) {
@@ -447,11 +472,40 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       const assessment = availableAssessments.find((a) => a.id === assessmentId);
       if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
         // Auto-populate service system from the first area of the assessment
-        // Assuming all areas in an assessment usually share the same service system
         const system = assessment.assessment_areas[0].service_system;
         if (system) {
           setServiceSystem(system);
         }
+        
+        // Populate work areas
+        const areas = assessment.assessment_areas.map((area, index) => ({
+           id: `area-${Date.now()}-${index}`,
+           name: area.area_name,
+           service_package: area.service_system || ''
+        }));
+        setWorkAreas(areas);
+      }
+    }
+  };
+
+  const handleInvoiceChange = async (invoiceId: string) => {
+    setSelectedInvoiceId(invoiceId);
+
+    // If no reference is selected, try to populate areas from invoice
+    if (!selectedReference && invoiceId) {
+      try {
+        const invoice = await InvoiceApi.getById(invoiceId);
+        if (invoice && invoice.items && invoice.items.length > 0) {
+           // Populate work areas from invoice items
+           const areas = invoice.items.map((item: any, index: number) => ({
+             id: `area-${Date.now()}-${index}`,
+             name: item.description,
+             service_package: item.product?.name || ''
+           }));
+           setWorkAreas(areas);
+        }
+      } catch (error) {
+        console.error('Error fetching invoice details:', error);
       }
     }
   };
@@ -475,6 +529,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     return {
       assessment_id: assessmentId || undefined,
       contract_id: contractId || undefined,
+      invoice_id: selectedInvoiceId || undefined,
       customer_id: selectedCustomerId,
       primary_tech_id: leadTechnicianId,
       start_date: new Date(startDateTime),
@@ -892,6 +947,22 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                       ))}
                     </Select>
                   </FormField>
+
+                  <SearchableSelect
+                     label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)"
+                     options={filteredInvoices}
+                     value={selectedInvoiceId}
+                     onChange={handleInvoiceChange}
+                     onSearchChange={setInvoiceSearch}
+                     placeholder={
+                       selectedCustomerId
+                         ? 'เลือกใบแจ้งหนี้...'
+                         : 'กรุณาเลือกลูกค้าก่อน'
+                     }
+                     className={
+                       !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+                     }
+                   />
                </div>
 
                 <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
@@ -912,14 +983,26 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                 <h3 className="text-lg font-semibold text-slate-800">
                   รายละเอียดพื้นที่บริการ
                 </h3>
-                {selectedReference && (
-                  <div className="text-sm text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
-                     อ้างอิง: {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                {(selectedReference || selectedInvoiceId) && (
+                  <div className="flex flex-col gap-2 items-end">
+                    {selectedReference && (
+                      <div className="text-sm text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
+                         อ้างอิง: {
+                           isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : 
+                           (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)
+                         }
+                      </div>
+                    )}
+                    {selectedInvoiceId && (
+                      <div className="text-sm text-green-600 font-medium px-3 py-1 bg-green-50 rounded-full border border-green-100">
+                         ใบแจ้งหนี้: {availableInvoices.find(inv => inv.id === selectedInvoiceId)?.code || selectedInvoiceId}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
               
-              {selectedReference ? (
+              {(selectedReference || selectedInvoiceId) ? (
                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -928,11 +1011,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                       </div>
                       <div>
                         <p className="font-semibold text-slate-800">
-                          ข้อมูลอ้างอิง: {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                          ข้อมูลอ้างอิง
                         </p>
-                        <p className="text-sm text-slate-500">
-                          {isAssessment ? 'ใบประเมิน' : 'สัญญา'}
-                        </p>
+                        <div className="text-sm text-slate-500 flex flex-col">
+                          {selectedReference && (
+                            <span>
+                              {isAssessment ? 'ใบประเมิน: ' : 'สัญญา: '}
+                              {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                            </span>
+                          )}
+                          {selectedInvoiceId && (
+                            <span>
+                              ใบแจ้งหนี้: {availableInvoices.find(inv => inv.id === selectedInvoiceId)?.code || selectedInvoiceId}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

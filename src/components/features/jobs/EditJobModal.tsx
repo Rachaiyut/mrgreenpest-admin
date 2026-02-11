@@ -509,13 +509,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     });
   };
 
-  const handleInstallmentDateChange = (index: number, date: string) => {
-    setInstallments(prev => {
-      const newInst = [...prev];
-      newInst[index] = { ...newInst[index], due_date: date };
-      return newInst;
-    });
-  };
+
 
   // Auto-calculate installments Effect
   useEffect(() => {
@@ -1330,17 +1324,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                                         className="bg-white"
                                       />
                                     </div>
-                                    <div className="flex-1">
-                                      <label className="block text-xs text-slate-400 mb-1">วันครบกำหนด</label>
-                                      <Input
-                                        type="date"
-                                        value={inst.due_date ? inst.due_date.substring(0, 10) : ''}
-                                        onChange={(e) => {
-                                          handleInstallmentDateChange(idx, e.target.value);
-                                        }}
-                                        className="bg-white"
-                                      />
-                                    </div>
+
                                     <div className="flex-1">
                                       <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
                                       <Input
