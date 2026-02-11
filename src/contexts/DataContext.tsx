@@ -233,52 +233,52 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     const promises: Promise<void>[] = [];
 
     if (shouldFetch('users')) {
-      promises.push(safeFetch(() => UserApi.getAll({ limit: 10})).then((data: any) => setUsers(data)));
+      promises.push(safeFetch(() => UserApi.getAll({ limit: 10 })).then((data: any) => setUsers(data)));
     }
     if (shouldFetch('jobs')) {
-      // promises.push(safeFetch(() => JobApi.getAll({ limit: 10})).then((data: any) => setJobs(data)));
+      promises.push(safeFetch(() => JobApi.getAll({ limit: 10 })).then((data: any) => setJobs(data)));
     }
     if (shouldFetch('assessments')) {
-      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10})).then((data: any) => setAssessments(data)));
+      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10 })).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
-      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10})).then((data: any) => setContracts(data)));
+      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10 })).then((data: any) => setContracts(data)));
     }
     if (shouldFetch('quotations')) {
-      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10})).then((data: any) => setQuotations(data)));
+      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) => setQuotations(data)));
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
-      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10})).then((data: any) => setInvoices(data)));
+      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) => setInvoices(data)));
     }
     if (shouldFetch('receipts')) {
-      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10})).then((data: any) => setReceipts(data)));
+      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) => setReceipts(data)));
     }
     if (shouldFetch('customers')) {
-      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10})).then((data: any) => setCustomers(data)));
+      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10 })).then((data: any) => setCustomers(data)));
     }
     if (shouldFetch('products')) {
-      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10})).then((data: any) => setProducts(data)));
+      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10 })).then((data: any) => setProducts(data)));
     }
     if (shouldFetch('warehouses')) {
-      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 10})).then((data: any) => setWarehouses(data)));
+      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 10 })).then((data: any) => setWarehouses(data)));
     }
     if (shouldFetch('suppliers')) {
       promises.push(
-        safeFetch(() => SupplierApi.getSuppliers({ limit: 10})).then(
+        safeFetch(() => SupplierApi.getSuppliers({ limit: 10 })).then(
           (data: any) => setSuppliers(data)
         )
       );
     }
     if (shouldFetch('goodsReceipts')) {
       promises.push(
-        safeFetch(() => GoodsReceiptApi.getAll({ limit: 10})).then(
+        safeFetch(() => GoodsReceiptApi.getAll({ limit: 10 })).then(
           (data: any) => setGoodsReceipts(data)
         )
       );
     }
     if (shouldFetch('withdrawals')) {
-      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 10})).then((data: any) => setWithdrawals(data)));
+      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 10 })).then((data: any) => setWithdrawals(data)));
     }
     if (shouldFetch('transfers')) {
       // promises.push(safeFetch(() => TransferApi.getAll({ limit: 10})).then(setTransfers));
@@ -390,33 +390,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         },
       },
       invoices: {
-      create: async (data: any) => {
-        await InvoiceApi.create(data);
-        fetchData(['invoices']);
+        create: async (data: any) => {
+          await InvoiceApi.create(data);
+          fetchData(['invoices']);
+        },
+        update: async (data: any) => {
+          await InvoiceApi.update(data.id, data);
+          fetchData(['invoices']);
+        },
+        delete: async (id: string) => {
+          await InvoiceApi.delete(id);
+          fetchData(['invoices']);
+        },
       },
-      update: async (data: any) => {
-        await InvoiceApi.update(data.id, data);
-        fetchData(['invoices']);
+      receipts: {
+        create: async (data: any) => {
+          await ReceiptApi.create(data);
+          fetchData(['receipts']);
+        },
+        update: async (data: any) => {
+          await ReceiptApi.update(data.id, data);
+          fetchData(['receipts']);
+        },
+        delete: async (id: string) => {
+          await ReceiptApi.delete(id);
+          fetchData(['receipts']);
+        },
       },
-      delete: async (id: string) => {
-        await InvoiceApi.delete(id);
-        fetchData(['invoices']);
-      },
-    },
-    receipts: {
-      create: async (data: any) => {
-        await ReceiptApi.create(data);
-        fetchData(['receipts']);
-      },
-      update: async (data: any) => {
-        await ReceiptApi.update(data.id, data);
-        fetchData(['receipts']);
-      },
-      delete: async (id: string) => {
-        await ReceiptApi.delete(id);
-        fetchData(['receipts']);
-      },
-    },
       warehouses: {
         create: async (data: any) => {
           await WarehouseApi.create(data);

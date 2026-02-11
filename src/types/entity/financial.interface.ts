@@ -147,6 +147,7 @@ export interface Contract {
   servicePackage?: string;
   installments?: InstallmentPlan[];
   customer?: Customer;
+  jobs?: any[];
 }
 
 export interface WalletTransaction {

@@ -7,12 +7,12 @@ import {
     Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { 
-    PlusIcon, 
-    TrashIcon, 
-    DocumentTextIcon, 
-    HomeIcon, 
-    MapIcon, 
+import {
+    PlusIcon,
+    TrashIcon,
+    DocumentTextIcon,
+    HomeIcon,
+    MapIcon,
     CurrencyDollarIcon,
     MapPinIcon,
     ClipboardDocumentListIcon
@@ -44,7 +44,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 }) => {
     const { customers, categories } = useData();
     const [quotations, setQuotations] = useState<Quotation[]>([]);
-    
+
     // Local state for fetched data
     const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
 
@@ -66,16 +66,16 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Service info
     const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
-    
+
     // Convert comma-separated string back to array if needed, or default to empty array
     const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
-        initialValues?.service_type 
+        initialValues?.service_type
             ? initialValues.service_type.split(',').map(s => s.trim()).filter(Boolean)
             : []
     );
     const [serviceType, setServiceType] = useState(initialValues?.service_type || '');
     const [buildingType, setBuildingType] = useState(initialValues?.building_type || '');
-    
+
     // Sync serviceType string when selectedServiceTypes changes
     useEffect(() => {
         setServiceType(selectedServiceTypes.join(', '));
@@ -115,9 +115,9 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     // Selected customer
     const selectedCustomer = useMemo(() => {
-        return customers.find((c) => c.id === selectedCustomerId) || 
-               searchedCustomers.find((c) => c.id === selectedCustomerId) ||
-               fetchedSingleCustomer;
+        return customers.find((c) => c.id === selectedCustomerId) ||
+            searchedCustomers.find((c) => c.id === selectedCustomerId) ||
+            fetchedSingleCustomer;
     }, [customers, searchedCustomers, selectedCustomerId, fetchedSingleCustomer]);
 
     useEffect(() => {
@@ -153,7 +153,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             const end = new Date(now);
             end.setFullYear(end.getFullYear() + 1);
             setEndDate(end.toISOString().substring(0, 10));
-            
+
             setInstallments([
                 {
                     id: crypto.randomUUID(),
@@ -272,13 +272,13 @@ export const ContractForm: FC<ContractFormProps> = ({
                     const response = await QuotationApi.getById(selectedQuotationId);
                     const fullQuotationData = (response as any).data || response;
                     setFullQuotation(fullQuotationData);
-                    
+
                     if (fullQuotationData) {
                         // Only set if not already set or if explicitly changing quotation
                         if (mode === 'create' || !selectedCustomerId) {
                             setSelectedCustomerId(fullQuotationData.customer_id);
                         }
-                        
+
                         setTotalAmount(Number(fullQuotationData.total) || 0);
                         if (fullQuotationData.service_location) setServiceLocation(fullQuotationData.service_location);
                         if (fullQuotationData.building_type) setBuildingType(fullQuotationData.building_type);
@@ -286,11 +286,11 @@ export const ContractForm: FC<ContractFormProps> = ({
                             setServiceType(fullQuotationData.service_type);
                             setSelectedServiceTypes(fullQuotationData.service_type.split(',').map((s: string) => s.trim()).filter(Boolean));
                         }
-                        
+
                         if (fullQuotationData.system_used) {
                             setSystemUsed(fullQuotationData.system_used);
                         } else if (fullQuotationData.service_type) {
-                             if (fullQuotationData.service_type.includes('เหยื่อ') || fullQuotationData.service_type.includes('Pre')) {
+                            if (fullQuotationData.service_type.includes('เหยื่อ') || fullQuotationData.service_type.includes('Pre')) {
                                 setSystemUsed('ระบบเหยื่อ');
                             } else if (fullQuotationData.service_type.includes('เคมี') || fullQuotationData.service_type.includes('Chemical')) {
                                 setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
@@ -298,30 +298,47 @@ export const ContractForm: FC<ContractFormProps> = ({
                         }
 
                         if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
-                        if (fullQuotationData.service_count) setServiceCount(parseInt(String(fullQuotationData.service_count)) || 7);
+                        if (fullQuotationData.service_count) {
+                            setServiceCount(parseInt(String(fullQuotationData.service_count)) || 7);
+                        } else {
+                            // Try to retrieve from Package if available in areas
+                            let foundInPackage = false;
+                            if (fullQuotationData.quotation_areas && fullQuotationData.quotation_areas.length > 0) {
+                                const area = fullQuotationData.quotation_areas[0];
+                                const pkgLimit = area.packagePriceRelation?.package?.visit_limit;
+                                if (pkgLimit) {
+                                    setServiceCount(Number(pkgLimit));
+                                    foundInPackage = true;
+                                }
+                            }
+
+                            if (!foundInPackage) {
+                                setServiceCount(7);
+                            }
+                        }
                         if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
 
                         // Auto-fill installments from quotation if available
                         if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
-                             const backendInstallments = fullQuotationData.installments as any[];
-                             
-                             // Parsing Duration
-                             let durationMonths = 12;
-                             if (contractDuration.includes('ปี')) {
-                                 durationMonths = parseFloat(contractDuration) * 12;
-                             } else if (contractDuration.includes('เดือน')) {
-                                 durationMonths = parseFloat(contractDuration);
-                             }
+                            const backendInstallments = fullQuotationData.installments as any[];
 
-                             let creditTermDays = 30;
-                             if (fullQuotationData.payment_terms) {
-                                 const match = fullQuotationData.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
-                                 if (match) creditTermDays = parseInt(match[1]);
-                             }
+                            // Parsing Duration
+                            let durationMonths = 12;
+                            if (contractDuration.includes('ปี')) {
+                                durationMonths = parseFloat(contractDuration) * 12;
+                            } else if (contractDuration.includes('เดือน')) {
+                                durationMonths = parseFloat(contractDuration);
+                            }
 
-                             // Logic to map quotation installments to contract installments could be complex
-                             // For now, we use simple mapping
-                             setInstallments(backendInstallments.map((inst: any, index: number) => ({
+                            let creditTermDays = 30;
+                            if (fullQuotationData.payment_terms) {
+                                const match = fullQuotationData.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
+                                if (match) creditTermDays = parseInt(match[1]);
+                            }
+
+                            // Logic to map quotation installments to contract installments could be complex
+                            // For now, we use simple mapping
+                            setInstallments(backendInstallments.map((inst: any, index: number) => ({
                                 id: crypto.randomUUID(),
                                 term: inst.installment_no || index + 1,
                                 description: inst.description || `งวดที่ ${inst.installment_no || index + 1}`,
@@ -329,7 +346,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                 amount: Number(inst.amount) || 0,
                                 due_date: '', // Recalculate based on start date?
                                 status: 'PENDING' as any
-                             })));
+                            })));
                         }
                     }
                 } catch (error) {
@@ -345,7 +362,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     // Auto-fill address
     useEffect(() => {
         if (selectedCustomer && !serviceLocation) {
-             const address = [
+            const address = [
                 selectedCustomer.address_house_no,
                 selectedCustomer.road_line,
                 selectedCustomer.sub_district,
@@ -408,7 +425,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!selectedCustomerId) {
             alert('กรุณาเลือกลูกค้า');
             return;
@@ -420,7 +437,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             return;
         }
 
-        let selectedCustomerObj = customers.find(c => c.id === selectedCustomerId) 
+        let selectedCustomerObj = customers.find(c => c.id === selectedCustomerId)
             || searchedCustomers.find(c => c.id === selectedCustomerId)
             || fetchedSingleCustomer;
 
@@ -432,14 +449,14 @@ export const ContractForm: FC<ContractFormProps> = ({
                 console.error("Error fetching customer before submit:", error);
             }
         }
-            
+
         const payload = {
             ...initialValues,
             code: contractCode,
             quotation_id: selectedQuotationId || undefined,
             customer_id: selectedCustomerId,
-            customer_name: selectedCustomerObj 
-                ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name || ''}`.trim() 
+            customer_name: selectedCustomerObj
+                ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name || ''}`.trim()
                 : (initialValues?.customer_name && initialValues.customer_name !== 'Unknown' ? initialValues.customer_name : 'Unknown'),
             service_location: serviceLocation,
             building_type: buildingType,
@@ -453,7 +470,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             end_date: endDate,
             notes: notes,
             installments: installments.map(inst => ({
-                id: inst.id.length < 36 ? undefined : inst.id, 
+                id: inst.id.length < 36 ? undefined : inst.id,
                 term: inst.term,
                 description: inst.description,
                 percentage: inst.percentage,
@@ -462,7 +479,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 status: inst.status
             }))
         };
-        
+
         await onSubmit(payload);
     };
 
@@ -483,7 +500,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 {/* Left Column: General Information */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป (General Information)" />
-                    
+
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <FormField label="เลขที่สัญญา" htmlFor="code">
@@ -558,7 +575,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 {/* Right Column: Address Information */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
                     <SectionHeader icon={HomeIcon} title="ข้อมูลที่อยู่ (Address Information)" />
-                    
+
                     <div className="space-y-4">
                         <FormField label="สถานที่ให้บริการ" htmlFor="location">
                             <Textarea
@@ -571,19 +588,19 @@ export const ContractForm: FC<ContractFormProps> = ({
                         </FormField>
 
                         <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                             <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
-                             {selectedCustomer?.google_map_link ? (
-                                 <a 
-                                    href={selectedCustomer.google_map_link} 
-                                    target="_blank" 
+                            <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
+                            {selectedCustomer?.google_map_link ? (
+                                <a
+                                    href={selectedCustomer.google_map_link}
+                                    target="_blank"
                                     rel="noreferrer"
                                     className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                                 >
+                                >
                                     <MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า
-                                 </a>
-                             ) : (
-                                 <span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>
-                             )}
+                                </a>
+                            ) : (
+                                <span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -744,91 +761,91 @@ export const ContractForm: FC<ContractFormProps> = ({
 
                 {/* Service Details - Full Width */}
                 {!selectedQuotationId && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                    <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ (Service Details)" />
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <FormField label="ประเภทสิ่งปลูกสร้าง" htmlFor="buildingType">
-                            <Select
-                                id="buildingType"
-                                value={buildingType}
-                                onChange={(e) => setBuildingType(e.target.value)}
-                            >
-                                <option value="">เลือกประเภทสิ่งปลูกสร้าง</option>
-                                <option value="HOUSE">บ้าน</option>
-                                <option value="OFFICE">ออฟฟิศ</option>
-                            </Select>
-                        </FormField>
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+                        <SectionHeader icon={MapIcon} title="รายละเอียดการบริการ (Service Details)" />
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <FormField label="ประเภทสิ่งปลูกสร้าง" htmlFor="buildingType">
+                                <Select
+                                    id="buildingType"
+                                    value={buildingType}
+                                    onChange={(e) => setBuildingType(e.target.value)}
+                                >
+                                    <option value="">เลือกประเภทสิ่งปลูกสร้าง</option>
+                                    <option value="HOUSE">บ้าน</option>
+                                    <option value="OFFICE">ออฟฟิศ</option>
+                                </Select>
+                            </FormField>
 
 
-                        <FormField label="ระบบที่ใช้" htmlFor="systemUsed">
-                            <Input
-                                id="systemUsed"
-                                value={systemUsed}
-                                onChange={(e) => setSystemUsed(e.target.value)}
-                                placeholder="เช่น ระบบเหยื่อ, ระบบฉีดพ่น"
-                            />
-                        </FormField>
+                            <FormField label="ระบบที่ใช้" htmlFor="systemUsed">
+                                <Input
+                                    id="systemUsed"
+                                    value={systemUsed}
+                                    onChange={(e) => setSystemUsed(e.target.value)}
+                                    placeholder="เช่น ระบบเหยื่อ, ระบบฉีดพ่น"
+                                />
+                            </FormField>
 
-                        <FormField label="ระยะเวลาสัญญา" htmlFor="duration">
-                            <Select
-                                id="duration"
-                                value={contractDuration}
-                                onChange={(e) => setContractDuration(e.target.value)}
-                            >
-                                <option value="1 ปี">1 ปี</option>
-                                <option value="6 เดือน">6 เดือน</option>
-                                <option value="3 เดือน">3 เดือน</option>
-                                <option value="ครั้งเดียว">ครั้งเดียว</option>
-                            </Select>
-                        </FormField>
+                            <FormField label="ระยะเวลาสัญญา" htmlFor="duration">
+                                <Select
+                                    id="duration"
+                                    value={contractDuration}
+                                    onChange={(e) => setContractDuration(e.target.value)}
+                                >
+                                    <option value="1 ปี">1 ปี</option>
+                                    <option value="6 เดือน">6 เดือน</option>
+                                    <option value="3 เดือน">3 เดือน</option>
+                                    <option value="ครั้งเดียว">ครั้งเดียว</option>
+                                </Select>
+                            </FormField>
 
-                         <FormField label="จำนวนครั้งเข้าบริการ" htmlFor="serviceCount">
-                            <Input
-                                id="serviceCount"
-                                type="number"
-                                value={serviceCount}
-                                onChange={(e) => setServiceCount(Number(e.target.value))}
-                            />
-                        </FormField>
+                            <FormField label="จำนวนครั้งเข้าบริการ" htmlFor="serviceCount">
+                                <Input
+                                    id="serviceCount"
+                                    type="number"
+                                    value={serviceCount}
+                                    onChange={(e) => setServiceCount(Number(e.target.value))}
+                                />
+                            </FormField>
 
-												  <div className="col-span-1 md:col-span-2 lg:col-span-4">
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                                ประเภทบริการ<span className="text-red-500">*</span>
-                            </label>
-                            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {serviceTypeOptions.map((option) => (
-                                        <label key={option.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedServiceTypes.includes(option.value)}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedServiceTypes([...selectedServiceTypes, option.value]);
-                                                    } else {
-                                                        setSelectedServiceTypes(selectedServiceTypes.filter(t => t !== option.value));
-                                                    }
-                                                }}
-                                                className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                                            />
-                                            <span className="text-sm text-slate-700">{option.label}</span>
-                                        </label>
-                                    ))}
+                            <div className="col-span-1 md:col-span-2 lg:col-span-4">
+                                <label className="block text-sm font-medium text-slate-700 mb-2">
+                                    ประเภทบริการ<span className="text-red-500">*</span>
+                                </label>
+                                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        {serviceTypeOptions.map((option) => (
+                                            <label key={option.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedServiceTypes.includes(option.value)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedServiceTypes([...selectedServiceTypes, option.value]);
+                                                        } else {
+                                                            setSelectedServiceTypes(selectedServiceTypes.filter(t => t !== option.value));
+                                                        }
+                                                    }}
+                                                    className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                                                />
+                                                <span className="text-sm text-slate-700">{option.label}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedServiceTypes.length === 0 && (
+                                        <p className="text-xs text-red-500 mt-2">กรุณาเลือกอย่างน้อย 1 รายการ</p>
+                                    )}
                                 </div>
-                                {selectedServiceTypes.length === 0 && (
-                                    <p className="text-xs text-red-500 mt-2">กรุณาเลือกอย่างน้อย 1 รายการ</p>
-                                )}
                             </div>
                         </div>
                     </div>
-                </div>
                 )}
 
                 {/* Payment & Installments - Full Width */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
                     <SectionHeader icon={CurrencyDollarIcon} title="การชำระเงินและงวดงาน (Payment & Installments)" />
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                         <div>
                             <FormField label="มูลค่าสัญญารวม (บาท)" htmlFor="totalAmount">
@@ -841,7 +858,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                 />
                             </FormField>
                         </div>
-                         <div className="flex items-center">
+                        <div className="flex items-center">
                             <div className={`flex-1 p-4 rounded-lg border ${Math.abs(totalPercentage - 100) < 0.5 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm font-medium text-slate-600">สัดส่วนการแบ่งงวดรวม</span>
@@ -896,7 +913,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                             />
                                         </td>
                                         <td className="px-4 py-2">
-                                             <Select
+                                            <Select
                                                 value={inst.status as any}
                                                 onChange={(e) => handleInstallmentChange(inst.id, 'status', e.target.value)}
                                                 className="!py-1 h-9 text-xs"
@@ -923,7 +940,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                     </div>
 
                     <div className="flex justify-start mb-6">
-                         <Button
+                        <Button
                             type="button"
                             variant="outline"
                             onClick={addInstallment}

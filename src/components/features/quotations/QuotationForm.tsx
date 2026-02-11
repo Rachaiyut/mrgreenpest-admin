@@ -389,7 +389,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [packagePrice, setPackagePrice] = useState(0);
     const [packageName, setPackageName] = useState('');
     const [usePackagePricing, setUsePackagePricing] = useState(false);
-    
+
     // Payment Condition
     const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
 
@@ -521,6 +521,27 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     }
 
                     if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
+                        // Update Service Count from Package
+                        if (pkg.visit_limit) {
+                            setServiceCount(`${pkg.visit_limit} ครั้ง`);
+                        }
+
+                        // Update Contract Duration from Package
+                        if (pkg.contract_period) {
+                            const period = Number(pkg.contract_period);
+                            // Only update if not already set by user? 
+                            // Since this effect runs on assessment selection, we assume user wants the package defaults.
+                            if (period >= 12) {
+                                // If period is multiple of 12, show in years
+                                const years = period / 12;
+                                // Handle integer vs float if needed
+                                setContractDuration(`${years} ปี`);
+                            } else {
+                                setContractDuration(`${period} เดือน`);
+                            }
+                        }
+
+                        // Sort by area_range ASC
                         // Sort by area_range ASC
                         const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
 
@@ -632,45 +653,45 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             if (selectedAssessment.installments && selectedAssessment.installments.length > 0) {
                 console.log('✅ Auto-filling installments from assessment:', selectedAssessment.installments);
                 setPaymentCondition(PaymentMethod.INSTALLMENT);
-                
+
                 // If includeVat is true, we need to scale the installments to match Net Total
                 // Calculate total assessment amount to use as base for proportion
                 const totalAssessmentAmount = selectedAssessment.installments.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
-                
+
                 // Determine target total:
                 // Since items/packagePrice are set above, we can estimate the subtotal
                 // Logic mirrors the 'subtotal' useMemo
                 let estimatedSubtotal = 0;
-                
+
                 // If package pricing is used (set above)
                 if (selectedAssessment.package) {
-                   estimatedSubtotal = Number(selectedAssessment.total_price) || 0; 
-                   // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
-                   // If we can't perfectly replicate it here without code duplication, 
-                   // we can rely on totalAssessmentAmount if it matches total_price.
+                    estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
+                    // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
+                    // If we can't perfectly replicate it here without code duplication, 
+                    // we can rely on totalAssessmentAmount if it matches total_price.
                 } else {
-                   // Items sum
-                   // We just created 'newItems' above or have existing items
-                   // If we just set items, we can't access 'items' state immediately here
-                   // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
-                   estimatedSubtotal = Number(selectedAssessment.total_price) || totalAssessmentAmount;
+                    // Items sum
+                    // We just created 'newItems' above or have existing items
+                    // If we just set items, we can't access 'items' state immediately here
+                    // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
+                    estimatedSubtotal = Number(selectedAssessment.total_price) || totalAssessmentAmount;
                 }
-                
+
                 const shouldIncludeVat = mode === 'create' ? true : includeVat;
                 const targetTotal = shouldIncludeVat ? estimatedSubtotal * 1.07 : estimatedSubtotal;
-                
+
                 // Scale factor
                 const scale = (totalAssessmentAmount > 0) ? (targetTotal / totalAssessmentAmount) : 1;
-                
+
                 let accumulatedAmount = 0;
-                
+
                 // Sort installments by installment_no before processing
                 const sortedAssessmentInstallments = [...selectedAssessment.installments].sort((a: any, b: any) => a.installment_no - b.installment_no);
 
                 const newInstallments = sortedAssessmentInstallments.map((inst: any, index: number) => {
                     const originalAmount = Number(inst.amount);
                     let newAmount = 0;
-                    
+
                     if (index === sortedAssessmentInstallments.length - 1) {
                         // Last installment takes the remainder to ensure exact match
                         newAmount = targetTotal - accumulatedAmount;
@@ -858,20 +879,20 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const subtotal = useMemo(() => {
         // 1. If Assessment is selected (or we have quotation areas from initialValues)
         if (selectedAssessmentId) {
-             // 1a. Global Package Pricing (Override)
-             if (usePackagePricing) {
-                 return packagePrice;
-             }
-             
-             // 1b. Per-Area Pricing (Sum of Areas)
-             // Prioritize quotation_areas (saved state) over assessment_areas (source state)
-             const areas = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
-                        ? initialValues.quotation_areas
-                        : selectedAssessment?.assessment_areas;
-             
-             if (areas && areas.length > 0) {
-                 return areas.reduce((sum: number, area: any) => sum + (Number(area.total_price) || 0), 0);
-             }
+            // 1a. Global Package Pricing (Override)
+            if (usePackagePricing) {
+                return packagePrice;
+            }
+
+            // 1b. Per-Area Pricing (Sum of Areas)
+            // Prioritize quotation_areas (saved state) over assessment_areas (source state)
+            const areas = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
+                ? initialValues.quotation_areas
+                : selectedAssessment?.assessment_areas;
+
+            if (areas && areas.length > 0) {
+                return areas.reduce((sum: number, area: any) => sum + (Number(area.total_price) || 0), 0);
+            }
         }
 
         // 2. Manual Quotation (or fallback if no areas found)
@@ -919,7 +940,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return inst;
         }));
     };
-    
+
     // Auto-calculate installments when netTotal changes or payment condition changes
     useEffect(() => {
         if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && netTotal > 0) {
@@ -930,27 +951,27 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             date2.setMonth(date2.getMonth() + 1);
 
             setInstallments([
-                { 
-                    id: crypto.randomUUID(), 
-                    installment_no: 1, 
-                    amount: netTotal / 2, 
-                    service_date: date1.toISOString().substring(0, 10), 
-                    notes: 'งวดที่ 1' 
+                {
+                    id: crypto.randomUUID(),
+                    installment_no: 1,
+                    amount: netTotal / 2,
+                    service_date: date1.toISOString().substring(0, 10),
+                    notes: 'งวดที่ 1'
                 },
-                { 
-                    id: crypto.randomUUID(), 
-                    installment_no: 2, 
-                    amount: netTotal / 2, 
-                    service_date: date2.toISOString().substring(0, 10), 
-                    notes: 'งวดที่ 2' 
+                {
+                    id: crypto.randomUUID(),
+                    installment_no: 2,
+                    amount: netTotal / 2,
+                    service_date: date2.toISOString().substring(0, 10),
+                    notes: 'งวดที่ 2'
                 }
             ]);
         } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
-             // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
-             // For now, let's just clear if user explicitly switches. 
-             // Ideally we need a flag to know if this is user action vs initial load.
-             // But simpler: if condition is Transfer, we just don't show the table. 
-             // When submitting, we check the condition.
+            // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
+            // For now, let's just clear if user explicitly switches. 
+            // Ideally we need a flag to know if this is user action vs initial load.
+            // But simpler: if condition is Transfer, we just don't show the table. 
+            // When submitting, we check the condition.
         }
     }, [paymentCondition, netTotal]);
 
@@ -978,7 +999,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         // Validation: If no items AND no package, alert
         const hasValidItems = items.some((item) => item.description && item.amount > 0);
-        
+
         // Relax validation: Allow if assessment is linked (data might come from backend or be draft)
         // Also allow if package pricing is selected, even if calculated price is 0 (can be edited later)
         const isAssessmentLinked = !!selectedAssessmentId;
@@ -1280,10 +1301,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                                 const isChecked = area.category_services?.some((cat: any) => {
                                                                     const catId = cat.category_id || cat.category?.id || cat.id;
                                                                     const catName = cat.name || cat.category?.name;
-                                                                    
+
                                                                     const matchId = (catId && catId === option.id);
                                                                     const matchName = (catName && catName === option.value);
-                                                                    
+
                                                                     return matchId || matchName;
                                                                 });
 
@@ -1455,7 +1476,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                 </tr>
                                             ))}
                                         </tbody>
-                    </table>
+                                    </table>
                                 </div>
                                 {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) >= 1 && (
                                     <p className="text-xs text-red-500 text-right">
