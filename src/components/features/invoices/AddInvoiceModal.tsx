@@ -243,9 +243,44 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }, [contracts]);
 
     // Selected contract details
-    const selectedContract = useMemo(() => {
+    const selectedContractBasic = useMemo(() => {
         return contracts?.find((c) => c.id === selectedContractId);
     }, [contracts, selectedContractId]);
+
+    const [fetchedContract, setFetchedContract] = useState<Contract | null>(null);
+
+    useEffect(() => {
+        if (selectedContractId) {
+            const fetchFullContract = async () => {
+                try {
+                    const res = await ContractApi.getById(selectedContractId);
+                    if (res) {
+                        // Check if result is wrapped in 'data' (common in this project's API response)
+                        const contractData = (res as any).data || res;
+                        setFetchedContract(contractData);
+                    }
+                } catch (error) {
+                    console.error("Error fetching full contract:", error);
+                }
+            };
+            fetchFullContract();
+        } else {
+            setFetchedContract(null);
+        }
+    }, [selectedContractId]);
+
+    const selectedContract = fetchedContract || selectedContractBasic;
+
+    // DEBUG: Monitor selected contract and its installments
+    useEffect(() => {
+        if (selectedContract) {
+            console.log('DEBUG: Selected Contract changed:', {
+                id: selectedContract.id,
+                installmentsCount: selectedContract.installments?.length,
+                installments: selectedContract.installments
+            });
+        }
+    }, [selectedContract]);
 
     // Selected quotation details - Fetch full details when selected to ensure we have installments
     const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
@@ -328,19 +363,35 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
         const invoicedTerms = new Set(existingInvoices.map(inv => inv.term).filter(t => t !== undefined));
 
+        console.log('DEBUG: Invoiced terms:', Array.from(invoicedTerms));
+
         return selectedContract.installments
             .filter(inst => {
+                const term = inst.term || (inst as any).installment_no;
+                
+                // Check status - handle both Thai enum and English string
+                const isPaid = inst.status === Status.Paid || (inst.status as unknown as string) === 'PAID';
+
+                const isAvailable = !invoicedTerms.has(term) && !isPaid;
+                
+                console.log(`DEBUG: Checking installment term ${term}:`, {
+                    status: inst.status,
+                    isPaid,
+                    isInvoiced: invoicedTerms.has(term),
+                    isAvailable
+                });
+
                 // If this is the installment currently being edited (matches initialValues.term), allow it even if status is Paid
-                if (currentInvoiceId && initialValues?.term === inst.term) {
+                if (currentInvoiceId && initialValues?.term === term) {
                     return true;
                 }
 
                 // Otherwise apply standard filters: not already invoiced AND not Paid
-                return !invoicedTerms.has(inst.term) && inst.status !== Status.Paid;
+                return isAvailable;
             })
             .map(inst => ({
                 id: inst.id,
-                term: inst.term,
+                term: inst.term || (inst as any).installment_no,
                 description: inst.description,
                 amount: Number(inst.amount),
                 status: inst.status
@@ -350,10 +401,15 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     // Auto-select first available installment
     useEffect(() => {
         if (contractInstallments.length > 0 && mode === 'create') {
-            // Only auto-select if nothing is selected or the selected one is no longer available
-            const isSelectedAvailable = contractInstallments.some(i => i.term === selectedInstallmentTerm);
-            if (!selectedInstallmentTerm || !isSelectedAvailable) {
-                setSelectedInstallmentTerm(contractInstallments[0].term);
+            // Only auto-select if nothing is selected or the selected one is no longer available/disabled
+            const selectedInst = contractInstallments.find(i => i.term === selectedInstallmentTerm);
+            const isSelectedValid = selectedInst; // In current filter logic, we only return valid ones
+
+            if (!selectedInstallmentTerm || !isSelectedValid) {
+                const firstAvailable = contractInstallments[0];
+                if (firstAvailable) {
+                    setSelectedInstallmentTerm(firstAvailable.term);
+                }
             }
         }
     }, [contractInstallments, mode, selectedInstallmentTerm]);
@@ -649,9 +705,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                                             className="bg-white border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 h-11"
                                         >
                                             <option value="">-- เลือกงวดที่ต้องการเรียกเก็บ --</option>
-                                            {contractInstallments.map(inst => (
-                                                <option key={inst.term} value={inst.term}>
-                                                    งวดที่ {inst.term} ({inst.description}) - {inst.amount.toLocaleString()} บาท
+                                            {contractInstallments.map((inst: any) => (
+                                                <option key={inst.term} value={inst.term} disabled={inst.isDisabled}>
+                                                    งวดที่ {inst.term} ({inst.description}) - {Number(inst.amount).toLocaleString()} บาท {inst.reason ? inst.reason : ''}
                                                 </option>
                                             ))}
                                         </Select>

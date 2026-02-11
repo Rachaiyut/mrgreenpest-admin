@@ -218,20 +218,6 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
               placeholder="เช่น 4"
             />
           </FormField>
-          {/* Removed contract_duration field as it's not in the interface */}
-          <FormField label="อายุสัญญา" htmlFor="contractDuration">
-            <Select
-              id="contractDuration"
-              name="contract_duration" // This will go nowhere unless we handle it or add it to interface
-              disabled
-              title="Not supported yet"
-            >
-              <option>ครั้งเดียว</option>
-              <option>3 เดือน</option>
-              <option>6 เดือน</option>
-              <option>1 ปี</option>
-            </Select>
-          </FormField>
         </div>
         <FormField label="หมายเหตุ" htmlFor="remark">
           <Textarea

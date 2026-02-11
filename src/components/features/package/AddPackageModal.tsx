@@ -43,10 +43,10 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     conditions.forEach((cond, index) => {
       if (
         typeof cond.minimum_price === 'number' &&
-        typeof cond.price_no_termite === 'number' &&
+        typeof cond.price_without_termite === 'number' &&
         typeof cond.price_with_termite === 'number' &&
         cond.minimum_price >
-          Math.min(cond.price_no_termite, cond.price_with_termite)
+          Math.min(cond.price_without_termite, cond.price_with_termite)
       ) {
         indices.push(index);
       }
@@ -94,13 +94,12 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
       name: data['package-name'] as string,
       category_id: data['categoryId'] as string,
       visit_limit: parseInt(data['package-visits'] as string, 10),
-      contract_period: parseFloat(data['package-duration'] as string) || 1,
       remark: data['package-description'] as string,
       package_price: conditions.map(
         (c) =>
           ({
             area_range: c.area_range || 0,
-            price_no_termite: c.price_no_termite || 0,
+            price_without_termite: c.price_without_termite || 0,
             price_with_termite: c.price_with_termite || 0,
             minimum_price: c.minimum_price || 0,
           }) as PackagePrice
@@ -185,15 +184,6 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
               placeholder="เช่น 4"
             />
           </FormField>
-          <FormField label="อายุสัญญา (ปี)" htmlFor="package-duration">
-            <Input
-              id="package-duration"
-              name="package-duration"
-              type="number"
-              step="0.5"
-              placeholder="เช่น 1"
-            />
-          </FormField>
         </div>
 
         <FormField label="หมายเหตุ" htmlFor="package-description">
@@ -265,11 +255,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_no_termite ?? ''}
+                          value={cond.price_without_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_no_termite',
+                              'price_without_termite',
                               e.target.value
                             )
                           }

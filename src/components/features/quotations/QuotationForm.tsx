@@ -67,20 +67,23 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
     const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
     const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
+    const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
 
     // Initial data fetching
     useEffect(() => {
         const initData = async () => {
             try {
-                const [custRes, assessRes, catRes] = await Promise.all([
+                const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
                     CustomerApi.getCustomers({ limit: 100 }),
                     AssessmentApi.getAll({ limit: 20 }),
-                    CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 })
+                    CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 }),
+                    PackageApi.getPackages({ limit: 100 })
                 ]);
 
                 if (custRes?.data) setFetchedCustomers(custRes.data);
                 if (assessRes?.data) setFetchedAssessments(assessRes.data);
                 if (catRes?.data) setFetchedCategories(catRes.data);
+                if (pkgRes?.data) setFetchedPackages(pkgRes.data);
 
             } catch (err) {
                 console.error("Error fetching initial data:", err);
@@ -141,6 +144,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
     // Assessment Search Handling
     const assessmentSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Package reference (Direct selection)
+    const [selectedPackageId, setSelectedPackageId] = useState('');
 
     const handleAssessmentSearch = useCallback((query: string) => {
         if (assessmentSearchTimeoutRef.current) {
@@ -307,12 +313,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         try {
                             const pkgRes = await PackageApi.getPackageById(packageId);
                             setFetchedPackage(pkgRes);
+                            setSelectedPackageId(packageId); // Sync selection
                         } catch (pkgErr) {
                             console.error("Error fetching package details:", pkgErr);
                             setFetchedPackage(null);
                         }
                     } else {
                         setFetchedPackage(null);
+                        setSelectedPackageId('');
                     }
                 } catch (err) {
                     console.error("Error fetching full assessment:", err);
@@ -321,11 +329,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 }
             };
             fetchFull();
+        } else if (selectedPackageId) {
+            // Manual Package Selection
+            const pkg = fetchedPackages.find(p => p.id === selectedPackageId);
+            if (pkg) {
+                setFetchedPackage(pkg);
+            } else {
+                PackageApi.getPackageById(selectedPackageId)
+                    .then(setFetchedPackage)
+                    .catch(() => setFetchedPackage(null));
+            }
+            setFullAssessment(null);
         } else {
             setFullAssessment(null);
             setFetchedPackage(null);
         }
-    }, [selectedAssessmentId]);
+    }, [selectedAssessmentId, selectedPackageId, fetchedPackages]);
 
     const selectedAssessment = useMemo(() => {
         const assessment = (fullAssessment && fullAssessment.id === selectedAssessmentId)
@@ -404,7 +423,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 .map((inst: any) => ({
                     installment_no: inst.installment_no,
                     amount: inst.amount,
-                    service_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
                     notes: inst.notes || ''
                 }))
             : []
@@ -416,6 +434,59 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             setPaymentCondition(PaymentMethod.INSTALLMENT);
         }
     }, [initialValues]);
+
+    // Auto-fill from Package (Direct Selection)
+    useEffect(() => {
+        if (fetchedPackage && !selectedAssessmentId) {
+            setUsePackagePricing(true);
+            setPackageName(fetchedPackage.name);
+
+            // Service Count
+            if (fetchedPackage.visit_limit) {
+                setServiceCount(`${fetchedPackage.visit_limit} ครั้ง`);
+            }
+
+            // Duration
+            if (fetchedPackage.contract_period) {
+                const period = Number(fetchedPackage.contract_period);
+                if (period >= 12) {
+                    setContractDuration(`${period / 12} ปี`);
+                } else {
+                    setContractDuration(`${period} เดือน`);
+                }
+            }
+
+            // Price Calculation
+            let areaSize = 0;
+            if (serviceArea) {
+                areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
+            }
+
+            let masterPrice = 0;
+            const pkgPrices = fetchedPackage.package_price || (fetchedPackage as any).package_prices;
+
+            if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
+                const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
+                const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
+
+                if (condition) {
+                    // Check for Termite service
+                    const hasTermite = selectedServiceTypes.some(s => /ปลวก|termite/i.test(s));
+
+                    const priceWith = Number(condition.price_with_termite);
+                    const priceWithout = Number(condition.price_without_termite);
+
+                    masterPrice = hasTermite
+                        ? (priceWith > 0 ? priceWith : priceWithout)
+                        : (priceWithout > 0 ? priceWithout : priceWith);
+                }
+            }
+
+            if (masterPrice > 0) {
+                setPackagePrice(masterPrice);
+            }
+        }
+    }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
 
     // Auto-fill from assessment when selected
     useEffect(() => {
@@ -707,7 +778,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         id: inst.id || crypto.randomUUID(),
                         installment_no: inst.installment_no,
                         amount: newAmount > 0 ? newAmount : 0,
-                        service_date: inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : '',
                         notes: inst.note || `งวดที่ ${inst.installment_no}`
                     };
                 });
@@ -832,9 +902,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         if (isChecked) {
             // Auto-fill package info if available
-            if (selectedAssessment?.package) {
-                setPackageName(selectedAssessment.package.name);
-                setPackagePrice(Number(selectedAssessment.total_price) || 0);
+            const pkg = selectedAssessment?.package || fetchedPackage;
+            if (pkg) {
+                setPackageName(pkg.name);
+                if (selectedAssessment) {
+                    setPackagePrice(Number(selectedAssessment.total_price) || 0);
+                }
             }
 
             // Clear items for "Add-ons" (user adds manually)
@@ -915,7 +988,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 id: crypto.randomUUID(),
                 installment_no: prev.length + 1,
                 amount: 0,
-                service_date: '',
                 notes: `งวดที่ ${prev.length + 1}`,
             }
         ]);
@@ -945,24 +1017,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     useEffect(() => {
         if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && netTotal > 0) {
             // Default to 2 installments if none exist
-            // Calculate dates: 1st installment on quotation date (or today), 2nd installment next month
-            const date1 = quotationDate ? new Date(quotationDate) : new Date();
-            const date2 = new Date(date1);
-            date2.setMonth(date2.getMonth() + 1);
-
             setInstallments([
                 {
                     id: crypto.randomUUID(),
                     installment_no: 1,
                     amount: netTotal / 2,
-                    service_date: date1.toISOString().substring(0, 10),
                     notes: 'งวดที่ 1'
                 },
                 {
                     id: crypto.randomUUID(),
                     installment_no: 2,
                     amount: netTotal / 2,
-                    service_date: date2.toISOString().substring(0, 10),
                     notes: 'งวดที่ 2'
                 }
             ]);
@@ -1075,8 +1140,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             include_vat: includeVat,
             items: finalItems,
             installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map(inst => ({
-                ...inst,
-                service_date: inst.service_date || undefined
+                ...inst
             })) : [],
             is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
         };
@@ -1132,6 +1196,25 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                     }))}
                                     placeholder="เลือกใบประเมิน (ถ้ามี)"
                                     disabled={isReadOnly}
+                                />
+                            </FormField>
+                        </div>
+
+                        <div className="col-span-1 md:col-span-2">
+                            <FormField label="แพ็กเกจบริการ (Package)">
+                                <SearchableSelect
+                                    value={selectedPackageId}
+                                    onChange={(val) => {
+                                        setSelectedPackageId(val);
+                                        if (val) setSelectedAssessmentId('');
+                                    }}
+                                    options={fetchedPackages.map((p) => ({
+                                        value: p.id,
+                                        label: `${p.name} (${p.code})`,
+                                        description: `${p.visit_limit} ครั้ง / ${p.contract_period} เดือน`
+                                    }))}
+                                    placeholder="เลือกแพ็กเกจ (ถ้ามี)"
+                                    disabled={isReadOnly || !!selectedAssessmentId}
                                 />
                             </FormField>
                         </div>

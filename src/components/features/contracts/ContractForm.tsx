@@ -186,7 +186,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         } else if (initialValues?.installments) {
             setInstallments(initialValues.installments.map(inst => ({
                 id: inst.id || crypto.randomUUID(),
-                term: inst.term,
+                term: inst.term || inst.installment_no,
                 description: inst.description,
                 percentage: Number(inst.percentage),
                 amount: Number(inst.amount),
@@ -194,7 +194,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 status: inst.status as any
             })));
         }
-    }, [mode]);
+    }, [mode, initialValues]);
 
     // Initialize searched customers
     useEffect(() => {
@@ -271,111 +271,140 @@ export const ContractForm: FC<ContractFormProps> = ({
         return options;
     }, [quotations, fullQuotation, selectedQuotationId]);
 
-    // Auto-fill from Quotation
-    const isInitialLoad = useRef(true);
+    // Fetch Quotation Details when selected
     useEffect(() => {
-        // Skip on initial mount if editing to avoid overwriting
-        if (mode === 'edit' && isInitialLoad.current) {
-            isInitialLoad.current = false;
+        if (!selectedQuotationId) {
+            // Only clear if not in edit mode with existing data
+            if (mode === 'create') {
+                // Optional: Clear form?
+            }
             return;
         }
 
         const fetchQuotationDetails = async () => {
-            if (selectedQuotationId) {
-                try {
-                    const response = await QuotationApi.getById(selectedQuotationId);
-                    const fullQuotationData = (response as any).data || response;
-                    setFullQuotation(fullQuotationData);
+            try {
+                const response = await QuotationApi.getById(selectedQuotationId);
+                const fullQuotationData = (response as any).data || response;
+                setFullQuotation(fullQuotationData);
 
-                    if (fullQuotationData) {
-                        // Only set if not already set or if explicitly changing quotation
-                        if (mode === 'create' || !selectedCustomerId) {
-                            setSelectedCustomerId(fullQuotationData.customer_id);
-                        }
+                if (fullQuotationData) {
+                    // 1. Customer & Basic Info
+                    if (mode === 'create' || !selectedCustomerId) {
+                        setSelectedCustomerId(fullQuotationData.customer_id);
+                    }
+                    if (fullQuotationData.service_location) setServiceLocation(fullQuotationData.service_location);
+                    if (fullQuotationData.building_type) setBuildingType(fullQuotationData.building_type);
+                    if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
+                    if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
 
-                        setTotalAmount(Number(fullQuotationData.total) || 0);
-                        if (fullQuotationData.service_location) setServiceLocation(fullQuotationData.service_location);
-                        if (fullQuotationData.building_type) setBuildingType(fullQuotationData.building_type);
-                        if (fullQuotationData.service_type) {
-                            setServiceType(fullQuotationData.service_type);
-                            setSelectedServiceTypes(fullQuotationData.service_type.split(',').map((s: string) => s.trim()).filter(Boolean));
-                        }
-
-                        if (fullQuotationData.system_used) {
-                            setSystemUsed(fullQuotationData.system_used);
-                        } else if (fullQuotationData.service_type) {
-                            if (fullQuotationData.service_type.includes('เหยื่อ') || fullQuotationData.service_type.includes('Pre')) {
-                                setSystemUsed('ระบบเหยื่อ');
-                            } else if (fullQuotationData.service_type.includes('เคมี') || fullQuotationData.service_type.includes('Chemical')) {
-                                setSystemUsed('ระบบสารเคมีกึ่งชีวภาพ');
+                    // 2. Service Types
+                    const extractedServiceTypes = new Set<string>();
+                    if (fullQuotationData.service_type) {
+                        fullQuotationData.service_type.split(',').forEach((s: string) => extractedServiceTypes.add(s.trim()));
+                    }
+                    if (fullQuotationData.quotation_areas) {
+                        fullQuotationData.quotation_areas.forEach((area: any) => {
+                            if (area.category_services) {
+                                area.category_services.forEach((cs: any) => {
+                                    if (cs.category?.name) extractedServiceTypes.add(cs.category.name);
+                                });
                             }
-                        }
+                        });
+                    }
+                    const serviceTypeList = Array.from(extractedServiceTypes);
+                    if (serviceTypeList.length > 0) {
+                        setSelectedServiceTypes(serviceTypeList);
+                        setServiceType(serviceTypeList.join(', '));
+                    }
 
-                        if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
-                        if (fullQuotationData.service_count) {
-                            setServiceCount(parseInt(String(fullQuotationData.service_count)) || 7);
-                        } else {
-                            // Try to retrieve from Package if available in areas
-                            let foundInPackage = false;
-                            if (fullQuotationData.quotation_areas && fullQuotationData.quotation_areas.length > 0) {
-                                const area = fullQuotationData.quotation_areas[0];
-                                const pkgLimit = area.packagePriceRelation?.package?.visit_limit;
-                                if (pkgLimit) {
-                                    setServiceCount(Number(pkgLimit));
-                                    foundInPackage = true;
-                                }
-                            }
-
-                            if (!foundInPackage) {
-                                setServiceCount(7);
-                            }
-                        }
-                        if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
-
-                        // Auto-fill installments from quotation if available
-                        if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
-                            const backendInstallments = fullQuotationData.installments as any[];
-                            const totalVal = Number(fullQuotationData.total) || 0;
-
-                            // Parsing Duration
-                            let durationMonths = 12;
-                            if (contractDuration.includes('ปี')) {
-                                durationMonths = parseFloat(contractDuration) * 12;
-                            } else if (contractDuration.includes('เดือน')) {
-                                durationMonths = parseFloat(contractDuration);
-                            }
-
-                            let creditTermDays = 30;
-                            if (fullQuotationData.payment_terms) {
-                                const match = fullQuotationData.payment_terms.match(/(\d+)\s*(วัน|Day)/i);
-                                if (match) creditTermDays = parseInt(match[1]);
-                            }
-
-                            // Logic to map quotation installments to contract installments could be complex
-                            // For now, we use simple mapping
-                            setInstallments(backendInstallments.map((inst: any, index: number) => {
-                                const amount = Number(inst.amount) || 0;
-                                const calculatedPercentage = totalVal > 0 ? (amount / totalVal) * 100 : 0;
-
-                                return {
-                                    id: crypto.randomUUID(),
-                                    term: inst.installment_no || index + 1,
-                                    description: inst.description || inst.notes || `งวดที่ ${inst.installment_no || index + 1}`,
-                                    percentage: Number(inst.percentage) || calculatedPercentage,
-                                    amount: amount,
-                                    due_date: inst.service_date ? new Date(inst.service_date).toISOString().substring(0, 10) : '',
-                                    status: 'PENDING' as any
-                                };
-                            }));
+                    // 3. Service Count (Priority Logic)
+                    let targetServiceCount = 0;
+                    if (fullQuotationData.quotation_areas) {
+                        const visits = fullQuotationData.quotation_areas
+                            .map((a: any) => a.packagePriceRelation?.package?.visit_limit)
+                            .filter((v: any) => v && !isNaN(Number(v)));
+                        if (visits.length > 0) {
+                            targetServiceCount = Math.max(...visits.map((v: any) => Number(v)));
                         }
                     }
-                } catch (error) {
-                    console.error("Failed to fetch quotation details:", error);
+
+                    if (targetServiceCount > 0) {
+                        setServiceCount(targetServiceCount);
+                    } else if (fullQuotationData.service_count) {
+                        setServiceCount(Number(fullQuotationData.service_count));
+                    } else {
+                        setServiceCount(7);
+                    }
+
+                    // 4. Calculate Total Amount (Including Items & VAT)
+                    let calculatedSubTotal = 0;
+                    if (fullQuotationData.quotation_areas) {
+                        fullQuotationData.quotation_areas.forEach((area: any) => {
+                            let packagePrice = Number(area.package_price || 0);
+                            if (packagePrice === 0 && area.packagePriceRelation) {
+                                const isTermite = (area.category_services || []).some((cs: any) => {
+                                    const catName = cs.category?.name || '';
+                                    return /termite|กำจัดปลวก/i.test(catName);
+                                });
+                                packagePrice = isTermite
+                                    ? Number(area.packagePriceRelation.price_with_termite || 0)
+                                    : Number(area.packagePriceRelation.price_without_termite || 0);
+                            }
+                            calculatedSubTotal += packagePrice;
+                            if (area.items) area.items.forEach((item: any) => calculatedSubTotal += Number(item.total_price || item.amount || 0));
+                        });
+                    }
+                    if (fullQuotationData.items) {
+                        fullQuotationData.items.forEach((item: any) => calculatedSubTotal += Number(item.total_price || item.amount || 0));
+                    }
+
+                    const vat = calculatedSubTotal * 0.07;
+                    const netTotal = calculatedSubTotal + vat;
+                    setTotalAmount(Number(netTotal.toFixed(2)));
+
+                    // 5. Installments
+                    if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
+                        const totalVal = netTotal; // Use calculated total
+                        const backendInstallments = fullQuotationData.installments as any[];
+
+                        // Parse duration to estimate months
+                        const durationMatch = (fullQuotationData.contract_duration || '').match(/(\d+)\s*ปี/);
+                        const years = durationMatch ? parseInt(durationMatch[1]) : 1;
+                        const totalMonths = years * 12;
+
+                        let currentMonthOffset = 0;
+                        const monthStep = Math.floor(totalMonths / backendInstallments.length) || 1;
+
+                        setInstallments(backendInstallments.map((inst, idx) => {
+                            let dueDate = '';
+                            if (startDate) {
+                                const d = new Date(startDate);
+                                d.setMonth(d.getMonth() + currentMonthOffset);
+                                dueDate = d.toISOString().split('T')[0];
+                                currentMonthOffset += monthStep;
+                            }
+
+                            // Calculate percentage based on amount vs total
+                            const amount = Number(inst.amount);
+                            const calculatedPercentage = totalVal > 0 ? Number(((amount / totalVal) * 100).toFixed(2)) : 0;
+
+                            return {
+                                id: crypto.randomUUID(),
+                                term: inst.installment_no || (idx + 1),
+                                description: inst.description || `งวดที่ ${inst.installment_no || idx + 1}`,
+                                percentage: calculatedPercentage,
+                                amount: amount,
+                                due_date: dueDate,
+                                status: 'PENDING' as any
+                            };
+                        }));
+                    }
                 }
-            } else {
-                setFullQuotation(null);
+            } catch (error) {
+                console.error("Failed to fetch quotation details:", error);
             }
         };
+
         fetchQuotationDetails();
     }, [selectedQuotationId, mode, startDate]);
 
@@ -418,6 +447,20 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     const addInstallment = () => {
         const newTerm = installments.length + 1;
+
+        // Auto Calculate Next Due Date
+        let nextDueDate = '';
+        if (installments.length > 0) {
+            const lastInst = installments[installments.length - 1];
+            if (lastInst.due_date) {
+                const d = new Date(lastInst.due_date);
+                d.setMonth(d.getMonth() + 1);
+                nextDueDate = d.toISOString().split('T')[0];
+            }
+        } else if (startDate) {
+            nextDueDate = startDate;
+        }
+
         setInstallments([
             ...installments,
             {
@@ -426,10 +469,42 @@ export const ContractForm: FC<ContractFormProps> = ({
                 description: `งวดที่ ${newTerm}`,
                 percentage: 0,
                 amount: 0,
-                due_date: '',
+                due_date: nextDueDate,
                 status: 'PENDING' as any,
             }
         ]);
+    };
+
+    const distributeInstallments = () => {
+        if (installments.length === 0) return;
+
+        const count = installments.length;
+        // Calculate raw percentage
+        const rawPercent = 100 / count;
+        // Fix to 2 decimals
+        const basePercent = Math.floor(rawPercent * 100) / 100;
+
+        let currentTotalPercent = 0;
+
+        setInstallments(prev => prev.map((inst, index) => {
+            let percentage = basePercent;
+
+            // Adjust last one to ensure exactly 100%
+            if (index === count - 1) {
+                percentage = Number((100 - currentTotalPercent).toFixed(2));
+            } else {
+                currentTotalPercent += percentage;
+            }
+
+            // Recalculate Amount
+            const amount = Math.round(totalAmount * (percentage / 100));
+
+            return {
+                ...inst,
+                percentage,
+                amount
+            };
+        }));
     };
 
     const removeInstallment = (id: string) => {
@@ -491,7 +566,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             notes: notes,
             installments: installments.map(inst => ({
                 id: inst.id.length < 36 ? undefined : inst.id,
-                term: inst.term,
+                installment_no: inst.term,
                 description: inst.description,
                 percentage: inst.percentage,
                 amount: inst.amount,
@@ -695,16 +770,6 @@ export const ContractForm: FC<ContractFormProps> = ({
                                                                     {area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง
                                                                 </div>
                                                             </div>
-                                                            <div>
-                                                                <div className="text-xs text-blue-600 mb-1">ระยะเวลาสัญญา</div>
-                                                                <div className="font-medium text-blue-900">
-                                                                    {area.packagePriceRelation.package?.contract_period
-                                                                        ? `${area.packagePriceRelation.package.contract_period >= 12
-                                                                            ? (area.packagePriceRelation.package.contract_period / 12) + ' ปี'
-                                                                            : area.packagePriceRelation.package.contract_period + ' เดือน'}`
-                                                                        : '-'}
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
@@ -717,11 +782,26 @@ export const ContractForm: FC<ContractFormProps> = ({
                                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                                             {serviceTypeOptions.map((option) => {
                                                                 const isChecked = area.category_services?.some((cat: any) => {
-                                                                    const matchId = (cat.category_id && cat.category_id === option.id) ||
-                                                                        (cat.category?.id && cat.category.id === option.id);
-                                                                    const matchName = (cat.name && cat.name === option.value) ||
-                                                                        (cat.category?.name && cat.category.name === option.value);
-                                                                    return matchId || matchName;
+                                                                    try {
+                                                                        // Safety checks & Normalization
+                                                                        const normalize = (str: any) => String(str || '').trim().toLowerCase();
+
+                                                                        const catId = cat.category_id || cat.category?.id || cat.id;
+                                                                        const optionId = option.id;
+
+                                                                        // Compare IDs
+                                                                        if (catId && optionId && String(catId) === String(optionId)) return true;
+
+                                                                        // Compare Names
+                                                                        const catName = normalize(cat.name || cat.category?.name);
+                                                                        const optionName = normalize(option.value || option.label);
+
+                                                                        if (catName && optionName && catName === optionName) return true;
+
+                                                                        return false;
+                                                                    } catch (e) {
+                                                                        return false;
+                                                                    }
                                                                 });
 
                                                                 return (
@@ -774,6 +854,42 @@ export const ContractForm: FC<ContractFormProps> = ({
                                         </div>
                                     )
                                 })}
+
+                                {fullQuotation.items && fullQuotation.items.length > 0 && (
+                                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2 mt-4">
+                                        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+                                            <div className="p-1.5 bg-orange-50 rounded-lg text-orange-600">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                                </svg>
+                                            </div>
+                                            <h3 className="font-semibold text-slate-800 text-lg">รายการอื่นๆ เพิ่มเติม (Additional Items)</h3>
+                                        </div>
+
+                                        <div className="overflow-x-auto border rounded-lg border-slate-200">
+                                            <table className="min-w-full divide-y divide-slate-200">
+                                                <thead className="bg-slate-50">
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">รายการ</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-24">จำนวน</th>
+                                                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">ราคา/หน่วย</th>
+                                                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">รวม</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-slate-200">
+                                                    {fullQuotation.items.map((item: any, index: number) => (
+                                                        <tr key={index} className="hover:bg-slate-50">
+                                                            <td className="px-4 py-2 text-slate-800 text-sm">{item.description || item.product_name || '-'}</td>
+                                                            <td className="px-4 py-2 text-center text-slate-600 text-sm">{item.quantity} {item.unit}</td>
+                                                            <td className="px-4 py-2 text-right text-slate-600 text-sm">{Number(item.unit_price).toLocaleString()}</td>
+                                                            <td className="px-4 py-2 text-right font-medium text-slate-800 text-sm">{Number(item.amount).toLocaleString()}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
@@ -893,6 +1009,22 @@ export const ContractForm: FC<ContractFormProps> = ({
                         </div>
                     </div>
 
+                    {/* Contract Duration Summary for Payment Context */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-700">ระยะเวลาสัญญา:</span>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-medium">{contractDuration}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-600">
+                            <span className="font-semibold text-slate-700">ช่วงเวลา:</span>
+                            <span>
+                                {startDate ? new Date(startDate).toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '-'}
+                                <span className="mx-2 text-slate-400">ถึง</span>
+                                {endDate ? new Date(endDate).toLocaleDateString('th-TH', { dateStyle: 'medium' }) : '-'}
+                            </span>
+                        </div>
+                    </div>
+
                     <div className="overflow-x-auto border rounded-lg border-slate-200 mb-6">
                         <table className="min-w-full divide-y divide-slate-200">
                             <thead className="bg-slate-50">
@@ -901,6 +1033,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">รายละเอียด (Description)</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-24">%</th>
                                     <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">จำนวนเงิน</th>
+                                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-36">วันที่ครบกำหนด</th>
                                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-32">สถานะ</th>
                                     <th className="px-2 py-3 w-10"></th>
                                 </tr>
@@ -933,6 +1066,14 @@ export const ContractForm: FC<ContractFormProps> = ({
                                             />
                                         </td>
                                         <td className="px-4 py-2">
+                                            <Input
+                                                type="date"
+                                                value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''}
+                                                onChange={(e) => handleInstallmentChange(inst.id, 'due_date', e.target.value)}
+                                                className="!py-1 h-9 text-xs text-center"
+                                            />
+                                        </td>
+                                        <td className="px-4 py-2">
                                             <Select
                                                 value={inst.status as any}
                                                 onChange={(e) => handleInstallmentChange(inst.id, 'status', e.target.value)}
@@ -959,15 +1100,81 @@ export const ContractForm: FC<ContractFormProps> = ({
                         </table>
                     </div>
 
-                    <div className="flex justify-start mb-6">
+                    <div className="flex justify-between mb-6">
+                        <div className="flex gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={addInstallment}
+                                className="w-auto border-dashed border-2 border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 py-2 px-6 flex items-center gap-2 transition-all font-medium"
+                            >
+                                <PlusIcon className="w-5 h-5" />
+                                เพิ่มงวดชำระ (Add Installment)
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={distributeInstallments}
+                                className="w-auto border border-slate-200 text-slate-600 hover:border-green-500 hover:text-green-600 hover:bg-green-50 py-2 px-4 flex items-center gap-2 transition-all"
+                                title="เฉลี่ย % และยอดเงินให้เท่ากันทุกงวด"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5" />
+                                </svg>
+                                เฉลี่ยยอด (Distribute)
+                            </Button>
+                        </div>
+
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={addInstallment}
-                            className="w-auto border-dashed border-2 border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 py-2 px-6 flex items-center gap-2 transition-all font-medium"
+                            onClick={() => {
+                                // Logic to recalculate due dates
+                                if (!startDate) {
+                                    alert('กรุณาระบุวันที่เริ่มสัญญา');
+                                    return;
+                                }
+
+                                let durationMonths = 12; // Default 1 year
+                                if (contractDuration.includes('ปี')) {
+                                    durationMonths = parseFloat(contractDuration) * 12;
+                                } else if (contractDuration.includes('เดือน')) {
+                                    durationMonths = parseFloat(contractDuration);
+                                }
+
+                                const interval = durationMonths / installments.length;
+                                const start = new Date(startDate);
+
+                                setInstallments(prev => prev.map((inst, index) => {
+                                    // Inst 1: Start Date (Down payment logic) - or 0 month?
+                                    // Usually Installment 1 is Down Payment -> At Start Date
+                                    // Subsequent Installments: Start Date + (Interval * Index)
+                                    // Check user preference: if term 1, use start date. If term > 1, add interval.
+
+                                    // Calculation Logic:
+                                    // Term 1: Start Date
+                                    // Term 2: Start Date + (Interval * 1)
+                                    // Term 3: Start Date + (Interval * 2)
+                                    // ...
+
+                                    // Or evenly distributed including Term 1? (0, 4, 8 vs 4, 8, 12)
+                                    // Standard for contracts: First payment upon signing (Term 1)
+
+                                    const monthsToAdd = Math.floor((index) * interval); // index 0->0, 1->4, 2->8
+                                    const newDate = new Date(start);
+                                    newDate.setMonth(newDate.getMonth() + monthsToAdd);
+
+                                    return {
+                                        ...inst,
+                                        due_date: newDate.toISOString()
+                                    };
+                                }));
+                            }}
+                            className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
                         >
-                            <PlusIcon className="w-5 h-5" />
-                            เพิ่มงวดชำระ (Add Installment)
+                            <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
+                            คำนวณวันครบกำหนดอัตโนมัติ
                         </Button>
                     </div>
 

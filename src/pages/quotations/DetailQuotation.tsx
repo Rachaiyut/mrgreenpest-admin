@@ -287,8 +287,6 @@ const DetailQuotationPage: React.FC = () => {
                                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">รายละเอียด</th>
                                                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">%</th>
                                                 <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">ยอดชำระ</th>
-                                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">สถานะ</th>
-                                                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">จัดการ</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-slate-200">
@@ -299,19 +297,6 @@ const DetailQuotationPage: React.FC = () => {
                                                     <td className="px-4 py-3 text-sm text-right text-slate-600">{inst.percentage}%</td>
                                                     <td className="px-4 py-3 text-sm text-right font-semibold text-slate-900">
                                                         ฿{inst.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                    <td className="px-4 py-3 text-center"><StatusBadge status={inst.status} /></td>
-                                                    <td className="px-4 py-3 text-center">
-                                                        {inst.status === Status.Pending ? (
-                                                            <button
-                                                                onClick={() => handlers.invoices.create(inst as any)}
-                                                                className="text-primary hover:text-primary-dark text-xs font-medium underline"
-                                                            >
-                                                                ออกใบแจ้งหนี้
-                                                            </button>
-                                                        ) : (
-                                                            <span className="text-slate-400 text-xs">-</span>
-                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}

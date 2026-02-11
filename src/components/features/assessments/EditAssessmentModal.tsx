@@ -76,8 +76,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
       if (assessment.installments && assessment.installments.length > 0) {
         setInstallments(assessment.installments.map(inst => ({
-           ...inst,
-           due_date: inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : undefined
+           ...inst
         })));
       } else {
         setInstallments([]);
@@ -170,25 +169,18 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && totalEstimatedCost > 0) {
       // Default to 2 installments if none exist
-      // Calculate dates: 1st installment on appointment date (or today), 2nd installment next month
-      const date1 = formData.appointment_date ? new Date(formData.appointment_date) : new Date();
-      const date2 = new Date(date1);
-      date2.setMonth(date2.getMonth() + 1);
-
       setInstallments([
         { 
             id: crypto.randomUUID(), 
             installment_no: 1, 
             amount: totalEstimatedCost / 2, 
             note: 'งวดที่ 1',
-            due_date: date1.toISOString().substring(0, 10)
         },
         { 
             id: crypto.randomUUID(), 
             installment_no: 2, 
             amount: totalEstimatedCost / 2, 
             note: 'งวดที่ 2',
-            due_date: date2.toISOString().substring(0, 10)
         }
       ]);
     } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
@@ -747,6 +739,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                                             <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
                                             <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
                                             <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
+                                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">วันที่ครบกำหนด</th>
                                             <th className="px-2 py-3 w-10"></th>
                                         </tr>
                                     </thead>
@@ -770,14 +763,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                                                         value={inst.amount}
                                                         onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
                                                         className="h-9 text-right text-sm font-mono"
-                                                    />
-                                                </td>
-                                                <td className="px-4 py-2">
-                                                    <Input 
-                                                        type="date"
-                                                        value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''}
-                                                        onChange={(e) => handleInstallmentChange(idx, 'due_date', new Date(e.target.value))}
-                                                        className="h-9 text-sm"
                                                     />
                                                 </td>
                                                 <td className="px-2 py-2 text-center">

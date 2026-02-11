@@ -9,7 +9,7 @@ export interface InstallmentPlan {
   due_date?: string;
   percentage: number;
   description: string;
-  status: Status;
+  status?: Status;
 }
 
 export interface QuotationItem {

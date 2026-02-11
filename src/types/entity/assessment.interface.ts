@@ -69,7 +69,6 @@ export interface AssessmentInstallment extends IBase {
   assessment_id: string;
   installment_no: number;
   amount: number;
-  due_date?: string;
   note?: string;
 }
 

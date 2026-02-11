@@ -288,11 +288,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && totalEstimatedCost > 0) {
       // Default to 2 installments if none exist
-      // Calculate dates: 1st installment on appointment date (or today), 2nd installment next month
-      const date1 = formData.appointment_date ? new Date(formData.appointment_date) : new Date();
-      const date2 = new Date(date1);
-      date2.setMonth(date2.getMonth() + 1);
-
       setInstallments([
         { 
             id: crypto.randomUUID(), 

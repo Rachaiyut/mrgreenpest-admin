@@ -290,7 +290,6 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-32">กำหนดชำระ</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -304,9 +303,6 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                       </td>
                       <td className="px-4 py-2 text-right text-sm font-mono text-slate-700">
                         {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-4 py-2 text-center text-sm text-slate-700">
-                        {inst.due_date ? formatThaiDate(inst.due_date.toString()) : '-'}
                       </td>
                     </tr>
                   ))}

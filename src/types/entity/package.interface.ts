@@ -17,7 +17,6 @@ export interface Package extends IBase {
   remark?: string;
   code: string;
   name: string;
-  contract_period: number;
   package_price?: PackagePrice[];
   category?: Category;
 }
