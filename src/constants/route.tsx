@@ -13,7 +13,8 @@ import {
   BookOpenIcon,
   NewUsersIcon,
   NewReportIcon,
-  BellIcon
+  BellIcon,
+  BuildingOfficeIcon
 } from '../assets/icons/Icons';
 import { Role } from '../types/enums/role';
 
@@ -63,6 +64,12 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
   {
     type: 'link',
+    name: 'การแจ้งเตือน',
+    icon: BellIcon,
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+  },
+  {
+    type: 'link',
     name: 'ลูกค้า',
     icon: NewCustomerIcon,
     roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
@@ -70,14 +77,8 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   {
     type: 'link',
     name: 'ใบประเมิน',
-    icon: NewCustomerIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
-  },
-  {
-    type: 'link',
-    name: 'ฟอร์ม',
     icon: DocumentTextIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
   },
   {
     type: 'link',
@@ -115,11 +116,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   {
     type: 'group',
     name: 'คลังสินค้า',
-    icon: NewWarehouseIcon,
+    icon: BuildingOfficeIcon,
     subItems: [
       {
         name: 'คลังสินค้า',
-        icon: NewWarehouseIcon,
+        icon: BuildingOfficeIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
       },
       {
@@ -242,11 +243,5 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
         roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO]
       },
     ],
-  },
-  {
-    type: 'link',
-    name: 'การแจ้งเตือน',
-    icon: BellIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
   },
 ];

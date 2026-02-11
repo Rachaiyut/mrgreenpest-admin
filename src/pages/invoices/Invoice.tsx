@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatThaiDate } from '../../utils/date';
+import { formatPhoneNumber } from '../../utils/format';
 import {
   ManageIcon,
   EyeIcon,
@@ -379,8 +380,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   ยอดรวม
                 </th>
                 {(onUpdateInvoice || onDeleteInvoice) && (
-                  <th className="relative px-4 py-2.5">
-                    <span className="sr-only">จัดการ</span>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                    จัดการ
                   </th>
                 )}
               </tr>
@@ -417,7 +418,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {customer?.phone || '-'}
+                      {formatPhoneNumber(customer?.phone)}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {formatThaiDate(i.due_at)}

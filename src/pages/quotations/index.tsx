@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatThaiDate } from '../../utils/date';
+import { formatPhoneNumber } from '../../utils/format';
 import {
     PlusIcon,
     ManageIcon,
@@ -457,7 +458,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                     {q.code}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-700 font-medium">{q.customer_name}</td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">{customer?.phone || '-'}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{formatPhoneNumber(customer?.phone)}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{q['assessment']?.code || '-'}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.created_at)}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.expires_at)}</td>
@@ -468,8 +469,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                 <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                                                     <div className="flex items-center justify-end gap-2">
                                                         <Button
-                                                            className="px-4 py-2 text-sm font-bold rounded-lg shadow-md border-none flex items-center gap-2 hover:shadow-lg transition-shadow"
-                                                            style={{ backgroundColor: '#10B981', color: 'white' }}
+                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                                                                loadingPdfId === q.id
+                                                                    ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                                                            }`}
                                                             disabled={loadingPdfId === q.id}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -492,9 +496,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                             }}
                                                         >
                                                             {loadingPdfId === q.id ? (
-                                                                <LoadingIcon className="w-5 h-5 animate-spin" />
+                                                                <LoadingIcon className="w-4 h-4 animate-spin" />
                                                             ) : (
-                                                                <EyeIcon className="w-5 h-5" />
+                                                                <EyeIcon className="w-4 h-4" />
                                                             )}
                                                             {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
                                                         </Button>

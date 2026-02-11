@@ -7,6 +7,7 @@ import { Customer } from '@/src/types/entity/customer.interface';
 import { ManageIcon } from '../../assets/icons/Icons';
 import { CustomerType } from '@/src/types';
 import { formatThaiDate } from '@/src/utils/date';
+import { formatPhoneNumber } from '@/src/utils/format';
 
 // Helper function to calculate duration
 const calculateDuration = (createdAt: string): string => {
@@ -109,7 +110,7 @@ const CustomerListView: React.FC<{
               {customer.nickname || '-'}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {customer.phone}
+              {formatPhoneNumber(customer.phone)}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
               {customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา' }

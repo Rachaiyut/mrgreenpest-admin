@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
+import { formatPhoneNumber } from '../../utils/format';
 import {
   ManageIcon,
   CurrencyDollarIcon,
@@ -373,8 +374,8 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   จำนวนเงิน
                 </th>
                 {(onUpdateReceipt || onDeleteReceipt) && (
-                  <th className="relative px-4 py-2.5">
-                    <span className="sr-only">จัดการ</span>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                    จัดการ
                   </th>
                 )}
               </tr>
@@ -398,16 +399,16 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         setIsReceiptModalOpen(true);
                       }}
                     >
-                      {r.id}
+                      {r.code || r.id}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {r.customer_name}
                       <div className="text-xs text-slate-400 mt-0.5">
-                        Ref: {r.invoice_id}
+                        Ref: {invoices?.find(i => i.id === r.invoice_id)?.code || r.invoice_id}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {customer?.phone || '-'}
+                      {formatPhoneNumber(customer?.phone)}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {formatThaiDate(r.received_at || r.paid_at)}
@@ -438,10 +439,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                               
                               try {
                                 setIsDownloading(r.id);
-                                await ReceiptApi.downloadPdf(r.id);
+                                const blob = await ReceiptApi.getPdfBlob(r.id);
+                                const url = window.URL.createObjectURL(blob);
+                                window.open(url, '_blank');
                               } catch (err) {
-                                console.error('Failed to download PDF', err);
-                                alert('ไม่สามารถดาวน์โหลด PDF ได้');
+                                console.error('Failed to view PDF', err);
+                                alert('ไม่สามารถดู PDF ได้');
                               } finally {
                                 setIsDownloading(null);
                               }
@@ -747,7 +750,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         onClose={() => setIsReceiptModalOpen(false)}
         title={
           selectedReceipt
-            ? `รายละเอียดใบเสร็จรับเงิน ${selectedReceipt.id} `
+            ? `รายละเอียดใบเสร็จรับเงิน ${selectedReceipt.code || selectedReceipt.id} `
             : 'รายละเอียดใบเสร็จรับเงิน'
         }
       >
@@ -756,7 +759,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <div className="text-sm text-slate-600">เลขที่เอกสาร</div>
-                        <div className="text-sm text-slate-800">{selectedReceipt.id}</div>
+                        <div className="text-sm text-slate-800">{selectedReceipt.code || selectedReceipt.id}</div>
                     </div>
                     <div>
                         <div className="text-sm text-slate-600">ลูกค้า</div>
@@ -791,7 +794,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
         title="ลบใบเสร็จรับเงิน"
-        message={`คุณแน่ใจหรือไม่ว่าต้องการลบใบเสร็จรับเงิน ${selectedReceipt?.id}?`}
+        message={`คุณแน่ใจหรือไม่ว่าต้องการลบใบเสร็จรับเงิน ${selectedReceipt?.code || selectedReceipt?.id}?`}
         confirmButtonText="ลบ"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
@@ -804,7 +807,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         title="อัปเดตสถานะ"
         message={
           <div className="space-y-4 text-left">
-            <p>กรุณาเลือกสถานะใหม่สำหรับใบเสร็จรับเงิน <strong>{selectedReceipt?.id}</strong></p>
+            <p>กรุณาเลือกสถานะใหม่สำหรับใบเสร็จรับเงิน <strong>{selectedReceipt?.code || selectedReceipt?.id}</strong></p>
             <div className="mt-2">
               <label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
               <Select
