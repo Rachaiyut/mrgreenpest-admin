@@ -261,8 +261,15 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             if (rawAssessment.installments && rawAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
                loadedPaymentCondition = PaymentMethod.INSTALLMENT;
             }
+            // Ensure payment_installment_count is set if it's missing but installments exist
+            const loadedInstallmentCount = rawAssessment.payment_installment_count || (rawAssessment.installments ? rawAssessment.installments.length : 0);
+
             // We need to update assessment state with this inferred condition for the UI to show correct radio button
-            setAssessment(prev => prev ? { ...prev, payment_condition: loadedPaymentCondition } : null);
+            setAssessment(prev => prev ? { 
+              ...prev, 
+              payment_condition: loadedPaymentCondition,
+              payment_installment_count: loadedInstallmentCount
+            } : null);
 
             if (rawAssessment.installments && rawAssessment.installments.length > 0) {
                setInstallments(rawAssessment.installments.map((i: any) => ({ 
@@ -1289,12 +1296,55 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                               type="number"
                               placeholder="ระบุจำนวนงวด"
                               value={(assessment as any).payment_installment_count || ''}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const newCount = parseInt(e.target.value, 10) || 0;
                                 setAssessment((prev: any) => ({
                                   ...prev,
-                                  payment_installment_count: parseInt(e.target.value, 10) || 0,
-                                }))
-                              }
+                                  payment_installment_count: newCount,
+                                }));
+
+                                setInstallments((prev) => {
+                                  let updatedInstallments = [...prev];
+                                  
+                                  if (newCount > prev.length) {
+                                    // Add new installments
+                                    const toAdd = newCount - prev.length;
+                                    const startDate = assessment?.appointment_date ? new Date(assessment.appointment_date) : new Date();
+                                    
+                                    const newItems = Array.from({ length: toAdd }, (_, i) => {
+                                        const nextNo = prev.length + i + 1;
+                                        const dueDate = new Date(startDate);
+                                        dueDate.setMonth(dueDate.getMonth() + (prev.length + i));
+                                        
+                                        return {
+                                          id: crypto.randomUUID(),
+                                          installment_no: nextNo,
+                                          amount: 0,
+                                          note: `งวดที่ ${nextNo}`,
+                                          due_date: dueDate.toISOString().substring(0, 10)
+                                        };
+                                    });
+                                    updatedInstallments = [...prev, ...newItems];
+                                  } else if (newCount < prev.length) {
+                                    // Remove excess installments
+                                    updatedInstallments = prev.slice(0, newCount);
+                                  }
+
+                                  // Recalculate amounts to split total evenly
+                                  const total = (assessment as any).total_price || 0;
+                                  if (total > 0 && updatedInstallments.length > 0) {
+                                    const amountPerInst = Math.floor((total / updatedInstallments.length) * 100) / 100;
+                                    const lastAmount = total - (amountPerInst * (updatedInstallments.length - 1));
+                                    
+                                    updatedInstallments = updatedInstallments.map((inst, index) => ({
+                                      ...inst,
+                                      amount: index === updatedInstallments.length - 1 ? lastAmount : amountPerInst
+                                    }));
+                                  }
+
+                                  return updatedInstallments;
+                                });
+                              }}
                               className="bg-white max-w-[200px]"
                               required
                               min={2}

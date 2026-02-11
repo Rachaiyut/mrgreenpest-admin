@@ -103,7 +103,11 @@ export const ContractDetailsModal: React.FC<ContractDetailsModalProps> = ({
 								<div className="flex items-start gap-3">
 									<UserIcon className="w-5 h-5 text-slate-400 mt-0.5" />
 									<div>
-										<p className="font-medium text-slate-900">{contract.customer_name}</p>
+										<p className="font-medium text-slate-900">
+                                            {customer 
+                                                ? `${customer.first_name} ${customer.last_name || ''}`.trim() 
+                                                : contract.customer_name}
+                                        </p>
 										{customer?.phone && (
 											<p className="text-sm text-slate-500 mt-0.5 flex items-center gap-2">
 												<PhoneIcon className="w-3 h-3" /> {customer.phone}

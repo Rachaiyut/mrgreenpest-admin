@@ -166,7 +166,9 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
       return {
         contractId: contract.code || contract.id, // Show Code if available, else ID
-        customerName: contract.customer_name || contract.customerName || '-',
+        customerName: customer 
+            ? `${customer.first_name} ${customer.last_name || ''}`.trim() 
+            : (contract.customer_name || contract.customerName || '-'),
         nickname: customer?.nickname || '-',
         address: fullAddress,
         phone: customer?.phone || '-',

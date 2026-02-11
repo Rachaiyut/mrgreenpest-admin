@@ -375,7 +375,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 									</td>
 								</tr>
 							) : (
-								paginatedContracts.map((c, index) => (
+								paginatedContracts.map((c, index) => {
+									const customerName = c.customer 
+										? `${c.customer.first_name} ${c.customer.last_name || ''}`.trim() 
+										: c.customer_name;
+									
+									return (
 									<tr key={c.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
 										<td className="px-6 py-4 text-sm text-slate-500">
 											{(currentPage - 1) * itemsPerPage + index + 1}
@@ -393,12 +398,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 											<div className="flex items-center gap-3">
 												<div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
 													<span className="text-primary font-bold text-xs">
-														{c.customer_name.charAt(0).toUpperCase()}
+														{(customerName || '?').charAt(0).toUpperCase()}
 													</span>
 												</div>
 												<div className="min-w-0">
 													<p className="text-sm font-semibold text-slate-800 truncate">
-														{c.customer_name}
+														{customerName || '-'}
 													</p>
 												</div>
 											</div>
@@ -455,7 +460,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 											</div>
 										</td>
 									</tr>
-								))
+								);
+								})
 							)}
 						</tbody>
 					</table>

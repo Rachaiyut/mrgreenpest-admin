@@ -73,9 +73,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         const initData = async () => {
             try {
                 const [custRes, assessRes, catRes] = await Promise.all([
-                    CustomerApi.getCustomers({ limit: 10 }),
-                    AssessmentApi.getAll({ limit: 10 }),
-                    CategoryApi.getCategories({ type: CategoryType.SERVICE })
+                    CustomerApi.getCustomers({ limit: 100 }),
+                    AssessmentApi.getAll({ limit: 20 }),
+                    CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 })
                 ]);
 
                 if (custRes?.data) setFetchedCustomers(custRes.data);
@@ -1278,21 +1278,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                                             {serviceTypeOptions.map((option) => {
                                                                 const isChecked = area.category_services?.some((cat: any) => {
-                                                                    const matchId = (cat.category_id && cat.category_id === option.id) ||
-                                                                        (cat.category?.id && cat.category.id === option.id);
-                                                                    const matchName = (cat.name && cat.name === option.value) ||
-                                                                        (cat.category?.name && cat.category.name === option.value);
+                                                                    const catId = cat.category_id || cat.category?.id || cat.id;
+                                                                    const catName = cat.name || cat.category?.name;
+                                                                    
+                                                                    const matchId = (catId && catId === option.id);
+                                                                    const matchName = (catName && catName === option.value);
+                                                                    
                                                                     return matchId || matchName;
                                                                 });
 
                                                                 return (
-                                                                    <label key={option.id} className="flex items-center gap-2 cursor-default">
+                                                                    <label key={option.id} className="flex items-center gap-2 cursor-pointer pointer-events-none">
                                                                         <input
                                                                             type="checkbox"
                                                                             checked={isChecked}
-                                                                            disabled={true}
-                                                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500 disabled:opacity-100 bg-white"
                                                                             readOnly
+                                                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white h-4 w-4"
                                                                         />
                                                                         <span className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
                                                                             {option.label}

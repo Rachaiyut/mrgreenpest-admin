@@ -652,7 +652,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       id: 1,
       label: 'รายละเอียดบริการ',
       icon: <DocumentIcon className="w-5 h-5" />,
-      isValid: !!serviceSystem
+      isValid: true
     },
     {
       id: 2,
@@ -929,24 +929,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                        !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
                      }
                    />
-                   
-                   <FormField label="ระบบที่ใช้บริการ" htmlFor="service-system">
-                    <Select
-                      id="service-system"
-                      value={serviceSystem}
-                      onChange={(e) => setServiceSystem(e.target.value)}
-                      required
-                    >
-                      <option value="" disabled>
-                        -- เลือกระบบบริการ --
-                      </option>
-                      {Object.values(ServiceSystem).map((sys) => (
-                        <option key={sys} value={sys}>
-                          {sys === ServiceSystem.CHEMICAL ? 'สารเคมีขีวภาพ' : 'เหยื่อ'}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormField>
 
                   <SearchableSelect
                      label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)"

@@ -1,4 +1,5 @@
 import { Status } from './core.interface';
+import { Customer } from './customer.interface';
 import { InvoiceStatus, QuotationStatus, ContractStatus } from '../enums/financial';
 
 export interface InstallmentPlan {
@@ -145,6 +146,7 @@ export interface Contract {
   address?: string;
   servicePackage?: string;
   installments?: InstallmentPlan[];
+  customer?: Customer;
 }
 
 export interface WalletTransaction {

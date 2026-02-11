@@ -407,7 +407,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       {i.code || i.id}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {i.customer_name}
+                      {customer 
+                        ? `${customer.first_name} ${customer.last_name || ''}`.trim() 
+                        : (i.customer_name || 'Unknown')}
                       {i.term && (
                         <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                           งวดที่ {i.term}
