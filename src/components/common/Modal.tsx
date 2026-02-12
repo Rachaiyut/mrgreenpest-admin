@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl';
+  headerAction?: React.ReactNode;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -18,6 +19,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   footer,
   size = '2xl',
+  headerAction,
 }) => {
   if (!isOpen) return null;
 
@@ -58,19 +60,22 @@ export const Modal: React.FC<ModalProps> = ({
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-xl font-semibold text-slate-800">{title}</h3>
-          <Button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 rounded-full p-1"
-            variant="icon"
-            title="ปิด"
-          >
-            <XIcon className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center gap-3">
+            {headerAction}
+            <Button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 rounded-full p-1"
+              variant="icon"
+              title="ปิด"
+            >
+              <XIcon className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
         <div className="p-6 overflow-y-auto">{children}</div>
-        {renderFooter && (
+        {footer && (
           <div className="flex justify-end items-center p-4 border-t border-slate-200 bg-slate-50 rounded-b-lg flex-shrink-0">
-            {renderFooter}
+            {footer}
           </div>
         )}
       </div>
