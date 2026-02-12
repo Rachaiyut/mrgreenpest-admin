@@ -4,11 +4,14 @@ import { Textarea, Input, Select } from '../../common/FormControls';
 import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
+import { Quotation } from '@/src/types/entity/financial.interface';
 import { JobStatus } from '@/src/types/enums/job';
-import { PaymentMethod } from '@/src/types/enums/financial';
+import { PaymentMethod, QuotationStatus } from '@/src/types/enums/financial';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
+import { AssessmentApi, QuotationApi } from '@/src/api';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import { 
   CalendarIcon, 
   DocumentIcon, 
@@ -66,6 +69,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 }) => {
   const [reportState, setReportState] = useState<Partial<ServiceReport>>({});
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
 
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
@@ -146,6 +150,34 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   }, [job, contracts, products, jobs, packageMapByName]);
 
   useEffect(() => {
+    if (isOpen) {
+      const fetchQuotations = async () => {
+        try {
+          const res = await QuotationApi.getAll({ limit: 10, status: QuotationStatus.DRAFT });
+          setQuotations(res.data);
+        } catch (error) {
+          console.error('Failed to fetch quotations:', error);
+        }
+      };
+
+      fetchQuotations();
+    }
+  }, [isOpen]);
+
+  const handleQuotationSearch = async (value: string) => {
+    try {
+      const res = await QuotationApi.getAll({ 
+        limit: 10, 
+        status: QuotationStatus.DRAFT,
+        search: value
+      });
+      setQuotations(res.data);
+    } catch (error) {
+      console.error('Failed to search quotations:', error);
+    }
+  };
+
+  useEffect(() => {
     if (isOpen && job) {
       let initialReport: Partial<ServiceReport>;
 
@@ -188,6 +220,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         initialReport = {
           ...r,
+          quotation_id: r.quotation_id,
           service_types: types,
           service_actions: actions,
           check_in_time: r.time_in,
@@ -395,7 +428,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         termite_other: reportState.termite?.actions?.other,
       },
     } as ServiceReport;
-    onSubmit(job.id, finalReportData, finalStatus, undefined, selectedFiles);
+    onSubmit(job.id, finalReportData, finalStatus, reportState.quotation_id, selectedFiles);
   };
 
   const handleApprove = () => {
@@ -403,7 +436,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       ...reportState,
       status: JobStatus.Completed,
     } as ServiceReport;
-    onSubmit(job.id, finalReportData, finalStatus, undefined, selectedFiles);
+    onSubmit(job.id, finalReportData, finalStatus, reportState.quotation_id, selectedFiles);
   };
 
   const handleMultiSelect = (
@@ -954,6 +987,32 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         : 'ไม่มีช่างเทคนิค'}
                     </dd>
                 </div>
+            </div>
+        </div>
+
+        {/* Reference Document Section */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100">
+             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                 <h3 className="font-bold text-slate-800 flex items-center gap-2.5">
+                    <div className="p-1.5 bg-white rounded-lg shadow-sm text-blue-600">
+                        <DocumentIcon className="w-5 h-5" />
+                    </div>
+                    เอกสารอ้างอิง
+                 </h3>
+            </div>
+            <div className="p-6">
+                <label className="block text-sm font-medium text-slate-700 mb-2">ใบเสนอราคา (Quotation)</label>
+                <SearchableSelect
+                    value={reportState.quotation_id || ''}
+                    onChange={(value) => setReportState(prev => ({ ...prev, quotation_id: value }))}
+                    onSearchChange={handleQuotationSearch}
+                    options={quotations.map(q => ({
+                        value: q.id,
+                        label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`
+                    }))}
+                    placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
+                    className="w-full"
+                />
             </div>
         </div>
 

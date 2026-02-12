@@ -45,6 +45,7 @@ export interface ServiceReport {
   is_next_check?: boolean;
   is_next_underground?: boolean;
   is_next_renew?: boolean;
+  quotation_id?: string;
   created_at: string;
   updated_at?: string;
   service_report_pest_detail?: any;
