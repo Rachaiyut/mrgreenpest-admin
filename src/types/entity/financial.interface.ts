@@ -24,6 +24,7 @@ export interface QuotationItem {
   amount: number;
   created_at?: string;
   updated_at?: string;
+  customer?: Customer;
 }
 
 export interface Quotation {
@@ -60,6 +61,7 @@ export interface Quotation {
   items?: QuotationItem[];
   installments?: InstallmentPlan[];
   quotation_areas?: any[];
+  customer?: Customer;
 }
 
 export interface InvoiceItem {
@@ -95,6 +97,7 @@ export interface Invoice {
   created_at?: string;
   updated_at?: string;
   items?: InvoiceItem[];
+  customer?: Customer;
 }
 
 export interface Receipt {
@@ -114,6 +117,7 @@ export interface Receipt {
   updated_by?: string;
   created_at?: string;
   updated_at?: string;
+  customer?: Customer;
 }
 
 export interface Contract {

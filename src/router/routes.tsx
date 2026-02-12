@@ -8,7 +8,7 @@ const Dashboard = lazy(() => import('../pages/dashboard'));
 const Customers = lazy(() => import('../pages/customers/Customer'));
 const Assessments = lazy(() => import('../pages/assessments/Assessments'));
 const FieldOperations = lazy(() => import('../pages/field-operations'));
-const QuotationsPage = lazy(() => import('../pages/quotations'));
+const QuotationsPage = lazy(() => import('../pages/quotations/Quotation'));
 const InvoicesPage = lazy(() => import('../pages/invoices/Invoice'));
 const ReceiptsPage = lazy(() => import('../pages/receipts/Receipt'));
 const EditQuotation = lazy(() => import('../pages/quotations/EditQuotation'));

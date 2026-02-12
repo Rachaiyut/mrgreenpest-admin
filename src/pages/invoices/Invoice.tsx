@@ -388,7 +388,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {paginatedInvoices.map((i, index) => {
-                const customer = customers?.find(
+                const customer = i.customer || customers?.find(
                   (c) => c.id === i.customer_id
                 );
                 return (
@@ -592,6 +592,15 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <div className="text-sm text-slate-600">ลูกค้า</div>
                 <div className="text-sm text-slate-800">
                   {selectedInvoice.customer_name}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-600">เบอร์โทรศัพท์</div>
+                <div className="text-sm text-slate-800">
+                  {(() => {
+                    const customer = customers?.find(c => c.id === selectedInvoice.customer_id);
+                    return customer?.phone ? formatPhoneNumber(customer.phone) : '-';
+                  })()}
                 </div>
               </div>
               <div>

@@ -134,7 +134,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         // Search filter
         if (q) {
             result = result.filter((item) => {
-                const phone = custPhoneMap.get(item.customer_id) || '';
+                const phone = item.contact_phone || item.customer?.phone || custPhoneMap.get(item.customer_id) || '';
                 return (
                     item.id.toLowerCase().includes(q) ||
                     item.customer_name.toLowerCase().includes(q) ||
@@ -441,6 +441,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 ) : (
                                     paginatedQuotations.map((q, index) => {
                                         const customer = customers?.find((c) => c.id === q.customer_id);
+                                        const phoneNumber = q.contact_phone || q.customer?.phone || customer?.phone;
                                         return (
                                             <tr key={q.id} className="hover:bg-slate-50 transition-colors">
                                                 <td className="px-6 py-4 text-sm text-slate-500">
@@ -458,7 +459,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                                     {q.code}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-700 font-medium">{q.customer_name}</td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">{formatPhoneNumber(customer?.phone)}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-500">{formatPhoneNumber(phoneNumber)}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{q['assessment']?.code || '-'}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.created_at)}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">{formatThaiDate(q.expires_at)}</td>

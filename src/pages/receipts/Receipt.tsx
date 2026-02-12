@@ -382,7 +382,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {paginatedReceipts.map((r, index) => {
-                const customer = customers?.find(
+                const customer = r.customer || customers?.find(
                   (c) => c.id === r.customer_id
                 );
                 return (
@@ -408,7 +408,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatPhoneNumber(customer?.phone)}
+                      {formatPhoneNumber(customer?.phone || '-')}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {formatThaiDate(r.received_at || r.paid_at)}
