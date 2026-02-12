@@ -42,7 +42,7 @@ export const PAGE_PATH: Record<string, string> = {
   'คืนสินค้า': 'returns',
   'ผู้ใช้งาน': 'users',
   'จัดการบทบาท': 'roles',
-  'การแจ้งเตือน': 'notifications',
+  'การแจ้งเตือนและนัดหมาย': 'notifications',
   'รายงาน': 'reports',
   'เบิกสินค้าคืนผู้จำหน่าย': 'return-to-supplier',
   'รายงานรายได้ (รายเดือน)': 'reports/total-income',
@@ -64,7 +64,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
   {
     type: 'link',
-    name: 'การแจ้งเตือน',
+    name: 'การแจ้งเตือนและนัดหมาย',
     icon: BellIcon,
     roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
   },
@@ -150,11 +150,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     name: 'จัดการสินค้าภายใน',
     icon: NewWarehouseIcon,
     subItems: [
-      {
-        name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-        icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
-      },
       {
         name: 'ใบเบิกสินค้า',
         icon: DocumentTextIcon,

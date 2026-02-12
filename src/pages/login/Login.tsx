@@ -62,7 +62,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         onLogin(citizenId, remember);
-        navigate('/');
+
+        // Check role and redirect
+        const user = response.user; // Assuming response includes user info
+        
+        // Wait for state updates to propagate
+        setTimeout(() => {
+             // In AppRouter, default redirect logic might interfere.
+             // We use window.location.href or direct navigation with state
+             if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
+                  // Force redirect to field-jobs
+                  window.location.href = '/field-jobs';
+             } else {
+                  navigate('/');
+             }
+        }, 100);
       } else {
         message.error('เข้าสู่ระบบไม่สำเร็จ: ไม่ได้รับ Token');
       }

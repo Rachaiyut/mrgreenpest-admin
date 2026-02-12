@@ -264,6 +264,20 @@ const Notifications: React.FC<NotificationsProps> = () => {
       const displayPrice = contract.total_amount !== undefined ? contract.total_amount : contract.totalAmount || 0;
       const displayPackage = contract.service_type || contract.servicePackage || '-';
 
+      // Calculate Remaining Days: Next Service - Last Service (or Today if no last service)
+      let daysDiffBasis = new Date();
+      if (lastServiceDate !== '-') {
+        const lastD = new Date(lastServiceDate);
+        if (!isNaN(lastD.getTime())) {
+          daysDiffBasis = lastD;
+        }
+      }
+
+      const calculatedDaysRemaining = Math.ceil(
+        (nextServiceDue.getTime() - daysDiffBasis.getTime()) /
+        (1000 * 60 * 60 * 24)
+      );
+
       return {
         contractId: contract.code || contract.id,
         customerName: customer
@@ -294,10 +308,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
         lastServiceDate: lastServiceDate,
         nextServiceDate: nextServiceDue,
         nextServiceDisplay: nextServiceDisplay,
-        daysRemaining: Math.ceil(
-          (nextServiceDue.getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24)
-        ),
+        daysRemaining: calculatedDaysRemaining,
       };
     });
   }, [contracts, jobs, invoices, receipts, customers]);
@@ -321,7 +332,11 @@ const Notifications: React.FC<NotificationsProps> = () => {
         return daysToEnd <= 60 && daysToEnd > 0;
       }
       if (filterType === 'ใกล้กำหนดตรวจ') {
-        return item.daysRemaining <= 7;
+        const daysFromToday = Math.ceil(
+          (item.nextServiceDate.getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24)
+        );
+        return daysFromToday <= 7;
       }
       if (filterType === 'ค้างชำระ') {
         return item.installment !== '-';

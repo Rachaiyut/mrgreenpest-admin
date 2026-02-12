@@ -102,6 +102,11 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
     },
+    {
+      path: '/field-jobs',
+      element: <Navigate to="/field-operations" replace />,
+      roles: [Role.LEAD_TECH, Role.TECH, Role.SUPERADMIN],
+    },
 
     {
       path: '/invoices/:id/edit',
