@@ -117,7 +117,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
             การแจ้งเตือนและนัดหมาย
@@ -127,46 +127,45 @@ const Notifications: React.FC<NotificationsProps> = () => {
           </p>
         </div>
         
-        <div className="w-full xl:w-auto bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-          <div className="flex flex-col gap-3">
+        <div className="flex flex-col xl:flex-row gap-3 items-end">
             {/* Search Bar */}
-            <div className="relative">
+            <div className="relative w-full xl:w-80">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
               </div>
               <input
                 type="text"
-                placeholder="ค้นหา... (ชื่อ, สัญญา, ที่อยู่, เบอร์โทร)"
+                placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
+                className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm shadow-sm transition duration-150 ease-in-out"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
               {/* Type Filter */}
-              <div className="w-full sm:w-48">
+              <div className="w-full sm:w-40">
                 <Select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as any)}
-                  className="w-full bg-slate-50 border-slate-200 focus:bg-white"
+                  className="w-full bg-white border-slate-200 rounded-lg shadow-sm py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                   <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
-                  <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา (60 วัน)</option>
-                  <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ (7 วัน)</option>
+                  <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
+                  <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
                   <option value="ค้างชำระ">ค้างชำระ</option>
                 </Select>
               </div>
 
               {/* Date Range */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2.5 shadow-sm w-full sm:w-auto">
                 <CalendarIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400"
-                  placeholder="เริ่มสัญญา"
+                  placeholder="dd/mm/yyyy"
                 />
                 <span className="text-slate-400">-</span>
                 <input
@@ -174,7 +173,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400"
-                  placeholder="หมดสัญญา"
+                  placeholder="dd/mm/yyyy"
                 />
               </div>
 
@@ -183,7 +182,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <Select
                   value={invoiceStatus}
                   onChange={(e) => setInvoiceStatus(e.target.value)}
-                  className="w-full bg-slate-50 border-slate-200 focus:bg-white"
+                  className="w-full bg-white border-slate-200 rounded-lg shadow-sm py-2.5 focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 >
                    <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
                    <option value="PAID">ชำระแล้ว</option>
@@ -194,7 +193,6 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 </Select>
               </div>
             </div>
-          </div>
         </div>
       </div>
 
