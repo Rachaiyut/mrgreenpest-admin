@@ -87,8 +87,11 @@ const CustomerListView: React.FC<{
           >
             ระยะเวลา
           </th>
-          <th scope="col" className="relative px-6 py-3">
-            <span className="sr-only">จัดการ</span>
+          <th
+            scope="col"
+            className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+          >
+            จัดการ
           </th>
         </tr>
       </thead>
@@ -123,8 +126,8 @@ const CustomerListView: React.FC<{
                 {calculateDuration(customer.created_at)}
               </span>
             </td>
-            <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-              <div className="inline-block text-left">
+            <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+              <div className="inline-block">
                 <Button
                   data-customer-id={customer.id}
                   onClick={(e) => handleDropdownToggle(e, customer.id)}

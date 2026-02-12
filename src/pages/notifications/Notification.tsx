@@ -24,13 +24,9 @@ const Notifications: React.FC<NotificationsProps> = () => {
       setLoading(true);
       try {
         const res = await NotificationApi.getDashboardData();
-        // Check if res is array or object wrapped
-        // Based on my controller, it returns { success: true, data: [...] }
-        // The API service returns res.data which is the whole object { success, data }
         if (res && Array.isArray(res.data)) {
           setData(res.data);
         } else if (Array.isArray(res)) {
-             // Fallback if API wrapper is different
             setData(res);
         }
       } catch (error) {
@@ -127,7 +123,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
           </p>
         </div>
         
-        <div className="flex flex-col xl:flex-row gap-3 items-center w-full xl:w-auto">
+        <div className="flex flex-col 2xl:flex-row gap-3 items-center w-full xl:w-auto">
             {/* Search Bar */}
             <div className="relative w-full xl:w-96">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
