@@ -50,6 +50,11 @@ class NotificationService extends AuthService {
     const res = await this.http.patch<IBaseResponse<{ success: boolean }>>(`${this.path}/read-all`);
     return res.data;
   }
+
+  async getDashboardData(): Promise<IBaseResponse<any[]>> {
+    const res = await this.http.get<IBaseResponse<any[]>>(`${this.path}/dashboard`);
+    return res.data;
+  }
 }
 
 export const NotificationApi = new NotificationService();

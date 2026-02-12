@@ -1,354 +1,123 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { Select, Input } from '../../components/common/FormControls';
-import {
-  Contract,
-  Invoice,
-  Receipt,
-  Status,
-  Customer,
-} from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../utils/date';
-
-import { useData } from '../../contexts/DataContext';
+import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
+import { NotificationApi } from '../../api/notification';
 
 interface NotificationsProps { }
 
 const Notifications: React.FC<NotificationsProps> = () => {
-  const {
-    contracts,
-    jobs,
-    invoices,
-    receipts,
-    customers,
-  } = useData();
-
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<
     'ทั้งหมด' | 'ใกล้หมดสัญญา' | 'ใกล้กำหนดตรวจ' | 'ค้างชำระ'
   >('ทั้งหมด');
 
-  // Helper: Get all jobs for a contract (from contract.jobs or fallback to global jobs)
-  const getContractJobs = (contract: any) => {
-    let jobList = contract.jobs || [];
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [invoiceStatus, setInvoiceStatus] = useState('ทั้งหมด');
 
-    // Fallback to global jobs if not present in contract (legacy support)
-    if (jobList.length === 0) {
-      jobList = jobs.filter((j: any) => j.contract_id === contract.id || j.contractId === contract.id);
-    }
-
-    return jobList;
-  };
-
-  // Helper to find latest completed job
-  const getLatestJob = (allJobs: any[]) => {
-    const completedJobs = allJobs
-      .filter(
-        (j: any) => (j.status === Status.Completed || j.status === 'COMPLETE')
-      )
-      .sort(
-        (a: any, b: any) => {
-          const dateA = new Date(a.end_date || a.endTime).getTime();
-          const dateB = new Date(b.end_date || b.endTime).getTime();
-          return dateB - dateA;
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await NotificationApi.getDashboardData();
+        // Check if res is array or object wrapped
+        // Based on my controller, it returns { success: true, data: [...] }
+        // The API service returns res.data which is the whole object { success, data }
+        if (res && Array.isArray(res.data)) {
+          setData(res.data);
+        } else if (Array.isArray(res)) {
+             // Fallback if API wrapper is different
+            setData(res);
         }
-      );
-    return completedJobs.length > 0 ? completedJobs[0] : null;
-  };
-
-  // Helper to find next scheduled job
-  const getNextJob = (allJobs: any[]) => {
-    const scheduledJobs = allJobs
-      .filter(
-        (j: any) =>
-          [Status.Scheduled, Status.Planned, Status.InProgress, 'PENDING', 'IN_PROGRESS'].includes(
-            j.status
-          )
-      )
-      .sort(
-        (a: any, b: any) => {
-          const dateA = new Date(a.start_date || a.startTime).getTime();
-          const dateB = new Date(b.start_date || b.startTime).getTime();
-          return dateA - dateB;
-        }
-      );
-    return scheduledJobs.length > 0 ? scheduledJobs[0] : null;
-  };
-
-  // Process data for the table
-  const tableData = useMemo(() => {
-    console.log('[Notifications] contracts:', contracts.length, 'jobs:', jobs.length, 'invoices:', invoices.length);
-    return contracts.map((contract: any) => {
-      const cId = contract.customer_id || contract.customerId;
-      const customer = customers.find((c) => c.id === cId);
-      const allContractJobs = getContractJobs(contract);
-      const latestJob: any = getLatestJob(allContractJobs);
-      const nextJob: any = getNextJob(allContractJobs);
-
-      console.log(`[Notifications] Contract ${contract.code}: contract.jobs=`, contract.jobs?.length, 'allContractJobs=', allContractJobs.length, 'latestJob=', latestJob?.id, 'nextJob=', nextJob?.id);
-
-      // Safe date helper to prevent white screen on invalid dates
-      const getValidDate = (d: any): Date => {
-        const date = new Date(d);
-        return !isNaN(date.getTime()) ? date : new Date();
-      };
-
-      // Safe helper for address
-      const fullAddress = customer
-        ? `${customer.address_house_no || ''} ${customer.road_line || ''} ${customer.sub_district || ''} ${customer.district || ''} ${customer.province || ''} ${customer.postal_code || ''}`.trim()
-        : '-';
-
-      // ========== 🟢 GREEN SECTION: Service Info ==========
-
-      // --- ครั้งที่ (Visit Number) ---
-      // Count completed jobs for this contract
-      const completedJobsCount = allContractJobs.filter(
-        (j: any) => j.status === Status.Completed || j.status === 'COMPLETE'
-      ).length;
-
-      // --- วันที่ตรวจล่าสุด (Last Service Date) ---
-      // First visit: Job that has assessment_id (first time from assessment)
-      // Subsequent visits: Jobs that have contract_id
-      let lastServiceDate: string = '-';
-
-      // Sort all completed jobs by end_date descending
-      const completedJobsSorted = allContractJobs
-        .filter((j: any) => j.status === Status.Completed || j.status === 'COMPLETE')
-        .sort((a: any, b: any) => {
-          const dateA = new Date(a.end_date || a.endTime).getTime();
-          const dateB = new Date(b.end_date || b.endTime).getTime();
-          return dateB - dateA;
-        });
-
-      if (completedJobsSorted.length > 0) {
-        // Latest completed job provides the last service date
-        const latest = completedJobsSorted[0];
-        lastServiceDate = latest.end_date || latest.endTime || '-';
-      } else {
-        // If no completed jobs with contract_id, look for assessment-based first job
-        // (Jobs in the global list that reference an assessment related to this contract's customer)
-        const assessmentJobs = jobs
-          .filter((j: any) =>
-            j.assessment_id &&
-            (j.customer_id === cId) &&
-            (j.status === Status.Completed || j.status === 'COMPLETE')
-          )
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.end_date || a.endTime).getTime();
-            const dateB = new Date(b.end_date || b.endTime).getTime();
-            return dateB - dateA;
-          });
-
-        if (assessmentJobs.length > 0) {
-          lastServiceDate = assessmentJobs[0].end_date || (assessmentJobs[0] as any).endTime || '-';
-        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // --- เข้าตรวจถัดไป (Next Service Date) ---
-      // Pull from service_report.next_service_schedule of the latest completed job
-      let nextServiceDue: Date;
-      let nextServiceDisplay: string | null = null;
-
-      // 1. Try to get from Service Report's next_service_schedule
-      if (latestJob && latestJob.service_report && latestJob.service_report.next_service_schedule) {
-        nextServiceDisplay = latestJob.service_report.next_service_schedule;
-
-        const dateFromReport = getValidDate(latestJob.service_report.next_service_schedule);
-        if (!isNaN(dateFromReport.getTime()) && dateFromReport.getFullYear() > 1970) {
-          nextServiceDue = dateFromReport;
-        } else {
-          // next_service_schedule might be text like "15/03/2569" or Thai format
-          // Keep the display string, but calculate remaining from next scheduled job
-          if (nextJob && (nextJob.start_date || nextJob.startTime)) {
-            nextServiceDue = getValidDate(nextJob.start_date || nextJob.startTime);
-          } else {
-            nextServiceDue = new Date();
-          }
-        }
-      }
-      // 2. Try to get from Next Scheduled Job
-      else if (nextJob && (nextJob.start_date || nextJob.startTime)) {
-        nextServiceDue = getValidDate(nextJob.start_date || nextJob.startTime);
-      }
-      // 3. Fallback: Latest Job + 30 days
-      else if (latestJob && (latestJob.end_date || latestJob.endTime)) {
-        const lastEnd = getValidDate(latestJob.end_date || latestJob.endTime);
-        const d = new Date(lastEnd);
-        d.setDate(lastEnd.getDate() + 30);
-        nextServiceDue = d;
-      }
-      // 4. If no contract jobs, check assessment-based jobs for next_service_schedule
-      else {
-        // Check assessment jobs' service reports
-        const assessmentJobsWithReport = jobs
-          .filter((j: any) =>
-            j.assessment_id &&
-            (j.customer_id === cId) &&
-            (j.status === Status.Completed || j.status === 'COMPLETE') &&
-            j.service_report?.next_service_schedule
-          )
-          .sort((a: any, b: any) => {
-            const dateA = new Date(a.end_date || a.endTime).getTime();
-            const dateB = new Date(b.end_date || b.endTime).getTime();
-            return dateB - dateA;
-          });
-
-        if (assessmentJobsWithReport.length > 0) {
-          const sr = assessmentJobsWithReport[0].service_report;
-          nextServiceDisplay = sr.next_service_schedule;
-          const dateFromReport = getValidDate(sr.next_service_schedule);
-          if (!isNaN(dateFromReport.getTime()) && dateFromReport.getFullYear() > 1970) {
-            nextServiceDue = dateFromReport;
-          } else {
-            nextServiceDue = new Date();
-          }
-        } else {
-          nextServiceDue = new Date(); // Default to today if no data
-        }
-      }
-
-      // ========== 🔴 RED SECTION: Payment Info ==========
-      // Reference invoice by term of job (via job.invoice_id)
-      // Find the latest job's invoice, or find invoices linked to the contract
-      let invoiceTerm: string | number = '-';
-      let invoiceAmount: number = 0;
-      let invoiceStatus: string = '-';
-      let invoiceDueDate: string = '-';
-
-      // 1. Check if the latest job has an invoice_id
-      if (latestJob && latestJob.invoice_id) {
-        const jobInvoice = invoices.find((inv: any) => inv.id === latestJob.invoice_id);
-        if (jobInvoice) {
-          invoiceTerm = jobInvoice.term || '-';
-          invoiceAmount = Number(jobInvoice.total) || 0;
-          invoiceStatus = (jobInvoice as any).status || '-';
-          invoiceDueDate = (jobInvoice as any).due_at || '-';
-        }
-      }
-
-      // 2. Fallback: Find invoices linked to the contract by contract_id
-      if (invoiceTerm === '-') {
-        const contractInvoices = invoices
-          .filter((inv: any) => inv.contract_id === contract.id)
-          .sort((a: any, b: any) => {
-            const termA = (a as any).term || 0;
-            const termB = (b as any).term || 0;
-            return termB - termA; // Latest term first
-          });
-
-        if (contractInvoices.length > 0) {
-          const latestInvoice = contractInvoices[0];
-          invoiceTerm = latestInvoice.term || '-';
-          invoiceAmount = Number(latestInvoice.total) || 0;
-          invoiceStatus = (latestInvoice as any).status || '-';
-          invoiceDueDate = (latestInvoice as any).due_at || '-';
-        }
-      }
-
-      // 3. Fallback: Find receipts by customer for payment info
-      const latestReceipt = receipts
-        .filter((r: any) => (r.customer_id === cId || r.customerId === cId))
-        .sort(
-          (a: any, b: any) => new Date(b.paid_at || b.paidAt || b.received_at).getTime() - new Date(a.paid_at || a.paidAt || a.received_at).getTime()
-        )[0] as any;
-
-      // Contract duration calculation
-      const startDate = contract.start_date || contract.startDate;
-      const endDate = contract.end_date || contract.endDate;
-      const start = getValidDate(startDate);
-      const end = getValidDate(endDate);
-      const durationYears = (end.getFullYear() - start.getFullYear()).toFixed(
-        1
-      );
-
-      const displayPrice = contract.total_amount !== undefined ? contract.total_amount : contract.totalAmount || 0;
-      const displayPackage = contract.service_type || contract.servicePackage || '-';
-
-      // Calculate Remaining Days: Next Service - Last Service (or Today if no last service)
-      let daysDiffBasis = new Date();
-      if (lastServiceDate !== '-') {
-        const lastD = new Date(lastServiceDate);
-        if (!isNaN(lastD.getTime())) {
-          daysDiffBasis = lastD;
-        }
-      }
-
-      const calculatedDaysRemaining = Math.ceil(
-        (nextServiceDue.getTime() - daysDiffBasis.getTime()) /
-        (1000 * 60 * 60 * 24)
-      );
-
-      return {
-        contractId: contract.code || contract.id,
-        customerName: customer
-          ? `${customer.first_name} ${customer.last_name || ''}`.trim()
-          : (contract.customer_name || contract.customerName || '-'),
-        nickname: customer?.nickname || '-',
-        address: fullAddress,
-        phone: customer?.phone || '-',
-        contractDetails: displayPackage,
-        durationYears: durationYears,
-        visitsRequired: contract.service_count || 12,
-        startDate: startDate,
-        endDate: endDate,
-        buildingType: contract.building_type || 'บ้านเดี่ยว',
-        price: displayPrice,
-
-        // 🔴 Payment Info (from Invoice by job term)
-        installment: invoiceTerm,
-        invoiceAmount: invoiceAmount,
-        invoiceStatus: invoiceStatus,
-        invoiceDueDate: invoiceDueDate,
-        paymentMethod: latestReceipt?.payment_method || latestReceipt?.paymentMethod || '-',
-        amountPaid: latestReceipt?.amount || 0,
-        paidDate: latestReceipt?.paid_at || latestReceipt?.paidAt || latestReceipt?.received_at || '-',
-
-        // 🟢 Service Info 
-        visitNumber: completedJobsCount,
-        lastServiceDate: lastServiceDate,
-        nextServiceDate: nextServiceDue,
-        nextServiceDisplay: nextServiceDisplay,
-        daysRemaining: calculatedDaysRemaining,
-      };
-    });
-  }, [contracts, jobs, invoices, receipts, customers]);
+    fetchData();
+  }, []);
 
   const filteredData = useMemo(() => {
-    return tableData.filter((item) => {
-      const matchName = item.customerName
-        ? item.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-        : false;
-      const matchId = item.contractId
-        ? item.contractId.toLowerCase().includes(searchTerm.toLowerCase())
-        : false;
-      const matchesSearch = matchName || matchId;
+    return data.map(item => ({
+        contractId: item.contract_code || item.contract_id,
+        customerName: item.customer_name,
+        nickname: item.nickname || '-',
+        address: item.address,
+        phone: item.phone || '-',
+        contractDetails: item.contract_details,
+        durationYears: item.duration_years,
+        visitsRequired: item.visits_required || 12,
+        startDate: item.start_date,
+        endDate: item.end_date,
+        buildingType: item.building_type || 'บ้านเดี่ยว',
+        price: Number(item.price) || 0,
+        installment: item.installment,
+        invoiceAmount: Number(item.invoice_amount) || 0,
+        invoiceStatus: item.invoice_status,
+        invoiceDueDate: item.invoice_due_date,
+        paymentMethod: item.payment_method || '-',
+        amountPaid: Number(item.amount_paid) || 0,
+        paidDate: item.paid_date || '-',
+        visitNumber: Number(item.visit_number) || 0,
+        lastServiceDate: item.last_service_date || '-',
+        nextServiceDate: item.next_service_date ? new Date(item.next_service_date) : new Date(),
+        nextServiceDisplay: item.next_service_date,
+        daysRemaining: Number(item.days_remaining) || 0,
+    })).filter((item) => {
+      // 1. Search Logic
+      const term = searchTerm.toLowerCase();
+      const matchName = item.customerName && item.customerName.toLowerCase().includes(term);
+      const matchId = item.contractId && item.contractId.toLowerCase().includes(term);
+      const matchNickname = item.nickname && item.nickname.toLowerCase().includes(term);
+      const matchAddress = item.address && item.address.toLowerCase().includes(term);
+      const matchPhone = item.phone && item.phone.toLowerCase().includes(term);
+      
+      const matchesSearch = !term || matchName || matchId || matchNickname || matchAddress || matchPhone;
 
       if (!matchesSearch) return false;
 
+      // 2. Filter Logic (filterType)
       if (filterType === 'ใกล้หมดสัญญา') {
         const daysToEnd =
           (new Date(item.endDate).getTime() - new Date().getTime()) /
           (1000 * 60 * 60 * 24);
-        return daysToEnd <= 60 && daysToEnd > 0;
+        if (!(daysToEnd <= 60 && daysToEnd > 0)) return false;
+      } else if (filterType === 'ใกล้กำหนดตรวจ') {
+        if (item.daysRemaining > 7) return false;
+      } else if (filterType === 'ค้างชำระ') {
+        if (item.installment === '-') return false;
       }
-      if (filterType === 'ใกล้กำหนดตรวจ') {
-        const daysFromToday = Math.ceil(
-          (item.nextServiceDate.getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24)
-        );
-        return daysFromToday <= 7;
+
+      // 3. Date Range Logic (Start/End Date of Contract)
+      if (startDate) {
+        const itemStart = new Date(item.startDate).getTime();
+        const filterStart = new Date(startDate).getTime();
+        if (itemStart < filterStart) return false;
       }
-      if (filterType === 'ค้างชำระ') {
-        return item.installment !== '-';
+      if (endDate) {
+        const itemEnd = new Date(item.endDate).getTime();
+        const filterEnd = new Date(endDate).getTime();
+        if (itemEnd > filterEnd) return false;
+      }
+
+      // 4. Invoice Status Logic
+      if (invoiceStatus !== 'ทั้งหมด') {
+        if (item.invoiceStatus !== invoiceStatus) return false;
       }
 
       return true;
     });
-  }, [tableData, searchTerm, filterType]);
+  }, [data, searchTerm, filterType, startDate, endDate, invoiceStatus]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
             การแจ้งเตือนและนัดหมาย
@@ -357,23 +126,75 @@ const Notifications: React.FC<NotificationsProps> = () => {
             ติดตามสถานะสัญญา การชำระเงิน และรอบบริการ
           </p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Input
-            placeholder="Search..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64"
-          />
-          <Select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value as any)}
-            className="w-48"
-          >
-            <option value="ทั้งหมด">ทั้งหมด</option>
-            <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา (60 วัน)</option>
-            <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ (7 วัน)</option>
-            <option value="ค้างชำระ">ค้างชำระ</option>
-          </Select>
+        
+        <div className="w-full xl:w-auto bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex flex-col gap-3">
+            {/* Search Bar */}
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="ค้นหา... (ชื่อ, สัญญา, ที่อยู่, เบอร์โทร)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition duration-150 ease-in-out"
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Type Filter */}
+              <div className="w-full sm:w-48">
+                <Select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value as any)}
+                  className="w-full bg-slate-50 border-slate-200 focus:bg-white"
+                >
+                  <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
+                  <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา (60 วัน)</option>
+                  <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ (7 วัน)</option>
+                  <option value="ค้างชำระ">ค้างชำระ</option>
+                </Select>
+              </div>
+
+              {/* Date Range */}
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-auto">
+                <CalendarIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400"
+                  placeholder="เริ่มสัญญา"
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400"
+                  placeholder="หมดสัญญา"
+                />
+              </div>
+
+              {/* Invoice Status */}
+              <div className="w-full sm:w-40">
+                <Select
+                  value={invoiceStatus}
+                  onChange={(e) => setInvoiceStatus(e.target.value)}
+                  className="w-full bg-slate-50 border-slate-200 focus:bg-white"
+                >
+                   <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
+                   <option value="PAID">ชำระแล้ว</option>
+                   <option value="PENDING">รอชำระ</option>
+                   <option value="OVERDUE">เกินกำหนด</option>
+                   <option value="DRAFT">ร่าง</option>
+                   <option value="SENT">ส่งแล้ว</option>
+                </Select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -422,7 +243,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   กำหนดชำระ
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  ครั้งที่
+                  ครั้งที่ / ทั้งหมด
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   เข้าตรวจล่าสุด
@@ -436,7 +257,20 @@ const Notifications: React.FC<NotificationsProps> = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredData.map((row) => (
+              {loading ? (
+                <tr>
+                    <td colSpan={17} className="px-6 py-10 text-center text-slate-500">
+                        กำลังโหลดข้อมูล...
+                    </td>
+                </tr>
+              ) : filteredData.length === 0 ? (
+                <tr>
+                    <td colSpan={17} className="px-6 py-10 text-center text-slate-500">
+                        ไม่พบข้อมูล
+                    </td>
+                </tr>
+              ) : (
+                filteredData.map((row) => (
                 <tr
                   key={row.contractId}
                   className="hover:bg-slate-50 transition-colors"
@@ -500,7 +334,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
                   {/* 🟢 Green Section: Service Info */}
                   <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
-                    {row.visitNumber > 0 ? row.visitNumber : '-'}
+                    {row.visitNumber > 0 ? row.visitNumber : '-'} <span className="text-slate-400 mx-1">/</span> {row.visitsRequired || '-'}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
                     {row.lastServiceDate !== '-'
@@ -513,7 +347,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       if (display) {
                         // Check if it's a valid date string (e.g. ISO format or YYYY-MM-DD)
                         const d = new Date(display);
-                        if (!isNaN(d.getTime()) && display.includes('-')) {
+                        if (!isNaN(d.getTime()) && String(display).includes('-')) {
                           return formatThaiDate(display);
                         }
                         return display;
@@ -533,7 +367,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </span>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>
