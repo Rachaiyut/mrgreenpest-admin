@@ -447,6 +447,7 @@ import {
   CategoryApi,
   ServiceReportApi,
   PackageApi,
+  StorageApi,
 } from '@/src/api';
 
 const FieldOperations: React.FC<FieldOperationsProps> = ({
@@ -665,7 +666,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         await JobApi.checkOut(jobId);
       } else {
         const status =
-          newStatus === JobStatus.Completed
+          newStatus === JobStatus.Completed as any
             ? 'COMPLETE'
             : 'PENDING';
         await JobApi.update(jobId, { status } as any);
@@ -1032,7 +1033,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
     jobId: string,
     reportData: ServiceReport,
     finalStatus: JobStatus,
-    quotationId?: string
+    quotationId?: string,
+    files?: File[]
   ) => {
     try {
       const job = jobs.find((j) => j.id === jobId);
@@ -1048,10 +1050,27 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       // Remove id from payload if it exists to avoid issues with create/update if strict
       const { id, ...dataToSave } = payload;
 
+      let reportId: string | undefined;
+
       if (job.service_report && job.service_report.id) {
+        reportId = job.service_report.id;
         await ServiceReportApi.update(job.service_report.id, dataToSave);
       } else {
-        await ServiceReportApi.create(dataToSave);
+        const newReport = await ServiceReportApi.create(dataToSave);
+        reportId = newReport.id;
+      }
+
+      // Handle File Upload if files are present and we have a report ID
+      if (files && files.length > 0 && reportId) {
+        await StorageApi.uploadMultiple({
+          files: files,
+          path: `service-reports/${reportId}/blueprints`,
+          entity_type: 'service_report',
+          entity_id: reportId,
+          provider: 'local', 
+          type: 'image',
+          visibility: 'private'
+        });
       }
 
       // Update Job Status if needed

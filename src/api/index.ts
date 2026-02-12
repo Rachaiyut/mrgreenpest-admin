@@ -27,3 +27,4 @@ export * from './withdrawal';
 export * from './vehicle';
 export * from './price-engine';
 export * from './role';
+export * from './storage';

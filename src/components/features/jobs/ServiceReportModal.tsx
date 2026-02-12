@@ -24,7 +24,8 @@ interface ServiceReportModalProps {
     jobId: string,
     reportData: ServiceReport,
     finalStatus: JobStatus,
-    quotationId?: string
+    quotationId?: string,
+    files?: File[]
   ) => void;
   finalStatus: JobStatus;
   currentUser: User;
@@ -68,6 +69,13 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
 
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
 
   const selectedAssessment = useMemo(() => {
     return assessments?.find((a) => a.id === selectedAssessmentId);
@@ -387,7 +395,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         termite_other: reportState.termite?.actions?.other,
       },
     } as ServiceReport;
-    onSubmit(job.id, finalReportData, finalStatus);
+    onSubmit(job.id, finalReportData, finalStatus, undefined, selectedFiles);
   };
 
   const handleApprove = () => {
@@ -395,7 +403,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       ...reportState,
       status: JobStatus.Completed,
     } as ServiceReport;
-    onSubmit(job.id, finalReportData, finalStatus);
+    onSubmit(job.id, finalReportData, finalStatus, undefined, selectedFiles);
   };
 
   const handleMultiSelect = (
@@ -1183,6 +1191,47 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         placeholder="รายละเอียดเพิ่มเติม..."
                     />
                  </div>
+            </div>
+        </div>
+        
+        {/* Blueprint Images */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <DocumentIcon className="w-5 h-5 text-primary" />
+                รูปภาพ Blueprint
+            </h3>
+            <div className="space-y-4">
+                <div className="flex items-center justify-center w-full">
+                    <label htmlFor="blueprint-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg className="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">คลิกเพื่ออัพโหลด</span> หรือลากไฟล์มาวาง</p>
+                            <p className="text-xs text-slate-500">PNG, JPG (MAX. 10MB)</p>
+                        </div>
+                        <input id="blueprint-upload" type="file" className="hidden" multiple onChange={handleFileChange} accept="image/*" />
+                    </label>
+                </div>
+                {selectedFiles.length > 0 && (
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium text-slate-700">ไฟล์ที่เลือก ({selectedFiles.length})</p>
+                        <div className="flex flex-wrap gap-2">
+                            {selectedFiles.map((file, index) => (
+                                <div key={index} className="px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-600 flex items-center gap-2">
+                                    <span className="truncate max-w-[150px]">{file.name}</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setSelectedFiles(prev => prev.filter((_, i) => i !== index))}
+                                        className="text-slate-400 hover:text-red-500"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
         
