@@ -118,6 +118,14 @@ const Assessments: React.FC = () => {
     );
   }, [customers]);
 
+  const getCustomerName = useCallback((assessment: Assessment) => {
+    if (assessment.customer) {
+      const { first_name, last_name } = assessment.customer;
+      return [first_name, last_name].filter(t => t && t !== '-').join(' ').trim();
+    }
+    return customerMap.get(assessment.customer_id) || '';
+  }, [customerMap]);
+
   // Stats Calculations
   const stats = useMemo(() => {
     const total = assessments.length;
@@ -156,7 +164,8 @@ const Assessments: React.FC = () => {
     }
 
     return reversedAssessments.filter((assessment) => {
-      const customerName = customerMap.get(assessment.customer_id) || '';
+      const customerName = getCustomerName(assessment);
+      
       const matchesCustomer =
         assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
         customerName.toLowerCase().includes(lowercasedQuery);
@@ -176,7 +185,7 @@ const Assessments: React.FC = () => {
 
       return matchesCustomer || matchesWorkArea || matchesDate;
     });
-  }, [reversedAssessments, searchQuery, customerMap]);
+  }, [reversedAssessments, searchQuery, getCustomerName]);
 
   const kanbanColumns: {
     title: AsessmentStatus;
@@ -504,7 +513,7 @@ const Assessments: React.FC = () => {
                       <AssessmentCard
                         key={assessment.id}
                         assessment={assessment}
-                        customerName={customerMap.get(assessment.customer_id)}
+                        customerName={getCustomerName(assessment)}
                         onDropdownToggle={handleDropdownToggle}
                         onViewDetails={handleViewDetails}
                       />
@@ -581,15 +590,17 @@ const Assessments: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-xs">
-                                  {(customerMap.get(assessment.customer_id) || '?').charAt(0).toUpperCase()}
+                                  {(getCustomerName(assessment) || '?').charAt(0).toUpperCase()}
                                 </span>
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-slate-800 truncate">
-                                  {customerMap.get(assessment.customer_id) || '-'}
+                                  {getCustomerName(assessment) || '-'}
                                 </p>
                                 <p className="text-xs text-slate-500 truncate">
-                                  {assessment.customer_id}
+                                  {assessment.customer?.code ||
+                                    assessment.customer?.phone ||
+                                    '-'}
                                 </p>
                               </div>
                             </div>

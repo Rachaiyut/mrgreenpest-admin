@@ -15,7 +15,7 @@ import {
 } from '../../assets/icons/Icons';
 
 const CustomerCardView: React.FC<{
-  customers: ICustomer[];
+  customers: Customer[];
   handleDropdownToggle: (
     event: React.MouseEvent<HTMLElement>,
     customerId: string
@@ -31,9 +31,9 @@ const CustomerCardView: React.FC<{
                 {customer.first_name} {customer.last_name}
               </h3>
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${customer.customer_type === CustomerType.CORPORATE ? 'bg-sky-100 text-sky-800' : 'bg-lime-100 text-lime-800'}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium mt-1 ${customer.type === CustomerType.CORPORATE ? 'bg-sky-100 text-sky-800' : 'bg-lime-100 text-lime-800'}`}
               >
-                {customer.customer_type === CustomerType.CORPORATE
+                {customer.type === CustomerType.CORPORATE
                   ? 'นิติบุคคล'
                   : 'บุคคล'}
               </span>
