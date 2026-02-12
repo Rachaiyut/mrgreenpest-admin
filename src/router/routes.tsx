@@ -27,7 +27,7 @@ const Packages = lazy(() => import('../pages/packages/Package'));
 const Categories = lazy(() => import('../pages/categories/Category'));
 const Products = lazy(() => import('../pages/inventory/products/Product'));
 const Reports = lazy(() => import('../pages/reports'));
-const Notifications = lazy(() => import('../pages/notifications'));
+const Notifications = lazy(() => import('../pages/notifications/Notification'));
 const Forms = lazy(() => import('../pages/forms'));
 const ContractsPage = lazy(() => import('../pages/contracts/Contract'));
 const CreateInvoicePage = lazy(() => import('../pages/billing/CreateInvoice'));
