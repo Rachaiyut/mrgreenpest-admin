@@ -97,12 +97,12 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && search !== '') {
       // Reset search when closed
       setSearch('');
       onSearchChange?.('');
     }
-  }, [isOpen, onSearchChange]);
+  }, [isOpen, onSearchChange, search]);
 
   const filteredOptions = safeOptions.filter(
     (option) =>

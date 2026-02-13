@@ -53,31 +53,47 @@ export const FormField: FC<{
   );
 };
 
-export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => (
-  <input
-    {...props}
-    className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900 ${
-      props.type === 'search' ? 'pl-10' : '' // Add padding for search icon
-    }`}
-  />
-);
+export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
+  // Ensure value is never undefined/null for controlled inputs to prevent React warning
+  // If the user explicitly provides a 'value' prop, we must ensure it's not undefined
+  // If they provide 'defaultValue', it's uncontrolled, so we don't interfere
+  const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
 
-export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
-  <select
-    {...props}
-    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900"
-  />
-);
+  return (
+    <input
+      {...props}
+      {...controlledProps}
+      className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900 ${
+        props.type === 'search' ? 'pl-10' : '' // Add padding for search icon
+      }`}
+    />
+  );
+};
+
+export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = (props) => {
+  const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
+  return (
+    <select
+      {...props}
+      {...controlledProps}
+      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm h-10 text-slate-900"
+    />
+  );
+};
 
 export const Textarea: FC<TextareaHTMLAttributes<HTMLTextAreaElement>> = (
   props
-) => (
-  <textarea
-    {...props}
-    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-slate-900"
-    rows={3}
-  />
-);
+) => {
+  const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
+  return (
+    <textarea
+      {...props}
+      {...controlledProps}
+      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-slate-900"
+      rows={3}
+    />
+  );
+};
 
 export const Button: FC<
   ButtonHTMLAttributes<HTMLButtonElement> & {

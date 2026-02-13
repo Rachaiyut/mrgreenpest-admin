@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import { User, UserRole } from '@/src/types/entity/app.interface';
+import { User } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
+import { StorageApi } from '@/src/api/storage';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<any>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +41,8 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     }
     if (!isOpen) {
       setImagePreview(null);
+      setSelectedFile(null);
+      setIsUploading(false);
     }
   }, [user, isOpen]);
 
@@ -46,6 +51,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     if (file) {
       const newUrl = URL.createObjectURL(file);
       setImagePreview(newUrl);
+      setSelectedFile(file);
       setFormData((prev: any) => ({ ...prev, avatarUrl: newUrl }));
     }
   };
@@ -57,7 +63,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
       if (
@@ -71,22 +77,46 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         return;
       }
 
-      // Map to Backend DTO (UpdateUserDto)
-      const updatePayload = {
-        id: user.id, // Keep UUID for API call url
-        citizen_id: formData.citizen_id,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        nick_name: formData.nickname,
-        email: formData.email,
-        phone: formData.phone,
-        role_id: formData.role_id,
-        // password: only if changed? (Usually handled in separate change password flow or optional)
-      };
+      try {
+        setIsUploading(true);
+        let storageId = null;
 
-      onUpdateUser(updatePayload);
+        if (selectedFile) {
+          const uploadResult = await StorageApi.upload({
+            file: selectedFile,
+            path: 'users/avatars',
+            entity_type: 'user',
+            visibility: 'public',
+          });
+          storageId = uploadResult.id;
+        }
+
+        // Map to Backend DTO (UpdateUserDto)
+        const updatePayload: any = {
+          id: user.id, // Keep UUID for API call url
+          citizen_id: formData.citizen_id,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          nick_name: formData.nickname,
+          email: formData.email,
+          phone: formData.phone,
+          role_id: formData.role_id,
+          // password: only if changed? (Usually handled in separate change password flow or optional)
+        };
+
+        if (storageId) {
+          updatePayload.storage_id = storageId;
+        }
+
+        onUpdateUser(updatePayload);
+        onClose();
+      } catch (error) {
+        console.error('Error updating user:', error);
+        alert('เกิดข้อผิดพลาดในการแก้ไขผู้ใช้งาน');
+      } finally {
+        setIsUploading(false);
+      }
     }
-    onClose();
   };
 
   if (!user) return null;
@@ -104,8 +134,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             form="edit-user-form"
             className="h-16 px-5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-medium shadow-sm min-w-[110px]"
             variant="primary"
+            disabled={isUploading}
           >
-            บันทึก
+            {isUploading ? 'กำลังบันทึก...' : 'บันทึก'}
           </Button>
         </div>
       }
@@ -127,6 +158,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     accept="image/png, image/jpeg"
                     onChange={handleImageChange}
+                    disabled={isUploading}
                   />
                   
                   {imagePreview ? (
@@ -188,6 +220,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required
                         className="h-11"
+                        disabled={isUploading}
                       />
                     </FormField>
                     <FormField label="นามสกุล*" htmlFor="last_name">
@@ -199,6 +232,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required
                         className="h-11"
+                        disabled={isUploading}
                       />
                     </FormField>
                  </div>
@@ -213,6 +247,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required
                         className="h-11"
+                        disabled={isUploading}
                       />
                     </FormField>
                     <FormField label="เบอร์โทรศัพท์*" htmlFor="phone">
@@ -224,6 +259,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required 
                         className="h-11"
+                        disabled={isUploading}
                       />
                     </FormField>
                  </div>
@@ -244,6 +280,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required
                         className="h-11"
+                        disabled={isUploading}
                       />
                     </FormField>
                     <FormField label="เลือกบทบาท*" htmlFor="role_id">
@@ -254,6 +291,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onChange={handleChange}
                         required
                         className="h-11"
+                        disabled={isUploading}
                       >
                         <option value="">เลือกบทบาท</option>
                         {roles.map((role) => (
@@ -272,4 +310,3 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     </Modal>
   );
 };
-

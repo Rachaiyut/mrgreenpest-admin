@@ -4,6 +4,7 @@ import { User, UserRole } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
+import { StorageApi } from '@/src/api/storage';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -19,10 +20,14 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   roles,
 }) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setImagePreview(null);
+      setSelectedFile(null);
+      setIsUploading(false);
     }
   }, [isOpen]);
 
@@ -30,10 +35,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       setImagePreview(URL.createObjectURL(file));
+      setSelectedFile(file);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
@@ -51,24 +57,42 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
       return;
     }
 
-    // Map to Backend DTO (CreateUserDto)
-    const newUser = {
-      citizen_id: data['user-national-id'] as string,
-      first_name: data['user-first-name'] as string,
-      last_name: data['user-last-name'] as string,
-      nick_name: data['user-nickname'] as string,
-      email: data['user-email'] as string,
-      password: data['user-password'] as string,
-      role_id: data['user-role-id'] as string,
-      phone: data['user-phone'] as string,
-      status: 'active',
-      // storage_id? 
-      // avatar? backend DTO doesn't have it yet, maybe need to upload separately or base64? 
-      // For now we omit avatarUrl as API doesn't seem to support it in CreateUserDto
-    };
+    try {
+      setIsUploading(true);
+      let storageId = null;
 
-    onCreateUser(newUser);
-    onClose();
+      if (selectedFile) {
+        const uploadResult = await StorageApi.upload({
+          file: selectedFile,
+          path: 'users/avatars',
+          entity_type: 'user',
+          visibility: 'public',
+        });
+        storageId = uploadResult.id;
+      }
+
+      // Map to Backend DTO (CreateUserDto)
+      const newUser = {
+        citizen_id: data['user-national-id'] as string,
+        first_name: data['user-first-name'] as string,
+        last_name: data['user-last-name'] as string,
+        nick_name: data['user-nickname'] as string,
+        email: data['user-email'] as string,
+        password: data['user-password'] as string,
+        role_id: data['user-role-id'] as string,
+        phone: data['user-phone'] as string,
+        status: 'active',
+        storage_id: storageId,
+      };
+
+      onCreateUser(newUser);
+      onClose();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างผู้ใช้งาน');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
