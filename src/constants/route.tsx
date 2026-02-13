@@ -151,7 +151,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     icon: NewWarehouseIcon,
     subItems: [
       {
-        name: 'ใบเบิกสินค้า',
+        name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: DocumentTextIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
       },
