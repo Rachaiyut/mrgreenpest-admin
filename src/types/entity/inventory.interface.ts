@@ -149,7 +149,7 @@ export interface Transfer extends IBase {
   created_by?: string;
   updated_by?: string;
   items?: TransferItem[];
-  remarks?: string;
+  remark?: string;
 }
 
 export interface StockAdjustmentItem {

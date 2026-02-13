@@ -8,6 +8,7 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
+  CheckCircleIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
 import {
@@ -16,6 +17,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
+import { TransferStatus } from '@/src/types/enums/inventory';
 import { AddTransferModal } from '../../../components/features/inventory/AddTransferModal';
 import { TransferDetailsModal } from '../../../components/features/inventory/TransferDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
@@ -23,24 +25,30 @@ import { EditTransferModal } from '../../../components/features/inventory/EditTr
 import { Input, Button } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
+import { TransferApi } from '@/src/api/inventory/transfer';
 
-interface TransfersProps {
-  onCreateTransfer: (data: Omit<TransferType, 'id'>) => void;
-  onUpdateTransfer: (updatedItem: TransferType) => void;
-  onDeleteTransfer: (id: string) => void;
-}
-
-const Transfers: React.FC<TransfersProps> = ({
-  onCreateTransfer,
-  onUpdateTransfer,
-  onDeleteTransfer,
-}) => {
+const Transfers: React.FC = () => {
   const {
-    transfers,
     warehouses,
     products,
-    warehouseStocks: stockMap,
   } = useData();
+
+  const stockMap = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {};
+    warehouses.forEach((wh) => {
+      map[wh.id] = {};
+      if (wh.stock) {
+        wh.stock.forEach((s) => {
+          map[wh.id][s.product_id] = Number(s.quantity);
+        });
+      }
+    });
+    return map;
+  }, [warehouses]);
+
+  const [transfers, setTransfers] = useState<TransferType[]>([]);
+  const [loading, setLoading] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -64,6 +72,61 @@ const Transfers: React.FC<TransfersProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState('');
 
+  const fetchTransfers = async () => {
+    try {
+      setLoading(true);
+      const res = await TransferApi.getAll();
+      setTransfers(res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch transfers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTransfers();
+  }, []);
+
+  const handleCreateTransfer = async (data: any) => {
+    try {
+      await TransferApi.create(data);
+      await fetchTransfers();
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to create transfer:', error);
+      alert('Failed to create transfer');
+    }
+  };
+
+  const handleUpdateTransfer = async (updatedItem: TransferType) => {
+    try {
+      if (updatedItem.status) {
+        if (updatedItem.code) {
+          await TransferApi.updateStatus(updatedItem.code, updatedItem.status);
+          await fetchTransfers();
+          setIsEditModalOpen(false);
+          return;
+        }
+      }
+
+      alert('Update transfer details not supported by API yet. Only Status update is supported.');
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update transfer:', error);
+      alert('Failed to update transfer');
+    }
+  };
+
+  const handleDeleteTransfer = async (id: string) => {
+    try {
+      // API delete endpoint? TransferNoteController doesn't have delete.
+      alert('Delete transfer not supported by API yet.');
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w.name])),
     [warehouses]
@@ -77,7 +140,7 @@ const Transfers: React.FC<TransfersProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     return reversed.filter(
       (transfer) =>
-        transfer.id.toLowerCase().includes(lowercasedQuery) ||
+        (transfer.code || transfer.id).toLowerCase().includes(lowercasedQuery) ||
         formatThaiDate(transfer.created_at).includes(lowercasedQuery)
     );
   }, [transfers, searchQuery]);
@@ -113,7 +176,7 @@ const Transfers: React.FC<TransfersProps> = ({
 
   const handleConfirmDelete = () => {
     if (transferToDelete) {
-      onDeleteTransfer(transferToDelete.id);
+      handleDeleteTransfer(transferToDelete.id);
     }
     setIsDeleteModalOpen(false);
     setTransferToDelete(null);
@@ -157,6 +220,12 @@ const Transfers: React.FC<TransfersProps> = ({
     };
   }, [openDropdownId]);
 
+  const handleApprove = (transfer: TransferType) => {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการอนุมัติการโอนย้ายนี้?')) {
+      handleUpdateTransfer({ ...transfer, status: TransferStatus.COMPLETED });
+    }
+  };
+
   const actions = [
     {
       label: 'ดูรายละเอียด',
@@ -164,8 +233,15 @@ const Transfers: React.FC<TransfersProps> = ({
       handler: handleViewDetails,
       isDanger: false,
     },
-    { label: 'แก้ไข', icon: PencilIcon, handler: handleEdit, isDanger: false },
-    { label: 'ลบ', icon: TrashIcon, handler: handleDelete, isDanger: true },
+    {
+      label: 'อนุมัติ',
+      icon: CheckCircleIcon,
+      handler: handleApprove,
+      isDanger: false,
+      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+    },
+    { label: 'แก้ไข', icon: PencilIcon, handler: handleEdit, isDanger: false, show: (t: TransferType) => t.status === TransferStatus.PENDING },
+    { label: 'ลบ', icon: TrashIcon, handler: handleDelete, isDanger: true, show: (t: TransferType) => t.status === TransferStatus.PENDING },
   ];
 
   return (
@@ -237,6 +313,12 @@ const Transfers: React.FC<TransfersProps> = ({
                     scope="col"
                     className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
                     จำนวนสินค้า
                   </th>
                   <th
@@ -253,13 +335,13 @@ const Transfers: React.FC<TransfersProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedTransfers.map((transfer, index) => {
                   const fromWarehouse = warehouseMap.get(
-                    transfer.fromWarehouseId
-                  );
-                  const toWarehouse = warehouseMap.get(transfer.toWarehouseId);
-                  const totalQuantity = transfer.items.reduce(
-                    (sum, item) => sum + item.quantity,
+                    transfer.from_warehouse_id
+                  ) || (transfer as any).from_warehouse?.name;
+                  const toWarehouse = warehouseMap.get(transfer.to_warehouse_id) || (transfer as any).to_warehouse?.name;
+                  const totalQuantity = transfer.items?.reduce(
+                    (sum, item) => sum + Number(item.qty || item.quantity || 0),
                     0
-                  );
+                  ) || 0;
 
                   return (
                     <tr key={transfer.id} className="hover:bg-slate-50">
@@ -270,10 +352,10 @@ const Transfers: React.FC<TransfersProps> = ({
                         className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
                         onClick={() => handleViewDetails(transfer)}
                       >
-                        {transfer.id}
+                        {transfer.code || transfer.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {formatThaiDate(transfer.createdAt)}
+                        {formatThaiDate(transfer.created_at)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {fromWarehouse || '-'}
@@ -281,11 +363,14 @@ const Transfers: React.FC<TransfersProps> = ({
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {toWarehouse || '-'}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <StatusBadge status={transfer.status} />
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
                         {totalQuantity}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm">
-                        {transfer.reason}
+                        {transfer.remark}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">
@@ -337,34 +422,39 @@ const Transfers: React.FC<TransfersProps> = ({
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
-              <a
-                key={action.label}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const transfer = transfers.find(
-                    (t) => t.id === openDropdownId
-                  );
-                  if (transfer) {
-                    action.handler(transfer);
-                  }
-                  setOpenDropdownId(null);
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </a>
-            ))}
+            {actions
+              .filter((action) => {
+                const transfer = transfers.find((t) => t.id === openDropdownId);
+                return transfer && (!action.show || action.show(transfer));
+              })
+              .map((action) => (
+                <a
+                  key={action.label}
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const transfer = transfers.find(
+                      (t) => t.id === openDropdownId
+                    );
+                    if (transfer) {
+                      action.handler(transfer);
+                    }
+                    setOpenDropdownId(null);
+                  }}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                  role="menuitem"
+                >
+                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                  <span>{action.label}</span>
+                </a>
+              ))}
           </div>
         </div>
       )}
       <AddTransferModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateTransfer={onCreateTransfer}
+        onCreateTransfer={handleCreateTransfer}
         transfers={transfers}
         warehouses={warehouses}
         products={products}
@@ -377,7 +467,7 @@ const Transfers: React.FC<TransfersProps> = ({
           setTransferToEdit(null);
         }}
         transfer={transferToEdit}
-        onUpdateTransfer={onUpdateTransfer}
+        onUpdateTransfer={handleUpdateTransfer}
         warehouses={warehouses}
         products={products}
       />
@@ -390,6 +480,7 @@ const Transfers: React.FC<TransfersProps> = ({
         transfer={selectedTransfer}
         warehouses={warehouses}
         products={products}
+        onApprove={handleApprove}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -411,5 +502,3 @@ const Transfers: React.FC<TransfersProps> = ({
 };
 
 export default Transfers;
-
-

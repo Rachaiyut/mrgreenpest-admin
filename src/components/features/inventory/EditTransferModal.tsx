@@ -45,47 +45,47 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
     [products]
   );
   const fromWarehouseName = useMemo(
-    () => warehouses.find((w) => w.id === formData.fromWarehouseId)?.name || '',
-    [formData.fromWarehouseId, warehouses]
+    () => warehouses.find((w) => w.id === formData.from_warehouse_id)?.name || '',
+    [formData.from_warehouse_id, warehouses]
   );
   const productsInWarehouse = useMemo(
-    () => products.filter((p) => p.warehouse === fromWarehouseName),
-    [fromWarehouseName, products]
+    () => products,
+    [products]
   );
 
   const isFormValid = useMemo(() => {
     return (
-      formData.reason &&
-      formData.reason.trim() &&
+      formData.remark && 
       items.length > 0 &&
-      items.every((item) => item.quantity > 0)
+      items.every((item) => (item.qty || item.quantity) > 0)
     );
-  }, [formData.reason, items]);
+  }, [formData.remark, items]);
 
   useEffect(() => {
     if (transfer) {
       setFormData(transfer);
-      setItems(transfer.items.map((item) => ({ ...item })));
+      setItems(transfer.items ? transfer.items.map((item) => ({ ...item })) : []);
     }
   }, [transfer]);
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: TransferItem[] = productIds.map((pid) => ({
-      productId: pid,
-      quantity: 1,
+      product_id: pid,
+      qty: 1,
+      quantity: 1
     }));
     setItems((prev) => [...prev, ...newItems]);
   };
 
   const handleRemoveItem = (productId: string) => {
-    setItems(items.filter((item) => item.productId !== productId));
+    setItems(items.filter((item) => item.product_id !== productId));
   };
 
   const handleItemChange = (productId: string, value: string | number) => {
     setItems(
       items.map((item) =>
-        item.productId === productId
-          ? { ...item, quantity: Number(value) }
+        item.product_id === productId
+          ? { ...item, qty: Number(value), quantity: Number(value) }
           : item
       )
     );
@@ -109,13 +109,13 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
       return;
     }
     if (transfer) {
-      const updatedTransfer: TransferType = {
+      const updatedTransfer: any = {
         ...transfer,
         ...formData,
-        reason: formData.reason || transfer.reason,
+        remark: formData.remark || transfer.remark,
         items: items.map((item) => ({
-          productId: item.productId,
-          quantity: Number(item.quantity) || 0,
+          product_id: item.product_id,
+          qty: Number(item.qty || item.quantity) || 0,
         })),
       };
       onUpdateTransfer(updatedTransfer);
@@ -124,7 +124,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
   };
 
   const existingProductIds = useMemo(
-    () => items.map((item) => item.productId),
+    () => items.map((item) => item.product_id),
     [items]
   );
 
@@ -173,12 +173,12 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                 className="bg-slate-100"
               />
             </FormField>
-            <FormField label="วันที่โอนย้าย" htmlFor="createdAt">
+            <FormField label="วันที่โอนย้าย" htmlFor="created_at">
               <Input
-                id="createdAt"
-                name="createdAt"
+                id="created_at"
+                name="created_at"
                 type="date"
-                value={new Date(formData.createdAt || '')
+                value={new Date(formData.created_at || '')
                   .toISOString()
                   .substring(0, 10)}
                 onChange={handleChange}
@@ -187,40 +187,48 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="คลังต้นทาง" htmlFor="from-warehouse">
+            <FormField label="คลังต้นทาง" htmlFor="from_warehouse_id">
               <Select
-                id="from-warehouse"
-                value={formData.fromWarehouseId || ''}
+                id="from_warehouse_id"
+                name="from_warehouse_id"
+                value={formData.from_warehouse_id || ''}
                 disabled
                 className="bg-slate-100"
               >
-                <option value={formData.fromWarehouseId}>
-                  {warehouses.find((w) => w.id === formData.fromWarehouseId)
+                <option value={formData.from_warehouse_id}>
+                  {warehouses.find((w) => w.id === formData.from_warehouse_id)
                     ?.name || ''}
                 </option>
               </Select>
             </FormField>
-            <FormField label="คลังปลายทาง" htmlFor="to-warehouse">
+            <FormField label="คลังปลายทาง" htmlFor="to_warehouse_id">
               <Select
-                id="to-warehouse"
-                value={formData.toWarehouseId || ''}
-                disabled
-                className="bg-slate-100"
+                id="to_warehouse_id"
+                name="to_warehouse_id"
+                value={formData.to_warehouse_id || ''}
+                onChange={handleChange}
+                required
               >
-                <option value={formData.toWarehouseId}>
-                  {warehouses.find((w) => w.id === formData.toWarehouseId)
-                    ?.name || ''}
-                </option>
+                <option value="">เลือกคลังปลายทาง</option>
+                {warehouses
+                  .filter((w) => w.id !== formData.from_warehouse_id)
+                  .map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.name}
+                    </option>
+                  ))}
               </Select>
             </FormField>
           </div>
-          <FormField label="เหตุผลในการโอนย้าย" htmlFor="reason">
+          <FormField label="เหตุผลการโอนย้าย" htmlFor="remark">
             <Textarea
-              id="reason"
-              name="reason"
-              value={formData.reason || ''}
+              id="remark"
+              name="remark"
+              value={formData.remark || ''}
               onChange={handleChange}
               required
+              rows={3}
+              placeholder="ระบุสาเหตุการโอนย้าย..."
             />
           </FormField>
           <div>
@@ -263,12 +271,12 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                 <tbody>
                   {items.length > 0 ? (
                     items.map((item, index) => {
-                      const product = item.productId
-                        ? productMap.get(item.productId)
+                      const product = item.product_id
+                        ? productMap.get(item.product_id)
                         : null;
                       return (
                         <tr
-                          key={item.productId}
+                          key={item.product_id}
                           className="border-b border-slate-200 last:border-b-0"
                         >
                           <td className="p-2 align-middle text-center text-slate-600">
@@ -278,39 +286,39 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                             {product?.name || 'N/A'}
                           </td>
                           <td className="p-2 align-middle text-center text-slate-600">
-                            {product?.stock ?? '-'}
+                            {(product as any)?.stock ?? '-'}
                           </td>
                           <td className="p-2 align-middle">
                             <Input
                               type="number"
-                              value={item.quantity}
+                              value={item.qty || item.quantity}
                               onChange={(e) => {
                                 const newQuantity =
                                   parseInt(e.target.value, 10) || 0;
-                                const stock = product?.stock ?? 0;
+                                const stock = (product as any)?.stock ?? 9999;
                                 const validatedQuantity = Math.min(
                                   newQuantity,
                                   stock
                                 );
                                 handleItemChange(
-                                  item.productId,
+                                  item.product_id,
                                   validatedQuantity
                                 );
                               }}
                               className="w-24 h-10"
                               min="1"
-                              max={product?.stock ?? 0}
+                              max={(product as any)?.stock ?? 9999}
                               required
                             />
                           </td>
                           <td className="p-2 align-middle text-slate-600">
-                            {product?.unit || '-'}
+                            {product?.unit?.name || '-'}
                           </td>
                           <td className="p-2 text-center align-middle">
                             <Button
                               variant="ghost"
                               type="button"
-                              onClick={() => handleRemoveItem(item.productId)}
+                              onClick={() => handleRemoveItem(item.product_id)}
                               className="text-red-500 hover:text-red-700"
                             >
                               <TrashIcon className="h-5 w-5" />

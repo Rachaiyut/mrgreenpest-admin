@@ -5,6 +5,7 @@ import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
+import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 import {
   GoodsReceipt,
   GoodsReceiptItem,
@@ -167,83 +168,112 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
           onSubmit={handleSubmit}
           className="space-y-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="เลขที่ใบรับเข้า" htmlFor="receipt-id">
-              <Input
-                id="receipt-id"
-                type="text"
-                value={generatedId}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="วันที่รับสินค้าเข้า" htmlFor="receipt-date">
-              <Input
-                name="receipt-date"
-                id="receipt-date"
-                type="date"
-                defaultValue={new Date().toISOString().substring(0, 10)}
-                required
-              />
-            </FormField>
-            <FormField label="ผู้ทำรับ" htmlFor="created-by">
-              <Input
-                id="created-by"
-                name="createdBy"
-                type="text"
-                value="ผู้ดูแลระบบ"
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
+          {/* Document Information Section */}
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+              ข้อมูลเอกสาร
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FormField label="เลขที่ใบรับเข้า" htmlFor="receipt-id">
+                <Input
+                  id="receipt-id"
+                  type="text"
+                  value={generatedId}
+                  readOnly
+                  className="bg-white text-slate-500 cursor-not-allowed"
+                />
+              </FormField>
+              <FormField label="วันที่รับสินค้าเข้า" htmlFor="receipt-date">
+                <Input
+                  name="receipt-date"
+                  id="receipt-date"
+                  type="date"
+                  defaultValue={new Date().toISOString().substring(0, 10)}
+                  required
+                  className="bg-white"
+                />
+              </FormField>
+              <FormField label="เลขที่อ้างอิงเอกสาร" htmlFor="reference-id">
+                <Input
+                  name="reference-id"
+                  id="reference-id"
+                  type="text"
+                  placeholder="เช่น PO-12345"
+                  className="bg-white"
+                />
+              </FormField>
+              <FormField label="ผู้ทำรับ" htmlFor="created-by">
+                <Input
+                  id="created-by"
+                  name="createdBy"
+                  type="text"
+                  value="ผู้ดูแลระบบ"
+                  readOnly
+                  className="bg-white text-slate-500 cursor-not-allowed"
+                />
+              </FormField>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="รับเข้าคลัง" htmlFor="warehouse">
-              <SearchableSelect
-                value={selectedWarehouseId}
-                onChange={setSelectedWarehouseId}
-                placeholder="-- เลือกคลัง --"
-                required
-                name="warehouse"
-                options={warehouses.map((wh) => ({
-                  value: wh.id,
-                  label: `${wh.name}${wh.type === 'รถ' && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
-                }))}
-              />
-            </FormField>
-            <FormField label="ผู้จัดจำหน่าย" htmlFor="supplier">
-              <SearchableSelect
-                value={selectedSupplierId}
-                onChange={setSelectedSupplierId}
-                placeholder="-- เลือกผู้จัดจำหน่าย --"
-                name="supplier"
-                required
-                options={suppliers.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                }))}
-              />
-            </FormField>
-          </div>
-          <FormField label="เลขที่อ้างอิงเอกสาร" htmlFor="reference-id">
-            <Input
-              name="reference-id"
-              id="reference-id"
-              type="text"
-              placeholder="เช่น PO-12345"
-            />
-          </FormField>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-base font-semibold text-slate-800">
+          {/* Logistics Section */}
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <span>ข้อมูลการขนส่ง</span>
+              <div className="h-px bg-slate-200 flex-grow"></div>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
+                <FormField label="รับเข้าคลัง (Destination)" htmlFor="warehouse">
+                  <SearchableSelect
+                    value={selectedWarehouseId}
+                    onChange={setSelectedWarehouseId}
+                    placeholder="-- เลือกคลังปลายทาง --"
+                    required
+                    name="warehouse"
+                    options={warehouses.map((wh) => ({
+                      value: wh.id,
+                      label: `${wh.name}${wh.type === WarehouseTypeEnum.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
+                    }))}
+                  />
+                </FormField>
+              </div>
+              <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
+                <FormField label="ผู้จัดจำหน่าย (Source)" htmlFor="supplier">
+                  <SearchableSelect
+                    value={selectedSupplierId}
+                    onChange={setSelectedSupplierId}
+                    placeholder="-- เลือกผู้จัดจำหน่าย --"
+                    name="supplier"
+                    required
+                    options={suppliers.map((s) => ({
+                      value: s.id,
+                      label: s.name,
+                    }))}
+                  />
+                </FormField>
+              </div>
+            </div>
+          </div>
+
+          {/* Items Section */}
+          <div className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 รายการสินค้า
+                <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  {items.length} รายการ
+                </span>
               </h4>
               <Button
                 variant="primary"
                 type="button"
                 onClick={() => setIsProductModalOpen(true)}
                 disabled={!selectedWarehouseId}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
+                  !selectedWarehouseId
+                    ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
+                    : 'bg-primary hover:bg-primary/90 text-white'
+                }`}
                 title={
                   !selectedWarehouseId
                     ? 'กรุณาเลือกคลังก่อนเพิ่มสินค้า'
@@ -251,38 +281,36 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                 }
               >
                 <PlusIcon className="h-5 w-5" />
-                <span className="ml-2">เพิ่มสินค้า</span>
+                <span>เพิ่มสินค้า</span>
               </Button>
             </div>
-            <div className="overflow-x-auto border border-slate-200 rounded-md">
+
+            <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
               <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      ลำดับ
+                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-16">
+                      #
                     </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
                       รหัสสินค้า
                     </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
                       สินค้า
                     </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      จำนวนที่สั่ง<span className="text-red-500">*</span>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
+                      สั่งซื้อ <span className="text-red-500">*</span>
                     </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      จำนวนที่รับเข้า<span className="text-red-500">*</span>
+                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
+                      รับจริง <span className="text-red-500">*</span>
                     </th>
-                    <th className="p-2 text-right font-medium text-slate-600">
-                      ราคา
-                    </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
+                    <th className="px-4 py-3 text-right font-semibold text-slate-600">
                       หน่วย
                     </th>
-                    <th className="p-2"></th>
+                    <th className="px-4 py-3 text-center w-16"></th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {items.length > 0 ? (
                     items.map((item, index) => {
                       const product = item.productId
@@ -291,20 +319,21 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                       return (
                         <tr
                           key={item.id}
-                          className="border-b border-slate-200 last:border-b-0"
+                          className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-2 py-3 text-center align-middle text-slate-700">
+                          <td className="px-4 py-3 text-center align-middle text-slate-500 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-2 py-3 align-middle text-slate-700">
-                            {product?.id || '-'}
+                          <td className="px-4 py-3 align-middle text-slate-700 font-mono text-xs">
+                            {product?.code || '-'}
                           </td>
-                          <td className="px-2 py-3 align-middle font-medium text-slate-800">
-                            {product?.name || 'N/A'}
+                          <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                            {product?.name || 'Unknown Product'}
                           </td>
-                          <td className="px-2 py-3 align-middle">
+                          <td className="px-4 py-3 align-middle">
                             <Input
                               type="number"
+                              min="1"
                               value={item.quantityOrdered}
                               onChange={(e) =>
                                 handleItemChange(
@@ -313,14 +342,13 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                                   parseInt(e.target.value) || 0
                                 )
                               }
-                              className="w-24 h-10"
-                              min="1"
-                              required
+                              className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
                             />
                           </td>
-                          <td className="px-2 py-3 align-middle">
+                          <td className="px-4 py-3 align-middle">
                             <Input
                               type="number"
+                              min="0"
                               value={item.quantityReceived}
                               onChange={(e) =>
                                 handleItemChange(
@@ -329,32 +357,25 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                                   parseInt(e.target.value) || 0
                                 )
                               }
-                              className="w-24 h-10"
-                              min="0"
-                              required
+                              className={`text-center font-bold border-2 ${
+                                item.quantityReceived !== item.quantityOrdered
+                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                  : 'border-green-200 bg-green-50 text-green-700'
+                              }`}
                             />
                           </td>
-                          <td className="px-2 py-3 align-middle text-slate-700 text-right">
-                            ฿
-                            {product?.price != null
-                              ? product.price.toLocaleString('th-TH', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })
-                              : '0.00'}
+                          <td className="px-4 py-3 align-middle text-right text-slate-600">
+                            {product?.unit?.name || 'หน่วย'}
                           </td>
-                          <td className="px-2 py-3 align-middle text-slate-700">
-                            {product?.unit?.name || '-'}
-                          </td>
-                          <td className="px-2 py-3 text-center align-middle">
-                            <Button
-                              variant="ghost"
+                          <td className="px-4 py-3 align-middle text-center">
+                            <button
                               type="button"
                               onClick={() => handleRemoveItem(item.id)}
-                              className="text-red-500 hover:text-red-700"
+                              className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
+                              title="ลบรายการ"
                             >
                               <TrashIcon className="h-5 w-5" />
-                            </Button>
+                            </button>
                           </td>
                         </tr>
                       );
@@ -362,10 +383,16 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   ) : (
                     <tr>
                       <td
-                        colSpan={8}
-                        className="px-2 py-6 text-center text-slate-500"
+                        colSpan={7}
+                        className="px-6 py-12 text-center text-slate-400 bg-slate-50/50"
                       >
-                        ยังไม่มีรายการสินค้า
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="p-3 bg-slate-100 rounded-full">
+                            <PlusIcon className="h-6 w-6 text-slate-400" />
+                          </div>
+                          <p className="font-medium">ยังไม่มีรายการสินค้า</p>
+                          <p className="text-sm">กรุณาเลือกคลังและกดปุ่ม "เพิ่มสินค้า" เพื่อเริ่มรายการ</p>
+                        </div>
                       </td>
                     </tr>
                   )}

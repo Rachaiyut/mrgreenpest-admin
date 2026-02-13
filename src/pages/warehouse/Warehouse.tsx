@@ -547,12 +547,6 @@ const Warehouse: React.FC = () => {
                   >
                     สถานะ
                   </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    ใช้งานคลังหลัก
-                  </th>
                   <th scope="col" className="relative px-6 py-3">
                     <span className="sr-only">จัดการ</span>
                   </th>
@@ -562,7 +556,7 @@ const Warehouse: React.FC = () => {
                 {isLoading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-6 py-10 text-center text-slate-500"
                     >
                       Loading...
@@ -624,26 +618,6 @@ const Warehouse: React.FC = () => {
                           status={warehouse.status || Status.Draft}
                         />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center">
-                        {warehouse.type === WarehouseTypeEnum.MAIN ? (
-                          <label
-                            htmlFor={`toggle-${warehouse.id}`}
-                            className="inline-flex relative items-center cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              id={`toggle-${warehouse.id}`}
-                              className="sr-only peer"
-                              checked={warehouse.status === Status.Approved}
-                              onChange={() => handleToggleChange(warehouse)}
-                              disabled={warehouse.status === Status.Approved}
-                            />
-                            <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                          </label>
-                        ) : (
-                          <span className="text-xs text-slate-400">-</span>
-                        )}
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <Button
                           data-warehouse-id={warehouse.id}
@@ -659,7 +633,7 @@ const Warehouse: React.FC = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={7}
                       className="px-6 py-10 text-center text-slate-500"
                     >
                       <div className="flex flex-col items-center justify-center">

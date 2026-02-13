@@ -14,6 +14,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   const statusLabels: Record<string, string> = {
     PENDING: Status.Pending,
+    IN_TRANSIT: 'กำลังขนส่ง',
     IN_PROGRESS: Status.InProgress,
     INPROGRESS: Status.InProgress,
     COMPLETED: Status.Completed,
@@ -35,6 +36,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     REVISE: Status.Revise,
     CLOSED: Status.Closed,
     APPOINTMENT: 'นัดหมายแล้ว',
+    ACTIVE: 'ใช้งาน',
+    INACTIVE: 'ไม่ใช้งาน',
   };
 
   const statusColors: Record<string, string> = {
@@ -49,6 +52,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [Status.Failed]: 'bg-red-100 text-red-700',
     [Status.Cancelled]: 'bg-red-100 text-red-700',
     [Status.Pending]: 'bg-yellow-100 text-yellow-700',
+    'กำลังขนส่ง': 'bg-blue-100 text-blue-700',
+    IN_TRANSIT: 'bg-blue-100 text-blue-700',
     [Status.PendingApproval]: 'bg-orange-100 text-orange-700',
     [Status.Approved]: 'bg-green-100 text-green-700',
     'รับเข้าแล้ว': 'bg-green-100 text-green-700',
@@ -59,7 +64,9 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [Status.UnderReview]: 'bg-violet-100 text-violet-700',
     [Status.Revise]: 'bg-pink-100 text-pink-700',
     [Status.Closed]: 'bg-zinc-100 text-zinc-700',
-    'นัดหมายแล้ว': 'bg-blue-100 text-blue-700',
+    'ใช้งาน': 'bg-green-100 text-green-700',
+    'ไม่ใช้งาน': 'bg-red-100 text-red-700',
+    // 'นัดหมายแล้ว': 'bg-blue-100 text-blue-700', // Duplicate of Status.Scheduled
 
     // Assessment Status (English)
     [AsessmentStatus.APPOINTMENT]: 'bg-blue-100 text-blue-700',
