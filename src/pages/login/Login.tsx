@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Component
 import { Logo } from '@/src/components/common/Logo';
+import { LeafBackground } from '@/src/components/common/LeafBackground';
 
 // Interface
 import { LoginPayload } from '@/src/types/entity/auth.interface';
@@ -68,10 +69,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         
         // Wait for state updates to propagate
         setTimeout(() => {
-             // In AppRouter, default redirect logic might interfere.
-             // We use window.location.href or direct navigation with state
              if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
-                  // Force redirect to field-jobs
                   window.location.href = '/field-jobs';
              } else {
                   navigate('/');
@@ -93,11 +91,11 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="h-[100dvh] w-full flex overflow-hidden">
       {/* Left Side - Brand & Aesthetic */}
       <div className="hidden lg:flex w-1/2 bg-primary from-green-900 via-slate-900 to-slate-950 relative overflow-hidden items-center justify-center">
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/40 to-transparent"></div>
-
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-t from-black/40 to-transparent z-0"></div>
+        <LeafBackground color="text-white/30" className="z-0" />
         <div className="relative z-10 p-12 text-center">
           <div className="mb-8 flex justify-center">
             <div className="p-6 bg-white/5 rounded-full backdrop-blur-sm ring-1 ring-white/10 shadow-2xl">
@@ -125,17 +123,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       </div>
 
       {/* Right Side - Login Form */}
-      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-24">
-        <div className="w-full max-w-md space-y-8">
+      <div className="w-full lg:w-1/2 bg-white flex justify-center p-4 sm:p-12 lg:p-24 overflow-y-auto relative">
+        <div className="w-full max-w-md space-y-4 my-auto relative z-10">
           <div className="text-center">
-            <div className="lg:hidden mb-8 flex flex-col items-center justify-center gap-4">
+            <div className="lg:hidden mb-2 flex flex-col items-center justify-center gap-2">
               <img 
                 src="/mrgreen1.png" 
                 alt="Mr. Green Mascot" 
                 className="h-40 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform duration-300" 
               />
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               ยินดีต้อนรับกลับมา
             </h2>
             <p className="mt-2 text-slate-500">
@@ -150,7 +148,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             layout="vertical"
             size="large"
             initialValues={{ remember: false }}
-            className="mt-8 space-y-5"
+            className="mt-4 space-y-3"
           >
             <div className="space-y-4">
               <Form.Item
@@ -203,7 +201,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </a>
             </div>
 
-            <Form.Item className="mb-6 pt-2">
+            <Form.Item className="mb-4 pt-2">
               <Button
                 type="primary"
                 htmlType="submit"
@@ -214,8 +212,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </Button>
             </Form.Item>
 
-            <div className="pt-4 border-t border-slate-100">
-              <p className="text-xs text-slate-400 mb-3 text-center">เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)</p>
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-xs text-slate-400 mb-2 text-center">เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)</p>
               {demoUsers.length > 0 ? (
                 <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
                   <Select
@@ -249,7 +247,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
           </Form>
 
-          <div className="mt-10 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
+          <div className="mt-4 pt-4 border-t border-slate-100/20 lg:border-slate-100 text-center text-xs text-white/60 lg:text-slate-400">
             <p>
               &copy; {new Date().getFullYear()} Mr. Green Pest Control Co., Ltd.
               All rights reserved.
