@@ -134,7 +134,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 h-11 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm shadow-sm transition duration-150 ease-in-out"
+                className="block w-full pl-10 pr-3 h-11 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-base shadow-sm transition duration-150 ease-in-out"
               />
             </div>
 
@@ -160,7 +160,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
+                  className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
                   placeholder="dd/mm/yyyy"
                 />
                 <span className="text-slate-400">-</span>
@@ -168,7 +168,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-sm text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
+                  className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
                   placeholder="dd/mm/yyyy"
                 />
               </div>
@@ -194,7 +194,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
       <Card className="!p-0 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-xs">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-10 bg-slate-50">
