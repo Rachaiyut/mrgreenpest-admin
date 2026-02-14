@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input } from '../../common/FormControls';
 import { Warehouse, Product } from '@/src/types/entity/app.interface';
+import { WarehouseApi } from '@/src/api/warehouse';
 
 interface SetWithdrawalLimitModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const SetWithdrawalLimitModal: React.FC<
     {}
   );
   const [errors, setErrors] = useState<{ [productId: string]: string }>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const availableProducts = useMemo(() => {
     // Show all products.
@@ -28,55 +30,63 @@ export const SetWithdrawalLimitModal: React.FC<
   }, [products]);
 
   useEffect(() => {
-    if (warehouse) {
-      console.log('SetWithdrawalLimitModal: warehouse updated', warehouse);
-      const initialLimits: { [productId: string]: number | '' } = {};
-
-      if (Array.isArray(warehouse.withdrawal_limits)) {
-        console.log('SetWithdrawalLimitModal: found limits', warehouse.withdrawal_limits);
-        warehouse.withdrawal_limits.forEach((limit) => {
-          if (limit.product_id) {
-             initialLimits[limit.product_id] = Number(limit.max_quantity);
+    if (isOpen && warehouse) {
+      setIsLoading(true);
+      // Fetch latest warehouse data to get current limits
+      WarehouseApi.getWarehouseById(warehouse.id)
+        .then((latestWarehouse) => {
+          const initialLimits: { [productId: string]: number | '' } = {};
+          
+          if (latestWarehouse && Array.isArray(latestWarehouse.withdrawal_limits)) {
+            latestWarehouse.withdrawal_limits.forEach((limit: any) => {
+              if (limit.product_id) {
+                 initialLimits[limit.product_id] = Number(limit.max_return_qty || limit.max_quantity);
+              }
+            });
           }
+          
+          setLimits(initialLimits);
+        })
+        .catch(err => {
+          console.error("Failed to fetch warehouse limits", err);
+          // Fallback to prop data if fetch fails
+          const initialLimits: { [productId: string]: number | '' } = {};
+          if (warehouse.withdrawal_limits && Array.isArray(warehouse.withdrawal_limits)) {
+             warehouse.withdrawal_limits.forEach((limit: any) => {
+              if (limit.product_id) {
+                 initialLimits[limit.product_id] = Number(limit.max_return_qty || limit.max_quantity);
+              }
+            });
+          }
+          setLimits(initialLimits);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
-      } else {
-        console.log('SetWithdrawalLimitModal: no limits array found');
-      }
 
-      console.log('SetWithdrawalLimitModal: initialLimits', initialLimits);
-      
-      // Debug: Check for ID match
-      if (availableProducts.length > 0) {
-        const sampleProd = availableProducts[0];
-        console.log('SetWithdrawalLimitModal: Sample Product ID', sampleProd.id);
-        console.log('SetWithdrawalLimitModal: Is Sample in Limits?', sampleProd.id in initialLimits);
-        console.log('SetWithdrawalLimitModal: Limit keys', Object.keys(initialLimits));
-      }
-
-      setLimits(initialLimits);
       setErrors({}); // Reset errors on open
     }
-  }, [isOpen, warehouse, availableProducts]);
+  }, [isOpen, warehouse]);
 
   if (!isOpen || !warehouse) return null;
 
-  const handleLimitChange = (product: Product, value: string) => {
+  const handleLimitChange = (productId: string, value: string) => {
     const numValue = Number(value);
 
     setLimits((prev) => ({
       ...prev,
-      [product.id]: value === '' ? '' : numValue,
+      [productId]: value === '' ? '' : numValue,
     }));
 
     if (value !== '' && (isNaN(numValue) || numValue < 0)) {
       setErrors((prev) => ({
         ...prev,
-        [product.id]: 'กรุณาระบุตัวเลขที่ถูกต้อง',
+        [productId]: 'กรุณาระบุตัวเลขที่ถูกต้อง',
       }));
     } else {
       setErrors((prev) => {
         const newErrors = { ...prev };
-        delete newErrors[product.id];
+        delete newErrors[productId];
         return newErrors;
       });
     }
@@ -154,7 +164,7 @@ export const SetWithdrawalLimitModal: React.FC<
                         min="0"
                         value={limits[product.id] ?? ''}
                         onChange={(e) =>
-                          handleLimitChange(product, e.target.value)
+                          handleLimitChange(product.id, e.target.value)
                         }
                         placeholder="ไม่จำกัด"
                         className={`w-32 h-9 ${errors[product.id] ? 'border-red-500 focus:ring-red-500' : ''}`}

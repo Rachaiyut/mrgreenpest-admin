@@ -305,25 +305,30 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     e.preventDefault();
     // Validation logic...
     const payload: any = {
-      from_warehouse_id: fromWarehouseId,
+      warehouse_id: fromWarehouseId,
       to_warehouse_id: toWarehouseId || undefined,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
-      items: goodsItems.map((item) => ({
-        product_id: item.productId,
-        qty: item.quantity,
-      })),
+      purpose: 'เบิกสินค้า/อุปกรณ์', // Default purpose
+      items: goodsItems.map((item) => {
+        const product = productMap.get(item.productId);
+        return {
+          product_id: item.productId,
+          product_name: product?.name || '',
+          quantity: item.quantity,
+          unit: product?.unit?.symbol || 'หน่วย',
+        };
+      }),
       expenses: expenseItems.map((item) => ({
         description: item.description,
         amount: Number(item.amount),
       })),
-      reference_type: referenceType,
-      remark: (e.target as any).remarks?.value,
+      notes: (e.target as any).remarks?.value,
       status: isOverLimit || isAnyItemOverLimit ? WithdrawalStatus.PENDING : WithdrawalStatus.APPROVED, 
     };
 
     if (referenceIds.length > 0) {
-      payload.reference_id = referenceIds[0];
+      payload.reference_ids = referenceIds;
     }
     
     // Add customer info if available
@@ -337,24 +342,32 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const handleSaveDraft = () => {
     // Logic for saving as draft
     const payload: any = {
-      from_warehouse_id: fromWarehouseId,
+      warehouse_id: fromWarehouseId,
       to_warehouse_id: toWarehouseId || undefined,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
-      items: goodsItems.map((item) => ({
-        product_id: item.productId,
-        qty: item.quantity,
-      })),
+      purpose: 'เบิกสินค้า/อุปกรณ์ (Draft)',
+      items: goodsItems.map((item) => {
+        const product = productMap.get(item.productId);
+        return {
+          product_id: item.productId,
+          product_name: product?.name || '',
+          quantity: item.quantity,
+          unit: product?.unit?.symbol || 'หน่วย',
+        };
+      }),
       expenses: expenseItems.map((item) => ({
         description: item.description,
         amount: Number(item.amount),
       })),
       status: WithdrawalStatus.DRAFT,
-      reference_type: referenceType,
-      // Add reference ID if available
-      reference_id: referenceIds.length > 0 ? referenceIds[0] : undefined,
-      remark: goodsFormRef.current?.remarks?.value,
+      notes: goodsFormRef.current?.remarks?.value,
     };
+    
+    if (referenceIds.length > 0) {
+      payload.reference_ids = referenceIds;
+    }
+
      if (selectedCustomerIds.length > 0) {
       payload.customer_id = selectedCustomerIds[0];
     }
