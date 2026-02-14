@@ -200,7 +200,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-10 bg-slate-50">
                   เลขที่สัญญา
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-20 z-10 bg-slate-50">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   ชื่อ-นามสกุล ลูกค้า
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
@@ -272,7 +272,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   <td className="px-3 py-3 whitespace-nowrap font-medium text-blue-600 sticky left-0 z-10 bg-white">
                     {row.contractId}
                   </td>
-                  <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800 sticky left-20 z-10 bg-white">
+                  <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
                     {row.customerName}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap text-slate-600">

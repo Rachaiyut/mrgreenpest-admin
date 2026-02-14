@@ -342,12 +342,15 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
                     สถานะ
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -378,9 +381,9 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                         ? supplierMap[receipt.supplier_id]
                         : '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <StatusBadge status={receipt.status} />
-                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <StatusBadge status={receipt.status} />
+                      </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button

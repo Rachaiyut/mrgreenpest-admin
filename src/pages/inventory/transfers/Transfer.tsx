@@ -327,8 +327,11 @@ const Transfers: React.FC = () => {
                   >
                     เหตุผล
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
