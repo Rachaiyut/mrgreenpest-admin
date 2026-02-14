@@ -134,7 +134,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               />
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              ยินดีต้อนรับกลับมา
+              เข้าสู่ระบบ
             </h2>
             <p className="mt-2 text-slate-500">
               กรุณาลงชื่อเข้าใช้เพื่อเข้าถึงระบบจัดการ
