@@ -127,9 +127,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8 sm:p-12 lg:p-24">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center lg:text-left">
-            <div className="lg:hidden mb-8 flex justify-center">
-              <Logo variant="dark" size="lg" />
+          <div className="text-center">
+            <div className="lg:hidden mb-8 flex flex-col items-center justify-center gap-4">
+              <img 
+                src="/mrgreen1.png" 
+                alt="Mr. Green Mascot" 
+                className="h-40 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform duration-300" 
+              />
             </div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
               ยินดีต้อนรับกลับมา
@@ -146,7 +150,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             layout="vertical"
             size="large"
             initialValues={{ remember: false }}
-            className="mt-8 space-y-6"
+            className="mt-8 space-y-5"
           >
             <div className="space-y-4">
               <Form.Item
@@ -165,9 +169,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 className="mb-4"
               >
                 <Input
-                  prefix={<UserOutlined className="text-slate-400" />}
+                  prefix={<UserOutlined className="text-slate-400 text-lg" />}
                   placeholder="ระบุรหัสผู้ใช้งาน"
-                  className="rounded-md py-2.5"
+                  className="rounded-xl py-3 bg-slate-50 border-slate-200 hover:bg-white focus:bg-white transition-all duration-200"
                 />
               </Form.Item>
 
@@ -180,16 +184,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 className="mb-2"
               >
                 <Input.Password
-                  prefix={<LockOutlined className="text-slate-400" />}
+                  prefix={<LockOutlined className="text-slate-400 text-lg" />}
                   placeholder="ระบุรหัสผ่าน"
-                  className="rounded-md py-2.5"
+                  className="rounded-xl py-3 bg-slate-50 border-slate-200 hover:bg-white focus:bg-white transition-all duration-200"
                 />
               </Form.Item>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between py-1">
               <Form.Item name="remember" valuePropName="checked" noStyle>
-                <Checkbox className="text-slate-600">จดจำฉันไว้ในระบบ</Checkbox>
+                <Checkbox className="text-slate-600 select-none">จดจำฉันไว้ในระบบ</Checkbox>
               </Form.Item>
               <a
                 href="#"
@@ -199,14 +203,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               </a>
             </div>
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="w-full h-12 text-base font-bold border-none shadow-lg shadow-green-700/20 rounded-md transition-all duration-200"
-              loading={loading}
-            >
-              เข้าสู่ระบบ
-            </Button>
+            <Form.Item className="mb-6 pt-2">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                className="w-full h-12 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-none rounded-xl text-base font-bold shadow-lg shadow-green-500/30 transition-all duration-300 transform active:scale-[0.98]"
+              >
+                เข้าสู่ระบบ
+              </Button>
+            </Form.Item>
 
             <div className="pt-4 border-t border-slate-100">
               <p className="text-xs text-slate-400 mb-3 text-center">เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)</p>
