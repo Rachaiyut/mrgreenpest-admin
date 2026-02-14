@@ -242,20 +242,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10 })).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
-      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10 })).then((data: any) => setContracts(data)));
+      promises.push(safeFetch(() => ContractApi.getAll({ limit: 1000 })).then((data: any) => setContracts(data)));
     }
     if (shouldFetch('quotations')) {
-      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) => setQuotations(data)));
+      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 1000 })).then((data: any) => setQuotations(data)));
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
-      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) => setInvoices(data)));
+      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 1000 })).then((data: any) => setInvoices(data)));
     }
     if (shouldFetch('receipts')) {
-      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) => setReceipts(data)));
+      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 1000 })).then((data: any) => setReceipts(data)));
     }
     if (shouldFetch('customers')) {
-      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10 })).then((data: any) => setCustomers(data)));
+      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 1000 })).then((data: any) => setCustomers(data)));
     }
     if (shouldFetch('products')) {
       promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10 })).then((data: any) => setProducts(data)));

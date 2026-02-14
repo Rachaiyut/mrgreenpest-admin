@@ -49,7 +49,11 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   onUpdateInvoice,
   onDeleteInvoice,
 }) => {
-  const { invoices, customers, quotations } = useData();
+  const { invoices, customers, quotations, fetchData } = useData();
+
+  useEffect(() => {
+    fetchData(['invoices', 'customers', 'quotations']);
+  }, []);
 
   const [invoicePage, setInvoicePage] = useState(1);
   const [invoiceItemsPerPage, setInvoiceItemsPerPage] = useState(10);
