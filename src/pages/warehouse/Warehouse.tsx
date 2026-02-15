@@ -15,6 +15,7 @@ import {
   LimitIcon,
   NewWarehouseIcon,
   SearchIcon,
+  TruckIcon,
 } from '../../assets/icons/Icons';
 import { Button, Input } from '../../components/common/FormControls';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
@@ -436,46 +437,46 @@ const Warehouse: React.FC = () => {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
+            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-blue-600">
               <NewWarehouseIcon className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">ทั้งหมด</p>
-              <h3 className="text-2xl font-bold text-slate-800">
+              <p className="text-sm font-medium text-blue-600">ทั้งหมด</p>
+              <h3 className="text-2xl font-bold text-blue-900">
                 {warehouseStats?.total}
               </h3>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-indigo-200">
+            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-indigo-600">
               <NewWarehouseIcon className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">คลังหลัก</p>
-              <h3 className="text-2xl font-bold text-slate-800">
+              <p className="text-sm font-medium text-indigo-600">คลังหลัก</p>
+              <h3 className="text-2xl font-bold text-indigo-900">
                 {warehouseStats?.fixed}
               </h3>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-blue-50 text-blue-600">
-              <NewWarehouseIcon className="h-6 w-6" />
+          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-amber-200">
+            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-amber-600">
+              <TruckIcon className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">คลังย่อย</p>
-              <h3 className="text-2xl font-bold text-slate-800">
+              <p className="text-sm font-medium text-amber-600">คลังย่อย</p>
+              <h3 className="text-2xl font-bold text-amber-900">
                 {warehouseStats?.mobile}
               </h3>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-blue-50 text-blue-600">
+          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-emerald-200">
+            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-emerald-600">
               <NewWarehouseIcon className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">ทั้งหมด</p>
-              <h3 className="text-2xl font-bold text-slate-800">
+              <p className="text-sm font-medium text-emerald-600">ใช้งานอยู่</p>
+              <h3 className="text-2xl font-bold text-emerald-900">
                 {warehouseStats?.active}
               </h3>
             </div>
@@ -604,7 +605,7 @@ const Warehouse: React.FC = () => {
                             {warehouse.type === WarehouseTypeEnum.MAIN ? (
                               <NewWarehouseIcon className="h-4 w-4" />
                             ) : (
-                              <ManageIcon className="h-4 w-4" />
+                              <TruckIcon className="h-4 w-4" />
                             )}
                           </div>
                           {warehouse.name}
@@ -620,8 +621,9 @@ const Warehouse: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
-                        {warehouse.type === WarehouseTypeEnum.SUB &&
-                          warehouse.vehicle ? (
+                        {(warehouse.type === WarehouseTypeEnum.SUB ||
+                          warehouse.type === WarehouseTypeEnum.VEHICLE) &&
+                        warehouse.vehicle ? (
                           <div className="flex flex-col">
                             <span>
                               {warehouse.vehicle.vehicle_registration}

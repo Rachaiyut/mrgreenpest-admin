@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Button } from '../../common/FormControls';
+import { Button } from '../../common/FormControls';
 import { Warehouse } from '@/src/types/entity/app.interface';
+import {
+  NewWarehouseIcon,
+  TruckIcon,
+  MapPinIcon,
+  HomeIcon,
+} from '../../../assets/icons/Icons';
 
 interface AddWarehouseModalProps {
   isOpen: boolean;
@@ -44,8 +50,6 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
       payload.brand = (formData.get('brand') as string) || '';
       payload.model = (formData.get('model') as string) || '';
       payload.color = (formData.get('color') as string) || '';
-    } else {
-      // Keep address as the source of truth for location.
     }
 
     onCreateWarehouse(payload);
@@ -57,12 +61,13 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="สร้างคลังสินค้าใหม่"
+      size="2xl"
       footer={
-        <div className="flex gap-2">
+        <div className="flex w-full justify-end gap-2">
           <Button
             type="button"
             onClick={onClose}
-            className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300"
+            className="py-2 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-700 font-medium border border-slate-300 shadow-sm"
             variant="outline"
           >
             ยกเลิก
@@ -70,7 +75,7 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
           <Button
             type="submit"
             form="add-warehouse-form"
-            className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
+            className="py-2 px-6 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm"
             variant="primary"
           >
             บันทึก
@@ -82,120 +87,168 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
         id="add-warehouse-form"
         ref={formRef}
         onSubmit={handleSubmit}
-        className="space-y-4"
+        className="space-y-6"
       >
-        <FormField label="ประเภท">
-          <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-            <label className="relative flex-1 cursor-pointer">
-              <input
-                type="radio"
-                name="warehouseType"
-                value="คลัง"
-                className="sr-only peer"
-                checked={warehouseType === 'คลัง'}
-                onChange={() => setWarehouseType('คลัง')}
-              />
-              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                คลัง
-              </span>
-            </label>
-            <label className="relative flex-1 cursor-pointer">
-              <input
-                type="radio"
-                name="warehouseType"
-                value="รถ"
-                className="sr-only peer"
-                checked={warehouseType === 'รถ'}
-                onChange={() => setWarehouseType('รถ')}
-              />
-              <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                รถ
-              </span>
-            </label>
-          </div>
-        </FormField>
-        <FormField label="ชื่อคลัง" htmlFor="warehouse-name">
-          <Input
-            name="warehouse-name"
-            id="warehouse-name"
-            type="text"
-            required
-            placeholder={
-              warehouseType === 'คลัง' ? 'เช่น คลังหลัก' : 'เช่น รถบริการ A'
-            }
-          />
-        </FormField>
+        {/* Type Selection */}
+        <div className="bg-slate-100 p-1 rounded-lg flex">
+          <button
+            type="button"
+            onClick={() => setWarehouseType('คลัง')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              warehouseType === 'คลัง'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <NewWarehouseIcon className={`w-4 h-4 ${warehouseType === 'คลัง' ? 'text-white' : 'text-slate-400'}`} />
+            คลังสินค้า
+          </button>
+          <button
+            type="button"
+            onClick={() => setWarehouseType('รถ')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+              warehouseType === 'รถ'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <TruckIcon className={`w-4 h-4 ${warehouseType === 'รถ' ? 'text-white' : 'text-slate-400'}`} />
+            รถบริการ
+          </button>
+        </div>
 
-        {warehouseType === 'รถ' ? (
-          <>
+        {/* General Info Card */}
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
+            <div className="p-1.5 bg-emerald-50 rounded-md text-emerald-600">
+              <HomeIcon className="w-4 h-4" />
+            </div>
+            ข้อมูลทั่วไป
+          </h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="warehouse-name" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                ชื่อ{warehouseType === 'คลัง' ? 'คลัง' : 'รถ'} <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="warehouse-name"
+                id="warehouse-name"
+                type="text"
+                required
+                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                placeholder={warehouseType === 'คลัง' ? 'เช่น คลังหลัก, คลังย่อย 01' : 'เช่น รถบริการหน่วย 01'}
+              />
+            </div>
+
+            {warehouseType === 'คลัง' ? (
+              <div>
+                <label htmlFor="warehouse-location" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  ที่ตั้ง <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MapPinIcon className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <input
+                    name="warehouse-location"
+                    id="warehouse-location"
+                    type="text"
+                    required
+                    className="w-full border border-slate-300 rounded-lg pl-9 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                    placeholder="เช่น สำนักงานใหญ่, สาขาลาดพร้าว"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                 <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  สถานะที่ตั้ง
+                </label>
+                <div className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-500 flex items-center gap-2">
+                  <MapPinIcon className="h-4 w-4 text-slate-400" />
+                  เคลื่อนที่
+                </div>
+                <input type="hidden" name="warehouse-location" value="เคลื่อนที่" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Vehicle Details Card (Conditional) */}
+        {warehouseType === 'รถ' && (
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+            <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
+              <div className="p-1.5 bg-blue-50 rounded-md text-blue-600">
+                <TruckIcon className="w-4 h-4" />
+              </div>
+              ข้อมูลยานพาหนะ
+            </h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ทะเบียนรถ" htmlFor="license-plate">
-                <Input
+              <div className="col-span-1 md:col-span-2">
+                <label htmlFor="license-plate" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  ทะเบียนรถ <span className="text-red-500">*</span>
+                </label>
+                <input
                   name="license-plate"
                   id="license-plate"
                   type="text"
                   required
                   maxLength={20}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
                   placeholder="เช่น 1กข 1234"
                 />
-              </FormField>
-              <FormField label="ยี่ห้อ" htmlFor="brand">
-                <Input
+              </div>
+              
+              <div>
+                <label htmlFor="brand" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  ยี่ห้อ <span className="text-red-500">*</span>
+                </label>
+                <input
                   name="brand"
                   id="brand"
                   type="text"
                   required
                   maxLength={50}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
                   placeholder="เช่น Toyota"
                 />
-              </FormField>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="รุ่น" htmlFor="model">
-                <Input
+              </div>
+              
+              <div>
+                <label htmlFor="model" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  รุ่น <span className="text-red-500">*</span>
+                </label>
+                <input
                   name="model"
                   id="model"
                   type="text"
                   required
                   maxLength={100}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
                   placeholder="เช่น Hilux Revo"
                 />
-              </FormField>
-              <FormField label="สี" htmlFor="color">
-                <Input
+              </div>
+              
+              <div className="col-span-1 md:col-span-2">
+                <label htmlFor="color" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  สี <span className="text-red-500">*</span>
+                </label>
+                <input
                   name="color"
                   id="color"
                   type="text"
                   required
                   maxLength={30}
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
                   placeholder="เช่น ขาว"
                 />
-              </FormField>
+              </div>
             </div>
-            <FormField label="ที่ตั้ง" htmlFor="warehouse-location">
-              <Input
-                name="warehouse-location"
-                id="warehouse-location"
-                type="text"
-                value="เคลื่อนที่"
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-          </>
-        ) : (
-          <FormField label="ที่ตั้ง" htmlFor="warehouse-location">
-            <Input
-              name="warehouse-location"
-              id="warehouse-location"
-              type="text"
-              placeholder="เช่น สำนักงานใหญ่"
-              required
-            />
-          </FormField>
+          </div>
         )}
       </form>
     </Modal>
   );
 };
-

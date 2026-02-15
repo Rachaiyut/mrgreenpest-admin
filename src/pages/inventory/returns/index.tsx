@@ -8,6 +8,8 @@ import {
   PencilIcon,
   TrashIcon,
   CheckCircleIcon,
+  DocumentCheckIcon,
+  XCircleIcon,
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
@@ -17,6 +19,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
+import { ProductReturnStatus } from '@/src/types/enums/inventory';
 import { ReturnDetailsModal } from '../../../components/features/inventory/ReturnDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { EditReturnModal } from '../../../components/features/inventory/EditReturnModal';
@@ -173,13 +176,27 @@ const Returns: React.FC<ReturnsProps> = ({
     }
   };
 
+  const handleReject = async (returnItem: ReturnType) => {
+    try {
+      if (confirm('ยืนยันการไม่อนุมัติ?')) {
+        await ProductReturnApi.update(returnItem.id, { status: ProductReturnStatus.REJECTED as any });
+        fetchData(['productReturns', 'warehouses']);
+        setOpenDropdownId(null);
+      }
+    } catch (error) {
+      console.error('Failed to reject return:', error);
+      alert('เกิดข้อผิดพลาดในการไม่อนุมัติ');
+    }
+  };
+
   const actionItems = (item: ReturnType) => [
-    { label: 'ดูรายละเอียด', icon: EyeIcon, isDanger: false, onClick: () => handleViewDetails(item) },
-    ...(item.status !== 'COMPLETED' ? [
-        { label: 'อนุมัติ (ตัดสต็อก)', icon: CheckCircleIcon, isDanger: false, onClick: () => handleApprove(item) }
+    { label: 'ดูรายละเอียด', icon: EyeIcon, color: 'text-slate-700', hoverBg: 'hover:bg-slate-50', onClick: () => handleViewDetails(item) },
+    ...(item.status !== 'COMPLETED' && item.status !== 'APPROVED' && item.status !== 'REJECTED' && item.status !== 'CANCELLED' ? [
+        { label: 'แก้ไข', icon: PencilIcon, color: 'text-blue-600', hoverBg: 'hover:bg-blue-50', onClick: () => handleEdit(item) },
+        { label: 'อนุมัติ', icon: DocumentCheckIcon, color: 'text-green-600', hoverBg: 'hover:bg-green-50', onClick: () => handleApprove(item) },
+        { label: 'ไม่อนุมัติ', icon: XCircleIcon, color: 'text-red-600', hoverBg: 'hover:bg-red-50', onClick: () => handleReject(item) }
     ] : []),
-    { label: 'แก้ไข', icon: PencilIcon, isDanger: false, onClick: () => handleEdit(item) },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true, onClick: () => handleDelete(item) },
+    { label: 'ยกเลิก', icon: TrashIcon, color: 'text-red-600', hoverBg: 'hover:bg-red-50', onClick: () => handleDelete(item) },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -200,6 +217,24 @@ const Returns: React.FC<ReturnsProps> = ({
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
             ร่าง
+          </span>
+        );
+      case 'APPROVED':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            อนุมัติแล้ว
+          </span>
+        );
+      case 'REJECTED':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            ไม่อนุมัติ
+          </span>
+        );
+      case 'CANCELLED':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            ยกเลิก
           </span>
         );
       default:
@@ -395,7 +430,7 @@ const Returns: React.FC<ReturnsProps> = ({
                     e.preventDefault();
                     if (action.onClick) action.onClick();
                   }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
                   role="menuitem"
                 >
                   <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />

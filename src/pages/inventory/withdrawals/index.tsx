@@ -286,49 +286,31 @@ const Withdrawals: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const renderActions = () => {
-    const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
-    if (!withdrawal) return null;
-
+  const getActionItems = (withdrawal: WithdrawalType) => {
     const actions = [
-      <a
-        key="view"
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          handleViewDetails(withdrawal);
-        }}
-        className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-        role="menuitem"
-      >
-        <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-        <span>ดูรายละเอียด</span>
-      </a>,
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        color: 'text-slate-700',
+        hoverBg: 'hover:bg-slate-50',
+        onClick: () => handleViewDetails(withdrawal),
+      },
     ];
 
     // Allow editing for Draft and PendingApproval statuses
-    // Check both Enum values (DRAFT, PENDING) and Thai strings (Status.Draft, Status.PendingApproval) for compatibility
     if (
       withdrawal.status === WithdrawalStatus.DRAFT ||
       withdrawal.status === WithdrawalStatus.PENDING ||
       withdrawal.status === Status.Draft ||
       withdrawal.status === Status.PendingApproval
     ) {
-      actions.push(
-        <a
-          key="edit"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleEditWithdrawal(withdrawal);
-          }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-          role="menuitem"
-        >
-          <PencilIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
-          <span>แก้ไข</span>
-        </a>
-      );
+      actions.push({
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        color: 'text-blue-600',
+        hoverBg: 'hover:bg-blue-50',
+        onClick: () => handleEditWithdrawal(withdrawal),
+      });
     }
 
     if (
@@ -336,48 +318,27 @@ const Withdrawals: React.FC = () => {
       withdrawal.status === Status.PendingApproval
     ) {
       actions.push(
-        <a
-          key="approve"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleApprovalAction('approve');
-          }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-          role="menuitem"
-        >
-          <DocumentCheckIcon
-            className="mr-3 h-5 w-5 text-green-500"
-            aria-hidden="true"
-          />
-          <span>อนุมัติ</span>
-        </a>,
-        <a
-          key="reject"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleApprovalAction('reject');
-          }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-          role="menuitem"
-        >
-          <XCircleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-          <span>ไม่อนุมัติ</span>
-        </a>,
-        <a
-          key="cancel"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleCancel(withdrawal.id);
-          }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-          role="menuitem"
-        >
-          <TrashIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-          <span>ยกเลิก</span>
-        </a>
+        {
+          label: 'อนุมัติ',
+          icon: DocumentCheckIcon,
+          color: 'text-green-600',
+          hoverBg: 'hover:bg-green-50',
+          onClick: () => handleApprovalAction('approve'),
+        },
+        {
+          label: 'ไม่อนุมัติ',
+          icon: XCircleIcon,
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+          onClick: () => handleApprovalAction('reject'),
+        },
+        {
+          label: 'ยกเลิก',
+          icon: TrashIcon,
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+          onClick: () => handleCancel(withdrawal.id),
+        }
       );
     }
 
@@ -707,7 +668,25 @@ const Withdrawals: React.FC = () => {
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {renderActions()}
+            {(() => {
+              const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
+              if (!withdrawal) return null;
+
+              return getActionItems(withdrawal).map((action, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    action.onClick();
+                  }}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
+                  role="menuitem"
+                >
+                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                  <span>{action.label}</span>
+                </button>
+              ));
+            })()}
           </div>
         </div>,
         document.body

@@ -11,7 +11,8 @@ import {
   UserGroupIcon,
   TechnicianIcon,
   NewWarehouseIcon,
-  HomeIcon
+  HomeIcon,
+  TruckIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
 import { UserRole } from '@/src/types/entity/core.interface';
@@ -162,13 +163,13 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
             {/* Vehicle */}
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                <NewWarehouseIcon className="w-4 h-4 text-slate-500" />
+                <TruckIcon className="w-4 h-4 text-slate-500" />
                 รถบริการ
               </h5>
               {vehicle ? (
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <NewWarehouseIcon className="w-5 h-5" />
+                    <TruckIcon className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="font-medium text-slate-900">{vehicle.name}</div>
