@@ -26,6 +26,14 @@ class ProductReturnService extends AuthService {
     return res.data;
   }
 
+  async approve(id: string): Promise<ProductReturn> {
+    const res = await this.http.patch<ProductReturn>(
+      `${this.path}/${id}/approve`,
+      {}
+    );
+    return res.data;
+  }
+
   async update(
     id: string,
     data: Partial<ProductReturn>

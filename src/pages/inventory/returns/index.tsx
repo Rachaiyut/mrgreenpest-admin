@@ -7,6 +7,7 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
+  CheckCircleIcon,
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
@@ -22,6 +23,7 @@ import { EditReturnModal } from '../../../components/features/inventory/EditRetu
 import { Input } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
+import { ProductReturnApi } from '@/src/api/product-return';
 
 interface ReturnsProps {
   onCreateReturn: (data: Omit<ReturnType, 'id'>) => void;
@@ -38,8 +40,11 @@ const Returns: React.FC<ReturnsProps> = ({
     productReturns: returns,
     warehouses,
     products,
-    warehouseStocks: stockMap,
+    users,
+    fetchData,
   } = useData();
+
+  const stockMap = useMemo(() => ({}), []);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -62,6 +67,11 @@ const Returns: React.FC<ReturnsProps> = ({
     [warehouses]
   );
 
+  const userMap = useMemo(
+    () => new Map(users.map((u) => [u.id, `${(u as any).first_name || (u as any).firstName} ${(u as any).last_name || (u as any).lastName}`])),
+    [users]
+  );
+
   const filteredReturns = useMemo(() => {
     const reversed = [...returns].reverse();
     if (!searchQuery.trim()) {
@@ -71,7 +81,7 @@ const Returns: React.FC<ReturnsProps> = ({
     return reversed.filter(
       (item) =>
         item.id.toLowerCase().includes(lowercasedQuery) ||
-        formatThaiDate(item.createdAt).includes(lowercasedQuery)
+        formatThaiDate(item.created_at || (item as any).createdAt).includes(lowercasedQuery)
     );
   }, [returns, searchQuery]);
 
@@ -123,8 +133,8 @@ const Returns: React.FC<ReturnsProps> = ({
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setOpenDropdownId(returnId);
       setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
+        top: buttonRect.bottom, // Use viewport coordinates directly if using fixed
+        left: buttonRect.right,
       });
     }
   };
@@ -150,11 +160,56 @@ const Returns: React.FC<ReturnsProps> = ({
     };
   }, [openDropdownId]);
 
-  const actions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon, isDanger: false },
-    { label: 'แก้ไข', icon: PencilIcon, isDanger: false },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
+  const handleApprove = async (returnItem: ReturnType) => {
+    try {
+      if (confirm('ยืนยันการอนุมัติ? เมื่ออนุมัติแล้วจะทำการตัดสต็อกทันที')) {
+        await ProductReturnApi.approve(returnItem.id);
+        fetchData(['productReturns', 'warehouses']); // Refresh data
+        setOpenDropdownId(null);
+      }
+    } catch (error) {
+      console.error('Failed to approve return:', error);
+      alert('เกิดข้อผิดพลาดในการอนุมัติ');
+    }
+  };
+
+  const actionItems = (item: ReturnType) => [
+    { label: 'ดูรายละเอียด', icon: EyeIcon, isDanger: false, onClick: () => handleViewDetails(item) },
+    ...(item.status !== 'COMPLETED' ? [
+        { label: 'อนุมัติ (ตัดสต็อก)', icon: CheckCircleIcon, isDanger: false, onClick: () => handleApprove(item) }
+    ] : []),
+    { label: 'แก้ไข', icon: PencilIcon, isDanger: false, onClick: () => handleEdit(item) },
+    { label: 'ลบ', icon: TrashIcon, isDanger: true, onClick: () => handleDelete(item) },
   ];
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            สำเร็จ
+          </span>
+        );
+      case 'PENDING':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+            รออนุมัติ
+          </span>
+        );
+      case 'DRAFT':
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            ร่าง
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            {status}
+          </span>
+        );
+    }
+  };
 
   return (
     <>
@@ -213,6 +268,12 @@ const Returns: React.FC<ReturnsProps> = ({
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
                   >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                  >
                     คืนจาก (รถ)
                   </th>
                   <th
@@ -255,7 +316,10 @@ const Returns: React.FC<ReturnsProps> = ({
                         {item.code || item.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {formatThaiDate(item.created_at || item.createdAt)}
+                        {formatThaiDate(item.created_at || (item as any).createdAt)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {getStatusBadge(item.status)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {fromWarehouse || '-'}
@@ -267,7 +331,7 @@ const Returns: React.FC<ReturnsProps> = ({
                         {item.items?.length || 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {item.created_by || item.createdBy}
+                        {userMap.get(item.created_by || (item as any).createdBy) || item.created_by || (item as any).createdBy}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">
@@ -307,7 +371,7 @@ const Returns: React.FC<ReturnsProps> = ({
         <div
           ref={dropdownRef}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
@@ -317,37 +381,25 @@ const Returns: React.FC<ReturnsProps> = ({
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
-              <a
-                key={action.label}
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const returnItem = returns.find(
-                    (r) => r.id === openDropdownId
-                  );
-                  if (!returnItem) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-
-                  if (action.label === 'ดูรายละเอียด') {
-                    handleViewDetails(returnItem);
-                  } else if (action.label === 'แก้ไข') {
-                    handleEdit(returnItem);
-                  } else if (action.label === 'ลบ') {
-                    handleDelete(returnItem);
-                  } else {
-                    setOpenDropdownId(null);
-                  }
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </a>
-            ))}
+            {(() => {
+              const returnItem = returns.find((r) => r.id === openDropdownId);
+              if (!returnItem) return null;
+              
+              return actionItems(returnItem).map((action, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (action.onClick) action.onClick();
+                  }}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                  role="menuitem"
+                >
+                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                  <span>{action.label}</span>
+                </button>
+              ));
+            })()}
           </div>
         </div>
       )}

@@ -233,7 +233,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
           reason: item.reason,
         };
       }),
-      status: Status.Completed,
+      status: Status.Pending,
     };
     onCreateReturn(newReturn);
     onClose();
