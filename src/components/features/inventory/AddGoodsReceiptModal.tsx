@@ -3,7 +3,12 @@ import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
+import { PlusIcon,
+  TrashIcon,
+  DocumentTextIcon,
+  TruckIcon,
+  PackageIcon,
+} from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 import {
@@ -51,25 +56,6 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     () => new Map(products.map((p) => [p.id, p])),
     [products]
   );
-
-  const generatedId = useMemo(() => {
-    if (!isOpen) return '';
-
-    const thaiYearLastTwoDigits = (new Date().getFullYear() + 543)
-      .toString()
-      .slice(-2);
-    const prefix = `GR${thaiYearLastTwoDigits}`;
-
-    const receiptsThisYear = receipts.filter((r) => r.id.startsWith(prefix));
-
-    const maxId = receiptsThisYear.reduce((max, r) => {
-      const num = parseInt(r.id.slice(4), 10);
-      return num > max ? num : max;
-    }, 0);
-
-    const newIdNumber = maxId + 1;
-    return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
-  }, [isOpen, receipts]);
 
   useEffect(() => {
     if (isOpen) {
@@ -170,19 +156,11 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
         >
           {/* Document Information Section */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-slate-500" />
               ข้อมูลเอกสาร
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <FormField label="เลขที่ใบรับเข้า" htmlFor="receipt-id">
-                <Input
-                  id="receipt-id"
-                  type="text"
-                  value={generatedId}
-                  readOnly
-                  className="bg-white text-slate-500 cursor-not-allowed"
-                />
-              </FormField>
               <FormField label="วันที่รับสินค้าเข้า" htmlFor="receipt-date">
                 <Input
                   name="receipt-date"
@@ -218,8 +196,8 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
           {/* Logistics Section */}
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <TruckIcon className="w-4 h-4 text-slate-500" />
               <span>ข้อมูลการขนส่ง</span>
-              <div className="h-px bg-slate-200 flex-grow"></div>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
@@ -259,6 +237,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
           <div className="mt-6">
             <div className="flex justify-between items-center mb-4">
               <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <PackageIcon className="w-5 h-5 text-slate-500" />
                 รายการสินค้า
                 <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
                   {items.length} รายการ

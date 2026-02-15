@@ -11,7 +11,7 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, TrashIcon, DocumentTextIcon, TruckIcon, PackageIcon } from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Transfer as TransferType,
@@ -163,77 +163,90 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
           onSubmit={handleSubmit}
           className="space-y-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <FormField label="เลขที่เอกสารโอนย้าย" htmlFor="transfer-id">
-              <Input
-                id="transfer-id"
-                type="text"
-                value={formData.id || ''}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
-            <FormField label="วันที่โอนย้าย" htmlFor="created_at">
-              <Input
-                id="created_at"
-                name="created_at"
-                type="date"
-                value={new Date(formData.created_at || '')
-                  .toISOString()
-                  .substring(0, 10)}
-                onChange={handleChange}
-                required
-              />
-            </FormField>
+          {/* Document Information Section */}
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-slate-500" />
+              ข้อมูลเอกสาร
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="วันที่โอนย้าย" htmlFor="created_at">
+                <Input
+                  id="created_at"
+                  name="created_at"
+                  type="date"
+                  value={new Date(formData.created_at || '')
+                    .toISOString()
+                    .substring(0, 10)}
+                  onChange={handleChange}
+                  required
+                />
+              </FormField>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="คลังต้นทาง" htmlFor="from_warehouse_id">
-              <Select
-                id="from_warehouse_id"
-                name="from_warehouse_id"
-                value={formData.from_warehouse_id || ''}
-                disabled
-                className="bg-slate-100"
-              >
-                <option value={formData.from_warehouse_id}>
-                  {warehouses.find((w) => w.id === formData.from_warehouse_id)
-                    ?.name || ''}
-                </option>
-              </Select>
-            </FormField>
-            <FormField label="คลังปลายทาง" htmlFor="to_warehouse_id">
-              <Select
-                id="to_warehouse_id"
-                name="to_warehouse_id"
-                value={formData.to_warehouse_id || ''}
-                onChange={handleChange}
-                required
-              >
-                <option value="">เลือกคลังปลายทาง</option>
-                {warehouses
-                  .filter((w) => w.id !== formData.from_warehouse_id)
-                  .map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
+
+          {/* Logistics Section */}
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <TruckIcon className="w-4 h-4 text-slate-500" />
+              <span>ข้อมูลการขนส่ง</span>
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
+                <FormField label="คลังต้นทาง" htmlFor="from_warehouse_id">
+                  <Select
+                    id="from_warehouse_id"
+                    name="from_warehouse_id"
+                    value={formData.from_warehouse_id || ''}
+                    disabled
+                    className="bg-slate-100"
+                  >
+                    <option value={formData.from_warehouse_id}>
+                      {warehouses.find((w) => w.id === formData.from_warehouse_id)
+                        ?.name || ''}
                     </option>
-                  ))}
-              </Select>
-            </FormField>
+                  </Select>
+                </FormField>
+              </div>
+              <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
+                <FormField label="คลังปลายทาง" htmlFor="to_warehouse_id">
+                  <Select
+                    id="to_warehouse_id"
+                    name="to_warehouse_id"
+                    value={formData.to_warehouse_id || ''}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">เลือกคลังปลายทาง</option>
+                    {warehouses
+                      .filter((w) => w.id !== formData.from_warehouse_id)
+                      .map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                  </Select>
+                </FormField>
+              </div>
+            </div>
+            <div className="mt-4">
+              <FormField label="เหตุผลการโอนย้าย" htmlFor="remark">
+                <Textarea
+                  id="remark"
+                  name="remark"
+                  value={formData.remark || ''}
+                  onChange={handleChange}
+                  required
+                  rows={2}
+                  placeholder="ระบุสาเหตุการโอนย้าย..."
+                />
+              </FormField>
+            </div>
           </div>
-          <FormField label="เหตุผลการโอนย้าย" htmlFor="remark">
-            <Textarea
-              id="remark"
-              name="remark"
-              value={formData.remark || ''}
-              onChange={handleChange}
-              required
-              rows={3}
-              placeholder="ระบุสาเหตุการโอนย้าย..."
-            />
-          </FormField>
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-base font-semibold text-slate-800">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <PackageIcon className="w-5 h-5 text-slate-500" />
                 รายการสินค้า
               </h4>
               <Button

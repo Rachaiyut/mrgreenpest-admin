@@ -3,13 +3,18 @@ import { Modal } from '../../common/Modal';
 import {
   FormField,
   Input,
-  Select,
   Textarea,
   Button,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 
-import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
+import {
+  PlusIcon,
+  TrashIcon,
+  DocumentTextIcon,
+  TruckIcon,
+  PackageIcon,
+} from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Transfer as TransferType,
@@ -221,19 +226,11 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
         >
           {/* Document Information Section */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-slate-500" />
               ข้อมูลเอกสาร
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="เลขที่เอกสารโอนย้าย" htmlFor="transfer-id">
-                <Input
-                  id="transfer-id"
-                  type="text"
-                  value={generatedId}
-                  readOnly
-                  className="bg-white text-slate-500 cursor-not-allowed"
-                />
-              </FormField>
               <FormField label="วันที่โอนย้าย" htmlFor="transfer-date">
                 <Input
                   id="transfer-date"
@@ -251,8 +248,8 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
           {/* Logistics Section */}
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
             <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <TruckIcon className="w-4 h-4 text-slate-500" />
               <span>ข้อมูลการขนส่ง</span>
-              <div className="h-px bg-slate-200 flex-grow"></div>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
