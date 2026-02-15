@@ -313,12 +313,6 @@ const Transfers: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
                     จำนวนสินค้า
                   </th>
                   <th
@@ -326,6 +320,12 @@ const Transfers: React.FC = () => {
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
                     เหตุผล
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    สถานะ
                   </th>
                   <th
                     scope="col"
@@ -366,14 +366,14 @@ const Transfers: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {toWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center">
-                        <StatusBadge status={transfer.status} />
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
                         {totalQuantity}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm">
                         {transfer.remark}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <StatusBadge status={transfer.status} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

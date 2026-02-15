@@ -324,7 +324,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         amount: Number(item.amount),
       })),
       notes: (e.target as any).remarks?.value,
-      status: isOverLimit || isAnyItemOverLimit ? WithdrawalStatus.PENDING : WithdrawalStatus.APPROVED, 
+      status: WithdrawalStatus.PENDING, 
     };
 
     if (referenceIds.length > 0) {
@@ -373,6 +373,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     }
 
     onCreateWithdrawal(payload);
+    onClose();
   };
 
   const existingProductIds = useMemo(

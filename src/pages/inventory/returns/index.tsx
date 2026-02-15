@@ -268,12 +268,6 @@ const Returns: React.FC<ReturnsProps> = ({
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
                   >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
-                  >
                     คืนจาก (รถ)
                   </th>
                   <th
@@ -294,8 +288,17 @@ const Returns: React.FC<ReturnsProps> = ({
                   >
                     ผู้คืนสินค้า
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                  >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -319,9 +322,6 @@ const Returns: React.FC<ReturnsProps> = ({
                         {formatThaiDate(item.created_at || (item as any).createdAt)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {getStatusBadge(item.status)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {fromWarehouse || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
@@ -332,6 +332,9 @@ const Returns: React.FC<ReturnsProps> = ({
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {userMap.get(item.created_by || (item as any).createdBy) || item.created_by || (item as any).createdBy}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {getStatusBadge(item.status)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

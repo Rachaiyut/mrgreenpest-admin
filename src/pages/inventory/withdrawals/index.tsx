@@ -566,12 +566,6 @@ const Withdrawals: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
                     ผู้สร้าง
                   </th>
                   <th
@@ -580,8 +574,17 @@ const Withdrawals: React.FC = () => {
                   >
                     ผู้เบิก/ผู้รับเงิน
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -643,9 +646,6 @@ const Withdrawals: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
                         {(Array.isArray(withdrawal.reference_ids) ? withdrawal.reference_ids.length : 0)} รายการ
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <StatusBadge status={withdrawal.status} />
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {(() => {
                           const creatorName = userMap.get(withdrawal.created_by) || withdrawal.created_by;
@@ -654,6 +654,9 @@ const Withdrawals: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {recipientName === '[object Object]' ? 'Unknown' : recipientName}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <StatusBadge status={withdrawal.status} />
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">
