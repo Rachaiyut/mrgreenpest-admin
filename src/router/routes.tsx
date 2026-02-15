@@ -13,7 +13,7 @@ const InvoicesPage = lazy(() => import('../pages/invoices/Invoice'));
 const ReceiptsPage = lazy(() => import('../pages/receipts/Receipt'));
 const EditQuotation = lazy(() => import('../pages/quotations/EditQuotation'));
 const EditInvoicePage = lazy(() => import('../components/features/invoices/EditInvoiceModal'));
-const Users = lazy(() => import('../pages/users'));
+const Users = lazy(() => import('../pages/users/User'));
 const Warehouse = lazy(() => import('../pages/warehouse/Warehouse'));
 const GoodsReceipt = lazy(() => import('../pages/inventory/goods-receipt/Good-Receipt'));
 const Suppliers = lazy(() => import('../pages/suppliers/Supplier'));

@@ -53,7 +53,7 @@ const Packages: React.FC = () => {
     try {
       const response = await CategoryApi.getCategories({
         type: CategoryType.SERVICE,
-        limit: 10,
+        limit: 100,
       });
       setCategories(response.data);
     } catch (error) {
@@ -274,7 +274,7 @@ const Packages: React.FC = () => {
                       {pkg.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {categoryMap.get(pkg.category_id) || '-'}
+                      {pkg.category?.name || categoryMap.get(pkg.category_id) || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
                       {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
