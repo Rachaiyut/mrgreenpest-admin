@@ -240,8 +240,8 @@ const Returns: React.FC<ReturnsProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedReturns.map((item, index) => {
-                  const fromWarehouse = warehouseMap.get(item.fromWarehouseId);
-                  const toWarehouse = warehouseMap.get(item.toWarehouseId);
+                  const fromWarehouse = warehouseMap.get((item as any).vehicle_id) || (item as any).vehicle_id;
+                  const toWarehouse = warehouseMap.get(item.warehouse_id) || item.warehouse_id;
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50">
@@ -252,10 +252,10 @@ const Returns: React.FC<ReturnsProps> = ({
                         className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
                         onClick={() => handleViewDetails(item)}
                       >
-                        {item.id}
+                        {item.code || item.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {formatThaiDate(item.createdAt)}
+                        {formatThaiDate(item.created_at || item.createdAt)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {fromWarehouse || '-'}
@@ -264,10 +264,10 @@ const Returns: React.FC<ReturnsProps> = ({
                         {toWarehouse || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
-                        {item.items.length}
+                        {item.items?.length || 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {item.createdBy}
+                        {item.created_by || item.createdBy}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

@@ -249,13 +249,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
-      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 1000 })).then((data: any) => setInvoices(data)));
+      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) => setInvoices(data)));
     }
     if (shouldFetch('receipts')) {
-      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 1000 })).then((data: any) => setReceipts(data)));
+      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) => setReceipts(data)));
     }
     if (shouldFetch('customers')) {
-      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 1000 })).then((data: any) => setCustomers(data)));
+      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10 })).then((data: any) => setCustomers(data)));
     }
     if (shouldFetch('products')) {
       promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10 })).then((data: any) => setProducts(data)));
@@ -289,8 +289,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setStockAdjustments([]);
     }
     if (shouldFetch('productReturns')) {
-      // promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 10})).then(setProductReturns));
-      setProductReturns([]);
+      promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 1000 })).then((data: any) => setProductReturns(data)));
     }
     if (shouldFetch('returnToSuppliers')) {
       // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 10})).then(setReturnToSuppliers));
@@ -499,15 +498,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       productReturns: {
         create: async (data: any) => {
           await ProductReturnApi.create(data);
-          // fetchData(['productReturns']);
+          fetchData(['productReturns']);
         },
         update: async (data: any) => {
           await ProductReturnApi.update(data.id, data);
-          // fetchData(['productReturns']);
+          fetchData(['productReturns']);
         },
         delete: async (id: string) => {
           await ProductReturnApi.delete(id);
-          // fetchData(['productReturns']);
+          fetchData(['productReturns']);
         },
       },
       returnToSuppliers: {

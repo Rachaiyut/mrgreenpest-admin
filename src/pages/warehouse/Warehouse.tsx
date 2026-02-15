@@ -29,6 +29,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { EditWarehouseModal } from '../../components/features/warehouses/EditWarehouseModal';
 import { SetWithdrawalLimitModal } from '../../components/features/warehouses/SetWithdrawalLimitModal';
+import { ReturnToMainWarehouseModal } from '../../components/features/warehouses/ReturnToMainWarehouseModal';
 import { StatusBadge } from '../../components/common/StatusBadge';
 
 import { WarehouseApi } from '@/src/api/warehouse';
@@ -65,6 +66,7 @@ const Warehouse: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
 
   // Selected Items
   const [selectedWarehouse, setSelectedWarehouse] =
@@ -77,6 +79,8 @@ const Warehouse: React.FC = () => {
   const [warehouseToActivate, setWarehouseToActivate] =
     useState<WarehouseType | null>(null);
   const [warehouseForLimits, setWarehouseForLimits] =
+    useState<WarehouseType | null>(null);
+  const [warehouseForReturn, setWarehouseForReturn] =
     useState<WarehouseType | null>(null);
 
   // Pagination
@@ -347,6 +351,12 @@ const Warehouse: React.FC = () => {
     }
   };
 
+  const handleReturnStock = (warehouse: WarehouseType) => {
+    setWarehouseForReturn(warehouse);
+    setIsReturnModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
   const handleConfirmDelete = async () => {
     if (warehouseToDelete) await onDeleteWarehouse(warehouseToDelete.id);
   };
@@ -383,6 +393,15 @@ const Warehouse: React.FC = () => {
       condition: (w: WarehouseType) =>
         !!(w as any).vehicle ||
         w.type === WarehouseTypeEnum.SUB ||
+        w.type === WarehouseTypeEnum.VEHICLE,
+    },
+    {
+      label: 'คืนสินค้าเข้าคลังหลัก',
+      icon: NewWarehouseIcon,
+      action: handleReturnStock,
+      // Only for Vehicle Warehouses
+      condition: (w: WarehouseType) =>
+        !!(w as any).vehicle ||
         w.type === WarehouseTypeEnum.VEHICLE,
     },
     { label: 'ลบ', icon: TrashIcon, isDanger: true, action: handleDelete },
@@ -752,6 +771,17 @@ const Warehouse: React.FC = () => {
         onClose={() => setIsLimitModalOpen(false)}
         warehouse={warehouseForLimits}
         onSave={onUpdateWarehouseLimits}
+        products={products}
+      />
+
+      <ReturnToMainWarehouseModal
+        isOpen={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        sourceWarehouse={warehouseForReturn}
+        onSuccess={() => {
+          fetchWarehousesStats();
+          // Optionally refresh stock if we were viewing it
+        }}
         products={products}
       />
     </>
