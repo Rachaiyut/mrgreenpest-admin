@@ -269,7 +269,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   key={row.contractId}
                   className="hover:bg-slate-50 transition-colors"
                 >
-                  <td className="px-3 py-3 whitespace-nowrap font-medium text-blue-600 sticky left-0 z-10 bg-white">
+                  <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-0 z-10 bg-white">
                     {row.contractId}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
