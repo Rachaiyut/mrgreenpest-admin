@@ -106,6 +106,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
             file: selectedFile,
             path: 'users/avatars',
             entity_type: 'user',
+            entity_id: user.id,
             visibility: 'public',
           });
           storageId = uploadResult.id;

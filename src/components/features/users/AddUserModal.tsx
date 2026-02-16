@@ -15,7 +15,8 @@ import {
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateUser: (data: any) => void;
+  onCreateUser: (data: any) => Promise<User | null>;
+  onUpdateUser: (data: any) => void;
   roles: { id: string; name: string }[];
 }
 
@@ -23,6 +24,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   isOpen,
   onClose,
   onCreateUser,
+  onUpdateUser,
   roles,
 }) => {
   const initialFormData = {
@@ -128,10 +130,28 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         role_id: formData['user-role-id'],
         phone: formData['user-phone'],
         status: 'active',
-        storage_id: storageId,
+        storage_id: null, // จะถูกอัปเดตหลังจากอัปโหลดรูปภาพเสร็จ
       };
 
-      onCreateUser(newUser);
+      const createdUser = await onCreateUser(newUser);
+
+      if (createdUser && selectedFile) {
+        // ถ้าสร้างผู้ใช้สำเร็จ และมีไฟล์รูปภาพ ให้ทำการอัปโหลดรูปภาพ
+        const uploadResult = await StorageApi.upload({
+          file: selectedFile,
+          path: 'users/avatars',
+          entity_type: 'user',
+          entity_id: createdUser.id, // ใช้ ID ของผู้ใช้ที่สร้างใหม่
+          visibility: 'public',
+        });
+
+        // อัปเดตข้อมูลผู้ใช้ด้วย storage_id ใหม่
+        await onUpdateUser({
+          id: createdUser.id,
+          storage_id: uploadResult.id,
+        });
+      }
+
       onClose();
     } catch (error) {
       console.error('Error creating user:', error);
