@@ -5,6 +5,12 @@ import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
+import {
+  validateCitizenId,
+  validateEmail,
+  validatePassword,
+  validatePhone,
+} from '@/src/utils/validation';
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -19,12 +25,26 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   onCreateUser,
   roles,
 }) => {
+  const initialFormData = {
+    'user-national-id': '',
+    'user-password': '',
+    'user-first-name': '',
+    'user-last-name': '',
+    'user-nickname': '',
+    'user-role-id': '',
+    'user-phone': '',
+    'user-email': '',
+  };
+  const [formData, setFormData] = useState(initialFormData);
+  const [errors, setErrors] = useState<Partial<Record<keyof typeof initialFormData, string>>>({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
+      setFormData(initialFormData);
+      setErrors({});
       setImagePreview(null);
       setSelectedFile(null);
       setIsUploading(false);
@@ -39,21 +59,48 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     }
   };
 
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name as keyof typeof initialFormData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<keyof typeof initialFormData, string>> = {};
+
+    const nationalIdError = validateCitizenId(formData['user-national-id']);
+    if (nationalIdError) newErrors['user-national-id'] = nationalIdError;
+
+    const passwordError = validatePassword(formData['user-password']);
+    if (passwordError) newErrors['user-password'] = passwordError;
+
+    const emailError = validateEmail(formData['user-email']);
+    if (emailError) newErrors['user-email'] = emailError;
+
+    const phoneError = validatePhone(formData['user-phone']);
+    if (phoneError) newErrors['user-phone'] = phoneError;
+
+    if (!formData['user-first-name'])
+      newErrors['user-first-name'] = 'กรุณากรอกชื่อจริง';
+    if (!formData['user-last-name'])
+      newErrors['user-last-name'] = 'กรุณากรอกนามสกุล';
+    if (!formData['user-nickname'])
+      newErrors['user-nickname'] = 'กรุณากรอกชื่อเล่น';
+    if (!formData['user-role-id'])
+      newErrors['user-role-id'] = 'กรุณาเลือกบทบาท';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
 
-    if (
-      !data['user-national-id'] ||
-      !data['user-password'] ||
-      !data['user-first-name'] ||
-      !data['user-last-name'] ||
-      !data['user-nickname'] ||
-      !data['user-role-id'] ||
-      !data['user-phone']
-    ) {
-      alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+    if (!validateForm()) {
       return;
     }
 
@@ -71,16 +118,15 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         storageId = uploadResult.id;
       }
 
-      // Map to Backend DTO (CreateUserDto)
       const newUser = {
-        citizen_id: data['user-national-id'] as string,
-        first_name: data['user-first-name'] as string,
-        last_name: data['user-last-name'] as string,
-        nick_name: data['user-nickname'] as string,
-        email: data['user-email'] as string,
-        password: data['user-password'] as string,
-        role_id: data['user-role-id'] as string,
-        phone: data['user-phone'] as string,
+        citizen_id: formData['user-national-id'],
+        first_name: formData['user-first-name'],
+        last_name: formData['user-last-name'],
+        nick_name: formData['user-nickname'],
+        email: formData['user-email'],
+        password: formData['user-password'],
+        role_id: formData['user-role-id'],
+        phone: formData['user-phone'],
         status: 'active',
         storage_id: storageId,
       };
@@ -105,7 +151,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         <div className="flex justify-end py-2">
           <Button
             type="submit"
-            form="edit-user-form"
+            form="add-user-form"
             className="h-16 px-5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-lg font-medium shadow-sm min-w-[110px]"
             variant="primary"
           >
@@ -176,10 +222,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       name="user-national-id"
                       type="text"
                       maxLength={13}
-                      required
                       placeholder="13 หลัก"
                       className="h-11"
+                      value={formData['user-national-id']}
+                      onChange={handleChange}
                     />
+                    {errors['user-national-id'] && <p className="text-red-500 text-sm mt-1">{errors['user-national-id']}</p>}
                   </FormField>
                 </div>
 
@@ -189,18 +237,22 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       id="user-first-name"
                       name="user-first-name"
                       type="text"
-                      required
                       className="h-11"
+                      value={formData['user-first-name']}
+                      onChange={handleChange}
                     />
+                    {errors['user-first-name'] && <p className="text-red-500 text-sm mt-1">{errors['user-first-name']}</p>}
                   </FormField>
                   <FormField label="นามสกุล*" htmlFor="user-last-name">
                     <Input
                       id="user-last-name"
                       name="user-last-name"
                       type="text"
-                      required
                       className="h-11"
+                      value={formData['user-last-name']}
+                      onChange={handleChange}
                     />
+                    {errors['user-last-name'] && <p className="text-red-500 text-sm mt-1">{errors['user-last-name']}</p>}
                   </FormField>
                 </div>
 
@@ -210,18 +262,22 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       id="user-nickname"
                       name="user-nickname"
                       type="text"
-                      required
                       className="h-11"
+                      value={formData['user-nickname']}
+                      onChange={handleChange}
                     />
+                    {errors['user-nickname'] && <p className="text-red-500 text-sm mt-1">{errors['user-nickname']}</p>}
                   </FormField>
                   <FormField label="เบอร์โทรศัพท์*" htmlFor="user-phone">
                     <Input
                       id="user-phone"
                       name="user-phone"
                       type="tel"
-                      required
                       className="h-11"
+                      value={formData['user-phone']}
+                      onChange={handleChange}
                     />
+                    {errors['user-phone'] && <p className="text-red-500 text-sm mt-1">{errors['user-phone']}</p>}
                   </FormField>
                 </div>
               </div>
@@ -237,16 +293,19 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       id="user-email"
                       name="user-email"
                       type="email"
-                      required
                       className="h-11"
+                      value={formData['user-email']}
+                      onChange={handleChange}
                     />
+                    {errors['user-email'] && <p className="text-red-500 text-sm mt-1">{errors['user-email']}</p>}
                   </FormField>
                   <FormField label="เลือกบทบาท*" htmlFor="user-role-id">
                     <Select
                       id="user-role-id"
                       name="user-role-id"
-                      required
                       className="h-11"
+                      value={formData['user-role-id']}
+                      onChange={handleChange}
                     >
                       <option value="">เลือกบทบาท</option>
                       {roles.map((role) => (
@@ -255,6 +314,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                           </option>
                         ))}
                     </Select>
+                    {errors['user-role-id'] && <p className="text-red-500 text-sm mt-1">{errors['user-role-id']}</p>}
                   </FormField>
                 </div>
 
@@ -264,9 +324,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       id="user-password"
                       name="user-password"
                       type="password"
-                      required
                       className="h-11"
+                      value={formData['user-password']}
+                      onChange={handleChange}
                     />
+                    {errors['user-password'] && <p className="text-red-500 text-sm mt-1">{errors['user-password']}</p>}
                   </FormField>
                 </div>
               </div>

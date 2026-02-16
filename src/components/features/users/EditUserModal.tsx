@@ -5,6 +5,10 @@ import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
+import {
+  validateEmail,
+  validatePhone,
+} from '@/src/utils/validation';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -25,6 +29,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   useEffect(() => {
     if (user) {
@@ -43,6 +48,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       setImagePreview(null);
       setSelectedFile(null);
       setIsUploading(false);
+      setErrors({});
     }
   }, [user, isOpen]);
 
@@ -61,19 +67,33 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: Partial<Record<string, string>> = {};
+
+    const emailError = validateEmail(formData.email);
+    if (emailError) newErrors.email = emailError;
+
+    const phoneError = validatePhone(formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
+
+    if (!formData.first_name) newErrors.first_name = 'กรุณากรอกชื่อจริง';
+    if (!formData.last_name) newErrors.last_name = 'กรุณากรอกนามสกุล';
+    if (!formData.nickname) newErrors.nickname = 'กรุณากรอกชื่อเล่น';
+    if (!formData.role_id) newErrors.role_id = 'กรุณาเลือกบทบาท';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (user) {
-      if (
-        !formData.first_name ||
-        !formData.last_name ||
-        !formData.phone ||
-        !formData.role_id ||
-        !formData.nickname
-      ) {
-        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+      if (!validateForm()) {
         return;
       }
 
@@ -218,10 +238,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         type="text"
                         value={formData.first_name || ''}
                         onChange={handleChange}
-                        required
                         className="h-11"
                         disabled={isUploading}
                       />
+                      {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
                     </FormField>
                     <FormField label="นามสกุล*" htmlFor="last_name">
                       <Input
@@ -230,10 +250,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         type="text"
                         value={formData.last_name || ''}
                         onChange={handleChange}
-                        required
                         className="h-11"
                         disabled={isUploading}
                       />
+                      {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
                     </FormField>
                  </div>
 
@@ -245,10 +265,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         type="text"
                         value={formData.nickname || ''}
                         onChange={handleChange}
-                        required
                         className="h-11"
                         disabled={isUploading}
                       />
+                      {errors.nickname && <p className="text-red-500 text-sm mt-1">{errors.nickname}</p>}
                     </FormField>
                     <FormField label="เบอร์โทรศัพท์*" htmlFor="phone">
                       <Input 
@@ -257,10 +277,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         type="tel" 
                         value={formData.phone || ''}
                         onChange={handleChange}
-                        required 
                         className="h-11"
                         disabled={isUploading}
                       />
+                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                     </FormField>
                  </div>
               </div>
@@ -278,10 +298,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         type="email"
                         value={formData.email || ''}
                         onChange={handleChange}
-                        required
                         className="h-11"
                         disabled={isUploading}
                       />
+                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
                     </FormField>
                     <FormField label="เลือกบทบาท*" htmlFor="role_id">
                       <Select
@@ -289,7 +309,6 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         name="role_id"
                         value={formData.role_id || ''}
                         onChange={handleChange}
-                        required
                         className="h-11"
                         disabled={isUploading}
                       >
@@ -300,6 +319,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                           </option>
                         ))}
                       </Select>
+                      {errors.role_id && <p className="text-red-500 text-sm mt-1">{errors.role_id}</p>}
                     </FormField>
                  </div>
               </div>

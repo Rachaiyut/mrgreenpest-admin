@@ -119,7 +119,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           created_at: c.created_at || '',
           updated_at: c.updated_at || '',
           area_range: c.area_range || 0,
-          unit_id: c.unit_id,
+          unit_id: c.unit_id || null,
           price_without_termite: c.price_without_termite || 0,
           price_with_termite: c.price_with_termite || 0,
           minimum_price: c.minimum_price || 0,
