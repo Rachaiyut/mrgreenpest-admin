@@ -7,7 +7,7 @@ import {
   Select,
   Button,
 } from '../../common';
-import { Package, PackagePrice, Category, CategoryType } from '@/src/types';
+import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface AddPackageModalProps {
@@ -15,6 +15,7 @@ interface AddPackageModalProps {
   onClose: () => void;
   onCreatePackage: (product: Partial<Package>) => void;
   categories: Category[];
+  units: Unit[];
 }
 
 export const AddPackageModal: React.FC<AddPackageModalProps> = ({
@@ -22,6 +23,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
   onClose,
   onCreatePackage,
   categories,
+  units,
 }) => {
   const [conditions, setConditions] = useState<
     Partial<Omit<PackagePrice, 'id' | 'created_at' | 'updated_at'>>[]
@@ -59,7 +61,8 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
       ...prev,
       {
         area_range: undefined,
-        price_no_termite: 0,
+        unit_id: undefined,
+        price_without_termite: 0,
         price_with_termite: 0,
         minimum_price: 0,
       },
@@ -68,11 +71,15 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at'>,
+    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at' | 'unit'>,
     value: string
   ) => {
     const newConditions = [...conditions];
-    (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
+    if (field === 'unit_id') {
+      (newConditions[index] as any)[field] = value;
+    } else {
+      (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
+    }
     setConditions(newConditions);
   };
 
@@ -99,6 +106,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
         (c) =>
           ({
             area_range: c.area_range || 0,
+            unit_id: c.unit_id,
             price_without_termite: c.price_without_termite || 0,
             price_with_termite: c.price_with_termite || 0,
             minimum_price: c.minimum_price || 0,
@@ -218,6 +226,9 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                     พื้นที่ฯ (ตร.ม.)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
+                    หน่วย
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
                     ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
@@ -251,6 +262,23 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                           placeholder="เช่น 150"
                           required
                         />
+                      </td>
+                      <td className="p-1">
+                        <Select
+                          value={cond.unit_id || ''}
+                          onChange={(e) =>
+                            handleConditionChange(index, 'unit_id', e.target.value)
+                          }
+                          className={`${baseInputClasses} h-9 ${normalInputClasses}`}
+                          required
+                        >
+                          <option value="">-- เลือกหน่วย --</option>
+                          {units.map((unit) => (
+                            <option key={unit.id} value={unit.id}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </Select>
                       </td>
                       <td className="p-1">
                         <Input
@@ -316,7 +344,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-slate-500">
+                    <td colSpan={6} className="text-center py-6 text-slate-500">
                       ยังไม่มีเงื่อนไข
                     </td>
                   </tr>

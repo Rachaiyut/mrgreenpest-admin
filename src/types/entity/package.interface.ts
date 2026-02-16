@@ -10,9 +10,12 @@ export interface PackageCondition {
   min_price: number;
 }
 
+import { Unit } from './unit.interface';
+
+// Interface
+
 export interface Package extends IBase {
   category_id: string;
-  unit_id?: string;
   visit_limit: number;
   remark?: string;
   code: string;
@@ -23,10 +26,12 @@ export interface Package extends IBase {
 
 export interface PackagePrice extends IBase {
   package_id?: string;
+  unit_id?: string;
   area_range: number;
   price_with_termite: number;
   price_without_termite: number;
   minimum_price: number;
+  unit?: Unit;
 }
 
 export interface PackageQuery extends IBaseQuery {

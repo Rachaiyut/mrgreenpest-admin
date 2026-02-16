@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common';
-import { Package, PackagePrice, Category, CategoryType } from '@/src/types';
+import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
 import { FormField, Input, Textarea, Select } from '../../common';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
@@ -10,6 +10,7 @@ interface EditPackageModalProps {
   pkg: Package | null;
   onUpdatePackage: (pkg: Package) => void;
   categories: Category[];
+  units: Unit[];
 }
 
 export const EditPackageModal: React.FC<EditPackageModalProps> = ({
@@ -18,6 +19,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
   pkg,
   onUpdatePackage,
   categories,
+  units,
 }) => {
   const [formData, setFormData] = useState<Partial<Package>>({});
   const [conditions, setConditions] = useState<Partial<PackagePrice>[]>([]);
@@ -39,10 +41,10 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     conditions.forEach((cond, index) => {
       if (
         typeof cond.minimum_price === 'number' &&
-        typeof cond.price_no_termite === 'number' &&
+        typeof cond.price_without_termite === 'number' &&
         typeof cond.price_with_termite === 'number' &&
         cond.minimum_price >
-          Math.min(cond.price_no_termite, cond.price_with_termite)
+          Math.min(cond.price_without_termite, cond.price_with_termite)
       ) {
         indices.push(index);
       }
@@ -68,7 +70,8 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
       ...prev,
       {
         area_range: undefined,
-        price_no_termite: 0,
+        unit_id: undefined,
+        price_without_termite: 0,
         price_with_termite: 0,
         minimum_price: 0,
       },
@@ -77,11 +80,15 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at'>,
+    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at' | 'unit'>,
     value: string
   ) => {
     const newConditions = [...conditions];
-    (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
+    if (field === 'unit_id') {
+      (newConditions[index] as any)[field] = value;
+    } else {
+      (newConditions[index] as any)[field] = value ? parseFloat(value) : 0;
+    }
     setConditions(newConditions);
   };
 
@@ -112,7 +119,8 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           created_at: c.created_at || '',
           updated_at: c.updated_at || '',
           area_range: c.area_range || 0,
-          price_no_termite: c.price_no_termite || 0,
+          unit_id: c.unit_id,
+          price_without_termite: c.price_without_termite || 0,
           price_with_termite: c.price_with_termite || 0,
           minimum_price: c.minimum_price || 0,
         })),
@@ -251,6 +259,9 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                     พื้นที่ฯ (ตร.ม.)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
+                    หน่วย
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
                     ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
@@ -286,13 +297,30 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                         />
                       </td>
                       <td className="p-1">
+                        <Select
+                          value={cond.unit_id || ''}
+                          onChange={(e) =>
+                            handleConditionChange(index, 'unit_id', e.target.value)
+                          }
+                          className={`${baseInputClasses} h-9 ${normalInputClasses}`}
+                          required
+                        >
+                          <option value="">-- เลือกหน่วย --</option>
+                          {units.map((unit) => (
+                            <option key={unit.id} value={unit.id}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </td>
+                      <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_no_termite ?? ''}
+                          value={cond.price_without_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_no_termite',
+                              'price_without_termite',
                               e.target.value
                             )
                           }
@@ -349,7 +377,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-slate-500">
+                    <td colSpan={6} className="text-center py-6 text-slate-500">
                       ยังไม่มีเงื่อนไข
                     </td>
                   </tr>

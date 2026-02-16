@@ -126,9 +126,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   {selectedPackage.name}
                 </div>
                 <div className="text-xs text-slate-500 mt-1">
-                  {selectedPackage.visit_limit} ครั้ง /{' '}
-                  {selectedPackage.contract_period} (เงื่อนไขที่ใช้: ไม่เกิน{' '}
-                  {selectedCondition.area_range} ตร.ม.)
+                  {selectedPackage.visit_limit} ครั้ง
+                  {selectedCondition.area_range} ตร.ม.
                 </div>
               </div>
               <div className="flex flex-col items-end">
@@ -231,8 +230,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 {selectedPackage.name}
               </div>
               <div className="text-xs text-slate-500 mt-1">
-                {selectedPackage.visit_limit} ครั้ง /{' '}
-                {selectedPackage.contract_period}
+                {selectedPackage.visit_limit} ครั้ง
               </div>
               <div className="text-xs text-amber-600 mt-1">
                 กรุณาระบุขนาดพื้นที่เพื่อคำนวณราคา (หรือระบุราคาเอง)
@@ -698,7 +696,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                               >
                                 <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>{pkg.name}</div>
                                 <div className="text-xs text-slate-500 mt-1">
-                                  {pkg.visit_limit} ครั้ง / {pkg.contract_period} ปี
+                                  {pkg.visit_limit} ครั้ง
                                 </div>
                                 {price !== null ? (
                                     <div className={`mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>

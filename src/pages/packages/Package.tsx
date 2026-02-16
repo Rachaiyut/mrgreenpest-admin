@@ -12,8 +12,8 @@ import {
   Input,
   Button,
 } from '../../components/common';
-import { Package, Category, CategoryType } from '@/src/types';
-import { PackageApi, CategoryApi } from '@/src/api';
+import { Package, Category, CategoryType, Unit } from '@/src/types';
+import { PackageApi, CategoryApi, Unit as UnitApi } from '@/src/api';
 import {
   PlusIcon,
   ManageIcon,
@@ -31,6 +31,7 @@ import {
 const Packages: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -50,18 +51,27 @@ const Packages: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchCategories = async () => {
-    try {
-      const response = await CategoryApi.getCategories({
-        type: CategoryType.SERVICE,
-        limit: 100,
-      });
-      setCategories(response.data);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-    }
-  };
+      try {
+        const response = await CategoryApi.getCategories({
+          type: CategoryType.SERVICE,
+          limit: 100,
+        });
+        setCategories(response.data);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
 
-  const fetchPackages = useCallback(async () => {
+    const fetchUnits = async () => {
+      try {
+        const response = await UnitApi.getUnit({ limit: 100 });
+        setUnits(response.data);
+      } catch (error) {
+        console.error('Failed to fetch units:', error);
+      }
+    };
+
+    const fetchPackages = useCallback(async () => {
     setLoading(true);
     try {
       const response = await PackageApi.getPackages({
@@ -81,6 +91,7 @@ const Packages: React.FC = () => {
 
   useEffect(() => {
     fetchCategories();
+    fetchUnits();
     fetchPackages();
   }, [fetchPackages]);
 
@@ -370,6 +381,7 @@ const Packages: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)}
         onCreatePackage={onCreatePackage}
         categories={categories}
+        units={units}
       />
       <EditPackageModal
         isOpen={isEditModalOpen}
@@ -379,6 +391,7 @@ const Packages: React.FC = () => {
           onUpdatePackage(updatedPkg.id, updatedPkg)
         }
         categories={categories}
+        units={units}
       />
       <PackageDetailsModal
         isOpen={isDetailsModalOpen}
