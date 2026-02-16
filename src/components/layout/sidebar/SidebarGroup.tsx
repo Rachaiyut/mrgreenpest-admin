@@ -89,7 +89,14 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
                     : 'text-white/80 hover:bg-[#08a93d]/80 hover:text-white'
                   }`}
               >
-                {subItem.name}
+                {subItem.name === 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย' ? (
+                  <span>
+                    สรุปการเบิกสินค้า/อุปกรณ์
+                    <span className="block">และค่าใช้จ่าย</span>
+                  </span>
+                ) : (
+                  subItem.name
+                )}
               </Link>
             );
           })}

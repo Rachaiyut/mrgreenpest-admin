@@ -51,7 +51,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
             { label: 'คลังสินค้า', module: 'WAREHOUSE' },
             { label: 'ผู้จัดจำหน่าย', module: 'PURCHASING' },
             { label: 'รับเข้า', module: 'PURCHASING' },
-            { label: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย', module: 'WAREHOUSE' },
+            { label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย', module: 'WAREHOUSE' },
             { label: 'โอนย้าย', module: 'WAREHOUSE' },
             { label: 'ปรับปรุง Stock', module: 'INVENTORY' },
             { label: 'คืนสินค้า', module: 'INVENTORY' },

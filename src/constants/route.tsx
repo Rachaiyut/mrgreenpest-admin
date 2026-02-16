@@ -35,7 +35,7 @@ export const PAGE_PATH: Record<string, string> = {
   'คลังสินค้า': 'warehouse',
   'ผู้จัดจำหน่าย': 'suppliers',
   'รับเข้า': 'goods-receipt',
-  'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย': 'withdrawals',
+  'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย': 'withdrawals',
   'โอนย้าย': 'transfers',
   'ใบเบิกสินค้า': 'requisitions',
   'ปรับปรุง Stock': 'stock-adjustment',
@@ -151,7 +151,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     icon: NewWarehouseIcon,
     subItems: [
       {
-        name: 'เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
+        name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: DocumentTextIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
       },

@@ -155,14 +155,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const fetchWarehouses = useCallback(async () => {
     try {
-      const res = await WarehouseApi.getWarehousesWithItems(); // Use getWarehousesWithItems
+      const res = await WarehouseApi.getWarehousesWithItems();
       if (res && res.data) {
         const allWarehouses = res.data;
         const newStockMap = new Map<string, Map<string, number>>();
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock = new Map<string, number>();
-          // Handle both 'stock' and 'stock_balances' keys, and ensure it's an array
           const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
 
           stockItems.forEach((s: any) => {
@@ -192,7 +191,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   }, [warehouses]);
 
   const effectiveStockMap = useMemo(() => {
-    // Merge prop stockMap and localStockMap, preferring local since it's freshly fetched with-items
     if (localStockMap.size > 0) return localStockMap;
     return stockMap;
   }, [stockMap, localStockMap]);
@@ -423,7 +421,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         setFetchedRequester(u);
       }).catch(err => {
         console.error("Failed to fetch requester details", err);
-        // Fallback to finding in users prop
         const found = users.find(u => u.id === requesterId);
         if (found) setFetchedRequester(found);
       });

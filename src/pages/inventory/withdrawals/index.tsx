@@ -350,9 +350,7 @@ const Withdrawals: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">
-              เบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย
-            </h1>
+            <h1 className="text-3xl font-bold text-slate-800">สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย</h1>
             <p className="mt-1 text-slate-600">
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
             </p>
@@ -701,7 +699,6 @@ const Withdrawals: React.FC = () => {
         warehouses={warehouses}
         jobs={jobs as any}
         customers={customers}
-        currentUser={currentUser}
         products={products}
         stockMap={stockMap}
         assessments={assessments}
