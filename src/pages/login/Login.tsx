@@ -66,6 +66,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         // Check role and redirect
         const user = response.user; // Assuming response includes user info
+        localStorage.setItem('currentUser', JSON.stringify(user));
         
         // Wait for state updates to propagate
         setTimeout(() => {

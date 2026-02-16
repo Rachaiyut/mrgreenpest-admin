@@ -14,7 +14,6 @@ import {
   EyeIcon,
   LimitIcon,
   NewWarehouseIcon,
-  SearchIcon,
   TruckIcon,
 } from '../../assets/icons/Icons';
 import { Button, Input } from '../../components/common/FormControls';

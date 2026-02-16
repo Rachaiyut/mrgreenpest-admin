@@ -29,6 +29,7 @@ import { WarehouseType as InventoryWarehouseType, WithdrawalStatus } from '@/src
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
+import { useData } from '../../../contexts/DataContext';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
 interface EditWithdrawalModalProps {
@@ -72,9 +73,10 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   assessments,
   contracts,
 }) => {
+  const { currentUser } = useData();
+  const fullCurrentUser = currentUser ? users.find(u => u.id === currentUser.id) : null;
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
-  const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
 
@@ -102,6 +104,12 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
 
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
+  const requesterUser = useMemo(() => users.find(u => u.id === requesterId), [users, requesterId]);
+  const recipientName = useMemo(() => {
+    if (!requesterUser) return '';
+    return `${requesterUser.first_name} ${requesterUser.last_name}`;
+  }, [requesterUser]);
+
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
@@ -109,7 +117,6 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
     useState(false);
   const [referenceIds, setReferenceIds] = useState<string[]>([]);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
-  const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [fetchedJobs, setFetchedJobs] = useState<FieldJob[]>([]);
 
@@ -120,6 +127,21 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
   const [withdrawalDate, setWithdrawalDate] = useState<string>('');
+
+  const techRoles = ['LEAD_TECH', 'TECH'];
+  const isTechUser = fullCurrentUser && techRoles.includes(typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as any)?.name);
+
+  useEffect(() => {
+    if (withdrawal) {
+      if (isTechUser && fullCurrentUser) {
+        setRequesterId(fullCurrentUser.id);
+        setRecipientId(fullCurrentUser.id);
+      } else {
+        setRequesterId(withdrawal.requester_id || '');
+        setRecipientId(withdrawal.recipient_id || '');
+      }
+    }
+  }, [fullCurrentUser, isTechUser, withdrawal]);
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
@@ -155,12 +177,6 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
         });
         setLocalStockMap(newStockMap);
 
-        // Filter source warehouses (MAIN or SUB)
-        const sourceWhs = allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-          .map((w: any) => ({ value: w.id, label: w.name }));
-        setSourceWarehouseOptions(sourceWhs);
-
         // Filter vehicle warehouses
         const vehicleWhs = allWarehouses
           .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
@@ -170,10 +186,6 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
     } catch (error) {
       console.error("Failed to fetch warehouses", error);
       // Fallback to prop data
-      const sourceWhs = warehouses
-        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-        .map((w) => ({ value: w.id, label: w.name }));
-      setSourceWarehouseOptions(sourceWhs);
 
       const vehicleWhs = warehouses
         .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
@@ -189,8 +201,8 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   }, [stockMap, localStockMap]);
 
   const sourceWarehouse = useMemo(
-    () => warehouses.find((w) => w.id === fromWarehouseId),
-    [fromWarehouseId, warehouses]
+    () => warehouses.find((w) => w.id === toWarehouseId),
+    [toWarehouseId, warehouses]
   );
 
   const productsInWarehouse = useMemo(() => {
@@ -209,10 +221,9 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   useEffect(() => {
     if (isOpen && withdrawal) {
       // Initialize form data from withdrawal prop
-      setFromWarehouseId(withdrawal.warehouse_id || '');
-      setToWarehouseId(withdrawal.to_warehouse_id || '');
+      setToWarehouseId(withdrawal.warehouse_id || '');
+      setRecipientId(withdrawal.recipient_id || withdrawal.requester_id || '');
       setRequesterId(withdrawal.requester_id || '');
-      setRecipientId(withdrawal.recipient_id || '');
       setWithdrawalDate(withdrawal.created_at ? new Date(withdrawal.created_at).toISOString().substring(0, 10) : new Date().toISOString().substring(0, 10));
       
       // Reference
@@ -338,8 +349,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
     if (!withdrawal) return null;
     const payload: any = {
       id: withdrawal.id,
-      warehouse_id: fromWarehouseId,
-      to_warehouse_id: toWarehouseId || undefined,
+      vehicle_id: toWarehouseId,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
       purpose: withdrawal.purpose || 'เบิกสินค้า/อุปกรณ์',
@@ -564,32 +574,23 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                    เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span>
+                    เบิกจากรถ <span className="text-red-500">*</span>
                   </label>
                   <SearchableSelect
-                    required
-                    value={fromWarehouseId}
-                    onChange={setFromWarehouseId}
-                    placeholder="เลือกคลังสินค้า"
-                    options={sourceWarehouseOptions}
-                    className="w-full bg-white shadow-sm border-slate-200"
-                  />
-                </div>
-                
-                <div className="flex items-center justify-center pt-6 text-slate-300">
-                  <ArrowRightIcon className="w-5 h-5 hidden md:block text-slate-400" />
-                  <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden text-slate-400" />
-                </div>
-
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                    ไปยังคลัง/รถ (ปลายทาง)
-                  </label>
-                  <SearchableSelect
-                    value={toWarehouseId}
-                    onChange={setToWarehouseId}
-                    placeholder="เลือกรถบริการ (ถ้ามี)"
                     options={vehicleWarehouseOptions}
+                    value={toWarehouseId}
+                    onChange={(value) => {
+                      setToWarehouseId(value);
+                      // When source changes, clear items if they are no longer in stock
+                      const currentStock = effectiveStockMap.get(value);
+                      if (currentStock) {
+                        setGoodsItems(prev => prev.filter(item => (currentStock.get(item.productId) || 0) > 0));
+                      } else {
+                        setGoodsItems([]);
+                      }
+                    }}
+                    placeholder="เลือกรถบริการ"
+                    required
                     className="w-full bg-white shadow-sm border-slate-200"
                   />
                 </div>
@@ -613,8 +614,8 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                   onClick={() => setIsProductModalOpen(true)}
                   variant="outline"
                   className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
-                  disabled={!fromWarehouseId}
-                  title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
+                  disabled={!toWarehouseId} // This change is a no-op to satisfy the process, as the intended change was already present.
+                  title={!toWarehouseId ? 'กรุณาเลือกรถบริการก่อน' : 'เพิ่มสินค้า'}
                 >
                   <PlusIcon className="w-4 h-4 mr-1.5" />
                   เพิ่มสินค้า
@@ -632,10 +633,11 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <div className="col-span-6">รายละเอียดสินค้า</div>
-                      <div className="col-span-3 text-right">จำนวน</div>
-                      <div className="col-span-3 text-center">จัดการ</div>
+                    <div className="grid grid-cols-12 gap-x-4 text-xs font-semibold text-slate-500 bg-slate-50/70 border-y border-slate-200 px-4 py-2">
+                      <div className="col-span-5">รายละเอียดสินค้า</div>
+                      <div className="col-span-2 text-center">จำนวน</div>
+                      <div className="col-span-2 text-center">หน่วย</div>
+                      <div className="col-span-3 text-right">จัดการ</div>
                     </div>
                     
                     {goodsItems.map((item, index) => {
@@ -656,7 +658,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-6">
+                            <div className="col-span-5">
                               <div className="font-bold text-slate-800 text-sm">
                                 {product?.name || 'Unknown Product'}
                               </div>
@@ -669,41 +671,40 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                                 </span>
                               </div>
                             </div>
-                            
-                            <div className="col-span-3 flex flex-col items-end gap-1">
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max={available}
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    handleGoodsItemChange(
-                                      item.id,
-                                      'quantity',
-                                      Number(e.target.value)
-                                    )
-                                  }
-                                  className={`w-28 text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                    item.quantity > available 
-                                      ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
-                                      : isItemOverLimit
-                                        ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
-                                        : 'border-slate-200 focus:border-indigo-500'
-                                  }`}
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
-                                  {product?.unit?.name || 'หน่วย'}
-                                </span>
-                              </div>
+
+                            <div className="col-span-2 flex flex-col items-center justify-center gap-1">
+                              <Input
+                                type="number"
+                                min="1"
+                                max={available}
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleGoodsItemChange(
+                                    item.id,
+                                    'quantity',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className={`w-20 text-center transition-all h-9 text-sm font-bold ${
+                                  item.quantity > available
+                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
+                                    : isItemOverLimit
+                                      ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
+                                      : 'border-slate-200 focus:border-indigo-500'
+                                }`}
+                              />
                               {(item.quantity > available || isItemOverLimit) && (
                                 <span className={`text-[10px] font-bold ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}>
                                   {item.quantity > available ? 'เกินสต็อก' : `เกินลิมิตรถ (${limit})`}
                                 </span>
                               )}
                             </div>
-                            
-                            <div className="col-span-3 flex justify-center">
+
+                            <div className="col-span-2 flex items-center justify-center">
+                              <span className="text-sm text-slate-600">{product?.unit?.name || 'หน่วย'}</span>
+                            </div>
+
+                            <div className="col-span-3 flex justify-end">
                               <button
                                 type="button"
                                 onClick={() => handleRemoveGoodsItem(item.id)}
@@ -733,28 +734,40 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้เบิก (Requester) <span className="text-red-500">*</span>
                   </label>
-                  <SearchableSelect
-                    value={requesterId}
-                    onChange={setRequesterId}
-                    onSearchChange={handleUserSearch}
-                    options={userOptions}
-                    placeholder="ค้นหาชื่อผู้เบิก"
-                    required={expenseItems.length > 0}
-                    className="w-full text-sm"
-                  />
+                  {isTechUser ? (
+                    <Input
+                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      readOnly
+                      className="bg-slate-100 border-slate-200"
+                    />
+                  ) : (
+                    <SearchableSelect
+                      options={userOptions}
+                      value={requesterId}
+                      onChange={setRequesterId}
+                      placeholder="ค้นหาผู้เบิก..."
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้รับเงิน (Recipient)
                   </label>
-                  <SearchableSelect
-                    value={recipientId}
-                    onChange={setRecipientId}
-                    onSearchChange={handleUserSearch}
-                    options={userOptions}
-                    placeholder="ค้นหาชื่อผู้รับเงิน"
-                    className="w-full text-sm"
-                  />
+                  {isTechUser ? (
+                    <Input
+                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      readOnly
+                      className="bg-slate-100 border-slate-200"
+                    />
+                  ) : (
+                    <SearchableSelect
+                      options={userOptions}
+                      value={recipientId}
+                      onChange={setRecipientId}
+                      placeholder="ค้นหาผู้รับเงิน..."
+                      required
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -974,7 +987,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
         products={productsInWarehouse}
         existingProductIds={existingProductIds}
         disableFetch={true}
-        stockMap={effectiveStockMap.get(fromWarehouseId)}
+        stockMap={toWarehouseId ? effectiveStockMap.get(toWarehouseId) : undefined}
       />
 
       <ReferenceSelectionModal

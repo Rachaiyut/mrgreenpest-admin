@@ -31,7 +31,6 @@ import {
 import { Requisition, RequisitionStatus } from '@/src/types/entity/requisition.interface'; // New Import
 import { GoodsReceipt } from '@/src/types/entity/good-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
-import { CategoryType } from '@/src/types/enums/category'; // Or interface?
 
 // APIs
 import { UserApi } from '@/src/api/user';
@@ -51,8 +50,6 @@ import { StockAdjustmentApi } from '@/src/api/stock-adjustment';
 import { ProductReturnApi } from '@/src/api/product-return';
 import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
 import { WithdrawalApi } from '@/src/api/withdrawal';
-import { CategoryApi } from '@/src/api/category';
-import { PackageApi } from '@/src/api/package';
 import { RequisitionApi } from '@/src/api/requisition';
 
 export type ResourceType =
@@ -76,6 +73,8 @@ export type ResourceType =
   | 'requisitions';
 
 export interface DataContextType {
+  currentUser: User | null;
+  setCurrentUser: (user: User | null) => void;
   users: User[];
   jobs: Job[];
   assessments: Assessment[];
@@ -188,6 +187,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -242,10 +242,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10 })).then((data: any) => setAssessments(data)));
     }
     if (shouldFetch('contracts')) {
-      promises.push(safeFetch(() => ContractApi.getAll({ limit: 1000 })).then((data: any) => setContracts(data)));
+      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10 })).then((data: any) => setContracts(data)));
     }
     if (shouldFetch('quotations')) {
-      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 1000 })).then((data: any) => setQuotations(data)));
+      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) => setQuotations(data)));
       // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
@@ -289,7 +289,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setStockAdjustments([]);
     }
     if (shouldFetch('productReturns')) {
-      promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 1000 })).then((data: any) => setProductReturns(data)));
+      promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 10 })).then((data: any) => setProductReturns(data)));
     }
     if (shouldFetch('returnToSuppliers')) {
       // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 10})).then(setReturnToSuppliers));
@@ -310,6 +310,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   useEffect(() => {
     // Initial fetch of active modules
     fetchData();
+
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
   }, []);
 
   const handlers = useMemo(
@@ -554,6 +559,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <DataContext.Provider
       value={{
+        currentUser,
+        setCurrentUser,
         users,
         jobs,
         assessments,
