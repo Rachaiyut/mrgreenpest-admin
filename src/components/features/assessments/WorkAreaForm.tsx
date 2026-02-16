@@ -636,7 +636,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       className="text-primary focus:ring-primary h-4 w-4"
                     />
                     <span className="ml-2 text-sm font-medium text-slate-700">
-                      ความยาวรอบรูป (เมตร)
+                      พื้นที่ (เมตร)
                     </span>
                   </label>
                 </div>
