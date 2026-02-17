@@ -67,14 +67,19 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       return;
     }
 
-    const newSupplier: Partial<Partial<Supplier>> = {
-      contact_name: data['supplier-name'] as string,
-      type: supplierType as SupplierType,
-      tax_id: data['tax-id'] as string | undefined,
-      phone: data.phone as string,
+    const typeValue = supplierType === 'นิติบุคคล' ? 'CORPORATE' : 'INDIVIDUAL';
+
+    const newSupplier: Partial<Supplier> = {
+      name: data['supplier-name'] as string,
+      type: typeValue as SupplierType,
+      tax_id: (data['tax-id'] as string) || undefined,
+      phone: phones[0],
       email: data['email'] as string,
-      company_name: '',
     };
+
+    if (supplierType === 'นิติบุคคล') {
+      (newSupplier as any).contact_name = data['contact-person'] as string;
+    }
 
     onCreateSupplier(newSupplier);
     onClose();
