@@ -16,11 +16,12 @@ import {
   StockAdjustmentItem,
 } from '@/src/types/entity/app.interface';
 
-interface EditableAdjustmentItem extends Omit<
-  StockAdjustmentItem,
-  'adjustedQuantity'
-> {
-  adjustedQuantity: number | '';
+interface EditableAdjustmentItem {
+  product_id: string;
+  product?: Product;
+  qty_before: number;
+  quantity_change: number | '';
+  reason: string;
 }
 
 interface EditStockAdjustmentModalProps {
@@ -29,12 +30,10 @@ interface EditStockAdjustmentModalProps {
   adjustment: StockAdjustmentType | null;
   onUpdateAdjustment: (adjustment: StockAdjustmentType) => void;
   warehouses: WarehouseType[];
-  products: Product[];
+  products: (Product & { quantity: number; warehouse_id: string })[];
 }
 
-export const EditStockAdjustmentModal: React.FC<
-  EditStockAdjustmentModalProps
-> = ({
+export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> = ({
   isOpen,
   onClose,
   adjustment,
@@ -46,18 +45,10 @@ export const EditStockAdjustmentModal: React.FC<
   const [formData, setFormData] = useState<Partial<StockAdjustmentType>>({});
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
-  const productMap = useMemo(
-    () => new Map(products.map((p) => [p.id, p])),
-    [products]
-  );
-  const warehouseName = useMemo(
-    () => warehouses.find((w) => w.id === formData.warehouseId)?.name || '',
-    [formData.warehouseId, warehouses]
-  );
-  const productsInWarehouse = useMemo(
-    () => products.filter((p) => p.warehouse === warehouseName),
-    [warehouseName, products]
-  );
+  const productsInWarehouse = useMemo(() => {
+    if (!formData.warehouse_id) return [];
+    return products.filter((p) => p.warehouse_id === formData.warehouse_id);
+  }, [formData.warehouse_id, products]);
 
   const isFormValid = useMemo(() => {
     return (
@@ -66,36 +57,48 @@ export const EditStockAdjustmentModal: React.FC<
       items.length > 0 &&
       items.every(
         (item) =>
-          typeof item.adjustedQuantity === 'number' &&
-          item.adjustedQuantity >= 0
+          typeof item.quantity_change === 'number' &&
+          item.quantity_change !== 0
       )
     );
   }, [formData.reason, items]);
 
   useEffect(() => {
     if (adjustment) {
-      setFormData(adjustment);
+      setFormData({
+        ...adjustment,
+        warehouse_id: adjustment.warehouse_id,
+      });
       setItems(
-        adjustment.items.map((item) => ({
-          ...item,
-          adjustedQuantity: item.adjustedQuantity,
+        (adjustment.items || []).map((item) => ({
+          product_id: item.product_id,
+          product: products.find((p) => p.id === item.product_id),
+          quantity_change: item.quantity_change || 0,
+          qty_before: item.qty_before || 0,
+          reason: item.reason || '',
         }))
       );
     }
-  }, [adjustment]);
+  }, [adjustment, products]);
 
   const handleAddProducts = (productIds: string[]) => {
-    const newItems: EditableAdjustmentItem[] = productIds.map((pid) => ({
-      productId: pid,
-      originalQuantity: productMap.get(pid)?.stock || 0,
-      adjustedQuantity: 0,
+    const selectedProducts = productsInWarehouse.filter((p) => productIds.includes(p.id));
+    const newItems: EditableAdjustmentItem[] = selectedProducts.map((p) => ({
+      product_id: p.id,
+      product: p,
+      qty_before: (p as any).quantity || 0,
+      quantity_change: '',
       reason: '',
     }));
-    setItems((prev) => [...prev, ...newItems]);
+    setItems((prev) => {
+      const existingIds = new Set(prev.map((i) => i.product_id));
+      const uniqueNewItems = newItems.filter((i) => !existingIds.has(i.product_id));
+      return [...prev, ...uniqueNewItems];
+    });
   };
 
   const handleRemoveItem = (productId: string) => {
-    setItems(items.filter((item) => item.productId !== productId));
+    setItems(items.filter((item) => item.product_id !== productId));
   };
 
   const handleItemChange = (
@@ -104,12 +107,12 @@ export const EditStockAdjustmentModal: React.FC<
     value: string | number
   ) => {
     const newItems = items.map((item) => {
-      if (item.productId === productId) {
-        const updatedItem = { ...item } as EditableAdjustmentItem;
-        if (field === 'adjustedQuantity') {
-          updatedItem[field] = value === '' ? '' : Number(value);
-        } else {
-          (updatedItem as any)[field] = value;
+      if (item.product_id === productId) {
+        const updatedItem = { ...item };
+        if (field === 'quantity_change') {
+          updatedItem.quantity_change = value === '' ? '' : Number(value);
+        } else if (field === 'reason' && typeof value === 'string') {
+          updatedItem.reason = value;
         }
         return updatedItem;
       }
@@ -119,9 +122,7 @@ export const EditStockAdjustmentModal: React.FC<
   };
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -131,7 +132,7 @@ export const EditStockAdjustmentModal: React.FC<
     e.preventDefault();
     if (!isFormValid) {
       alert(
-        'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีเหตุผลหลัก และรายการสินค้าที่ปรับปรุงให้ถูกต้อง'
+        'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีเหตุผลหลัก และรายการสินค้าที่ปรับปรุงต้องมีจำนวนที่เปลี่ยนแปลงอย่างน้อย 1 รายการ'
       );
       return;
     }
@@ -140,13 +141,11 @@ export const EditStockAdjustmentModal: React.FC<
         ...adjustment,
         ...formData,
         items: items.map((item) => ({
-          productId: item.productId,
-          originalQuantity: item.originalQuantity,
-          adjustedQuantity:
-            typeof item.adjustedQuantity === 'number'
-              ? item.adjustedQuantity
-              : 0,
+          product_id: item.product_id,
+          quantity_change: Number(item.quantity_change) || 0,
           reason: item.reason,
+          qty_before: item.qty_before,
+          id: adjustment.items?.find(i => i.product_id === item.product_id)?.id
         })),
       };
       onUpdateAdjustment(updatedAdjustment);
@@ -154,10 +153,7 @@ export const EditStockAdjustmentModal: React.FC<
     onClose();
   };
 
-  const existingProductIds = useMemo(
-    () => items.map((item) => item.productId),
-    [items]
-  );
+  const existingProductIds = useMemo(() => new Set(items.map((i) => i.product_id)), [items]);
 
   if (!adjustment) return null;
 
@@ -173,7 +169,12 @@ export const EditStockAdjustmentModal: React.FC<
             <Button variant="outline" type="button" onClick={onClose}>
               ยกเลิก
             </Button>
-            <Button variant="primary" type="submit" form="edit-adjustment-form">
+            <Button
+              variant="primary"
+              type="submit"
+              form="edit-adjustment-form"
+              disabled={!isFormValid}
+            >
               บันทึกการเปลี่ยนแปลง
             </Button>
           </div>
@@ -196,28 +197,31 @@ export const EditStockAdjustmentModal: React.FC<
             </FormField>
             <FormField label="วันที่" htmlFor="createdAt">
               <Input
-                id="createdAt"
-                name="createdAt"
+                id="created_at"
+                name="created_at"
                 type="date"
-                value={new Date(formData.createdAt || '')
-                  .toISOString()
-                  .substring(0, 10)}
+                value={
+                  formData.created_at
+                    ? new Date(formData.created_at).toISOString().split('T')[0]
+                    : ''
+                }
                 onChange={handleChange}
                 required
               />
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="คลังสินค้า" htmlFor="warehouse">
+            <FormField label="คลังสินค้า" htmlFor="warehouse_id">
               <Select
-                id="warehouse"
-                value={formData.warehouseId || ''}
+                id="warehouse_id"
+                name="warehouse_id"
+                value={formData.warehouse_id || ''}
+                onChange={handleChange}
                 disabled
                 className="bg-slate-100"
               >
-                <option value={formData.warehouseId}>
-                  {warehouses.find((w) => w.id === formData.warehouseId)
-                    ?.name || ''}
+                <option value={adjustment?.warehouse_id}>
+                  {warehouses.find(w => w.id === adjustment?.warehouse_id)?.name}
                 </option>
               </Select>
             </FormField>
@@ -241,6 +245,7 @@ export const EditStockAdjustmentModal: React.FC<
                 type="button"
                 onClick={() => setIsProductModalOpen(true)}
                 className="text-sm"
+                disabled={!formData.warehouse_id}
               >
                 <PlusIcon className="h-5 w-5" />
                 เพิ่มสินค้า
@@ -270,56 +275,50 @@ export const EditStockAdjustmentModal: React.FC<
                 </thead>
                 <tbody>
                   {items.length > 0 ? (
-                    items.map((item, index) => {
-                      const product = item.productId
-                        ? productMap.get(item.productId)
-                        : null;
-                      return (
-                        <tr
-                          key={item.productId}
-                          className="border-b border-slate-200 last:border-b-0"
-                        >
-                          <td className="p-2 align-middle text-center text-slate-600">
-                            {index + 1}
-                          </td>
-                          <td className="p-2 align-middle font-medium text-slate-800">
-                            {product?.name || 'N/A'}
-                          </td>
-                          <td className="p-2 align-middle text-center text-slate-600">
-                            {item.originalQuantity}
-                          </td>
-                          <td className="p-2 align-middle">
-                            <Input
-                              type="number"
-                              value={item.adjustedQuantity}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  item.productId,
-                                  'adjustedQuantity',
-                                  e.target.value
-                                )
-                              }
-                              className="w-24 h-10"
-                              min="0"
-                              required
-                            />
-                          </td>
-                          <td className="p-2 align-middle text-slate-600">
-                            {product?.unit || '-'}
-                          </td>
-                          <td className="p-2 text-center align-middle">
-                            <Button
-                              variant="ghost"
-                              type="button"
-                              onClick={() => handleRemoveItem(item.productId)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })
+                    items.map((item, index) => (
+                      <tr
+                        key={item.product_id}
+                        className="border-b border-slate-200 last:border-b-0"
+                      >
+                        <td className="p-2 align-middle text-center text-slate-600">
+                          {index + 1}
+                        </td>
+                        <td className="p-2 align-middle font-medium text-slate-800">
+                          {item.product?.name || 'N/A'}
+                        </td>
+                        <td className="p-2 align-middle text-center text-slate-600">
+                          {item.qty_before}
+                        </td>
+                        <td className="p-2 align-middle">
+                          <Input
+                            type="number"
+                            value={item.quantity_change}
+                            onChange={(e) =>
+                              handleItemChange(
+                                item.product_id,
+                                'quantity_change',
+                                e.target.value
+                              )
+                            }
+                            className="w-24 h-10"
+                            required
+                          />
+                        </td>
+                        <td className="p-2 align-middle text-slate-600">
+                          {item.product?.unit?.name || '-'}
+                        </td>
+                        <td className="p-2 text-center align-middle">
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            onClick={() => handleRemoveItem(item.product_id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <TrashIcon className="h-5 w-5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
                   ) : (
                     <tr>
                       <td
@@ -342,9 +341,10 @@ export const EditStockAdjustmentModal: React.FC<
         onClose={() => setIsProductModalOpen(false)}
         onAddProducts={handleAddProducts}
         products={productsInWarehouse}
-        existingProductIds={existingProductIds}
+        existingProductIds={Array.from(existingProductIds)}
       />
     </>
   );
 };
+
 

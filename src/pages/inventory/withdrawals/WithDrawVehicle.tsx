@@ -29,7 +29,7 @@ import {
   Customer,
   Product,
 } from '@/src/types/entity/app.interface';
-import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithDrawVehicle';
+import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithDrawModal';
 import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
@@ -702,7 +702,7 @@ const Withdrawals: React.FC = () => {
         products={products}
         stockMap={stockMap}
         assessments={assessments}
-        contracts={contracts}
+        contracts={contracts} currentUser={undefined}      
       />
       <ApprovalModal
         isOpen={isApprovalModalOpen}

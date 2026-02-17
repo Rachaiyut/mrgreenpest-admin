@@ -28,6 +28,7 @@ import { WarehouseType as InventoryWarehouseType, WithdrawalStatus } from '@/src
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
+import { useData } from '../../../contexts/DataContext';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
 interface AddWithdrawalModalProps {
@@ -39,7 +40,6 @@ interface AddWithdrawalModalProps {
   warehouses: WarehouseType[];
   jobs: FieldJob[];
   customers: Customer[];
-  currentUser: User | null;
   products: Product[];
   stockMap: Map<string, Map<string, number>>;
   assessments: Assessment[];
@@ -67,19 +67,20 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   warehouses,
   jobs,
   customers,
-  currentUser,
   products,
   stockMap,
   assessments,
   contracts,
 }) => {
+  const { currentUser } = useData();
+  const fullCurrentUser = currentUser ? users.find(u => u.id === currentUser.id) : null;
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
-  const [fromWarehouseId, setFromWarehouseId] = useState('');
+  const [errors, setErrors] = useState<any>({});
+
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
 
-  // Fetch destination warehouse limits when toWarehouseId changes
   useEffect(() => {
     if (toWarehouseId) {
       WarehouseApi.getWarehouseById(toWarehouseId).then((warehouse) => {
@@ -101,8 +102,14 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     }
   }, [toWarehouseId]);
 
-  const [requesterId, setRequesterId] = useState('');
-  const [recipientId, setRecipientId] = useState('');
+  const [requesterId, setRequesterId] = useState<string>('');
+  const [recipientId, setRecipientId] = useState<string>('');
+  const requesterUser = useMemo(() => users.find(u => u.id === requesterId), [users, requesterId]);
+  const recipientName = useMemo(() => {
+    if (!requesterUser) return '';
+    return `${requesterUser.first_name} ${requesterUser.last_name}`;
+  }, [requesterUser]);
+
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
@@ -111,7 +118,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [referenceIds, setReferenceIds] = useState<string[]>([]);
   const [createdBy, setCreatedBy] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
-  const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [fetchedJobs, setFetchedJobs] = useState<FieldJob[]>([]);
 
@@ -122,6 +129,15 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
 
+  const techRoles = ['LEAD_TECH', 'TECH'];
+  const isTechUser = fullCurrentUser && techRoles.includes(typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as any)?.name);
+
+  const isTechnician = useMemo(() => {
+    if (!currentUser || !currentUser.role) return false;
+    const userRole = typeof currentUser.role === 'string' ? currentUser.role : currentUser.role.name;
+    return ['TECH', 'LEAD_TECH'].includes(userRole);
+  }, [currentUser]);
+
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   const productMap = useMemo(
@@ -131,17 +147,15 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
 
-  // Fetch warehouses on modal open
   const fetchWarehouses = useCallback(async () => {
     try {
-      const res = await WarehouseApi.getWarehousesWithItems(); // Use getWarehousesWithItems
+      const res = await WarehouseApi.getWarehousesWithItems();
       if (res && res.data) {
         const allWarehouses = res.data;
         const newStockMap = new Map<string, Map<string, number>>();
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock = new Map<string, number>();
-          // Handle both 'stock' and 'stock_balances' keys, and ensure it's an array
           const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
 
           stockItems.forEach((s: any) => {
@@ -156,13 +170,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         });
         setLocalStockMap(newStockMap);
 
-        // Filter source warehouses (MAIN or SUB)
-        const sourceWhs = allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-          .map((w: any) => ({ value: w.id, label: w.name }));
-        setSourceWarehouseOptions(sourceWhs);
-
-        // Filter vehicle warehouses
         const vehicleWhs = allWarehouses
           .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
           .map((w: any) => ({ value: w.id, label: w.name }));
@@ -170,12 +177,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to fetch warehouses", error);
-      // Fallback to prop data
-      const sourceWhs = warehouses
-        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-        .map((w) => ({ value: w.id, label: w.name }));
-      setSourceWarehouseOptions(sourceWhs);
-
       const vehicleWhs = warehouses
         .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
         .map((w) => ({ value: w.id, label: w.name }));
@@ -184,14 +185,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   }, [warehouses]);
 
   const effectiveStockMap = useMemo(() => {
-    // Merge prop stockMap and localStockMap, preferring local since it's freshly fetched with-items
     if (localStockMap.size > 0) return localStockMap;
     return stockMap;
   }, [stockMap, localStockMap]);
 
   const sourceWarehouse = useMemo(
-    () => warehouses.find((w) => w.id === fromWarehouseId),
-    [fromWarehouseId, warehouses]
+    () => warehouses.find((w) => w.id === toWarehouseId),
+    [toWarehouseId, warehouses]
   );
 
   const productsInWarehouse = useMemo(() => {
@@ -212,10 +212,14 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       // Reset form
       setGoodsItems([]);
       setExpenseItems([]);
-      setFromWarehouseId('');
       setToWarehouseId('');
-      setRequesterId(currentUser?.id || '');
-      setRecipientId('');
+      if (isTechUser && fullCurrentUser) {
+        setRequesterId(fullCurrentUser.id);
+        setRecipientId(fullCurrentUser.id);
+      } else {
+        setRequesterId('');
+        setRecipientId('');
+      }
       setReferenceIds([]);
       setCreatedBy(currentUser?.id || '');
       setSelectedCustomerIds([]);
@@ -224,7 +228,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       setSelectedContractId('');
       fetchWarehouses();
     }
-  }, [isOpen, currentUser, fetchWarehouses]);
+  }, [isOpen, currentUser, fetchWarehouses, isTechUser, fullCurrentUser]);
 
   useEffect(() => {
     if (users.length > 0) {
@@ -239,13 +243,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   // Fetch jobs when customer changes
   useEffect(() => {
     if (selectedCustomerIds.length > 0) {
-      // Fetch jobs for these customers
-      // For now filter from props if available, or fetch
-      // Assuming we have a way to filter jobs by customer IDs
-      // Since API might not support multi-customer filter easily, we can filter locally from props if available
-      // Or fetch all jobs and filter.
-      // Better approach: If we have many jobs, fetch from API.
-      // For this implementation, let's filter from 'jobs' prop which might be "active jobs"
       const customerJobs = jobs.filter(j => {
         const cId = (j as any).customer_id || (j as any).customer?.id;
         return selectedCustomerIds.includes(cId);
@@ -303,10 +300,20 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!requesterId) {
+      alert('กรุณาเลือกผู้เบิก');
+      return;
+    }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(requesterId)) {
+      alert('รหัสผู้เบิกไม่ถูกต้อง กรุณาเลือกผู้เบิกใหม่');
+      return;
+    }
     // Validation logic...
     const payload: any = {
-      warehouse_id: fromWarehouseId,
-      to_warehouse_id: toWarehouseId || undefined,
+      vehicle_id: toWarehouseId,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
       purpose: 'เบิกสินค้า/อุปกรณ์', // Default purpose
@@ -337,13 +344,27 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     }
 
     onCreateWithdrawal(payload);
+    onClose();
   };
 
   const handleSaveDraft = () => {
+    // Validate requester_id for draft as well
+    if (!requesterId) {
+      alert('กรุณาเลือกผู้เบิก');
+      return;
+    }
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(requesterId)) {
+      alert('รหัสผู้เบิกไม่ถูกต้อง กรุณาเลือกผู้เบิกใหม่');
+      return;
+    }
+    
     // Logic for saving as draft
     const payload: any = {
-      warehouse_id: fromWarehouseId,
-      to_warehouse_id: toWarehouseId || undefined,
+      vehicle_id: toWarehouseId,
+      to_warehouse_id: undefined,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
       purpose: 'เบิกสินค้า/อุปกรณ์ (Draft)',
@@ -423,7 +444,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         setFetchedRequester(u);
       }).catch(err => {
         console.error("Failed to fetch requester details", err);
-        // Fallback to finding in users prop
         const found = users.find(u => u.id === requesterId);
         if (found) setFetchedRequester(found);
       });
@@ -546,33 +566,24 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                    เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span>
+                    เบิกจากรถ <span className="text-red-500">*</span>
                   </label>
                   <SearchableSelect
-                    required
-                    value={fromWarehouseId}
-                    onChange={setFromWarehouseId}
-                    placeholder="เลือกคลังสินค้า"
-                    options={sourceWarehouseOptions}
-                    className="w-full bg-white shadow-sm border-slate-200"
-                  />
-                </div>
-                
-                <div className="flex items-center justify-center pt-6 text-slate-300">
-                  <ArrowRightIcon className="w-5 h-5 hidden md:block text-slate-400" />
-                  <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden text-slate-400" />
-                </div>
-
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                    ไปยังคลัง/รถ (ปลายทาง)
-                  </label>
-                  <SearchableSelect
-                    value={toWarehouseId}
-                    onChange={setToWarehouseId}
-                    placeholder="เลือกรถบริการ (ถ้ามี)"
                     options={vehicleWarehouseOptions}
-                    className="w-full bg-white shadow-sm border-slate-200"
+                    value={toWarehouseId}
+                    onChange={(value) => {
+                      setToWarehouseId(value);
+                      const currentStock = effectiveStockMap.get(value);
+                      if (currentStock) {
+                        setGoodsItems((prev) =>
+                          prev.filter(
+                            (item) => (currentStock.get(item.productId) || 0) > 0
+                          )
+                        );
+                      }
+                    }}
+                    placeholder="เลือกรถบริการ..."
+                    required
                   />
                 </div>
               </div>
@@ -595,8 +606,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   onClick={() => setIsProductModalOpen(true)}
                   variant="outline"
                   className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
-                  disabled={!fromWarehouseId}
-                  title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
+                  disabled={!toWarehouseId}
+                  title={!toWarehouseId ? 'กรุณาเลือกรถบริการก่อน' : 'เพิ่มสินค้า'}
                 >
                   <PlusIcon className="w-4 h-4 mr-1.5" />
                   เพิ่มสินค้า
@@ -615,8 +626,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 ) : (
                   <div className="space-y-3">
                     <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <div className="col-span-6">รายละเอียดสินค้า</div>
-                      <div className="col-span-3 text-right">จำนวน</div>
+                      <div className="col-span-5">รายละเอียดสินค้า</div>
+                      <div className="col-span-2 text-right">จำนวน</div>
+                      <div className="col-span-2 text-center">หน่วย</div>
                       <div className="col-span-3 text-center">จัดการ</div>
                     </div>
                     
@@ -638,7 +650,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-6">
+                            <div className="col-span-5">
                               <div className="font-bold text-slate-800 text-sm">
                                 {product?.name || 'Unknown Product'}
                               </div>
@@ -652,37 +664,36 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                               </div>
                             </div>
                             
-                            <div className="col-span-3 flex flex-col items-end gap-1">
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  max={available}
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    handleGoodsItemChange(
-                                      item.id,
-                                      'quantity',
-                                      Number(e.target.value)
-                                    )
-                                  }
-                                  className={`w-28 text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                    item.quantity > available 
-                                      ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
-                                      : isItemOverLimit
-                                        ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
-                                        : 'border-slate-200 focus:border-indigo-500'
-                                  }`}
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium pointer-events-none">
-                                  {product?.unit?.name || 'หน่วย'}
-                                </span>
-                              </div>
+                            <div className="col-span-2 flex flex-col items-end gap-1">
+                              <Input
+                                type="number"
+                                min="1"
+                                max={available}
+                                value={item.quantity}
+                                onChange={(e) =>
+                                  handleGoodsItemChange(
+                                    item.id,
+                                    'quantity',
+                                    Number(e.target.value)
+                                  )
+                                }
+                                className={`w-24 text-right transition-all h-9 text-sm font-bold ${
+                                  item.quantity > available 
+                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                    : isItemOverLimit
+                                      ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
+                                      : 'border-slate-200 focus:border-indigo-500'
+                                }`}
+                              />
                               {(item.quantity > available || isItemOverLimit) && (
                                 <span className={`text-[10px] font-bold ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}>
                                   {item.quantity > available ? 'เกินสต็อก' : `เกินลิมิตรถ (${limit})`}
                                 </span>
                               )}
+                            </div>
+
+                            <div className="col-span-2 flex items-center justify-center text-sm text-slate-600">
+                              {product?.unit?.name || 'หน่วย'}
                             </div>
                             
                             <div className="col-span-3 flex justify-center">
@@ -704,39 +715,53 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               </div>
             </div>
 
-            {/* People Card */}
+            {/* Requester & Recipient Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
-                <UserIcon className="w-4 h-4 text-slate-400" />
-                ผู้เกี่ยวข้อง
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                  <UserIcon className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-semibold text-slate-800">ข้อมูลผู้เบิกและผู้รับ</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้เบิก (Requester) <span className="text-red-500">*</span>
                   </label>
-                  <SearchableSelect
-                    value={requesterId}
-                    onChange={setRequesterId}
-                    onSearchChange={handleUserSearch}
-                    options={userOptions}
-                    placeholder="ค้นหาชื่อผู้เบิก"
-                    required={expenseItems.length > 0}
-                    className="w-full text-sm"
-                  />
+                  {isTechUser ? (
+                    <Input
+                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      readOnly
+                      className="bg-slate-100 border-slate-200"
+                    />
+                  ) : (
+                    <SearchableSelect
+                      options={userOptions}
+                      value={requesterId}
+                      onChange={setRequesterId}
+                      placeholder="ค้นหาผู้เบิก..."
+                    />
+                  )}
                 </div>
-                <div>
+                <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้รับเงิน (Recipient)
                   </label>
-                  <SearchableSelect
-                    value={recipientId}
-                    onChange={setRecipientId}
-                    onSearchChange={handleUserSearch}
-                    options={userOptions}
-                    placeholder="ค้นหาชื่อผู้รับเงิน"
-                    className="w-full text-sm"
-                  />
+                  {isTechUser ? (
+                    <Input
+                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      readOnly
+                      className="bg-slate-100 border-slate-200"
+                    />
+                  ) : (
+                    <SearchableSelect
+                      options={userOptions}
+                      value={recipientId}
+                      onChange={setRecipientId}
+                      placeholder="ค้นหาผู้รับเงิน..."
+                      required
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -955,7 +980,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         products={productsInWarehouse}
         existingProductIds={existingProductIds}
         disableFetch={true}
-        stockMap={effectiveStockMap.get(fromWarehouseId)}
+        stockMap={toWarehouseId ? effectiveStockMap.get(toWarehouseId) : undefined}
       />
 
       <ReferenceSelectionModal

@@ -1,3 +1,9 @@
+/**
+ * @file AddWithDrawModal.tsx
+ * @description Modal component for creating a new goods withdrawal.
+ * This component handles the form for creating a new withdrawal, including selecting products, specifying quantities, adding expenses, and selecting references.
+ * It also includes validation and logic for submitting the withdrawal for approval or saving it as a draft.
+ */
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
@@ -28,7 +34,6 @@ import { WarehouseType as InventoryWarehouseType, WithdrawalStatus } from '@/src
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
-import { useData } from '../../../contexts/DataContext';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
 interface AddWithdrawalModalProps {
@@ -40,6 +45,7 @@ interface AddWithdrawalModalProps {
   warehouses: WarehouseType[];
   jobs: FieldJob[];
   customers: Customer[];
+  currentUser: User | null;
   products: Product[];
   stockMap: Map<string, Map<string, number>>;
   assessments: Assessment[];
@@ -67,82 +73,38 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   warehouses,
   jobs,
   customers,
+  currentUser,
   products,
   stockMap,
   assessments,
   contracts,
 }) => {
-  const { currentUser } = useData();
-  const fullCurrentUser = currentUser ? users.find(u => u.id === currentUser.id) : null;
+  // Form state
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
-
+  const [errors, setErrors] = useState<any>({});
+  const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
-  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
-
-  useEffect(() => {
-    if (toWarehouseId) {
-      WarehouseApi.getWarehouseById(toWarehouseId).then((warehouse) => {
-        const limits = new Map<string, number>();
-        if (warehouse && Array.isArray(warehouse.withdrawal_limits)) {
-          warehouse.withdrawal_limits.forEach((limit: any) => {
-            if (limit.product_id) {
-              limits.set(limit.product_id, Number(limit.max_quantity));
-            }
-          });
-        }
-        setDestinationLimits(limits);
-      }).catch(err => {
-        console.error("Failed to fetch destination warehouse limits", err);
-        setDestinationLimits(new Map());
-      });
-    } else {
-      setDestinationLimits(new Map());
-    }
-  }, [toWarehouseId]);
-
-  const [requesterId, setRequesterId] = useState<string>('');
-  const [recipientId, setRecipientId] = useState<string>('');
-  const requesterUser = useMemo(() => users.find(u => u.id === requesterId), [users, requesterId]);
-  const recipientName = useMemo(() => {
-    if (!requesterUser) return '';
-    return `${requesterUser.first_name} ${requesterUser.last_name}`;
-  }, [requesterUser]);
-
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
-  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
-  const [isCustomerSelectionModalOpen, setIsCustomerSelectionModalOpen] =
-    useState(false);
+  const [requesterId, setRequesterId] = useState('');
+  const [recipientId, setRecipientId] = useState('');
   const [referenceIds, setReferenceIds] = useState<string[]>([]);
   const [createdBy, setCreatedBy] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
-
-  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
-  const [fetchedJobs, setFetchedJobs] = useState<FieldJob[]>([]);
-
-  // Reference Type State
   const [referenceType, setReferenceType] = useState<'JOB' | 'ASSESSMENT' | 'CONTRACT'>('JOB');
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>('');
-  const [selectedContractId, setSelectedContractId] = useState<string>('');
+
+  // UI state
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+  const [isCustomerSelectionModalOpen, setIsCustomerSelectionModalOpen] =
+    useState(false);
+
+  // Data state
+  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
+  const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
-
-  const techRoles = ['LEAD_TECH', 'TECH'];
-  const isTechUser = fullCurrentUser && techRoles.includes(typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as any)?.name);
-
-  useEffect(() => {
-    if (isTechUser && fullCurrentUser) {
-      setRequesterId(fullCurrentUser.id);
-      setRecipientId(fullCurrentUser.id);
-    }
-  }, [fullCurrentUser, isTechUser]);
-
-  const isTechnician = useMemo(() => {
-    if (!currentUser || !currentUser.role) return false;
-    const userRole = typeof currentUser.role === 'string' ? currentUser.role : currentUser.role.name;
-    return ['TECH', 'LEAD_TECH'].includes(userRole);
-  }, [currentUser]);
+  const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
@@ -151,17 +113,26 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     [products]
   );
 
-  const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
+  const userOptions = useMemo(() => {
+    return users.map((u) => ({
+      value: u.id,
+      label: `${u.first_name} ${u.last_name}${u.nick_name ? ` (${u.nick_name})` : ''}`,
+    }));
+  }, [users]);
 
+
+
+  // Fetch warehouses on modal open
   const fetchWarehouses = useCallback(async () => {
     try {
-      const res = await WarehouseApi.getWarehousesWithItems();
+      const res = await WarehouseApi.getWarehousesWithItems(); // Use getWarehousesWithItems
       if (res && res.data) {
         const allWarehouses = res.data;
         const newStockMap = new Map<string, Map<string, number>>();
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock = new Map<string, number>();
+          // Handle both 'stock' and 'stock_balances' keys, and ensure it's an array
           const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
 
           stockItems.forEach((s: any) => {
@@ -176,6 +147,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         });
         setLocalStockMap(newStockMap);
 
+        // Filter source warehouses (MAIN or SUB)
+        const sourceWhs = allWarehouses
+          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+          .map((w: any) => ({ value: w.id, label: w.name }));
+        setSourceWarehouseOptions(sourceWhs);
+
+        // Filter vehicle warehouses
         const vehicleWhs = allWarehouses
           .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
           .map((w: any) => ({ value: w.id, label: w.name }));
@@ -183,6 +161,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to fetch warehouses", error);
+      // Fallback to prop data
+      const sourceWhs = warehouses
+        .filter((w) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+        .map((w) => ({ value: w.id, label: w.name }));
+      setSourceWarehouseOptions(sourceWhs);
+
       const vehicleWhs = warehouses
         .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
         .map((w) => ({ value: w.id, label: w.name }));
@@ -191,13 +175,14 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   }, [warehouses]);
 
   const effectiveStockMap = useMemo(() => {
+    // Merge prop stockMap and localStockMap, preferring local since it's freshly fetched with-items
     if (localStockMap.size > 0) return localStockMap;
     return stockMap;
   }, [stockMap, localStockMap]);
 
   const sourceWarehouse = useMemo(
-    () => warehouses.find((w) => w.id === toWarehouseId),
-    [toWarehouseId, warehouses]
+    () => warehouses.find((w) => w.id === fromWarehouseId),
+    [fromWarehouseId, warehouses]
   );
 
   const productsInWarehouse = useMemo(() => {
@@ -218,41 +203,21 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       // Reset form
       setGoodsItems([]);
       setExpenseItems([]);
+      setFromWarehouseId('');
       setToWarehouseId('');
-      setRequesterId('');
+      setRequesterId(currentUser?.id || '');
       setRecipientId('');
       setReferenceIds([]);
       setCreatedBy(currentUser?.id || '');
       setSelectedCustomerIds([]);
       setReferenceType('JOB');
-      setSelectedAssessmentId('');
-      setSelectedContractId('');
       fetchWarehouses();
     }
   }, [isOpen, currentUser, fetchWarehouses]);
 
-  useEffect(() => {
-    if (users.length > 0) {
-      const options = users.map((u) => ({
-        value: u.id,
-        label: `${u.first_name} ${u.last_name}${u.nick_name ? ` (${u.nick_name})` : ''}`,
-      }));
-      setUserOptions(options);
-    }
-  }, [users]);
 
-  // Fetch jobs when customer changes
-  useEffect(() => {
-    if (selectedCustomerIds.length > 0) {
-      const customerJobs = jobs.filter(j => {
-        const cId = (j as any).customer_id || (j as any).customer?.id;
-        return selectedCustomerIds.includes(cId);
-      });
-      setFetchedJobs(customerJobs);
-    } else {
-      setFetchedJobs([]);
-    }
-  }, [selectedCustomerIds, jobs]);
+
+
 
   const handleUserSearch = (search: string) => {
     // Implement search logic if needed, or rely on SearchableSelect internal search
@@ -299,11 +264,47 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     );
   };
 
+  const validate = () => {
+    const newErrors: any = {};
+    if (!fromWarehouseId) newErrors.fromWarehouseId = 'กรุณาเลือกคลังต้นทาง';
+    if (!requesterId) newErrors.requesterId = 'กรุณาเลือกผู้เบิก';
+    if (goodsItems.length === 0) newErrors.goodsItems = 'ต้องมีสินค้าอย่างน้อย 1 รายการ';
+    goodsItems.forEach((item, index) => {
+      if (!item.quantity || item.quantity <= 0) {
+        if (!newErrors.goods) newErrors.goods = [];
+        newErrors.goods[index] = { ...newErrors.goods[index], quantity: 'จำนวนต้องมากกว่า 0' };
+      }
+      const product = productMap.get(item.productId);
+      const available = sourceWarehouse
+        ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
+        : 0;
+      if (item.quantity > available) {
+        if (!newErrors.goods) newErrors.goods = [];
+        newErrors.goods[index] = { ...newErrors.goods[index], quantity: 'จำนวนเกินสต็อก' };
+      }
+    });
+    expenseItems.forEach((item, index) => {
+        if (!item.description.trim()) {
+            if (!newErrors.expenses) newErrors.expenses = [];
+            newErrors.expenses[index] = { ...newErrors.expenses[index], description: 'กรุณาระบุรายละเอียด' };
+        }
+        if (item.amount === '' || item.amount === null || isNaN(Number(item.amount)) || Number(item.amount) <= 0) {
+            if (!newErrors.expenses) newErrors.expenses = [];
+            newErrors.expenses[index] = { ...newErrors.expenses[index], amount: 'ระบุจำนวนเงิน' };
+        }
+    });
+
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validation logic...
+    if (!validate()) return;
     const payload: any = {
-      vehicle_id: toWarehouseId,
+      warehouse_id: fromWarehouseId,
+      to_warehouse_id: toWarehouseId || undefined,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
       purpose: 'เบิกสินค้า/อุปกรณ์', // Default purpose
@@ -334,14 +335,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     }
 
     onCreateWithdrawal(payload);
-    onClose();
   };
 
   const handleSaveDraft = () => {
-    // Logic for saving as draft
+    if (!validate()) return;
     const payload: any = {
-      vehicle_id: toWarehouseId,
-      to_warehouse_id: undefined,
+      warehouse_id: fromWarehouseId,
+      to_warehouse_id: toWarehouseId || undefined,
       requester_id: requesterId,
       recipient_id: recipientId || undefined,
       purpose: 'เบิกสินค้า/อุปกรณ์ (Draft)',
@@ -421,6 +421,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         setFetchedRequester(u);
       }).catch(err => {
         console.error("Failed to fetch requester details", err);
+        // Fallback to finding in users prop
         const found = users.find(u => u.id === requesterId);
         if (found) setFetchedRequester(found);
       });
@@ -535,7 +536,6 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                     name="createdAt"
                     defaultValue={new Date().toISOString().substring(0, 10)}
                     className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
-                    required
                   />
                 </div>
               </div>
@@ -543,24 +543,36 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
                 <div className="flex-1 w-full">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                    เบิกจากรถ <span className="text-red-500">*</span>
+                    เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span>
                   </label>
                   <SearchableSelect
-                    options={vehicleWarehouseOptions}
-                    value={toWarehouseId}
+                    value={fromWarehouseId}
                     onChange={(value) => {
-                      setToWarehouseId(value);
-                      const currentStock = effectiveStockMap.get(value);
-                      if (currentStock) {
-                        setGoodsItems((prev) =>
-                          prev.filter(
-                            (item) => (currentStock.get(item.productId) || 0) > 0
-                          )
-                        );
-                      }
+                      setFromWarehouseId(value);
+                      setErrors((prev: any) => ({ ...prev, fromWarehouseId: undefined }));
                     }}
-                    placeholder="เลือกรถบริการ..."
-                    required
+                    placeholder="เลือกคลังสินค้า"
+                    options={sourceWarehouseOptions}
+                    className="w-full bg-white shadow-sm border-slate-200"
+                  />
+                  {errors.fromWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouseId}</p>}
+                </div>
+                
+                <div className="flex items-center justify-center pt-6 text-slate-300">
+                  <ArrowRightIcon className="w-5 h-5 hidden md:block text-slate-400" />
+                  <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden text-slate-400" />
+                </div>
+
+                <div className="flex-1 w-full">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                    ไปยังคลัง/รถ (ปลายทาง)
+                  </label>
+                  <SearchableSelect
+                    value={toWarehouseId}
+                    onChange={setToWarehouseId}
+                    placeholder="เลือกรถบริการ (ถ้ามี)"
+                    options={vehicleWarehouseOptions}
+                    className="w-full bg-white shadow-sm border-slate-200"
                   />
                 </div>
               </div>
@@ -583,8 +595,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   onClick={() => setIsProductModalOpen(true)}
                   variant="outline"
                   className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
-                  disabled={!toWarehouseId}
-                  title={!toWarehouseId ? 'กรุณาเลือกรถบริการก่อน' : 'เพิ่มสินค้า'}
+                  disabled={!fromWarehouseId}
+                  title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
                 >
                   <PlusIcon className="w-4 h-4 mr-1.5" />
                   เพิ่มสินค้า
@@ -592,6 +604,11 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               </div>
 
               <div className="flex-grow overflow-y-auto bg-slate-50/30 p-4">
+                {errors.goodsItems && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{errors.goodsItems}</p>
+                  </div>
+                )}
                 {goodsItems.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-slate-400 py-8">
                     <div className="bg-slate-50 p-4 rounded-full mb-3 border border-dashed border-slate-200 animate-pulse">
@@ -602,12 +619,14 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                      <div className="col-span-5">รายละเอียดสินค้า</div>
-                      <div className="col-span-2 text-right">จำนวน</div>
-                      <div className="col-span-2 text-center">หน่วย</div>
-                      <div className="col-span-3 text-center">จัดการ</div>
-                    </div>
+                    <div className="grid grid-cols-12 gap-4 px-4 py-2 text-sm font-bold text-slate-400 uppercase tracking-wider">
+                    <div className="col-span-2">รหัส</div>
+                    <div className="col-span-4">รายละเอียดสินค้า</div>
+                    <div className="col-span-2 text-center">คงเหลือ</div>
+                    <div className="col-span-1 text-center">หน่วย</div>
+                    <div className="col-span-2 text-right">จำนวนเบิก</div>
+                    <div className="col-span-1 text-center">จัดการ</div>
+                  </div>
                     
                     {goodsItems.map((item, index) => {
                       const product = productMap.get(item.productId);
@@ -627,59 +646,72 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center">
-                            <div className="col-span-5">
+                            <div className="col-span-2 text-sm font-bold text-slate-800">
+                              {product?.code || product?.id?.substring(0, 8)}
+                            </div>
+                            <div className="col-span-4">
                               <div className="font-bold text-slate-800 text-sm">
                                 {product?.name || 'Unknown Product'}
                               </div>
-                              <div className="flex flex-wrap gap-2 mt-2">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                  Code: {product?.code || product?.id?.substring(0, 8)}
-                                </span>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                                  Stock: {available.toLocaleString()} {product?.unit?.name || '-'}
-                                </span>
-                              </div>
                             </div>
+                            <div className="col-span-2 text-sm font-bold text-slate-800 text-center">
+                              {available.toLocaleString()}
+                            </div>
+                        <div className="col-span-1 text-sm text-slate-800 font-bold text-center">
+                          {product?.unit?.name || '-'}
+                        </div>
                             
                             <div className="col-span-2 flex flex-col items-end gap-1">
-                              <Input
-                                type="number"
-                                min="1"
-                                max={available}
-                                value={item.quantity}
-                                onChange={(e) =>
-                                  handleGoodsItemChange(
-                                    item.id,
-                                    'quantity',
-                                    Number(e.target.value)
-                                  )
-                                }
-                                className={`w-24 text-right transition-all h-9 text-sm font-bold ${
-                                  item.quantity > available 
-                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
-                                    : isItemOverLimit
-                                      ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
-                                      : 'border-slate-200 focus:border-indigo-500'
-                                }`}
-                              />
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max={available}
+                                  value={item.quantity}
+                                  onChange={(e) => {
+                                    handleGoodsItemChange(item.id, 'quantity', Number(e.target.value));
+                                    if (errors.goods && errors.goods[index]?.quantity) {
+                                      setErrors((prev: any) => {
+                                        const newErrors = { ...prev };
+                                        if (newErrors.goods && newErrors.goods[index]) {
+                                          delete newErrors.goods[index].quantity;
+                                          if (Object.keys(newErrors.goods[index]).length === 0) {
+                                            newErrors.goods.splice(index, 1);
+                                          }
+                                        }
+                                        return newErrors;
+                                      });
+                                    }
+                                  }}
+                                  className={`w-28 text-right transition-all h-9 text-sm font-bold pr-8 ${
+                                    item.quantity > available 
+                                      ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                      : isItemOverLimit
+                                        ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
+                                        : 'border-slate-200 focus:border-indigo-500'
+                                  }`}
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium pointer-events-none">
+                                  {product?.unit?.name || 'หน่วย'}
+                                </span>
+                              </div>
                               {(item.quantity > available || isItemOverLimit) && (
                                 <span className={`text-[10px] font-bold ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}>
                                   {item.quantity > available ? 'เกินสต็อก' : `เกินลิมิตรถ (${limit})`}
                                 </span>
                               )}
-                            </div>
-
-                            <div className="col-span-2 flex items-center justify-center text-sm text-slate-600">
-                              {product?.unit?.name || 'หน่วย'}
+                              {errors.goods && errors.goods[index]?.quantity && (
+                                <span className="text-red-600 text-[10px] font-bold">{errors.goods[index].quantity}</span>
+                              )}
                             </div>
                             
-                            <div className="col-span-3 flex justify-center">
+                            <div className="col-span-1 flex justify-center">
                               <button
-                                type="button"
-                                onClick={() => handleRemoveGoodsItem(item.id)}
-                                className="text-slate-400 hover:text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
-                                title="ลบรายการ"
-                              >
+                                  type="button"
+                                  onClick={() => handleRemoveGoodsItem(item.id)}
+                                  className="text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"
+                                  title="ลบรายการ"
+                                >
                                 <TrashIcon className="w-5 h-5" />
                               </button>
                             </div>
@@ -692,53 +724,42 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               </div>
             </div>
 
-            {/* Requester & Recipient Card */}
+            {/* People Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-green-50 rounded-lg text-green-600">
-                  <UserIcon className="w-5 h-5" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-800">ข้อมูลผู้เบิกและผู้รับ</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex-1 w-full">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
+                <UserIcon className="w-4 h-4 text-slate-400" />
+                ผู้เกี่ยวข้อง
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้เบิก (Requester) <span className="text-red-500">*</span>
                   </label>
-                  {isTechUser ? (
-                    <Input
-                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
-                      readOnly
-                      className="bg-slate-100 border-slate-200"
-                    />
-                  ) : (
-                    <SearchableSelect
-                      options={userOptions}
-                      value={requesterId}
-                      onChange={setRequesterId}
-                      placeholder="ค้นหาผู้เบิก..."
-                    />
-                  )}
+                  <SearchableSelect
+                    value={requesterId}
+                    onChange={(value) => {
+                      setRequesterId(value);
+                      setErrors((prev: any) => ({ ...prev, requesterId: undefined }));
+                    }}
+                    onSearchChange={handleUserSearch}
+                    options={userOptions}
+                    placeholder="ค้นหาชื่อผู้เบิก"
+                    className="w-full text-sm"
+                  />
+                  {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
                 </div>
-                <div className="flex-1 w-full">
+                <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                     ผู้รับเงิน (Recipient)
                   </label>
-                  {isTechUser ? (
-                    <Input
-                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
-                      readOnly
-                      className="bg-slate-100 border-slate-200"
-                    />
-                  ) : (
-                    <SearchableSelect
-                      options={userOptions}
-                      value={recipientId}
-                      onChange={setRecipientId}
-                      placeholder="ค้นหาผู้รับเงิน..."
-                      required
-                    />
-                  )}
+                  <SearchableSelect
+                    value={recipientId}
+                    onChange={setRecipientId}
+                    onSearchChange={handleUserSearch}
+                    options={userOptions}
+                    placeholder="ค้นหาชื่อผู้รับเงิน"
+                    className="w-full text-sm"
+                  />
                 </div>
               </div>
             </div>
@@ -750,20 +771,23 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 : 'bg-white border-slate-200'
             }`}>
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide pb-2">
                   <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200 font-serif">฿</span>
                   การเงิน & ค่าใช้จ่าย
                 </h3>
+
                 <Button
                   type="button"
                   onClick={handleAddExpense}
-                  variant="ghost"
-                  className="text-xs text-primary hover:text-primary/80 hover:bg-primary/5 px-2 py-1 h-auto font-medium"
+                  variant="outline"
+                  className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
                 >
-                  + เพิ่มรายการ
+                  <PlusIcon className="w-4 h-4 mr-1.5" />
+                  เพิ่มรายการ
                 </Button>
               </div>
 
+           
               {/* Wallet Status Widget */}
               {walletInfo && (
                 <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
@@ -801,27 +825,61 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
               {/* Expense Items List */}
               <div className="space-y-2">
-                {expenseItems.map((item) => (
+                {expenseItems.map((item, index) => (
                   <div key={item.id} className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm group">
                     <div className="p-1.5 bg-slate-100 rounded text-slate-400">
                       <BanknotesIcon className="w-3 h-3" />
                     </div>
-                    <input
-                      type="text"
-                      value={item.description}
-                      onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
-                      placeholder="ระบุรายละเอียด..."
-                      className="flex-grow min-w-0 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs px-0 py-1 bg-transparent font-medium text-slate-700 placeholder:text-slate-300"
-                    />
-                    <div className="flex items-center gap-1">
+                    <div className="flex-grow min-w-0">
                       <input
-                        type="number"
-                        min="0"
-                        value={item.amount}
-                        onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
-                        placeholder="0.00"
-                        className="w-16 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs text-right px-0 py-1 font-bold text-slate-800 bg-transparent placeholder:text-slate-300"
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => {
+                            handleExpenseItemChange(item.id, 'description', e.target.value);
+                            if (errors.expenses && errors.expenses[index]?.description) {
+                                setErrors((prev: any) => {
+                                    const newErrors = { ...prev };
+                                    if (newErrors.expenses && newErrors.expenses[index]) {
+                                        delete newErrors.expenses[index].description;
+                                        if (Object.keys(newErrors.expenses[index]).length === 0) {
+                                            newErrors.expenses.splice(index, 1);
+                                        }
+                                    }
+                                    return newErrors;
+                                });
+                            }
+                        }}
+                        placeholder="ระบุรายละเอียด..."
+                        className="flex-grow min-w-0 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm px-0 py-1 bg-transparent font-medium text-slate-700 placeholder:text-slate-300 w-full"
                       />
+                      {errors.expenses && errors.expenses[index]?.description && <p className="text-red-500 text-xs mt-1">{errors.expenses[index].description}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div>
+                        <input
+                          type="number"
+                          min="0"
+                          value={item.amount}
+                          onChange={(e) => {
+                            handleExpenseItemChange(item.id, 'amount', e.target.value)
+                            if (errors.expenses && errors.expenses[index]?.amount) {
+                                setErrors((prev: any) => {
+                                    const newErrors = { ...prev };
+                                    if (newErrors.expenses && newErrors.expenses[index]) {
+                                        delete newErrors.expenses[index].amount;
+                                        if (Object.keys(newErrors.expenses[index]).length === 0) {
+                                            newErrors.expenses.splice(index, 1);
+                                        }
+                                    }
+                                    return newErrors;
+                                });
+                            }
+                          }}
+                          placeholder="0.00"
+                          className="w-16 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs text-right px-0 py-1 font-bold text-slate-800 bg-transparent placeholder:text-slate-300"
+                        />
+                        {errors.expenses && errors.expenses[index]?.amount && <p className="text-red-500 text-xs mt-1">{errors.expenses[index].amount}</p>}
+                      </div>
                       <span className="text-[10px] text-slate-400">฿</span>
                     </div>
                     <button
@@ -851,24 +909,27 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
             {/* Reference Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
-                <DocumentCheckIcon className="w-4 h-4 text-slate-400" />
-                ข้อมูลอ้างอิง
-              </h3>
-              
+              <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide pb-2">
+                  <DocumentCheckIcon className="w-5 h-5 text-slate-400" />
+                  ข้อมูลอ้างอิง
+                </h3>
+
+                <Button
+                  type="button"
+                  onClick={() => setIsCustomerSelectionModalOpen(true)}
+                  variant="outline"
+                  className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
+                  title={!fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : ''}
+                >
+                  <PlusIcon className="w-4 h-4 mr-1.5" />
+                  เลือกลูกค้า
+                </Button>
+              </div>
+
               <div className="space-y-4">
                 {/* Customer */}
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-semibold text-slate-500 ml-1">ลูกค้า</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomerSelectionModalOpen(true)}
-                      className="text-[10px] font-bold text-primary hover:text-primary/80 uppercase tracking-wider bg-primary/5 px-2 py-0.5 rounded hover:bg-primary/10 transition-colors"
-                    >
-                      + เลือกลูกค้า
-                    </button>
-                  </div>
                   {selectedCustomers.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {selectedCustomers.map((customer) => (
@@ -912,7 +973,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                         <SearchableSelect
                           value={referenceIds[0] || ''}
                           onChange={(value) => setReferenceIds(value ? [value] : [])}
-                          options={(fetchedJobs.length > 0 ? fetchedJobs : jobs).map(j => {
+                          options={jobsForSelectedCustomers.map(j => {
                             const c = (j as any).customer;
                             const customerName = c
                               ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
@@ -957,7 +1018,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         products={productsInWarehouse}
         existingProductIds={existingProductIds}
         disableFetch={true}
-        stockMap={toWarehouseId ? effectiveStockMap.get(toWarehouseId) : undefined}
+        stockMap={effectiveStockMap.get(fromWarehouseId)}
       />
 
       <ReferenceSelectionModal

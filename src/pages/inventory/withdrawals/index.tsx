@@ -29,7 +29,7 @@ import {
   Customer,
   Product,
 } from '@/src/types/entity/app.interface';
-import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalModal';
+import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalVehicleModal';
 import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';

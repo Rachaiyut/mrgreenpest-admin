@@ -152,6 +152,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     icon: NewWarehouseIcon,
     subItems: [
       {
+        name: 'เบิกสินค้าเข้าคลังย่อย',
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
+      },
+      {
         name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: DocumentTextIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
@@ -160,11 +165,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
         name: 'คืนสินค้า',
         icon: NewWarehouseIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
-      },
-      {
-        name: 'เบิกสินค้าเข้าคลังย่อย',
-        icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
       },
     ],
   },

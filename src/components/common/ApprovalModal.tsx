@@ -4,6 +4,7 @@ import { FormField, Textarea, Button } from './FormControls';
 
 interface ApprovableItem {
   id: string;
+  code?: string;
   status: string; // Accept any status type
 }
 
@@ -48,7 +49,7 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`${title}: ${item.id}`}
+      title={`${title}: ${item.code || item.id}`}
       size="lg"
       footer={
         <div className="flex gap-2">
