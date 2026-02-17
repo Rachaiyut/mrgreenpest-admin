@@ -603,6 +603,26 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </FormField>
               </div>
 
+              <div className="bg-white p-3 rounded-lg border border-slate-200">
+               <FormField label="ประเภทบริการ *">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                  {categories.map((cat) => (
+                    <label key={cat.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        checked={(area.category_services || []).some(
+                          (s) => s.category_id === cat.id
+                        )}
+                        onChange={() => handleServiceTypeChange(cat.id)}
+                      />
+                      <span className="text-slate-700">{cat.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </FormField>
+              </div>
+
               {/* Measurement Selection */}
               <div className="bg-white p-3 rounded-lg border border-slate-200">
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -791,23 +811,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   </div>
                 )}
               </div>
-
-              <FormField label="ประเภทบริการ *">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {categories.map((category) => (
-                    <label key={category.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        className="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary"
-                        checked={area.category_services?.some((c) => c.category_id === category.id) || false}
-                        onChange={() => handleServiceTypeChange(category.id)}
-                        required={!area.category_services || area.category_services.length === 0}
-                      />
-                      <span className="text-sm text-slate-800">{category.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FormField>
 
               {renderPriceSection()}
 
