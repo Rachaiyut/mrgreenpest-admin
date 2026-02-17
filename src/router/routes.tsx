@@ -18,6 +18,7 @@ const Warehouse = lazy(() => import('../pages/warehouse/Warehouse'));
 const GoodsReceipt = lazy(() => import('../pages/inventory/goods-receipt/Good-Receipt'));
 const Suppliers = lazy(() => import('../pages/suppliers/Supplier'));
 const Withdrawals = lazy(() => import('../pages/inventory/withdrawals'));
+const WithDrawVehicle = lazy(() => import('../pages/inventory/withdrawals/WithDrawVehicle'));
 const Transfers = lazy(() => import('../pages/inventory/transfers/Transfer'));
 const StockAdjustment = lazy(() => import('../pages/inventory/stock-adjustment'));
 const Returns = lazy(() => import('../pages/inventory/returns'));
@@ -98,6 +99,14 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onUpdateAssessment={handlers.assessments.update}
           onUpdateQuotation={handlers.quotations.update}
           onCreateQuotation={handlers.quotations.create}
+        />
+      ),
+      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
+    },
+    {
+      path: '/withdraw-vehicle',
+      element: (
+        <WithDrawVehicle
         />
       ),
       roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],

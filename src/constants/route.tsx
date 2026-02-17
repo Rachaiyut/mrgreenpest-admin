@@ -40,6 +40,7 @@ export const PAGE_PATH: Record<string, string> = {
   'ใบเบิกสินค้า': 'requisitions',
   'ปรับปรุง Stock': 'stock-adjustment',
   'คืนสินค้า': 'returns',
+  'เบิกสินค้าเข้าคลังย่อย': 'withdraw-vehicle',
   'ผู้ใช้งาน': 'users',
   'จัดการบทบาท': 'roles',
   'การแจ้งเตือนและนัดหมาย': 'notifications',
@@ -159,6 +160,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
         name: 'คืนสินค้า',
         icon: NewWarehouseIcon,
         roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
+      },
+      {
+        name: 'เบิกสินค้าเข้าคลังย่อย',
+        icon: NewWarehouseIcon,
+        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
       },
     ],
   },
