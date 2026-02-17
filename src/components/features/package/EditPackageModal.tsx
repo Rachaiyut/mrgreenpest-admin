@@ -29,6 +29,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     [categories]
   );
 
+  const availableUnits = useMemo(
+    () => units.filter((u) => ['เมตร', 'ตารางเมตร'].includes(u.name)),
+    [units]
+  );
+
   useEffect(() => {
     if (pkg) {
       setFormData(pkg);
@@ -190,7 +195,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
             <Select
               name="category_id"
               id="categoryId"
-              value={formData.category_id || ''}
+              value={formData.category_id || formData.category?.id || ''}
               onChange={handleChange}
               required
             >
@@ -262,10 +267,10 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                     หน่วย
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
-                    ราคาเสนอ (ไม่มีปลวก)
+                    ราคาเสนอ (มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
-                    ราคาเสนอ (มีปลวก)
+                    ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
                     ราคาต่ำสุด
@@ -298,7 +303,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       </td>
                       <td className="p-1">
                         <Select
-                          value={cond.unit_id || ''}
+                          value={cond.unit_id || cond.unit?.id || ''}
                           onChange={(e) =>
                             handleConditionChange(index, 'unit_id', e.target.value)
                           }
@@ -306,7 +311,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                           required
                         >
                           <option value="">-- เลือกหน่วย --</option>
-                          {units.map((unit) => (
+                          {availableUnits.map((unit) => (
                             <option key={unit.id} value={unit.id}>
                               {unit.name}
                             </option>
@@ -316,11 +321,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_without_termite ?? ''}
+                          value={cond.price_with_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_without_termite',
+                              'price_with_termite',
                               e.target.value
                             )
                           }
@@ -333,11 +338,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_with_termite ?? ''}
+                          value={cond.price_without_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_with_termite',
+                              'price_without_termite',
                               e.target.value
                             )
                           }

@@ -40,6 +40,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     [categories]
   );
 
+  const availableUnits = useMemo(
+    () => units.filter((u) => ['เมตร', 'ตารางเมตร'].includes(u.name)),
+    [units]
+  );
+
   const invalidConditionIndices = useMemo(() => {
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
@@ -229,10 +234,10 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                     หน่วย
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
-                    ราคาเสนอ (ไม่มีปลวก)
+                    ราคาเสนอ (มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
-                    ราคาเสนอ (มีปลวก)
+                    ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
                     ราคาต่ำสุด
@@ -273,7 +278,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                           required
                         >
                           <option value="">-- เลือกหน่วย --</option>
-                          {units.map((unit) => (
+                          {availableUnits.map((unit) => (
                             <option key={unit.id} value={unit.id}>
                               {unit.name}
                             </option>
@@ -283,11 +288,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_without_termite ?? ''}
+                          value={cond.price_with_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_without_termite',
+                              'price_with_termite',
                               e.target.value
                             )
                           }
@@ -300,11 +305,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.price_with_termite ?? ''}
+                          value={cond.price_without_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'price_with_termite',
+                              'price_without_termite',
                               e.target.value
                             )
                           }
