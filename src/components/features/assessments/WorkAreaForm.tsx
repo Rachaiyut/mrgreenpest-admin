@@ -48,6 +48,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const isInitialLoad = useRef(true);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedStandardPrice, setSelectedStandardPrice] = useState<number | undefined>(
+    area.package_price
+  );
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -318,6 +321,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
   // Handler for price option selection
   const handlePriceOptionChange = (price: number) => {
+    setSelectedStandardPrice(price);
     onAreaChange(index, {
       ...area,
       package_price: price,
@@ -586,102 +590,97 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                 {measurementType === 'sqm' && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                      พื้นที่ (ตร.ม.) <span className="text-red-500">*</span>
-                    </label>
-
-
-
                     {/* Package Selection Cards */}
                     {area.area_size && area.area_size > 0 && availablePackages.length > 0 && (
-                      <div className="mb-4 animate-fadeIn">
-                        <h4 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                          <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">📦</span>
-                          เลือกแพ็กเกจ
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-                          {availablePackages.map(pkg => {
-                            const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
-                            const fit = area.area_size ? conditions.find(c => c.area_range >= area.area_size!) : null;
+                      <>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          แพ็คเก็จ <span className="text-red-500">*</span>
+                        </label>  
+                        <div className="mb-4 animate-fadeIn">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+                            {availablePackages.map(pkg => {
+                              const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                              const fit = area.area_size ? conditions.find(c => c.area_range >= area.area_size!) : null;
 
-                            const isSelected = selectedPackage?.id === pkg.id;
+                              const isSelected = selectedPackage?.id === pkg.id;
 
-                            return (
-                              <button
-                                key={pkg.id}
-                                type="button"
-                                onClick={() => onSelectPackage?.(pkg.id)}
-                                className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
-                                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                  : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
-                                  }`}
-                              >
-                                <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>{pkg.name}</div>
-                                {selectedPackage ? (
-                                  <div className={`mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>
-                                    <label className="block text-sm font-medium text-slate-700 mb-1">
-                                      เงื่อนไขราคา<span className="text-red-500">*</span>
-                                    </label>
-                                    {fit && (
-                                      <div className="grid grid-cols-2 gap-2 w-full">
-                                        {/* Option 1: With Termites */}
-                                        <label
-                                          onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_with_termite); }}
-                                          className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
-                                            area.package_price === fit.price_with_termite
-                                              ? 'bg-green-50 border-green-500'
-                                              : 'bg-white border-slate-300 hover:border-slate-400'
-                                          }`}
-                                        >
-                                          <div className="text-[10px] text-slate-500">มีปลวก</div>
-                                          <div className="flex items-center mt-1">
-                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                                              area.package_price === fit.price_with_termite ? 'border-green-600' : 'border-slate-400'
-                                            }`}>
-                                              {area.package_price === fit.price_with_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                              return (
+                                <button
+                                  key={pkg.id}
+                                  type="button"
+                                  onClick={() => onSelectPackage?.(pkg.id)}
+                                  className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
+                                    ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                    : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
+                                    }`}
+                                >
+                                  <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>{pkg.name}</div>
+                                  {selectedPackage ? (
+                                    <div className={`w-full mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>
+                                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                                        เงื่อนไขราคา<span className="text-red-500">*</span>
+                                      </label>
+                                      {fit && (
+                                        <div className="grid grid-cols-2 gap-2 w-full">
+                                          {/* Option 1: With Termites */}
+                                          <label
+                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_with_termite); }}
+                                            className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
+                                              selectedStandardPrice === fit.price_with_termite
+                                                ? 'bg-green-50 border-green-500'
+                                                : 'bg-white border-slate-300 hover:border-slate-400'
+                                            }`}
+                                          >
+                                            <div className="text-[10px] text-slate-500">มีปลวก</div>
+                                            <div className="flex items-center mt-1">
+                                              <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                                                selectedStandardPrice === fit.price_with_termite ? 'border-green-600' : 'border-slate-400'
+                                              }`}>
+                                                {selectedStandardPrice === fit.price_with_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                                              </div>
+                                              <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_with_termite.toLocaleString()}</div>
                                             </div>
-                                            <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_with_termite.toLocaleString()}</div>
-                                          </div>
-                                        </label>
+                                          </label>
 
-                                        {/* Option 2: Without Termites */}
-                                        <label
-                                          onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_without_termite); }}
-                                          className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
-                                            area.package_price === fit.price_without_termite
-                                              ? 'bg-green-50 border-green-500'
-                                              : 'bg-white border-slate-300 hover:border-slate-400'
-                                          }`}
-                                        >
-                                          <div className="text-[10px] text-slate-500">ไม่มีปลวก</div>
-                                          <div className="flex items-center mt-1">
-                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                                              area.package_price === fit.price_without_termite ? 'border-green-600' : 'border-slate-400'
-                                            }`}>
-                                              {area.package_price === fit.price_without_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                                          {/* Option 2: Without Termites */}
+                                          <label
+                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_without_termite); }}
+                                            className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
+                                              selectedStandardPrice === fit.price_without_termite
+                                                ? 'bg-green-50 border-green-500'
+                                                : 'bg-white border-slate-300 hover:border-slate-400'
+                                            }`}
+                                          >
+                                            <div className="text-[10px] text-slate-500">ไม่มีปลวก</div>
+                                            <div className="flex items-center mt-1">
+                                              <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                                                selectedStandardPrice === fit.price_without_termite ? 'border-green-600' : 'border-slate-400'
+                                              }`}>
+                                                {selectedStandardPrice === fit.price_without_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                                              </div>
+                                              <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_without_termite.toLocaleString()}</div>
                                             </div>
-                                            <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_without_termite.toLocaleString()}</div>
-                                          </div>
-                                        </label>
-                                      </div>
-                                    )}
+                                          </label>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="mt-2 text-xs text-slate-400">
+                                      ระบุขนาดเพื่อคำนวณราคา
+                                    </div>
+                                  )}
+                                  <div className="text-[10px] text-slate-400 mt-3">
+                                    {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ตร.ม.` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}
                                   </div>
-                                ) : (
-                                  <div className="mt-2 text-xs text-slate-400">
-                                    ระบุขนาดเพื่อคำนวณราคา
-                                  </div>
-                                )}
-                                <div className="text-[10px] text-slate-400 mt-3">
-                                  {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ตร.ม.` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}
-                                </div>
-                                {isSelected && (
-                                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                                )}
-                              </button>
-                            );
-                          })}
+                                  {isSelected && (
+                                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      </>
                     )}
 
                     {/* Standard Size Options */}
@@ -738,11 +737,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                     {/* Show current package price if calculated */}
                     {selectedPackage && area.area_size && area.area_size > 0 && (
-                      <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
-                        <span className="text-sm text-blue-800 font-medium">
+                      <div className="mt-2 p-3 bg-primary/5  border border-blue-100 rounded-lg flex justify-between items-center">
+                        <span className="text-sm text-primary font-medium">
                           ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
                         </span>
-                        <span className="text-lg text-blue-900 font-bold">
+                        <span className="text-lg text-primary font-bold">
                           ฿{(area.package_price || 0).toLocaleString()}
                         </span>
                       </div>
