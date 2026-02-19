@@ -5,12 +5,10 @@ import { PlusIcon, TrashIcon, RefreshIcon, ShieldCheckIcon, ChevronDownIcon } fr
 import {
   AssessmentWorkArea,
   AssessmentWorkAreaItem,
-  AssessmentWorkAreaCategory,
 } from '@/src/types/entity/assessment.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category, ServiceSystem } from '@/src/types';
-
 
 interface WorkAreaFormProps {
   area: Partial<AssessmentWorkArea>;
@@ -26,9 +24,7 @@ interface WorkAreaFormProps {
   availablePackages?: Package[];
   onSelectPackage?: (pkgId: string) => void;
   categories: Category[];
-  /** Original area data for comparison when editing (optional) */
   originalArea?: Partial<AssessmentWorkArea>;
-  /** Flag to indicate this is an edit operation (optional) */
   isEditing?: boolean;
   onApprove?: (index: number) => void;
 }
@@ -50,7 +46,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 }) => {
   // Track if this is the initial load - skip auto-recalculation if editing existing data
   const isInitialLoad = useRef(true);
-  const hasUserMadeChanges = useRef(false);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -83,23 +78,15 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (!selectedPackage) {
       return (
         <div className="pt-4 border-t space-y-4">
-          {/* Package Recommendation Section Removed from here */}
           <FormField label="ราคาบริการหลัก (กำหนดเอง)" htmlFor={`manual-price-${index}`}>
             <Input
               id={`manual-price-${index}`}
               type="number"
-              value={
-                area.base_service_price === undefined
-                  ? ''
-                  : area.base_service_price
-              }
+              value={area.package_price === undefined ? '' : area.package_price}
               onChange={(e) => {
                 onAreaChange(index, {
                   ...area,
-                  base_service_price:
-                    e.target.value === ''
-                      ? undefined
-                      : parseFloat(e.target.value),
+                  package_price: e.target.value === '' ? undefined : parseFloat(e.target.value),
                 });
               }}
               step="0.01"
@@ -116,9 +103,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           <h4 className="text-base font-semibold text-slate-700 mb-3">
             แพ็กเกจที่เลือก
           </h4>
-
-          {/* Package Selection Cards Removed from here */}
-
           <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
             <div className="flex justify-between items-start">
               <div>
@@ -136,20 +120,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <Input
                     type="number"
                     className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
-                    value={
-                      area.base_service_price === undefined
-                        ? ''
-                        : area.base_service_price
-                    }
+                    value={area.package_price === undefined ? '' : area.package_price}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       e.stopPropagation();
                       onAreaChange(index, {
                         ...area,
-                        base_service_price:
-                          e.target.value === ''
-                            ? undefined
-                            : parseFloat(e.target.value),
+                        package_price: e.target.value === '' ? undefined : parseFloat(e.target.value),
                       });
                     }}
                     step="0.01"
@@ -161,7 +138,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <div className="flex flex-col items-end mt-2 p-2 bg-red-50 border border-red-100 rounded-lg">
                     <p className="text-xs text-red-600 font-medium mb-2 text-right">
                       ⚠️ ราคาต่ำกว่าเกณฑ์มาตรฐาน<br />
-                      (ส่วนต่าง ฿{(selectedCondition.minimum_price - (area.base_service_price || 0)).toLocaleString('th-TH')})
+                      (ส่วนต่าง ฿{((() => {
+                        const minPrice = Math.min(
+                          selectedCondition.min_price_with_termite,
+                          selectedCondition.min_price_without_termite
+                        );
+                        return minPrice - (area.package_price || 0);
+                      })()).toLocaleString('th-TH')})
                     </p>
                     {onApprove && (
                       <button
@@ -178,42 +161,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               </div>
             </div>
           </div>
-        </div>
-      );
-    }
-
-    if (area.area_size && area.area_size > 0) {
-      return (
-        <div className="pt-4 border-t">
-          <FormField
-            label="ราคาบริการแพ็กเกจ"
-            htmlFor={`manual-package-price-${index}`}
-          >
-            <Input
-              id={`manual-package-price-${index}`}
-              type="number"
-              value={
-                area.base_service_price === undefined
-                  ? ''
-                  : area.base_service_price
-              }
-              onChange={(e) => {
-                onAreaChange(index, {
-                  ...area,
-                  base_service_price:
-                    e.target.value === ''
-                      ? undefined
-                      : parseFloat(e.target.value),
-                });
-              }}
-              step="0.01"
-              placeholder="0.00"
-              required
-            />
-          </FormField>
-          <p className="text-xs text-amber-600 mt-1">
-            ขนาดพื้นที่ไม่อยู่ในเงื่อนไขแพ็กเกจ กรุณาระบุราคาเอง
-          </p>
         </div>
       );
     }
@@ -242,18 +189,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 <Input
                   type="number"
                   className="w-28 text-right font-bold text-lg h-9 !py-1 text-primary border-slate-300 focus:ring-primary focus:border-primary"
-                  value={
-                    area.base_service_price === undefined
-                      ? ''
-                      : area.base_service_price
-                  }
+                  value={area.package_price === undefined ? '' : area.package_price}
                   onChange={(e) => {
                     onAreaChange(index, {
                       ...area,
-                      base_service_price:
-                        e.target.value === ''
-                          ? undefined
-                          : parseFloat(e.target.value),
+                      package_price: e.target.value === '' ? undefined : parseFloat(e.target.value),
                     });
                   }}
                   step="0.01"
@@ -267,30 +207,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     );
   };
 
-  // Stringify category_services IDs for stable comparison
-  const categoryServicesKey = useMemo(() => {
-    return JSON.stringify((area.category_services || []).map(c => c.category_id).sort());
-  }, [area.category_services]);
-
   useEffect(() => {
-    // Skip auto-recalculation on initial load if we're editing existing data with valid prices
-    // This preserves the original saved values
-    if (isInitialLoad.current && isEditing) {
-      // If the area already has a base_service_price from the database, preserve it
-      if (typeof area.base_service_price === 'number' && area.base_service_price > 0) {
-        isInitialLoad.current = false;
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      // If editing, and a price is already set, don't override it on initial load.
+      if (isEditing && typeof area.package_price === 'number' && area.package_price > 0) {
         return;
       }
     }
 
-    // Mark initial load as complete after first run
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      return; // Don't recalculate on first render if editing
-    }
-
     if (selectedPackage && area.area_size) {
-      // Sort package prices by area_range ascending to find the best fit
       const sortedPrices = [...(selectedPackage.package_price || [])].sort(
         (a, b) => a.area_range - b.area_range
       );
@@ -299,37 +225,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         (c) => c.area_range >= area.area_size!
       );
 
+      // When the size or package results in a new price condition, set a default price.
+      // The user can then override this by clicking a price option or typing a new price.
       if (condition) {
-        const hasTermites = (area.category_services || []).some((cat) =>
-          categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
-        );
-        const priceToUse = hasTermites
-          ? condition.price_with_termite
-          : condition.price_without_termite;
-
-        if (
-          area.base_service_price !== priceToUse ||
-          area.package_price_id !== condition.id
-        ) {
-          // PROTECTION: If we are editing, and the current price matches the ORIGINAL saved price,
-          // AND the area size hasn't changed from original,
-          // then assume this is a custom price override that should be preserved.
-          // This prevents late-loading packages from overwriting the saved custom price.
-          if (isEditing && originalArea &&
-            typeof originalArea.base_service_price === 'number' &&
-            Math.abs((area.base_service_price || 0) - originalArea.base_service_price) < 0.1 &&
-            area.area_size === originalArea.area_size
-          ) {
-            console.log("Preserving custom price:", area.base_service_price);
-            return;
-          }
-
+        if (area.package_price_id !== condition.id) {
+          const defaultPrice = condition.price_without_termite;
           onAreaChange(index, {
             ...area,
-            base_service_price: priceToUse,
+            package_price: defaultPrice,
             package_price_id: condition.id,
-            package_price: priceToUse, // Save the calculated package price
-            total_price: priceToUse + (area.items || []).reduce(
+            total_price: defaultPrice + (area.items || []).reduce(
               (sum, item) =>
                 sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
               0
@@ -337,12 +242,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           });
         }
       } else {
-        if (area.base_service_price !== 0 || area.package_price_id || area.package_price) {
+        // No suitable price condition found, reset the price.
+        if (area.package_price !== 0 || area.package_price_id) {
           onAreaChange(index, {
             ...area,
-            base_service_price: 0,
+            package_price: 0,
             package_price_id: undefined,
-            package_price: undefined,
             total_price: (area.items || []).reduce(
               (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
               0
@@ -352,13 +257,20 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [area.area_size, selectedPackage?.id, categoryServicesKey, isEditing, index]);
+  }, [area.area_size, selectedPackage?.id, isEditing, index]);
 
   const isPriceInvalid = useMemo(() => {
-    if (!selectedCondition || typeof area.base_service_price !== 'number')
+    if (!selectedCondition || typeof area.package_price !== 'number')
       return false;
-    return area.base_service_price < selectedCondition.minimum_price;
-  }, [selectedCondition, area.base_service_price]);
+
+    // Use the overall minimum price as the threshold.
+    const minPrice = Math.min(
+      selectedCondition.min_price_with_termite,
+      selectedCondition.min_price_without_termite
+    );
+
+    return area.package_price < minPrice;
+  }, [selectedCondition, area.package_price]);
 
   useEffect(() => {
     const itemsCost = (area.items || []).reduce(
@@ -366,7 +278,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
       0
     );
-    const packageCost = Number(area.base_service_price) || 0;
+    const packageCost = Number(area.package_price) || 0;
     const newTotalCost = packageCost + itemsCost;
 
     const currentEstimatedCost = area.total_price || 0;
@@ -378,7 +290,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     area.items,
-    area.base_service_price,
+    area.package_price,
     // NOTE: Removed area.total_price to prevent infinite loop
     // We're calculating and setting total_price, so it shouldn't be a dependency
     index,
@@ -390,7 +302,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     const { name, value } = e.target;
     const updatedArea: Partial<AssessmentWorkArea> = { ...area };
 
-    if (name === 'area_size' || name === 'perimeter') {
+    if (name === 'area_size') {
       updatedArea[name] = value === '' ? undefined : parseFloat(value);
     } else {
       (updatedArea as any)[name] = value;
@@ -402,6 +314,18 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   // Specific handler for Radio change
   const handleAreaSizeRadioChange = (size: number) => {
     onAreaChange(index, { ...area, area_size: size });
+  };
+
+  // Handler for price option selection
+  const handlePriceOptionChange = (price: number) => {
+    onAreaChange(index, {
+      ...area,
+      package_price: price,
+      total_price: price + (area.items || []).reduce(
+        (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+        0
+      ),
+    });
   };
 
   const handleServiceTypeChange = (categoryId: string) => {
@@ -432,7 +356,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     onAreaChange(index, {
       ...area,
       items: currentItems,
-      total_price: currentItems.reduce((sum, i) => sum + (i.total_price || 0), 0) + (area.base_service_price || 0),
+      total_price: currentItems.reduce((sum, i) => sum + (i.total_price || 0), 0) + (area.package_price || 0),
     });
     setIsProductModalOpen(false);
   };
@@ -459,7 +383,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
       0
     );
-    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
+    const newTotalPrice = (area.package_price || 0) + productsTotal;
 
     onAreaChange(index, {
       ...area,
@@ -477,7 +401,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
       0
     );
-    const newTotalPrice = (area.base_service_price || 0) + productsTotal;
+    const newTotalPrice = (area.package_price || 0) + productsTotal;
 
     onAreaChange(index, {
       ...area,
@@ -487,7 +411,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   };
 
   const [measurementType, setMeasurementType] = useState<'sqm' | 'meter'>(
-    area.perimeter && !area.area_size ? 'meter' : 'sqm'
+    'sqm'
   );
 
   const handleMeasurementTypeChange = (type: 'sqm' | 'meter') => {
@@ -556,7 +480,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         {!isCollapsed && (
           <div className="p-4 pt-0 border-t border-slate-200 animate-fadeIn">
             <div className="mt-4 space-y-4">
-
               <FormField
                 label={`ชื่อพื้นที่ #${displayIndex}`}
                 htmlFor={`areaName-${index}`}
@@ -604,23 +527,23 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               </div>
 
               <div className="bg-white p-3 rounded-lg border border-slate-200">
-               <FormField label="ประเภทบริการ *">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                  {categories.map((cat) => (
-                    <label key={cat.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        checked={(area.category_services || []).some(
-                          (s) => s.category_id === cat.id
-                        )}
-                        onChange={() => handleServiceTypeChange(cat.id)}
-                      />
-                      <span className="text-slate-700">{cat.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </FormField>
+                <FormField label="ประเภทบริการ *">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                    {categories.map((cat) => (
+                      <label key={cat.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={(area.category_services || []).some(
+                            (s) => s.category_id === cat.id
+                          )}
+                          onChange={() => handleServiceTypeChange(cat.id)}
+                        />
+                        <span className="text-slate-700">{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </FormField>
               </div>
 
               {/* Measurement Selection */}
@@ -659,24 +582,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   </label>
                 </div>
 
-                {measurementType === 'meter' && (
-                  <FormField label="พื้นที่ (ม.)" htmlFor={`linearMeters-${index}`}>
-                    <div className="relative">
-                      <Input
-                        id={`linearMeters-${index}`}
-                        name="perimeter"
-                        type="number"
-                        value={area.perimeter || ''}
-                        onChange={handleFieldChange}
-                        placeholder="ความยาวรอบรูป (ม.)"
-                        required
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">ม.</span>
-                      </div>
-                    </div>
-                  </FormField>
-                )}
+
 
                 {measurementType === 'sqm' && (
                   <div className="space-y-2">
@@ -693,15 +599,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                           <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">📦</span>
                           เลือกแพ็กเกจ
                         </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
                           {availablePackages.map(pkg => {
                             const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
                             const fit = area.area_size ? conditions.find(c => c.area_range >= area.area_size!) : null;
-                            
-                            const hasTermites = (area.category_services || []).some((cat) =>
-                              categories.some((c) => c.id === cat.category_id && c.name.includes('กำจัดปลวก'))
-                            );
-                            const price = fit ? (hasTermites ? fit.price_with_termite : fit.price_without_termite) : null;
+
                             const isSelected = selectedPackage?.id === pkg.id;
 
                             return (
@@ -715,19 +617,61 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   }`}
                               >
                                 <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>{pkg.name}</div>
-                                <div className="text-xs text-slate-500 mt-1">
-                                  {pkg.visit_limit} ครั้ง
-                                </div>
-                                {price !== null ? (
-                                    <div className={`mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>
-                                    ฿{price.toLocaleString()}
-                                    </div>
+                                {selectedPackage ? (
+                                  <div className={`mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                                      เงื่อนไขราคา<span className="text-red-500">*</span>
+                                    </label>
+                                    {fit && (
+                                      <div className="grid grid-cols-2 gap-2 w-full">
+                                        {/* Option 1: With Termites */}
+                                        <label
+                                          onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_with_termite); }}
+                                          className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
+                                            area.package_price === fit.price_with_termite
+                                              ? 'bg-green-50 border-green-500'
+                                              : 'bg-white border-slate-300 hover:border-slate-400'
+                                          }`}
+                                        >
+                                          <div className="text-[10px] text-slate-500">มีปลวก</div>
+                                          <div className="flex items-center mt-1">
+                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                                              area.package_price === fit.price_with_termite ? 'border-green-600' : 'border-slate-400'
+                                            }`}>
+                                              {area.package_price === fit.price_with_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                                            </div>
+                                            <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_with_termite.toLocaleString()}</div>
+                                          </div>
+                                        </label>
+
+                                        {/* Option 2: Without Termites */}
+                                        <label
+                                          onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_without_termite); }}
+                                          className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
+                                            area.package_price === fit.price_without_termite
+                                              ? 'bg-green-50 border-green-500'
+                                              : 'bg-white border-slate-300 hover:border-slate-400'
+                                          }`}
+                                        >
+                                          <div className="text-[10px] text-slate-500">ไม่มีปลวก</div>
+                                          <div className="flex items-center mt-1">
+                                            <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                                              area.package_price === fit.price_without_termite ? 'border-green-600' : 'border-slate-400'
+                                            }`}>
+                                              {area.package_price === fit.price_without_termite && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
+                                            </div>
+                                            <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_without_termite.toLocaleString()}</div>
+                                          </div>
+                                        </label>
+                                      </div>
+                                    )}
+                                  </div>
                                 ) : (
-                                    <div className="mt-2 text-xs text-slate-400">
-                                        ระบุขนาดเพื่อคำนวณราคา
-                                    </div>
+                                  <div className="mt-2 text-xs text-slate-400">
+                                    ระบุขนาดเพื่อคำนวณราคา
+                                  </div>
                                 )}
-                                <div className="text-[10px] text-slate-400 mt-1">
+                                <div className="text-[10px] text-slate-400 mt-3">
                                   {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ตร.ม.` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}
                                 </div>
                                 {isSelected && (
@@ -774,11 +718,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       </div>
                     )}
 
-
-
-
-
-
                     {area.area_size && area.area_size > 0 && (
                       <p className="text-xs text-slate-500 mb-2">หรือระบุขนาดเอง:</p>
                     )}
@@ -799,12 +738,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                     {/* Show current package price if calculated */}
                     {selectedPackage && area.area_size && area.area_size > 0 && (
-                      <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
+                      <div className="mt-2 bg-blue-50 border border-blue-100 rounded-lg flex justify-between items-center">
                         <span className="text-sm text-blue-800 font-medium">
                           ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
                         </span>
                         <span className="text-lg text-blue-900 font-bold">
-                          ฿{(area.base_service_price || 0).toLocaleString()}
+                          ฿{(area.package_price || 0).toLocaleString()}
                         </span>
                       </div>
                     )}
@@ -932,11 +871,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         </span>
                       </div>
                     )}
-                    {typeof originalArea.base_service_price === 'number' && (
+                    {typeof originalArea.package_price === 'number' && (
                       <div>
                         <span className="text-amber-600">ราคาบริการ:</span>{' '}
                         <span className="font-medium text-amber-900">
-                          ฿{originalArea.base_service_price.toLocaleString('th-TH', {
+                          ฿{originalArea.package_price.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}

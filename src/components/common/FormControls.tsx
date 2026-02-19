@@ -202,3 +202,14 @@ export const DetailsItem: FC<{
     </dd>
   </div>
 );
+
+
+export const Radio: FC<InputHTMLAttributes<HTMLInputElement>> = ({ className = '', ...props }) => {
+  return (
+    <input
+      {...props}
+      type="radio" 
+      className={`h-4 w-4 border-slate-300 text-primary focus:ring-primary ${className}`}
+    />
+  );
+};

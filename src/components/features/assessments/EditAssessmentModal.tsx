@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, FC, ChangeEvent, FormEvent } from 'react';
+
+import { useState, useEffect, useMemo, FC, ChangeEvent } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Textarea } from '../../common/FormControls';
 import { AssessmentApi } from '@/src/api';
 import {
   Assessment,
@@ -76,8 +76,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         
         let loadedPaymentCondition = loadedAssessment.payment_condition || PaymentMethod.TRANSFER;
         
-        // Fallback: If payment condition is TRANSFER but there are installments, assume INSTALLMENT
-        // This handles legacy data where payment_condition might not have been saved correctly
         if (loadedAssessment.installments && loadedAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
            loadedPaymentCondition = PaymentMethod.INSTALLMENT;
         }
@@ -94,7 +92,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
         const rawAreas = assessment_areas || loadedAssessment.assessment_areas || [];
 
-        // Helper to derive base price
         const enrichArea = (wa: any) => {
           const enrichedItems = (wa.items || []).map((item: any) => {
             if (item.product_id && (!item.product_name || !item.product_price)) {
@@ -111,15 +108,15 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           });
 
           const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
-          const derivedBasePrice = wa.base_service_price !== undefined
-            ? wa.base_service_price
+          const derivedBasePrice = wa.package_price !== undefined
+            ? wa.package_price
             : (Number(wa.total_price) || 0) - itemsTotal;
 
           return {
             ...wa,
             items: enrichedItems,
             category_services: wa.category_services || [],
-            base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+            package_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
           };
         };
 
@@ -144,64 +141,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     [workAreas]
   );
 
-  // Handlers for Installments
-  const handleAddInstallment = () => {
-    setInstallments(prev => {
-      const newCount = prev.length + 1;
-      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
-      const remainder = totalEstimatedCost - (baseAmount * newCount);
-      
-      const newInstallments = [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          installment_no: newCount,
-          amount: 0, // Will be updated below
-          note: `งวดที่ ${newCount}`,
-        }
-      ];
-
-      return newInstallments.map((inst, index) => {
-        let amount = baseAmount;
-        // Add remainder to the last installment to ensure total matches exactly
-        if (index === newCount - 1) {
-          amount = Number((baseAmount + remainder).toFixed(2));
-        }
-        
-        return {
-          ...inst,
-          amount
-        };
-      });
-    });
-  };
-
-  const handleRemoveInstallment = (index: number) => {
-    setInstallments(prev => {
-      const filtered = prev.filter((_, i) => i !== index);
-      const newCount = filtered.length;
-      
-      if (newCount === 0) return [];
-
-      const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
-      const remainder = totalEstimatedCost - (baseAmount * newCount);
-
-      return filtered.map((inst, i) => {
-        let amount = baseAmount;
-        if (i === newCount - 1) {
-          amount = Number((baseAmount + remainder).toFixed(2));
-        }
-
-        return {
-          ...inst,
-          installment_no: i + 1,
-          amount,
-          note: inst.note?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.note
-        };
-      });
-    });
-  };
-
   const handleInstallmentChange = (index: number, field: keyof AssessmentInstallment, value: any) => {
     setInstallments(prev => prev.map((inst, i) => {
       if (i === index) {
@@ -211,12 +150,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     }));
   };
 
-  // Auto-calculate installments when total price changes or payment condition changes
-  // Remove installments from dependencies to prevent loop
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       if (installments.length === 0 && totalEstimatedCost > 0) {
-        // Default to 2 installments if none exist
         setInstallments([
           { 
               id: crypto.randomUUID(), 
@@ -232,10 +168,8 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           }
         ]);
       } else if (installments.length > 0 && totalEstimatedCost > 0) {
-        // Recalculate existing installments based on new total
         const currentTotal = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
         
-        // Only update if the total doesn't match (precision issue tolerance)
         if (Math.abs(currentTotal - totalEstimatedCost) > 0.05) {
            const count = installments.length;
            const baseAmount = Math.floor((totalEstimatedCost / count) * 100) / 100;
@@ -251,9 +185,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         }
       }
     } else {
-      // Don't clear immediately on edit to prevent data loss if accidental switch, 
-      // but if we follow Add logic, we should clear. 
-      // Let's keep it consistent:
       setInstallments([]);
     }
   }, [paymentCondition, totalEstimatedCost]);
@@ -295,7 +226,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         area_name: `พื้นที่ ${prev.length + 1}`,
         items: [],
         category_services: [],
-        base_service_price: 0,
+        package_price: 0,
         total_price: 0,
       },
     ]);
@@ -330,7 +261,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           area_size: undefined,
           category_services: [],
           service_system: undefined,
-          base_service_price: 0,
+          package_price: 0,
           total_price: 0,
         };
       }
@@ -369,8 +300,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             : bestFit.price_without_termite;
           return {
             ...area,
-            base_service_price: priceToUse,
-            package_price: priceToUse, // Set package price snapshot
+            package_price: priceToUse,
             package_price_id: bestFit.id,
             total_price: priceToUse + (area.items || []).reduce(
               (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
@@ -390,7 +320,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     const sanitizedWorkAreas = workAreas.map((area) => {
       const newArea: any = { ...area };
       if (newArea.id && newArea.id.startsWith('area-')) {
-        delete newArea.id;
+        newArea.id = crypto.randomUUID();
       }
       if (newArea.area_size === undefined || newArea.area_size === '') {
         newArea.area_size = 0;
@@ -401,10 +331,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         (sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
         0
       );
-      const baseCost = Number(newArea.base_service_price) || 0;
+      const baseCost = Number(newArea.package_price) || 0;
       newArea.total_price = baseCost + itemsCost;
 
-      // Ensure package_price is number if present
       if (newArea.package_price !== undefined && newArea.package_price !== null) {
         newArea.package_price = Number(newArea.package_price);
       }
@@ -428,8 +357,6 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
       }));
 
-      delete newArea.base_service_price;
-
       return newArea;
     });
 
@@ -449,7 +376,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     onClose();
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     await handleSave();
   };
@@ -525,7 +452,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
               -ml-0.5 mr-2 h-5 w-5
               ${activeTab === 'areas' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
             `} />
-            พื้นที่บริการ ({workAreas.length})
+            พื้นที่และบริการ
           </button>
           <button
             onClick={() => setActiveTab('payment')}
@@ -546,377 +473,132 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         </nav>
       </div>
 
-      <form
-        id="edit-assessment-form"
-        onSubmit={handleSubmit}
-        className="space-y-6"
-      >
-        {/* TAB 1: General Info */}
-        <div className={activeTab === 'info' ? 'block' : 'hidden'}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
-                <div className="space-y-4">
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลเบื้องต้น</h3>
-                        <FormField label="วันที่สร้าง" htmlFor="created_at">
-                            <Input
-                            name="created_at"
-                            type="date"
-                            value={formData.created_at || ''}
-                            onChange={handleFieldChange}
-                            required
-                            />
-                        </FormField>
-                        <FormField label="วันที่นัดหมาย" htmlFor="appointment_date">
-                            <Input
-                            name="appointment_date"
-                            type="date"
-                            value={
-                                formData.appointment_date
-                                ? new Date(formData.appointment_date)
-                                    .toISOString()
-                                    .substring(0, 10)
-                                : ''
-                            }
-                            onChange={handleDateChange}
-                            required
-                            />
-                        </FormField>
-                        <FormField label="ลูกค้า" htmlFor="customer_id">
-                            <Input
-                            value={
-                                customers.find((c) => c.id === formData.customer_id)
-                                ? `${customers.find((c) => c.id === formData.customer_id)?.first_name} ${customers.find((c) => c.id === formData.customer_id)?.last_name}`
-                                : formData.customer_id || ''
-                            }
-                            readOnly
-                            className="bg-slate-200 text-slate-600"
-                            />
-                        </FormField>
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
-                             <span className="w-2 h-2 rounded-full bg-primary"></span>
-                             ที่อยู่ให้บริการ
-                        </h3>
-                        <FormField label="ที่อยู่" htmlFor="address">
-                            <Textarea
-                            name="address"
-                            value={formData.address || ''}
-                            onChange={handleFieldChange}
-                            required
-                            className="min-h-[100px]"
-                            />
-                        </FormField>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField label="แขวง/ตำบล" htmlFor="sub_district">
-                            <Input
-                                name="sub_district"
-                                value={formData.sub_district || ''}
-                                onChange={handleFieldChange}
-                                required
-                            />
-                            </FormField>
-                            <FormField label="เขต/อำเภอ" htmlFor="district">
-                            <Input
-                                name="district"
-                                value={formData.district || ''}
-                                onChange={handleFieldChange}
-                                required
-                            />
-                            </FormField>
-                            <FormField label="จังหวัด" htmlFor="province">
-                            <Input
-                                name="province"
-                                value={formData.province || ''}
-                                onChange={handleFieldChange}
-                                required
-                            />
-                            </FormField>
-                            <FormField label="รหัสไปรษณีย์" htmlFor="zipcode">
-                            <Input
-                                name="zipcode"
-                                value={formData.zipcode || ''}
-                                onChange={handleFieldChange}
-                                required
-                            />
-                            </FormField>
-                        </div>
-                         <div className="pt-2">
-                             <FormField label="Link Google Map" htmlFor="google_map_link">
-                                <Input
-                                name="google_map_link"
-                                type="url"
-                                placeholder="https://maps.app.goo.gl/..."
-                                value={formData.google_map_link || ''}
-                                onChange={handleFieldChange}
-                                />
-                            </FormField>
-                         </div>
-                    </div>
-                </div>
+      <form id="edit-assessment-form" onSubmit={handleSubmit}>
+        {activeTab === 'info' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">ข้อมูลลูกค้า</h3>
+              <div className="space-y-4">
+                <p><span className="font-semibold">ชื่อ:</span> {assessment?.customer?.first_name} {assessment?.customer?.last_name}</p>
+                <p><span className="font-semibold">โทรศัพท์:</span> {assessment?.customer?.phone}</p>
+                <p><span className="font-semibold">ที่อยู่:</span> {assessment?.customer?.address_house_no}</p>
+              </div>
             </div>
-            
-            <div className="mt-6 border border-slate-200 p-4 rounded-xl bg-slate-50">
-                 <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลเส้นทาง (Routing)</h3>
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <FormField label="เขต" htmlFor="zone">
-                        <Input
-                        name="zone"
-                        value={formData.zone || ''}
-                        onChange={handleFieldChange}
-                        className="bg-white"
-                        />
-                    </FormField>
-                    <FormField label="Group" htmlFor="route_group">
-                        <Input
-                        name="route_group"
-                        value={formData.route_group || ''}
-                        onChange={handleFieldChange}
-                        className="bg-white"
-                        />
-                    </FormField>
-                    <FormField label="สายถนน" htmlFor="road_line">
-                        <Input
-                        name="road_line"
-                        value={formData.road_line || ''}
-                        onChange={handleFieldChange}
-                        className="bg-white"
-                        />
-                    </FormField>
-                    <FormField label="ลำดับ" htmlFor="sequence">
-                        <Input
-                        name="sequence"
-                        value={formData.sequence || ''}
-                        onChange={handleFieldChange}
-                        className="bg-white"
-                        />
-                    </FormField>
-                 </div>
-            </div>
-        </div>
-
-        {/* TAB 2: Work Areas */}
-        <div className={activeTab === 'areas' ? 'block' : 'hidden'}>
-            <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">รายละเอียดใบประเมิน</h3>
+              <div className="space-y-4">
+                <p><span className="font-semibold">รหัส:</span> {assessment?.code}</p>
+                <p><span className="font-semibold">วันที่สร้าง:</span> {formData.created_at}</p>
                 <div>
-                    <h3 className="text-lg font-bold text-slate-800">พื้นที่ให้บริการ</h3>
-                    <p className="text-sm text-slate-500">จัดการรายละเอียดพื้นที่และสินค้า/บริการ</p>
+                  <label htmlFor="appointment_date" className="block text-sm font-medium text-slate-700">วันที่นัดหมาย</label>
+                  <input
+                    type="date"
+                    id="appointment_date"
+                    name="appointment_date"
+                    value={formData.appointment_date ? new Date(formData.appointment_date).toISOString().substring(0, 10) : ''}
+                    onChange={handleDateChange}
+                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                  />
                 </div>
-                <button
-                    type="button"
-                    onClick={handleAddArea}
-                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 shadow-sm transition-all font-medium"
-                >
-                    <PlusIcon className="w-5 h-5" />
-                    เพิ่มพื้นที่
-                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'areas' && (
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-slate-800">พื้นที่และบริการ</h3>
+              <button
+                type="button"
+                onClick={handleAddArea}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              >
+                <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                เพิ่มพื้นที่
+              </button>
             </div>
 
-            <div className="space-y-4 animate-fadeIn">
-                {workAreas.map((area, index) => (
-                    <WorkAreaForm
-                    key={area.id || index}
+            <div className="space-y-6">
+              {workAreas.map((area, index) => (
+                <div key={area.id} className="p-4 border border-slate-200 rounded-lg">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-semibold text-slate-700">{area.area_name || `พื้นที่ ${index + 1}`}</h4>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => handleClearArea(index)} className="text-sm text-slate-500 hover:text-slate-700">ล้างข้อมูล</button>
+                      <button type="button" onClick={() => handleRemoveArea(index)} className="text-sm text-red-500 hover:text-red-700">ลบพื้นที่</button>
+                    </div>
+                  </div>
+                  <WorkAreaForm
                     area={area}
                     index={index}
                     onAreaChange={handleAreaChange}
-                    onRemoveArea={handleRemoveArea}
                     onClearArea={handleClearArea}
-                    products={products}
-                    selectedPackage={
-                        selectedPackageId
-                        ? (packages.find(
-                            (p) => p.id === selectedPackageId
-                            ) as any)!
-                        : null
-                    }
+                    selectedPackage={packages.find(p => p.id === selectedPackageId) || null}
                     availablePackages={packages}
-                    onSelectPackage={handlePackageSelect}
+                    products={products}
                     categories={categories}
-                    isEditing={true}
-                    originalArea={originalWorkAreas[index]}
-                    onApprove={assessment?.status === AsessmentStatus.PENDING ? () => {
-                        if (window.confirm('ยืนยันการอนุมัติราคาและเปลี่ยนสถานะเป็น "นัดหมายบริการ" (Appointment)?\\nConfirm approval and status change to Appointment?')) {
-                        setFormData(prev => ({ ...prev, status: AsessmentStatus.APPOINTMENT }));
-                        handleSave(AsessmentStatus.APPOINTMENT);
-                        }
-                    } : undefined}
-                    />
-                ))}
-                 {workAreas.length === 0 && (
-                    <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
-                        ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น
-                    </div>
-                )}
-            </div>
-        </div>
-
-        {/* TAB 3: Payment */}
-        <div className={activeTab === 'payment' ? 'block' : 'hidden'}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
-                 {/* Payment Condition Section */}
-                 <div className="lg:col-span-2 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                        <CreditCardIcon className="w-5 h-5 text-primary" />
-                        เงื่อนไขการชำระเงิน
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <label className={`
-                            relative flex items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all h-14
-                            ${paymentCondition === PaymentMethod.TRANSFER 
-                                ? 'border-primary bg-primary/5 shadow-sm' 
-                                : 'border-slate-200 hover:border-slate-300 bg-white'}
-                        `}>
-                            <input 
-                                type="radio" 
-                                name="paymentCondition" 
-                                value={PaymentMethod.TRANSFER}
-                                checked={paymentCondition === PaymentMethod.TRANSFER}
-                                onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
-                                className="sr-only"
-                            />
-                            <span className={`text-sm font-bold ${paymentCondition === PaymentMethod.TRANSFER ? 'text-primary' : 'text-slate-600'}`}>ชำระเต็มจำนวน</span>
-                        </label>
-
-                        <label className={`
-                            relative flex items-center justify-center p-4 cursor-pointer rounded-xl border-2 transition-all h-14
-                            ${paymentCondition === PaymentMethod.INSTALLMENT 
-                                ? 'border-primary bg-primary/5 shadow-sm' 
-                                : 'border-slate-200 hover:border-slate-300 bg-white'}
-                        `}>
-                            <input 
-                                type="radio" 
-                                name="paymentCondition" 
-                                value={PaymentMethod.INSTALLMENT}
-                                checked={paymentCondition === PaymentMethod.INSTALLMENT}
-                                onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)}
-                                className="sr-only"
-                            />
-                            <span className={`text-sm font-bold ${paymentCondition === PaymentMethod.INSTALLMENT ? 'text-primary' : 'text-slate-600'}`}>แบ่งชำระ (งวด)</span>
-                        </label>
-                    </div>
-
-                    {paymentCondition === PaymentMethod.INSTALLMENT && (
-                        <div className="space-y-4 animate-fadeIn">
-                            <div>
-                              <label className="block text-sm font-semibold text-slate-700 mb-1">
-                                จำนวนงวด <span className="text-red-500">*</span>
-                              </label>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  max={60}
-                                  value={installments.length}
-                                  onChange={(e) => updateInstallmentCount(Number(e.target.value))}
-                                  className="font-semibold text-slate-700"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                                <h4 className="text-sm font-semibold text-slate-700 mb-3">รายละเอียดการแบ่งชำระ:</h4>
-                                <div className="space-y-3">
-                                  {installments.map((inst, idx) => (
-                                    <div key={inst.id || idx} className="grid grid-cols-12 gap-3 items-start">
-                                      <div className="col-span-2 pt-2 text-sm font-medium text-slate-600">
-                                        งวดที่ {inst.installment_no}
-                                      </div>
-                                      <div className="col-span-5">
-                                        <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
-                                        <Input 
-                                          type="number"
-                                          value={inst.amount}
-                                          onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
-                                          className="text-sm font-medium"
-                                        />
-                                      </div>
-                                      <div className="col-span-5">
-                                        <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
-                                        <Input 
-                                          value={inst.note || ''}
-                                          onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)}
-                                          className="text-sm"
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-200">
-                                    <span className="text-sm font-bold text-slate-700">รวม</span>
-                                    <span className={`text-sm font-bold ${
-                                        Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 
-                                        ? 'text-red-600' 
-                                        : 'text-red-600' // Using red per design requirement/image usually
-                                    }`}>
-                                        {installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()} / {totalEstimatedCost.toLocaleString()}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                 </div>
-
-                 {/* Summary Side Card */}
-                 <div className="lg:col-span-1">
-                    <div className="bg-white border border-slate-200 rounded-xl shadow-sm sticky top-6">
-                        <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
-                            <h3 className="font-bold text-slate-800">สรุปค่าบริการ</h3>
-                        </div>
-                        <div className="p-4 space-y-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">พื้นที่ทั้งหมด</span>
-                                <span className="font-medium text-slate-900">{workAreas.length} จุด</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">ประเภทราคา</span>
-                                <span className="font-medium text-slate-900">{selectedPackageId ? 'Package' : 'Standard'}</span>
-                            </div>
-                            <div className="pt-4 border-t border-slate-100 flex justify-between items-center bg-green-50/50 -mx-4 px-4 py-3 mt-2 rounded-b-lg">
-                                <span className="font-bold text-slate-800">รวมสุทธิ</span>
-                                <span className="text-xl font-bold text-green-600">
-                                    ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                 </div>
-            </div>
-        </div>
-
-        {/* Summary Card (Moved or Removed) */}
-        <div className={activeTab === 'areas' ? 'block' : 'hidden'}>
-            <div className="mt-6">
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
-                    <div className="p-4 border-b bg-slate-50 rounded-t-xl">
-                        <h3 className="font-bold text-slate-800">สรุปรายการ</h3>
-                    </div>
-                    <div className="p-4 space-y-4">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">จำนวนพื้นที่บริการ</span>
-                            <span className="font-medium">{workAreas.length} แห่ง</span>
-                        </div>
-                        <div className="space-y-2">
-                            {workAreas.map((area, idx) => (
-                                <div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100">
-                                    <span className="truncate max-w-[150px]">{area.area_name}</span>
-                                    <span>฿{(area.total_price || 0).toLocaleString()}</span>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="pt-4 border-t flex justify-between items-end">
-                            <span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span>
-                            <span className="text-2xl font-bold text-primary">
-                                ฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                            </span>
-                        </div>
-                    </div>
+                  />
                 </div>
+              ))}
             </div>
-        </div>
+          </div>
+        )}
+
+        {activeTab === 'payment' && (
+          <div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">เงื่อนไขการชำระเงิน</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">วิธีการชำระเงิน</label>
+                <select
+                  value={paymentCondition}
+                  onChange={(e) => setPaymentCondition(e.target.value as PaymentMethod)}
+                  className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                >
+                  <option value={PaymentMethod.TRANSFER}>โอนเงิน</option>
+                  <option value={PaymentMethod.CASH}>เงินสด</option>
+                  <option value={PaymentMethod.CREDIT_CARD}>บัตรเครดิต</option>
+                  <option value={PaymentMethod.INSTALLMENT}>แบ่งชำระ</option>
+                </select>
+              </div>
+
+              {paymentCondition === PaymentMethod.INSTALLMENT && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">จำนวนงวด</label>
+                  <input
+                    type="number"
+                    value={installments.length}
+                    onChange={(e) => updateInstallmentCount(Number(e.target.value))}
+                    className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                    min="1"
+                    max="60"
+                  />
+                  <div className="mt-4 space-y-2">
+                    {installments.map((inst, index) => (
+                      <div key={inst.id} className="grid grid-cols-3 gap-4 items-center">
+                        <input
+                          type="number"
+                          placeholder="จำนวนเงิน"
+                          value={inst.amount || ''}
+                          onChange={(e) => handleInstallmentChange(index, 'amount', Number(e.target.value))}
+                          className="col-span-1 mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="หมายเหตุ"
+                          value={inst.note || ''}
+                          onChange={(e) => handleInstallmentChange(index, 'note', e.target.value)}
+                          className="col-span-2 mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </form>
     </Modal>
   );

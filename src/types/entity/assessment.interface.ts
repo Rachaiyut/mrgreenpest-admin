@@ -22,16 +22,15 @@ export interface AssessmentWorkAreaCategory extends IBase {
 }
 
 export interface AssessmentWorkArea extends IBase {
+  assessment_id: string;
   package_price_id?: string;
-  packagePriceRelation?: PackagePrice;
-  package_price?: number; // Package price snapshot
+  package_price?: number; 
   building_type: string;
   area_name: string;
   service_system?: ServiceSystem;
   area_size?: number;
-  perimeter?: number;
-  base_service_price: number;
   total_price: number;
+  package_price_relation?: PackagePrice;
   items?: AssessmentWorkAreaItem[];
   category_services?: AssessmentWorkAreaCategory[];
 }

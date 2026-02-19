@@ -30,7 +30,8 @@ export interface PackagePrice extends IBase {
   area_range: number;
   price_with_termite: number;
   price_without_termite: number;
-  minimum_price: number;
+  min_price_with_termite: number;
+  min_price_without_termite: number;
   unit?: Unit;
 }
 

@@ -88,7 +88,13 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                     scope="col"
                     className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
                   >
-                    ราคาต่ำสุด
+                    ราคาต่ำสุด (มีปลวก)
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                  >
+                    ราคาต่ำสุด (ไม่มีปลวก)
                   </th>
                 </tr>
               </thead>
@@ -115,7 +121,14 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.minimum_price.toLocaleString('th-TH', {
+                        {cond.min_price_with_termite.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-slate-900">
+                        ฿
+                        {cond.min_price_without_termite.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}

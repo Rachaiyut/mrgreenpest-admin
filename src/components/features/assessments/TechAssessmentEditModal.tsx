@@ -5,14 +5,13 @@ import {
   Assessment,
   Product,
   AssessmentWorkArea,
-  Customer,
   Category,
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { CategoryType } from '@/src/types/enums/category';
 import { PlusIcon, LoadingIcon } from '../../../assets/icons/Icons';
 import { WorkAreaForm } from './WorkAreaForm';
-import { PackageApi, PriceEngineApi } from '@/src/api';
+import { PackageApi } from '@/src/api';
 
 interface TechAssessmentEditModalProps {
   isOpen: boolean;
@@ -38,7 +37,6 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
-  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false);
 
   // Fetch packages
   useEffect(() => {
@@ -79,10 +77,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     return filteredPackages;
   }, [packages, assessment]);
 
-  const servicePackages = useMemo(
-    () => products.filter((p) => p.category?.type === CategoryType.SERVICE),
-    [products]
-  );
+
 
   useEffect(() => {
     if (assessment && isOpen) {
@@ -151,14 +146,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     [workAreas]
   );
 
-  const handleFieldChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+
 
   const handleAddArea = () => {
     setWorkAreas((prev) => [
@@ -168,7 +156,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
         area_name: `พื้นที่ ${prev.length + 1}`,
         items: [],
         category_services: [],
-        base_service_price: 0,
+        package_price: 0,
         total_price: 0,
       },
     ]);
@@ -203,7 +191,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
           area_size: undefined,
           category_services: [],
           service_system: undefined,
-          base_service_price: 0,
+          package_price: 0,
           total_price: 0,
         };
       }
@@ -254,7 +242,6 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
 
           return {
             ...area,
-            base_service_price: priceToUse,
             package_price: priceToUse, // Set package price snapshot
             package_price_id: bestFit.id,
             total_price: priceToUse + itemsTotal,
@@ -272,8 +259,10 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
 
     const sanitizedWorkAreas = workAreas.map((area) => {
       const newArea: any = { ...area };
+      // Generate a proper UUID for new areas instead of deleting the ID
       if (newArea.id && newArea.id.startsWith('area-')) {
-        delete newArea.id;
+        // Generate a simple UUID-like string for new areas
+        newArea.id = `new-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
       }
       if (newArea.package_price !== undefined && newArea.package_price !== null) {
         newArea.package_price = Number(newArea.package_price);
@@ -410,7 +399,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
                   <span className="font-medium">{(assessment as any).package?.name}</span>
                   {(assessment as any).package?.visit_limit && (
                     <span className="text-sm text-slate-500 ml-2">
-                      ({(assessment as any).package.visit_limit} ครั้ง / {(assessment as any).package.contract_period} เดือน)
+                      ({(assessment as any).package.visit_limit} ครั้ง)
                     </span>
                   )}
                 </div>
@@ -453,11 +442,11 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
                         <span className="font-medium">{area.area_size} ตร.ม.</span>
                       </div>
                     )}
-                    {typeof area.base_service_price === 'number' && (
+                    {typeof area.package_price === 'number' && (
                       <div>
                         <span className="text-slate-500">ราคาบริการ:</span>{' '}
                         <span className="font-medium">
-                          ฿{area.base_service_price.toLocaleString('th-TH')}
+                          ฿{area.package_price.toLocaleString('th-TH')}
                         </span>
                       </div>
                     )}
@@ -586,7 +575,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
                   />
                   <div className="font-semibold text-slate-800">{pkg.name}</div>
                   <div className="text-xs text-slate-500 mt-1">
-                    {pkg.visit_limit} ครั้ง / {pkg.contract_period} เดือน
+                    {pkg.visit_limit} ครั้ง
                   </div>
                   {pkg.package_price && pkg.package_price.length > 0 && (
                     <div className="text-xs text-primary mt-2">

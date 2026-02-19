@@ -49,10 +49,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
       if (
-        typeof cond.minimum_price === 'number' &&
+        typeof cond.min_price_without_termite === 'number' &&
+        typeof cond.min_price_with_termite === 'number' &&
         typeof cond.price_without_termite === 'number' &&
         typeof cond.price_with_termite === 'number' &&
-        cond.minimum_price >
+        cond.min_price_without_termite >
           Math.min(cond.price_without_termite, cond.price_with_termite)
       ) {
         indices.push(index);
@@ -114,7 +115,8 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
             unit_id: c.unit_id || null,
             price_without_termite: c.price_without_termite || 0,
             price_with_termite: c.price_with_termite || 0,
-            minimum_price: c.minimum_price || 0,
+            min_price_with_termite: c.min_price_with_termite || 0,
+            min_price_without_termite: c.min_price_without_termite || 0,
           }) as PackagePrice
       ),
     };
@@ -165,11 +167,12 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
               name="package-code"
               type="text"
               className="bg-slate-100"
+              placeholder='รหัสเเพ็ตเก็จ'
             />
           </FormField>
           <FormField label="หมวดหมู่" htmlFor="categoryId">
             <Select name="categoryId" id="categoryId" required>
-              <option value="">-- เลือกหมวดหมู่ --</option>
+              <option value="">เลือกหมวดหมู่</option>
               {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -178,16 +181,17 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
             </Select>
           </FormField>
         </div>
-        <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
-          <Input
-            id="package-name"
-            name="package-name"
-            type="text"
-            required
-            placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)"
-          />
-        </FormField>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="ชื่อแพ็กเกจ" htmlFor="package-name">
+            <Input
+              id="package-name"
+              name="package-name"
+              type="text"
+              required
+              placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)"
+            />
+          </FormField>
+
           <FormField label="จำนวนครั้งที่เข้าบริการ" htmlFor="package-visits">
             <Input
               id="package-visits"
@@ -240,7 +244,10 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                     ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th className="p-2 text-left font-medium text-slate-600">
-                    ราคาต่ำสุด
+                    ราคาต่ำสุด (มีปลวก)
+                  </th>
+                  <th className="p-2 text-left font-medium text-slate-600">
+                    ราคาต่ำสุด (ไม่มีปลวก)
                   </th>
                   <th className="p-2 w-10"></th>
                 </tr>
@@ -322,11 +329,28 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.minimum_price ?? ''}
+                          value={cond.min_price_with_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'minimum_price',
+                              'min_price_with_termite',
+                              e.target.value
+                            )
+                          }
+                          className={`${baseInputClasses} h-9 ${invalidConditionIndices.includes(index) ? errorInputClasses : normalInputClasses}`}
+                          placeholder="0.00"
+                          step="0.01"
+                          required
+                        />
+                      </td>
+                      <td className="p-1">
+                        <Input
+                          type="number"
+                          value={cond.min_price_without_termite ?? ''}
+                          onChange={(e) =>
+                            handleConditionChange(
+                              index,
+                              'min_price_without_termite',
                               e.target.value
                             )
                           }

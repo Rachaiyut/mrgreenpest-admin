@@ -262,10 +262,18 @@ const Packages: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
                   >
-                    ราคาแพ็กเกจ
+                    ราคาแพ็กเกจ (มีปลวก)
                   </th>
-                  <th scope="col" className="relative px-4 py-2.5">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
+                  >
+                    ราคาแพ็กเกจ (ไม่มีปลวก)
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase">
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -293,7 +301,13 @@ const Packages: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {/* TODO: Handle price range or min price display */}
                       {pkg.package_price && pkg.package_price.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.minimum_price)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        : 'ตามเงื่อนไข'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
+                      {/* TODO: Handle price range or min price display */}
+                      {pkg.package_price && pkg.package_price.length > 0
+                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
