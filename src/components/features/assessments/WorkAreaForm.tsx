@@ -65,7 +65,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   // Derived logic for package conditions
   const sortedConditions = useMemo(() => {
     if (!selectedPackage) return [];
-    return [...(selectedPackage.package_price || [])].sort(
+    return [...(selectedPackage.package_prices || [])].sort(
       (a, b) => a.area_range - b.area_range
     );
   }, [selectedPackage]);
@@ -113,7 +113,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   {selectedPackage.name}
                 </div>
                 <div className="text-xs text-slate-500 mt-1">
-                  {selectedPackage.visit_limit} ครั้ง
+                  {selectedPackage.visit_limit} ครั้ง &nbsp;
                   {selectedCondition.area_range} ตร.ม.
                 </div>
               </div>
@@ -122,7 +122,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <span className="font-semibold text-slate-700">฿</span>
                   <Input
                     type="number"
-                    className={`w-28 text-right font-bold text-lg h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
+                    className={`w-20 text-right font-bold text-sm h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
                     value={area.package_price === undefined ? '' : area.package_price}
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
@@ -138,10 +138,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   />
                 </div>
                 {isPriceInvalid && selectedCondition && (
-                  <div className="flex flex-col items-end mt-2 p-2 bg-red-50 border border-red-100 rounded-lg">
-                    <p className="text-xs text-red-600 font-medium mb-2 text-right">
-                      ⚠️ ราคาต่ำกว่าเกณฑ์มาตรฐาน<br />
-                      (ส่วนต่าง ฿{((() => {
+                  <div className="flex items-center justify-end mt-1.5 text-xs text-red-600 font-medium">
+                    <p>
+                      ⚠️ ราคาต่ำกว่าเกณฑ์มาตรฐาน (ส่วนต่าง ฿
+                      {((() => {
                         const minPrice = Math.min(
                           selectedCondition.min_price_with_termite,
                           selectedCondition.min_price_without_termite
@@ -153,10 +153,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       <button
                         type="button"
                         onClick={() => onApprove(index)}
-                        className="flex items-center gap-1 bg-emerald-600 text-white px-3 py-1.5 rounded-md hover:bg-emerald-700 transition-colors shadow-sm text-xs font-medium"
+                        className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-md text-xs font-semibold hover:bg-green-200"
                       >
-                        <ShieldCheckIcon className="h-4 w-4" />
-                        <span>อนุมัติราคาพิเศษ (Approve)</span>
+                        อนุมัติ
                       </button>
                     )}
                   </div>
@@ -191,7 +190,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 <span className="font-semibold text-slate-700">฿</span>
                 <Input
                   type="number"
-                  className="w-28 text-right font-bold text-lg h-9 !py-1 text-primary border-slate-300 focus:ring-primary focus:border-primary"
+                  className="w-20 text-right font-bold text-sm h-9 !py-1 text-primary border-slate-300 focus:ring-primary focus:border-primary"
                   value={area.package_price === undefined ? '' : area.package_price}
                   onChange={(e) => {
                     onAreaChange(index, {
@@ -220,7 +219,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     }
 
     if (selectedPackage && area.area_size) {
-      const sortedPrices = [...(selectedPackage.package_price || [])].sort(
+      const sortedPrices = [...(selectedPackage.package_prices || [])].sort(
         (a, b) => a.area_range - b.area_range
       );
 
@@ -508,9 +507,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     onChange={handleFieldChange}
                     required
                   >
-                    <option value="">-- เลือกประเภท --</option>
-                    <option value="OFFICE">ออฟฟิศ (Office)</option>
-                    <option value="HOUSE">บ้าน (House)</option>
+                    <option value="">เลือกประเภท</option>
+                    <option value="OFFICE">ออฟฟิศ</option>
+                    <option value="HOUSE">บ้าน</option>
+                    <option value="OTHER">อื่นๆ</option>
                   </Select>
                 </FormField>
                 <FormField label="ระบบใช้บริการ" htmlFor={`serviceSystem-${index}`}>
@@ -520,7 +520,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     onChange={handleFieldChange}
                     required
                   >
-                    <option value="">-- เลือกระบบ --</option>
+                    <option value="">เลือกระบบ</option>
                     {Object.values(ServiceSystem).map((type) => (
                       <option key={type} value={type}>
                         {serviceLabels[type]}
@@ -599,7 +599,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         <div className="mb-4 animate-fadeIn">
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
                             {availablePackages.map(pkg => {
-                              const conditions = [...(pkg.package_price || [])].sort((a, b) => a.area_range - b.area_range);
+                              const conditions = [...(pkg.package_prices || [])].sort((a, b) => a.area_range - b.area_range);
                               const fit = area.area_size ? conditions.find(c => c.area_range >= area.area_size!) : null;
 
                               const isSelected = selectedPackage?.id === pkg.id;
@@ -686,7 +686,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     {/* Standard Size Options */}
                     {selectedPackage && sortedConditions.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-xs text-slate-500 mb-2">
+                        <p className="text-sm font-medium text-slate-800 mb-2">
                           เลือกจากขนาดมาตรฐาน:
                         </p>
                         <div className="grid grid-cols-2 gap-2">
@@ -708,7 +708,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 }
                                 checked={area.area_size === condition.area_range}
                               />
-                              <div className="font-semibold text-slate-800">
+                              <div className="font-semibold text-slate-800 text-sm">
                                 {condition.area_range.toLocaleString()} ตร.ม.
                               </div>
                             </label>

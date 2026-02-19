@@ -1,79 +1,56 @@
 import React, { Fragment, useEffect, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { BellIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@/src/assets/icons/Icons';
-import { NotificationApi, Notification } from '@/src/api/notification';
+import type { Notification } from '@/src/api/notification';
 import { useNavigate } from 'react-router-dom';
+import { socket } from '@/src/lib/socket';
 
 export const NotificationMenu: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const navigate = useNavigate();
 
-    const fetchNotification = async () => {
-        try {
-            const res = await NotificationApi.getAll({
-                limit: 5,
-                // We fetch all to show recent list, but count unread from meta
-            });
-            
-            if (res && res.data) {
-                setNotifications(res.data);
-                // The backend adds unread_count to meta
-                // @ts-ignore
-                const meta = res.meta;
-                if (meta && typeof meta.unread_count === 'number') {
-                    setUnreadCount(meta.unread_count);
-                } else {
-                    // Fallback
-                    setUnreadCount(res.data.filter(n => !n.is_read).length);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to fetch notifications', error);
-        }
-    };
-
     useEffect(() => {
-        fetchNotification();
-        const interval = setInterval(fetchNotification, 60000); // Polling every minute
-        return () => clearInterval(interval);
+        // Listen for connection confirmation
+        function onConnect() {
+            console.log('NotificationMenu: Socket connected!');
+        }
+        socket.on('connect', onConnect);
+
+        // Listen for incoming notifications
+        function onNewNotification(newNotification: Notification) {
+            console.log('Received new notification:', newNotification);
+            setNotifications(prev => [newNotification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+        }
+        socket.on('notification', onNewNotification);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('notification', onNewNotification);
+        };
     }, []);
 
-    const handleMarkAsRead = async (notification: Notification) => {
-        if (!notification.is_read) {
-            try {
-                await NotificationApi.markAsRead(notification.id);
-                // Update local state to reflect read status immediately
-                setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
-                setUnreadCount(prev => Math.max(0, prev - 1));
-            } catch (error) {
-                console.error("Failed to mark as read", error);
-            }
-        }
-    };
-
     const handleClick = (notification: Notification, close: () => void) => {
-        handleMarkAsRead(notification);
+        // Mark as read locally
+        if (!notification.is_read) {
+            setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+            setUnreadCount(prev => Math.max(0, prev - 1));
+        }
+        
         close();
 
         // Navigate based on type
         if (notification.related_entity_type === 'WITHDRAWAL') {
-            navigate(`/inventory/withdrawals`); // Or specific detail modal if possible
+            navigate(`/inventory/withdrawals`);
         } else if (notification.related_entity_type === 'ASSESSMENT') {
             navigate(`/assessments`);
-        } else {
-             // Default fallback
         }
     };
     
-    const handleMarkAllRead = async () => {
-        try {
-            await NotificationApi.markAllAsRead();
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-            setUnreadCount(0);
-        } catch (error) {
-            console.error("Failed to mark all as read", error);
-        }
+    const handleMarkAllRead = () => {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
     }
 
     return (

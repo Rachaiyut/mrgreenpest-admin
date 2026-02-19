@@ -20,7 +20,7 @@ export interface Package extends IBase {
   remark?: string;
   code: string;
   name: string;
-  package_price?: PackagePrice[];
+  package_prices?: PackagePrice[];
   category?: Category;
 }
 

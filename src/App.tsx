@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { FC } from 'react';
 import { ConfigProvider } from 'antd';
 
@@ -10,6 +10,8 @@ import { AppRouter } from '@/src/router/router';
 
 // Service
 import { Auth } from '@/src/api/auth';
+
+import { socket } from './lib/socket';
 
 // Context
 import { DataProvider } from './contexts/DataContext';
@@ -23,6 +25,33 @@ const App: FC = () => {
       return false;
     }
   });
+
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      socket.connect();
+      console.log('Socket connecting...');
+
+      function onConnect() {
+        console.log('Socket connected!');
+      }
+
+      function onDisconnect() {
+        console.log('Socket disconnected!');
+      }
+
+      socket.on('connect', onConnect);
+      socket.on('disconnect', onDisconnect);
+
+      return () => {
+        socket.off('connect', onConnect);
+        socket.off('disconnect', onDisconnect);
+        socket.disconnect();
+      };
+    } else {
+        socket.disconnect();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = useCallback((username: string, remember: boolean) => {
     setIsAuthenticated(true);

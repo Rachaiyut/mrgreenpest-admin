@@ -62,7 +62,7 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
   // Also include the package from assessment if it has price data
   const packagesWithPrices = useMemo(() => {
     const filteredPackages = packages.filter(
-      (pkg) => pkg.package_price && pkg.package_price.length > 0
+      (pkg) => pkg.package_prices && pkg.package_prices.length > 0
     );
 
     // If assessment has a package with prices, ensure it's in the list
@@ -132,7 +132,14 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
           category_services: wa.category_services || [],
         };
       });
-      setWorkAreas(initialWorkAreas || []);
+
+      // Recalculate prices on initial load if a package is selected
+      if (assessment.package_id) {
+        const recalculatedAreas = calculateWorkAreaPrices(initialWorkAreas, assessment.package_id);
+        setWorkAreas(recalculatedAreas);
+      } else {
+        setWorkAreas(initialWorkAreas || []);
+      }
     } else if (!isOpen) {
       setFormData({});
       setWorkAreas([]);
@@ -146,7 +153,56 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     [workAreas]
   );
 
+  const calculateWorkAreaPrices = (
+    areas: Partial<AssessmentWorkArea>[],
+    pkgId: string | null
+  ): Partial<AssessmentWorkArea>[] => {
+    const selectedPkg = pkgId
+      ? packagesWithPrices.find((p) => p.id === pkgId)
+      : null;
 
+    return areas.map((area) => {
+      if (!selectedPkg || !area.area_size || area.area_size <= 0) {
+        // Return area with its existing price if no package or size
+        return area;
+      }
+
+      const sortedConditions = [...(selectedPkg.package_prices || [])].sort(
+        (a, b) => a.area_range - b.area_range
+      );
+
+      const bestFit = sortedConditions.find(
+        (c) => c.area_range >= area.area_size!
+      );
+
+      if (bestFit) {
+        const termiteCategory = categories.find((c) =>
+          c.name.includes('กำจัดปลวก')
+        );
+        const hasTermites = (area.category_services || []).some(
+          (s) => s.category_id === termiteCategory?.id
+        );
+        const priceToUse = hasTermites
+          ? bestFit.price_with_termite
+          : bestFit.price_without_termite;
+
+        const itemsTotal = (area.items || []).reduce(
+          (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
+          0
+        );
+
+        return {
+          ...area,
+          package_price: priceToUse,
+          package_price_id: bestFit.id,
+          total_price: priceToUse + itemsTotal,
+        };
+      } else {
+        // If no condition fits, keep existing price
+        return area;
+      }
+    });
+  };
 
   const handleAddArea = () => {
     setWorkAreas((prev) => [
@@ -203,54 +259,8 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
     setSelectedPackageId(pkgId);
     setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
 
-    const selectedPkg = pkgId
-      ? packagesWithPrices.find((p) => p.id === pkgId)
-      : null;
-
     // Update work areas with new prices based on selected package
-    setWorkAreas((prevAreas) =>
-      prevAreas.map((area) => {
-        if (!selectedPkg || !area.area_size || area.area_size <= 0) {
-          return { ...area };
-        }
-
-        const sortedConditions = [
-          ...(selectedPkg.package_price || []),
-        ].sort((a, b) => a.area_range - b.area_range);
-
-        const bestFit = sortedConditions.find(
-          (c) => c.area_range >= area.area_size!
-        );
-
-        if (bestFit) {
-          // Check if any category service matches 'กำจัดปลวก'
-          const termiteCategory = categories.find((c) =>
-            c.name.includes('กำจัดปลวก')
-          );
-          const hasTermites = (area.category_services || []).some(
-            (s) => s.category_id === termiteCategory?.id
-          );
-          const priceToUse = hasTermites
-            ? bestFit.price_with_termite
-            : bestFit.price_without_termite;
-
-          // Calculate total price including items
-          const itemsTotal = (area.items || []).reduce(
-            (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
-            0
-          );
-
-          return {
-            ...area,
-            package_price: priceToUse, // Set package price snapshot
-            package_price_id: bestFit.id,
-            total_price: priceToUse + itemsTotal,
-          };
-        } else {
-          return { ...area };
-        }
-      })
-    );
+    setWorkAreas((prevAreas) => calculateWorkAreaPrices(prevAreas, pkgId));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -577,9 +587,9 @@ export const TechAssessmentEditModal: React.FC<TechAssessmentEditModalProps> = (
                   <div className="text-xs text-slate-500 mt-1">
                     {pkg.visit_limit} ครั้ง
                   </div>
-                  {pkg.package_price && pkg.package_price.length > 0 && (
+                  {pkg.package_prices && pkg.package_prices.length > 0 && (
                     <div className="text-xs text-primary mt-2">
-                      {pkg.package_price.length} ระดับราคา
+                      {pkg.package_prices.length} ระดับราคา
                     </div>
                   )}
                 </label>
