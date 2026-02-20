@@ -2,10 +2,10 @@
 import { io } from 'socket.io-client';
 
 // Get the API URL from environment variables
-const URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const URL = process.env.VITE_API_BASE_URL
 
 export const socket = io(URL, {
-  autoConnect: false, // We will connect manually
-  withCredentials: true, // Important for sending cookies/auth tokens
+  autoConnect: false, 
+  withCredentials: true,
   transports: ['websocket', 'polling'],
 });
