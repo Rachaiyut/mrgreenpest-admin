@@ -72,17 +72,17 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/dashboard',
       element: <Dashboard />,
-      access: 'ACCESS_REPORT_ANALYSIS', // Example permission
+      access: 'ACCESS_DASHBOARD',
     },
     {
       path: '/customers',
       element: <Customers />,
-      access: 'ACCESS_MASTER_DATA',
+      access: 'ACCESS_CUSTOMER',
     },
     {
       path: '/assessments',
       element: <Assessments />,
-      access: 'ACCESS_OPERATION',
+      access: 'ACCESS_ASSESSMENT',
     },
     {
       path: '/field-operations',
@@ -123,12 +123,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onUpdateInvoice={handlers.invoices.update}
         />
       ),
-      access: 'ACCESS_FINANCIAL',
+      access: 'ACCESS_INVOICE',
     },
     {
       path: '/quotations/:id/edit',
       element: <EditQuotation />,
-      access: 'ACCESS_SALES',
+      access: 'ACCESS_QUOTATION',
     },
     {
       path: '/quotations',
@@ -140,7 +140,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onReviseQuotation={handlers.quotations.revise}
         />
       ),
-      access: 'ACCESS_SALES',
+      access: 'ACCESS_QUOTATION',
     },
     {
       path: '/contracts',
@@ -151,10 +151,10 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteContract={handlers.contracts.delete}
         />
       ),
-      access: 'ACCESS_SALES',
+      access: 'ACCESS_CONTRACT',
     },
     {
-      path: '/billing',
+      path: '/invoice',
       element: (
         <InvoicesPage
           onCreateInvoice={handlers.invoices.create}
@@ -162,12 +162,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteInvoice={handlers.invoices.delete}
         />
       ),
-      access: 'ACCESS_FINANCIAL',
+      access: 'ACCESS_INVOICE',
     },
     {
-      path: '/billing/new',
+      path: '/invoice/new',
       element: <CreateInvoicePage />,
-      access: 'ACCESS_FINANCIAL',
+      access: 'ACCESS_INVOICE',
     },
     {
       path: '/receipts',
@@ -178,22 +178,22 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReceipt={handlers.receipts.delete}
         />
       ),
-      access: 'ACCESS_FINANCIAL',
+      access: 'ACCESS_RECEIPT',
     },
     {
       path: '/categories',
       element: <Categories />,
-      access: 'ACCESS_INVENTORY',
+      access: 'ACCESS_CATEGORY',
     },
     {
       path: '/products',
       element: <Products />,
-      access: 'ACCESS_INVENTORY',
+      access: 'ACCESS_PRODUCT',
     },
     {
       path: '/packages',
       element: <Packages />,
-      access: 'ACCESS_INVENTORY',
+      access: 'ACCESS_PACKAGES',
     },
     {
       path: '/warehouse',
@@ -203,7 +203,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/suppliers',
       element: <Suppliers />,
-      access: 'ACCESS_PURCHASING',
+      access: 'ACCESS_SUPPLIER',
     },
     {
       path: '/reporting/monthly-sales',
@@ -229,17 +229,17 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReceipt={handlers.goodsReceipts.delete}
         />
       ),
-      access: 'ACCESS_PURCHASING',
+      access: 'ACCESS_RECEIVE_NOTE',
     },
     {
       path: '/withdrawals',
       element: <Withdrawals />,
-      access: 'ACCESS_WAREHOUSE',
+      access: 'ACCESS_WITHDRAW_NOTE',
     },
     {
       path: '/transfers',
       element: <Transfers />,
-      access: 'ACCESS_WAREHOUSE',
+      access: 'ACCESS_TRANSFER_NOTE',
     },
     {
       path: '/stock-adjustment',
@@ -250,7 +250,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteAdjustment={handlers.stockAdjustments.delete}
         />
       ),
-      access: 'ACCESS_INVENTORY',
+      access: 'ACCESS_ADJUSTMENT_NOTE',
     },
     {
       path: '/returns',
@@ -261,12 +261,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReturn={handlers.productReturns.delete}
         />
       ),
-      access: 'ACCESS_INVENTORY',
+      access: 'ACCESS_RETURN_NOTE',
     },
     {
       path: '/requisitions',
       element: <Requisitions />,
-      access: 'ACCESS_WAREHOUSE',
+      access: 'ACCESS_SUMMARY_WITHDRAW',
     },
     {
       path: '/return-to-supplier',
@@ -277,7 +277,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReturn={handlers.returnToSuppliers.delete}
         />
       ),
-      access: 'ACCESS_PURCHASING',
+      access: 'ACCESS_RETURN_NOTE',
     },
     {
       path: '/users',
@@ -289,7 +289,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateWalletTransaction={handlers.userWallets.createTransaction}
         />
       ),
-      access: 'ACCESS_SETTINGS',
+      access: 'ACCESS_USER',
     },
     {
       path: '/roles',
@@ -302,7 +302,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateWalletTransaction={handlers.userWallets.createTransaction}
         />
       ),
-      access: 'ACCESS_SETTINGS',
+      access: 'ACCESS_ROLE',
     },
     {
       path: '/notifications',

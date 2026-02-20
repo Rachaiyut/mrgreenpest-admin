@@ -26,7 +26,7 @@ export const PAGE_PATH: Record<string, string> = {
   'ภาคสนาม': 'field-operations',
   'ใบเสนอราคา': 'quotations',
   'ใบสัญญา': 'contracts',
-  'ใบแจ้งหนี้': 'billing',
+  'ใบแจ้งหนี้': 'invoice',
   'ใบกำกับภาษี/ใบเสร็จรับเงิน': 'receipts',
   'ฟอร์ม': 'forms',
   'หมวดหมู่': 'categories',
@@ -61,7 +61,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     type: 'link',
     name: 'Dashboard',
     icon: NewDashboardIcon,
-    access: 'ACCESS_REPORT_ANALYSIS',
+    access: 'ACCESS_DASHBOARD',
   },
   {
     type: 'link',
@@ -73,13 +73,13 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     type: 'link',
     name: 'ลูกค้า',
     icon: NewCustomerIcon,
-    access: 'ACCESS_MASTER_DATA',
+    access: 'ACCESS_CUSTOMER',
   },
   {
     type: 'link',
     name: 'ใบประเมิน',
     icon: DocumentTextIcon,
-    access: 'ACCESS_OPERATION',
+    access: 'ACCESS_ASSESSMENT',
   },
   {
     type: 'link',
@@ -95,22 +95,22 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'ใบเสนอราคา',
         icon: DocumentTextIcon,
-        access: 'ACCESS_SALES',
+        access: 'ACCESS_QUOTATION',
       },
       {
         name: 'ใบสัญญา',
         icon: DocumentTextIcon,
-        access: 'ACCESS_SALES',
+        access: 'ACCESS_CONTRACT',
       },
       {
         name: 'ใบแจ้งหนี้',
         icon: CurrencyDollarIcon,
-        access: 'ACCESS_FINANCIAL',
+        access: 'ACCESS_INVOICE',
       },
       {
         name: 'ใบกำกับภาษี/ใบเสร็จรับเงิน',
         icon: ShieldCheckIcon,
-        access: 'ACCESS_FINANCIAL',
+        access: 'ACCESS_RECEIPT',
       },
     ],
   },
@@ -122,27 +122,27 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'คลังสินค้า',
         icon: BuildingOfficeIcon,
-        access: 'ACCESS_INVENTORY',
+        access: 'ACCESS_WAREHOUSE',
       },
       {
         name: 'รับเข้า',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_INVENTORY',
+        access: 'ACCESS_RECEIVE_NOTE',
       },
       {
         name: 'โอนย้าย',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_INVENTORY',
+        access: 'ACCESS_TRANSFER_NOTE',
       },
       {
         name: 'ปรับปรุง Stock',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_INVENTORY',
+        access: 'ACCESS_ADJUSTMENT_NOTE',
       },
       {
         name: 'เบิกสินค้าคืนผู้จำหน่าย',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_INVENTORY',
+        access: 'ACCESS_RETURN_NOTE',
       },
     ],
   },
@@ -154,17 +154,17 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'เบิกสินค้าเข้าคลังย่อย',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_VEHICLE',
+        access: 'ACCESS_WITHDRAWAL_NOTE',
       },
       {
         name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: DocumentTextIcon,
-        access: 'ACCESS_VEHICLE',
+        access: 'ACCESS_SUMMARY_WITHDRAW',
       },
       {
         name: 'คืนสินค้า',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_VEHICLE',
+        access: 'ACCESS_RETURN_NOTE',
       },
     ],
   },
@@ -176,22 +176,22 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'สินค้า/บริการ',
         icon: PackageIcon,
-        access: 'ACCESS_MASTER_DATA',
+        access: 'ACCESS_PRODUCT',
       },
       {
         name: 'แพ็กเกจ',
         icon: PackageIcon,
-        access: 'ACCESS_MASTER_DATA',
+        access: 'ACCESS_PACKAGES',
       },
       {
         name: 'หมวดหมู่',
         icon: BookOpenIcon,
-        access: 'ACCESS_MASTER_DATA',
+        access: 'ACCESS_CATEGORY',
       },
       {
         name: 'ผู้จัดจำหน่าย',
         icon: NewUsersIcon,
-        access: 'ACCESS_MASTER_DATA',
+        access: 'ACCESS_SUPPLIER',
       },
     ],
   },
@@ -202,11 +202,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     subItems: [
       {
         name: 'ผู้ใช้งาน',
-        access: 'ACCESS_SETTINGS',
+        access: 'ACCESS_USER',
       },
       {
         name: 'จัดการบทบาท',
-        access: 'ACCESS_SETTINGS',
+        access: 'ACCESS_ROLE',
       }
     ],
   },
