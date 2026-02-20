@@ -154,7 +154,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'เบิกสินค้าเข้าคลังย่อย',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_WITHDRAWAL_NOTE',
+        access: 'ACCESS_WITHDRAW_NOTE',
       },
       {
         name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
