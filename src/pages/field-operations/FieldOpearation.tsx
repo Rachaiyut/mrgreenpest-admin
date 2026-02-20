@@ -44,7 +44,6 @@ import { formatThaiDate, formatThaiDateTime } from '@/src/utils/date';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { Select, Input, Button } from '../../components/common/FormControls';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
-import { TechAssessmentEditModal } from '../../components/features/assessments/TechAssessmentEditModal';
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { FormField } from '../../components/common/FormControls';

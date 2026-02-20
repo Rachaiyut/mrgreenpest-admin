@@ -9,6 +9,7 @@ import {
 import { Package } from '@/src/types/entity/package.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category, ServiceSystem } from '@/src/types';
+import { PackageType } from '@/src/types/enums/package';
 
 interface WorkAreaFormProps {
   area: Partial<AssessmentWorkArea>;
@@ -319,11 +320,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   };
 
   // Handler for price option selection
-  const handlePriceOptionChange = (price: number) => {
+  const handlePriceOptionChange = (price: number, hasTermiteProtection: PackageType) => {
     setSelectedStandardPrice(price);
     onAreaChange(index, {
       ...area,
       package_price: price,
+      package_type: hasTermiteProtection,
       total_price: price + (area.items || []).reduce(
         (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
         0
@@ -624,7 +626,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                         <div className="grid grid-cols-2 gap-2 w-full">
                                           {/* Option 1: With Termites */}
                                           <label
-                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_with_termite); }}
+                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_with_termite, PackageType.WITH_TERMITE); }}
                                             className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
                                               selectedStandardPrice === fit.price_with_termite
                                                 ? 'bg-green-50 border-green-500'
@@ -644,7 +646,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                                           {/* Option 2: Without Termites */}
                                           <label
-                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_without_termite); }}
+                                            onClick={(e) => { e.stopPropagation(); handlePriceOptionChange(fit.price_without_termite, PackageType.WITHOUT_TERMITE); }}
                                             className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
                                               selectedStandardPrice === fit.price_without_termite
                                                 ? 'bg-green-50 border-green-500'

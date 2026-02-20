@@ -49,8 +49,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [visitedSteps, setVisitedSteps] = useState<number[]>([0]);
-  const [formData, setFormData] = useState<
-    Partial<Omit<Assessment, 'workAreas' | 'totalEstimatedCost'>>
+  const [formData, setFormData] = useState<Partial<Assessment>
   >({});
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
@@ -86,7 +85,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       // Reset form
       setFormData({
         status: AsessmentStatus.DRAFT,
-        created_at: new Date().toISOString(),
       });
       setWorkAreas([{
         id: `area-${Date.now()}`,
@@ -94,7 +92,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         building_type: '',
         items: [],
         category_services: [],
-        base_service_price: 0,
         total_price: 0
       }]);
       setInstallments([]);
@@ -108,8 +105,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   const suggestedPackageOptions = useMemo(() => {
     return packages.filter(
       (pkg) =>
-        pkg.package_price &&
-        pkg.package_price.length > 0
+        pkg.package_prices &&
+        pkg.package_prices.length > 0
     );
   }, [packages]);
 
@@ -191,7 +188,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
           area_size: undefined,
           category_services: [],
           service_system: undefined,
-          base_service_price: 0,
           total_price: 0,
         };
       }
@@ -371,7 +367,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       if (newArea.package_price !== undefined && newArea.package_price !== null) {
         newArea.package_price = Number(newArea.package_price);
       }
-      delete newArea.base_service_price;
       return newArea;
     });
 

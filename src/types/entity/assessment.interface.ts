@@ -1,5 +1,6 @@
 import { AsessmentStatus, ServiceSystem } from '../enums/assessment';
 import { PaymentMethod } from '../enums/financial';
+import { PackageType } from '../enums/package';
 import { IBase } from './base.interface';
 import { Customer } from './customer.interface';
 import { Package, PackagePrice } from './package.interface';
@@ -25,11 +26,13 @@ export interface AssessmentWorkArea extends IBase {
   assessment_id: string;
   package_price_id?: string;
   package_price?: number; 
+  package_type: PackageType,
   building_type: string;
   area_name: string;
   service_system?: ServiceSystem;
   area_size?: number;
   total_price: number;
+
   package_price_relation?: PackagePrice;
   items?: AssessmentWorkAreaItem[];
   category_services?: AssessmentWorkAreaCategory[];

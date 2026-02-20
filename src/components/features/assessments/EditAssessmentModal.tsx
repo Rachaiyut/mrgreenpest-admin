@@ -108,15 +108,25 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           });
 
           const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
-          const derivedBasePrice = wa.package_price !== undefined
-            ? wa.package_price
-            : (Number(wa.total_price) || 0) - itemsTotal;
+          
+          let packagePrice = 0;
+          const pkg = packages.find(p => p.id === loadedAssessment.package_id);
+          if (pkg && wa.area_size) {
+            const sortedConditions = [...(pkg.package_prices || [])].sort((a, b) => a.area_range - b.area_range);
+            const bestFit = sortedConditions.find(c => c.area_range >= wa.area_size);
+            if (bestFit) {
+              const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
+              const hasTermites = (wa.category_services || []).some((s: any) => s.category_id === termiteCategory?.id);
+              packagePrice = hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
+            }
+          }
 
           return {
             ...wa,
             items: enrichedItems,
             category_services: wa.category_services || [],
-            package_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+            package_price: packagePrice,
+            total_price: packagePrice + itemsTotal,
           };
         };
 
@@ -124,6 +134,11 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
         setWorkAreas(enrichedAreas);
         setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a })));
+
+        // Trigger initial price calculation after data is loaded
+        if (loadedAssessment.package_id) {
+          handlePackageSelect(loadedAssessment.package_id);
+        }
       } else if (!isOpen) {
         setFormData({});
         setWorkAreas([]);
