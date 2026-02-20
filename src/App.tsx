@@ -26,7 +26,6 @@ const App: FC = () => {
     }
   });
 
-
   useEffect(() => {
     if (isAuthenticated) {
       socket.connect();

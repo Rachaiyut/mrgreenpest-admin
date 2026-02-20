@@ -1,33 +1,24 @@
-import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Role } from '../types/enums/role';
 
 interface ProtectedRouteProps {
-  allowedRoles?: Role[];
   children: React.ReactNode;
+  access?: string;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  allowedRoles,
-  children,
-}) => {
-  const currentUser = useCurrentUser();
+const ProtectedRoute = ({ children, access }: ProtectedRouteProps) => {
+  const permissionsRaw = localStorage.getItem('permissions');
+  const permissions = permissionsRaw && permissionsRaw !== 'undefined' ? JSON.parse(permissionsRaw) : [];
 
-  if (!currentUser) {
-    return <Navigate to="/" replace />;
+  if (!access) {
+    // If no access prop is provided, allow access
+    return children;
   }
 
-  if (!allowedRoles || allowedRoles.length === 0) {
-    return <>{children}</>;
-  }
-
-  const userRole = currentUser.role as Role;
-
-  if (!allowedRoles.includes(userRole)) {
-
+  if (permissions.includes(access)) {
+    return children;
+  } else {
     return <Navigate to="/dashboard" replace />;
   }
-
-  return <>{children}</>;
 };
+
+export default ProtectedRoute;

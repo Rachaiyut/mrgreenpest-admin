@@ -47,7 +47,7 @@ import { Role } from '../types/enums/role';
 export interface RouteConfig {
   path: string;
   element: ReactNode;
-  roles?: Role[];
+  access?: string; // Changed from roles to access
 }
 
 export const getRoutes = (data: DataContextType): RouteConfig[] => {
@@ -72,17 +72,17 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/dashboard',
       element: <Dashboard />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_REPORT_ANALYSIS', // Example permission
     },
     {
       path: '/customers',
       element: <Customers />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_MASTER_DATA',
     },
     {
       path: '/assessments',
       element: <Assessments />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_OPERATION',
     },
     {
       path: '/field-operations',
@@ -101,22 +101,18 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateQuotation={handlers.quotations.create}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_OPERATION',
     },
     {
       path: '/withdraw-vehicle',
-      element: (
-        <WithDrawVehicle
-        />
-      ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
+      element: <WithDrawVehicle />,
+      access: 'ACCESS_VEHICLE',
     },
     {
       path: '/field-jobs',
       element: <Navigate to="/field-operations" replace />,
-      roles: [Role.LEAD_TECH, Role.TECH, Role.SUPERADMIN],
+      access: 'ACCESS_OPERATION',
     },
-
     {
       path: '/invoices/:id/edit',
       element: (
@@ -127,12 +123,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onUpdateInvoice={handlers.invoices.update}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
+      access: 'ACCESS_FINANCIAL',
     },
     {
       path: '/quotations/:id/edit',
       element: <EditQuotation />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH],
+      access: 'ACCESS_SALES',
     },
     {
       path: '/quotations',
@@ -144,7 +140,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onReviseQuotation={handlers.quotations.revise}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_SALES',
     },
     {
       path: '/contracts',
@@ -155,7 +151,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteContract={handlers.contracts.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_SALES',
     },
     {
       path: '/billing',
@@ -166,12 +162,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteInvoice={handlers.invoices.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
+      access: 'ACCESS_FINANCIAL',
     },
     {
       path: '/billing/new',
       element: <CreateInvoicePage />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
+      access: 'ACCESS_FINANCIAL',
     },
     {
       path: '/receipts',
@@ -182,52 +178,47 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReceipt={handlers.receipts.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO],
-    },
-    {
-      path: '/forms',
-      element: <Forms />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
+      access: 'ACCESS_FINANCIAL',
     },
     {
       path: '/categories',
       element: <Categories />,
-      roles: [Role.SUPERADMIN, Role.ADMIN],
+      access: 'ACCESS_INVENTORY',
     },
     {
       path: '/products',
       element: <Products />,
-      roles: [Role.SUPERADMIN, Role.ADMIN],
+      access: 'ACCESS_INVENTORY',
     },
     {
       path: '/packages',
       element: <Packages />,
-      roles: [Role.SUPERADMIN, Role.ADMIN],
+      access: 'ACCESS_INVENTORY',
     },
     {
       path: '/warehouse',
       element: <Warehouse />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_WAREHOUSE',
     },
     {
       path: '/suppliers',
       element: <Suppliers />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_PURCHASING',
     },
     {
       path: '/reporting/monthly-sales',
       element: <MonthlySales />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO],
+      access: 'ACCESS_REPORT_SALES',
     },
     {
       path: '/reports/monthly-sales',
       element: <MonthlySales />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO],
+      access: 'ACCESS_REPORT_SALES',
     },
     {
       path: '/reports/sales-summary',
       element: <SalesSummary />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO],
+      access: 'ACCESS_REPORT_SALES',
     },
     {
       path: '/goods-receipt',
@@ -238,26 +229,17 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReceipt={handlers.goodsReceipts.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_PURCHASING',
     },
     {
       path: '/withdrawals',
-      element: (
-        <Withdrawals
-        />
-      ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
+      element: <Withdrawals />,
+      access: 'ACCESS_WAREHOUSE',
     },
     {
       path: '/transfers',
-      element: (
-        <Transfers
-          onCreateTransfer={handlers.transfers.create}
-          onUpdateTransfer={handlers.transfers.update}
-          onDeleteTransfer={handlers.transfers.delete}
-        />
-      ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      element: <Transfers />,
+      access: 'ACCESS_WAREHOUSE',
     },
     {
       path: '/stock-adjustment',
@@ -268,7 +250,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteAdjustment={handlers.stockAdjustments.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_INVENTORY',
     },
     {
       path: '/returns',
@@ -279,12 +261,12 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReturn={handlers.productReturns.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_INVENTORY',
     },
     {
       path: '/requisitions',
       element: <Requisitions />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH],
+      access: 'ACCESS_WAREHOUSE',
     },
     {
       path: '/return-to-supplier',
@@ -295,7 +277,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onDeleteReturn={handlers.returnToSuppliers.delete}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO],
+      access: 'ACCESS_PURCHASING',
     },
     {
       path: '/users',
@@ -307,7 +289,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateWalletTransaction={handlers.userWallets.createTransaction}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN],
+      access: 'ACCESS_SETTINGS',
     },
     {
       path: '/roles',
@@ -320,42 +302,42 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
           onCreateWalletTransaction={handlers.userWallets.createTransaction}
         />
       ),
-      roles: [Role.SUPERADMIN, Role.ADMIN],
+      access: 'ACCESS_SETTINGS',
     },
     {
       path: '/notifications',
       element: <Notifications />,
-      roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
+      // No specific permission, accessible to all logged-in users
     },
     {
       path: '/reports',
       element: <Reports />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO],
+      access: 'ACCESS_REPORT_MASTER',
     },
     {
       path: '/reports/total-income',
       element: <TotalIncome />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO],
+      access: 'ACCESS_REPORT_SALES',
     },
     {
       path: '/reports/tax-invoice-income',
       element: <TaxInvoiceIncome />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO],
+      access: 'ACCESS_REPORT_SALES',
     },
     {
       path: '/reports/indirect-expenses',
       element: <IndirectExpenses />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO],
+      access: 'ACCESS_REPORT_PURCHASE',
     },
     {
       path: '/reports/daily-cash',
       element: <DailyCash />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO],
+      access: 'ACCESS_REPORT_FINANCIAL', // Assuming this report relates to financials
     },
     {
       path: '/reports/direct-expenses',
       element: <DirectExpenses />,
-      roles: [Role.SUPERADMIN, Role.CEO, Role.CFO],
+      access: 'ACCESS_REPORT_PURCHASE',
     },
     {
       path: '*',

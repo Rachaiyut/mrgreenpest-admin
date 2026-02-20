@@ -53,12 +53,17 @@ export class AuthService extends BaseHttpClient {
       payload
     );
 
-    const { access_token, user } = res.data.data;
+    const { access_token, refresh_token, user, permissions } = res.data.data;
 
+    // Store tokens and user profile
     localStorage.setItem(STORAGE_KEYS.TOKEN, access_token);
+    localStorage.setItem('refresh_token', refresh_token);
     localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(user));
 
-    return { access_token, user };
+    // Store permissions for route access control
+    localStorage.setItem('permissions', JSON.stringify(permissions || []));
+
+    return { access_token, refresh_token, user, permissions };
   }
 
   async logout() {

@@ -61,7 +61,7 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     type: 'link',
     name: 'Dashboard',
     icon: NewDashboardIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO]
+    access: 'ACCESS_REPORT_ANALYSIS',
   },
   {
     type: 'link',
@@ -73,19 +73,19 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     type: 'link',
     name: 'ลูกค้า',
     icon: NewCustomerIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+    access: 'ACCESS_MASTER_DATA',
   },
   {
     type: 'link',
     name: 'ใบประเมิน',
     icon: DocumentTextIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+    access: 'ACCESS_OPERATION',
   },
   {
     type: 'link',
     name: 'ภาคสนาม',
     icon: NewFieldOpsIcon,
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
+    access: 'ACCESS_OPERATION',
   },
   {
     type: 'group',
@@ -95,22 +95,22 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'ใบเสนอราคา',
         icon: DocumentTextIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO, Role.LEAD_TECH, Role.TECH]
+        access: 'ACCESS_SALES',
       },
       {
         name: 'ใบสัญญา',
         icon: DocumentTextIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO, Role.COO]
+        access: 'ACCESS_SALES',
       },
       {
         name: 'ใบแจ้งหนี้',
         icon: CurrencyDollarIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO]
+        access: 'ACCESS_FINANCIAL',
       },
       {
         name: 'ใบกำกับภาษี/ใบเสร็จรับเงิน',
         icon: ShieldCheckIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.CFO]
+        access: 'ACCESS_FINANCIAL',
       },
     ],
   },
@@ -122,27 +122,27 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'คลังสินค้า',
         icon: BuildingOfficeIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_INVENTORY',
       },
       {
         name: 'รับเข้า',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_INVENTORY',
       },
       {
         name: 'โอนย้าย',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_INVENTORY',
       },
       {
         name: 'ปรับปรุง Stock',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_INVENTORY',
       },
       {
         name: 'เบิกสินค้าคืนผู้จำหน่าย',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_INVENTORY',
       },
     ],
   },
@@ -154,17 +154,17 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'เบิกสินค้าเข้าคลังย่อย',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
+        access: 'ACCESS_VEHICLE',
       },
       {
         name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         icon: DocumentTextIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.CFO, Role.LEAD_TECH, Role.TECH]
+        access: 'ACCESS_VEHICLE',
       },
       {
         name: 'คืนสินค้า',
         icon: NewWarehouseIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO, Role.LEAD_TECH, Role.TECH]
+        access: 'ACCESS_VEHICLE',
       },
     ],
   },
@@ -176,22 +176,22 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
       {
         name: 'สินค้า/บริการ',
         icon: PackageIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN]
+        access: 'ACCESS_MASTER_DATA',
       },
       {
         name: 'แพ็กเกจ',
         icon: PackageIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN]
+        access: 'ACCESS_MASTER_DATA',
       },
       {
         name: 'หมวดหมู่',
         icon: BookOpenIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN]
+        access: 'ACCESS_MASTER_DATA',
       },
       {
         name: 'ผู้จัดจำหน่าย',
         icon: NewUsersIcon,
-        roles: [Role.SUPERADMIN, Role.ADMIN, Role.COO]
+        access: 'ACCESS_MASTER_DATA',
       },
     ],
   },
@@ -202,11 +202,11 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     subItems: [
       {
         name: 'ผู้ใช้งาน',
-        roles: [Role.SUPERADMIN, Role.ADMIN]
+        access: 'ACCESS_SETTINGS',
       },
       {
         name: 'จัดการบทบาท',
-        roles: [Role.SUPERADMIN, Role.ADMIN]
+        access: 'ACCESS_SETTINGS',
       }
     ],
   },
@@ -217,31 +217,31 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
     subItems: [
       {
         name: 'รายงานรายได้ (รายเดือน)',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'รายได้ออกใบกำกับ(รายเดือน)',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'ค่าใช้จ่ายทางอ้อม',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'บัญชีเงินสดรายวัน',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'ค่าใช้จ่ายทางตรง',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'ยอดขาย(รายเดือน)',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
       {
         name: 'สรุปยอดขาย(รายเดือน)',
-        roles: [Role.SUPERADMIN, Role.CEO, Role.CFO, Role.COO]
+        access: 'ACCESS_REPORT_ANALYSIS',
       },
     ],
   },

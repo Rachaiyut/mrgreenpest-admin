@@ -64,17 +64,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         onLogin(citizenId, remember);
 
-        // Check role and redirect
-        const user = response.user; // Assuming response includes user info
+        // Cache user for DataContext and handle redirect
+        const user = response.user;
         localStorage.setItem('currentUser', JSON.stringify(user));
-        
-        // Wait for state updates to propagate
+
+        // Wait for state updates to propagate before redirect
         setTimeout(() => {
-             if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
-                  window.location.href = '/field-jobs';
-             } else {
-                  navigate('/');
-             }
+          if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
+            window.location.href = '/field-jobs';
+          } else {
+            navigate('/');
+          }
         }, 100);
       } else {
         message.error('เข้าสู่ระบบไม่สำเร็จ: ไม่ได้รับ Token');

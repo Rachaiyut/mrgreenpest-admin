@@ -1,4 +1,5 @@
 export const PERMISSION_ACTIONS = [
+    { label: 'เข้าใช้งาน', action: 'ACCESS' },
     { label: 'ดู', action: 'READ' },
     { label: 'สร้าง', action: 'CREATE' },
     { label: 'แก้ไข', action: 'UPDATE' },
@@ -21,9 +22,9 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
         groupName: 'ภาพรวมและลูกค้า',
         items: [
             { label: 'Dashboard', module: 'REPORT_ANALYSIS' },
-            { label: 'ลูกค้า', module: 'MASTER_DATA' }, // Assuming Customer is Master Data or Sales?
+            { label: 'ลูกค้า', module: 'MASTER_DATA' }, 
             { label: 'สัญญา', module: 'SALES' },
-            { label: 'การต่ออายุสัญญา', module: 'SALES' }, // Duplicated module usage implies linked permissions
+            { label: 'การต่ออายุสัญญา', module: 'SALES' },
         ],
     },
     {
