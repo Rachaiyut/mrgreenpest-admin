@@ -40,7 +40,13 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
 import { ConfirmationModal } from '@/src/components/common';
-import { AssessmentApi, CustomerApi, PackageApi, ProductApi, CategoryApi } from '@/src/api';
+import {
+  AssessmentApi,
+  CustomerApi,
+  PackageApi,
+  ProductApi,
+  CategoryApi,
+} from '@/src/api';
 import { CategoryType } from '@/src/types';
 
 const Assessments: React.FC = () => {
@@ -89,12 +95,18 @@ const Assessments: React.FC = () => {
         // Also ensure current page is reset if needed, but here we just fetch
       }
 
-      const [assessmentsRes, customersRes, productsRes, packagesRes, categoriesRes] = await Promise.all([
+      const [
+        assessmentsRes,
+        customersRes,
+        productsRes,
+        packagesRes,
+        categoriesRes,
+      ] = await Promise.all([
         AssessmentApi.getAll(filter),
         CustomerApi.getCustomers({ limit: 10 }),
         ProductApi.getProducts({ limit: 10 }),
         PackageApi.getPackages({ limit: 10 }),
-        CategoryApi.getCategories({ type: CategoryType.SERVICE })
+        CategoryApi.getCategories({ type: CategoryType.SERVICE }),
       ]);
       setAssessments(assessmentsRes.data);
       setCustomers(customersRes.data);
@@ -118,13 +130,19 @@ const Assessments: React.FC = () => {
     );
   }, [customers]);
 
-  const getCustomerName = useCallback((assessment: Assessment) => {
-    if (assessment.customer) {
-      const { first_name, last_name } = assessment.customer;
-      return [first_name, last_name].filter(t => t && t !== '-').join(' ').trim();
-    }
-    return customerMap.get(assessment.customer_id) || '';
-  }, [customerMap]);
+  const getCustomerName = useCallback(
+    (assessment: Assessment) => {
+      if (assessment.customer) {
+        const { first_name, last_name } = assessment.customer;
+        return [first_name, last_name]
+          .filter((t) => t && t !== '-')
+          .join(' ')
+          .trim();
+      }
+      return customerMap.get(assessment.customer_id) || '';
+    },
+    [customerMap]
+  );
 
   // Stats Calculations
   const stats = useMemo(() => {
@@ -165,7 +183,7 @@ const Assessments: React.FC = () => {
 
     return reversedAssessments.filter((assessment) => {
       const customerName = getCustomerName(assessment);
-      
+
       const matchesCustomer =
         assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
         customerName.toLowerCase().includes(lowercasedQuery);
@@ -174,14 +192,14 @@ const Assessments: React.FC = () => {
         (area) =>
           (area.building_type &&
             area.building_type.toLowerCase().includes(lowercasedQuery)) ||
-          (area.category_services || []).some(
-            (service) => service.name.toLowerCase().includes(lowercasedQuery)
+          (area.category_services || []).some((service) =>
+            service.name.toLowerCase().includes(lowercasedQuery)
           )
       );
 
-      const matchesDate = formatThaiDate(new Date(assessment.appointment_date).toDateString()).includes(
-        lowercasedQuery
-      );
+      const matchesDate = formatThaiDate(
+        new Date(assessment.appointment_date).toDateString()
+      ).includes(lowercasedQuery);
 
       return matchesCustomer || matchesWorkArea || matchesDate;
     });
@@ -191,31 +209,31 @@ const Assessments: React.FC = () => {
     title: AsessmentStatus;
     assessments: Assessment[];
   }[] = [
-      {
-        title: AsessmentStatus.DRAFT,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.DRAFT
-        ),
-      },
-      {
-        title: AsessmentStatus.APPOINTMENT,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.APPOINTMENT
-        ),
-      },
-      {
-        title: AsessmentStatus.PENDING,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.PENDING
-        ),
-      },
-      {
-        title: AsessmentStatus.COMPLETE,
-        assessments: filteredAssessments.filter(
-          (a) => a.status === AsessmentStatus.COMPLETE
-        ),
-      },
-    ];
+    {
+      title: AsessmentStatus.DRAFT,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.DRAFT
+      ),
+    },
+    {
+      title: AsessmentStatus.APPOINTMENT,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.APPOINTMENT
+      ),
+    },
+    {
+      title: AsessmentStatus.PENDING,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.PENDING
+      ),
+    },
+    {
+      title: AsessmentStatus.COMPLETE,
+      assessments: filteredAssessments.filter(
+        (a) => a.status === AsessmentStatus.COMPLETE
+      ),
+    },
+  ];
 
   const totalItems = filteredAssessments.length;
   const paginatedAssessments = filteredAssessments.slice(
@@ -332,17 +350,17 @@ const Assessments: React.FC = () => {
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-        {
-          label: 'ดูรายละเอียด',
-          icon: EyeIcon,
-          onClick: () => handleViewDetails(selectedAssessment),
-        },
-        {
-          label: 'แก้ไข',
-          icon: PencilIcon,
-          onClick: () => handleEdit(selectedAssessment),
-        },
-      ];
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(selectedAssessment),
+      },
+      {
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(selectedAssessment),
+      },
+    ];
 
     actions.push({
       label: 'ลบ',
@@ -376,7 +394,9 @@ const Assessments: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ใบประเมิน</h1>
-            <p className="mt-1 text-slate-600">จัดการและติดตามใบประเมินทั้งหมด</p>
+            <p className="mt-1 text-slate-600">
+              จัดการและติดตามใบประเมินทั้งหมด
+            </p>
           </div>
           <Button
             onClick={() => setIsAddModalOpen(true)}
@@ -397,7 +417,9 @@ const Assessments: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-                <p className="text-2xl font-bold text-blue-800">{stats.total}</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {stats.total}
+                </p>
               </div>
             </div>
           </Card>
@@ -408,7 +430,9 @@ const Assessments: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-600 font-medium">แบบร่าง</p>
-                <p className="text-2xl font-bold text-slate-800">{stats.draft}</p>
+                <p className="text-2xl font-bold text-slate-800">
+                  {stats.draft}
+                </p>
               </div>
             </div>
           </Card>
@@ -418,8 +442,12 @@ const Assessments: React.FC = () => {
                 <ClockIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-amber-600 font-medium">รอดำเนินการ</p>
-                <p className="text-2xl font-bold text-amber-800">{stats.pending}</p>
+                <p className="text-sm text-amber-600 font-medium">
+                  รอดำเนินการ
+                </p>
+                <p className="text-2xl font-bold text-amber-800">
+                  {stats.pending}
+                </p>
               </div>
             </div>
           </Card>
@@ -430,7 +458,9 @@ const Assessments: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-green-600 font-medium">เสร็จสิ้น</p>
-                <p className="text-2xl font-bold text-green-800">{stats.completed}</p>
+                <p className="text-2xl font-bold text-green-800">
+                  {stats.completed}
+                </p>
               </div>
             </div>
           </Card>
@@ -451,8 +481,18 @@ const Assessments: React.FC = () => {
                   }}
                   className="w-full pl-10"
                 />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               </div>
             </div>
@@ -490,18 +530,27 @@ const Assessments: React.FC = () => {
                 >
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        col.title === AsessmentStatus.DRAFT ? 'bg-slate-400' :
-                        col.title === AsessmentStatus.APPOINTMENT ? 'bg-blue-500' :
-                        col.title === AsessmentStatus.PENDING ? 'bg-amber-500' :
-                        'bg-green-500'
-                      }`} />
+                      <div
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                          col.title === AsessmentStatus.DRAFT
+                            ? 'bg-slate-400'
+                            : col.title === AsessmentStatus.APPOINTMENT
+                              ? 'bg-blue-500'
+                              : col.title === AsessmentStatus.PENDING
+                                ? 'bg-amber-500'
+                                : 'bg-green-500'
+                        }`}
+                      />
                       <h3 className="font-bold text-slate-700 text-sm truncate">
-                        {col.title === AsessmentStatus.DRAFT ? 'แบบร่าง' :
-                         col.title === AsessmentStatus.APPOINTMENT ? 'นัดหมายแล้ว' :
-                         col.title === AsessmentStatus.PENDING ? 'รอดำเนินการ' :
-                         col.title === AsessmentStatus.COMPLETE ? 'เสร็จสิ้น' :
-                         col.title}
+                        {col.title === AsessmentStatus.DRAFT
+                          ? 'แบบร่าง'
+                          : col.title === AsessmentStatus.APPOINTMENT
+                            ? 'นัดหมายแล้ว'
+                            : col.title === AsessmentStatus.PENDING
+                              ? 'รอดำเนินการ'
+                              : col.title === AsessmentStatus.COMPLETE
+                                ? 'เสร็จสิ้น'
+                                : col.title}
                       </h3>
                     </div>
                     <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
@@ -577,7 +626,10 @@ const Assessments: React.FC = () => {
                         ),
                       ];
                       return (
-                        <tr key={assessment.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                        <tr
+                          key={assessment.id}
+                          className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
@@ -590,7 +642,9 @@ const Assessments: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-xs">
-                                  {(getCustomerName(assessment) || '?').charAt(0).toUpperCase()}
+                                  {(getCustomerName(assessment) || '?')
+                                    .charAt(0)
+                                    .toUpperCase()}
                                 </span>
                               </div>
                               <div className="min-w-0">
@@ -611,7 +665,11 @@ const Assessments: React.FC = () => {
                                 <JobDateIcon className="h-3.5 w-3.5 text-blue-500" />
                               </div>
                               <span className="text-sm text-slate-700">
-                                {formatThaiDate(new Date(assessment.appointment_date).toDateString())}
+                                {formatThaiDate(
+                                  new Date(
+                                    assessment.appointment_date
+                                  ).toDateString()
+                                )}
                               </span>
                             </div>
                           </td>
@@ -629,7 +687,8 @@ const Assessments: React.FC = () => {
                             <StatusBadge status={assessment.status as any} />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">
-                            ฿{assessment.total_price.toLocaleString('th-TH', {
+                            ฿
+                            {assessment.total_price.toLocaleString('th-TH', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
@@ -641,10 +700,17 @@ const Assessments: React.FC = () => {
                                   try {
                                     if (assessment.id) {
                                       setLoadingPdfId(assessment.id);
-                                      const blob = await AssessmentApi.exportPdf(assessment.id);
-                                      const url = window.URL.createObjectURL(blob);
+                                      const blob =
+                                        await AssessmentApi.exportPdf(
+                                          assessment.id
+                                        );
+                                      const url =
+                                        window.URL.createObjectURL(blob);
                                       window.open(url, '_blank');
-                                      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                                      setTimeout(
+                                        () => window.URL.revokeObjectURL(url),
+                                        100
+                                      );
                                     }
                                   } catch (error) {
                                     console.error('Error fetching PDF:', error);
@@ -755,11 +821,11 @@ const Assessments: React.FC = () => {
           <div className="text-slate-600">
             คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินนี้?
             <br />
-            {assessmentToDelete &&
+            {assessmentToDelete && (
               <span className="font-semibold text-slate-800 mt-2 block">
                 รหัส: {assessmentToDelete.code || assessmentToDelete.id}
               </span>
-            }
+            )}
             <br />
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </div>

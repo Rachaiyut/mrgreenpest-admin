@@ -51,27 +51,27 @@ const Packages: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchCategories = async () => {
-      try {
-        const response = await CategoryApi.getCategories({
-          type: CategoryType.SERVICE,
-          limit: 100,
-        });
-        setCategories(response.data);
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-      }
-    };
+    try {
+      const response = await CategoryApi.getCategories({
+        type: CategoryType.SERVICE,
+        limit: 100,
+      });
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
 
-    const fetchUnits = async () => {
-      try {
-        const response = await UnitApi.getUnit({ limit: 100 });
-        setUnits(response.data);
-      } catch (error) {
-        console.error('Failed to fetch units:', error);
-      }
-    };
+  const fetchUnits = async () => {
+    try {
+      const response = await UnitApi.getUnit({ limit: 100 });
+      setUnits(response.data);
+    } catch (error) {
+      console.error('Failed to fetch units:', error);
+    }
+  };
 
-    const fetchPackages = useCallback(async () => {
+  const fetchPackages = useCallback(async () => {
     setLoading(true);
     try {
       const response = await PackageApi.getPackages({
@@ -270,9 +270,10 @@ const Packages: React.FC = () => {
                   >
                     ราคาแพ็กเกจ (ไม่มีปลวก)
                   </th>
-                  <th 
-                    scope="col" 
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase">
+                  <th
+                    scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase"
+                  >
                     จัดการ
                   </th>
                 </tr>
@@ -293,21 +294,23 @@ const Packages: React.FC = () => {
                       {pkg.name}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {pkg.category?.name || categoryMap.get(pkg.category_id) || '-'}
+                      {pkg.category?.name ||
+                        categoryMap.get(pkg.category_id) ||
+                        '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
                       {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {/* TODO: Handle price range or min price display */}
-                      {pkg.package_price && pkg.package_price.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      {pkg.package_prices && pkg.package_prices.length > 0
+                        ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
                       {/* TODO: Handle price range or min price display */}
-                      {pkg.package_price && pkg.package_price.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.package_price.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                      {pkg.package_prices && pkg.package_prices.length > 0
+                        ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">

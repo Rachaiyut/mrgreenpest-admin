@@ -1,5 +1,3 @@
-import { IBase } from "./base.interface";
+import { IBase } from './base.interface';
 
-export interface IQuotation extends IBase {
-
-}
+export interface IQuotation extends IBase {}

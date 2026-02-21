@@ -14,7 +14,7 @@ export const Logo: React.FC<LogoProps> = ({
   showSubtitle = true,
 }) => {
   const isLight = variant === 'light';
-  
+
   const sizeClasses = {
     sm: { title: 'text-lg', subtitle: 'text-[10px]' },
     md: { title: 'text-2xl', subtitle: 'text-xs' },
@@ -63,15 +63,19 @@ export const Logo: React.FC<LogoProps> = ({
             strokeLinejoin="round"
           />
         </svg>
-        
+
         <div>
-          <h1 className={`${title} font-extrabold tracking-wider leading-tight ${isLight ? 'text-white' : 'text-slate-800'}`}>
+          <h1
+            className={`${title} font-extrabold tracking-wider leading-tight ${isLight ? 'text-white' : 'text-slate-800'}`}
+          >
             MR. GREEN
           </h1>
         </div>
       </div>
       {showSubtitle && (
-        <p className={`${subtitle} tracking-[0.2em] font-medium ${isLight ? 'text-green-100' : 'text-primary'} mt-1`}>
+        <p
+          className={`${subtitle} tracking-[0.2em] font-medium ${isLight ? 'text-green-100' : 'text-primary'} mt-1`}
+        >
           PEST CONTROL CO.,LTD
         </p>
       )}

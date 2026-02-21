@@ -16,4 +16,3 @@ export interface Category extends IBase {
   type?: CategoryType;
   prefix?: string;
 }
-

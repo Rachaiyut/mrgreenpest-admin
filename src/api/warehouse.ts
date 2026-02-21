@@ -1,5 +1,9 @@
-import { IBaseResponseArray, } from '@/src/types/entity/base.interface';
-import { Warehouse, WarehouseQuery, WarehouseStats } from '@/src/types/entity/inventory.interface';
+import { IBaseResponseArray } from '@/src/types/entity/base.interface';
+import {
+  Warehouse,
+  WarehouseQuery,
+  WarehouseStats,
+} from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
 class WarehouseService extends AuthService {
@@ -33,7 +37,7 @@ class WarehouseService extends AuthService {
   async getWarehouseStats(): Promise<WarehouseStats> {
     const res = await this.http.get<WarehouseStats>(`${this.path}/stats`);
 
-    return res.data
+    return res.data;
   }
 
   async getStockBalances(id: string): Promise<any[]> {
@@ -66,4 +70,3 @@ class WarehouseService extends AuthService {
 }
 
 export const WarehouseApi = new WarehouseService();
-

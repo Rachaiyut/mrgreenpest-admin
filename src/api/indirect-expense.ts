@@ -45,4 +45,3 @@ class IndirectExpenseService extends AuthService {
 }
 
 export const IndirectExpenseApi = new IndirectExpenseService();
-

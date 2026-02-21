@@ -5,10 +5,7 @@ import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
-import {
-  validateEmail,
-  validatePhone,
-} from '@/src/utils/validation';
+import { validateEmail, validatePhone } from '@/src/utils/validation';
 
 interface EditUserModalProps {
   isOpen: boolean;
@@ -37,7 +34,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       setFormData({
         ...user,
         first_name: (user as any).first_name || user.name.split(' ')[0] || '',
-        last_name: (user as any).last_name || user.name.split(' ').slice(1).join(' ') || '',
+        last_name:
+          (user as any).last_name ||
+          user.name.split(' ').slice(1).join(' ') ||
+          '',
         nickname: (user as any).nick_name || (user as any).nickname || '',
         role_id: typeof user.role === 'object' ? (user.role as any).id : '',
         citizen_id: user.citizen_id,
@@ -162,7 +162,11 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         </div>
       }
     >
-      <form id="edit-user-form" onSubmit={handleSubmit} className="p-4 bg-slate-50 rounded-lg space-y-6">
+      <form
+        id="edit-user-form"
+        onSubmit={handleSubmit}
+        className="p-4 bg-slate-50 rounded-lg space-y-6"
+      >
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Upload Section */}
@@ -170,159 +174,187 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-2 w-full text-left">
                 รูปโปรไฟล์
               </label>
-              
+
               <div className="w-full aspect-square border-2 border-dashed border-slate-300 rounded-lg flex flex-col items-center justify-center bg-slate-50 relative overflow-hidden group hover:border-primary transition-colors cursor-pointer">
-                 <input
-                    id="file-upload-edit"
-                    name="file-upload"
-                    type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    accept="image/png, image/jpeg"
-                    onChange={handleImageChange}
-                    disabled={isUploading}
+                <input
+                  id="file-upload-edit"
+                  name="file-upload"
+                  type="file"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  accept="image/png, image/jpeg"
+                  onChange={handleImageChange}
+                  disabled={isUploading}
+                />
+
+                {imagePreview ? (
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
                   />
-                  
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-slate-400">
-                      <div className="p-4 bg-white rounded-full shadow-sm mb-2">
-                        <PhotoIcon className="h-8 w-8 text-slate-300" />
-                      </div>
-                      <span className="text-sm font-medium text-slate-500">อัปโหลดรูปภาพ</span>
-                      <span className="text-xs text-slate-400 mt-1">PNG, JPG</span>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-slate-400">
+                    <div className="p-4 bg-white rounded-full shadow-sm mb-2">
+                      <PhotoIcon className="h-8 w-8 text-slate-300" />
                     </div>
-                  )}
-                  
-                  {imagePreview && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                       <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
-                         เปลี่ยนรูปภาพ
-                       </span>
-                    </div>
-                  )}
+                    <span className="text-sm font-medium text-slate-500">
+                      อัปโหลดรูปภาพ
+                    </span>
+                    <span className="text-xs text-slate-400 mt-1">
+                      PNG, JPG
+                    </span>
+                  </div>
+                )}
+
+                {imagePreview && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <span className="text-white text-sm font-medium bg-black/50 px-3 py-1 rounded-full">
+                      เปลี่ยนรูปภาพ
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Form Fields Section */}
             <div className="w-full md:w-2/3 space-y-5">
               <div className="space-y-4">
-                 <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-4">
-                   ข้อมูลส่วนตัว
-                 </h3>
-                 
-                 <div className="grid grid-cols-1 gap-4">
-                    <FormField
-                      label="เลขบัตรประชาชน (Username)"
-                      htmlFor="citizen_id"
-                    >
-                      <Input
-                        id="citizen_id"
-                        name="citizen_id"
-                        type="text"
-                        value={formData.citizen_id || ''}
-                        readOnly
-                        className="bg-slate-100 h-11"
-                      />
-                    </FormField>
-                 </div>
+                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-4">
+                  ข้อมูลส่วนตัว
+                </h3>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="ชื่อจริง*" htmlFor="first_name">
-                      <Input
-                        id="first_name"
-                        name="first_name"
-                        type="text"
-                        value={formData.first_name || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      />
-                      {errors.first_name && <p className="text-red-500 text-sm mt-1">{errors.first_name}</p>}
-                    </FormField>
-                    <FormField label="นามสกุล*" htmlFor="last_name">
-                      <Input
-                        id="last_name"
-                        name="last_name"
-                        type="text"
-                        value={formData.last_name || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      />
-                      {errors.last_name && <p className="text-red-500 text-sm mt-1">{errors.last_name}</p>}
-                    </FormField>
-                 </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField
+                    label="เลขบัตรประชาชน (Username)"
+                    htmlFor="citizen_id"
+                  >
+                    <Input
+                      id="citizen_id"
+                      name="citizen_id"
+                      type="text"
+                      value={formData.citizen_id || ''}
+                      readOnly
+                      className="bg-slate-100 h-11"
+                    />
+                  </FormField>
+                </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="ชื่อเล่น*" htmlFor="nickname">
-                      <Input
-                        id="nickname"
-                        name="nickname"
-                        type="text"
-                        value={formData.nickname || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      />
-                      {errors.nickname && <p className="text-red-500 text-sm mt-1">{errors.nickname}</p>}
-                    </FormField>
-                    <FormField label="เบอร์โทรศัพท์*" htmlFor="phone">
-                      <Input 
-                        id="phone" 
-                        name="phone" 
-                        type="tel" 
-                        value={formData.phone || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      />
-                      {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
-                    </FormField>
-                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label="ชื่อจริง*" htmlFor="first_name">
+                    <Input
+                      id="first_name"
+                      name="first_name"
+                      type="text"
+                      value={formData.first_name || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    />
+                    {errors.first_name && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.first_name}
+                      </p>
+                    )}
+                  </FormField>
+                  <FormField label="นามสกุล*" htmlFor="last_name">
+                    <Input
+                      id="last_name"
+                      name="last_name"
+                      type="text"
+                      value={formData.last_name || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    />
+                    {errors.last_name && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.last_name}
+                      </p>
+                    )}
+                  </FormField>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label="ชื่อเล่น*" htmlFor="nickname">
+                    <Input
+                      id="nickname"
+                      name="nickname"
+                      type="text"
+                      value={formData.nickname || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    />
+                    {errors.nickname && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.nickname}
+                      </p>
+                    )}
+                  </FormField>
+                  <FormField label="เบอร์โทรศัพท์*" htmlFor="phone">
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    />
+                    {errors.phone && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.phone}
+                      </p>
+                    )}
+                  </FormField>
+                </div>
               </div>
 
               <div className="space-y-4 pt-2">
-                 <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-4">
-                   ข้อมูลบัญชี
-                 </h3>
-                 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField label="อีเมล*" htmlFor="email">
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      />
-                      {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                    </FormField>
-                    <FormField label="เลือกบทบาท*" htmlFor="role_id">
-                      <Select
-                        id="role_id"
-                        name="role_id"
-                        value={formData.role_id || ''}
-                        onChange={handleChange}
-                        className="h-11"
-                        disabled={isUploading}
-                      >
-                        <option value="">เลือกบทบาท</option>
-                        {roles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {getRoleNameTh(role.name)}
-                          </option>
-                        ))}
-                      </Select>
-                      {errors.role_id && <p className="text-red-500 text-sm mt-1">{errors.role_id}</p>}
-                    </FormField>
-                 </div>
+                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-100 pb-2 mb-4">
+                  ข้อมูลบัญชี
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label="อีเมล*" htmlFor="email">
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    />
+                    {errors.email && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.email}
+                      </p>
+                    )}
+                  </FormField>
+                  <FormField label="เลือกบทบาท*" htmlFor="role_id">
+                    <Select
+                      id="role_id"
+                      name="role_id"
+                      value={formData.role_id || ''}
+                      onChange={handleChange}
+                      className="h-11"
+                      disabled={isUploading}
+                    >
+                      <option value="">เลือกบทบาท</option>
+                      {roles.map((role) => (
+                        <option key={role.id} value={role.id}>
+                          {getRoleNameTh(role.name)}
+                        </option>
+                      ))}
+                    </Select>
+                    {errors.role_id && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors.role_id}
+                      </p>
+                    )}
+                  </FormField>
+                </div>
               </div>
             </div>
           </div>

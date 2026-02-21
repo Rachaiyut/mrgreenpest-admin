@@ -1,16 +1,54 @@
-import { useState, useEffect, useMemo, FC, ChangeEvent, FormEvent } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  FC,
+  ChangeEvent,
+  FormEvent,
+} from 'react';
 import { Modal } from '../../common/Modal';
-import { Button, FormField, Input, Select, Textarea } from '../../common/FormControls';
-import { Assessment, User, UserRole, Warehouse, Product, Category, AssessmentWorkArea, AssessmentInstallment } from '@/src/types/entity/app.interface';
+import {
+  Button,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+} from '../../common/FormControls';
+import {
+  Assessment,
+  User,
+  UserRole,
+  Warehouse,
+  Product,
+  Category,
+  AssessmentWorkArea,
+  AssessmentInstallment,
+} from '@/src/types/entity/app.interface';
 import {
   FieldJob,
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
 import { JobStatus, JobMainStatus } from '@/src/types/enums/job';
-import { PlusIcon, RefreshIcon, LoadingIcon, UserIcon, CalendarIcon, DocumentIcon, CreditCardIcon, TruckIcon } from '../../../assets/icons/Icons';
+import {
+  PlusIcon,
+  RefreshIcon,
+  LoadingIcon,
+  UserIcon,
+  CalendarIcon,
+  DocumentIcon,
+  CreditCardIcon,
+  TruckIcon,
+} from '../../../assets/icons/Icons';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { WarehouseType, CategoryType } from '@/src/types';
-import { AssessmentApi, ProductApi, CategoryApi, PackageApi, JobApi, CustomerApi } from '@/src/api';
+import {
+  AssessmentApi,
+  ProductApi,
+  CategoryApi,
+  PackageApi,
+  JobApi,
+  CustomerApi,
+} from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
@@ -104,7 +142,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   warehouses,
   currentUser,
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'service' | 'team'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'service' | 'team'>(
+    'overview'
+  );
   const [currentJob, setCurrentJob] = useState<FieldJob | null>(job);
   const [formData, setFormData] = useState<Partial<FieldJob>>({});
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
@@ -118,14 +158,20 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     null
   );
   const [workAreas, setWorkAreas] = useState<Partial<FieldJobWorkArea>[]>([]); // Note: This might be redundant if using assessment.assessment_areas
-  const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
+  const [originalWorkAreas, setOriginalWorkAreas] = useState<
+    Partial<AssessmentWorkArea>[]
+  >([]);
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
+    null
+  );
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(false);
-  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
+  const [installments, setInstallments] = useState<
+    Partial<AssessmentInstallment>[]
+  >([]);
   const [leadTechSearch, setLeadTechSearch] = useState('');
   const [additionalTechSearch, setAdditionalTechSearch] = useState('');
   const [vehicleSearch, setVehicleSearch] = useState('');
@@ -138,19 +184,23 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   };
 
   const servicePackages = useMemo(
-    () => products.filter((p) => (p as any)?.category?.type === CategoryType.SERVICE),
+    () =>
+      products.filter(
+        (p) => (p as any)?.category?.type === CategoryType.SERVICE
+      ),
     [products]
   );
 
   // Use packages from API for calculation and display
   const suggestedPackageOptions = useMemo(() => {
     return packages.filter(
-      (pkg) => pkg.package_price && pkg.package_price.length > 0
+      (pkg) => pkg.package_prices && pkg.package_prices.length > 0
     );
   }, [packages]);
 
   const technicians = (users || []).filter((u) => {
-    const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+    const roleName =
+      typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
     return roleName === UserRole.TECH;
   });
 
@@ -193,7 +243,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     });
   }, [technicians, leadTechSearch]);
 
-
   const bookedSlots = useMemo(() => {
     if (!formData.vehicle_id || !workDate || !currentJob) return [];
     return jobs
@@ -225,8 +274,12 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   }, [isOpen, job]);
 
   useEffect(() => {
-    if (isOpen && (currentJob?.assessment_id || (currentJob as any)?.assessment?.id)) {
-      const idToFetch = currentJob?.assessment_id || (currentJob as any)?.assessment?.id;
+    if (
+      isOpen &&
+      (currentJob?.assessment_id || (currentJob as any)?.assessment?.id)
+    ) {
+      const idToFetch =
+        currentJob?.assessment_id || (currentJob as any)?.assessment?.id;
       console.log('EditJobModal: Fetching assessment', idToFetch);
       AssessmentApi.getById(idToFetch)
         .then((res: any) => {
@@ -235,10 +288,15 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           if (rawAssessment) {
             // Helper to derive base price (Logic sync with EditAssessmentModal)
             const enrichArea = (wa: any) => {
-              const itemsTotal = (wa.items || []).reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
-              const derivedBasePrice = wa.base_service_price !== undefined
-                ? wa.base_service_price
-                : (Number(wa.total_price) || 0) - itemsTotal;
+              const itemsTotal = (wa.items || []).reduce(
+                (sum: number, item: any) =>
+                  sum + (Number(item.total_price) || 0),
+                0
+              );
+              const derivedBasePrice =
+                wa.base_service_price !== undefined
+                  ? wa.base_service_price
+                  : (Number(wa.total_price) || 0) - itemsTotal;
 
               return {
                 ...wa,
@@ -248,53 +306,80 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               };
             };
 
-            const enrichedAreas = (rawAssessment.assessment_areas || []).map(enrichArea);
+            const enrichedAreas = (rawAssessment.assessment_areas || []).map(
+              enrichArea
+            );
 
             // Update assessment with enriched areas so they display correctly immediately
             setAssessment({
               ...rawAssessment,
-              assessment_areas: enrichedAreas
+              assessment_areas: enrichedAreas,
             });
-            
+
             // Fix: Populate installments even if payment_condition is null, infer from installments length
-            let loadedPaymentCondition = rawAssessment.payment_condition || PaymentMethod.TRANSFER;
-            if (rawAssessment.installments && rawAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
-               loadedPaymentCondition = PaymentMethod.INSTALLMENT;
+            let loadedPaymentCondition =
+              rawAssessment.payment_condition || PaymentMethod.TRANSFER;
+            if (
+              rawAssessment.installments &&
+              rawAssessment.installments.length > 0 &&
+              loadedPaymentCondition !== PaymentMethod.INSTALLMENT
+            ) {
+              loadedPaymentCondition = PaymentMethod.INSTALLMENT;
             }
             // Ensure payment_installment_count is set if it's missing but installments exist
-            const loadedInstallmentCount = rawAssessment.payment_installment_count || (rawAssessment.installments ? rawAssessment.installments.length : 0);
+            const loadedInstallmentCount =
+              rawAssessment.payment_installment_count ||
+              (rawAssessment.installments
+                ? rawAssessment.installments.length
+                : 0);
 
             // We need to update assessment state with this inferred condition for the UI to show correct radio button
-            setAssessment(prev => prev ? { 
-              ...prev, 
-              payment_condition: loadedPaymentCondition,
-              payment_installment_count: loadedInstallmentCount
-            } : null);
+            setAssessment((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    payment_condition: loadedPaymentCondition,
+                    payment_installment_count: loadedInstallmentCount,
+                  }
+                : null
+            );
 
-            if (rawAssessment.installments && rawAssessment.installments.length > 0) {
-               setInstallments(rawAssessment.installments.map((i: any) => ({ 
-                   ...i,
-                   due_date: i.due_date ? new Date(i.due_date).toISOString().substring(0, 10) : undefined
-               })));
+            if (
+              rawAssessment.installments &&
+              rawAssessment.installments.length > 0
+            ) {
+              setInstallments(
+                rawAssessment.installments.map((i: any) => ({
+                  ...i,
+                  due_date: i.due_date
+                    ? new Date(i.due_date).toISOString().substring(0, 10)
+                    : undefined,
+                }))
+              );
             } else {
-               setInstallments([]);
+              setInstallments([]);
             }
 
             // Set original areas for comparison/protection
-            setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
-          // If assessment fields are missing in job but present in assessment, fill them
-          if (rawAssessment) {
-             const assessmentAny = rawAssessment as any;
-             setFormData(prev => {
-                 const newData = { ...prev };
-                 if (!newData.zone && assessmentAny.zone) newData.zone = assessmentAny.zone;
-                 if (!newData.group && assessmentAny.route_group) newData.group = assessmentAny.route_group;
-                 if (!newData.road_line && assessmentAny.road_line) newData.road_line = assessmentAny.road_line;
-                 if (!newData.sequence && assessmentAny.sequence) newData.sequence = assessmentAny.sequence;
-                 return newData;
-             });
-          }
-
+            setOriginalWorkAreas(
+              enrichedAreas.map((a) => JSON.parse(JSON.stringify(a)))
+            );
+            // If assessment fields are missing in job but present in assessment, fill them
+            if (rawAssessment) {
+              const assessmentAny = rawAssessment as any;
+              setFormData((prev) => {
+                const newData = { ...prev };
+                if (!newData.zone && assessmentAny.zone)
+                  newData.zone = assessmentAny.zone;
+                if (!newData.group && assessmentAny.route_group)
+                  newData.group = assessmentAny.route_group;
+                if (!newData.road_line && assessmentAny.road_line)
+                  newData.road_line = assessmentAny.road_line;
+                if (!newData.sequence && assessmentAny.sequence)
+                  newData.sequence = assessmentAny.sequence;
+                return newData;
+              });
+            }
           } else {
             setAssessment(null);
             setInstallments([]);
@@ -306,13 +391,17 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         });
     } else if (isOpen) {
       // Fallback: If job has no assessment_id, try to find it via API (sometimes the prop is stale)
-       if (currentJob && !currentJob.assessment_id && (currentJob as any).assessmentId) {
-          // If assessmentId exists in a different casing or property
-          // This block is just a safeguard, usually job.assessment_id is correct
-       } else {
-         console.log('EditJobModal: No assessment_id in job object', currentJob);
-         setAssessment(null);
-       }
+      if (
+        currentJob &&
+        !currentJob.assessment_id &&
+        (currentJob as any).assessmentId
+      ) {
+        // If assessmentId exists in a different casing or property
+        // This block is just a safeguard, usually job.assessment_id is correct
+      } else {
+        console.log('EditJobModal: No assessment_id in job object', currentJob);
+        setAssessment(null);
+      }
     }
   }, [isOpen, currentJob]);
 
@@ -325,7 +414,11 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         .catch((err: any) => {
           console.error('Error fetching products:', err);
         });
-      CategoryApi.getCategories({ type: CategoryType.SERVICE, page: 1, limit: 10 })
+      CategoryApi.getCategories({
+        type: CategoryType.SERVICE,
+        page: 1,
+        limit: 10,
+      })
         .then((res: any) => {
           setCategories(res.data || []);
         })
@@ -359,30 +452,38 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     if (currentJob) {
       const { work_areas, technicians, ...rest } = currentJob;
       const initialFormData: any = { ...rest };
-      
+
       // Resolve Customer Name
-      let cName = (currentJob as any).customerName || (currentJob as any).customer_name;
-      
+      let cName =
+        (currentJob as any).customerName || (currentJob as any).customer_name;
+
       if ((currentJob as any).customer) {
-         const c = (currentJob as any).customer;
-         const constructedName = c.name || `${c.first_name || ''} ${c.last_name || ''} ${c.nickname ? `(${c.nickname})` : ''}`.trim();
-         if (constructedName) cName = constructedName;
+        const c = (currentJob as any).customer;
+        const constructedName =
+          c.name ||
+          `${c.first_name || ''} ${c.last_name || ''} ${c.nickname ? `(${c.nickname})` : ''}`.trim();
+        if (constructedName) cName = constructedName;
       }
-      
+
       initialFormData.customerName = cName;
 
       // If still no name but we have ID, fetch it
       if (!cName && currentJob.customer_id) {
-           CustomerApi.getCustomerById(currentJob.customer_id).then(res => {
-               const c = res as any; // The response might be the object directly or have data property
-               const customerData = c.data || c; 
-               if (customerData) {
-                   const fetchedName = `${customerData.first_name || ''} ${customerData.last_name || ''} ${customerData.nickname ? `(${customerData.nickname})` : ''}`.trim();
-                   setFormData(prev => ({ ...prev, customerName: fetchedName }));
-               }
-           }).catch(err => console.error("Error fetching customer for job:", err));
-       }
-         
+        CustomerApi.getCustomerById(currentJob.customer_id)
+          .then((res) => {
+            const c = res as any; // The response might be the object directly or have data property
+            const customerData = c.data || c;
+            if (customerData) {
+              const fetchedName =
+                `${customerData.first_name || ''} ${customerData.last_name || ''} ${customerData.nickname ? `(${customerData.nickname})` : ''}`.trim();
+              setFormData((prev) => ({ ...prev, customerName: fetchedName }));
+            }
+          })
+          .catch((err) =>
+            console.error('Error fetching customer for job:', err)
+          );
+      }
+
       // Construct address from customer fields if job address is empty
       if (!initialFormData.address && (currentJob as any).customer) {
         const c = (currentJob as any).customer;
@@ -397,13 +498,18 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         ].filter(Boolean);
         initialFormData.address = addressParts.join(' ');
       }
-      
+
       // If still empty and we fetch customer later, we might want to update address too?
       // For now let's keep it simple.
 
       // Map google_map_link from customer if empty
-      if (!initialFormData.google_map_link && (currentJob as any).customer?.google_map_link) {
-        initialFormData.google_map_link = (currentJob as any).customer.google_map_link;
+      if (
+        !initialFormData.google_map_link &&
+        (currentJob as any).customer?.google_map_link
+      ) {
+        initialFormData.google_map_link = (
+          currentJob as any
+        ).customer.google_map_link;
       }
 
       setFormData(initialFormData);
@@ -412,12 +518,16 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       const enrichArea = (wa: any) => {
         // Calculate base_service_price if not present
         // In Job Edit, we assume items are already populated
-        const itemsTotal = (wa.items || []).reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+        const itemsTotal = (wa.items || []).reduce(
+          (sum: number, item: any) => sum + (Number(item.total_price) || 0),
+          0
+        );
 
         // If coming from DB, base_service_price might be missing, so derive it
-        const derivedBasePrice = wa.base_service_price !== undefined
-          ? wa.base_service_price
-          : (Number(wa.total_price) || 0) - itemsTotal;
+        const derivedBasePrice =
+          wa.base_service_price !== undefined
+            ? wa.base_service_price
+            : (Number(wa.total_price) || 0) - itemsTotal;
 
         return {
           ...wa,
@@ -430,7 +540,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       const enrichedAreas = (work_areas || []).map(enrichArea);
       setWorkAreas(enrichedAreas);
       // Deep copy to ensure independence for edit detection
-      setOriginalWorkAreas(enrichedAreas.map(a => JSON.parse(JSON.stringify(a))));
+      setOriginalWorkAreas(
+        enrichedAreas.map((a) => JSON.parse(JSON.stringify(a)))
+      );
 
       // Handle technicians safely from multiple possible sources
       const jobAny = currentJob as any;
@@ -460,18 +572,18 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           setWorkDate(localDate);
           setStartTime(startDate.toTimeString().substring(0, 5));
         } else {
-           setWorkDate('');
-           setStartTime('');
+          setWorkDate('');
+          setStartTime('');
         }
       }
 
       if (currentJob.end_time) {
-         const endDate = new Date(currentJob.end_time);
-         if (!isNaN(endDate.getTime())) {
-            setEndTime(endDate.toTimeString().substring(0, 5));
-         } else {
-            setEndTime('');
-         }
+        const endDate = new Date(currentJob.end_time);
+        if (!isNaN(endDate.getTime())) {
+          setEndTime(endDate.toTimeString().substring(0, 5));
+        } else {
+          setEndTime('');
+        }
       }
 
       setTimeConflictError(null);
@@ -479,7 +591,13 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   }, [currentJob]);
 
   useEffect(() => {
-    if (!currentJob || !formData.vehicle_id || !workDate || !startTime || !endTime) {
+    if (
+      !currentJob ||
+      !formData.vehicle_id ||
+      !workDate ||
+      !startTime ||
+      !endTime
+    ) {
       setTimeConflictError(null);
       return;
     }
@@ -499,18 +617,19 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
       const existingJobStart = new Date(existingJob.start_time);
       const existingJobEnd = new Date(existingJob.end_time);
-      
+
       // Handle invalid dates
-      if (isNaN(existingJobStart.getTime()) || isNaN(existingJobEnd.getTime())) return false;
+      if (isNaN(existingJobStart.getTime()) || isNaN(existingJobEnd.getTime()))
+        return false;
 
       // Robust Date comparison (Local vs Local)
       // Use getFullYear(), getMonth(), getDate() to build local YYYY-MM-DD
       const existingDateLocal = `${existingJobStart.getFullYear()}-${String(existingJobStart.getMonth() + 1).padStart(2, '0')}-${String(existingJobStart.getDate()).padStart(2, '0')}`;
-      
+
       // Parse workDate parts to ensure format matches regardless of input type
       // workDate comes from input[type="date"] so it should be YYYY-MM-DD
       // But let's be safe
-      
+
       if (existingDateLocal !== workDate) {
         return false;
       }
@@ -521,14 +640,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       // To compare correctly, we should compare time strings if date matches, OR convert everything to same basis.
       // Since we already matched the date string (local day), we can just compare time-of-day?
       // No, existingJob might span midnight (unlikely but possible).
-      
+
       // BETTER APPROACH: Convert existing times to local date objects for comparison
       // But we don't know the timezone of the browser vs the server intended time?
       // Usually existingJob.start_time is an ISO string. new Date(iso) gives a Date object in browser's local time.
       // So existingJobStart is in local time.
       // newJobStart is constructed from "YYYY-MM-DD" + "THH:mm". This is parsed as local time by `new Date()`.
       // So both are local. Comparison should be valid.
-      
+
       return newJobStart < existingJobEnd && newJobEnd > existingJobStart;
     });
 
@@ -544,7 +663,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   }, [formData.vehicle_id, workDate, startTime, endTime, jobs, currentJob]);
 
   const handleInstallmentAmountChange = (index: number, amount: number) => {
-    setInstallments(prev => {
+    setInstallments((prev) => {
       const newInst = [...prev];
       newInst[index] = { ...newInst[index], amount };
       return newInst;
@@ -552,19 +671,17 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   };
 
   const handleInstallmentNoteChange = (index: number, note: string) => {
-    setInstallments(prev => {
+    setInstallments((prev) => {
       const newInst = [...prev];
       newInst[index] = { ...newInst[index], note };
       return newInst;
     });
   };
 
-
-
   // Auto-calculate installments Effect
   useEffect(() => {
     if (!assessment) return;
-    
+
     const paymentCondition = (assessment as any).payment_condition;
     const installmentCount = (assessment as any).payment_installment_count;
     const total = (assessment as any).total_price || 0;
@@ -572,45 +689,57 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     // Logic: If installments exist, keep them. If not, generate if count > 0.
     // If installments exist but total mismatch, we MIGHT want to adjust, but be careful not to overwrite user edits if in edit mode.
     // For now, let's trust the loaded installments if they exist.
-    
+
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
-        if (installments.length === 0 && installmentCount > 0) {
-             // Generate new if none exist
-             const amountPerInst = Math.floor((total / installmentCount) * 100) / 100;
-             const lastAmount = total - (amountPerInst * (installmentCount - 1));
-             
-             // Auto-date logic (Start date + 1 month increment)
-             const startDate = assessment.appointment_date ? new Date(assessment.appointment_date) : new Date();
+      if (installments.length === 0 && installmentCount > 0) {
+        // Generate new if none exist
+        const amountPerInst =
+          Math.floor((total / installmentCount) * 100) / 100;
+        const lastAmount = total - amountPerInst * (installmentCount - 1);
 
-             const newInst: Partial<AssessmentInstallment>[] = [];
-             for (let i = 0; i < installmentCount; i++) {
-                const dueDate = new Date(startDate);
-                dueDate.setMonth(dueDate.getMonth() + i);
+        // Auto-date logic (Start date + 1 month increment)
+        const startDate = assessment.appointment_date
+          ? new Date(assessment.appointment_date)
+          : new Date();
 
-                newInst.push({
-                  id: crypto.randomUUID(),
-                  installment_no: i + 1,
-                  amount: i === installmentCount - 1 ? lastAmount : amountPerInst,
-                  note: `งวดที่ ${i + 1}`,
-                  due_date: dueDate.toISOString().substring(0, 10)
-                });
-             }
-             setInstallments(newInst);
-        } else if (installments.length > 0) {
-             // If exists, ensure they are sorted
-             setInstallments(prev => [...prev].sort((a: any, b: any) => a.installment_no - b.installment_no));
+        const newInst: Partial<AssessmentInstallment>[] = [];
+        for (let i = 0; i < installmentCount; i++) {
+          const dueDate = new Date(startDate);
+          dueDate.setMonth(dueDate.getMonth() + i);
+
+          newInst.push({
+            id: crypto.randomUUID(),
+            installment_no: i + 1,
+            amount: i === installmentCount - 1 ? lastAmount : amountPerInst,
+            note: `งวดที่ ${i + 1}`,
+            due_date: dueDate.toISOString().substring(0, 10),
+          });
         }
+        setInstallments(newInst);
+      } else if (installments.length > 0) {
+        // If exists, ensure they are sorted
+        setInstallments((prev) =>
+          [...prev].sort(
+            (a: any, b: any) => a.installment_no - b.installment_no
+          )
+        );
+      }
     } else {
-      if (installments.length > 0 && paymentCondition !== PaymentMethod.INSTALLMENT) {
+      if (
+        installments.length > 0 &&
+        paymentCondition !== PaymentMethod.INSTALLMENT
+      ) {
         setInstallments([]);
       }
     }
-  }, [assessment?.payment_condition, assessment?.payment_installment_count, assessment?.total_price]);
+  }, [
+    assessment?.payment_condition,
+    assessment?.payment_installment_count,
+    assessment?.total_price,
+  ]);
 
   const handleChange = (
-    e: ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -638,15 +767,27 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
     const startDateTime = new Date(`${workDate}T${startTime}`).toISOString();
     const endDateTime = new Date(`${workDate}T${endTime}`).toISOString();
-    
+
     let apiStatus = 'PENDING';
-    if (status === JobStatus.InProgress || status === JobMainStatus.IN_PROGRESS) apiStatus = 'IN_PROGRESS';
-    else if (status === JobStatus.Completed || status === JobMainStatus.COMPLETE) apiStatus = 'COMPLETE';
-    else if (status === JobStatus.Cancelled || status === JobMainStatus.CANCELLED) apiStatus = 'CANCELLED';
-    else if (status === JobStatus.Failed || status === JobMainStatus.FAILED) apiStatus = 'FAILED';
+    if (status === JobStatus.InProgress || status === JobMainStatus.IN_PROGRESS)
+      apiStatus = 'IN_PROGRESS';
+    else if (
+      status === JobStatus.Completed ||
+      status === JobMainStatus.COMPLETE
+    )
+      apiStatus = 'COMPLETE';
+    else if (
+      status === JobStatus.Cancelled ||
+      status === JobMainStatus.CANCELLED
+    )
+      apiStatus = 'CANCELLED';
+    else if (status === JobStatus.Failed || status === JobMainStatus.FAILED)
+      apiStatus = 'FAILED';
 
     const primaryTechId =
-      (currentJob as any)?.primary_technician?.id || leadTechnicianId || undefined;
+      (currentJob as any)?.primary_technician?.id ||
+      leadTechnicianId ||
+      undefined;
 
     const teamMembers = (selectedTechnicianIds || []).map((id) => ({
       user_id: id,
@@ -672,10 +813,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           (area: any) => {
             // Check for price condition
             if (assessment.package_id) {
-              const pkg = packages.find(p => p.id === assessment.package_id);
+              const pkg = packages.find((p) => p.id === assessment.package_id);
               if (pkg) {
                 const standardBasePrice = Number(calculateAreaPrice(area, pkg));
-                const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
+                const itemsTotal = (area.items || []).reduce(
+                  (sum: number, item: any) =>
+                    sum + Number(item.total_price || 0),
+                  0
+                );
                 const minExpectedTotal = standardBasePrice + itemsTotal;
 
                 // Allow for small floating point differences
@@ -687,16 +832,21 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
             return {
               package_price_id: area.package_price_id,
-              package_price: area.package_price !== undefined && area.package_price !== null ? Number(area.package_price) : undefined, // Include package price in payload
+              package_price:
+                area.package_price !== undefined && area.package_price !== null
+                  ? Number(area.package_price)
+                  : undefined, // Include package price in payload
               area_name: area.area_name,
               building_type: area.building_type,
               service_system: area.service_system,
               area_size: area.area_size,
               // base_service_price: area.base_service_price, // Removed as requested
               total_price: area.total_price,
-              category_services: (area.category_services || []).map((c: any) => ({
-                category_id: c.category_id
-              })),
+              category_services: (area.category_services || []).map(
+                (c: any) => ({
+                  category_id: c.category_id,
+                })
+              ),
               items: (area.items || []).map((it: any) => ({
                 product_id: it.product_id,
                 product_name: it.product_name,
@@ -712,23 +862,38 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           customer_id: currentJob.customer_id,
           package_id: (assessment as any).package_id,
           appointment_date: assessment.appointment_date
-            ? new Date(assessment.appointment_date).toISOString().substring(0, 10)
+            ? new Date(assessment.appointment_date)
+                .toISOString()
+                .substring(0, 10)
             : undefined,
           address: currentJob.address,
-          sub_district: (assessment as any).sub_district || (currentJob as any).sub_district,
-          district: (assessment as any).district || (currentJob as any).district,
-          province: (assessment as any).province || (currentJob as any).province,
-          zipcode: (assessment as any).zipcode || (currentJob as any).postal_code,
+          sub_district:
+            (assessment as any).sub_district ||
+            (currentJob as any).sub_district,
+          district:
+            (assessment as any).district || (currentJob as any).district,
+          province:
+            (assessment as any).province || (currentJob as any).province,
+          zipcode:
+            (assessment as any).zipcode || (currentJob as any).postal_code,
           zone: (currentJob as any).zone,
           route_group: (currentJob as any).group,
           road_line: (currentJob as any).road_line,
           sequence: (currentJob as any).sequence,
           google_map_link: currentJob.google_map_link,
           // If price condition met, force PENDING, otherwise use existing status
-          status: shouldBePending ? AsessmentStatus.PENDING : (assessment as any).status,
+          status: shouldBePending
+            ? AsessmentStatus.PENDING
+            : (assessment as any).status,
           payment_condition: (assessment as any).payment_condition,
-          payment_installment_count: (assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? (assessment as any).payment_installment_count : undefined,
-          installments: (assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? installments : [],
+          payment_installment_count:
+            (assessment as any).payment_condition === PaymentMethod.INSTALLMENT
+              ? (assessment as any).payment_installment_count
+              : undefined,
+          installments:
+            (assessment as any).payment_condition === PaymentMethod.INSTALLMENT
+              ? installments
+              : [],
           total_price: (assessment as any).total_price,
           created_by: currentUser?.name,
           updated_by: currentUser?.name,
@@ -753,7 +918,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           return;
         }
       }
-      
+
       onUpdateJob(updatedPayload);
       onClose();
     }
@@ -763,16 +928,21 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     e.preventDefault();
 
     if (!currentJob || !workDate || !startTime || !endTime) {
-       console.log('Validation failed: missing required fields', { currentJob, workDate, startTime, endTime });
-       return;
+      console.log('Validation failed: missing required fields', {
+        currentJob,
+        workDate,
+        startTime,
+        endTime,
+      });
+      return;
     }
 
     if (timeConflictError) {
-        if (!confirm('พบช่วงเวลาทับซ้อน ต้องการบันทึกข้อมูลหรือไม่?')) {
-            return;
-        }
+      if (!confirm('พบช่วงเวลาทับซ้อน ต้องการบันทึกข้อมูลหรือไม่?')) {
+        return;
+      }
     }
-    
+
     await handleSaveAndClose(formData.status || JobStatus.Planned);
   };
 
@@ -824,10 +994,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     });
   };
 
-  const handleAssessmentAreaChange = (
-    index: number,
-    updatedArea: any
-  ) => {
+  const handleAssessmentAreaChange = (index: number, updatedArea: any) => {
     setAssessment((prev) => {
       if (!prev) return prev;
       const areas = [...(prev.assessment_areas || [])];
@@ -835,11 +1002,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       // Calculate new price if area size changed and package selected
       let newArea = { ...updatedArea };
       if (selectedPackageId) {
-        const pkg = packages.find(p => p.id === selectedPackageId);
+        const pkg = packages.find((p) => p.id === selectedPackageId);
         if (pkg) {
           // Use the price from the form (which allows manual edits), don't force recalculation
           const basePrice = Number(newArea.base_service_price || 0);
-          const itemsTotal = (newArea.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
+          const itemsTotal = (newArea.items || []).reduce(
+            (sum: number, item: any) => sum + Number(item.total_price || 0),
+            0
+          );
           newArea.base_service_price = basePrice;
           newArea.total_price = basePrice + itemsTotal;
         }
@@ -847,8 +1017,15 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
       areas[index] = newArea;
 
-      const newTotal = areas.reduce((sum, a) => sum + Number(a.total_price || 0), 0);
-      return { ...prev, assessment_areas: areas, total_price: newTotal } as Assessment;
+      const newTotal = areas.reduce(
+        (sum, a) => sum + Number(a.total_price || 0),
+        0
+      );
+      return {
+        ...prev,
+        assessment_areas: areas,
+        total_price: newTotal,
+      } as Assessment;
     });
   };
 
@@ -860,12 +1037,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       if (areaToClear) {
         areas[index] = {
           id: areaToClear.id,
+          assessment_id: assessment?.id || '',
+          package_type: undefined,
           area_name: areaToClear.area_name,
           building_type: '',
           area_size: undefined,
           category_services: [],
           service_system: undefined,
-          base_service_price: 0,
+          package_price: 0,
           total_price: 0,
           items: [],
         };
@@ -889,19 +1068,28 @@ export const EditJobModal: FC<EditJobModalProps> = ({
   };
 
   const calculateAreaPrice = (area: any, pkg: Package) => {
-    if (!area.area_size || area.area_size <= 0 || !pkg.package_price) return area.base_service_price || 0;
+    if (!area.area_size || area.area_size <= 0 || !pkg.package_prices)
+      return area.package_price || 0;
 
-    const sortedConditions = [...pkg.package_price].sort((a, b) => a.area_range - b.area_range);
-    const bestFit = sortedConditions.find((c) => c.area_range >= area.area_size);
+    const sortedConditions = [...pkg.package_prices].sort(
+      (a, b) => a.area_range - b.area_range
+    );
+    const bestFit = sortedConditions.find(
+      (c) => c.area_range >= area.area_size
+    );
 
     if (bestFit) {
       // Check for termite service
-      // We need categories list here. 
-      const termiteCategory = categories.find((c) => c.name.includes('กำจัดปลวก'));
+      // We need categories list here.
+      const termiteCategory = categories.find((c) =>
+        c.name.includes('กำจัดปลวก')
+      );
       const hasTermites = (area.category_services || []).some(
         (s: any) => s.category_id === termiteCategory?.id
       );
-      return hasTermites ? Number(bestFit.price_with_termite) : Number(bestFit.price_without_termite);
+      return hasTermites
+        ? Number(bestFit.price_with_termite)
+        : Number(bestFit.price_without_termite);
     }
     return Number(area.base_service_price || 0);
   };
@@ -914,24 +1102,32 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
       // Recalculate prices if package selected
       if (pkgId) {
-        const pkg = packages.find(p => p.id === pkgId);
+        const pkg = packages.find((p) => p.id === pkgId);
         if (pkg) {
-          newAssessment.assessment_areas = (prev.assessment_areas || []).map(area => {
-            const basePrice = Number(calculateAreaPrice(area, pkg));
-            // Recalculate total price for area (base + items)
-            const itemsTotal = (area.items || []).reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
-            return {
-              ...area,
-              base_service_price: basePrice,
-              package_price: basePrice, // Set package price snapshot
-              total_price: basePrice + itemsTotal
-            };
-          }) as any;
+          newAssessment.assessment_areas = (prev.assessment_areas || []).map(
+            (area) => {
+              const basePrice = Number(calculateAreaPrice(area, pkg));
+              // Recalculate total price for area (base + items)
+              const itemsTotal = (area.items || []).reduce(
+                (sum: number, item: any) => sum + Number(item.total_price || 0),
+                0
+              );
+              return {
+                ...area,
+                base_service_price: basePrice,
+                package_price: basePrice, // Set package price snapshot
+                total_price: basePrice + itemsTotal,
+              };
+            }
+          ) as any;
         }
       }
 
       // Update total price of assessment
-      newAssessment.total_price = (newAssessment.assessment_areas || []).reduce((sum, area) => sum + Number(area.total_price || 0), 0);
+      newAssessment.total_price = (newAssessment.assessment_areas || []).reduce(
+        (sum, area) => sum + Number(area.total_price || 0),
+        0
+      );
 
       return newAssessment as Assessment;
     });
@@ -943,7 +1139,11 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       .filter((tech) => {
         if (!additionalTechSearch) return true;
         const name = getTechnicianName(tech).toLowerCase();
-        const nickname = (tech.nick_name || (tech as any).nickname || '').toLowerCase();
+        const nickname = (
+          tech.nick_name ||
+          (tech as any).nickname ||
+          ''
+        ).toLowerCase();
         const search = additionalTechSearch.toLowerCase();
         return name.includes(search) || nickname.includes(search);
       });
@@ -951,14 +1151,23 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
   const tabs = useMemo(() => {
     const allTabs = [
-      { id: 'overview', label: 'ข้อมูลทั่วไป', icon: <DocumentIcon className="w-4 h-4" /> },
-      { id: 'service', label: 'รายละเอียดบริการ', icon: <CalendarIcon className="w-4 h-4" /> },
+      {
+        id: 'overview',
+        label: 'ข้อมูลทั่วไป',
+        icon: <DocumentIcon className="w-4 h-4" />,
+      },
+      {
+        id: 'service',
+        label: 'รายละเอียดบริการ',
+        icon: <CalendarIcon className="w-4 h-4" />,
+      },
       { id: 'team', label: 'ทีมช่าง', icon: <UserIcon className="w-4 h-4" /> },
     ];
 
-    const roleName = typeof currentUser?.role === 'object'
-      ? (currentUser.role as any).name
-      : currentUser?.role;
+    const roleName =
+      typeof currentUser?.role === 'object'
+        ? (currentUser.role as any).name
+        : currentUser?.role;
 
     // Hide team tab if user is NOT Lead Tech, Technician, or Admin
     if (
@@ -996,10 +1205,10 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       const fallbackParts = name
         ? [name]
         : [
-          tech?.first_name || '',
-          tech?.last_name || '',
-          tech?.nick_name || tech?.nickname || '',
-        ].filter(Boolean);
+            tech?.first_name || '',
+            tech?.last_name || '',
+            tech?.nick_name || tech?.nickname || '',
+          ].filter(Boolean);
       return fallbackParts.join(' ');
     }
     return '';
@@ -1061,9 +1270,10 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               onClick={() => setActiveTab(tab.id as any)}
               className={`
                 flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${activeTab === tab.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                ${
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }
               `}
             >
@@ -1075,13 +1285,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       </div>
 
       <form id="edit-job-form" onSubmit={handleSubmit} className="space-y-6">
-        
         {/* TAB: OVERVIEW */}
         <div className={activeTab === 'overview' ? 'block' : 'hidden'}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">ข้อมูลลูกค้า</h3>
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+                  ข้อมูลลูกค้า
+                </h3>
                 <FormField label="ลูกค้า" htmlFor="customerName">
                   <Input
                     id="customerName"
@@ -1094,7 +1305,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     className="bg-white"
                   />
                 </FormField>
-
 
                 <FormField label="ที่อยู่" htmlFor="address">
                   <Textarea
@@ -1121,30 +1331,55 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               </div>
 
               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">พื้นที่บริการ (ข้อมูลอ้างอิง)</h3>
-                
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider">
+                  พื้นที่บริการ (ข้อมูลอ้างอิง)
+                </h3>
+
                 <div className="mb-4">
-                   <FormField label="อ้างอิงใบประเมิน (Code)" htmlFor="assessmentCode">
-                      <Input 
-                        value={assessment ? (assessment as any).code || '-' : '-'} 
-                        readOnly 
-                        className="bg-white font-medium text-primary" 
-                      />
-                   </FormField>
+                  <FormField
+                    label="อ้างอิงใบประเมิน (Code)"
+                    htmlFor="assessmentCode"
+                  >
+                    <Input
+                      value={assessment ? (assessment as any).code || '-' : '-'}
+                      readOnly
+                      className="bg-white font-medium text-primary"
+                    />
+                  </FormField>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField label="เขต" htmlFor="zone">
-                    <Input name="zone" value={formData.zone || ''} readOnly className="bg-white" />
+                    <Input
+                      name="zone"
+                      value={formData.zone || ''}
+                      readOnly
+                      className="bg-white"
+                    />
                   </FormField>
                   <FormField label="Group" htmlFor="group">
-                    <Input name="group" value={formData.group || ''} readOnly className="bg-white" />
+                    <Input
+                      name="group"
+                      value={formData.group || ''}
+                      readOnly
+                      className="bg-white"
+                    />
                   </FormField>
                   <FormField label="สายถนน" htmlFor="roadLine">
-                    <Input name="road_line" value={formData.road_line || ''} readOnly className="bg-white" />
+                    <Input
+                      name="road_line"
+                      value={formData.road_line || ''}
+                      readOnly
+                      className="bg-white"
+                    />
                   </FormField>
                   <FormField label="ลำดับ" htmlFor="sequence">
-                    <Input name="sequence" value={formData.sequence || ''} readOnly className="bg-white" />
+                    <Input
+                      name="sequence"
+                      value={formData.sequence || ''}
+                      readOnly
+                      className="bg-white"
+                    />
                   </FormField>
                 </div>
               </div>
@@ -1156,7 +1391,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                   <span className="w-2 h-2 rounded-full bg-primary"></span>
                   กำหนดการปฏิบัติงาน
                 </h3>
-                
+
                 <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date">
                   <Input
                     id="work-date"
@@ -1219,9 +1454,16 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     </p>
                     <ul className="space-y-1">
                       {bookedSlots.map((slot, idx) => (
-                        <li key={idx} className="text-amber-700 flex justify-between">
-                          <span>{slot.start} - {slot.end}</span>
-                          <span className="opacity-75 truncate max-w-[150px]">{slot.customer}</span>
+                        <li
+                          key={idx}
+                          className="text-amber-700 flex justify-between"
+                        >
+                          <span>
+                            {slot.start} - {slot.end}
+                          </span>
+                          <span className="opacity-75 truncate max-w-[150px]">
+                            {slot.customer}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -1251,11 +1493,15 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           {!currentJob.assessment_id && (
             <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
               <div className="text-slate-400 mb-2">📄</div>
-              <p className="text-slate-500 font-medium">งานนี้ไม่ได้อ้างอิงใบประเมิน</p>
-              <p className="text-sm text-slate-400">คุณสามารถจัดการข้อมูลพื้นที่ได้ในส่วนการแก้ไขงานทั่วไป (ถ้ามี)</p>
+              <p className="text-slate-500 font-medium">
+                งานนี้ไม่ได้อ้างอิงใบประเมิน
+              </p>
+              <p className="text-sm text-slate-400">
+                คุณสามารถจัดการข้อมูลพื้นที่ได้ในส่วนการแก้ไขงานทั่วไป (ถ้ามี)
+              </p>
             </div>
           )}
-          
+
           {currentJob.assessment_id && !assessment && (
             <div className="flex flex-col items-center justify-center p-12 bg-slate-50 border border-slate-200 rounded-xl">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mb-4"></div>
@@ -1267,8 +1513,12 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             <div className="space-y-6 animate-fadeIn">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">รายการพื้นที่บริการ</h3>
-                  <p className="text-sm text-slate-500">จัดการพื้นที่และสินค้าที่ใช้ในแต่ละจุด</p>
+                  <h3 className="text-lg font-bold text-slate-800">
+                    รายการพื้นที่บริการ
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    จัดการพื้นที่และสินค้าที่ใช้ในแต่ละจุด
+                  </p>
                 </div>
               </div>
 
@@ -1285,8 +1535,8 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     selectedPackage={
                       selectedPackageId
                         ? (packages.find(
-                          (p) => p.id === selectedPackageId
-                        ) as any)!
+                            (p) => p.id === selectedPackageId
+                          ) as any)!
                         : null
                     }
                     availablePackages={packages}
@@ -1299,7 +1549,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               </div>
 
               <div className="flex justify-center mt-6">
-                 <button
+                <button
                   type="button"
                   onClick={handleAddArea}
                   className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
@@ -1312,169 +1562,269 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               {/* Payment Condition Section moved here as it relates to the service agreement */}
               <div className="bg-white p-6 rounded-xl border border-slate-200 mt-8 shadow-sm">
                 <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                    <CreditCardIcon className="w-5 h-5 text-primary" />
-                    เงื่อนไขการชำระเงิน
+                  <CreditCardIcon className="w-5 h-5 text-primary" />
+                  เงื่อนไขการชำระเงิน
                 </h3>
-                
+
                 <div className="flex flex-col md:flex-row gap-6">
-                   <div className="flex-1 space-y-4">
-                      <div className="flex gap-4">
-                        <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                          <input
-                            type="radio"
-                            name="payment_type_edit_job"
-                            className="hidden"
-                            checked={!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT}
-                            onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.CASH }))}
-                          />
-                          <div className="font-semibold">ชำระเต็มจำนวน</div>
-                        </label>
-                        <label className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${(assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                          <input
-                            type="radio"
-                            name="payment_type_edit_job"
-                            className="hidden"
-                            checked={(assessment as any).payment_condition === PaymentMethod.INSTALLMENT}
-                            onChange={() => setAssessment((prev: any) => ({ ...prev, payment_condition: PaymentMethod.INSTALLMENT }))}
-                          />
-                          <div className="font-semibold">แบ่งชำระ (งวด)</div>
-                        </label>
-                      </div>
+                  <div className="flex-1 space-y-4">
+                    <div className="flex gap-4">
+                      <label
+                        className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${!(assessment as any).payment_condition || (assessment as any).payment_condition !== PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment_type_edit_job"
+                          className="hidden"
+                          checked={
+                            !(assessment as any).payment_condition ||
+                            (assessment as any).payment_condition !==
+                              PaymentMethod.INSTALLMENT
+                          }
+                          onChange={() =>
+                            setAssessment((prev: any) => ({
+                              ...prev,
+                              payment_condition: PaymentMethod.CASH,
+                            }))
+                          }
+                        />
+                        <div className="font-semibold">ชำระเต็มจำนวน</div>
+                      </label>
+                      <label
+                        className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${(assessment as any).payment_condition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 hover:border-slate-300'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment_type_edit_job"
+                          className="hidden"
+                          checked={
+                            (assessment as any).payment_condition ===
+                            PaymentMethod.INSTALLMENT
+                          }
+                          onChange={() =>
+                            setAssessment((prev: any) => ({
+                              ...prev,
+                              payment_condition: PaymentMethod.INSTALLMENT,
+                            }))
+                          }
+                        />
+                        <div className="font-semibold">แบ่งชำระ (งวด)</div>
+                      </label>
+                    </div>
 
-                      {(assessment as any).payment_condition === PaymentMethod.INSTALLMENT && (
-                        <div className="space-y-4 animate-fadeIn">
-                          <FormField label="จำนวนงวด" htmlFor="payment_installment_count">
-                            <Input
-                              name="payment_installment_count"
-                              type="number"
-                              placeholder="ระบุจำนวนงวด"
-                              value={(assessment as any).payment_installment_count || ''}
-                              onChange={(e) => {
-                                const newCount = parseInt(e.target.value, 10) || 0;
-                                setAssessment((prev: any) => ({
-                                  ...prev,
-                                  payment_installment_count: newCount,
-                                }));
+                    {(assessment as any).payment_condition ===
+                      PaymentMethod.INSTALLMENT && (
+                      <div className="space-y-4 animate-fadeIn">
+                        <FormField
+                          label="จำนวนงวด"
+                          htmlFor="payment_installment_count"
+                        >
+                          <Input
+                            name="payment_installment_count"
+                            type="number"
+                            placeholder="ระบุจำนวนงวด"
+                            value={
+                              (assessment as any).payment_installment_count ||
+                              ''
+                            }
+                            onChange={(e) => {
+                              const newCount =
+                                parseInt(e.target.value, 10) || 0;
+                              setAssessment((prev: any) => ({
+                                ...prev,
+                                payment_installment_count: newCount,
+                              }));
 
-                                setInstallments((prev) => {
-                                  let updatedInstallments = [...prev];
-                                  
-                                  if (newCount > prev.length) {
-                                    // Add new installments
-                                    const toAdd = newCount - prev.length;
-                                    const startDate = assessment?.appointment_date ? new Date(assessment.appointment_date) : new Date();
-                                    
-                                    const newItems = Array.from({ length: toAdd }, (_, i) => {
-                                        const nextNo = prev.length + i + 1;
-                                        const dueDate = new Date(startDate);
-                                        dueDate.setMonth(dueDate.getMonth() + (prev.length + i));
-                                        
-                                        return {
-                                          id: crypto.randomUUID(),
-                                          installment_no: nextNo,
-                                          amount: 0,
-                                          note: `งวดที่ ${nextNo}`,
-                                          due_date: dueDate.toISOString().substring(0, 10)
-                                        };
-                                    });
-                                    updatedInstallments = [...prev, ...newItems];
-                                  } else if (newCount < prev.length) {
-                                    // Remove excess installments
-                                    updatedInstallments = prev.slice(0, newCount);
-                                  }
+                              setInstallments((prev) => {
+                                let updatedInstallments = [...prev];
 
-                                  // Recalculate amounts to split total evenly
-                                  const total = (assessment as any).total_price || 0;
-                                  if (total > 0 && updatedInstallments.length > 0) {
-                                    const amountPerInst = Math.floor((total / updatedInstallments.length) * 100) / 100;
-                                    const lastAmount = total - (amountPerInst * (updatedInstallments.length - 1));
-                                    
-                                    updatedInstallments = updatedInstallments.map((inst, index) => ({
+                                if (newCount > prev.length) {
+                                  // Add new installments
+                                  const toAdd = newCount - prev.length;
+                                  const startDate = assessment?.appointment_date
+                                    ? new Date(assessment.appointment_date)
+                                    : new Date();
+
+                                  const newItems = Array.from(
+                                    { length: toAdd },
+                                    (_, i) => {
+                                      const nextNo = prev.length + i + 1;
+                                      const dueDate = new Date(startDate);
+                                      dueDate.setMonth(
+                                        dueDate.getMonth() + (prev.length + i)
+                                      );
+
+                                      return {
+                                        id: crypto.randomUUID(),
+                                        installment_no: nextNo,
+                                        amount: 0,
+                                        note: `งวดที่ ${nextNo}`,
+                                        due_date: dueDate
+                                          .toISOString()
+                                          .substring(0, 10),
+                                      };
+                                    }
+                                  );
+                                  updatedInstallments = [...prev, ...newItems];
+                                } else if (newCount < prev.length) {
+                                  // Remove excess installments
+                                  updatedInstallments = prev.slice(0, newCount);
+                                }
+
+                                // Recalculate amounts to split total evenly
+                                const total =
+                                  (assessment as any).total_price || 0;
+                                if (
+                                  total > 0 &&
+                                  updatedInstallments.length > 0
+                                ) {
+                                  const amountPerInst =
+                                    Math.floor(
+                                      (total / updatedInstallments.length) * 100
+                                    ) / 100;
+                                  const lastAmount =
+                                    total -
+                                    amountPerInst *
+                                      (updatedInstallments.length - 1);
+
+                                  updatedInstallments = updatedInstallments.map(
+                                    (inst, index) => ({
                                       ...inst,
-                                      amount: index === updatedInstallments.length - 1 ? lastAmount : amountPerInst
-                                    }));
-                                  }
+                                      amount:
+                                        index === updatedInstallments.length - 1
+                                          ? lastAmount
+                                          : amountPerInst,
+                                    })
+                                  );
+                                }
 
-                                  return updatedInstallments;
-                                });
-                              }}
-                              className="bg-white max-w-[200px]"
-                              required
-                              min={2}
-                            />
-                          </FormField>
-                          
-                          {/* Installment Details */}
-                          {installments.length > 0 && (
-                            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-                              <h4 className="font-medium text-slate-700 mb-3">รายละเอียดการแบ่งชำระ</h4>
-                              <div className="space-y-3">
-                                {installments.map((inst, idx) => (
-                                  <div key={idx} className="flex gap-3 items-end">
-                                    <div className="w-16 pt-2 text-sm font-medium text-slate-500">
-                                      งวดที่ {inst.installment_no}
-                                    </div>
-                                    <div className="flex-1">
-                                      <label className="block text-xs text-slate-400 mb-1">จำนวนเงิน</label>
-                                      <Input
-                                        type="number"
-                                        value={inst.amount}
-                                        onChange={(e) => {
-                                          const val = parseFloat(e.target.value) || 0;
-                                          handleInstallmentAmountChange(idx, val);
-                                        }}
-                                        step="0.01"
-                                        className="bg-white"
-                                      />
-                                    </div>
+                                return updatedInstallments;
+                              });
+                            }}
+                            className="bg-white max-w-[200px]"
+                            required
+                            min={2}
+                          />
+                        </FormField>
 
-                                    <div className="flex-1">
-                                      <label className="block text-xs text-slate-400 mb-1">หมายเหตุ</label>
-                                      <Input
-                                        type="text"
-                                        value={inst.note || ''}
-                                        placeholder="เช่น มัดจำ"
-                                        onChange={(e) => {
-                                          handleInstallmentNoteChange(idx, e.target.value);
-                                        }}
-                                        className="bg-white"
-                                      />
-                                    </div>
+                        {/* Installment Details */}
+                        {installments.length > 0 && (
+                          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                            <h4 className="font-medium text-slate-700 mb-3">
+                              รายละเอียดการแบ่งชำระ
+                            </h4>
+                            <div className="space-y-3">
+                              {installments.map((inst, idx) => (
+                                <div key={idx} className="flex gap-3 items-end">
+                                  <div className="w-16 pt-2 text-sm font-medium text-slate-500">
+                                    งวดที่ {inst.installment_no}
                                   </div>
-                                ))}
-                                <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                                  <span>รวม</span>
-                                  <span className={installments.reduce((sum, i) => sum + Number(i.amount || 0), 0) === (assessment as any).total_price ? 'text-green-600' : 'text-red-500'}>
-                                    {installments.reduce((sum, i) => sum + Number(i.amount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / {((assessment as any).total_price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                  </span>
+                                  <div className="flex-1">
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                      จำนวนเงิน
+                                    </label>
+                                    <Input
+                                      type="number"
+                                      value={inst.amount}
+                                      onChange={(e) => {
+                                        const val =
+                                          parseFloat(e.target.value) || 0;
+                                        handleInstallmentAmountChange(idx, val);
+                                      }}
+                                      step="0.01"
+                                      className="bg-white"
+                                    />
+                                  </div>
+
+                                  <div className="flex-1">
+                                    <label className="block text-xs text-slate-400 mb-1">
+                                      หมายเหตุ
+                                    </label>
+                                    <Input
+                                      type="text"
+                                      value={inst.note || ''}
+                                      placeholder="เช่น มัดจำ"
+                                      onChange={(e) => {
+                                        handleInstallmentNoteChange(
+                                          idx,
+                                          e.target.value
+                                        );
+                                      }}
+                                      className="bg-white"
+                                    />
+                                  </div>
                                 </div>
+                              ))}
+                              <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                                <span>รวม</span>
+                                <span
+                                  className={
+                                    installments.reduce(
+                                      (sum, i) => sum + Number(i.amount || 0),
+                                      0
+                                    ) === (assessment as any).total_price
+                                      ? 'text-green-600'
+                                      : 'text-red-500'
+                                  }
+                                >
+                                  {installments
+                                    .reduce(
+                                      (sum, i) => sum + Number(i.amount || 0),
+                                      0
+                                    )
+                                    .toLocaleString(undefined, {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}{' '}
+                                  /{' '}
+                                  {(
+                                    (assessment as any).total_price || 0
+                                  ).toLocaleString(undefined, {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}
+                                </span>
                               </div>
                             </div>
-                          )}
-                        </div>
-                      )}
-                   </div>
-
-                   {/* Summary for Job Edit */}
-                   <div className="w-full md:w-1/3">
-                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                          <h4 className="font-semibold text-slate-800 mb-2">สรุปค่าบริการ</h4>
-                          <div className="space-y-2 text-sm">
-                             <div className="flex justify-between text-slate-600">
-                                <span>พื้นที่ทั้งหมด</span>
-                                <span>{(assessment.assessment_areas || []).length} จุด</span>
-                             </div>
-                             <div className="flex justify-between text-slate-600">
-                                <span>ประเภทราคา</span>
-                                <span>{(assessment as any).package_id ? 'Package' : 'Custom'}</span>
-                             </div>
-                             <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg text-primary">
-                                <span>รวมสุทธิ</span>
-                                <span>฿{((assessment as any).total_price || 0).toLocaleString()}</span>
-                             </div>
                           </div>
+                        )}
                       </div>
-                   </div>
+                    )}
+                  </div>
+
+                  {/* Summary for Job Edit */}
+                  <div className="w-full md:w-1/3">
+                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                      <h4 className="font-semibold text-slate-800 mb-2">
+                        สรุปค่าบริการ
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between text-slate-600">
+                          <span>พื้นที่ทั้งหมด</span>
+                          <span>
+                            {(assessment.assessment_areas || []).length} จุด
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-slate-600">
+                          <span>ประเภทราคา</span>
+                          <span>
+                            {(assessment as any).package_id
+                              ? 'Package'
+                              : 'Custom'}
+                          </span>
+                        </div>
+                        <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg text-primary">
+                          <span>รวมสุทธิ</span>
+                          <span>
+                            ฿
+                            {(
+                              (assessment as any).total_price || 0
+                            ).toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1493,39 +1843,44 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                   </div>
                   ยานพาหนะ
                 </h3>
-                
+
                 <div className="space-y-4">
                   <SearchableSelect
-                      label="เลือกรถที่ปฏิบัติงาน"
-                      options={filteredVehicles}
-                      value={formData.vehicle_id || ''}
-                      onChange={(val) => setFormData(prev => ({ ...prev, vehicle_id: val || '' }))}
-                      onSearchChange={setVehicleSearch}
-                      placeholder="ค้นหารถบริการ..."
-                      required
-                    />
+                    label="เลือกรถที่ปฏิบัติงาน"
+                    options={filteredVehicles}
+                    value={formData.vehicle_id || ''}
+                    onChange={(val) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        vehicle_id: val || '',
+                      }))
+                    }
+                    onSearchChange={setVehicleSearch}
+                    placeholder="ค้นหารถบริการ..."
+                    required
+                  />
 
-                    {timeConflictError && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
-                        <span className="text-lg">⚠️</span>
-                        <p>{timeConflictError}</p>
-                      </div>
-                    )}
+                  {timeConflictError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
+                      <span className="text-lg">⚠️</span>
+                      <p>{timeConflictError}</p>
+                    </div>
+                  )}
 
-                    {bookedSlots.length > 0 && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
-                        <p className="font-semibold text-amber-800 mb-1">
-                          ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
-                        </p>
-                        <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
-                          {bookedSlots.map((slot) => (
-                            <li key={slot.start}>
-                              {slot.start} - {slot.end} ({slot.customer})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  {bookedSlots.length > 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                      <p className="font-semibold text-amber-800 mb-1">
+                        ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
+                      </p>
+                      <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
+                        {bookedSlots.map((slot) => (
+                          <li key={slot.start}>
+                            {slot.start} - {slot.end} ({slot.customer})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1564,14 +1919,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                 </div>
                 ลูกทีม (Members)
               </h3>
-              
+
               <div className="mb-6">
-                 <Input
-                    placeholder="ค้นหาช่างเพิ่มเติม..."
-                    value={additionalTechSearch}
-                    onChange={(e) => setAdditionalTechSearch(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
-                  />
+                <Input
+                  placeholder="ค้นหาช่างเพิ่มเติม..."
+                  value={additionalTechSearch}
+                  onChange={(e) => setAdditionalTechSearch(e.target.value)}
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1580,9 +1935,11 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     key={tech.id}
                     className={`
                       relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
-                      ${selectedTechnicianIds.includes(tech.id) 
-                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' 
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
+                      ${
+                        selectedTechnicianIds.includes(tech.id)
+                          ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      }
                     `}
                   >
                     <div className="pt-1">
@@ -1594,11 +1951,21 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                       />
                     </div>
                     <div className="flex flex-col">
-                      <span className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}>
+                      <span
+                        className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}
+                      >
                         {getTechnicianName(tech)}
                       </span>
-                      {tech.nick_name && <span className="text-xs text-slate-500 font-medium">({tech.nick_name})</span>}
-                      {tech.phone && <span className="text-xs text-slate-400 mt-1">{tech.phone}</span>}
+                      {tech.nick_name && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          ({tech.nick_name})
+                        </span>
+                      )}
+                      {tech.phone && (
+                        <span className="text-xs text-slate-400 mt-1">
+                          {tech.phone}
+                        </span>
+                      )}
                     </div>
                   </label>
                 ))}
@@ -1611,7 +1978,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             </div>
           </div>
         </div>
-
       </form>
     </Modal>
   );

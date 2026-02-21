@@ -20,6 +20,7 @@ interface EditReturnModalProps {
   onUpdateReturn: (returnData: ReturnType) => void;
   warehouses: WarehouseType[];
   products: Product[];
+  stockMap: { [key: string]: { [key: string]: number } };
 }
 
 export const EditReturnModal: React.FC<EditReturnModalProps> = ({
@@ -29,6 +30,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
   onUpdateReturn,
   warehouses,
   products,
+  stockMap,
 }) => {
   const [items, setItems] = useState<ProductReturnItem[]>([]);
   const [formData, setFormData] = useState<Partial<ReturnType>>({});
@@ -39,13 +41,16 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
     [products]
   );
   const fromWarehouseName = useMemo(
-    () => warehouses.find((w) => w.id === formData.fromWarehouseId)?.name || '',
-    [formData.fromWarehouseId, warehouses]
+    () => warehouses.find((w) => w.id === formData.warehouse_id)?.name || '',
+    [formData.warehouse_id, warehouses]
   );
-  const productsInWarehouse = useMemo(
-    () => products.filter((p) => p.warehouse === fromWarehouseName),
-    [fromWarehouseName, products]
-  );
+  const productsInWarehouse = useMemo(() => {
+    if (!formData.warehouse_id) return [];
+    const productIdsInWarehouse = Object.keys(
+      stockMap[formData.warehouse_id] || {}
+    );
+    return products.filter((p) => productIdsInWarehouse.includes(p.id));
+  }, [formData.warehouse_id, products, stockMap]);
 
   const isFormValid = useMemo(() => {
     return (
@@ -63,25 +68,25 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: ProductReturnItem[] = productIds.map((pid) => ({
-      productId: pid,
+      product_id: pid,
       quantity: 1,
       reason: '',
     }));
     setItems((prev) => [...prev, ...newItems]);
   };
 
-  const handleRemoveItem = (productId: string) => {
-    setItems(items.filter((item) => item.productId !== productId));
+  const handleRemoveItem = (product_id: string) => {
+    setItems(items.filter((item) => item.product_id !== product_id));
   };
 
   const handleItemChange = (
-    productId: string,
+    product_id: string,
     field: 'quantity' | 'reason',
     value: string | number
   ) => {
     setItems(
       items.map((item) =>
-        item.productId === productId ? { ...item, [field]: value } : item
+        item.product_id === product_id ? { ...item, [field]: value } : item
       )
     );
   };
@@ -103,7 +108,6 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
       const updatedReturn: ReturnType = {
         ...returnItem,
         ...formData,
-        withdrawalRefId: formData.withdrawalRefId || returnItem.withdrawalRefId,
         items: items.map((item) => ({
           ...item,
           quantity: Number(item.quantity),
@@ -115,7 +119,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
   };
 
   const existingProductIds = useMemo(
-    () => items.map((item) => item.productId),
+    () => items.map((item) => item.product_id),
     [items]
   );
 
@@ -164,26 +168,16 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                 className="bg-slate-100"
               />
             </FormField>
-            <FormField label="วันที่" htmlFor="createdAt">
+            <FormField label="วันที่" htmlFor="created_at">
               <Input
-                id="createdAt"
-                name="createdAt"
+                id="created_at"
+                name="created_at"
                 type="date"
-                value={new Date(formData.createdAt || '')
+                value={new Date(formData.created_at || '')
                   .toISOString()
                   .substring(0, 10)}
                 onChange={handleChange}
                 required
-              />
-            </FormField>
-            <FormField label="อ้างอิงใบเบิก" htmlFor="withdrawalRefId">
-              <Input
-                id="withdrawalRefId"
-                name="withdrawalRefId"
-                type="text"
-                value={formData.withdrawalRefId || ''}
-                onChange={handleChange}
-                placeholder="เช่น SR67xxxx"
               />
             </FormField>
           </div>
@@ -191,12 +185,12 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
             <FormField label="คืนจากคลัง (รถ)" htmlFor="fromWarehouseId">
               <Select
                 id="fromWarehouseId"
-                value={formData.fromWarehouseId || ''}
+                value={formData.warehouse_id || ''}
                 disabled
                 className="bg-slate-100"
               >
-                <option value={formData.fromWarehouseId}>
-                  {warehouses.find((w) => w.id === formData.fromWarehouseId)
+                <option value={formData.warehouse_id}>
+                  {warehouses.find((w) => w.id === formData.warehouse_id)
                     ?.name || ''}
                 </option>
               </Select>
@@ -204,12 +198,12 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
             <FormField label="คืนเข้าคลัง" htmlFor="toWarehouseId">
               <Select
                 id="toWarehouseId"
-                value={formData.toWarehouseId || ''}
+                value={formData.warehouse_id || ''}
                 disabled
                 className="bg-slate-100"
               >
-                <option value={formData.toWarehouseId}>
-                  {warehouses.find((w) => w.id === formData.toWarehouseId)
+                <option value={formData.warehouse_id}>
+                  {warehouses.find((w) => w.id === formData.warehouse_id)
                     ?.name || ''}
                 </option>
               </Select>
@@ -255,12 +249,12 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                 <tbody>
                   {items.length > 0 ? (
                     items.map((item, index) => {
-                      const product = item.productId
-                        ? productMap.get(item.productId)
+                      const product = item.product_id
+                        ? productMap.get(item.product_id)
                         : null;
                       return (
                         <tr
-                          key={item.productId}
+                          key={item.product_id}
                           className="border-b border-slate-200 last:border-b-0"
                         >
                           <td className="p-2 align-middle text-center text-slate-600">
@@ -270,7 +264,8 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                             {product?.name || 'N/A'}
                           </td>
                           <td className="p-2 align-middle text-center text-slate-600">
-                            {product?.stock ?? '-'}
+                            {stockMap[formData.warehouse_id]?.[product.id] ??
+                              '-'}
                           </td>
                           <td className="p-2 align-middle">
                             <Input
@@ -279,20 +274,26 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                               onChange={(e) => {
                                 const newQuantity =
                                   parseInt(e.target.value, 10) || 0;
-                                const stock = product?.stock ?? 0;
+                                const stock =
+                                  stockMap[formData.warehouse_id]?.[
+                                    product.id
+                                  ] ?? 0;
                                 const validatedQuantity = Math.min(
                                   newQuantity,
                                   stock
                                 );
                                 handleItemChange(
-                                  item.productId,
+                                  item.product_id,
                                   'quantity',
                                   validatedQuantity
                                 );
                               }}
                               className="w-24 h-10"
                               min="1"
-                              max={product?.stock ?? 0}
+                              max={
+                                stockMap[formData.warehouse_id]?.[product.id] ??
+                                0
+                              }
                               required
                             />
                           </td>
@@ -302,7 +303,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                               value={item.reason}
                               onChange={(e) =>
                                 handleItemChange(
-                                  item.productId,
+                                  item.product_id,
                                   'reason',
                                   e.target.value
                                 )
@@ -316,7 +317,7 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
                             <Button
                               variant="ghost"
                               type="button"
-                              onClick={() => handleRemoveItem(item.productId)}
+                              onClick={() => handleRemoveItem(item.product_id)}
                               className="text-red-500 hover:text-red-700"
                             >
                               <TrashIcon className="h-5 w-5" />
@@ -352,4 +353,3 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
     </>
   );
 };
-

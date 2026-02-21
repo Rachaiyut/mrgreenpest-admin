@@ -48,4 +48,3 @@ class CategoryService extends AuthService {
 }
 
 export const CategoryApi = new CategoryService();
-

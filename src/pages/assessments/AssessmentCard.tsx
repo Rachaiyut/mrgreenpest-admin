@@ -19,26 +19,31 @@ const AssessmentCard: React.FC<{
   ) => void;
   onViewDetails: (assessment: Assessment) => void;
 }> = ({ assessment, customerName, onDropdownToggle, onViewDetails }) => {
-  const appointmentDate = formatThaiDate(assessment.appointment_date.toString());
+  const appointmentDate = formatThaiDate(
+    assessment.appointment_date.toString()
+  );
 
   const allServiceTypes = useMemo(() => {
     const areas = assessment?.assessment_areas || [];
     // Assuming you want to display something meaningful, you might need to fetch category names
     // For now, we'll just use the IDs or an empty array if categories are missing from the interface for now
     // based on previous errors, let's check what's actually on AssessmentWorkArea
-    return []; 
+    return [];
   }, [assessment?.assessment_areas]);
 
   const getStatusColor = () => {
     const statusUpper = String(assessment.status || '').toUpperCase();
     if (statusUpper === 'PENDING') return 'border-l-amber-500';
-    if (statusUpper === 'COMPLETE' || statusUpper === 'COMPLETED') return 'border-l-green-500';
+    if (statusUpper === 'COMPLETE' || statusUpper === 'COMPLETED')
+      return 'border-l-green-500';
     if (statusUpper === 'APPOINTMENT') return 'border-l-primary';
     return 'border-l-slate-400';
   };
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}>
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}
+    >
       {/* Header */}
       <div className="px-4 pt-4 pb-3">
         <div className="flex justify-between items-start gap-2">
@@ -54,7 +59,9 @@ const AssessmentCard: React.FC<{
           </div>
           <Button
             data-assessment-id={assessment.id || assessment.code}
-            onClick={(e) => onDropdownToggle(e, assessment.id || assessment.code)}
+            onClick={(e) =>
+              onDropdownToggle(e, assessment.id || assessment.code)
+            }
             variant="ghost"
             className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
             title="ตัวเลือก"
@@ -74,7 +81,9 @@ const AssessmentCard: React.FC<{
       <div className="px-4 pb-3 space-y-2">
         <div className="flex items-start gap-2.5 text-sm">
           <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-          <span className="text-slate-600 line-clamp-2 leading-snug">{assessment.address || '-'}</span>
+          <span className="text-slate-600 line-clamp-2 leading-snug">
+            {assessment.address || '-'}
+          </span>
         </div>
         <div className="flex items-center gap-2.5 text-sm">
           <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
@@ -99,5 +108,3 @@ const AssessmentCard: React.FC<{
 };
 
 export default AssessmentCard;
-
-

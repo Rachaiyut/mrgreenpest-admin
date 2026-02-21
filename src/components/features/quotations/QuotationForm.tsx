@@ -1,26 +1,35 @@
-import { useState, useEffect, useMemo, useRef, ChangeEvent, FormEvent, FC, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  ChangeEvent,
+  FormEvent,
+  FC,
+  useCallback,
+} from 'react';
 import { Card } from '../../common/Card';
 import {
-    FormField,
-    Input,
-    Select,
-    Button,
-    Textarea,
+  FormField,
+  Input,
+  Select,
+  Button,
+  Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import {
-    PlusIcon,
-    TrashIcon,
-    DocumentTextIcon,
-    HomeIcon,
-    MapIcon,
-    ClipboardDocumentListIcon,
-    CurrencyDollarIcon,
-    CalendarIcon,
-    MapPinIcon,
-    NewFieldOpsIcon,
-    CreditCardIcon
+  PlusIcon,
+  TrashIcon,
+  DocumentTextIcon,
+  HomeIcon,
+  MapIcon,
+  ClipboardDocumentListIcon,
+  CurrencyDollarIcon,
+  CalendarIcon,
+  MapPinIcon,
+  NewFieldOpsIcon,
+  CreditCardIcon,
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
@@ -36,1686 +45,2088 @@ import { PackageApi } from '../../../api/package';
 import { Package } from '../../../types/entity/package.interface';
 
 interface QuotationItem {
-    id: string;
-    productId: string;
-    description: string;
-    quantity: number;
-    unit: string;
-    unitPrice: number;
-    amount: number;
+  id: string;
+  productId: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  amount: number;
 }
 
 export interface QuotationFormProps {
-    mode: 'create' | 'edit' | 'revise' | 'detail';
-    initialValues?: Partial<Quotation>;
-    onSubmit: (data: any) => Promise<void>;
-    onCancel: () => void;
-    assessmentId?: string | null;
+  mode: 'create' | 'edit' | 'revise' | 'detail';
+  initialValues?: Partial<Quotation>;
+  onSubmit: (data: any) => Promise<void>;
+  onCancel: () => void;
+  assessmentId?: string | null;
 }
 
 export const QuotationForm: FC<QuotationFormProps> = ({
-    mode,
-    initialValues,
-    onSubmit,
-    onCancel,
-    assessmentId,
+  mode,
+  initialValues,
+  onSubmit,
+  onCancel,
+  assessmentId,
 }) => {
-    const { products, categories } = useData();
-    const isReadOnly = mode === 'detail';
+  const { products } = useData();
 
-    // Local state for fetched data
-    const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
-    const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
-    const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
-    const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
+  const isReadOnly = mode === 'detail';
 
-    // Initial data fetching
-    useEffect(() => {
-        const initData = async () => {
-            try {
-                const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
-                    CustomerApi.getCustomers({ limit: 100 }),
-                    AssessmentApi.getAll({ limit: 20 }),
-                    CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 }),
-                    PackageApi.getPackages({ limit: 100 })
-                ]);
+  // Local state for fetched data
+  const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
+  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>(
+    []
+  );
+  const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
+  const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
 
-                if (custRes?.data) setFetchedCustomers(custRes.data);
-                if (assessRes?.data) setFetchedAssessments(assessRes.data);
-                if (catRes?.data) setFetchedCategories(catRes.data);
-                if (pkgRes?.data) setFetchedPackages(pkgRes.data);
+  // Initial data fetching
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
+          CustomerApi.getCustomers({ limit: 100 }),
+          AssessmentApi.getAll({ limit: 20 }),
+          CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 100 }),
+          PackageApi.getPackages({ limit: 100 }),
+        ]);
 
-            } catch (err) {
-                console.error("Error fetching initial data:", err);
-            }
-        };
-        initData();
-    }, []);
+        if (custRes?.data) setFetchedCustomers(custRes.data);
+        if (assessRes?.data) setFetchedAssessments(assessRes.data);
+        if (catRes?.data) setFetchedCategories(catRes.data);
+        if (pkgRes?.data) setFetchedPackages(pkgRes.data);
+      } catch (err) {
+        console.error('Error fetching initial data:', err);
+      }
+    };
+    initData();
+  }, []);
 
-    // Ensure we use the most complete list of categories (Context + potentially fetched)
-    // For now, relying on Context 'categories' is standard pattern in this app.
-    // If 'categories' is empty, we might want to trigger a fetch in DataContext or here.
+  // Ensure we use the most complete list of categories (Context + potentially fetched)
+  // For now, relying on Context 'categories' is standard pattern in this app.
+  // If 'categories' is empty, we might want to trigger a fetch in DataContext or here.
 
-    // Service Type Options derived from categories
-    const serviceTypeOptions = useMemo(() => {
-        const sourceCategories = fetchedCategories.length > 0 ? fetchedCategories : (categories || []);
-        return sourceCategories
-            .filter((c: any) => c.type === 'SERVICE')
-            .map((c: any) => ({
-                value: c.name, // Use name as value to match backend expectation of string
-                label: c.name,
-                id: c.id // Keep ID for reference if needed
-            }));
-    }, [categories, fetchedCategories]);
+  // Service Type Options derived from categories
+  const serviceTypeOptions = useMemo(() => {
+    const sourceCategories = fetchedCategories;
+    return sourceCategories
+      .filter((c: any) => c.type === 'SERVICE')
+      .map((c: any) => ({
+        value: c.name, // Use name as value to match backend expectation of string
+        label: c.name,
+        id: c.id, // Keep ID for reference if needed
+      }));
+  }, [fetchedCategories]);
 
-    // Customer info
-    const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
+  // Customer info
+  const [selectedCustomerId, setSelectedCustomerId] = useState(
+    initialValues?.customer_id || ''
+  );
 
-    // Customer Search Handling
-    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Customer Search Handling
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const handleCustomerSearch = useCallback((query: string) => {
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
+  const handleCustomerSearch = useCallback(
+    (query: string) => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
 
-        searchTimeoutRef.current = setTimeout(async () => {
-            try {
-                const res = await CustomerApi.getCustomers({ search: query, limit: 50 });
-                if (res && res.data) {
-                    setFetchedCustomers(prev => {
-                        const selected = prev.find(c => c.id === selectedCustomerId);
-                        if (selected && !res.data.find(c => c.id === selected.id)) {
-                            return [selected, ...res.data];
-                        }
-                        return res.data;
-                    });
-                }
-            } catch (error) {
-                console.error("Error searching customers:", error);
-            }
-        }, 500);
-    }, [selectedCustomerId]);
-
-    // Assessment reference
-    const [selectedAssessmentId, setSelectedAssessmentId] = useState(
-        assessmentId || initialValues?.assessment_id || ''
-    );
-
-    // Assessment Search Handling
-    const assessmentSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Package reference (Direct selection)
-    const [selectedPackageId, setSelectedPackageId] = useState('');
-
-    const handleAssessmentSearch = useCallback((query: string) => {
-        if (assessmentSearchTimeoutRef.current) {
-            clearTimeout(assessmentSearchTimeoutRef.current);
-        }
-
-        assessmentSearchTimeoutRef.current = setTimeout(async () => {
-            try {
-                const res = await AssessmentApi.getAll({ search: query, limit: 10 });
-                if (res && res.data) {
-                    setFetchedAssessments(prev => {
-                        const selected = prev.find(a => a.id === selectedAssessmentId);
-                        if (selected && !res.data.find(a => a.id === selected.id)) {
-                            return [selected, ...res.data];
-                        }
-                        return res.data;
-                    });
-                }
-            } catch (error) {
-                console.error("Error searching assessments:", error);
-            }
-        }, 500);
-    }, [selectedAssessmentId]);
-
-    // Quotation info
-    const [quotationDate, setQuotationDate] = useState(
-        initialValues?.created_at ? new Date(initialValues.created_at).toISOString().substring(0, 10) : ''
-    );
-    const [validityDays, setValidityDays] = useState(30); // Default, logic to calc from existing expiry needed if edit
-    const [expiresAt, setExpiresAt] = useState(
-        initialValues?.expires_at ? new Date(initialValues.expires_at).toISOString().substring(0, 10) : ''
-    );
-
-    // Contact Phone (Editable)
-    const [contactPhone, setContactPhone] = useState(initialValues?.contact_phone || '');
-
-    // Service info
-    const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
-    const [buildingType, setBuildingType] = useState(initialValues?.building_type || '');
-    const [serviceArea, setServiceArea] = useState(initialValues?.service_area || '');
-    const [serviceSystem, setServiceSystem] = useState(initialValues?.service_system || '');
-    const [systemUsed, setSystemUsed] = useState(initialValues?.system_used || '');
-
-    // Convert comma-separated string back to array if needed, or default to empty array
-    const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
-        initialValues?.service_type
-            ? initialValues.service_type.split(',').map(s => s.trim()).filter(Boolean)
-            : []
-    );
-    // Keep serviceType state synced for backward compatibility or simple submission logic
-    const [serviceType, setServiceType] = useState(initialValues?.service_type || '');
-
-    // Sync serviceType string when selectedServiceTypes changes
-    useEffect(() => {
-        setServiceType(selectedServiceTypes.join(', '));
-    }, [selectedServiceTypes]);
-
-    const [paymentTerms, setPaymentTerms] = useState(
-        initialValues?.payment_terms || 'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย'
-    );
-    const [notes, setNotes] = useState(initialValues?.notes || '');
-    const [contractDuration, setContractDuration] = useState(initialValues?.contract_duration || '1 ปี');
-    const [serviceCount, setServiceCount] = useState(initialValues?.service_count || '7 ครั้ง');
-
-    // Reset when usePackagePricing changes back to false if needed, but usually we keep last valid or default
-    // Logic to sync package defaults if package changes is handled in useEffect[selectedAssessment]
-
-
-    // Line items
-    const [items, setItems] = useState<QuotationItem[]>(
-        initialValues?.items
-            ?.filter((item: any) => {
-                // Filter legacy artifacts from bug
-                if (item.unit === 'พื้นที่' && !item.product_id) return false;
-                // Filter out package items if they are accidentally in the list (identified by unit 'งาน/แพ็กเกจ' or description starting with 'แพ็กเกจ:')
-                if (item.unit === 'งาน/แพ็กเกจ' || item.description?.startsWith('แพ็กเกจ:')) return false;
-                return true;
-            })
-            ?.map((item: any) => ({
-                id: crypto.randomUUID(),
-                productId: item.product_id || '',
-                description: item.description || '',
-                quantity: Number(item.quantity) || 1,
-                unit: item.unit || 'ครั้ง',
-                unitPrice: Number(item.unit_price) || 0,
-                amount: Number(item.amount) || 0,
-            })) || [
-            {
-                id: crypto.randomUUID(),
-                productId: '',
-                description: '',
-                quantity: 1,
-                unit: 'ครั้ง',
-                unitPrice: 0,
-                amount: 0,
-            },
-        ]
-    );
-
-    // Standard service counts for dropdown
-    const standardServiceCounts = ["1 ครั้ง", "3 ครั้ง", "5 ครั้ง", "7 ครั้ง", "8 ครั้ง", "12 ครั้ง", "24 ครั้ง"];
-
-    // Ensure custom service count is available in options
-    const serviceCountOptions = useMemo(() => {
-        const options = [...standardServiceCounts];
-        if (serviceCount && !options.includes(serviceCount)) {
-            options.push(serviceCount);
-            options.sort((a, b) => {
-                const numA = parseInt(a) || 0;
-                const numB = parseInt(b) || 0;
-                return numA - numB;
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await CustomerApi.getCustomers({
+            search: query,
+            limit: 50,
+          });
+          if (res && res.data) {
+            setFetchedCustomers((prev) => {
+              const selected = prev.find((c) => c.id === selectedCustomerId);
+              if (selected && !res.data.find((c) => c.id === selected.id)) {
+                return [selected, ...res.data];
+              }
+              return res.data;
             });
+          }
+        } catch (error) {
+          console.error('Error searching customers:', error);
         }
-        return options;
-    }, [serviceCount]);
+      }, 500);
+    },
+    [selectedCustomerId]
+  );
 
-    // VAT settings
-    const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
-    const vatRate = 0.07;
+  // Assessment reference
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState(
+    assessmentId || initialValues?.assessment_id || ''
+  );
 
-    // Product options for dropdown (filter out PACKAGE items)
-    const productOptions = useMemo(() => {
-        return products
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            .filter((p) => p.type !== 'PACKAGE') // Filter out products with type 'PACKAGE'
-            .map((p) => ({
-                value: p.id,
-                label: `${p.code} - ${p.name}`,
-                description: p.unit?.name || '',
-            }));
-    }, [products]);
+  // Assessment Search Handling
+  const assessmentSearchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Assessment options for dropdown
-    const assessmentOptions = useMemo(() => {
-        return (fetchedAssessments || []).map((a) => {
-            const customerName = a.customer
-                ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
-                : 'ไม่ระบุลูกค้า';
-            return {
-                value: a.id,
-                label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
-                description: a.address || '',
-            };
-        });
-    }, [fetchedAssessments]);
+  // Package reference (Direct selection)
+  const [selectedPackageId, setSelectedPackageId] = useState('');
 
-    // Selected assessment details
-    const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
-    const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null);
+  const handleAssessmentSearch = useCallback(
+    (query: string) => {
+      if (assessmentSearchTimeoutRef.current) {
+        clearTimeout(assessmentSearchTimeoutRef.current);
+      }
 
-    // Fetch full assessment details when ID changes
-    useEffect(() => {
-        if (selectedAssessmentId) {
-            const fetchFull = async () => {
-                try {
-                    const res = await AssessmentApi.getById(selectedAssessmentId);
-                    setFullAssessment(res);
-
-                    // If assessment has package_id (or nested package object with ID), fetch package details explicitly
-                    const packageId = res.package_id || (res.package && res.package.id);
-
-                    if (packageId) {
-                        try {
-                            const pkgRes = await PackageApi.getPackageById(packageId);
-                            setFetchedPackage(pkgRes);
-                            setSelectedPackageId(packageId); // Sync selection
-                        } catch (pkgErr) {
-                            console.error("Error fetching package details:", pkgErr);
-                            setFetchedPackage(null);
-                        }
-                    } else {
-                        setFetchedPackage(null);
-                        setSelectedPackageId('');
-                    }
-                } catch (err) {
-                    console.error("Error fetching full assessment:", err);
-                    setFullAssessment(null);
-                    setFetchedPackage(null);
-                }
-            };
-            fetchFull();
-        } else if (selectedPackageId) {
-            // Manual Package Selection
-            const pkg = fetchedPackages.find(p => p.id === selectedPackageId);
-            if (pkg) {
-                setFetchedPackage(pkg);
-            } else {
-                PackageApi.getPackageById(selectedPackageId)
-                    .then(setFetchedPackage)
-                    .catch(() => setFetchedPackage(null));
-            }
-            setFullAssessment(null);
-        } else {
-            setFullAssessment(null);
-            setFetchedPackage(null);
+      assessmentSearchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await AssessmentApi.getAll({ search: query, limit: 10 });
+          if (res && res.data) {
+            setFetchedAssessments((prev) => {
+              const selected = prev.find((a) => a.id === selectedAssessmentId);
+              if (selected && !res.data.find((a) => a.id === selected.id)) {
+                return [selected, ...res.data];
+              }
+              return res.data;
+            });
+          }
+        } catch (error) {
+          console.error('Error searching assessments:', error);
         }
-    }, [selectedAssessmentId, selectedPackageId, fetchedPackages]);
-
-    const selectedAssessment = useMemo(() => {
-        const assessment = (fullAssessment && fullAssessment.id === selectedAssessmentId)
-            ? fullAssessment
-            : fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
-
-        if (assessment && fetchedPackage) {
-            // Check if assessment links to this package either via package_id OR if the nested package object has the same ID
-            const assessmentPkgId = assessment.package_id || (assessment.package && assessment.package.id);
-
-            if (assessmentPkgId === fetchedPackage.id) {
-                return {
-                    ...assessment,
-                    package: {
-                        ...assessment.package, // Keep existing props
-                        ...fetchedPackage, // Overwrite with full master details
-                        // Ensure package_price is carried over
-                        package_price: fetchedPackage.package_price || (fetchedPackage as any).package_prices || assessment.package?.package_price
-                    }
-                };
-            }
-        }
-        return assessment;
-    }, [fetchedAssessments, selectedAssessmentId, fullAssessment, fetchedPackage]);
-
-    // Selected customer details
-    const selectedCustomer = useMemo(() => {
-        return fetchedCustomers.find((c) => c.id === selectedCustomerId);
-    }, [fetchedCustomers, selectedCustomerId]);
-
-
-
-    // Initialize dates if create mode
-    useEffect(() => {
-        if (mode === 'create' && !initialValues) {
-            const today = new Date();
-            const expiry = new Date();
-            expiry.setDate(today.getDate() + validityDays);
-
-            setQuotationDate(today.toISOString().substring(0, 10));
-            setExpiresAt(expiry.toISOString().substring(0, 10));
-        } else if ((mode === 'edit' || mode === 'revise') && initialValues?.created_at && initialValues?.expires_at) {
-            // Calculate validity days from existing dates
-            const start = new Date(initialValues.created_at);
-            const end = new Date(initialValues.expires_at);
-            const diffTime = Math.abs(end.getTime() - start.getTime());
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            setValidityDays(diffDays);
-        }
-    }, [mode, initialValues]);
-
-    // Auto-fill from assessment when selected (only if not editing/revising existing data, or user explicitly changes assessment)
-    // We need to be careful not to overwrite data when loading an existing quotation
-    // For now, we'll only auto-fill if the selectedAssessmentId changes and it matches the one passed in via props/init only if we are in create mode or explicit change
-    // Actually, safer to just run this if it's a NEW selection. 
-    // To simplify: if mode is Create, we behave as before. 
-    // If mode is Edit/Revise, we assume data is loaded from initialValues, but if user changes assessment, we might want to prompt or just not auto-fill blindly.
-    // For this task, let's keep the logic but maybe guard it.
-
-    // Package Info from Assessment
-    const [packagePrice, setPackagePrice] = useState(0);
-    const [packageName, setPackageName] = useState('');
-    const [usePackagePricing, setUsePackagePricing] = useState(false);
-
-    // Payment Condition
-    const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
-
-    // Installment Logic
-    const [isInstallment, setIsInstallment] = useState(
-        !!(initialValues?.is_installment || (initialValues?.installments && initialValues.installments.length > 0))
-    );
-    const [installments, setInstallments] = useState<any[]>(
-        (initialValues?.installments && initialValues.installments.length > 0)
-            ? [...initialValues.installments]
-                .sort((a: any, b: any) => a.installment_no - b.installment_no)
-                .map((inst: any) => ({
-                    installment_no: inst.installment_no,
-                    amount: inst.amount,
-                    notes: inst.notes || ''
-                }))
-            : []
-    );
-
-    // Effect to init paymentCondition based on initialValues
-    useEffect(() => {
-        if (initialValues?.installments && initialValues.installments.length > 0) {
-            setPaymentCondition(PaymentMethod.INSTALLMENT);
-        }
-    }, [initialValues]);
-
-    // Auto-fill from Package (Direct Selection)
-    useEffect(() => {
-        if (fetchedPackage && !selectedAssessmentId) {
-            setUsePackagePricing(true);
-            setPackageName(fetchedPackage.name);
-
-            // Service Count
-            if (fetchedPackage.visit_limit) {
-                setServiceCount(`${fetchedPackage.visit_limit} ครั้ง`);
-            }
-
-            // Duration
-            if (fetchedPackage.contract_period) {
-                const period = Number(fetchedPackage.contract_period);
-                if (period >= 12) {
-                    setContractDuration(`${period / 12} ปี`);
-                } else {
-                    setContractDuration(`${period} เดือน`);
-                }
-            }
-
-            // Price Calculation
-            let areaSize = 0;
-            if (serviceArea) {
-                areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-            }
-
-            let masterPrice = 0;
-            const pkgPrices = fetchedPackage.package_price || (fetchedPackage as any).package_prices;
-
-            if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
-                const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
-                const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
-
-                if (condition) {
-                    // Check for Termite service
-                    const hasTermite = selectedServiceTypes.some(s => /ปลวก|termite/i.test(s));
-
-                    const priceWith = Number(condition.price_with_termite);
-                    const priceWithout = Number(condition.price_without_termite);
-
-                    masterPrice = hasTermite
-                        ? (priceWith > 0 ? priceWith : priceWithout)
-                        : (priceWithout > 0 ? priceWithout : priceWith);
-                }
-            }
-
-            if (masterPrice > 0) {
-                setPackagePrice(masterPrice);
-            }
-        }
-    }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
-
-    // Auto-fill from assessment when selected
-    useEffect(() => {
-        if (selectedAssessment) {
-
-            // Set customer
-            if (selectedAssessment.customer_id && (mode === 'create' || !selectedCustomerId)) {
-                setSelectedCustomerId(selectedAssessment.customer_id);
-            }
-
-            // Set service location if empty
-            if (!serviceLocation) {
-                const address = [
-                    selectedAssessment.address,
-                    selectedAssessment.sub_district,
-                    selectedAssessment.district,
-                    selectedAssessment.province,
-                    selectedAssessment.zipcode,
-                ]
-                    .filter(Boolean)
-                    .join(' ');
-                setServiceLocation(address);
-            }
-
-            // Auto-fill buildingType, serviceArea, serviceType, serviceSystem from assessment_areas
-            // These are needed for validation and backward compatibility
-            if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                console.log('🔍 Auto-filling from assessment_areas:', selectedAssessment.assessment_areas);
-
-                // Aggregate from all areas - always set when assessment is selected
-                const buildingTypes = selectedAssessment.assessment_areas
-                    .map(a => a.building_type)
-                    .filter(Boolean);
-                if (buildingTypes.length > 0) {
-                    const uniqueTypes = [...new Set(buildingTypes)];
-                    console.log('✅ Setting buildingType:', uniqueTypes[0]);
-                    setBuildingType(uniqueTypes[0]);
-                }
-
-                // Sum all areas
-                const totalArea = selectedAssessment.assessment_areas.reduce((sum, a) => sum + (Number(a.area_size) || 0), 0);
-                if (totalArea > 0) {
-                    console.log('✅ Setting serviceArea:', `${totalArea.toFixed(2)} ตร.ม.`);
-                    setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
-                }
-
-                // Aggregate service systems
-                const systems = selectedAssessment.assessment_areas
-                    .map(a => a.service_system)
-                    .filter(Boolean);
-                if (systems.length > 0) {
-                    const uniqueSystems = [...new Set(systems)];
-                    console.log('✅ Setting serviceSystem:', uniqueSystems[0]);
-                    setServiceSystem(uniqueSystems[0]);
-                }
-
-                // Aggregate all category_services
-                const allCategories = new Set<string>();
-                selectedAssessment.assessment_areas.forEach(area => {
-                    console.log('📋 Area category_services:', area.category_services);
-                    area.category_services?.forEach(cat => {
-                        const categoryName = cat.category?.name || cat.name;
-                        if (categoryName) {
-                            allCategories.add(categoryName);
-                        }
-                    });
-                });
-                console.log('📋 All categories found:', Array.from(allCategories));
-                if (allCategories.size > 0) {
-                    const categoryString = Array.from(allCategories).join(', ');
-                    console.log('✅ Setting serviceType:', categoryString);
-                    setServiceType(categoryString);
-                    setSelectedServiceTypes(Array.from(allCategories));
-                } else {
-                    console.warn('⚠️ No categories found in assessment_areas!');
-                }
-            }
-
-            // Check for Package
-            if (selectedAssessment.package) {
-                setUsePackagePricing(true);
-                setPackageName(selectedAssessment.package.name);
-                // Use Master Package Price instead of Assessment Total
-                let masterPrice = 0;
-
-                // Prioritize fetchedPackage (Master Data) over selectedAssessment.package
-                // Because selectedAssessment.package might have stale or incomplete data (e.g. missing prices)
-                const pkg = fetchedPackage || selectedAssessment.package;
-
-                if (pkg) {
-                    // Check for both property names just in case (backend inconsistency between finding by ID vs relation)
-                    const pkgPrices = pkg.package_price || (pkg as any).package_prices;
-
-                    // Determine Area Size: Use form value (editable) or fallback to assessment area
-                    // Parse "68.00 ตร.ม." -> 68.00
-                    let areaSize = 0;
-                    if (serviceArea) {
-                        areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-                    }
-
-                    if (areaSize === 0 && selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                        areaSize = Number(selectedAssessment.assessment_areas[0].area_size) || 0;
-                    }
-
-                    if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
-                        // Update Service Count from Package
-                        if (pkg.visit_limit) {
-                            setServiceCount(`${pkg.visit_limit} ครั้ง`);
-                        }
-
-                        // Update Contract Duration from Package
-                        if (pkg.contract_period) {
-                            const period = Number(pkg.contract_period);
-                            // Only update if not already set by user? 
-                            // Since this effect runs on assessment selection, we assume user wants the package defaults.
-                            if (period >= 12) {
-                                // If period is multiple of 12, show in years
-                                const years = period / 12;
-                                // Handle integer vs float if needed
-                                setContractDuration(`${years} ปี`);
-                            } else {
-                                setContractDuration(`${period} เดือน`);
-                            }
-                        }
-
-                        // Sort by area_range ASC
-                        // Sort by area_range ASC
-                        const sortedPrices = [...pkgPrices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
-
-                        // Find first tier where area_range >= area_size
-                        const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
-
-                        if (condition) {
-                            // Check for Termite service
-                            // We check the assessment area categories to see if "Termite" service is required
-                            let hasTermite = false;
-
-                            if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                                const area = selectedAssessment.assessment_areas[0];
-                                hasTermite = area.category_services?.some((c: any) => {
-                                    if (c.name && /ปลวก|termite/i.test(c.name)) return true;
-                                    const masterCat = fetchedCategories.find((cat: any) => cat.id === c.category_id);
-                                    return masterCat && /ปลวก|termite/i.test(masterCat.name);
-                                }) || false;
-                            }
-
-                            const priceWith = Number(condition.price_with_termite);
-                            const priceWithout = Number(condition.price_without_termite);
-
-                            masterPrice = hasTermite
-                                ? (priceWith > 0 ? priceWith : priceWithout)
-                                : (priceWithout > 0 ? priceWithout : priceWith);
-                        }
-                    }
-                }
-
-                // Fallback to assessment total if calculation failed or returned 0 (and we have no package data)
-                if (masterPrice === 0 && selectedAssessment.total_price) {
-                    masterPrice = Number(selectedAssessment.total_price);
-                }
-
-                setPackagePrice(masterPrice);
-
-                // If using package pricing, we also populate items from areas if available (as additional items)
-                if (mode === 'create' && (!items || items.length === 0)) {
-                    // Check if there are items in assessment areas
-                    if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                        const newItems: QuotationItem[] = [];
-
-                        selectedAssessment.assessment_areas.forEach(area => {
-                            if (area.items && area.items.length > 0) {
-                                // Map specific product items
-                                area.items.forEach(item => {
-                                    if (!item.product_id) return; // Skip items without product ID
-
-                                    // Find master product price to ensure accuracy
-                                    const masterProduct = products.find(p => p.id === item.product_id);
-                                    const unitPrice = masterProduct
-                                        ? (Number(masterProduct.price) || Number(masterProduct.cost_price) || 0)
-                                        : (Number(item.product_price) || 0);
-
-                                    newItems.push({
-                                        id: crypto.randomUUID(),
-                                        productId: item.product_id,
-                                        description: item.product_name,
-                                        quantity: Number(item.quantity) || 1,
-                                        unit: 'ครั้ง',
-                                        unitPrice: unitPrice,
-                                        amount: (Number(item.quantity) || 1) * unitPrice,
-                                    });
-                                });
-                            }
-                        });
-
-                        if (newItems.length > 0) {
-                            setItems(newItems);
-                        }
-                    }
-                }
-            } else if (mode === 'create' && !initialValues?.items) {
-                // Fallback: No package, map areas to items
-                if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                    const newItems: QuotationItem[] = [];
-
-                    selectedAssessment.assessment_areas.forEach(area => {
-                        if (area.items && area.items.length > 0) {
-                            // Map specific product items
-                            area.items.forEach(item => {
-                                if (!item.product_id) return; // Skip items without product ID
-
-                                // Find master product price to ensure accuracy (optional, but requested implicitly)
-                                const masterProduct = products.find(p => p.id === item.product_id);
-                                const unitPrice = masterProduct
-                                    ? (Number(masterProduct.price) || Number(masterProduct.cost_price) || 0)
-                                    : (Number(item.product_price) || 0);
-
-                                newItems.push({
-                                    id: crypto.randomUUID(),
-                                    productId: item.product_id,
-                                    description: item.product_name,
-                                    quantity: Number(item.quantity) || 1,
-                                    unit: 'ครั้ง',
-                                    unitPrice: unitPrice,
-                                    amount: (Number(item.quantity) || 1) * unitPrice,
-                                });
-                            });
-                        }
-                    });
-
-                    setItems(newItems.length > 0 ? newItems : []);
-                }
-            }
-
-            // Auto-fill Installments
-            if (selectedAssessment.installments && selectedAssessment.installments.length > 0) {
-                console.log('✅ Auto-filling installments from assessment:', selectedAssessment.installments);
-                setPaymentCondition(PaymentMethod.INSTALLMENT);
-
-                // If includeVat is true, we need to scale the installments to match Net Total
-                // Calculate total assessment amount to use as base for proportion
-                const totalAssessmentAmount = selectedAssessment.installments.reduce((sum: number, i: any) => sum + (Number(i.amount) || 0), 0);
-
-                // Determine target total:
-                // Since items/packagePrice are set above, we can estimate the subtotal
-                // Logic mirrors the 'subtotal' useMemo
-                let estimatedSubtotal = 0;
-
-                // If package pricing is used (set above)
-                if (selectedAssessment.package) {
-                    estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
-                    // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
-                    // If we can't perfectly replicate it here without code duplication, 
-                    // we can rely on totalAssessmentAmount if it matches total_price.
-                } else {
-                    // Items sum
-                    // We just created 'newItems' above or have existing items
-                    // If we just set items, we can't access 'items' state immediately here
-                    // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
-                    estimatedSubtotal = Number(selectedAssessment.total_price) || totalAssessmentAmount;
-                }
-
-                const shouldIncludeVat = mode === 'create' ? true : includeVat;
-                const targetTotal = shouldIncludeVat ? estimatedSubtotal * 1.07 : estimatedSubtotal;
-
-                // Scale factor
-                const scale = (totalAssessmentAmount > 0) ? (targetTotal / totalAssessmentAmount) : 1;
-
-                let accumulatedAmount = 0;
-
-                // Sort installments by installment_no before processing
-                const sortedAssessmentInstallments = [...selectedAssessment.installments].sort((a: any, b: any) => a.installment_no - b.installment_no);
-
-                const newInstallments = sortedAssessmentInstallments.map((inst: any, index: number) => {
-                    const originalAmount = Number(inst.amount);
-                    let newAmount = 0;
-
-                    if (index === sortedAssessmentInstallments.length - 1) {
-                        // Last installment takes the remainder to ensure exact match
-                        newAmount = targetTotal - accumulatedAmount;
-                    } else {
-                        newAmount = originalAmount * scale;
-                        // Round to 2 decimals usually, but let's keep precision until display? 
-                        // No, form inputs need defined values.
-                        newAmount = Math.round(newAmount * 100) / 100;
-                        accumulatedAmount += newAmount;
-                    }
-
-                    return {
-                        id: inst.id || crypto.randomUUID(),
-                        installment_no: inst.installment_no,
-                        amount: newAmount > 0 ? newAmount : 0,
-                        notes: inst.note || `งวดที่ ${inst.installment_no}`
-                    };
-                });
-
-                setInstallments(newInstallments);
-            }
-        }
-    }, [selectedAssessment, mode, categories, fetchedCategories, fetchedPackage, serviceArea]);
-
-    // Update expiry date when validity days change
-    useEffect(() => {
-        if (quotationDate) {
-            const date = new Date(quotationDate);
-            date.setDate(date.getDate() + validityDays);
-            setExpiresAt(date.toISOString().substring(0, 10));
-        }
-    }, [quotationDate, validityDays]);
-
-    // Auto-fill customer info
-    useEffect(() => {
-        if (selectedCustomer) {
-            // Fill address if empty or creating new
-            if (!serviceLocation || mode === 'create') {
-                if (!serviceLocation) {
-                    const address = [
-                        selectedCustomer.address_house_no,
-                        selectedCustomer.road_line,
-                        selectedCustomer.sub_district,
-                        selectedCustomer.district,
-                        selectedCustomer.province,
-                        selectedCustomer.postal_code,
-                    ]
-                        .filter(Boolean)
-                        .join(' ');
-                    setServiceLocation(address);
-                }
-            }
-
-            // Fill contact phone if empty
-            if (!contactPhone) {
-                setContactPhone(selectedCustomer.phone || '');
-            }
-        }
-    }, [selectedCustomer]);
-
-    // Handle item changes
-    const handleItemChange = (
-        id: string,
-        field: keyof QuotationItem,
-        value: string | number
-    ) => {
-        setItems((prev) =>
-            prev.map((item) => {
-                if (item.id !== id) return item;
-
-                const updated = { ...item, [field]: value };
-
-                // Recalculate amount
-                if (field === 'quantity' || field === 'unitPrice') {
-                    updated.amount = updated.quantity * updated.unitPrice;
-                }
-
-                return updated;
-            })
-        );
-    };
-
-    // Handle product selection
-    const handleProductSelect = (itemId: string, productId: string) => {
-        const product = products.find((p) => p.id === productId);
-        setItems((prev) =>
-            prev.map((item) => {
-                if (item.id !== itemId) return item;
-
-                if (product) {
-                    const unitPrice = Number(product.cost_price) || 0;
-                    return {
-                        ...item,
-                        productId: productId,
-                        description: product.name,
-                        unit: product.unit?.name || 'ครั้ง',
-                        unitPrice: unitPrice,
-                        amount: item.quantity * unitPrice,
-                    };
-                } else {
-                    return {
-                        ...item,
-                        productId: '',
-                        description: '',
-                        unit: 'ครั้ง',
-                        unitPrice: 0,
-                        amount: 0,
-                    };
-                }
-            })
-        );
-    };
-
-    const addItem = () => {
-        setItems((prev) => [
-            ...prev,
-            {
-                id: crypto.randomUUID(),
-                productId: '',
-                description: '',
-                quantity: 1,
-                unit: 'ครั้ง',
-                unitPrice: 0,
-                amount: 0,
-            },
-        ]);
-    };
-
-    const removeItem = (id: string) => {
-        if (items.length <= 1) return;
-        setItems((prev) => prev.filter((item) => item.id !== id));
-    };
-
-    const handlePackagePricingToggle = (e: ChangeEvent<HTMLInputElement>) => {
-        const isChecked = e.target.checked;
-        setUsePackagePricing(isChecked);
-
-        if (isChecked) {
-            // Auto-fill package info if available
-            const pkg = selectedAssessment?.package || fetchedPackage;
-            if (pkg) {
-                setPackageName(pkg.name);
-                if (selectedAssessment) {
-                    setPackagePrice(Number(selectedAssessment.total_price) || 0);
-                }
-            }
-
-            // Clear items for "Add-ons" (user adds manually)
-            setItems([]);
-
-        } else {
-            // Restore items from assessment areas if available
-            if (selectedAssessment?.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-                const newItems: QuotationItem[] = [];
-
-                selectedAssessment.assessment_areas.forEach(area => {
-                    if (area.items && area.items.length > 0) {
-                        // Map specific product items
-                        area.items.forEach(item => {
-                            if (!item.product_id) return; // Skip items without product ID
-
-                            // Find master product price to ensure accuracy (optional, but requested implicitly)
-                            const masterProduct = products.find(p => p.id === item.product_id);
-                            const unitPrice = masterProduct
-                                ? (Number(masterProduct.price) || Number(masterProduct.cost_price) || 0)
-                                : (Number(item.product_price) || 0);
-
-                            newItems.push({
-                                id: crypto.randomUUID(),
-                                productId: item.product_id,
-                                description: item.product_name,
-                                quantity: Number(item.quantity) || 1,
-                                unit: 'ครั้ง',
-                                unitPrice: unitPrice,
-                                amount: (Number(item.quantity) || 1) * unitPrice,
-                            });
-                        });
-                    }
-                });
-
-                setItems(newItems.length > 0 ? newItems : items);
-            }
-        }
-    };
-
-    // Calculate totals
-    const subtotal = useMemo(() => {
-        // 1. If Assessment is selected (or we have quotation areas from initialValues)
-        if (selectedAssessmentId) {
-            // 1a. Global Package Pricing (Override)
-            if (usePackagePricing) {
-                return packagePrice;
-            }
-
-            // 1b. Per-Area Pricing (Sum of Areas)
-            // Prioritize quotation_areas (saved state) over assessment_areas (source state)
-            const areas = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
-                ? initialValues.quotation_areas
-                : selectedAssessment?.assessment_areas;
-
-            if (areas && areas.length > 0) {
-                return areas.reduce((sum: number, area: any) => sum + (Number(area.total_price) || 0), 0);
-            }
-        }
-
-        // 2. Manual Quotation (or fallback if no areas found)
-        const itemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-        return itemsTotal + (usePackagePricing ? packagePrice : 0);
-    }, [items, usePackagePricing, packagePrice, selectedAssessmentId, selectedAssessment, initialValues]);
-
-    const vatAmount = useMemo(() => {
-        return includeVat ? subtotal * vatRate : 0;
-    }, [subtotal, includeVat]);
-
-    const netTotal = useMemo(() => {
-        return subtotal + vatAmount;
-    }, [subtotal, vatAmount]);
-
-    const handleAddInstallment = () => {
-        setInstallments(prev => [
-            ...prev,
-            {
-                id: crypto.randomUUID(),
-                installment_no: prev.length + 1,
-                amount: 0,
-                notes: `งวดที่ ${prev.length + 1}`,
-            }
-        ]);
-    };
-
-    const handleRemoveInstallment = (index: number) => {
-        setInstallments(prev => {
-            const filtered = prev.filter((_, i) => i !== index);
-            return filtered.map((inst, i) => ({
-                ...inst,
-                installment_no: i + 1,
-                notes: inst.notes?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.notes
-            }));
-        });
-    };
-
-    const handleInstallmentChange = (index: number, field: string, value: any) => {
-        setInstallments(prev => prev.map((inst, i) => {
-            if (i === index) {
-                return { ...inst, [field]: value };
-            }
-            return inst;
-        }));
-    };
-
-    // Auto-calculate installments when netTotal changes or payment condition changes
-    useEffect(() => {
-        if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length === 0 && netTotal > 0) {
-            // Default to 2 installments if none exist
-            setInstallments([
-                {
-                    id: crypto.randomUUID(),
-                    installment_no: 1,
-                    amount: netTotal / 2,
-                    notes: 'งวดที่ 1'
-                },
-                {
-                    id: crypto.randomUUID(),
-                    installment_no: 2,
-                    amount: netTotal / 2,
-                    notes: 'งวดที่ 2'
-                }
-            ]);
-        } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
-            // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
-            // For now, let's just clear if user explicitly switches. 
-            // Ideally we need a flag to know if this is user action vs initial load.
-            // But simpler: if condition is Transfer, we just don't show the table. 
-            // When submitting, we check the condition.
-        }
-    }, [paymentCondition, netTotal]);
-
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-
-        if (!selectedCustomerId || !selectedCustomer) {
-            alert('กรุณาเลือกลูกค้า');
-            return;
-        }
-
-        // Skip buildingType and serviceType validation if creating from assessment
-        // Backend will copy the data from assessment_areas
-        if (!selectedAssessmentId) {
-            if (!buildingType) {
-                alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)');
-                return;
-            }
-            if (!serviceType) {
-                alert('กรุณาระบุประเภทบริการ (Service Type is required)');
-                return;
-            }
-        }
-
-        // Validation: If no items AND no package, alert
-        const hasValidItems = items.some((item) => item.description && item.amount > 0);
-
-        // Relax validation: Allow if assessment is linked (data might come from backend or be draft)
-        // Also allow if package pricing is selected, even if calculated price is 0 (can be edited later)
-        const isAssessmentLinked = !!selectedAssessmentId;
-
-        if (!hasValidItems && !usePackagePricing && !isAssessmentLinked) {
-            alert('กรุณาเพิ่มรายการสินค้าหรือเลือกแพ็กเกจ');
-            return;
-        }
-
-        // Validation: If installments enabled, check totals
-        if (paymentCondition === PaymentMethod.INSTALLMENT) {
-            const totalInstallment = installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
-            if (Math.abs(totalInstallment - netTotal) >= 1) {
-                alert(`ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})`);
-                return;
-            }
-        }
-
-        // Prepare items: If usePackagePricing is true, add it as the first item
-        let finalItems = items.map((item, index) => ({
-            sequence: index + 1, // temporary, will fix below
-            product_id: item.productId || null,
-            description: item.description,
-            quantity: item.quantity,
-            unit: item.unit,
-            unit_price: item.unitPrice,
-            amount: item.amount,
-        }));
-
-        if (usePackagePricing) {
-            const packageItem = {
-                sequence: 1,
-                product_id: null,
-                description: `แพ็กเกจ: ${packageName || 'บริการหลัก'}`,
-                quantity: 1,
-                unit: 'งาน/แพ็กเกจ',
-                unit_price: packagePrice,
-                amount: packagePrice,
-            };
-            // Add to start
-            finalItems = [packageItem, ...finalItems];
-        } else {
-            // Filter out empty lines if any (optional, but good practice)
-            finalItems = finalItems.filter(i => i.description || i.amount > 0);
-        }
-
-        // Re-sequence
-        finalItems = finalItems.map((item, idx) => ({ ...item, sequence: idx + 1 }));
-
-        const quotationData = {
-            ...initialValues, // preserve ID and other fields if editing
-            assessment_id: selectedAssessmentId || undefined,
-            customer_id: selectedCustomerId,
-            customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
-            created_at: quotationDate,
-            expires_at: expiresAt,
-            status: initialValues?.status || Status.Draft,
-            total: netTotal,
-            revision: mode === 'revise' ? (initialValues?.revision || 0) + 1 : (initialValues?.revision || 1),
-            google_map_link: selectedCustomer.google_map_link || '',
-            payment_terms: paymentTerms,
-            service_location: serviceLocation,
-            building_type: buildingType,
-            service_area: serviceArea,
-            service_system: serviceSystem,
-            system_used: systemUsed,
-            service_type: serviceType,
-            notes: notes,
-            contract_duration: contractDuration,
-            service_count: serviceCount,
-            subtotal: subtotal,
-            vat_amount: vatAmount,
-            include_vat: includeVat,
-            items: finalItems,
-            installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map(inst => ({
-                ...inst
-            })) : [],
-            is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
-        };
-
-        await onSubmit(quotationData);
-    };
-
-    // Helper for Section Header
-    const SectionHeader = ({ icon: Icon, title }: { icon: any, title: string }) => (
-        <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-            <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
-                <Icon className="w-5 h-5" />
-            </div>
-            <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>
-        </div>
-    );
-
+      }, 500);
+    },
+    [selectedAssessmentId]
+  );
+
+  // Quotation info
+  const [quotationDate, setQuotationDate] = useState(
+    initialValues?.created_at
+      ? new Date(initialValues.created_at).toISOString().substring(0, 10)
+      : ''
+  );
+  const [validityDays, setValidityDays] = useState(30); // Default, logic to calc from existing expiry needed if edit
+  const [expiresAt, setExpiresAt] = useState(
+    initialValues?.expires_at
+      ? new Date(initialValues.expires_at).toISOString().substring(0, 10)
+      : ''
+  );
+
+  // Contact Phone (Editable)
+  const [contactPhone, setContactPhone] = useState(
+    initialValues?.contact_phone || ''
+  );
+
+  // Service info
+  const [serviceLocation, setServiceLocation] = useState(
+    initialValues?.service_location || ''
+  );
+  const [buildingType, setBuildingType] = useState(
+    initialValues?.building_type || ''
+  );
+  const [serviceArea, setServiceArea] = useState(
+    initialValues?.service_area || ''
+  );
+  const [serviceSystem, setServiceSystem] = useState(
+    initialValues?.service_system || ''
+  );
+  const [systemUsed, setSystemUsed] = useState(
+    initialValues?.system_used || ''
+  );
+
+  // Convert comma-separated string back to array if needed, or default to empty array
+  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
+    initialValues?.service_type
+      ? initialValues.service_type
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : []
+  );
+  // Keep serviceType state synced for backward compatibility or simple submission logic
+  const [serviceType, setServiceType] = useState(
+    initialValues?.service_type || ''
+  );
+
+  // Sync serviceType string when selectedServiceTypes changes
+  useEffect(() => {
+    setServiceType(selectedServiceTypes.join(', '));
+  }, [selectedServiceTypes]);
+
+  const [paymentTerms, setPaymentTerms] = useState(
+    initialValues?.payment_terms ||
+      'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย'
+  );
+  const [notes, setNotes] = useState(initialValues?.notes || '');
+  const [contractDuration, setContractDuration] = useState(
+    initialValues?.contract_duration || '1 ปี'
+  );
+  const [serviceCount, setServiceCount] = useState(
+    initialValues?.service_count || '7 ครั้ง'
+  );
+
+  // Reset when usePackagePricing changes back to false if needed, but usually we keep last valid or default
+  // Logic to sync package defaults if package changes is handled in useEffect[selectedAssessment]
+
+  // Line items
+  const [items, setItems] = useState<QuotationItem[]>(
+    initialValues?.items
+      ?.filter((item: any) => {
+        // Filter legacy artifacts from bug
+        if (item.unit === 'พื้นที่' && !item.product_id) return false;
+        // Filter out package items if they are accidentally in the list (identified by unit 'งาน/แพ็กเกจ' or description starting with 'แพ็กเกจ:')
+        if (
+          item.unit === 'งาน/แพ็กเกจ' ||
+          item.description?.startsWith('แพ็กเกจ:')
+        )
+          return false;
+        return true;
+      })
+      ?.map((item: any) => ({
+        id: crypto.randomUUID(),
+        productId: item.product_id || '',
+        description: item.description || '',
+        quantity: Number(item.quantity) || 1,
+        unit: item.unit || 'ครั้ง',
+        unitPrice: Number(item.unit_price) || 0,
+        amount: Number(item.amount) || 0,
+      })) || [
+      {
+        id: crypto.randomUUID(),
+        productId: '',
+        description: '',
+        quantity: 1,
+        unit: 'ครั้ง',
+        unitPrice: 0,
+        amount: 0,
+      },
+    ]
+  );
+
+  // Standard service counts for dropdown
+  const standardServiceCounts = [
+    '1 ครั้ง',
+    '3 ครั้ง',
+    '5 ครั้ง',
+    '7 ครั้ง',
+    '8 ครั้ง',
+    '12 ครั้ง',
+    '24 ครั้ง',
+  ];
+
+  // Ensure custom service count is available in options
+  const serviceCountOptions = useMemo(() => {
+    const options = [...standardServiceCounts];
+    if (serviceCount && !options.includes(serviceCount)) {
+      options.push(serviceCount);
+      options.sort((a, b) => {
+        const numA = parseInt(a) || 0;
+        const numB = parseInt(b) || 0;
+        return numA - numB;
+      });
+    }
+    return options;
+  }, [serviceCount]);
+
+  // VAT settings
+  const [includeVat, setIncludeVat] = useState(
+    initialValues?.include_vat ?? true
+  );
+  const vatRate = 0.07;
+
+  // Product options for dropdown (filter out PACKAGE items)
+  const productOptions = useMemo(() => {
     return (
-        <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 1. General Information */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                    <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="col-span-1 md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                                ลูกค้า <span className="text-red-500">*</span>
-                            </label>
-                            <SearchableSelect
-                                value={selectedCustomerId}
-                                onChange={setSelectedCustomerId}
-                                onSearchChange={handleCustomerSearch}
-                                options={fetchedCustomers.map(c => ({
-                                    value: c.id,
-                                    label: `${c.first_name} ${c.last_name}`,
-                                    description: c.phone
-                                }))}
-                                placeholder="ค้นหาลูกค้า..."
-                                disabled={isReadOnly}
-                            />
-                        </div>
-
-                        <div className="col-span-1 md:col-span-2">
-                            <FormField label="ใบประเมินหน้างาน (อ้างอิง)">
-                                <SearchableSelect
-                                    value={selectedAssessmentId}
-                                    onChange={setSelectedAssessmentId}
-                                    options={fetchedAssessments.map((a: any) => ({
-                                        value: a.id,
-                                        label: `${a.code} - ${a.customer_name || a.customer?.first_name || 'N/A'}`,
-                                        description: a.service_location || 'N/A'
-                                    }))}
-                                    placeholder="เลือกใบประเมิน (ถ้ามี)"
-                                    disabled={isReadOnly}
-                                />
-                            </FormField>
-                        </div>
-
-                        <div className="col-span-1 md:col-span-2">
-                            <FormField label="แพ็กเกจบริการ (Package)">
-                                <SearchableSelect
-                                    value={selectedPackageId}
-                                    onChange={(val) => {
-                                        setSelectedPackageId(val);
-                                        if (val) setSelectedAssessmentId('');
-                                    }}
-                                    options={fetchedPackages.map((p) => ({
-                                        value: p.id,
-                                        label: `${p.name} (${p.code})`,
-                                        description: `${p.visit_limit} ครั้ง / ${p.contract_period} เดือน`
-                                    }))}
-                                    placeholder="เลือกแพ็กเกจ (ถ้ามี)"
-                                    disabled={isReadOnly || !!selectedAssessmentId}
-                                />
-                            </FormField>
-                        </div>
-
-                        <FormField label="วันที่เสนอราคา">
-                            <Input
-                                type="date"
-                                value={quotationDate}
-                                onChange={(e) => setQuotationDate(e.target.value)}
-                                disabled={isReadOnly}
-                                required
-                            />
-                        </FormField>
-
-                        <FormField label="ยืนราคา (วัน)">
-                            <Input
-                                type="number"
-                                value={validityDays}
-                                onChange={(e) => setValidityDays(Number(e.target.value))}
-                                disabled={isReadOnly}
-                                min={1}
-                            />
-                        </FormField>
-
-                        <FormField label="ใช้ได้ถึงวันที่">
-                            <Input
-                                type="date"
-                                value={expiresAt}
-                                disabled={true}
-                                className="bg-slate-50"
-                            />
-                        </FormField>
-                    </div>
-                </div>
-
-                {/* 2. Address Information */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-                    <SectionHeader icon={HomeIcon} title="ข้อมูลที่อยู่" />
-
-                    <div className="space-y-4">
-                        <FormField label="สถานที่ให้บริการ">
-                            <Textarea
-                                value={serviceLocation}
-                                onChange={(e) => setServiceLocation(e.target.value)}
-                                disabled={isReadOnly}
-                                rows={4}
-                                placeholder="ที่อยู่สำหรับเข้าให้บริการ..."
-                                required
-                            />
-                        </FormField>
-
-                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                            <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
-                            {selectedCustomer?.google_map_link ? (
-                                <a
-                                    href={selectedCustomer.google_map_link}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                                >
-                                    <MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า
-                                </a>
-                            ) : (
-                                <span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Assessment/Quotation Area Details Section */}
-                {(() => {
-                    // Determine which areas to display
-                    const areasToDisplay = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
-                        ? initialValues.quotation_areas
-                        : selectedAssessment?.assessment_areas;
-
-                    const sectionTitle = initialValues?.quotation_areas && initialValues.quotation_areas.length > 0
-                        ? 'รายละเอียดพื้นที่ในใบเสนอราคา'
-                        : 'รายละเอียดพื้นที่ที่ประเมิน';
-
-                    if (!areasToDisplay || areasToDisplay.length === 0) return null;
-
-                    return (
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
-                            <SectionHeader icon={ClipboardDocumentListIcon} title={sectionTitle} />
-
-                            <div className="space-y-4">
-                                {areasToDisplay.map((area: any, index: number) => {
-                                    const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
-                                    const basePrice = (Number(area.total_price) || 0) - itemsTotal;
-                                    return (
-                                        <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
-                                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                                                    <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
-                                                </div>
-                                                <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
-                                                    ฿{Number(area.total_price || 0).toLocaleString()}
-                                                </div>
-                                            </div>
-
-                                            <div className="p-4">
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                                                    <div>
-                                                        <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
-                                                        <div className="font-medium text-slate-800">{area.building_type || '-'}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
-                                                        <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
-                                                        <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-                                                            {area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
-                                                        <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
-                                                    </div>
-                                                </div>
-
-
-                                                {/* Package Information */}
-                                                {area.packagePriceRelation && (
-                                                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                                                            <div className="text-sm font-semibold text-blue-900">แพ็กเกจที่เลือก</div>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                                            <div>
-                                                                <div className="text-xs text-blue-600 mb-1">ชื่อแพ็กเกจ</div>
-                                                                <div className="font-medium text-blue-900">
-                                                                    {area.packagePriceRelation.package?.name || area.packagePriceRelation.name || '-'}
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xs text-blue-600 mb-1">จำนวนครั้งบริการ</div>
-                                                                <div className="font-medium text-blue-900">
-                                                                    {area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <div className="text-xs text-blue-600 mb-1">ระยะเวลาสัญญา</div>
-                                                                <div className="font-medium text-blue-900">
-                                                                    {area.packagePriceRelation.package?.contract_period
-                                                                        ? `${area.packagePriceRelation.package.contract_period >= 12
-                                                                            ? (area.packagePriceRelation.package.contract_period / 12) + ' ปี'
-                                                                            : area.packagePriceRelation.package.contract_period + ' เดือน'}`
-                                                                        : '-'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="mb-4">
-                                                    <label className="block text-xs text-slate-500 mb-2">
-                                                        ประเภทบริการ
-                                                    </label>
-                                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                                            {serviceTypeOptions.map((option) => {
-                                                                const isChecked = area.category_services?.some((cat: any) => {
-                                                                    const catId = cat.category_id || cat.category?.id || cat.id;
-                                                                    const catName = cat.name || cat.category?.name;
-
-                                                                    const matchId = (catId && catId === option.id);
-                                                                    const matchName = (catName && catName === option.value);
-
-                                                                    return matchId || matchName;
-                                                                });
-
-                                                                return (
-                                                                    <label key={option.id} className="flex items-center gap-2 cursor-pointer pointer-events-none">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            checked={isChecked}
-                                                                            readOnly
-                                                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white h-4 w-4"
-                                                                        />
-                                                                        <span className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}>
-                                                                            {option.label}
-                                                                        </span>
-                                                                    </label>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                {area.items && area.items.length > 0 && (
-                                                    <div className="mt-4 border rounded-lg overflow-hidden">
-                                                        <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
-                                                            สินค้า/บริการเพิ่มเติม
-                                                        </div>
-                                                        <table className="w-full text-sm text-left">
-                                                            <thead className="text-xs text-slate-500 bg-white border-b">
-                                                                <tr>
-                                                                    <th className="px-4 py-2 font-medium">รายการ</th>
-                                                                    <th className="px-4 py-2 font-medium text-center w-20">จำนวน</th>
-                                                                    <th className="px-4 py-2 font-medium text-right w-32">ราคา/หน่วย</th>
-                                                                    <th className="px-4 py-2 font-medium text-right w-32">รวม</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className="divide-y divide-slate-100">
-                                                                {area.items.map((item: any, i: number) => (
-                                                                    <tr key={i} className="hover:bg-slate-50">
-                                                                        <td className="px-4 py-2 text-slate-800">{item.product_name || item.description}</td>
-                                                                        <td className="px-4 py-2 text-center text-slate-600">{item.quantity}</td>
-                                                                        <td className="px-4 py-2 text-right text-slate-600">{Number(item.product_price || item.unit_price).toLocaleString()}</td>
-                                                                        <td className="px-4 py-2 text-right font-medium text-slate-800">{Number(item.total_price || item.amount).toLocaleString()}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    );
-                })()}
-
-                {/* 6. Payment Terms (Moved above Items & Pricing) */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
-                    <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
-
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <label className={`
-                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
-                                ${paymentCondition === PaymentMethod.TRANSFER
-                                    ? 'border-green-500 bg-green-50 shadow-md'
-                                    : 'border-slate-200 hover:border-slate-300 bg-white'}
-                            `}>
-                                <input
-                                    type="radio"
-                                    name="paymentCondition"
-                                    value={PaymentMethod.TRANSFER}
-                                    checked={paymentCondition === PaymentMethod.TRANSFER}
-                                    onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
-                                    className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
-                                    disabled={isReadOnly}
-                                />
-                                <div className="ml-3">
-                                    <span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span>
-                                    <span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span>
-                                </div>
-                            </label>
-
-                            <label className={`
-                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
-                                ${paymentCondition === PaymentMethod.INSTALLMENT
-                                    ? 'border-green-500 bg-green-50 shadow-md'
-                                    : 'border-slate-200 hover:border-slate-300 bg-white'}
-                            `}>
-                                <input
-                                    type="radio"
-                                    name="paymentCondition"
-                                    value={PaymentMethod.INSTALLMENT}
-                                    checked={paymentCondition === PaymentMethod.INSTALLMENT}
-                                    onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)}
-                                    className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
-                                    disabled={isReadOnly}
-                                />
-                                <div className="ml-3">
-                                    <span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span>
-                                    <span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span>
-                                </div>
-                            </label>
-                        </div>
-
-                        {paymentCondition === PaymentMethod.INSTALLMENT && (
-                            <div className="space-y-4 animate-fadeIn">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
-                                    {!isReadOnly && (
-                                        <button
-                                            type="button"
-                                            onClick={handleAddInstallment}
-                                            className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"
-                                        >
-                                            <PlusIcon className="w-4 h-4" />
-                                            เพิ่มงวด
-                                        </button>
-                                    )}
-                                </div>
-
-                                <div className="overflow-hidden border border-slate-200 rounded-lg">
-                                    <table className="min-w-full divide-y divide-slate-200">
-                                        <thead className="bg-slate-50">
-                                            <tr>
-                                                <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th>
-                                                <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th>
-                                                <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th>
-                                                {!isReadOnly && <th className="px-2 py-3 w-10"></th>}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-slate-200">
-                                            {installments.map((inst, idx) => (
-                                                <tr key={inst.id || idx}>
-                                                    <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
-                                                        {inst.installment_no}
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        <Input
-                                                            value={inst.notes || ''}
-                                                            onChange={(e) => handleInstallmentChange(idx, 'notes', e.target.value)}
-                                                            placeholder="รายละเอียด..."
-                                                            className="h-9 text-sm"
-                                                            disabled={isReadOnly}
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-2">
-                                                        <Input
-                                                            type="number"
-                                                            value={inst.amount}
-                                                            onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))}
-                                                            className="h-9 text-right text-sm font-mono"
-                                                            disabled={isReadOnly}
-                                                        />
-                                                    </td>
-                                                    {!isReadOnly && (
-                                                        <td className="px-2 py-2 text-center">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleRemoveInstallment(idx)}
-                                                                className="text-slate-400 hover:text-red-500"
-                                                                disabled={installments.length <= 1}
-                                                            >
-                                                                <TrashIcon className="w-4 h-4" />
-                                                            </button>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) >= 1 && (
-                                    <p className="text-xs text-red-500 text-right">
-                                        * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({netTotal.toLocaleString()} บาท)
-                                    </p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 5. Items & Pricing */}
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-                    {!selectedAssessmentId && (
-                        <>
-                            <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
-                            <div className="space-y-4">
-                                {items.map((item, index) => {
-                                    // Find product name for display
-                                    const product = products.find(p => p.id === item.productId);
-                                    const productName = product ? `${product.code} - ${product.name}` : item.description;
-
-                                    return (
-                                        <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
-                                            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                                                <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
-                                                    {index + 1}
-                                                </div>
-
-                                                <div className="md:col-span-4">
-                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
-                                                    <SearchableSelect
-                                                        value={item.productId}
-                                                        onChange={(val) => handleProductSelect(item.id, val)}
-                                                        options={productOptions}
-                                                        placeholder="เลือกสินค้า..."
-                                                        disabled={isReadOnly || usePackagePricing}
-                                                    />
-                                                </div>
-
-                                                <div className="md:col-span-3">
-                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
-                                                    <Input
-                                                        value={item.description}
-                                                        onChange={(e) => handleItemChange(item.id, 'description', e.target.value)}
-                                                        placeholder="รายละเอียด..."
-                                                        disabled={isReadOnly}
-                                                    />
-                                                </div>
-
-                                                <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                                                    <div>
-                                                        <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
-                                                        <Input
-                                                            type="number"
-                                                            min="1"
-                                                            value={item.quantity}
-                                                            onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))}
-                                                            disabled={isReadOnly}
-                                                            className="text-center"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            value={item.unitPrice}
-                                                            onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))}
-                                                            disabled={isReadOnly}
-                                                            className="text-right"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <div className="md:col-span-2 text-right">
-                                                    <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
-                                                    <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
-                                                        {item.amount.toLocaleString()}
-                                                    </div>
-                                                </div>
-
-                                                {!isReadOnly && items.length > 1 && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeItem(item.id)}
-                                                        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
-                                                        title="ลบรายการ"
-                                                    >
-                                                        <TrashIcon className="w-5 h-5" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-
-                                {!isReadOnly && !usePackagePricing && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={addItem}
-                                        className="w-full border-dashed border-2 border-slate-300 text-slate-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50"
-                                    >
-                                        <PlusIcon className="w-5 h-5 mr-2" /> เพิ่มรายการ
-                                    </Button>
-                                )}
-                            </div>
-                        </>
-                    )}
-
-                    {/* Totals */}
-                    <div className={selectedAssessmentId ? "pt-0" : "mt-8 border-t border-slate-200 pt-6"}>
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                            <div className="w-full md:w-1/2">
-                                <label className="block text-sm font-medium text-slate-700 mb-2">หมายเหตุ</label>
-                                <Textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    rows={3}
-                                    disabled={isReadOnly}
-                                    placeholder="หมายเหตุเพิ่มเติม..."
-                                />
-                            </div>
-
-                            <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
-                                    <span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span>
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm">
-                                    <label className="flex items-center gap-2 cursor-pointer text-slate-600">
-                                        <input
-                                            type="checkbox"
-                                            checked={includeVat}
-                                            onChange={(e) => setIncludeVat(e.target.checked)}
-                                            disabled={isReadOnly}
-                                            className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                                        />
-                                        ภาษีมูลค่าเพิ่ม 7% (VAT)
-                                    </label>
-                                    <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
-                                </div>
-
-                                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                                    <span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span>
-                                    <span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Installment Plan Preview - REMOVED */}
-            </div>
-        </form>
+      products
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        .filter((p) => p.type !== 'PACKAGE') // Filter out products with type 'PACKAGE'
+        .map((p) => ({
+          value: p.id,
+          label: `${p.code} - ${p.name}`,
+          description: p.unit?.name || '',
+        }))
     );
+  }, [products]);
+
+  // Assessment options for dropdown
+  const assessmentOptions = useMemo(() => {
+    return (fetchedAssessments || []).map((a) => {
+      const customerName = a.customer
+        ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
+        : 'ไม่ระบุลูกค้า';
+      return {
+        value: a.id,
+        label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
+        description: a.address || '',
+      };
+    });
+  }, [fetchedAssessments]);
+
+  // Selected assessment details
+  const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
+  const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null);
+
+  // Fetch full assessment details when ID changes
+  useEffect(() => {
+    if (selectedAssessmentId) {
+      const fetchFull = async () => {
+        try {
+          const res = await AssessmentApi.getById(selectedAssessmentId);
+          setFullAssessment(res);
+
+          // If assessment has package_id (or nested package object with ID), fetch package details explicitly
+          const packageId = res.package_id || (res.package && res.package.id);
+
+          if (packageId) {
+            try {
+              const pkgRes = await PackageApi.getPackageById(packageId);
+              setFetchedPackage(pkgRes);
+              setSelectedPackageId(packageId); // Sync selection
+            } catch (pkgErr) {
+              console.error('Error fetching package details:', pkgErr);
+              setFetchedPackage(null);
+            }
+          } else {
+            setFetchedPackage(null);
+            setSelectedPackageId('');
+          }
+        } catch (err) {
+          console.error('Error fetching full assessment:', err);
+          setFullAssessment(null);
+          setFetchedPackage(null);
+        }
+      };
+      fetchFull();
+    } else if (selectedPackageId) {
+      // Manual Package Selection
+      const pkg = fetchedPackages.find((p) => p.id === selectedPackageId);
+      if (pkg) {
+        setFetchedPackage(pkg);
+      } else {
+        PackageApi.getPackageById(selectedPackageId)
+          .then(setFetchedPackage)
+          .catch(() => setFetchedPackage(null));
+      }
+      setFullAssessment(null);
+    } else {
+      setFullAssessment(null);
+      setFetchedPackage(null);
+    }
+  }, [selectedAssessmentId, selectedPackageId, fetchedPackages]);
+
+  const selectedAssessment = useMemo(() => {
+    const assessment =
+      fullAssessment && fullAssessment.id === selectedAssessmentId
+        ? fullAssessment
+        : fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
+
+    if (assessment && fetchedPackage) {
+      // Check if assessment links to this package either via package_id OR if the nested package object has the same ID
+      const assessmentPkgId =
+        assessment.package_id || (assessment.package && assessment.package.id);
+
+      if (assessmentPkgId === fetchedPackage.id) {
+        return {
+          ...assessment,
+          package: {
+            ...assessment.package, // Keep existing props
+            ...fetchedPackage, // Overwrite with full master details
+            // Ensure package_price is carried over
+            package_prices:
+              fetchedPackage.package_prices ||
+              assessment.package?.package_prices,
+          },
+        };
+      }
+    }
+    return assessment;
+  }, [
+    fetchedAssessments,
+    selectedAssessmentId,
+    fullAssessment,
+    fetchedPackage,
+  ]);
+
+  // Selected customer details
+  const selectedCustomer = useMemo(() => {
+    return fetchedCustomers.find((c) => c.id === selectedCustomerId);
+  }, [fetchedCustomers, selectedCustomerId]);
+
+  // Initialize dates if create mode
+  useEffect(() => {
+    if (mode === 'create' && !initialValues) {
+      const today = new Date();
+      const expiry = new Date();
+      expiry.setDate(today.getDate() + validityDays);
+
+      setQuotationDate(today.toISOString().substring(0, 10));
+      setExpiresAt(expiry.toISOString().substring(0, 10));
+    } else if (
+      (mode === 'edit' || mode === 'revise') &&
+      initialValues?.created_at &&
+      initialValues?.expires_at
+    ) {
+      // Calculate validity days from existing dates
+      const start = new Date(initialValues.created_at);
+      const end = new Date(initialValues.expires_at);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setValidityDays(diffDays);
+    }
+  }, [mode, initialValues]);
+
+  // Auto-fill from assessment when selected (only if not editing/revising existing data, or user explicitly changes assessment)
+  // We need to be careful not to overwrite data when loading an existing quotation
+  // For now, we'll only auto-fill if the selectedAssessmentId changes and it matches the one passed in via props/init only if we are in create mode or explicit change
+  // Actually, safer to just run this if it's a NEW selection.
+  // To simplify: if mode is Create, we behave as before.
+  // If mode is Edit/Revise, we assume data is loaded from initialValues, but if user changes assessment, we might want to prompt or just not auto-fill blindly.
+  // For this task, let's keep the logic but maybe guard it.
+
+  // Package Info from Assessment
+  const [packagePrice, setPackagePrice] = useState(0);
+  const [packageName, setPackageName] = useState('');
+  const [usePackagePricing, setUsePackagePricing] = useState(false);
+
+  // Payment Condition
+  const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(
+    PaymentMethod.TRANSFER
+  );
+
+  // Installment Logic
+  const [isInstallment, setIsInstallment] = useState(
+    !!(
+      initialValues?.is_installment ||
+      (initialValues?.installments && initialValues.installments.length > 0)
+    )
+  );
+  const [installments, setInstallments] = useState<any[]>(
+    initialValues?.installments && initialValues.installments.length > 0
+      ? [...initialValues.installments]
+          .sort((a: any, b: any) => a.installment_no - b.installment_no)
+          .map((inst: any) => ({
+            installment_no: inst.installment_no,
+            amount: inst.amount,
+            notes: inst.notes || '',
+          }))
+      : []
+  );
+
+  // Effect to init paymentCondition based on initialValues
+  useEffect(() => {
+    if (initialValues?.installments && initialValues.installments.length > 0) {
+      setPaymentCondition(PaymentMethod.INSTALLMENT);
+    }
+  }, [initialValues]);
+
+  // Auto-fill from Package (Direct Selection)
+  useEffect(() => {
+    if (fetchedPackage && !selectedAssessmentId) {
+      setUsePackagePricing(true);
+      setPackageName(fetchedPackage.name);
+
+      // Service Count
+      if (fetchedPackage.visit_limit) {
+        setServiceCount(`${fetchedPackage.visit_limit} ครั้ง`);
+      }
+
+      // Duration
+      if (fetchedPackage.visit_limit) {
+        const period = Number(fetchedPackage.visit_limit);
+        if (period >= 12) {
+          setContractDuration(`${period / 12} ปี`);
+        } else {
+          setContractDuration(`${period} เดือน`);
+        }
+      }
+
+      // Price Calculation
+      let areaSize = 0;
+      if (serviceArea) {
+        areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
+      }
+
+      let masterPrice = 0;
+      const pkgPrices = fetchedPackage.package_prices;
+
+      if (areaSize > 0 && Array.isArray(pkgPrices) && pkgPrices.length > 0) {
+        const sortedPrices = [...pkgPrices].sort(
+          (a: any, b: any) => Number(a.area_range) - Number(b.area_range)
+        );
+        const condition = sortedPrices.find(
+          (p: any) => Number(p.area_range) >= areaSize
+        );
+
+        if (condition) {
+          // Check for Termite service
+          const hasTermite = selectedServiceTypes.some((s) =>
+            /ปลวก|termite/i.test(s)
+          );
+
+          const priceWith = Number(condition.price_with_termite);
+          const priceWithout = Number(condition.price_without_termite);
+
+          masterPrice = hasTermite
+            ? priceWith > 0
+              ? priceWith
+              : priceWithout
+            : priceWithout > 0
+              ? priceWithout
+              : priceWith;
+        }
+      }
+
+      if (masterPrice > 0) {
+        setPackagePrice(masterPrice);
+      }
+    }
+  }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
+
+  // Auto-fill from assessment when selected
+  useEffect(() => {
+    if (selectedAssessment) {
+      // Set customer
+      if (
+        selectedAssessment.customer_id &&
+        (mode === 'create' || !selectedCustomerId)
+      ) {
+        setSelectedCustomerId(selectedAssessment.customer_id);
+      }
+
+      // Set service location if empty
+      if (!serviceLocation) {
+        const address = [
+          selectedAssessment.address,
+          selectedAssessment.sub_district,
+          selectedAssessment.district,
+          selectedAssessment.province,
+          selectedAssessment.zipcode,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        setServiceLocation(address);
+      }
+
+      // Auto-fill buildingType, serviceArea, serviceType, serviceSystem from assessment_areas
+      // These are needed for validation and backward compatibility
+      if (
+        selectedAssessment.assessment_areas &&
+        selectedAssessment.assessment_areas.length > 0
+      ) {
+        console.log(
+          '🔍 Auto-filling from assessment_areas:',
+          selectedAssessment.assessment_areas
+        );
+
+        // Aggregate from all areas - always set when assessment is selected
+        const buildingTypes = selectedAssessment.assessment_areas
+          .map((a) => a.building_type)
+          .filter(Boolean);
+        if (buildingTypes.length > 0) {
+          const uniqueTypes = [...new Set(buildingTypes)];
+          console.log('✅ Setting buildingType:', uniqueTypes[0]);
+          setBuildingType(uniqueTypes[0]);
+        }
+
+        // Sum all areas
+        const totalArea = selectedAssessment.assessment_areas.reduce(
+          (sum, a) => sum + (Number(a.area_size) || 0),
+          0
+        );
+        if (totalArea > 0) {
+          console.log(
+            '✅ Setting serviceArea:',
+            `${totalArea.toFixed(2)} ตร.ม.`
+          );
+          setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
+        }
+
+        // Aggregate service systems
+        const systems = selectedAssessment.assessment_areas
+          .map((a) => a.service_system)
+          .filter(Boolean);
+        if (systems.length > 0) {
+          const uniqueSystems = [...new Set(systems)];
+          console.log('✅ Setting serviceSystem:', uniqueSystems[0]);
+          setServiceSystem(uniqueSystems[0]);
+        }
+
+        // Aggregate all category_services
+        const allCategories = new Set<string>();
+        selectedAssessment.assessment_areas.forEach((area) => {
+          console.log('📋 Area category_services:', area.category_services);
+          area.category_services?.forEach((cat) => {
+            const categoryName = cat.category?.name || cat.name;
+            if (categoryName) {
+              allCategories.add(categoryName);
+            }
+          });
+        });
+        console.log('📋 All categories found:', Array.from(allCategories));
+        if (allCategories.size > 0) {
+          const categoryString = Array.from(allCategories).join(', ');
+          console.log('✅ Setting serviceType:', categoryString);
+          setServiceType(categoryString);
+          setSelectedServiceTypes(Array.from(allCategories));
+        } else {
+          console.warn('⚠️ No categories found in assessment_areas!');
+        }
+      }
+
+      // Check for Package
+      if (selectedAssessment.package) {
+        setUsePackagePricing(true);
+        setPackageName(selectedAssessment.package.name);
+        // Use Master Package Price instead of Assessment Total
+        let masterPrice = 0;
+
+        // Prioritize fetchedPackage (Master Data) over selectedAssessment.package
+        // Because selectedAssessment.package might have stale or incomplete data (e.g. missing prices)
+        const pkg = fetchedPackage || selectedAssessment.package;
+
+        if (pkg) {
+          // Check for both property names just in case (backend inconsistency between finding by ID vs relation)
+          const pkgPrices = pkg.package_prices;
+
+          // Determine Area Size: Use form value (editable) or fallback to assessment area
+          // Parse "68.00 ตร.ม." -> 68.00
+          let areaSize = 0;
+          if (serviceArea) {
+            areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
+          }
+
+          if (
+            areaSize === 0 &&
+            selectedAssessment.assessment_areas &&
+            selectedAssessment.assessment_areas.length > 0
+          ) {
+            areaSize =
+              Number(selectedAssessment.assessment_areas[0].area_size) || 0;
+          }
+
+          if (
+            areaSize > 0 &&
+            Array.isArray(pkgPrices) &&
+            pkgPrices.length > 0
+          ) {
+            // Update Service Count from Package
+            if (pkg.visit_limit) {
+              setServiceCount(`${pkg.visit_limit} ครั้ง`);
+            }
+
+            // Update Contract Duration from Package
+            if (pkg.visit_limit) {
+              const period = Number(pkg.visit_limit);
+              // Only update if not already set by user?
+              // Since this effect runs on assessment selection, we assume user wants the package defaults.
+              if (period >= 12) {
+                // If period is multiple of 12, show in years
+                const years = period / 12;
+                // Handle integer vs float if needed
+                setContractDuration(`${years} ปี`);
+              } else {
+                setContractDuration(`${period} เดือน`);
+              }
+            }
+
+            // Sort by area_range ASC
+            // Sort by area_range ASC
+            const sortedPrices = [...pkgPrices].sort(
+              (a: any, b: any) => Number(a.area_range) - Number(b.area_range)
+            );
+
+            // Find first tier where area_range >= area_size
+            const condition = sortedPrices.find(
+              (p: any) => Number(p.area_range) >= areaSize
+            );
+
+            if (condition) {
+              // Check for Termite service
+              // We check the assessment area categories to see if "Termite" service is required
+              let hasTermite = false;
+
+              if (
+                selectedAssessment.assessment_areas &&
+                selectedAssessment.assessment_areas.length > 0
+              ) {
+                const area = selectedAssessment.assessment_areas[0];
+                hasTermite =
+                  area.category_services?.some((c: any) => {
+                    if (c.name && /ปลวก|termite/i.test(c.name)) return true;
+                    const masterCat = fetchedCategories.find(
+                      (cat: any) => cat.id === c.category_id
+                    );
+                    return masterCat && /ปลวก|termite/i.test(masterCat.name);
+                  }) || false;
+              }
+
+              const priceWith = Number(condition.price_with_termite);
+              const priceWithout = Number(condition.price_without_termite);
+
+              masterPrice = hasTermite
+                ? priceWith > 0
+                  ? priceWith
+                  : priceWithout
+                : priceWithout > 0
+                  ? priceWithout
+                  : priceWith;
+            }
+          }
+        }
+
+        // Fallback to assessment total if calculation failed or returned 0 (and we have no package data)
+        if (masterPrice === 0 && selectedAssessment.total_price) {
+          masterPrice = Number(selectedAssessment.total_price);
+        }
+
+        setPackagePrice(masterPrice);
+
+        // If using package pricing, we also populate items from areas if available (as additional items)
+        if (mode === 'create' && (!items || items.length === 0)) {
+          // Check if there are items in assessment areas
+          if (
+            selectedAssessment.assessment_areas &&
+            selectedAssessment.assessment_areas.length > 0
+          ) {
+            const newItems: QuotationItem[] = [];
+
+            selectedAssessment.assessment_areas.forEach((area) => {
+              if (area.items && area.items.length > 0) {
+                // Map specific product items
+                area.items.forEach((item) => {
+                  if (!item.product_id) return; // Skip items without product ID
+
+                  // Find master product price to ensure accuracy
+                  const masterProduct = products.find(
+                    (p) => p.id === item.product_id
+                  );
+                  const unitPrice = masterProduct
+                    ? Number(masterProduct.price) ||
+                      Number(masterProduct.cost_price) ||
+                      0
+                    : Number(item.product_price) || 0;
+
+                  newItems.push({
+                    id: crypto.randomUUID(),
+                    productId: item.product_id,
+                    description: item.product_name,
+                    quantity: Number(item.quantity) || 1,
+                    unit: 'ครั้ง',
+                    unitPrice: unitPrice,
+                    amount: (Number(item.quantity) || 1) * unitPrice,
+                  });
+                });
+              }
+            });
+
+            if (newItems.length > 0) {
+              setItems(newItems);
+            }
+          }
+        }
+      } else if (mode === 'create' && !initialValues?.items) {
+        // Fallback: No package, map areas to items
+        if (
+          selectedAssessment.assessment_areas &&
+          selectedAssessment.assessment_areas.length > 0
+        ) {
+          const newItems: QuotationItem[] = [];
+
+          selectedAssessment.assessment_areas.forEach((area) => {
+            if (area.items && area.items.length > 0) {
+              // Map specific product items
+              area.items.forEach((item) => {
+                if (!item.product_id) return; // Skip items without product ID
+
+                // Find master product price to ensure accuracy (optional, but requested implicitly)
+                const masterProduct = products.find(
+                  (p) => p.id === item.product_id
+                );
+                const unitPrice = masterProduct
+                  ? Number(masterProduct.price) ||
+                    Number(masterProduct.cost_price) ||
+                    0
+                  : Number(item.product_price) || 0;
+
+                newItems.push({
+                  id: crypto.randomUUID(),
+                  productId: item.product_id,
+                  description: item.product_name,
+                  quantity: Number(item.quantity) || 1,
+                  unit: 'ครั้ง',
+                  unitPrice: unitPrice,
+                  amount: (Number(item.quantity) || 1) * unitPrice,
+                });
+              });
+            }
+          });
+
+          setItems(newItems.length > 0 ? newItems : []);
+        }
+      }
+
+      // Auto-fill Installments
+      if (
+        selectedAssessment.installments &&
+        selectedAssessment.installments.length > 0
+      ) {
+        console.log(
+          '✅ Auto-filling installments from assessment:',
+          selectedAssessment.installments
+        );
+        setPaymentCondition(PaymentMethod.INSTALLMENT);
+
+        // If includeVat is true, we need to scale the installments to match Net Total
+        // Calculate total assessment amount to use as base for proportion
+        const totalAssessmentAmount = selectedAssessment.installments.reduce(
+          (sum: number, i: any) => sum + (Number(i.amount) || 0),
+          0
+        );
+
+        // Determine target total:
+        // Since items/packagePrice are set above, we can estimate the subtotal
+        // Logic mirrors the 'subtotal' useMemo
+        let estimatedSubtotal = 0;
+
+        // If package pricing is used (set above)
+        if (selectedAssessment.package) {
+          estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
+          // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
+          // If we can't perfectly replicate it here without code duplication,
+          // we can rely on totalAssessmentAmount if it matches total_price.
+        } else {
+          // Items sum
+          // We just created 'newItems' above or have existing items
+          // If we just set items, we can't access 'items' state immediately here
+          // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
+          estimatedSubtotal =
+            Number(selectedAssessment.total_price) || totalAssessmentAmount;
+        }
+
+        const shouldIncludeVat = mode === 'create' ? true : includeVat;
+        const targetTotal = shouldIncludeVat
+          ? estimatedSubtotal * 1.07
+          : estimatedSubtotal;
+
+        // Scale factor
+        const scale =
+          totalAssessmentAmount > 0 ? targetTotal / totalAssessmentAmount : 1;
+
+        let accumulatedAmount = 0;
+
+        // Sort installments by installment_no before processing
+        const sortedAssessmentInstallments = [
+          ...selectedAssessment.installments,
+        ].sort((a: any, b: any) => a.installment_no - b.installment_no);
+
+        const newInstallments = sortedAssessmentInstallments.map(
+          (inst: any, index: number) => {
+            const originalAmount = Number(inst.amount);
+            let newAmount = 0;
+
+            if (index === sortedAssessmentInstallments.length - 1) {
+              // Last installment takes the remainder to ensure exact match
+              newAmount = targetTotal - accumulatedAmount;
+            } else {
+              newAmount = originalAmount * scale;
+              // Round to 2 decimals usually, but let's keep precision until display?
+              // No, form inputs need defined values.
+              newAmount = Math.round(newAmount * 100) / 100;
+              accumulatedAmount += newAmount;
+            }
+
+            return {
+              id: inst.id || crypto.randomUUID(),
+              installment_no: inst.installment_no,
+              amount: newAmount > 0 ? newAmount : 0,
+              notes: inst.note || `งวดที่ ${inst.installment_no}`,
+            };
+          }
+        );
+
+        setInstallments(newInstallments);
+      }
+    }
+  }, [
+    selectedAssessment,
+    mode,
+    fetchedCategories,
+    fetchedPackage,
+    serviceArea,
+  ]);
+
+  // Update expiry date when validity days change
+  useEffect(() => {
+    if (quotationDate) {
+      const date = new Date(quotationDate);
+      date.setDate(date.getDate() + validityDays);
+      setExpiresAt(date.toISOString().substring(0, 10));
+    }
+  }, [quotationDate, validityDays]);
+
+  // Auto-fill customer info
+  useEffect(() => {
+    if (selectedCustomer) {
+      // Fill address if empty or creating new
+      if (!serviceLocation || mode === 'create') {
+        if (!serviceLocation) {
+          const address = [
+            selectedCustomer.address_house_no,
+            selectedCustomer.road_line,
+            selectedCustomer.sub_district,
+            selectedCustomer.district,
+            selectedCustomer.province,
+            selectedCustomer.postal_code,
+          ]
+            .filter(Boolean)
+            .join(' ');
+          setServiceLocation(address);
+        }
+      }
+
+      // Fill contact phone if empty
+      if (!contactPhone) {
+        setContactPhone(selectedCustomer.phone || '');
+      }
+    }
+  }, [selectedCustomer]);
+
+  // Handle item changes
+  const handleItemChange = (
+    id: string,
+    field: keyof QuotationItem,
+    value: string | number
+  ) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== id) return item;
+
+        const updated = { ...item, [field]: value };
+
+        // Recalculate amount
+        if (field === 'quantity' || field === 'unitPrice') {
+          updated.amount = updated.quantity * updated.unitPrice;
+        }
+
+        return updated;
+      })
+    );
+  };
+
+  // Handle product selection
+  const handleProductSelect = (itemId: string, productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item;
+
+        if (product) {
+          const unitPrice = Number(product.cost_price) || 0;
+          return {
+            ...item,
+            productId: productId,
+            description: product.name,
+            unit: product.unit?.name || 'ครั้ง',
+            unitPrice: unitPrice,
+            amount: item.quantity * unitPrice,
+          };
+        } else {
+          return {
+            ...item,
+            productId: '',
+            description: '',
+            unit: 'ครั้ง',
+            unitPrice: 0,
+            amount: 0,
+          };
+        }
+      })
+    );
+  };
+
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        productId: '',
+        description: '',
+        quantity: 1,
+        unit: 'ครั้ง',
+        unitPrice: 0,
+        amount: 0,
+      },
+    ]);
+  };
+
+  const removeItem = (id: string) => {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handlePackagePricingToggle = (e: ChangeEvent<HTMLInputElement>) => {
+    const isChecked = e.target.checked;
+    setUsePackagePricing(isChecked);
+
+    if (isChecked) {
+      // Auto-fill package info if available
+      const pkg = selectedAssessment?.package || fetchedPackage;
+      if (pkg) {
+        setPackageName(pkg.name);
+        if (selectedAssessment) {
+          setPackagePrice(Number(selectedAssessment.total_price) || 0);
+        }
+      }
+
+      // Clear items for "Add-ons" (user adds manually)
+      setItems([]);
+    } else {
+      // Restore items from assessment areas if available
+      if (
+        selectedAssessment?.assessment_areas &&
+        selectedAssessment.assessment_areas.length > 0
+      ) {
+        const newItems: QuotationItem[] = [];
+
+        selectedAssessment.assessment_areas.forEach((area) => {
+          if (area.items && area.items.length > 0) {
+            // Map specific product items
+            area.items.forEach((item) => {
+              if (!item.product_id) return; // Skip items without product ID
+
+              // Find master product price to ensure accuracy (optional, but requested implicitly)
+              const masterProduct = products.find(
+                (p) => p.id === item.product_id
+              );
+              const unitPrice = masterProduct
+                ? Number(masterProduct.price) ||
+                  Number(masterProduct.cost_price) ||
+                  0
+                : Number(item.product_price) || 0;
+
+              newItems.push({
+                id: crypto.randomUUID(),
+                productId: item.product_id,
+                description: item.product_name,
+                quantity: Number(item.quantity) || 1,
+                unit: 'ครั้ง',
+                unitPrice: unitPrice,
+                amount: (Number(item.quantity) || 1) * unitPrice,
+              });
+            });
+          }
+        });
+
+        setItems(newItems.length > 0 ? newItems : items);
+      }
+    }
+  };
+
+  // Calculate totals
+  const subtotal = useMemo(() => {
+    // 1. If Assessment is selected (or we have quotation areas from initialValues)
+    if (selectedAssessmentId) {
+      // 1a. Global Package Pricing (Override)
+      if (usePackagePricing) {
+        return packagePrice;
+      }
+
+      // 1b. Per-Area Pricing (Sum of Areas)
+      // Prioritize quotation_areas (saved state) over assessment_areas (source state)
+      const areas =
+        initialValues?.quotation_areas &&
+        initialValues.quotation_areas.length > 0
+          ? initialValues.quotation_areas
+          : selectedAssessment?.assessment_areas;
+
+      if (areas && areas.length > 0) {
+        return areas.reduce(
+          (sum: number, area: any) => sum + (Number(area.total_price) || 0),
+          0
+        );
+      }
+    }
+
+    // 2. Manual Quotation (or fallback if no areas found)
+    const itemsTotal = items.reduce(
+      (sum, item) => sum + (Number(item.amount) || 0),
+      0
+    );
+    return itemsTotal + (usePackagePricing ? packagePrice : 0);
+  }, [
+    items,
+    usePackagePricing,
+    packagePrice,
+    selectedAssessmentId,
+    selectedAssessment,
+    initialValues,
+  ]);
+
+  const vatAmount = useMemo(() => {
+    return includeVat ? subtotal * vatRate : 0;
+  }, [subtotal, includeVat]);
+
+  const netTotal = useMemo(() => {
+    return subtotal + vatAmount;
+  }, [subtotal, vatAmount]);
+
+  const handleAddInstallment = () => {
+    setInstallments((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        installment_no: prev.length + 1,
+        amount: 0,
+        notes: `งวดที่ ${prev.length + 1}`,
+      },
+    ]);
+  };
+
+  const handleRemoveInstallment = (index: number) => {
+    setInstallments((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      return filtered.map((inst, i) => ({
+        ...inst,
+        installment_no: i + 1,
+        notes: inst.notes?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.notes,
+      }));
+    });
+  };
+
+  const handleInstallmentChange = (
+    index: number,
+    field: string,
+    value: any
+  ) => {
+    setInstallments((prev) =>
+      prev.map((inst, i) => {
+        if (i === index) {
+          return { ...inst, [field]: value };
+        }
+        return inst;
+      })
+    );
+  };
+
+  // Auto-calculate installments when netTotal changes or payment condition changes
+  useEffect(() => {
+    if (
+      paymentCondition === PaymentMethod.INSTALLMENT &&
+      installments.length === 0 &&
+      netTotal > 0
+    ) {
+      // Default to 2 installments if none exist
+      setInstallments([
+        {
+          id: crypto.randomUUID(),
+          installment_no: 1,
+          amount: netTotal / 2,
+          notes: 'งวดที่ 1',
+        },
+        {
+          id: crypto.randomUUID(),
+          installment_no: 2,
+          amount: netTotal / 2,
+          notes: 'งวดที่ 2',
+        },
+      ]);
+    } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
+      // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
+      // For now, let's just clear if user explicitly switches.
+      // Ideally we need a flag to know if this is user action vs initial load.
+      // But simpler: if condition is Transfer, we just don't show the table.
+      // When submitting, we check the condition.
+    }
+  }, [paymentCondition, netTotal]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedCustomerId || !selectedCustomer) {
+      alert('กรุณาเลือกลูกค้า');
+      return;
+    }
+
+    // Skip buildingType and serviceType validation if creating from assessment
+    // Backend will copy the data from assessment_areas
+    if (!selectedAssessmentId) {
+      if (!buildingType) {
+        alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)');
+        return;
+      }
+      if (!serviceType) {
+        alert('กรุณาระบุประเภทบริการ (Service Type is required)');
+        return;
+      }
+    }
+
+    // Validation: If no items AND no package, alert
+    const hasValidItems = items.some(
+      (item) => item.description && item.amount > 0
+    );
+
+    // Relax validation: Allow if assessment is linked (data might come from backend or be draft)
+    // Also allow if package pricing is selected, even if calculated price is 0 (can be edited later)
+    const isAssessmentLinked = !!selectedAssessmentId;
+
+    if (!hasValidItems && !usePackagePricing && !isAssessmentLinked) {
+      alert('กรุณาเพิ่มรายการสินค้าหรือเลือกแพ็กเกจ');
+      return;
+    }
+
+    // Validation: If installments enabled, check totals
+    if (paymentCondition === PaymentMethod.INSTALLMENT) {
+      const totalInstallment = installments.reduce(
+        (sum, inst) => sum + (Number(inst.amount) || 0),
+        0
+      );
+      if (Math.abs(totalInstallment - netTotal) >= 1) {
+        alert(
+          `ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})`
+        );
+        return;
+      }
+    }
+
+    // Prepare items: If usePackagePricing is true, add it as the first item
+    let finalItems = items.map((item, index) => ({
+      id: '',
+      quotation_id: '',
+      sequence: index + 1, // temporary, will fix below
+      product_id: item.productId || null,
+      description: item.description,
+      quantity: item.quantity,
+      unit: item.unit,
+      unit_price: item.unitPrice,
+      amount: item.amount,
+    }));
+
+    if (usePackagePricing) {
+      const packageItem = {
+        id: '',
+        quotation_id: '',
+        sequence: 1,
+        product_id: null,
+        description: `แพ็กเกจ: ${packageName || 'บริการหลัก'}`,
+        quantity: 1,
+        unit: 'งาน/แพ็กเกจ',
+        unit_price: packagePrice,
+        amount: packagePrice,
+      };
+      // Add to start
+      finalItems = [packageItem, ...finalItems];
+    } else {
+      // Filter out empty lines if any (optional, but good practice)
+      finalItems = finalItems.filter((i) => i.description || i.amount > 0);
+    }
+
+    // Re-sequence
+    finalItems = finalItems.map((item, idx) => ({
+      ...item,
+      id: '',
+      quotation_id: '',
+      sequence: idx + 1,
+    }));
+
+    const quotationData: Partial<Quotation> = {
+      ...initialValues, // preserve ID and other fields if editing
+      assessment_id: selectedAssessmentId || undefined,
+      customer_id: selectedCustomerId,
+      customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
+      created_at: quotationDate,
+      expires_at: expiresAt,
+      status: initialValues?.status || Status.Draft,
+      total: netTotal,
+      revision:
+        mode === 'revise'
+          ? (initialValues?.revision || 0) + 1
+          : initialValues?.revision || 1,
+      google_map_link: selectedCustomer.google_map_link || '',
+      payment_terms: paymentTerms,
+      service_location: serviceLocation,
+      building_type: buildingType,
+      service_area: serviceArea,
+      service_system: serviceSystem,
+      system_used: systemUsed,
+      service_type: serviceType,
+      notes: notes,
+      contract_duration: contractDuration,
+      service_count: serviceCount,
+      subtotal: subtotal,
+      vat_amount: vatAmount,
+      include_vat: includeVat,
+      items: finalItems,
+      installments:
+        paymentCondition === PaymentMethod.INSTALLMENT
+          ? installments.map((inst) => ({
+              ...inst,
+            }))
+          : [],
+      is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
+    };
+
+    await onSubmit(quotationData);
+  };
+
+  // Helper for Section Header
+  const SectionHeader = ({
+    icon: Icon,
+    title,
+  }: {
+    icon: any;
+    title: string;
+  }) => (
+    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+      <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+        <Icon className="w-5 h-5" />
+      </div>
+      <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>
+    </div>
+  );
+
+  return (
+    <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 1. General Information */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                ลูกค้า <span className="text-red-500">*</span>
+              </label>
+              <SearchableSelect
+                value={selectedCustomerId}
+                onChange={setSelectedCustomerId}
+                onSearchChange={handleCustomerSearch}
+                options={fetchedCustomers.map((c) => ({
+                  value: c.id,
+                  label: `${c.first_name} ${c.last_name}`,
+                  description: c.phone,
+                }))}
+                placeholder="ค้นหาลูกค้า..."
+                disabled={isReadOnly}
+              />
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <FormField label="ใบประเมินหน้างาน (อ้างอิง)">
+                <SearchableSelect
+                  value={selectedAssessmentId}
+                  onChange={setSelectedAssessmentId}
+                  options={fetchedAssessments.map((a: any) => ({
+                    value: a.id,
+                    label: `${a.code} - ${a.customer_name || a.customer?.first_name || 'N/A'}`,
+                    description: a.service_location || 'N/A',
+                  }))}
+                  placeholder="เลือกใบประเมิน (ถ้ามี)"
+                  disabled={isReadOnly}
+                />
+              </FormField>
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <FormField label="แพ็กเกจบริการ (Package)">
+                <SearchableSelect
+                  value={selectedPackageId}
+                  onChange={(val) => {
+                    setSelectedPackageId(val);
+                    if (val) setSelectedAssessmentId('');
+                  }}
+                  options={fetchedPackages.map((p) => ({
+                    value: p.id,
+                    label: `${p.name} (${p.code})`,
+                    description: `${p.visit_limit} ครั้ง / ${p.visit_limit} เดือน`,
+                  }))}
+                  placeholder="เลือกแพ็กเกจ (ถ้ามี)"
+                  disabled={isReadOnly || !!selectedAssessmentId}
+                />
+              </FormField>
+            </div>
+
+            <FormField label="วันที่เสนอราคา">
+              <Input
+                type="date"
+                value={quotationDate}
+                onChange={(e) => setQuotationDate(e.target.value)}
+                disabled={isReadOnly}
+                required
+              />
+            </FormField>
+
+            <FormField label="ยืนราคา (วัน)">
+              <Input
+                type="number"
+                value={validityDays}
+                onChange={(e) => setValidityDays(Number(e.target.value))}
+                disabled={isReadOnly}
+                min={1}
+              />
+            </FormField>
+
+            <FormField label="ใช้ได้ถึงวันที่">
+              <Input
+                type="date"
+                value={expiresAt}
+                disabled={true}
+                className="bg-slate-50"
+              />
+            </FormField>
+          </div>
+        </div>
+
+        {/* 2. Address Information */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <SectionHeader icon={HomeIcon} title="ข้อมูลที่อยู่" />
+
+          <div className="space-y-4">
+            <FormField label="สถานที่ให้บริการ">
+              <Textarea
+                value={serviceLocation}
+                onChange={(e) => setServiceLocation(e.target.value)}
+                disabled={isReadOnly}
+                rows={4}
+                placeholder="ที่อยู่สำหรับเข้าให้บริการ..."
+                required
+              />
+            </FormField>
+
+            <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-2">
+                Google Map
+              </h4>
+              {selectedCustomer?.google_map_link ? (
+                <a
+                  href={selectedCustomer.google_map_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                >
+                  <MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า
+                </a>
+              ) : (
+                <span className="text-sm text-slate-500">
+                  ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Assessment/Quotation Area Details Section */}
+        {(() => {
+          // Determine which areas to display
+          const areasToDisplay =
+            initialValues?.quotation_areas &&
+            initialValues.quotation_areas.length > 0
+              ? initialValues.quotation_areas
+              : selectedAssessment?.assessment_areas;
+
+          const sectionTitle =
+            initialValues?.quotation_areas &&
+            initialValues.quotation_areas.length > 0
+              ? 'รายละเอียดพื้นที่ในใบเสนอราคา'
+              : 'รายละเอียดพื้นที่ที่ประเมิน';
+
+          if (!areasToDisplay || areasToDisplay.length === 0) return null;
+
+          return (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
+              <SectionHeader
+                icon={ClipboardDocumentListIcon}
+                title={sectionTitle}
+              />
+
+              <div className="space-y-4">
+                {areasToDisplay.map((area: any, index: number) => {
+                  const itemsTotal =
+                    area.items?.reduce(
+                      (sum: number, item: any) =>
+                        sum + (Number(item.total_price || item.amount) || 0),
+                      0
+                    ) || 0;
+                  const basePrice =
+                    (Number(area.total_price) || 0) - itemsTotal;
+                  return (
+                    <div
+                      key={index}
+                      className="border border-slate-200 rounded-lg overflow-hidden"
+                    >
+                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                          <h4 className="font-semibold text-slate-800">
+                            {area.area_name}
+                          </h4>
+                        </div>
+                        <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
+                          ฿{Number(area.total_price || 0).toLocaleString()}
+                        </div>
+                      </div>
+
+                      <div className="p-4">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">
+                              ประเภทสิ่งปลูกสร้าง
+                            </div>
+                            <div className="font-medium text-slate-800">
+                              {area.building_type || '-'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">
+                              พื้นที่ (ตร.ม.)
+                            </div>
+                            <div className="font-medium text-slate-800">
+                              {Number(area.area_size || 0).toLocaleString()}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">
+                              ระบบที่ใช้
+                            </div>
+                            <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                              {area.service_system === 'PREY'
+                                ? 'เหยื่อ'
+                                : area.service_system === 'CHEMICAL'
+                                  ? 'สารเคมี'
+                                  : area.service_system || '-'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">
+                              ราคาบริการหลัก
+                            </div>
+                            <div className="font-medium text-slate-800">
+                              ฿{Number(basePrice).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Package Information */}
+                        {area.packagePriceRelation && (
+                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                              <div className="text-sm font-semibold text-blue-900">
+                                แพ็กเกจที่เลือก
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              <div>
+                                <div className="text-xs text-blue-600 mb-1">
+                                  ชื่อแพ็กเกจ
+                                </div>
+                                <div className="font-medium text-blue-900">
+                                  {area.packagePriceRelation.package?.name ||
+                                    area.packagePriceRelation.name ||
+                                    '-'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-blue-600 mb-1">
+                                  จำนวนครั้งบริการ
+                                </div>
+                                <div className="font-medium text-blue-900">
+                                  {area.packagePriceRelation.package
+                                    ?.visit_limit || '-'}{' '}
+                                  ครั้ง
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-blue-600 mb-1">
+                                  ระยะเวลาสัญญา
+                                </div>
+                                <div className="font-medium text-blue-900">
+                                  {area.packagePriceRelation.package
+                                    ?.contract_period
+                                    ? `${
+                                        area.packagePriceRelation.package
+                                          .contract_period >= 12
+                                          ? area.packagePriceRelation.package
+                                              .contract_period /
+                                              12 +
+                                            ' ปี'
+                                          : area.packagePriceRelation.package
+                                              .contract_period + ' เดือน'
+                                      }`
+                                    : '-'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mb-4">
+                          <label className="block text-xs text-slate-500 mb-2">
+                            ประเภทบริการ
+                          </label>
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                              {serviceTypeOptions.map((option) => {
+                                const isChecked = area.category_services?.some(
+                                  (cat: any) => {
+                                    const catId =
+                                      cat.category_id ||
+                                      cat.category?.id ||
+                                      cat.id;
+                                    const catName =
+                                      cat.name || cat.category?.name;
+
+                                    const matchId =
+                                      catId && catId === option.id;
+                                    const matchName =
+                                      catName && catName === option.value;
+
+                                    return matchId || matchName;
+                                  }
+                                );
+
+                                return (
+                                  <label
+                                    key={option.id}
+                                    className="flex items-center gap-2 cursor-pointer pointer-events-none"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      readOnly
+                                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white h-4 w-4"
+                                    />
+                                    <span
+                                      className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}
+                                    >
+                                      {option.label}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {area.items && area.items.length > 0 && (
+                          <div className="mt-4 border rounded-lg overflow-hidden">
+                            <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
+                              สินค้า/บริการเพิ่มเติม
+                            </div>
+                            <table className="w-full text-sm text-left">
+                              <thead className="text-xs text-slate-500 bg-white border-b">
+                                <tr>
+                                  <th className="px-4 py-2 font-medium">
+                                    รายการ
+                                  </th>
+                                  <th className="px-4 py-2 font-medium text-center w-20">
+                                    จำนวน
+                                  </th>
+                                  <th className="px-4 py-2 font-medium text-right w-32">
+                                    ราคา/หน่วย
+                                  </th>
+                                  <th className="px-4 py-2 font-medium text-right w-32">
+                                    รวม
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {area.items.map((item: any, i: number) => (
+                                  <tr key={i} className="hover:bg-slate-50">
+                                    <td className="px-4 py-2 text-slate-800">
+                                      {item.product_name || item.description}
+                                    </td>
+                                    <td className="px-4 py-2 text-center text-slate-600">
+                                      {item.quantity}
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-slate-600">
+                                      {Number(
+                                        item.product_price || item.unit_price
+                                      ).toLocaleString()}
+                                    </td>
+                                    <td className="px-4 py-2 text-right font-medium text-slate-800">
+                                      {Number(
+                                        item.total_price || item.amount
+                                      ).toLocaleString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* 6. Payment Terms (Moved above Items & Pricing) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
+          <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label
+                className={`
+                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                ${
+                                  paymentCondition === PaymentMethod.TRANSFER
+                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                                }
+                            `}
+              >
+                <input
+                  type="radio"
+                  name="paymentCondition"
+                  value={PaymentMethod.TRANSFER}
+                  checked={paymentCondition === PaymentMethod.TRANSFER}
+                  onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)}
+                  className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
+                  disabled={isReadOnly}
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-bold text-slate-800">
+                    ชำระเต็มจำนวน
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    เงินสด / โอนเงิน / เครดิต
+                  </span>
+                </div>
+              </label>
+
+              <label
+                className={`
+                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                                ${
+                                  paymentCondition === PaymentMethod.INSTALLMENT
+                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                                }
+                            `}
+              >
+                <input
+                  type="radio"
+                  name="paymentCondition"
+                  value={PaymentMethod.INSTALLMENT}
+                  checked={paymentCondition === PaymentMethod.INSTALLMENT}
+                  onChange={() =>
+                    setPaymentCondition(PaymentMethod.INSTALLMENT)
+                  }
+                  className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500"
+                  disabled={isReadOnly}
+                />
+                <div className="ml-3">
+                  <span className="block text-sm font-bold text-slate-800">
+                    แบ่งชำระ (งวดงาน)
+                  </span>
+                  <span className="block text-xs text-slate-500">
+                    แบ่งจ่ายตามงวดงานที่กำหนด
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            {paymentCondition === PaymentMethod.INSTALLMENT && (
+              <div className="space-y-4 animate-fadeIn">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-semibold text-slate-700">
+                    รายละเอียดงวดงาน
+                  </h4>
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={handleAddInstallment}
+                      className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      เพิ่มงวด
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-hidden border border-slate-200 rounded-lg">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">
+                          งวดที่
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
+                          รายละเอียด
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">
+                          จำนวนเงิน
+                        </th>
+                        {!isReadOnly && <th className="px-2 py-3 w-10"></th>}
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {installments.map((inst, idx) => (
+                        <tr key={inst.id || idx}>
+                          <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">
+                            {inst.installment_no}
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              value={inst.notes || ''}
+                              onChange={(e) =>
+                                handleInstallmentChange(
+                                  idx,
+                                  'notes',
+                                  e.target.value
+                                )
+                              }
+                              placeholder="รายละเอียด..."
+                              className="h-9 text-sm"
+                              disabled={isReadOnly}
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              type="number"
+                              value={inst.amount}
+                              onChange={(e) =>
+                                handleInstallmentChange(
+                                  idx,
+                                  'amount',
+                                  Number(e.target.value)
+                                )
+                              }
+                              className="h-9 text-right text-sm font-mono"
+                              disabled={isReadOnly}
+                            />
+                          </td>
+                          {!isReadOnly && (
+                            <td className="px-2 py-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveInstallment(idx)}
+                                className="text-slate-400 hover:text-red-500"
+                                disabled={installments.length <= 1}
+                              >
+                                <TrashIcon className="w-4 h-4" />
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {Math.abs(
+                  installments.reduce(
+                    (sum, i) => sum + (Number(i.amount) || 0),
+                    0
+                  ) - netTotal
+                ) >= 1 && (
+                  <p className="text-xs text-red-500 text-right">
+                    * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ (
+                    {netTotal.toLocaleString()} บาท)
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 5. Items & Pricing */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+          {!selectedAssessmentId && (
+            <>
+              <SectionHeader
+                icon={CurrencyDollarIcon}
+                title="รายการสินค้าและบริการ"
+              />
+              <div className="space-y-4">
+                {items.map((item, index) => {
+                  // Find product name for display
+                  const product = products.find((p) => p.id === item.productId);
+                  const productName = product
+                    ? `${product.code} - ${product.name}`
+                    : item.description;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                        <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
+                          {index + 1}
+                        </div>
+
+                        <div className="md:col-span-4">
+                          <label className="text-xs font-medium text-slate-500 mb-1 block">
+                            สินค้า/บริการ
+                          </label>
+                          <SearchableSelect
+                            value={item.productId}
+                            onChange={(val) =>
+                              handleProductSelect(item.id, val)
+                            }
+                            options={productOptions}
+                            placeholder="เลือกสินค้า..."
+                            disabled={isReadOnly || usePackagePricing}
+                          />
+                        </div>
+
+                        <div className="md:col-span-3">
+                          <label className="text-xs font-medium text-slate-500 mb-1 block">
+                            รายละเอียดเพิ่มเติม
+                          </label>
+                          <Input
+                            value={item.description}
+                            onChange={(e) =>
+                              handleItemChange(
+                                item.id,
+                                'description',
+                                e.target.value
+                              )
+                            }
+                            placeholder="รายละเอียด..."
+                            disabled={isReadOnly}
+                          />
+                        </div>
+
+                        <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 mb-1 block">
+                              จำนวน
+                            </label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  'quantity',
+                                  Number(e.target.value)
+                                )
+                              }
+                              disabled={isReadOnly}
+                              className="text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-slate-500 mb-1 block">
+                              ราคา/หน่วย
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={item.unitPrice}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  'unitPrice',
+                                  Number(e.target.value)
+                                )
+                              }
+                              disabled={isReadOnly}
+                              className="text-right"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 text-right">
+                          <label className="text-xs font-medium text-slate-500 mb-1 block">
+                            รวม
+                          </label>
+                          <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
+                            {item.amount.toLocaleString()}
+                          </div>
+                        </div>
+
+                        {!isReadOnly && items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.id)}
+                            className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                            title="ลบรายการ"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {!isReadOnly && !usePackagePricing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addItem}
+                    className="w-full border-dashed border-2 border-slate-300 text-slate-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50"
+                  >
+                    <PlusIcon className="w-5 h-5 mr-2" /> เพิ่มรายการ
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Totals */}
+          <div
+            className={
+              selectedAssessmentId
+                ? 'pt-0'
+                : 'mt-8 border-t border-slate-200 pt-6'
+            }
+          >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+              <div className="w-full md:w-1/2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  หมายเหตุ
+                </label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  disabled={isReadOnly}
+                  placeholder="หมายเหตุเพิ่มเติม..."
+                />
+              </div>
+
+              <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
+                  <span className="font-medium text-slate-900">
+                    {subtotal.toLocaleString()} บาท
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm">
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={includeVat}
+                      onChange={(e) => setIncludeVat(e.target.checked)}
+                      disabled={isReadOnly}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    ภาษีมูลค่าเพิ่ม 7% (VAT)
+                  </label>
+                  <span className="font-medium text-slate-900">
+                    {vatAmount.toLocaleString()} บาท
+                  </span>
+                </div>
+
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                  <span className="text-base font-bold text-slate-800">
+                    จำนวนเงินรวมทั้งสิ้น
+                  </span>
+                  <span className="text-xl font-bold text-green-600">
+                    {netTotal.toLocaleString()} บาท
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Installment Plan Preview - REMOVED */}
+      </div>
+    </form>
+  );
 };

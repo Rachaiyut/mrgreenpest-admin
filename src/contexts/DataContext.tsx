@@ -1,14 +1,32 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+} from 'react';
 
 // Entities
 import { User } from '@/src/types/entity/core.interface';
 import { Job } from '@/src/types/entity/job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
-import { Quotation, Invoice, Receipt, ReturnToSupplier } from '@/src/types/entity/financial.interface';
+import {
+  Quotation,
+  Invoice,
+  Receipt,
+  ReturnToSupplier,
+} from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Product } from '@/src/types/entity/product.interface';
-import { Warehouse, Withdrawal, Transfer, StockAdjustment, ProductReturn } from '@/src/types/entity/inventory.interface';
+import {
+  Warehouse,
+  Withdrawal,
+  Transfer,
+  StockAdjustment,
+  ProductReturn,
+} from '@/src/types/entity/inventory.interface';
 import { Requisition } from '@/src/types/entity/requisition.interface';
 import { GoodsReceipt } from '@/src/types/entity/good-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
@@ -51,7 +69,8 @@ export type ResourceType =
   | 'stockAdjustments'
   | 'productReturns'
   | 'returnToSuppliers'
-  | 'requisitions';
+  | 'requisitions'
+  | 'warehouseStocks';
 
 export interface DataContextType {
   users: User[];
@@ -72,6 +91,7 @@ export interface DataContextType {
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
   requisitions: Requisition[];
+  warehouseStocks: { [key: string]: { [key: string]: number } };
 
   fetchData: (resources?: ResourceType[]) => Promise<void>;
 
@@ -179,15 +199,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
+  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>(
+    []
+  );
   const [productReturns, setProductReturns] = useState<ProductReturn[]>([]);
-  const [returnToSuppliers, setReturnToSuppliers] = useState<ReturnToSupplier[]>([]);
+  const [returnToSuppliers, setReturnToSuppliers] = useState<
+    ReturnToSupplier[]
+  >([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
+  const [warehouseStocks, setWarehouseStocks] = useState<{
+    [key: string]: { [key: string]: number };
+  }>({});
 
   // Helper to safely fetch data - returns empty array if API fails
-  const safeFetch = async <T,>(
-    fetchFn: () => Promise<any>
-  ): Promise<T[]> => {
+  const safeFetch = async <T,>(fetchFn: () => Promise<any>): Promise<T[]> => {
     try {
       const res = await fetchFn();
       if (Array.isArray(res)) return res;
@@ -205,34 +230,74 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     const promises: Promise<void>[] = [];
 
     if (shouldFetch('users')) {
-      promises.push(safeFetch(() => UserApi.getAll({ limit: 10 })).then((data: any) => setUsers(data)));
+      promises.push(
+        safeFetch(() => UserApi.getAll({ limit: 10 })).then((data: any) =>
+          setUsers(data)
+        )
+      );
     }
     if (shouldFetch('jobs')) {
-      promises.push(safeFetch(() => JobApi.getAll({ limit: 10 })).then((data: any) => setJobs(data)));
+      promises.push(
+        safeFetch(() => JobApi.getAll({ limit: 10 })).then((data: any) =>
+          setJobs(data)
+        )
+      );
     }
     if (shouldFetch('assessments')) {
-      promises.push(safeFetch(() => AssessmentApi.getAll({ limit: 10 })).then((data: any) => setAssessments(data)));
+      promises.push(
+        safeFetch(() => AssessmentApi.getAll({ limit: 10 })).then((data: any) =>
+          setAssessments(data)
+        )
+      );
     }
     if (shouldFetch('contracts')) {
-      promises.push(safeFetch(() => ContractApi.getAll({ limit: 10 })).then((data: any) => setContracts(data)));
+      promises.push(
+        safeFetch(() => ContractApi.getAll({ limit: 10 })).then((data: any) =>
+          setContracts(data)
+        )
+      );
     }
     if (shouldFetch('quotations')) {
-      promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) => setQuotations(data)));
+      promises.push(
+        safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) =>
+          setQuotations(data)
+        )
+      );
     }
     if (shouldFetch('invoices')) {
-      promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) => setInvoices(data)));
+      promises.push(
+        safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) =>
+          setInvoices(data)
+        )
+      );
     }
     if (shouldFetch('receipts')) {
-      promises.push(safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) => setReceipts(data)));
+      promises.push(
+        safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) =>
+          setReceipts(data)
+        )
+      );
     }
     if (shouldFetch('customers')) {
-      promises.push(safeFetch(() => CustomerApi.getCustomers({ limit: 10 })).then((data: any) => setCustomers(data)));
+      promises.push(
+        safeFetch(() => CustomerApi.getCustomers({ limit: 10 })).then(
+          (data: any) => setCustomers(data)
+        )
+      );
     }
     if (shouldFetch('products')) {
-      promises.push(safeFetch(() => ProductApi.getProducts({ limit: 10 })).then((data: any) => setProducts(data)));
+      promises.push(
+        safeFetch(() => ProductApi.getProducts({ limit: 10 })).then(
+          (data: any) => setProducts(data)
+        )
+      );
     }
     if (shouldFetch('warehouses')) {
-      promises.push(safeFetch(() => WarehouseApi.getWarehouses({ limit: 10 })).then((data: any) => setWarehouses(data)));
+      promises.push(
+        safeFetch(() => WarehouseApi.getWarehouses({ limit: 10 })).then(
+          (data: any) => setWarehouses(data)
+        )
+      );
     }
     if (shouldFetch('suppliers')) {
       promises.push(
@@ -249,7 +314,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       );
     }
     if (shouldFetch('withdrawals')) {
-      promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 10 })).then((data: any) => setWithdrawals(data)));
+      promises.push(
+        safeFetch(() => WithdrawalApi.getAll({ limit: 10 })).then((data: any) =>
+          setWithdrawals(data)
+        )
+      );
     }
     if (shouldFetch('transfers')) {
       setTransfers([]);
@@ -258,13 +327,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setStockAdjustments([]);
     }
     if (shouldFetch('productReturns')) {
-      promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 10 })).then((data: any) => setProductReturns(data)));
+      promises.push(
+        safeFetch(() => ProductReturnApi.getAll({ limit: 10 })).then(
+          (data: any) => setProductReturns(data)
+        )
+      );
     }
     if (shouldFetch('returnToSuppliers')) {
       setReturnToSuppliers([]);
     }
     if (shouldFetch('requisitions')) {
       setRequisitions([]);
+    }
+    if (shouldFetch('warehouseStocks')) {
+      promises.push(
+        safeFetch(() => WarehouseApi.getWarehousesWithItems()).then(
+          (data: any) => {
+            const stockMap: { [key: string]: { [key: string]: number } } = {};
+            data.forEach((wh: any) => {
+              stockMap[wh.id] = {};
+              (wh.items || []).forEach((item: any) => {
+                stockMap[wh.id][item.productId] = item.quantity;
+              });
+            });
+            setWarehouseStocks(stockMap);
+          }
+        )
+      );
     }
 
     try {
@@ -275,7 +364,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   useEffect(() => {
-    fetchData(['users', 'jobs', 'assessments', 'customers', 'products', 'warehouses', 'suppliers']);
+    fetchData([
+      'users',
+      'jobs',
+      'assessments',
+      'customers',
+      'products',
+      'warehouses',
+      'suppliers',
+      'warehouseStocks',
+    ]);
   }, []);
 
   const handlers = useMemo(
@@ -488,7 +586,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         },
         approve: async (id: string, data: any) => {
           await RequisitionApi.approve(id, data);
-        }
+        },
       },
       userWallets: {
         createTransaction: async (userId: string, data: any) => {
@@ -520,6 +618,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         productReturns,
         returnToSuppliers,
         requisitions,
+        warehouseStocks,
         fetchData,
         handlers,
       }}

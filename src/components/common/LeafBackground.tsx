@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 
-const Leaf: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
+const Leaf: React.FC<{ className?: string; style?: React.CSSProperties }> = ({
+  className,
+  style,
+}) => (
   <svg
     viewBox="0 0 24 24"
     fill="currentColor"
@@ -26,26 +29,40 @@ const generateLeaves = (count: number) => {
     const r3 = seededRandom(i * 7 + 3); // Rotation
     const r4 = seededRandom(i * 7 + 4); // Size
     const r5 = seededRandom(i * 7 + 5); // Opacity
-    
+
     // Available tailwind sizes that are safe to use
-    const sizes = ['w-6 h-6', 'w-8 h-8', 'w-10 h-10', 'w-12 h-12', 'w-14 h-14', 'w-16 h-16', 'w-20 h-20', 'w-24 h-24'];
-    
+    const sizes = [
+      'w-6 h-6',
+      'w-8 h-8',
+      'w-10 h-10',
+      'w-12 h-12',
+      'w-14 h-14',
+      'w-16 h-16',
+      'w-20 h-20',
+      'w-24 h-24',
+    ];
+
     return {
       top: `${r2 * 100}%`,
       left: `${r1 * 100}%`,
       rotate: `${r3 * 360}deg`,
       size: sizes[Math.floor(r4 * sizes.length)],
-      opacity: 0.12 + (r5 * 0.18), // Opacity range: 0.12 to 0.30
+      opacity: 0.12 + r5 * 0.18, // Opacity range: 0.12 to 0.30
     };
   });
 };
 
-export const LeafBackground: React.FC<{ className?: string; color?: string }> = ({ className = '', color = 'text-green-500' }) => {
+export const LeafBackground: React.FC<{
+  className?: string;
+  color?: string;
+}> = ({ className = '', color = 'text-green-500' }) => {
   // Generate 80 leaves for a very dense pattern
   const leaves = useMemo(() => generateLeaves(80), []);
 
   return (
-    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+    <div
+      className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}
+    >
       {leaves.map((leaf, index) => (
         <div
           key={index}

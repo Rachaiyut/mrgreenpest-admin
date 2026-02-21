@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  FormField,
-  Input,
-  Textarea,
-  Button,
-} from '../../common/FormControls';
+import { FormField, Input, Textarea, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 
 import {
@@ -76,7 +71,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
     if (fromWarehouseId) {
       setLoadingStock(true);
       WarehouseApi.getStockBalances(fromWarehouseId)
-        .then((res: any) => {          
+        .then((res: any) => {
           const stocks = (res.data || res) as any[];
           const map: Record<string, number> = {};
           if (Array.isArray(stocks)) {
@@ -89,7 +84,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
             });
           }
           setFetchedStock(map);
-  })
+        })
         .catch((err) => {
           console.error('Failed to fetch stock balances:', err);
           setFetchedStock({});
@@ -104,11 +99,9 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
 
   const productsInWarehouse = useMemo(() => {
     if (!fromWarehouse) return [];
-    
+
     // Use fetched stock instead of stockMap prop
-    return products.filter(
-      (p) => (fetchedStock[p.id] || 0) > 0
-    );
+    return products.filter((p) => (fetchedStock[p.id] || 0) > 0);
   }, [fromWarehouse, products, fetchedStock]);
 
   const generatedId = useMemo(() => {
@@ -119,7 +112,9 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
       .slice(-2);
     const prefix = `IT${thaiYearLastTwoDigits}`;
 
-    const transfersThisYear = transfers.filter((t: any) => (t.code || t.id)?.startsWith(prefix));
+    const transfersThisYear = transfers.filter((t: any) =>
+      (t.code || t.id)?.startsWith(prefix)
+    );
 
     const maxId = transfersThisYear.reduce((max, t: any) => {
       const idStr = t.code || t.id;
@@ -273,7 +268,10 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                 </FormField>
               </div>
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
-                <FormField label="คลังปลายทาง (Destination)" htmlFor="to-warehouse">
+                <FormField
+                  label="คลังปลายทาง (Destination)"
+                  htmlFor="to-warehouse"
+                >
                   <SearchableSelect
                     required
                     value={toWarehouseId}
@@ -379,9 +377,13 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                             {product?.name || 'Unknown Product'}
                           </td>
                           <td className="px-4 py-3 align-middle text-center">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              currentStock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                currentStock > 0
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
                               {currentStock}
                             </span>
                           </td>
@@ -437,7 +439,10 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                             <PlusIcon className="h-6 w-6 text-slate-400" />
                           </div>
                           <p className="font-medium">ยังไม่มีรายการสินค้า</p>
-                          <p className="text-sm">กรุณาเลือกคลังต้นทางและกดปุ่ม "เพิ่มสินค้า" เพื่อเริ่มรายการ</p>
+                          <p className="text-sm">
+                            กรุณาเลือกคลังต้นทางและกดปุ่ม "เพิ่มสินค้า"
+                            เพื่อเริ่มรายการ
+                          </p>
                         </div>
                       </td>
                     </tr>
@@ -458,4 +463,3 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
     </>
   );
 };
-

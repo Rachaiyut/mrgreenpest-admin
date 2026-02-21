@@ -46,7 +46,8 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
 
     if (warehouseType === 'รถ') {
       // Backend vehicle DTO expects flattened fields (based on validation keys).
-      payload.vehicle_registration = (formData.get('license-plate') as string) || '';
+      payload.vehicle_registration =
+        (formData.get('license-plate') as string) || '';
       payload.brand = (formData.get('brand') as string) || '';
       payload.model = (formData.get('model') as string) || '';
       payload.color = (formData.get('color') as string) || '';
@@ -100,7 +101,9 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            <NewWarehouseIcon className={`w-4 h-4 ${warehouseType === 'คลัง' ? 'text-white' : 'text-slate-400'}`} />
+            <NewWarehouseIcon
+              className={`w-4 h-4 ${warehouseType === 'คลัง' ? 'text-white' : 'text-slate-400'}`}
+            />
             คลังสินค้า
           </button>
           <button
@@ -112,7 +115,9 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                 : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            <TruckIcon className={`w-4 h-4 ${warehouseType === 'รถ' ? 'text-white' : 'text-slate-400'}`} />
+            <TruckIcon
+              className={`w-4 h-4 ${warehouseType === 'รถ' ? 'text-white' : 'text-slate-400'}`}
+            />
             รถบริการ
           </button>
         </div>
@@ -125,11 +130,15 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
             </div>
             ข้อมูลทั่วไป
           </h3>
-          
+
           <div className="space-y-4">
             <div>
-              <label htmlFor="warehouse-name" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-                ชื่อ{warehouseType === 'คลัง' ? 'คลัง' : 'รถ'} <span className="text-red-500">*</span>
+              <label
+                htmlFor="warehouse-name"
+                className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+              >
+                ชื่อ{warehouseType === 'คลัง' ? 'คลัง' : 'รถ'}{' '}
+                <span className="text-red-500">*</span>
               </label>
               <input
                 name="warehouse-name"
@@ -137,13 +146,20 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                 type="text"
                 required
                 className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
-                placeholder={warehouseType === 'คลัง' ? 'เช่น คลังหลัก, คลังย่อย 01' : 'เช่น รถบริการหน่วย 01'}
+                placeholder={
+                  warehouseType === 'คลัง'
+                    ? 'เช่น คลังหลัก, คลังย่อย 01'
+                    : 'เช่น รถบริการหน่วย 01'
+                }
               />
             </div>
 
             {warehouseType === 'คลัง' ? (
               <div>
-                <label htmlFor="warehouse-location" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label
+                  htmlFor="warehouse-location"
+                  className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+                >
                   ที่ตั้ง <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -162,14 +178,18 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
               </div>
             ) : (
               <div>
-                 <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                   สถานะที่ตั้ง
                 </label>
                 <div className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-sm text-slate-500 flex items-center gap-2">
                   <MapPinIcon className="h-4 w-4 text-slate-400" />
                   เคลื่อนที่
                 </div>
-                <input type="hidden" name="warehouse-location" value="เคลื่อนที่" />
+                <input
+                  type="hidden"
+                  name="warehouse-location"
+                  value="เคลื่อนที่"
+                />
               </div>
             )}
           </div>
@@ -184,10 +204,13 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
               </div>
               ข้อมูลยานพาหนะ
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="col-span-1 md:col-span-2">
-                <label htmlFor="license-plate" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label
+                  htmlFor="license-plate"
+                  className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+                >
                   ทะเบียนรถ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -200,9 +223,12 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   placeholder="เช่น 1กข 1234"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="brand" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label
+                  htmlFor="brand"
+                  className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+                >
                   ยี่ห้อ <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -215,9 +241,12 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   placeholder="เช่น Toyota"
                 />
               </div>
-              
+
               <div>
-                <label htmlFor="model" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label
+                  htmlFor="model"
+                  className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+                >
                   รุ่น <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -230,9 +259,12 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   placeholder="เช่น Hilux Revo"
                 />
               </div>
-              
+
               <div className="col-span-1 md:col-span-2">
-                <label htmlFor="color" className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                <label
+                  htmlFor="color"
+                  className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1"
+                >
                   สี <span className="text-red-500">*</span>
                 </label>
                 <input

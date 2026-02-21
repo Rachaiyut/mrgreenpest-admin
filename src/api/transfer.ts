@@ -36,4 +36,3 @@ class TransferService extends AuthService {
 }
 
 export const TransferApi = new TransferService();
-

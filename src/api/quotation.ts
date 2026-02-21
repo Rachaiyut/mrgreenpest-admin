@@ -43,4 +43,3 @@ class QuotationService extends AuthService {
 }
 
 export const QuotationApi = new QuotationService();
-

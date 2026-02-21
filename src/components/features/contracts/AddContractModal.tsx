@@ -26,10 +26,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
   const [servicePackage, setServicePackage] = useState('');
 
   const approvedQuotations = useMemo(
-    () =>
-      quotations.filter(
-        (q) => q.status === Status.Approved
-      ),
+    () => quotations.filter((q) => q.status === Status.Approved),
     [quotations]
   );
 
@@ -40,20 +37,20 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
 
   useEffect(() => {
     if (isOpen && customer) {
-        const fetchQuotations = async () => {
-            try {
-                const res = await QuotationApi.getAll({ 
-                    customer_id: customer.id, 
-                    status: 'APPROVED' 
-                });
-                if (res && res.data) {
-                    setQuotations(res.data);
-                }
-            } catch (error) {
-                console.error("Error fetching quotations:", error);
-            }
-        };
-        fetchQuotations();
+      const fetchQuotations = async () => {
+        try {
+          const res = await QuotationApi.getAll({
+            customer_id: customer.id,
+            status: 'APPROVED',
+          });
+          if (res && res.data) {
+            setQuotations(res.data);
+          }
+        } catch (error) {
+          console.error('Error fetching quotations:', error);
+        }
+      };
+      fetchQuotations();
 
       setSelectedQuotationId('');
       setStartDate(new Date().toISOString().substring(0, 10));
@@ -251,4 +248,3 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
     </Modal>
   );
 };
-

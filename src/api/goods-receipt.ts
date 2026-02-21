@@ -5,7 +5,6 @@ import {
 import { GoodsReceipt } from '../types/entity/good-receipt';
 import { AuthService } from '.';
 
-
 class GoodsReceiptService extends AuthService {
   protected path = '/goods-receipts';
 
@@ -36,11 +35,16 @@ class GoodsReceiptService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async updateStatus(id: string, data: Partial<GoodsReceipt>): Promise<GoodsReceipt> {
-    const res = await this.http.patch<GoodsReceipt>(`${this.path}/${id}/status`, data);
+  async updateStatus(
+    id: string,
+    data: Partial<GoodsReceipt>
+  ): Promise<GoodsReceipt> {
+    const res = await this.http.patch<GoodsReceipt>(
+      `${this.path}/${id}/status`,
+      data
+    );
     return res.data;
   }
 }
 
 export const GoodsReceiptApi = new GoodsReceiptService();
-

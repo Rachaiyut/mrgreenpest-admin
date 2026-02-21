@@ -51,11 +51,19 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [withdrawalRefId, setWithdrawalRefId] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [returnDate, setReturnDate] = useState(new Date().toISOString().substring(0, 10));
+  const [returnDate, setReturnDate] = useState(
+    new Date().toISOString().substring(0, 10)
+  );
 
-  const [localStockMap, setLocalStockMap] = useState<Record<string, Record<string, number>>>({});
-  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
-  const [mainWarehouseOptions, setMainWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [localStockMap, setLocalStockMap] = useState<
+    Record<string, Record<string, number>>
+  >({});
+  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [mainWarehouseOptions, setMainWarehouseOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -71,11 +79,18 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock: Record<string, number> = {};
-          const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
+          const stockItems = Array.isArray(w.stock)
+            ? w.stock
+            : Array.isArray(w.stock_balances)
+              ? w.stock_balances
+              : [];
 
           stockItems.forEach((s: any) => {
             const productId = s.product_id || s.product?.id;
-            const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
+            const quantity =
+              typeof s.quantity === 'string'
+                ? parseFloat(s.quantity)
+                : Number(s.quantity);
 
             if (productId && !isNaN(quantity)) {
               warehouseStock[productId] = quantity;
@@ -88,33 +103,53 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         const vehicleWhs = allWarehouses
           .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
           .map((w: any) => {
-             const licensePlate = w.vehicle?.vehicle_registration || w.licensePlate || '';
-             return { 
-               value: w.id, 
-               label: licensePlate ? `${w.name} (${licensePlate})` : w.name 
-             };
+            const licensePlate =
+              w.vehicle?.vehicle_registration || w.licensePlate || '';
+            return {
+              value: w.id,
+              label: licensePlate ? `${w.name} (${licensePlate})` : w.name,
+            };
           });
         setVehicleWarehouseOptions(vehicleWhs);
 
         const mainWhs = allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+          .filter(
+            (w: any) =>
+              w.type === InventoryWarehouseType.MAIN ||
+              w.type === InventoryWarehouseType.SUB
+          )
           .map((w: any) => ({ value: w.id, label: w.name }));
         setMainWarehouseOptions(mainWhs);
       }
     } catch (error) {
-      console.error("Failed to fetch warehouses", error);
+      console.error('Failed to fetch warehouses', error);
       // Fallback to props
       setVehicleWarehouseOptions(
         warehouses
-          .filter((w) => (w as any).type === 'รถ' || w.type === InventoryWarehouseType.VEHICLE)
+          .filter(
+            (w) =>
+              (w as any).type === 'รถ' ||
+              w.type === InventoryWarehouseType.VEHICLE
+          )
           .map((w) => {
-             const licensePlate = (w as any).vehicle?.vehicle_registration || (w as any).licensePlate || '';
-             return { value: w.id, label: licensePlate ? `${w.name} (${licensePlate})` : w.name };
+            const licensePlate =
+              (w as any).vehicle?.vehicle_registration ||
+              (w as any).licensePlate ||
+              '';
+            return {
+              value: w.id,
+              label: licensePlate ? `${w.name} (${licensePlate})` : w.name,
+            };
           })
       );
       setMainWarehouseOptions(
         warehouses
-          .filter((w) => (w as any).type === 'คลัง' || w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
+          .filter(
+            (w) =>
+              (w as any).type === 'คลัง' ||
+              w.type === InventoryWarehouseType.MAIN ||
+              w.type === InventoryWarehouseType.SUB
+          )
           .map((w) => ({ value: w.id, label: w.name }))
       );
     }
@@ -126,8 +161,10 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
   }, [stockMap, localStockMap]);
 
   const fromWarehouse = useMemo(
-    () => warehouses.find((w) => w.id === fromWarehouseId) || 
-          vehicleWarehouseOptions.find(opt => opt.value === fromWarehouseId) || null,
+    () =>
+      warehouses.find((w) => w.id === fromWarehouseId) ||
+      vehicleWarehouseOptions.find((opt) => opt.value === fromWarehouseId) ||
+      null,
     [fromWarehouseId, warehouses, vehicleWarehouseOptions]
   );
 
@@ -220,8 +257,11 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         if (product?.unit) {
           if (typeof product.unit === 'string') {
             unitName = product.unit;
-          } else if (typeof product.unit === 'object' && (product.unit as any).name) {
-             unitName = (product.unit as any).name;
+          } else if (
+            typeof product.unit === 'object' &&
+            (product.unit as any).name
+          ) {
+            unitName = (product.unit as any).name;
           }
         }
 
@@ -266,7 +306,9 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                 form="add-return-form"
                 disabled={!isFormValid}
                 className={`py-2 px-6 rounded-lg text-white font-semibold shadow-sm transition-all ${
-                  isFormValid ? 'bg-primary hover:bg-primary/90' : 'bg-slate-300 cursor-not-allowed'
+                  isFormValid
+                    ? 'bg-primary hover:bg-primary/90'
+                    : 'bg-slate-300 cursor-not-allowed'
                 }`}
               >
                 บันทึก
@@ -286,17 +328,25 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
               <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                 <TruckIcon className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-semibold text-slate-800">การคืนสินค้า</h3>
-              
+              <h3 className="text-base font-semibold text-slate-800">
+                การคืนสินค้า
+              </h3>
+
               <div className="ml-auto flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                  <span className="text-xs text-slate-500 font-medium">เลขที่:</span>
-                  <span className="text-sm font-bold text-slate-700">{generatedId}</span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    เลขที่:
+                  </span>
+                  <span className="text-sm font-bold text-slate-700">
+                    {generatedId}
+                  </span>
                 </div>
-                
+
                 <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
                   <CalendarDaysIcon className="w-4 h-4 text-slate-400" />
-                  <span className="text-xs text-slate-500 font-medium">วันที่คืน:</span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    วันที่คืน:
+                  </span>
                   <input
                     type="date"
                     value={returnDate}
@@ -322,7 +372,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   className="w-full bg-white shadow-sm border-slate-200"
                 />
               </div>
-              
+
               <div className="flex items-center justify-center pt-6 text-slate-300">
                 <ArrowRightIcon className="w-5 h-5 hidden md:block text-slate-400" />
                 <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden text-slate-400" />
@@ -364,8 +414,12 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   <DocumentCheckIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-slate-800">รายการสินค้าคืน</h3>
-                  <p className="text-xs text-slate-500">สินค้าที่ต้องการคืนเข้าคลัง</p>
+                  <h3 className="text-base font-semibold text-slate-800">
+                    รายการสินค้าคืน
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    สินค้าที่ต้องการคืนเข้าคลัง
+                  </p>
                 </div>
               </div>
               <Button
@@ -387,8 +441,12 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   <div className="bg-slate-50 p-4 rounded-full mb-3 border border-dashed border-slate-200 animate-pulse">
                     <TruckIcon className="w-8 h-8 text-slate-300" />
                   </div>
-                  <p className="font-medium text-slate-600 text-sm">ยังไม่มีรายการสินค้า</p>
-                  <p className="text-xs mt-1 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง</p>
+                  <p className="font-medium text-slate-600 text-sm">
+                    ยังไม่มีรายการสินค้า
+                  </p>
+                  <p className="text-xs mt-1 text-slate-400">
+                    กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -398,18 +456,19 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                     <div className="col-span-4">เหตุผลการคืน</div>
                     <div className="col-span-1 text-center">ลบ</div>
                   </div>
-                  
+
                   {items.map((item) => {
                     const product = productMap.get(item.productId);
-                    const currentStock = effectiveStockMap[fromWarehouseId]?.[item.productId] ?? 0;
+                    const currentStock =
+                      effectiveStockMap[fromWarehouseId]?.[item.productId] ?? 0;
                     const isOverStock = item.quantity > currentStock;
-                    
+
                     return (
                       <div
                         key={item.id}
                         className={`p-4 rounded-xl border transition-all shadow-sm group ${
-                          isOverStock 
-                            ? 'bg-red-50 border-red-200' 
+                          isOverStock
+                            ? 'bg-red-50 border-red-200'
                             : 'bg-white border-slate-200 hover:border-indigo-200 hover:shadow-md'
                         }`}
                       >
@@ -424,11 +483,12 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 Code: {product?.id?.substring(0, 8)}
                               </span>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                                ในรถ: {currentStock.toLocaleString()} {product?.unit?.name || '-'}
+                                ในรถ: {currentStock.toLocaleString()}{' '}
+                                {product?.unit?.name || '-'}
                               </span>
                             </div>
                           </div>
-                          
+
                           {/* Quantity Input */}
                           <div className="col-span-2 flex flex-col items-end gap-1">
                             <div className="relative w-full">
@@ -446,7 +506,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                                 }
                                 className={`w-full text-right transition-all h-9 text-sm font-bold pr-8 ${
                                   isOverStock
-                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
                                     : 'border-slate-200 focus:border-indigo-500'
                                 }`}
                               />
@@ -460,22 +520,22 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                               </span>
                             )}
                           </div>
-                          
+
                           {/* Reason Input */}
                           <div className="col-span-4">
-                             <Input
-                                type="text"
-                                placeholder="ระบุเหตุผลการคืน..."
-                                value={item.reason}
-                                onChange={(e) =>
-                                  handleItemChange(
-                                    item.id,
-                                    'reason',
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full text-sm border-slate-200 focus:border-indigo-500 h-9"
-                              />
+                            <Input
+                              type="text"
+                              placeholder="ระบุเหตุผลการคืน..."
+                              value={item.reason}
+                              onChange={(e) =>
+                                handleItemChange(
+                                  item.id,
+                                  'reason',
+                                  e.target.value
+                                )
+                              }
+                              className="w-full text-sm border-slate-200 focus:border-indigo-500 h-9"
+                            />
                           </div>
 
                           {/* Delete Button */}

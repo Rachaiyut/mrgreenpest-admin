@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common';
-import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
+import {
+  Package,
+  PackagePrice,
+  Category,
+  CategoryType,
+  Unit,
+} from '@/src/types';
 import { FormField, Input, Textarea, Select } from '../../common';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
@@ -37,7 +43,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
   useEffect(() => {
     if (pkg) {
       setFormData(pkg);
-      setConditions(pkg.package_price?.map((c) => ({ ...c })) || []);
+      setConditions(pkg.package_prices?.map((c) => ({ ...c })) || []);
     }
   }, [pkg]);
 
@@ -45,10 +51,10 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     const indices: number[] = [];
     conditions.forEach((cond, index) => {
       if (
-        typeof cond.minimum_price === 'number' &&
+        typeof cond.min_price_with_termite === 'number' &&
         typeof cond.price_without_termite === 'number' &&
         typeof cond.price_with_termite === 'number' &&
-        cond.minimum_price >
+        cond.min_price_with_termite >
           Math.min(cond.price_without_termite, cond.price_with_termite)
       ) {
         indices.push(index);
@@ -85,7 +91,10 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at' | 'unit'>,
+    field: keyof Omit<
+      PackagePrice,
+      'id' | 'created_at' | 'updated_at' | 'unit'
+    >,
     value: string
   ) => {
     const newConditions = [...conditions];
@@ -119,7 +128,7 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
             ? formData.visit_limit
             : pkg.visit_limit,
         remark: formData.remark || pkg.remark,
-        package_price: conditions.map((c) => ({
+        package_prices: conditions.map((c) => ({
           id: c.id || '',
           created_at: c.created_at || '',
           updated_at: c.updated_at || '',
@@ -127,7 +136,8 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
           unit_id: c.unit_id || null,
           price_without_termite: c.price_without_termite || 0,
           price_with_termite: c.price_with_termite || 0,
-          minimum_price: c.minimum_price || 0,
+          min_price_with_termite: c.min_price_with_termite || 0,
+          min_price_without_termite: c.min_price_without_termite || 0,
         })),
       };
       onUpdatePackage(updatedPackageData);
@@ -305,7 +315,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                         <Select
                           value={cond.unit_id || cond.unit?.id || ''}
                           onChange={(e) =>
-                            handleConditionChange(index, 'unit_id', e.target.value)
+                            handleConditionChange(
+                              index,
+                              'unit_id',
+                              e.target.value
+                            )
                           }
                           className={`${baseInputClasses} h-9 ${normalInputClasses}`}
                           required
@@ -355,11 +369,11 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
                       <td className="p-1">
                         <Input
                           type="number"
-                          value={cond.minimum_price ?? ''}
+                          value={cond.min_price_with_termite ?? ''}
                           onChange={(e) =>
                             handleConditionChange(
                               index,
-                              'minimum_price',
+                              'min_price_with_termite',
                               e.target.value
                             )
                           }
@@ -400,4 +414,3 @@ export const EditPackageModal: React.FC<EditPackageModalProps> = ({
     </Modal>
   );
 };
-

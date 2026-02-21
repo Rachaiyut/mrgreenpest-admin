@@ -52,11 +52,11 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [Status.Failed]: 'bg-red-100 text-red-700',
     [Status.Cancelled]: 'bg-red-100 text-red-700',
     [Status.Pending]: 'bg-yellow-100 text-yellow-700',
-    'กำลังขนส่ง': 'bg-blue-100 text-blue-700',
+    กำลังขนส่ง: 'bg-blue-100 text-blue-700',
     IN_TRANSIT: 'bg-blue-100 text-blue-700',
     [Status.PendingApproval]: 'bg-orange-100 text-orange-700',
     [Status.Approved]: 'bg-green-100 text-green-700',
-    'รับเข้าแล้ว': 'bg-green-100 text-green-700',
+    รับเข้าแล้ว: 'bg-green-100 text-green-700',
     [Status.Rejected]: 'bg-red-100 text-red-700',
     [Status.Paid]: 'bg-green-100 text-green-700',
     [Status.Overdue]: 'bg-rose-100 text-rose-700',
@@ -64,14 +64,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     [Status.UnderReview]: 'bg-violet-100 text-violet-700',
     [Status.Revise]: 'bg-pink-100 text-pink-700',
     [Status.Closed]: 'bg-zinc-100 text-zinc-700',
-    'ใช้งาน': 'bg-green-100 text-green-700',
-    'ไม่ใช้งาน': 'bg-red-100 text-red-700',
+    ใช้งาน: 'bg-green-100 text-green-700',
+    ไม่ใช้งาน: 'bg-red-100 text-red-700',
     // 'นัดหมายแล้ว': 'bg-blue-100 text-blue-700', // Duplicate of Status.Scheduled
 
     // Assessment Status (English)
     [AsessmentStatus.APPOINTMENT]: 'bg-blue-100 text-blue-700',
     [AsessmentStatus.COMPLETE]: 'bg-green-100 text-green-700',
-
 
     // Invoice Status (English) - Only unique values
     PAID: 'bg-green-100 text-green-700',
@@ -88,28 +87,28 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     (s === JobStatus.Pending
       ? Status.Pending
       : s === JobStatus.InProgress
-      ? Status.InProgress
-      : s === JobStatus.Completed
-      ? Status.Completed
-      : s === JobStatus.Cancelled
-      ? Status.Cancelled
-      : s === JobStatus.Scheduled
-      ? Status.Scheduled
-      : s);
+        ? Status.InProgress
+        : s === JobStatus.Completed
+          ? Status.Completed
+          : s === JobStatus.Cancelled
+            ? Status.Cancelled
+            : s === JobStatus.Scheduled
+              ? Status.Scheduled
+              : s);
 
   const colorKey =
     statusLabels[upper] ||
     (s === JobStatus.Pending
       ? JobStatus.Pending
       : s === JobStatus.InProgress
-      ? JobStatus.InProgress
-      : s === JobStatus.Completed
-      ? JobStatus.Completed
-      : s === JobStatus.Cancelled
-      ? JobStatus.Cancelled
-      : s === JobStatus.Scheduled
-      ? JobStatus.Scheduled
-      : displayLabel);
+        ? JobStatus.InProgress
+        : s === JobStatus.Completed
+          ? JobStatus.Completed
+          : s === JobStatus.Cancelled
+            ? JobStatus.Cancelled
+            : s === JobStatus.Scheduled
+              ? JobStatus.Scheduled
+              : displayLabel);
 
   return (
     <span

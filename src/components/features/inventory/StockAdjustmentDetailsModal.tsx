@@ -57,7 +57,7 @@ export const StockAdjustmentDetailsModal: React.FC<
             <div>
               <dt className="font-medium text-slate-500">วันที่</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(adjustment.createdAt)}
+                {formatThaiDate(adjustment.created_at)}
               </dd>
             </div>
             <div>
@@ -67,7 +67,7 @@ export const StockAdjustmentDetailsModal: React.FC<
             <div>
               <dt className="font-medium text-slate-500">คลังสินค้า</dt>
               <dd className="mt-1 text-slate-900">
-                {warehouseMap.get(adjustment.warehouseId)}
+                {warehouseMap.get(adjustment.warehouse_id)}
               </dd>
             </div>
           </dl>
@@ -103,11 +103,10 @@ export const StockAdjustmentDetailsModal: React.FC<
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {adjustment.items.map((item) => {
-                  const product = productMap.get(item.productId);
-                  const difference =
-                    item.adjustedQuantity - item.originalQuantity;
+                  const product = productMap.get(item.product_id);
+                  const difference = item.qty_adjustment;
                   return (
-                    <tr key={item.productId}>
+                    <tr key={item.product_id}>
                       <td className="px-4 py-3">
                         <p className="font-medium text-slate-900">
                           {product?.name || 'N/A'}
@@ -117,10 +116,10 @@ export const StockAdjustmentDetailsModal: React.FC<
                         </p>
                       </td>
                       <td className="px-4 py-3 text-center text-slate-700">
-                        {item.originalQuantity}
+                        {item.qty_before}
                       </td>
                       <td className="px-4 py-3 text-center font-semibold text-slate-800">
-                        {item.adjustedQuantity}
+                        {item.qty_after}
                       </td>
                       <td
                         className={`px-4 py-3 text-center font-semibold ${difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-slate-700'}`}
@@ -128,7 +127,7 @@ export const StockAdjustmentDetailsModal: React.FC<
                         {difference > 0 ? `+${difference}` : difference}
                       </td>
                       <td className="px-4 py-3 text-center text-slate-700">
-                        {product?.unit}
+                        {product?.unit?.name || '-'}
                       </td>
                       <td className="px-4 py-3 text-slate-700">
                         {item.reason || '-'}
@@ -144,5 +143,3 @@ export const StockAdjustmentDetailsModal: React.FC<
     </Modal>
   );
 };
-
-

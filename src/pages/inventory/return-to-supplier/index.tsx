@@ -91,13 +91,13 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
     }
 
     return reversedReturns.filter((r) => {
-      const supplierName = (r.supplierId && supplierMap[r.supplierId]) || '';
-      const dateStr = formatThaiDate(r.createdAt);
+      const supplierName = (r.supplier_id && supplierMap[r.supplier_id]) || '';
+      const dateStr = formatThaiDate(r.created_at);
 
       return (
         r.id.toLowerCase().includes(lowercasedQuery) ||
-        (r.referenceId &&
-          r.referenceId.toLowerCase().includes(lowercasedQuery)) ||
+        (r.reference_id &&
+          r.reference_id.toLowerCase().includes(lowercasedQuery)) ||
         supplierName.toLowerCase().includes(lowercasedQuery) ||
         dateStr.includes(lowercasedQuery) ||
         r.status.toLowerCase().includes(lowercasedQuery)
@@ -157,8 +157,8 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
         // remarks: remarks, // Type ReturnToSupplier uses remarks directly on object, similar to GoodsReceipt? Yes. But ApprovalModal passes remark string.
         // Assuming type has remarks. Yes defined in type.
         remarks: remarks || itemToUpdate.remarks, // Keep original if empty? Or overwrite? Usually overwrite or append. Mocking overwrite.
-        approvedBy: 'ผู้ดูแลระบบ',
-        updatedBy: 'ผู้ดูแลระบบ',
+        approved_by: 'ผู้ดูแลระบบ',
+        updated_by: 'ผู้ดูแลระบบ',
       });
     }
     setIsApprovalModalOpen(false);
@@ -174,7 +174,7 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
         ...itemToUpdate,
         status: Status.Cancelled,
         remarks: 'ยกเลิกโดยผู้ใช้',
-        updatedBy: 'ผู้ดูแลระบบ',
+        updated_by: 'ผู้ดูแลระบบ',
       });
     }
     setOpenDropdownId(null);
@@ -375,16 +375,16 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
                       {r.id}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {r.referenceId || '-'}
+                      {r.reference_id || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {formatThaiDate(r.createdAt)}
+                      {formatThaiDate(r.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {warehouseMap[r.warehouseId] || '-'}
+                      {warehouseMap[r.warehouse_id] || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {r.supplierId ? supplierMap[r.supplierId] : '-'}
+                      {r.supplier_id ? supplierMap[r.supplier_id] : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <StatusBadge status={r.status} />
@@ -467,5 +467,3 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
 };
 
 export default ReturnToSupplierPage;
-
-

@@ -7,15 +7,15 @@ import { WarehouseApi } from '@/src/api/warehouse';
 import { TransferApi } from '@/src/api/transfer';
 import { UserApi } from '@/src/api/user';
 import { WarehouseType, TransferStatus } from '@/src/types/enums/inventory';
-import { 
-  PlusIcon, 
-  TrashIcon, 
-  TruckIcon, 
-  CalendarIcon, 
-  ArrowRightIcon, 
+import {
+  PlusIcon,
+  TrashIcon,
+  TruckIcon,
+  CalendarIcon,
+  ArrowRightIcon,
   PackageIcon,
   DocumentTextIcon,
-  UserIcon
+  UserIcon,
 } from '../../../assets/icons/Icons';
 import { message } from 'antd';
 
@@ -39,7 +39,7 @@ export const ReturnToMainWarehouseModal: React.FC<
   const [items, setItems] = useState<TransferItemState[]>([]);
   const [sourceWarehouseId, setSourceWarehouseId] = useState<string>('');
   const [destinationWarehouseId, setDestinationWarehouseId] = useState('');
-  
+
   const [mainWarehouses, setMainWarehouses] = useState<
     { value: string; label: string }[]
   >([]);
@@ -47,14 +47,18 @@ export const ReturnToMainWarehouseModal: React.FC<
     { value: string; label: string }[]
   >([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
-  
+  const [userOptions, setUserOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+
   const [stockMap, setStockMap] = useState<Map<string, number>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [remark, setRemark] = useState('');
-  const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0]);
-  
+  const [returnDate, setReturnDate] = useState(
+    new Date().toISOString().split('T')[0]
+  );
+
   // People State
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
@@ -86,28 +90,34 @@ export const ReturnToMainWarehouseModal: React.FC<
   useEffect(() => {
     if (isOpen) {
       setIsLoading(true);
-      
+
       const fetchData = async () => {
         try {
           const [mainRes, vehicleRes, usersRes] = await Promise.all([
-            WarehouseApi.getWarehouses({ type: WarehouseType.MAIN, limit: 1000 }),
-            WarehouseApi.getWarehouses({ type: WarehouseType.VEHICLE, limit: 1000 }),
-            UserApi.getAll({ limit: 1000 })
+            WarehouseApi.getWarehouses({
+              type: WarehouseType.MAIN,
+              limit: 1000,
+            }),
+            WarehouseApi.getWarehouses({
+              type: WarehouseType.VEHICLE,
+              limit: 1000,
+            }),
+            UserApi.getAll({ limit: 1000 }),
           ]);
 
           setMainWarehouses(
             mainRes.data.map((w) => ({ value: w.id, label: w.name }))
           );
-          
+
           setVehicleWarehouses(
             vehicleRes.data.map((w) => ({ value: w.id, label: w.name }))
           );
 
           if (usersRes && Array.isArray((usersRes as any).data)) {
-             setUsers((usersRes as any).data);
+            setUsers((usersRes as any).data);
           } else if (Array.isArray(usersRes)) {
-             // Fallback if structure is different
-             setUsers(usersRes as any);
+            // Fallback if structure is different
+            setUsers(usersRes as any);
           }
 
           // Auto-select destination if only one
@@ -123,7 +133,7 @@ export const ReturnToMainWarehouseModal: React.FC<
       };
 
       fetchData();
-      
+
       // Reset Form
       setItems([]);
       setRemark('');
@@ -152,9 +162,9 @@ export const ReturnToMainWarehouseModal: React.FC<
           const stocks = Array.isArray(res) ? res : res.data || [];
           const map = new Map<string, number>();
           stocks.forEach((s: any) => {
-             const pId = s.product_id || s.product?.id;
-             const qty = Number(s.quantity);
-             if(pId) map.set(pId, qty);
+            const pId = s.product_id || s.product?.id;
+            const qty = Number(s.quantity);
+            if (pId) map.set(pId, qty);
           });
           setStockMap(map);
         })
@@ -189,7 +199,7 @@ export const ReturnToMainWarehouseModal: React.FC<
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     // Prevent default form submission if wrapped in form
     if (e && e.preventDefault) e.preventDefault();
-    
+
     if (!sourceWarehouseId) {
       message.error('กรุณาเลือกต้นทาง (รถ/คลังย่อย)');
       return;
@@ -203,10 +213,10 @@ export const ReturnToMainWarehouseModal: React.FC<
       return;
     }
     if (!requesterId) {
-        message.error('กรุณาระบุผู้เบิก (Requester)');
-        return;
+      message.error('กรุณาระบุผู้เบิก (Requester)');
+      return;
     }
-    
+
     // Validate items
     for (const item of items) {
       if (!item.productId) {
@@ -220,7 +230,9 @@ export const ReturnToMainWarehouseModal: React.FC<
       const currentStock = stockMap.get(item.productId) || 0;
       if (item.quantity > currentStock) {
         const prodName = productMap.get(item.productId)?.name || item.productId;
-        message.error(`สินค้า ${prodName} มีจำนวนไม่พอ (คงเหลือ: ${currentStock})`);
+        message.error(
+          `สินค้า ${prodName} มีจำนวนไม่พอ (คงเหลือ: ${currentStock})`
+        );
         return;
       }
     }
@@ -228,11 +240,15 @@ export const ReturnToMainWarehouseModal: React.FC<
     setIsSubmitting(true);
     try {
       // Prepare remark with requester/recipient info
-      const requester = users.find(u => u.id === requesterId);
-      const recipient = users.find(u => u.id === recipientId);
-      const requesterName = requester ? `${requester.first_name} ${requester.last_name}` : requesterId;
-      const recipientName = recipient ? `${recipient.first_name} ${recipient.last_name}` : '';
-      
+      const requester = users.find((u) => u.id === requesterId);
+      const recipient = users.find((u) => u.id === recipientId);
+      const requesterName = requester
+        ? `${requester.first_name} ${requester.last_name}`
+        : requesterId;
+      const recipientName = recipient
+        ? `${recipient.first_name} ${recipient.last_name}`
+        : '';
+
       const fullRemark = `[คืนสินค้า] ผู้ขอคืน: ${requesterName}${recipientName ? `, ผู้รับ: ${recipientName}` : ''}. ${remark}`;
 
       await TransferApi.create({
@@ -303,17 +319,20 @@ export const ReturnToMainWarehouseModal: React.FC<
       }
     >
       <div className="flex flex-col gap-6">
-        
         {/* Logistics Header Card */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
               <TruckIcon className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
+            <h3 className="text-base font-semibold text-slate-800">
+              การเคลื่อนย้ายสินค้า
+            </h3>
             <div className="ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
               <CalendarIcon className="w-4 h-4 text-slate-400" />
-              <span className="text-xs text-slate-500 font-medium">วันที่คืน:</span>
+              <span className="text-xs text-slate-500 font-medium">
+                วันที่คืน:
+              </span>
               <input
                 type="date"
                 value={returnDate}
@@ -323,7 +342,7 @@ export const ReturnToMainWarehouseModal: React.FC<
               />
             </div>
           </div>
-          
+
           <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
             <div className="flex-1 w-full">
               <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
@@ -337,12 +356,12 @@ export const ReturnToMainWarehouseModal: React.FC<
                 className="w-full bg-white shadow-sm border-slate-200"
               />
             </div>
-            
+
             <div className="flex items-center justify-center pt-6 text-slate-300">
               <ArrowRightIcon className="w-5 h-5 hidden md:block text-slate-400" />
               <ArrowRightIcon className="w-5 h-5 rotate-90 md:hidden text-slate-400" />
             </div>
-            
+
             <div className="flex-1 w-full">
               <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
                 ไปยัง (คลังหลัก) <span className="text-red-500">*</span>
@@ -366,8 +385,12 @@ export const ReturnToMainWarehouseModal: React.FC<
                 <PackageIcon className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-800">รายการสินค้า</h3>
-                <p className="text-xs text-slate-500">สินค้าที่ต้องการคืนเข้าคลัง</p>
+                <h3 className="text-base font-semibold text-slate-800">
+                  รายการสินค้า
+                </h3>
+                <p className="text-xs text-slate-500">
+                  สินค้าที่ต้องการคืนเข้าคลัง
+                </p>
               </div>
             </div>
             <Button
@@ -386,8 +409,12 @@ export const ReturnToMainWarehouseModal: React.FC<
                 <div className="bg-slate-50 p-4 rounded-full mb-3 border border-dashed border-slate-200 animate-pulse">
                   <TruckIcon className="w-8 h-8 text-slate-300" />
                 </div>
-                <p className="font-medium text-slate-600 text-sm">ยังไม่มีรายการสินค้า</p>
-                <p className="text-xs mt-1 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง</p>
+                <p className="font-medium text-slate-600 text-sm">
+                  ยังไม่มีรายการสินค้า
+                </p>
+                <p className="text-xs mt-1 text-slate-400">
+                  กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -396,7 +423,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                   <div className="col-span-3 text-right">จำนวน</div>
                   <div className="col-span-3 text-center">จัดการ</div>
                 </div>
-                
+
                 {items.map((item) => {
                   const currentStock = stockMap.get(item.productId) || 0;
                   const product = productMap.get(item.productId);
@@ -407,22 +434,23 @@ export const ReturnToMainWarehouseModal: React.FC<
                     >
                       <div className="grid grid-cols-12 gap-4 items-center">
                         <div className="col-span-6">
-                           <SearchableSelect
-                              options={productOptions}
-                              value={item.productId}
-                              onChange={(val) =>
-                                handleItemChange(item.id, 'productId', val)
-                              }
-                              placeholder="เลือกสินค้า"
-                              className="w-full text-sm font-bold"
-                            />
+                          <SearchableSelect
+                            options={productOptions}
+                            value={item.productId}
+                            onChange={(val) =>
+                              handleItemChange(item.id, 'productId', val)
+                            }
+                            placeholder="เลือกสินค้า"
+                            className="w-full text-sm font-bold"
+                          />
                           <div className="flex flex-wrap gap-2 mt-2">
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                              Stock ในรถ: {currentStock.toLocaleString()} {product?.unit?.name || 'หน่วย'}
+                              Stock ในรถ: {currentStock.toLocaleString()}{' '}
+                              {product?.unit?.name || 'หน่วย'}
                             </span>
                           </div>
                         </div>
-                        
+
                         <div className="col-span-3 flex flex-col items-end gap-1">
                           <div className="relative">
                             <Input
@@ -438,8 +466,8 @@ export const ReturnToMainWarehouseModal: React.FC<
                                 )
                               }
                               className={`w-28 text-right transition-all h-9 text-sm font-bold pr-8 ${
-                                item.quantity > currentStock 
-                                  ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                item.quantity > currentStock
+                                  ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
                                   : 'border-slate-200 focus:border-indigo-500'
                               }`}
                             />
@@ -453,7 +481,7 @@ export const ReturnToMainWarehouseModal: React.FC<
                             </span>
                           )}
                         </div>
-                        
+
                         <div className="col-span-3 flex justify-center">
                           <button
                             type="button"
@@ -514,18 +542,17 @@ export const ReturnToMainWarehouseModal: React.FC<
             ข้อมูลเพิ่มเติม
           </h3>
           <div>
-             <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
-               หมายเหตุ
-             </label>
-             <Input
-               value={remark}
-               onChange={(e) => setRemark(e.target.value)}
-               placeholder="ระบุสาเหตุการคืนสินค้า (ถ้ามี)"
-               className="w-full border border-slate-300 rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
-             />
+            <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+              หมายเหตุ
+            </label>
+            <Input
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+              placeholder="ระบุสาเหตุการคืนสินค้า (ถ้ามี)"
+              className="w-full border border-slate-300 rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
+            />
           </div>
         </div>
-
       </div>
     </Modal>
   );

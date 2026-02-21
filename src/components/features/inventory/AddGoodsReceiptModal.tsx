@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { PlusIcon,
+import {
+  PlusIcon,
   TrashIcon,
   DocumentTextIcon,
   TruckIcon,
@@ -89,10 +90,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     );
   };
 
-  const createReceiptObject = (
-    status: Status,
-    formData: FormData
-  ) => {
+  const createReceiptObject = (status: Status, formData: FormData) => {
     // Map items to backend DTO format (snake_case)
     const receiptItems = items.map((item) => ({
       product_id: item.productId,
@@ -201,7 +199,10 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
-                <FormField label="รับเข้าคลัง (Destination)" htmlFor="warehouse">
+                <FormField
+                  label="รับเข้าคลัง (Destination)"
+                  htmlFor="warehouse"
+                >
                   <SearchableSelect
                     value={selectedWarehouseId}
                     onChange={setSelectedWarehouseId}
@@ -370,7 +371,10 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                             <PlusIcon className="h-6 w-6 text-slate-400" />
                           </div>
                           <p className="font-medium">ยังไม่มีรายการสินค้า</p>
-                          <p className="text-sm">กรุณาเลือกคลังและกดปุ่ม "เพิ่มสินค้า" เพื่อเริ่มรายการ</p>
+                          <p className="text-sm">
+                            กรุณาเลือกคลังและกดปุ่ม "เพิ่มสินค้า"
+                            เพื่อเริ่มรายการ
+                          </p>
                         </div>
                       </td>
                     </tr>
@@ -392,4 +396,3 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     </Fragment>
   );
 };
-

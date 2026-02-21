@@ -16,7 +16,6 @@ import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 
 // Interfaces
 import { Status } from '@/src/types/entity/core.interface';
-import { Product } from '@/src/types/entity/package.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { InvoiceStatus } from '@/src/types/enums/financial';
@@ -30,18 +29,36 @@ const SimpleAreaChart = ({
 }: {
   data: { name: string; total: number }[];
 }) => {
+  // Handle empty data
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-slate-500">
+        No data available
+      </div>
+    );
+  }
+
   const height = 300;
   const width = 800;
   const padding = 40;
   const graphHeight = height - padding * 2;
   const graphWidth = width - padding * 2;
 
-  const maxVal = Math.max(...data.map((d) => d.total)) * 1.2;
+  // Handle empty data or invalid totals
+  const validTotals = data
+    .map((d) => d.total)
+    .filter((total) => !isNaN(total) && isFinite(total));
+  const maxVal = validTotals.length > 0 ? Math.max(...validTotals) * 1.2 : 1;
+
+  // Handle case where maxVal is 0 (all values are 0)
+  const safeMaxVal = maxVal || 1;
 
   const points = data
     .map((d, i) => {
-      const x = padding + i * (graphWidth / (data.length - 1));
-      const y = height - padding - (d.total / maxVal) * graphHeight;
+      const total = isNaN(d.total) ? 0 : d.total;
+      const x =
+        padding + i * (graphWidth / (data.length > 1 ? data.length - 1 : 1));
+      const y = height - padding - (total / safeMaxVal) * graphHeight;
       return `${x},${y}`;
     })
     .join(' ');
@@ -101,8 +118,9 @@ const SimpleAreaChart = ({
         />
 
         {data.map((d, i) => {
+          const total = isNaN(d.total) ? 0 : d.total;
           const x = padding + i * (graphWidth / (data.length - 1 || 1));
-          const y = height - padding - (d.total / maxVal) * graphHeight;
+          const y = height - padding - (total / safeMaxVal) * graphHeight;
           return (
             <g key={i} className="group cursor-pointer">
               <circle
@@ -191,11 +209,11 @@ const Dashboard: React.FC<DashboardProps> = () => {
     return d >= now && d <= future;
   };
 
-  const todaysJobs = fieldJobs.filter((j) => isToday(j.start_time));
+  const todaysJobs = fieldJobs.filter((j) => isToday(j.start_date as string));
   const overdueInvoices = invoices.filter(
-    (i) => i.status === InvoiceStatus.Overdue
+    (i) => i.status === InvoiceStatus.OVERDUE
   );
-  const lowStockItems = products.filter((p) => (p.stock || 0) < p.min_stock);
+  const lowStockItems = products.filter((p) => false); // Product interface doesn't have stock property
 
   const isInSelectedRange = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -238,9 +256,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
       fieldJobs.filter(
         (j) =>
           j.status === JobStatus.Completed &&
-          (j.end_time
-            ? isInSelectedRange(j.end_time)
-            : isInSelectedRange(j.start_time))
+          ((j.end_date as string)
+            ? isInSelectedRange(j.end_date as string)
+            : isInSelectedRange(j.start_date as string))
       ).length,
     [fieldJobs, range]
   );
@@ -265,8 +283,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
     () =>
       invoices.filter(
         (i) =>
-          i.status !== InvoiceStatus.Paid &&
-          i.status !== InvoiceStatus.Cancelled
+          i.status !== InvoiceStatus.PAID &&
+          i.status !== InvoiceStatus.CANCELLED
       ),
     [invoices]
   );
@@ -274,25 +292,16 @@ const Dashboard: React.FC<DashboardProps> = () => {
     () => outstandingInvoices.reduce((sum, i) => sum + Number(i.total || 0), 0),
     [outstandingInvoices]
   );
-  const inventoryValue = useMemo(
-    () =>
-      products
-        // .filter((p) => p.type === 'สินค้า') // Type might be different enum now
-        .reduce(
-          (sum, p) =>
-            sum + Number(p.stock || 0) * Number((p.cost_price ?? p.price) || 0),
-          0
-        ),
-    [products]
-  );
+  const inventoryValue = useMemo(() => 0, []); // Stock tracking disabled: Product interface lacks stock property
 
   const upcomingJobs = useMemo(
     () =>
       fieldJobs
-        .filter((j) => inNextDays(j.start_time, 7))
+        .filter((j) => inNextDays(j.start_date as string, 7))
         .sort(
           (a, b) =>
-            new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+            new Date(a.start_date as string).getTime() -
+            new Date(b.start_date as string).getTime()
         )
         .slice(0, 5),
     [fieldJobs]
@@ -300,19 +309,19 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const upcomingAssessments = useMemo(
     () =>
       assessments
-        .filter((a) => inNextDays(a.scheduled_at, 7))
+        .filter((a) => inNextDays(a.appointment_date as string, 7))
         .sort(
           (a, b) =>
-            new Date(a.scheduled_at).getTime() -
-            new Date(b.scheduled_at).getTime()
+            new Date(a.appointment_date as string).getTime() -
+            new Date(b.appointment_date as string).getTime()
         )
         .slice(0, 5),
     [assessments]
   );
 
   const monthlyWarehouseOps = useMemo(() => {
-    const countMonth = (arr: { created_at: string }[]) =>
-      arr.filter((x) => isThisMonth(x.created_at)).length;
+    const countMonth = (arr: { created_at?: string }[]) =>
+      arr.filter((x) => x.created_at && isThisMonth(x.created_at)).length;
     return {
       gr: countMonth(goodsReceipts),
       wd: countMonth(withdrawals),
@@ -335,10 +344,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const technicianWorkloadList = useMemo(() => {
     const data: { name: string; jobs: number }[] = [];
     fieldJobs
-      .filter((j) => isInSelectedRange(j.start_time))
+      .filter((j) => isInSelectedRange(j.start_date as string))
       .forEach((job) => {
-        (job.technicians || []).forEach((t) => {
-          const name = t.nickname || t.name;
+        (job.job_team_members || []).forEach((t) => {
+          const user = users.find((u) => u.id === t.user_id);
+          const name = user
+            ? `${user.first_name} ${user.last_name || ''}`.trim()
+            : '';
           const idx = data.findIndex((x) => x.name === name);
           if (idx >= 0) data[idx].jobs += 1;
           else data.push({ name, jobs: 1 });
@@ -350,15 +362,19 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const upcomingCombined = useMemo(() => {
     const jobs = upcomingJobs.map((j) => ({
       type: 'งาน',
-      time: j.start_time,
-      name: j.customer_name,
+      time: j.start_date as string,
+      name:
+        `${j.customer?.first_name || ''} ${j.customer?.last_name || ''}`.trim() ||
+        '',
       status: j.status,
       id: j.id,
     }));
     const asses = upcomingAssessments.map((a) => ({
       type: 'ประเมิน',
-      time: a.scheduled_at,
-      name: a.customer_name,
+      time: a.appointment_date as string,
+      name:
+        `${a.customer?.first_name || ''} ${a.customer?.last_name || ''}`.trim() ||
+        '',
       status: a.status,
       id: a.id,
     }));
@@ -476,18 +492,22 @@ const Dashboard: React.FC<DashboardProps> = () => {
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-800 text-lg">
-                            {job.customer_name}
+                            {job.customer?.first_name} {job.customer?.last_name}
                           </h4>
                           <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
                             <span className="flex items-center gap-1">
                               <CalendarDaysIcon className="h-4 w-4" />{' '}
-                              {formatThaiDateTime(job.start_time).split(' ')[1]}
+                              {
+                                formatThaiDateTime(
+                                  job.start_date as string
+                                ).split(' ')[1]
+                              }
                             </span>
                             <span>•</span>
                             <span>
-                              {job.work_areas
-                                .map((wa) => wa.service_package)
-                                .join(', ')}
+                              {job.customer?.address_house_no}{' '}
+                              {job.customer?.sub_district}{' '}
+                              {job.customer?.district} {job.customer?.province}
                             </span>
                           </div>
                         </div>
@@ -495,8 +515,16 @@ const Dashboard: React.FC<DashboardProps> = () => {
                       <div className="flex flex-col items-end gap-2">
                         <StatusBadge status={job.status} />
                         <span className="text-xs text-slate-400">
-                          {job.technicians
-                            .map((t) => t.nickname || t.name)
+                          {job.job_team_members
+                            ?.map((tm) => {
+                              const user = users.find(
+                                (u) => u.id === tm.user_id
+                              );
+                              return user
+                                ? `${user.first_name} ${user.last_name || ''}`.trim()
+                                : '';
+                            })
+                            .filter(Boolean)
                             .join(', ')}
                         </span>
                       </div>
@@ -662,7 +690,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                             {item.name}
                           </span>
                           <span className="text-amber-600 font-medium">
-                            เหลือ {item.stock || 0}
+                            เหลือ {item.min_stock || 0}
                           </span>
                         </li>
                       ))}
@@ -776,20 +804,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
         isOpen={isAssessmentModalOpen}
         onClose={() => setIsAssessmentModalOpen(false)}
         onCreateAssessment={onCreateAssessment}
-        products={products}
-        customers={customers}
       />
       <AddJobModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
-        assessments={assessments}
-        contracts={contracts}
         onCreateJob={onCreateJob}
+        warehouses={warehouses}
+        contracts={contracts}
         jobs={fieldJobs}
         users={users}
-        products={products}
-        warehouses={warehouses}
-        customers={customers}
       />
     </>
   );

@@ -49,7 +49,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
         setFetchedProducts(res.data);
       }
     } catch (error) {
-      console.error("Failed to fetch products", error);
+      console.error('Failed to fetch products', error);
     } finally {
       setIsLoading(false);
     }
@@ -65,30 +65,25 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, isOpen, disableFetch]);
 
-  const availableProducts = useMemo(
-    () => {
-      let source = products;
+  const availableProducts = useMemo(() => {
+    let source = products;
 
-      // If fetching is enabled, use fetched products. 
-      // If disabled, use passed 'products' and filter locally by searchTerm.
-      if (!disableFetch) {
-        source = fetchedProducts.length > 0 ? fetchedProducts : products;
-      } else if (searchTerm) {
-        const lowerTerm = searchTerm.toLowerCase();
-        source = products.filter(p =>
+    // If fetching is enabled, use fetched products.
+    // If disabled, use passed 'products' and filter locally by searchTerm.
+    if (!disableFetch) {
+      source = fetchedProducts.length > 0 ? fetchedProducts : products;
+    } else if (searchTerm) {
+      const lowerTerm = searchTerm.toLowerCase();
+      source = products.filter(
+        (p) =>
           (p.name && p.name.toLowerCase().includes(lowerTerm)) ||
           (p.code && p.code.toLowerCase().includes(lowerTerm)) ||
           (p.id && p.id.toLowerCase().includes(lowerTerm))
-        );
-      }
-
-      return source.filter(
-        (p) =>
-          !existingProductIds.includes(p.id)
       );
-    },
-    [fetchedProducts, existingProductIds, products, disableFetch, searchTerm]
-  );
+    }
+
+    return source.filter((p) => !existingProductIds.includes(p.id));
+  }, [fetchedProducts, existingProductIds, products, disableFetch, searchTerm]);
 
   const handleToggleSelection = (productId: string) => {
     setSelectedIds((prev) => {
@@ -196,43 +191,44 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     กำลังโหลดข้อมูล...
                   </td>
                 </tr>
-              ) : availableProducts.map((product) => (
-                <tr
-                  key={product.id}
-                  className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
-                  onClick={() => handleToggleSelection(product.id)}
-                >
-                  <td className="px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(product.id)}
-                      readOnly
-                      className="pointer-events-none"
-                    />
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                    {product.code}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
-                    {product.code}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-600">
-                    {product.name}
-                  </td>
-                  {stockMap && (
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 text-right font-medium">
-                      {stockMap.get(product.id) || 0}
+              ) : (
+                availableProducts.map((product) => (
+                  <tr
+                    key={product.id}
+                    className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
+                    onClick={() => handleToggleSelection(product.id)}
+                  >
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(product.id)}
+                        readOnly
+                        className="pointer-events-none"
+                      />
                     </td>
-                  )}
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                    {product.unit?.name || '-'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
-                    ฿
-                    {product.cost_price}
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                      {product.code}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                      {product.code}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {product.name}
+                    </td>
+                    {stockMap && (
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 text-right font-medium">
+                        {stockMap.get(product.id) || 0}
+                      </td>
+                    )}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      {product.unit?.name || '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
+                      ฿{product.cost_price}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
           {!isLoading && availableProducts.length === 0 && (

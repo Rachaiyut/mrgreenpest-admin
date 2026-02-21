@@ -8,7 +8,9 @@ import { AuthService } from './auth';
 class CustomerService extends AuthService {
   protected path = '/customer';
 
-  async getCustomers(query?: CustomerQuery): Promise<IBaseResponseArray<Customer>> {
+  async getCustomers(
+    query?: CustomerQuery
+  ): Promise<IBaseResponseArray<Customer>> {
     const res = await this.http.get<IBaseResponseArray<Customer>>(
       `${this.path}`,
       {
@@ -17,8 +19,10 @@ class CustomerService extends AuthService {
     );
     return res.data;
   }
-  
-  async getCustomersService(query?: CustomerQuery): Promise<IBaseResponseArray<Customer>> {
+
+  async getCustomersService(
+    query?: CustomerQuery
+  ): Promise<IBaseResponseArray<Customer>> {
     const res = await this.http.get<IBaseResponseArray<Customer>>(
       `${this.path}/service`,
       {
@@ -27,7 +31,6 @@ class CustomerService extends AuthService {
     );
     return res.data;
   }
-
 
   async getCustomerById(id: string): Promise<Customer> {
     const res = await this.http.get<Customer>(`${this.path}/${id}`);
@@ -56,4 +59,3 @@ class CustomerService extends AuthService {
 }
 
 export const CustomerApi = new CustomerService();
-

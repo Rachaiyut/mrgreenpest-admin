@@ -37,7 +37,7 @@ const Customers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(false);
-  
+
   const [sortBy, setSortBy] = useState<string>('code');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,7 +58,9 @@ const Customers: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState(undefined);
-  const [typeFilter, setTypeFilter] = useState<SupplierType | undefined>(undefined);
+  const [typeFilter, setTypeFilter] = useState<SupplierType | undefined>(
+    undefined
+  );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null
@@ -336,7 +338,7 @@ const Customers: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       <AddCustomerModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -358,8 +360,8 @@ const Customers: React.FC = () => {
         onClose={() => setIsContractsModalOpen(false)}
         customer={selectedCustomer}
         contracts={contracts}
-        onCreateContract={() => { }}
-        onCreateJob={() => { }}
+        onCreateContract={() => {}}
+        onCreateJob={() => {}}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
@@ -381,4 +383,3 @@ const Customers: React.FC = () => {
 };
 
 export default Customers;
-

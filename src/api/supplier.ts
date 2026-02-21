@@ -52,4 +52,3 @@ class SupplierService extends AuthService {
 }
 
 export const SupplierApi = new SupplierService();
-

@@ -244,4 +244,3 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
     </Modal>
   );
 };
-

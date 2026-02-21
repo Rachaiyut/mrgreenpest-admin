@@ -1,4 +1,3 @@
-
 export const validateCitizenId = (id: string): string | null => {
   if (!id) return 'กรุณากรอกเลขบัตรประชาชน';
   if (!/^\d{13}$/.test(id)) {

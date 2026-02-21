@@ -37,7 +37,12 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const { goodsReceipts: receipts, warehouses, suppliers, products } = useData();
+  const {
+    goodsReceipts: receipts,
+    warehouses,
+    suppliers,
+    products,
+  } = useData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -91,12 +96,14 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       const receiptDate = formatThaiDate(receipt.created_at);
 
       return (
-        (receipt.code && receipt.code.toLowerCase().includes(lowercasedQuery)) ||
+        (receipt.code &&
+          receipt.code.toLowerCase().includes(lowercasedQuery)) ||
         (receipt.receipt_no &&
           receipt.receipt_no.toLowerCase().includes(lowercasedQuery)) ||
         supplierName.toLowerCase().includes(lowercasedQuery) ||
         receiptDate.includes(lowercasedQuery) ||
-        (receipt.status && receipt.status.toLowerCase().includes(lowercasedQuery))
+        (receipt.status &&
+          receipt.status.toLowerCase().includes(lowercasedQuery))
       );
     });
   }, [reversedReceipts, searchQuery, supplierMap]);
@@ -149,8 +156,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
     if (receiptToUpdate) {
       onUpdateReceipt({
         ...receiptToUpdate,
-        status:
-          approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
+        status: approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
         remarks: remarks,
       } as any);
     }
@@ -213,7 +219,10 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       </a>,
     ];
 
-    if (selectedReceipt.status === 'PENDING' || selectedReceipt.status === Status.PendingApproval) {
+    if (
+      selectedReceipt.status === 'PENDING' ||
+      selectedReceipt.status === Status.PendingApproval
+    ) {
       actions.push(
         <a
           key="approve"
@@ -374,7 +383,9 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {/* Try to use nested warehouse name if available, otherwise map id */}
-                      {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
+                      {(receipt as any).warehouse?.name ||
+                        warehouseMap[receipt.warehouse_id] ||
+                        '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                       {receipt.supplier_id
@@ -382,8 +393,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                         : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
-                        <StatusBadge status={receipt.status} />
-                      </td>
+                      <StatusBadge status={receipt.status} />
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button
@@ -461,5 +472,3 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
 };
 
 export default GoodsReceipt;
-
-

@@ -7,7 +7,10 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, access }: ProtectedRouteProps) => {
   const permissionsRaw = localStorage.getItem('permissions');
-  const permissions = permissionsRaw && permissionsRaw !== 'undefined' ? JSON.parse(permissionsRaw) : [];
+  const permissions =
+    permissionsRaw && permissionsRaw !== 'undefined'
+      ? JSON.parse(permissionsRaw)
+      : [];
 
   if (!access) {
     // If no access prop is provided, allow access

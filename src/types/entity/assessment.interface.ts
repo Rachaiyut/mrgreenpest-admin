@@ -25,8 +25,8 @@ export interface AssessmentWorkAreaCategory extends IBase {
 export interface AssessmentWorkArea extends IBase {
   assessment_id: string;
   package_price_id?: string;
-  package_price?: number; 
-  package_type: PackageType,
+  package_price?: number;
+  package_type: PackageType;
   building_type: string;
   area_name: string;
   service_system?: ServiceSystem;
@@ -74,4 +74,3 @@ export interface AssessmentInstallment extends IBase {
   note?: string;
   due_date?: string | Date;
 }
-

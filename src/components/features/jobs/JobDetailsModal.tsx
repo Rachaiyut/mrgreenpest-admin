@@ -1,13 +1,19 @@
-import React, { useMemo, FC, ReactNode, ReactElement, cloneElement } from 'react';
+import React, {
+  useMemo,
+  FC,
+  ReactNode,
+  ReactElement,
+  cloneElement,
+} from 'react';
 import { Modal } from '../../common/Modal';
 import { FieldJob } from '@/src/types/entity/field-job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { StatusBadge } from '../../common/StatusBadge';
-import { 
-  GoogleMapIcon, 
-  DocumentTextIcon, 
-  MapIcon, 
+import {
+  GoogleMapIcon,
+  DocumentTextIcon,
+  MapIcon,
   UserGroupIcon,
   TechnicianIcon,
   NewWarehouseIcon,
@@ -26,18 +32,23 @@ interface JobDetailsModalProps {
   warehouses: Warehouse[];
 }
 
-const DetailItem: FC<{ label: string; value: ReactNode; fullWidth?: boolean }> = ({
-  label,
-  value,
-  fullWidth = false,
-}) => (
+const DetailItem: FC<{
+  label: string;
+  value: ReactNode;
+  fullWidth?: boolean;
+}> = ({ label, value, fullWidth = false }) => (
   <div className={`${fullWidth ? 'col-span-full' : ''}`}>
     <dt className="text-xs font-medium text-slate-500 mb-1">{label}</dt>
-    <dd className="text-sm font-medium text-slate-900 break-words">{value || '-'}</dd>
+    <dd className="text-sm font-medium text-slate-900 break-words">
+      {value || '-'}
+    </dd>
   </div>
 );
 
-const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
+const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({
+  icon,
+  title,
+}) => (
   <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
     <div className="p-1.5 bg-primary/10 rounded-lg text-primary">
       {cloneElement(icon as ReactElement<any>, { className: 'w-4 h-4' })}
@@ -60,14 +71,20 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
   const { leadTechs, otherTechs } = useMemo(() => {
     if (!job?.technicians) return { leadTechs: [], otherTechs: [] };
-    
+
     const leads = job.technicians.filter(
-      (t) => t.role === UserRole.LEAD_TECH || t.role === 'LEAD_TECH' || t.role === 'Lead Technician'
+      (t) =>
+        t.role === UserRole.LEAD_TECH ||
+        t.role === 'LEAD_TECH' ||
+        t.role === 'Lead Technician'
     );
     const others = job.technicians.filter(
-      (t) => t.role !== UserRole.LEAD_TECH && t.role !== 'LEAD_TECH' && t.role !== 'Lead Technician'
+      (t) =>
+        t.role !== UserRole.LEAD_TECH &&
+        t.role !== 'LEAD_TECH' &&
+        t.role !== 'Lead Technician'
     );
-    
+
     return { leadTechs: leads, otherTechs: others };
   }, [job?.technicians]);
 
@@ -95,27 +112,30 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
             <dl className="grid grid-cols-2 gap-4">
               <DetailItem label="รหัสงาน" value={job.id} />
-              <DetailItem 
-                label="สถานะ" 
-                value={<StatusBadge status={job.status} />} 
+              <DetailItem
+                label="สถานะ"
+                value={<StatusBadge status={job.status} />}
               />
-              <DetailItem 
-                label="ลูกค้า" 
+              <DetailItem
+                label="ลูกค้า"
                 value={
                   <div className="flex items-center gap-2">
                     <UserGroupIcon className="w-4 h-4 text-slate-400" />
                     <span>{job.customerName}</span>
                   </div>
                 }
-                fullWidth 
+                fullWidth
               />
-              <DetailItem label="วันที่ปฏิบัติงาน" value={formatThaiDate(job.start_time)} />
-              <DetailItem 
-                label="เวลา" 
+              <DetailItem
+                label="วันที่ปฏิบัติงาน"
+                value={formatThaiDate(job.start_time)}
+              />
+              <DetailItem
+                label="เวลา"
                 value={`
                   ${new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} - 
                   ${new Date(job.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                `} 
+                `}
               />
             </dl>
           </div>
@@ -124,8 +144,8 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
             <SectionHeader icon={<MapIcon />} title="ข้อมูลที่อยู่และเส้นทาง" />
             <dl className="grid grid-cols-2 gap-4">
-              <DetailItem 
-                label="ที่อยู่" 
+              <DetailItem
+                label="ที่อยู่"
                 value={
                   <div className="flex flex-col gap-2">
                     <span className="flex items-start gap-2">
@@ -158,7 +178,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         {/* Team & Vehicle Section */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
           <SectionHeader icon={<UserGroupIcon />} title="ทีมงานและพาหนะ" />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Vehicle */}
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
@@ -172,14 +192,20 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                     <TruckIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900">{vehicle.name}</div>
+                    <div className="font-medium text-slate-900">
+                      {vehicle.name}
+                    </div>
                     <div className="text-xs text-slate-500">
-                      {(vehicle as any).license_plate || vehicle.vehicle?.vehicle_registration || '-'}
+                      {(vehicle as any).license_plate ||
+                        vehicle.vehicle?.vehicle_registration ||
+                        '-'}
                     </div>
                   </div>
                 </div>
               ) : (
-                <span className="text-sm text-slate-400 italic">ยังไม่มอบหมายรถ</span>
+                <span className="text-sm text-slate-400 italic">
+                  ยังไม่มอบหมายรถ
+                </span>
               )}
             </div>
 
@@ -194,12 +220,17 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                   {leadTechs.map((tech) => (
                     <div key={tech.id} className="flex items-center gap-3">
                       <img
-                        src={tech.avatarUrl || `https://ui-avatars.com/api/?name=${tech.name || 'L'}&background=0ea5e9&color=fff`}
+                        src={
+                          tech.avatarUrl ||
+                          `https://ui-avatars.com/api/?name=${tech.name || 'L'}&background=0ea5e9&color=fff`
+                        }
                         alt={tech.name}
                         className="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm"
                       />
                       <div>
-                        <div className="font-medium text-slate-900">{tech.name}</div>
+                        <div className="font-medium text-slate-900">
+                          {tech.name}
+                        </div>
                         <div className="text-xs text-primary font-medium bg-primary/10 px-1.5 py-0.5 rounded w-fit">
                           หัวหน้าชุด
                         </div>
@@ -208,7 +239,9 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                   ))}
                 </div>
               ) : (
-                <span className="text-sm text-slate-400 italic">ไม่มีหัวหน้าชุด</span>
+                <span className="text-sm text-slate-400 italic">
+                  ไม่มีหัวหน้าชุด
+                </span>
               )}
             </div>
 
@@ -223,32 +256,45 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                   {otherTechs.map((tech) => (
                     <div key={tech.id} className="flex items-center gap-3">
                       <img
-                        src={tech.avatarUrl || `https://ui-avatars.com/api/?name=${tech.name || 'T'}&background=random`}
+                        src={
+                          tech.avatarUrl ||
+                          `https://ui-avatars.com/api/?name=${tech.name || 'T'}&background=random`
+                        }
                         alt={tech.name}
                         className="h-9 w-9 rounded-full object-cover border border-slate-200"
                       />
                       <div>
-                        <div className="font-medium text-slate-900">{tech.name}</div>
+                        <div className="font-medium text-slate-900">
+                          {tech.name}
+                        </div>
                         <div className="text-xs text-slate-500">ช่างบริการ</div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <span className="text-sm text-slate-400 italic">ไม่มีลูกทีม</span>
+                <span className="text-sm text-slate-400 italic">
+                  ไม่มีลูกทีม
+                </span>
               )}
             </div>
           </div>
         </div>
 
         {/* Operation Details / Work Areas */}
-        {((job.work_areas && job.work_areas.length > 0) || job.operation_details) && (
+        {((job.work_areas && job.work_areas.length > 0) ||
+          job.operation_details) && (
           <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <SectionHeader icon={<DocumentTextIcon />} title="รายละเอียดการปฏิบัติงาน" />
-            
+            <SectionHeader
+              icon={<DocumentTextIcon />}
+              title="รายละเอียดการปฏิบัติงาน"
+            />
+
             {job.operation_details && (
               <div className="mb-6">
-                <h5 className="text-sm font-medium text-slate-700 mb-2">หมายเหตุ / รายละเอียดเพิ่มเติม</h5>
+                <h5 className="text-sm font-medium text-slate-700 mb-2">
+                  หมายเหตุ / รายละเอียดเพิ่มเติม
+                </h5>
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap">
                   {job.operation_details}
                 </div>
@@ -257,11 +303,18 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
             {job.work_areas && job.work_areas.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium text-slate-700 mb-3">พื้นที่และบริการที่มอบหมาย</h5>
+                <h5 className="text-sm font-medium text-slate-700 mb-3">
+                  พื้นที่และบริการที่มอบหมาย
+                </h5>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {job.work_areas.map((area, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                      <span className="font-medium text-slate-800">{area.name}</span>
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                    >
+                      <span className="font-medium text-slate-800">
+                        {area.name}
+                      </span>
                       <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
                         {area.service_package}
                       </span>
@@ -276,5 +329,3 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
     </Modal>
   );
 };
-
-

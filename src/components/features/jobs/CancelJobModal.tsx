@@ -32,7 +32,10 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
     e.preventDefault();
     if (job && reason) {
       try {
-        await JobApi.update(job.id, { status: JobStatus.Cancelled, remarks: reason } as any);
+        await JobApi.update(job.id, {
+          status: JobStatus.Cancelled,
+          remarks: reason,
+        } as any);
         onConfirm(job.id, reason);
         onClose();
       } catch (error) {
@@ -83,4 +86,3 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
     </Modal>
   );
 };
-

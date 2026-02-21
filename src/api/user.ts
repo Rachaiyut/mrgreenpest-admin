@@ -1,6 +1,4 @@
-import {
-  IBaseResponseArray,
-} from '@/src/types/entity/base.interface';
+import { IBaseResponseArray } from '@/src/types/entity/base.interface';
 import { User, UserQuery } from '@/src/types/entity/core.interface';
 import { AuthService } from './auth';
 
@@ -15,7 +13,10 @@ class UserService extends AuthService {
     // Map users and compute the name property
     const mapUser = (u: any): User => ({
       ...u,
-      name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
+      name:
+        `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+        u.nick_name ||
+        'Unknown',
       creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
     });
 
@@ -40,7 +41,10 @@ class UserService extends AuthService {
     const u = res.data;
     return {
       ...u,
-      name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
+      name:
+        `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+        u.nick_name ||
+        'Unknown',
       creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
     };
   }
@@ -69,11 +73,21 @@ class UserService extends AuthService {
     return res.data;
   }
 
-  async checkLimit(userId: string, amount: number): Promise<{ isOverLimit: boolean; balance: number; limit: number; message: string }> {
-    const res = await this.http.post(`${this.path}/${userId}/expenses/check-limit`, { amount });
+  async checkLimit(
+    userId: string,
+    amount: number
+  ): Promise<{
+    isOverLimit: boolean;
+    balance: number;
+    limit: number;
+    message: string;
+  }> {
+    const res = await this.http.post(
+      `${this.path}/${userId}/expenses/check-limit`,
+      { amount }
+    );
     return res.data.data;
   }
 }
 
 export const UserApi = new UserService();
-

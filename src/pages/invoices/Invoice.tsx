@@ -68,11 +68,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false);
   const [isInvoiceEditModalOpen, setIsInvoiceEditModalOpen] = useState(false);
-  const [isInvoiceDeleteModalOpen, setIsInvoiceDeleteModalOpen] = useState(false);
+  const [isInvoiceDeleteModalOpen, setIsInvoiceDeleteModalOpen] =
+    useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
-  const [invoiceInitialValues, setInvoiceInitialValues] = useState<Partial<Invoice> | undefined>(undefined);
+  const [invoiceInitialValues, setInvoiceInitialValues] = useState<
+    Partial<Invoice> | undefined
+  >(undefined);
 
-  const [openInvoiceDropdownId, setOpenInvoiceDropdownId] = useState<string | null>(null);
+  const [openInvoiceDropdownId, setOpenInvoiceDropdownId] = useState<
+    string | null
+  >(null);
   const [invoiceDropdownPosition, setInvoiceDropdownPosition] = useState<{
     top: number;
     left: number;
@@ -80,7 +85,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
 
   const invoiceData = invoices || [];
-  
+
   const filteredInvoices = useMemo(() => {
     const q = invoiceSearchQuery.trim().toLowerCase();
     const start = invoiceStartDate ? new Date(invoiceStartDate) : null;
@@ -144,12 +149,25 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
 
   const invoiceStats = useMemo(() => {
     const total = invoiceData.length;
-    const pending = invoiceData.filter((i) => i.status === InvoiceStatus.PENDING).length;
-    const paid = invoiceData.filter((i) => i.status === InvoiceStatus.PAID).length;
-    const overdue = invoiceData.filter((i) => i.status === InvoiceStatus.OVERDUE).length;
-    const totalValue = invoiceData.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+    const pending = invoiceData.filter(
+      (i) => i.status === InvoiceStatus.PENDING
+    ).length;
+    const paid = invoiceData.filter(
+      (i) => i.status === InvoiceStatus.PAID
+    ).length;
+    const overdue = invoiceData.filter(
+      (i) => i.status === InvoiceStatus.OVERDUE
+    ).length;
+    const totalValue = invoiceData.reduce(
+      (sum, i) => sum + (Number(i.total) || 0),
+      0
+    );
     const pendingValue = invoiceData
-      .filter((i) => i.status === InvoiceStatus.PENDING || i.status === InvoiceStatus.OVERDUE)
+      .filter(
+        (i) =>
+          i.status === InvoiceStatus.PENDING ||
+          i.status === InvoiceStatus.OVERDUE
+      )
       .reduce((sum, i) => sum + (Number(i.total) || 0), 0);
 
     return { total, pending, paid, overdue, totalValue, pendingValue };
@@ -201,7 +219,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     setIsInvoiceModalOpen(true);
     setOpenInvoiceDropdownId(null);
   };
-  
+
   const handleEditInvoice = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsInvoiceEditModalOpen(true);
@@ -223,7 +241,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       setPdfLoadingId(null);
     }
   };
-  
+
   const handleDeleteInvoice = (invoice: Invoice) => {
     setInvoiceToDelete(invoice);
     setIsInvoiceDeleteModalOpen(true);
@@ -244,10 +262,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <p className="mt-1 text-slate-600">จัดการใบแจ้งหนี้ทั้งหมด</p>
         </div>
         {onCreateInvoice && (
-          <Button onClick={() => {
+          <Button
+            onClick={() => {
               setInvoiceInitialValues(undefined);
               setIsAddInvoiceModalOpen(true);
-          }}>
+            }}
+          >
             <PlusIcon className="h-5 w-5" />
             สร้างใบแจ้งหนี้
           </Button>
@@ -263,7 +283,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </div>
             <div>
               <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-              <p className="text-2xl font-bold text-blue-800">{invoiceStats.total}</p>
+              <p className="text-2xl font-bold text-blue-800">
+                {invoiceStats.total}
+              </p>
             </div>
           </div>
         </Card>
@@ -274,7 +296,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </div>
             <div>
               <p className="text-sm text-amber-600 font-medium">รอชำระ</p>
-              <p className="text-2xl font-bold text-amber-800">{invoiceStats.pending}</p>
+              <p className="text-2xl font-bold text-amber-800">
+                {invoiceStats.pending}
+              </p>
             </div>
           </div>
         </Card>
@@ -285,7 +309,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </div>
             <div>
               <p className="text-sm text-red-600 font-medium">เกินกำหนด</p>
-              <p className="text-2xl font-bold text-red-800">{invoiceStats.overdue}</p>
+              <p className="text-2xl font-bold text-red-800">
+                {invoiceStats.overdue}
+              </p>
             </div>
           </div>
         </Card>
@@ -297,7 +323,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <div>
               <p className="text-sm text-purple-600 font-medium">ยอดค้างชำระ</p>
               <p className="text-lg font-bold text-purple-800">
-                ฿{invoiceStats.pendingValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                ฿
+                {invoiceStats.pendingValue.toLocaleString('th-TH', {
+                  minimumFractionDigits: 0,
+                })}
               </p>
             </div>
           </div>
@@ -392,15 +421,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {paginatedInvoices.map((i, index) => {
-                const customer = i.customer || customers?.find(
-                  (c) => c.id === i.customer_id
-                );
+                const customer =
+                  i.customer || customers?.find((c) => c.id === i.customer_id);
                 return (
                   <tr key={i.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(invoicePage - 1) * invoiceItemsPerPage +
-                        index +
-                        1}
+                      {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                     </td>
                     <td
                       className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
@@ -412,9 +438,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       {i.code || i.id}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
-                      {customer 
-                        ? `${customer.first_name} ${customer.last_name || ''}`.trim() 
-                        : (i.customer_name || 'Unknown')}
+                      {customer
+                        ? `${customer.first_name} ${customer.last_name || ''}`.trim()
+                        : i.customer_name || 'Unknown'}
                       {i.term && (
                         <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                           งวดที่ {i.term}
@@ -493,35 +519,35 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
 
       {openInvoiceDropdownId && invoiceDropdownPosition && (
         <div
-            ref={invoiceDropdownRef}
-            style={{
-                position: 'absolute',
-                top: `${invoiceDropdownPosition.top}px`,
-                left: `${invoiceDropdownPosition.left}px`,
-                transform: 'translateX(-100%)',
-            }}
-            className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          ref={invoiceDropdownRef}
+          style={{
+            position: 'absolute',
+            top: `${invoiceDropdownPosition.top}px`,
+            left: `${invoiceDropdownPosition.left}px`,
+            transform: 'translateX(-100%)',
+          }}
+          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
         >
-            <div className="py-1">
-                <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    onClick={() => handleViewInvoice(selectedInvoice!)}
-                >
-                    <EyeIcon className="mr-3 h-5 w-5" /> ดูรายละเอียด
-                </button>
-                <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    onClick={() => handleEditInvoice(selectedInvoice!)}
-                >
-                    <PencilIcon className="mr-3 h-5 w-5" /> แก้ไข
-                </button>
-                <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                    onClick={() => handleDeleteInvoice(selectedInvoice!)}
-                >
-                    <TrashIcon className="mr-3 h-5 w-5" /> ลบ
-                </button>
-            </div>
+          <div className="py-1">
+            <button
+              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              onClick={() => handleViewInvoice(selectedInvoice!)}
+            >
+              <EyeIcon className="mr-3 h-5 w-5" /> ดูรายละเอียด
+            </button>
+            <button
+              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              onClick={() => handleEditInvoice(selectedInvoice!)}
+            >
+              <PencilIcon className="mr-3 h-5 w-5" /> แก้ไข
+            </button>
+            <button
+              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              onClick={() => handleDeleteInvoice(selectedInvoice!)}
+            >
+              <TrashIcon className="mr-3 h-5 w-5" /> ลบ
+            </button>
+          </div>
         </div>
       )}
 
@@ -534,16 +560,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         footer={null}
       >
         <InvoiceForm
-            mode="create"
-            initialValues={invoiceInitialValues}
-            embedded={true}
-            onSubmit={async (data) => {
-                 if (onCreateInvoice) {
-                     await onCreateInvoice(data);
-                     setIsAddInvoiceModalOpen(false);
-                 }
-            }}
-            onCancel={() => setIsAddInvoiceModalOpen(false)}
+          mode="create"
+          initialValues={invoiceInitialValues}
+          embedded={true}
+          onSubmit={async (data) => {
+            if (onCreateInvoice) {
+              await onCreateInvoice(data);
+              setIsAddInvoiceModalOpen(false);
+            }
+          }}
+          onCancel={() => setIsAddInvoiceModalOpen(false)}
         />
       </Modal>
 
@@ -555,18 +581,18 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         footer={null}
       >
         {selectedInvoice && (
-            <InvoiceForm
-                mode="edit"
-                initialValues={selectedInvoice}
-                embedded={true}
-                onSubmit={async (data) => {
-                    if (onUpdateInvoice) {
-                        await onUpdateInvoice({ ...selectedInvoice, ...data });
-                        setIsInvoiceEditModalOpen(false);
-                    }
-                }}
-                onCancel={() => setIsInvoiceEditModalOpen(false)}
-            />
+          <InvoiceForm
+            mode="edit"
+            initialValues={selectedInvoice}
+            embedded={true}
+            onSubmit={async (data) => {
+              if (onUpdateInvoice) {
+                await onUpdateInvoice({ ...selectedInvoice, ...data });
+                setIsInvoiceEditModalOpen(false);
+              }
+            }}
+            onCancel={() => setIsInvoiceEditModalOpen(false)}
+          />
         )}
       </Modal>
 
@@ -602,8 +628,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <div className="text-sm text-slate-600">เบอร์โทรศัพท์</div>
                 <div className="text-sm text-slate-800">
                   {(() => {
-                    const customer = customers?.find(c => c.id === selectedInvoice.customer_id);
-                    return customer?.phone ? formatPhoneNumber(customer.phone) : '-';
+                    const customer = customers?.find(
+                      (c) => c.id === selectedInvoice.customer_id
+                    );
+                    return customer?.phone
+                      ? formatPhoneNumber(customer.phone)
+                      : '-';
                   })()}
                 </div>
               </div>

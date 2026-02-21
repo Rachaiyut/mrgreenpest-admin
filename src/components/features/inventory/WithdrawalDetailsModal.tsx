@@ -40,10 +40,13 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     [users]
   );
 
-  const fromWarehouse = withdrawal ? warehouseMap.get(withdrawal.warehouse_id) : undefined;
-  const toWarehouse = withdrawal && withdrawal.to_warehouse_id
-    ? warehouseMap.get(withdrawal.to_warehouse_id)
-    : null;
+  const fromWarehouse = withdrawal
+    ? warehouseMap.get(withdrawal.warehouse_id)
+    : undefined;
+  const toWarehouse =
+    withdrawal && withdrawal.to_warehouse_id
+      ? warehouseMap.get(withdrawal.to_warehouse_id)
+      : null;
 
   const totalGoodsAmount = useMemo(
     () =>
@@ -55,7 +58,9 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
   );
 
   const totalExpenseAmount = useMemo(
-    () => withdrawal?.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0,
+    () =>
+      withdrawal?.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) ||
+      0,
     [withdrawal?.expenses]
   );
 
@@ -108,7 +113,9 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}
+                {withdrawal.created_at
+                  ? formatThaiDate(withdrawal.created_at)
+                  : '-'}
               </dd>
             </div>
             <div>
@@ -125,8 +132,8 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               <dt className="font-medium text-slate-500">เลขที่อ้างอิง</dt>
               <dd className="mt-1 flex flex-wrap gap-2">
                 {withdrawal.reference_ids &&
-                  Array.isArray(withdrawal.reference_ids) &&
-                  withdrawal.reference_ids.length > 0 ? (
+                Array.isArray(withdrawal.reference_ids) &&
+                withdrawal.reference_ids.length > 0 ? (
                   withdrawal.reference_ids.map((id) => (
                     <span
                       key={id}
@@ -142,7 +149,11 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
-              <dd className="mt-1 text-slate-900">{withdrawal.created_by ? (userMap.get(withdrawal.created_by) || withdrawal.created_by) : '-'}</dd>
+              <dd className="mt-1 text-slate-900">
+                {withdrawal.created_by
+                  ? userMap.get(withdrawal.created_by) || withdrawal.created_by
+                  : '-'}
+              </dd>
             </div>
             {/* 
             {withdrawal.approvedBy && (

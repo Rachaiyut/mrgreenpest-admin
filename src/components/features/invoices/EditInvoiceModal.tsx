@@ -59,10 +59,10 @@ export const EditInvoicePage: FC<EditInvoicePageProps> = ({
 
       <div className="max-w-5xl mx-auto">
         <InvoiceForm
-            mode="edit"
-            initialValues={invoice}
-            onSubmit={handleSave}
-            onCancel={() => navigate('/billing')}
+          mode="edit"
+          initialValues={invoice}
+          onSubmit={handleSave}
+          onCancel={() => navigate('/billing')}
         />
       </div>
     </div>

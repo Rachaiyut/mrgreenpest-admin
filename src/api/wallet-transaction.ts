@@ -47,4 +47,3 @@ class WalletTransactionService extends AuthService {
 }
 
 export const WalletTransactionApi = new WalletTransactionService();
-

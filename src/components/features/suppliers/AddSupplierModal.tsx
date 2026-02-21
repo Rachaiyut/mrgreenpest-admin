@@ -213,4 +213,3 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
     </Modal>
   );
 };
-

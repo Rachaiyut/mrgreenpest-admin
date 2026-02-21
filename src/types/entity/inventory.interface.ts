@@ -5,11 +5,11 @@ import {
   ProductReturnStatus,
   StockAdjustmentStatus,
   TransferStatus,
-  GoodsReceiptStatus
-} from "../enums/inventory";
-import { Status } from "./app.interface";
-import { IBase, IBaseQuery } from "./base.interface";
-import { Job } from "./job.interface";
+  GoodsReceiptStatus,
+} from '../enums/inventory';
+import { Status } from './app.interface';
+import { IBase, IBaseQuery } from './base.interface';
+import { Job } from './job.interface';
 
 export interface WarehouseQuery extends IBaseQuery {
   code?: string;
@@ -32,44 +32,43 @@ export interface StockBalance {
     code: string;
     unit: {
       name: string;
-    }
-  }
+    };
+  };
 }
 
 export interface Warehouse extends IBase {
-  code: string,
-  name: string,
-  type: WarehouseType,
-  status: Status
-  warehouse_branch: WarehouseBranch,
-  vehicle: Vehicle,
-  withdrawal_limits?: WithdrawalLimit[],
-  stock?: StockBalance[],
+  code: string;
+  name: string;
+  type: WarehouseType;
+  status: Status;
+  warehouse_branch: WarehouseBranch;
+  vehicle: Vehicle;
+  withdrawal_limits?: WithdrawalLimit[];
+  stock?: StockBalance[];
 }
 
 export interface WarehouseBranch extends IBase {
-  id: string
-  warehouse_id: string,
-  location: string,
+  id: string;
+  warehouse_id: string;
+  location: string;
 }
 
 export interface Vehicle extends IBase {
-  warehouse_id: string
-  brand: string,
-  model: string
-  vehicle_registration: string,
-  color: string,
-  status: VehicleStatus,
+  warehouse_id: string;
+  brand: string;
+  model: string;
+  vehicle_registration: string;
+  color: string;
+  status: VehicleStatus;
 
-  jobs: Job[]
+  jobs: Job[];
 }
 
-
 export interface WarehouseStats {
-  total: string,
-  fixed: string,
-  mobile: string,
-  active: string
+  total: string;
+  fixed: string;
+  mobile: string;
+  active: string;
 }
 
 export interface WithdrawalItem {
@@ -199,4 +198,3 @@ export interface ProductReturn extends IBase {
   updated_by?: string;
   items?: ProductReturnItem[];
 }
-

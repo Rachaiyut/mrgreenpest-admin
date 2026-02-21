@@ -1,4 +1,8 @@
-import axios, { AxiosInstance, AxiosHeaders, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosHeaders,
+  InternalAxiosRequestConfig,
+} from 'axios';
 
 export abstract class BaseHttpClient {
   protected http: AxiosInstance;
@@ -12,9 +16,13 @@ export abstract class BaseHttpClient {
   protected abstract onAuthFailure(): void;
 
   constructor(baseURL: string, timeout: number) {
-    this.http = axios.create({ baseURL, timeout, headers: { 'Content-Type': 'application/json' } });
+    this.http = axios.create({
+      baseURL,
+      timeout,
+      headers: { 'Content-Type': 'application/json' },
+    });
     this.initializeInterceptors();
-  } 
+  }
 
   public get(): AxiosInstance {
     return this.http;
@@ -22,7 +30,11 @@ export abstract class BaseHttpClient {
 
   private notifyLoading() {
     if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('global:loading', { detail: { pending: this.pendingRequests } }));
+      window.dispatchEvent(
+        new CustomEvent('global:loading', {
+          detail: { pending: this.pendingRequests },
+        })
+      );
     }
   }
 
@@ -69,7 +81,7 @@ export abstract class BaseHttpClient {
             this.isRefreshing = false;
             this.refreshWaiters.forEach((cb) => cb(newToken));
             this.refreshWaiters = [];
-            
+
             originalRequest.headers.set('Authorization', `Bearer ${newToken}`);
             return this.http(originalRequest);
           } catch (refreshErr) {

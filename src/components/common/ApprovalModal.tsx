@@ -85,4 +85,3 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
     </Modal>
   );
 };
-

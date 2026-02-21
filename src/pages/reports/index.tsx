@@ -7,21 +7,10 @@ import { formatThaiDate, formatThaiDateTime } from '../../utils/date';
 import {
   Product,
   Warehouse as WarehouseType,
-  GoodsReceipt,
-  Withdrawal,
-  Transfer,
-  StockAdjustment,
-  ProductReturn,
-  FieldJob,
-  Invoice,
-  Receipt,
-  Customer,
   Status,
-  User,
-  Supplier,
 } from '@/src/types/entity/app.interface';
-import { ICustomer } from '@/src/types/entity/customer.interface';
-import { CustomerType } from '@/src/types/enums/customer';
+import { Customer } from '@/src/types/entity/customer.interface';
+import { CustomerType, Gender } from '@/src/types/enums/customer';
 import { Status as BaseStatus } from '@/src/types/enums/base';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 
@@ -53,10 +42,10 @@ const Reports: React.FC<ReportsProps> = () => {
     transfers,
     stockAdjustments,
     productReturns,
-    fieldJobs,
     invoices,
     receipts,
     customers,
+    jobs,
   } = useData();
 
   const [activeTab, setActiveTab] = useState<ReportTab>('สต็อกคงเหลือ');
@@ -117,11 +106,11 @@ const Reports: React.FC<ReportsProps> = () => {
         const qty = prodMap[pid] || 0;
         const p = productById.get(pid);
         if (!p) return;
-        const threshold = p.lowStockThreshold || 0;
+        const threshold = p.min_stock || 0;
         rows.push({
           warehouse: whName,
           product: p.name,
-          unit: p.unit,
+          unit: p.unit?.name || '',
           quantity: qty,
           threshold,
           low: qty < threshold,
@@ -134,29 +123,32 @@ const Reports: React.FC<ReportsProps> = () => {
   const grRows = useMemo(() => {
     return goodsReceipts.map((gr) => ({
       id: gr.id,
-      warehouse: warehouseById.get(gr.warehouseId) || gr.warehouseId,
-      supplier: gr.supplierId
-        ? supplierById.get(gr.supplierId) || gr.supplierId
+      warehouse: warehouseById.get(gr.warehouse_id) || gr.warehouse_id,
+      supplier: gr.supplier_id
+        ? supplierById.get(gr.supplier_id) || gr.supplier_id
         : '-',
-      date: formatThaiDate(gr.createdAt),
+      date: formatThaiDate(gr.created_at),
       status: gr.status,
       itemsCount: gr.items.length,
-      totalQty: gr.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(gr.createdAt || '').getTime(),
+      totalQty: gr.items.reduce(
+        (acc, it) => acc + Number(it.qty_received || 0),
+        0
+      ),
+      ts: new Date(gr.created_at || '').getTime(),
     }));
   }, [goodsReceipts, warehouseById, supplierById]);
 
   const wdRows = useMemo(() => {
     return withdrawals.map((w) => ({
       id: w.id,
-      from: warehouseById.get(w.fromWarehouseId) || w.fromWarehouseId,
-      to: w.toWarehouseId
-        ? warehouseById.get(w.toWarehouseId) || w.toWarehouseId
+      from: warehouseById.get(w.warehouse_id) || w.warehouse_id,
+      to: w.to_warehouse_id
+        ? warehouseById.get(w.to_warehouse_id) || w.to_warehouse_id
         : '-',
-      recipient: w.recipientId
-        ? userById.get(w.recipientId) || w.recipientId
+      recipient: w.recipient_id
+        ? userById.get(w.recipient_id) || w.recipient_id
         : '-',
-      date: formatThaiDate(w.createdAt),
+      date: formatThaiDate(w.created_at),
       status: w.status,
       itemsCount: w.items.length,
       totalQty: w.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
@@ -164,95 +156,93 @@ const Reports: React.FC<ReportsProps> = () => {
         (acc, e) => acc + Number(e.amount || 0),
         0
       ),
-      ts: new Date(w.createdAt || '').getTime(),
+      ts: new Date(w.created_at || '').getTime(),
     }));
   }, [withdrawals, warehouseById, userById]);
 
   const tfRows = useMemo(() => {
     return transfers.map((t) => ({
       id: t.id,
-      from: warehouseById.get(t.fromWarehouseId) || t.fromWarehouseId,
-      to: warehouseById.get(t.toWarehouseId) || t.toWarehouseId,
-      date: formatThaiDate(t.createdAt),
+      from: warehouseById.get(t.from_warehouse_id) || t.from_warehouse_id,
+      to: warehouseById.get(t.to_warehouse_id) || t.to_warehouse_id,
+      date: formatThaiDate(t.created_at),
       status: t.status,
       itemsCount: t.items.length,
       totalQty: t.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(t.createdAt || '').getTime(),
+      ts: new Date(t.created_at || '').getTime(),
     }));
   }, [transfers, warehouseById]);
 
   const saRows = useMemo(() => {
     return stockAdjustments.map((a) => ({
       id: a.id,
-      warehouse: warehouseById.get(a.warehouseId) || a.warehouseId,
-      date: formatThaiDate(a.createdAt),
+      warehouse: warehouseById.get(a.warehouse_id) || a.warehouse_id,
+      date: formatThaiDate(a.created_at),
       status: a.status,
       itemsCount: a.items.length,
       totalDelta: a.items.reduce(
-        (acc, it) =>
-          acc +
-          (Number(it.adjustedQuantity || 0) - Number(it.originalQuantity || 0)),
+        (acc, it) => acc + Number(it.qty_adjustment || 0),
         0
       ),
-      ts: new Date(a.createdAt || '').getTime(),
+      ts: new Date(a.created_at || '').getTime(),
     }));
   }, [stockAdjustments, warehouseById]);
 
   const rtRows = useMemo(() => {
     return productReturns.map((r) => ({
       id: r.id,
-      from: warehouseById.get(r.fromWarehouseId) || r.fromWarehouseId,
-      to: warehouseById.get(r.toWarehouseId) || r.toWarehouseId,
-      date: formatThaiDate(r.createdAt),
+      from: warehouseById.get(r.warehouse_id) || r.warehouse_id,
+      to: warehouseById.get(r.warehouse_id) || r.warehouse_id,
+      date: formatThaiDate(r.created_at),
       status: r.status,
       itemsCount: r.items.length,
       totalQty: r.items.reduce((acc, it) => acc + Number(it.quantity || 0), 0),
-      ts: new Date(r.createdAt || '').getTime(),
+      ts: new Date(r.created_at || '').getTime(),
     }));
   }, [productReturns, warehouseById]);
 
   const foRows = useMemo(() => {
-    return fieldJobs
-      .filter((j) => !!j.serviceReport)
+    return jobs
+      .filter((j) => !!j.service_report)
       .map((j) => ({
         id: j.id,
-        customer: j.customerName,
-        reportDate: formatThaiDateTime(j.serviceReport?.createdAt),
-        status: j.serviceReport?.status || Status.Draft,
-        ts: new Date(j.serviceReport?.createdAt || '').getTime(),
+        customer: j.customer?.first_name + ' ' + j.customer?.last_name || '',
+        reportDate: formatThaiDateTime(j.service_report?.created_at),
+        status: j.service_report?.status || Status.Draft,
+        ts: new Date(j.service_report?.created_at || '').getTime(),
       }));
-  }, [fieldJobs]);
+  }, [jobs]);
 
   const invRows = useMemo(() => {
     return invoices.map((inv) => ({
       id: inv.id,
-      customer: inv.customerName,
-      issuedAt: formatThaiDate(inv.issuedAt),
-      dueAt: formatThaiDate(inv.dueAt),
+      customer: inv.customer_name,
+      issuedAt: formatThaiDate(inv.issued_at),
+      dueAt: formatThaiDate(inv.due_at),
       status: inv.status,
       total: inv.total,
-      ts: new Date(inv.issuedAt || '').getTime(),
+      ts: new Date(inv.issued_at || '').getTime(),
     }));
   }, [invoices]);
 
   const recRows = useMemo(() => {
     return receipts.map((r) => ({
       id: r.id,
-      invoiceId: r.invoiceId,
-      customer: r.customerName,
-      paidAt: formatThaiDate(r.paidAt),
+      invoiceId: r.invoice_id,
+      customer: r.customer_name,
+      paidAt: formatThaiDate(r.paid_at),
       amount: r.amount,
-      method: r.paymentMethod,
-      ts: new Date(r.paidAt || '').getTime(),
+      method: r.payment_method,
+      ts: new Date(r.paid_at || '').getTime(),
     }));
   }, [receipts]);
 
   const custRows = useMemo(() => {
     return customers.map((c) => ({
       id: c.id,
-      name: c.name,
+      name: `${c.first_name} ${c.last_name}`,
       type: c.type,
-      createdAt: formatThaiDate(c.createdAt),
+      createdAt: formatThaiDate(c.created_at),
     }));
   }, [customers]);
 
@@ -367,7 +357,7 @@ const Reports: React.FC<ReportsProps> = () => {
   ];
 
   const [isCustDetailsOpen, setIsCustDetailsOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<ICustomer | null>(
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
   const handleViewCustomer = (id: string) => {
@@ -378,28 +368,36 @@ const Reports: React.FC<ReportsProps> = () => {
       return;
     }
 
-    const mapped: ICustomer = {
+    const mapped: Customer = {
       id: cust.id,
-      created_at: cust.createdAt,
-      updated_at: cust.createdAt,
-      country: cust.address.country,
+      created_at: cust.created_at,
+      updated_at: cust.created_at,
+      country: 'TH', // Default country
       status: BaseStatus.ACTIVE,
-      customer_type:
-        cust.type === 'บุคคลธรรมดา'
+      type:
+        cust.type === CustomerType.INDIVIDUAL
           ? CustomerType.INDIVIDUAL
           : CustomerType.CORPORATE,
-      first_name: cust.name,
-      last_name: '',
+      first_name: cust.first_name,
+      last_name: cust.last_name,
       nickname: cust.nickname ?? '',
-      tax_id: cust.taxId,
+      tax_id: cust.tax_id,
       phone: cust.phone,
       email: cust.email ?? '',
-      address_house_no: cust.address.street,
-      sub_district: cust.address.subdistrict,
-      district: cust.address.district,
-      province: cust.address.province,
-      postal_code: cust.address.postalcode,
-      google_map_link: cust.googleMapLink,
+      address_house_no: cust.address_house_no,
+      sub_district: cust.sub_district,
+      district: cust.district,
+      province: cust.province,
+      postal_code: cust.postal_code,
+      road_line: '', // Default road_line
+      sequence_no: '',
+      service_area: '',
+      service_group: '',
+      google_map_link: cust.google_map_link,
+      gendder: Gender.MALE, // Default gender
+      code: '',
+      assessments: [],
+      contracts: [],
     };
 
     setSelectedCustomer(mapped);
@@ -1404,5 +1402,3 @@ const Reports: React.FC<ReportsProps> = () => {
 };
 
 export default Reports;
-
-

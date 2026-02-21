@@ -80,10 +80,11 @@ export class AuthService extends BaseHttpClient {
   }
 
   async getDemoUsers(): Promise<any[]> {
-    const res = await this.http.get<IBaseResponse<any[]>>(`${this.path}/demo-users`);
+    const res = await this.http.get<IBaseResponse<any[]>>(
+      `${this.path}/demo-users`
+    );
     return res.data.data;
   }
 }
 
 export const Auth = new AuthService();
-

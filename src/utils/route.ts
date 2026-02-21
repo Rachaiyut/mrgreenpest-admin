@@ -1,4 +1,4 @@
-import { Page } from "../types/page";
+import { Page } from '../types/page';
 
 export const PATH_PREFIX_MAP: Record<string, Page> = {
   '/quotations': 'ใบเสนอราคา',
@@ -13,7 +13,10 @@ export const PATH_PREFIX_MAP: Record<string, Page> = {
   '/customers': 'ลูกค้า',
 };
 
-export const getCurrentPageFromPath = (pathname: string, pathPageMap: Record<string, Page>): Page => {
+export const getCurrentPageFromPath = (
+  pathname: string,
+  pathPageMap: Record<string, Page>
+): Page => {
   // 1. Exact match
   if (pathPageMap[pathname]) {
     return pathPageMap[pathname];
@@ -23,7 +26,11 @@ export const getCurrentPageFromPath = (pathname: string, pathPageMap: Record<str
   // Sort keys by length descending to catch most specific prefix first
   const prefixes = Object.keys(pathPageMap).sort((a, b) => b.length - a.length);
   for (const prefix of prefixes) {
-    if (pathname === prefix || (pathname.startsWith(prefix) && (pathname[prefix.length] === '/' || pathname[prefix.length] === '?'))) {
+    if (
+      pathname === prefix ||
+      (pathname.startsWith(prefix) &&
+        (pathname[prefix.length] === '/' || pathname[prefix.length] === '?'))
+    ) {
       return pathPageMap[prefix];
     }
   }

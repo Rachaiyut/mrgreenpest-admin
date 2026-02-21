@@ -46,4 +46,3 @@ class JobService extends AuthService {
 }
 
 export const JobApi = new JobService();
-

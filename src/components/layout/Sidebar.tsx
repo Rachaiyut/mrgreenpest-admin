@@ -41,10 +41,7 @@ export const Sidebar: FC<SidebarProps> = ({
     const activeGroup = getActiveGroup();
     setOpenGroups((prev) => {
       const newGroups = activeGroup ? [activeGroup] : [];
-      if (
-        prev.length === newGroups.length &&
-        prev[0] === newGroups[0]
-      ) {
+      if (prev.length === newGroups.length && prev[0] === newGroups[0]) {
         return prev;
       }
       return newGroups;

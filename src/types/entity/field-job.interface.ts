@@ -50,7 +50,7 @@ export interface ServiceReport {
   updated_at?: string;
   service_report_pest_detail?: any;
   status: JobStatus;
-  
+
   // Legacy fields (optional for compatibility during migration)
   check_in_time?: string;
   check_out_time?: string;

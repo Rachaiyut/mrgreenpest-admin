@@ -67,7 +67,7 @@ export const AppRouter = (props: AppRouterProps) => {
   );
 
   const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prev => !prev);
+    setIsSidebarOpen((prev) => !prev);
   }, []);
 
   if (!isAuthenticated) {

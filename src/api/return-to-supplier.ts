@@ -45,4 +45,3 @@ class ReturnToSupplierService extends AuthService {
 }
 
 export const ReturnToSupplierApi = new ReturnToSupplierService();
-

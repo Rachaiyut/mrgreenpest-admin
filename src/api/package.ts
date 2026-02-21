@@ -46,4 +46,3 @@ class PackageService extends AuthService {
 }
 
 export const PackageApi = new PackageService();
-

@@ -59,8 +59,9 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
             onFlyoutLeave();
           }
         }}
-        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${isActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
-          } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
+        className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} w-full ${collapsed ? 'px-2' : 'px-4'} py-2.5 text-base font-medium text-left rounded-md transition-colors ${
+          isActive ? 'text-white bg-[#08a93d]/50' : 'text-white/80'
+        } hover:bg-[#08a93d] hover:text-white focus:outline-none`}
         title={collapsed ? item.name : undefined}
       >
         <div className="flex items-center">
@@ -84,10 +85,11 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
                 key={subItem.name}
                 to={getHref(subItem.name as Page)}
                 onClick={onLinkClick}
-                className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${isSubActive
+                className={`flex items-center w-full px-3 py-2 text-sm font-normal rounded-md transition-colors ${
+                  isSubActive
                     ? 'bg-[#08a93d] text-white'
                     : 'text-white/80 hover:bg-[#08a93d]/80 hover:text-white'
-                  }`}
+                }`}
               >
                 {subItem.name === 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย' ? (
                   <span>
@@ -105,4 +107,3 @@ export const SidebarGroup: FC<SidebarGroupProps> = ({
     </div>
   );
 };
-

@@ -55,4 +55,3 @@ class ReceiptService extends AuthService {
 }
 
 export const ReceiptApi = new ReceiptService();
-

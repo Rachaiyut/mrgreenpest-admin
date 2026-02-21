@@ -27,10 +27,11 @@ export const SidebarLink: FC<SidebarLinkProps> = ({
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-2.5 text-base font-medium rounded-md transition-colors ${isActive
-        ? 'bg-[#08a93d] text-white'
-        : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
-        }`}
+      className={`flex items-center ${collapsed ? 'justify-center px-2' : 'px-4'} py-2.5 text-base font-medium rounded-md transition-colors ${
+        isActive
+          ? 'bg-[#08a93d] text-white'
+          : 'text-white/80 hover:bg-[#08a93d] hover:text-white'
+      }`}
       title={collapsed ? displayName : undefined}
     >
       {item.icon && (
@@ -40,4 +41,3 @@ export const SidebarLink: FC<SidebarLinkProps> = ({
     </Link>
   );
 };
-

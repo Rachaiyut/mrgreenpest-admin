@@ -41,7 +41,11 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.first_name} {customer.last_name}{' '}
               {customer.nickname && `(${customer.nickname})`}
             </DetailsItem>
-            <DetailsItem label="ประเภท">{customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา' }</DetailsItem>
+            <DetailsItem label="ประเภท">
+              {customer.type === CustomerType.CORPORATE
+                ? 'นิติบุคคล'
+                : 'บุคคลธรรมดา'}
+            </DetailsItem>
             {customer.tax_id && (
               <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
                 {customer.tax_id}
@@ -136,5 +140,3 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
     </Modal>
   );
 };
-
-

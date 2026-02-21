@@ -47,7 +47,7 @@ const App: FC = () => {
         socket.disconnect();
       };
     } else {
-        socket.disconnect();
+      socket.disconnect();
     }
   }, [isAuthenticated]);
 

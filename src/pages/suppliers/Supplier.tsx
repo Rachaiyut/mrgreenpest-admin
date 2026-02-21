@@ -435,4 +435,3 @@ const Suppliers: React.FC = () => {
 };
 
 export default Suppliers;
-

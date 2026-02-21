@@ -66,8 +66,9 @@ export const SidebarFlyout: FC<SidebarFlyoutProps> = ({
               key={subItem.name}
               to={to}
               onClick={onClose}
-              className={`flex items-center w-full px-4 py-2 text-sm ${isActive ? 'bg-slate-100 text-primary' : 'hover:bg-slate-50'
-                }`}
+              className={`flex items-center w-full px-4 py-2 text-sm ${
+                isActive ? 'bg-slate-100 text-primary' : 'hover:bg-slate-50'
+              }`}
             >
               <span className="truncate">{subItem.name}</span>
             </Link>
@@ -77,4 +78,3 @@ export const SidebarFlyout: FC<SidebarFlyoutProps> = ({
     </div>
   );
 };
-

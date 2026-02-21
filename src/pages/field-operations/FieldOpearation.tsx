@@ -70,163 +70,179 @@ const JobCard: React.FC<{
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
-    const currentUserId = (currentUser as any)?.id as string | undefined;
+  const currentUserId = (currentUser as any)?.id as string | undefined;
 
-    const isAssignedToCurrentUser = useMemo(
-      () =>
-        !!currentUserId &&
-        (job.technicians || []).some((tech) => tech && tech.id === currentUserId),
-      [job.technicians, currentUserId]
-    );
+  const isAssignedToCurrentUser = useMemo(
+    () =>
+      !!currentUserId &&
+      (job.technicians || []).some((tech) => tech && tech.id === currentUserId),
+    [job.technicians, currentUserId]
+  );
 
-    const showCheckInButton =
-      isAssignedToCurrentUser &&
-      ((job.status as unknown as JobStatus) === JobStatus.Planned || (job.status as unknown as string).toUpperCase() === 'PENDING');
+  const showCheckInButton =
+    isAssignedToCurrentUser &&
+    ((job.status as unknown as JobStatus) === JobStatus.Planned ||
+      (job.status as unknown as string).toUpperCase() === 'PENDING');
 
-    const showCheckOutButton =
-      isAssignedToCurrentUser &&
-      ((job.status as unknown as JobStatus) === JobStatus.InProgress || (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' || (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
+  const showCheckOutButton =
+    isAssignedToCurrentUser &&
+    ((job.status as unknown as JobStatus) === JobStatus.InProgress ||
+      (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' ||
+      (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
 
-    const showReportButton = showCheckOutButton && !job.service_report;
+  const showReportButton = showCheckOutButton && !job.service_report;
 
-    let checkInTooltip = '';
-    if (isAssignedToCurrentUser) {
-      if (isAnyJobInProgressForCurrentUser) {
-        checkInTooltip = 'คุณกำลังเช็คอินในงานอื่นอยู่';
-      } else {
-        checkInTooltip = 'เช็คอินเพื่อเริ่มงาน';
-      }
+  let checkInTooltip = '';
+  if (isAssignedToCurrentUser) {
+    if (isAnyJobInProgressForCurrentUser) {
+      checkInTooltip = 'คุณกำลังเช็คอินในงานอื่นอยู่';
+    } else {
+      checkInTooltip = 'เช็คอินเพื่อเริ่มงาน';
     }
+  }
 
-    const jobDate = formatThaiDate(job.start_time);
-    const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const jobDate = formatThaiDate(job.start_time);
+  const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
-    const hasActions = (job.status as unknown as JobStatus) !== JobStatus.Completed;
+  const hasActions =
+    (job.status as unknown as JobStatus) !== JobStatus.Completed;
 
-    // Get status color for left border
-    const getStatusColor = () => {
-      const statusUpper = String(job.status || job.api_status || '').toUpperCase();
-      if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'border-l-amber-500';
-      if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'border-l-green-500';
-      if (statusUpper === 'CANCELLED') return 'border-l-red-500';
-      return 'border-l-primary';
-    };
-
-    return (
-      <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}>
-        {/* Header */}
-        <div className="px-4 pt-4 pb-3">
-          <div className="flex justify-between items-start gap-2">
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
-                {job.customerName}
-              </h4>
-              {job.work_areas?.length > 0 && (
-                <p className="text-xs text-slate-500 mt-1 truncate">
-                  {job.work_areas.map((wa) => wa.service_package).join(', ')}
-                </p>
-              )}
-            </div>
-            <Button
-              data-job-id={job.id}
-              onClick={(e) => onDropdownToggle(e, job.id)}
-              variant="ghost"
-              className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
-              title="ตัวเลือก"
-            >
-              <ManageIcon className="h-4 w-4 text-slate-400" />
-            </Button>
-          </div>
-          <div className="mt-2">
-            <StatusBadge status={job.api_status} />
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="px-4 pb-3 space-y-2">
-          <div className="flex items-start gap-2.5 text-sm">
-            <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-            <span className="text-slate-600 line-clamp-2 leading-snug">{job.address || '-'}</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-sm">
-            <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span className="text-slate-600">{jobDate}</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-sm">
-            <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span className="text-slate-700 font-medium">{jobStartTime} - {jobEndTime}</span>
-          </div>
-          <div className="flex items-center gap-2.5 text-sm">
-            <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-            <span
-              className="text-slate-600 truncate"
-              title={job.technicians?.map((t) => t.name).join(', ')}
-            >
-              {job.technicians?.length > 0
-                ? job.technicians.map((t) => t.name).join(', ')
-                : <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>}
-            </span>
-          </div>
-        </div>
-
-        {/* Actions */}
-        {hasActions && (
-          <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
-            <Button
-              onClick={() => onViewDetails(job)}
-              title="ดูรายละเอียดงาน"
-              variant="ghost"
-              className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
-            >
-              <EyeIcon className="h-4 w-4 mr-1.5" />
-              ดูรายละเอียด
-            </Button>
-
-            {showCheckInButton && (
-              <Button
-                onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
-                disabled={isAnyJobInProgressForCurrentUser}
-                title={checkInTooltip}
-                variant="primary"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-              >
-                <PlayIcon className="h-4 w-4 mr-1.5" />
-                เช็คอิน
-              </Button>
-            )}
-            {showReportButton && (
-              <Button
-                onClick={() => onWriteReport(job)}
-                title="บันทึกรายงานบริการ"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-              >
-                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-                บันทึกรายงาน
-              </Button>
-            )}
-            {showCheckOutButton && (
-              <Button
-                onClick={() => onStatusChange(job.id, JobStatus.Completed)}
-                title="เช็คเอาท์เพื่อจบงาน"
-                variant="accent"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-              >
-                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-                เช็คเอาท์
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    );
+  // Get status color for left border
+  const getStatusColor = () => {
+    const statusUpper = String(
+      job.status || job.api_status || ''
+    ).toUpperCase();
+    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS')
+      return 'border-l-amber-500';
+    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
+      return 'border-l-green-500';
+    if (statusUpper === 'CANCELLED') return 'border-l-red-500';
+    return 'border-l-primary';
   };
+
+  return (
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}
+    >
+      {/* Header */}
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
+              {job.customerName}
+            </h4>
+            {job.work_areas?.length > 0 && (
+              <p className="text-xs text-slate-500 mt-1 truncate">
+                {job.work_areas.map((wa) => wa.service_package).join(', ')}
+              </p>
+            )}
+          </div>
+          <Button
+            data-job-id={job.id}
+            onClick={(e) => onDropdownToggle(e, job.id)}
+            variant="ghost"
+            className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
+            title="ตัวเลือก"
+          >
+            <ManageIcon className="h-4 w-4 text-slate-400" />
+          </Button>
+        </div>
+        <div className="mt-2">
+          <StatusBadge status={job.api_status} />
+        </div>
+      </div>
+
+      {/* Info */}
+      <div className="px-4 pb-3 space-y-2">
+        <div className="flex items-start gap-2.5 text-sm">
+          <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
+          <span className="text-slate-600 line-clamp-2 leading-snug">
+            {job.address || '-'}
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-600">{jobDate}</span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span className="text-slate-700 font-medium">
+            {jobStartTime} - {jobEndTime}
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 text-sm">
+          <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+          <span
+            className="text-slate-600 truncate"
+            title={job.technicians?.map((t) => t.name).join(', ')}
+          >
+            {job.technicians?.length > 0 ? (
+              job.technicians.map((t) => t.name).join(', ')
+            ) : (
+              <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>
+            )}
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      {hasActions && (
+        <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
+          <Button
+            onClick={() => onViewDetails(job)}
+            title="ดูรายละเอียดงาน"
+            variant="ghost"
+            className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
+          >
+            <EyeIcon className="h-4 w-4 mr-1.5" />
+            ดูรายละเอียด
+          </Button>
+
+          {showCheckInButton && (
+            <Button
+              onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
+              disabled={isAnyJobInProgressForCurrentUser}
+              title={checkInTooltip}
+              variant="primary"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+            >
+              <PlayIcon className="h-4 w-4 mr-1.5" />
+              เช็คอิน
+            </Button>
+          )}
+          {showReportButton && (
+            <Button
+              onClick={() => onWriteReport(job)}
+              title="บันทึกรายงานบริการ"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+              บันทึกรายงาน
+            </Button>
+          )}
+          {showCheckOutButton && (
+            <Button
+              onClick={() => onStatusChange(job.id, JobStatus.Completed)}
+              title="เช็คเอาท์เพื่อจบงาน"
+              variant="accent"
+              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+            >
+              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+              เช็คเอาท์
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const CalendarView: React.FC<{
   jobs: FieldJob[];
@@ -253,7 +269,15 @@ const CalendarView: React.FC<{
     year: 'numeric',
   });
 
-  const daysOfWeek = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์', 'เสาร์'];
+  const daysOfWeek = [
+    'อาทิตย์',
+    'จันทร์',
+    'อังคาร',
+    'พุธ',
+    'พฤหัสฯ',
+    'ศุกร์',
+    'เสาร์',
+  ];
 
   const calendarGrid = useMemo(() => {
     const today = new Date();
@@ -300,10 +324,14 @@ const CalendarView: React.FC<{
 
   const getJobStatusStyle = (status: string) => {
     const statusUpper = String(status || '').toUpperCase();
-    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS') return 'bg-amber-50 text-amber-700 border-l-amber-500';
-    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE') return 'bg-green-50 text-green-700 border-l-green-500';
-    if (statusUpper === 'CANCELLED') return 'bg-red-50 text-red-600 border-l-red-500';
-    if (statusUpper === 'PENDING' || statusUpper === 'PLANNED') return 'bg-blue-50 text-blue-700 border-l-blue-500';
+    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS')
+      return 'bg-amber-50 text-amber-700 border-l-amber-500';
+    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
+      return 'bg-green-50 text-green-700 border-l-green-500';
+    if (statusUpper === 'CANCELLED')
+      return 'bg-red-50 text-red-600 border-l-red-500';
+    if (statusUpper === 'PENDING' || statusUpper === 'PLANNED')
+      return 'bg-blue-50 text-blue-700 border-l-blue-500';
     return 'bg-primary/5 text-primary border-l-primary';
   };
 
@@ -312,7 +340,9 @@ const CalendarView: React.FC<{
       {/* Calendar Header */}
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-slate-800">{monthYearString}</h2>
+          <h2 className="text-xl font-bold text-slate-800">
+            {monthYearString}
+          </h2>
         </div>
         <div className="flex items-center gap-2">
           <Button
@@ -374,19 +404,27 @@ const CalendarView: React.FC<{
             return (
               <div
                 key={index}
-                className={`relative min-h-[120px] p-2 flex flex-col ${day.isCurrentMonth
-                  ? isWeekend ? 'bg-slate-50/50' : 'bg-white'
-                  : 'bg-slate-100/50'
-                  } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
+                className={`relative min-h-[120px] p-2 flex flex-col ${
+                  day.isCurrentMonth
+                    ? isWeekend
+                      ? 'bg-slate-50/50'
+                      : 'bg-white'
+                    : 'bg-slate-100/50'
+                } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
               >
                 <time
                   dateTime={day.date.toISOString().substring(0, 10)}
-                  className={`text-sm font-semibold mb-1 ${day.isToday
-                    ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
-                    : day.isCurrentMonth
-                      ? dayOfWeek === 0 ? 'text-red-400' : dayOfWeek === 6 ? 'text-blue-400' : 'text-slate-700'
-                      : 'text-slate-300'
-                    }`}
+                  className={`text-sm font-semibold mb-1 ${
+                    day.isToday
+                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
+                      : day.isCurrentMonth
+                        ? dayOfWeek === 0
+                          ? 'text-red-400'
+                          : dayOfWeek === 6
+                            ? 'text-blue-400'
+                            : 'text-slate-700'
+                        : 'text-slate-300'
+                  }`}
                 >
                   {day.date.getDate()}
                 </time>
@@ -399,7 +437,9 @@ const CalendarView: React.FC<{
                     >
                       <p className="font-semibold truncate">
                         <span className="text-[10px] opacity-70 mr-1">
-                          {new Date(job.start_time).toTimeString().substring(0, 5)}
+                          {new Date(job.start_time)
+                            .toTimeString()
+                            .substring(0, 5)}
                         </span>
                         {job.customerName}
                       </p>
@@ -479,14 +519,19 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [warehousesRes, categoriesRes, reportsRes, productsRes, packagesRes] =
-        await Promise.all([
-          VehicleApi.getVehiclesWithUserJobs(),
-          CategoryApi.getCategories({}),
-          ServiceReportApi.getAll({ limit: 10 }),
-          ProductApi.getProducts({ limit: 10 }),
-          PackageApi.getPackages({ limit: 10 }),
-        ]);
+      const [
+        warehousesRes,
+        categoriesRes,
+        reportsRes,
+        productsRes,
+        packagesRes,
+      ] = await Promise.all([
+        VehicleApi.getVehiclesWithUserJobs(),
+        CategoryApi.getCategories({}),
+        ServiceReportApi.getAll({ limit: 10 }),
+        ProductApi.getProducts({ limit: 10 }),
+        PackageApi.getPackages({ limit: 10 }),
+      ]);
 
       // Ensure warehousesData is an array
       let warehousesData: any[] = [];
@@ -514,9 +559,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
             const customer = job.customer || {};
             const customerName =
               customer.first_name || customer.last_name
-                ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
-                  ? ` ${customer.last_name}`
-                  : ''
+                ? `${customer.first_name || ''}${
+                    customer.last_name && customer.last_name !== '-'
+                      ? ` ${customer.last_name}`
+                      : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -562,27 +608,42 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
             });
 
             const techniciansList = [];
-            
+
             if (job.primary_technician) {
-              techniciansList.push({ 
-                ...job.primary_technician, 
+              techniciansList.push({
+                ...job.primary_technician,
                 role: 'LEAD_TECH',
-                name: job.primary_technician.first_name ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''}`.trim() : job.primary_technician.name 
+                name: job.primary_technician.first_name
+                  ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''}`.trim()
+                  : job.primary_technician.name,
               });
             }
 
-            if (Array.isArray(job.job_team_members) && job.job_team_members.length > 0) {
-               const teamMembers = job.job_team_members.filter((t: any) => t.id !== job.primary_technician?.id);
-               techniciansList.push(...teamMembers.map((t: any) => ({
-                 ...t,
-                 role: 'TECH',
-                 name: t.first_name ? `${t.first_name} ${t.last_name || ''}`.trim() : t.name
-               })));
+            if (
+              Array.isArray(job.job_team_members) &&
+              job.job_team_members.length > 0
+            ) {
+              const teamMembers = job.job_team_members.filter(
+                (t: any) => t.id !== job.primary_technician?.id
+              );
+              techniciansList.push(
+                ...teamMembers.map((t: any) => ({
+                  ...t,
+                  role: 'TECH',
+                  name: t.first_name
+                    ? `${t.first_name} ${t.last_name || ''}`.trim()
+                    : t.name,
+                }))
+              );
             }
-            
+
             // Fallback to existing technicians if API structure changes or different endpoint
-            if (techniciansList.length === 0 && Array.isArray(job.technicians) && job.technicians.length > 0) {
-                techniciansList.push(...job.technicians);
+            if (
+              techniciansList.length === 0 &&
+              Array.isArray(job.technicians) &&
+              job.technicians.length > 0
+            ) {
+              techniciansList.push(...job.technicians);
             }
 
             return {
@@ -665,9 +726,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         await JobApi.checkOut(jobId);
       } else {
         const status =
-          newStatus === JobStatus.Completed as any
-            ? 'COMPLETE'
-            : 'PENDING';
+          newStatus === (JobStatus.Completed as any) ? 'COMPLETE' : 'PENDING';
         await JobApi.update(jobId, { status } as any);
       }
       fetchData();
@@ -760,12 +819,14 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   const technicians = useMemo(
-    () => users.filter((user) => {
-      const roleName = typeof user.role === 'object' && user.role !== null
-        ? (user.role as { name: string }).name
-        : String(user.role || '');
-      return roleName === UserRole.TECH;
-    }),
+    () =>
+      users.filter((user) => {
+        const roleName =
+          typeof user.role === 'object' && user.role !== null
+            ? (user.role as { name: string }).name
+            : String(user.role || '');
+        return roleName === UserRole.TECH;
+      }),
     [users]
   );
 
@@ -782,9 +843,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       created_at: new Date().toISOString(),
       check_in_time: job.actual_start_time
         ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-          hour: '2-digit',
-          minute: '2-digit',
-        })
+            hour: '2-digit',
+            minute: '2-digit',
+          })
         : '',
       check_out_time: new Date().toLocaleTimeString('th-TH', {
         hour: '2-digit',
@@ -854,7 +915,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   }, [jobs, currentUser]);
 
   const kanbanColumns = useMemo(() => {
-
     const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
     const serviceVehicles = safeWarehouses.filter(
       (w) => w.type === WarehouseType.VEHICLE
@@ -866,19 +926,20 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         j.status !== JobMainStatus.CANCELLED
     );
 
-    const vehicleColumns = serviceVehicles.map((vehicle) => {
-      const license =
-        (vehicle as any)?.license_plate ||
-        (vehicle as any)?.vehicle?.vehicle_registration ||
-        (vehicle as any)?.vehicle_registration;
+    const vehicleColumns = serviceVehicles
+      .map((vehicle) => {
+        const license =
+          (vehicle as any)?.license_plate ||
+          (vehicle as any)?.vehicle?.vehicle_registration ||
+          (vehicle as any)?.vehicle_registration;
 
-      return {
-        title: license ? `${vehicle.name} (${license})` : vehicle.name,
-        id: vehicle.id,
-        jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
-      };
-    }).filter(v => v.id);
-
+        return {
+          title: license ? `${vehicle.name} (${license})` : vehicle.name,
+          id: vehicle.id,
+          jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
+        };
+      })
+      .filter((v) => v.id);
 
     return vehicleColumns;
   }, [filteredJobs, warehouses]);
@@ -888,7 +949,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   }, [initialCustomers]);
 
   const serviceReports = useMemo(
-    () => [...reports].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    () =>
+      [...reports].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      ),
     [reports]
   );
 
@@ -918,7 +983,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         (job) =>
           job.vehicle_id === scheduleVehicleId &&
           new Date(job.start_time).toISOString().substring(0, 10) ===
-          scheduleDate
+            scheduleDate
       )
       .sort(
         (a, b) =>
@@ -984,7 +1049,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   const handleWriteReport = (job: FieldJob) => {
     setJobForReport(job);
     setReportFinalStatus(
-      job.status === JobMainStatus.COMPLETE ? JobStatus.Completed : JobStatus.Draft
+      job.status === JobMainStatus.COMPLETE
+        ? JobStatus.Completed
+        : JobStatus.Draft
     );
     setIsReportModalOpen(true);
     setOpenDropdownId(null);
@@ -1066,14 +1133,14 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           path: `service-reports/${reportId}/blueprints`,
           entity_type: 'service_report',
           entity_id: reportId,
-          provider: 'local', 
+          provider: 'local',
           type: 'image',
-          visibility: 'private'
+          visibility: 'private',
         });
       }
 
       // Update Job Status if needed
-      // Note: Backend might handle status update when report is created/completed, 
+      // Note: Backend might handle status update when report is created/completed,
       // but we ensure consistency here.
       if (quotationId && quotationId !== job.quotation_id) {
         await JobApi.update(jobId, { quotation_id: quotationId } as any);
@@ -1162,12 +1229,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-        {
-          label: 'ดูรายละเอียด',
-          icon: EyeIcon,
-          onClick: () => handleViewDetails(selectedJob),
-        },
-      ];
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(selectedJob),
+      },
+    ];
 
     if (
       status === JobStatus.Planned ||
@@ -1228,13 +1295,17 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           e.preventDefault();
           action.onClick();
         }}
-        className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${action.isDanger
-          ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
-          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-          } ${index === 0 ? '' : ''}`}
+        className={`flex items-center w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${
+          action.isDanger
+            ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+        } ${index === 0 ? '' : ''}`}
         role="menuitem"
       >
-        <action.icon className={`mr-3 h-4 w-4 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`} aria-hidden="true" />
+        <action.icon
+          className={`mr-3 h-4 w-4 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`}
+          aria-hidden="true"
+        />
         <span>{action.label}</span>
       </a>
     ));
@@ -1267,7 +1338,11 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
       const status = String(j.status || j.api_status || '').toUpperCase();
       return status === 'PENDING' || status === 'PLANNED';
     });
-    return { today: todayJobs.length, inProgress: inProgressJobs.length, pending: pendingJobs.length };
+    return {
+      today: todayJobs.length,
+      inProgress: inProgressJobs.length,
+      pending: pendingJobs.length,
+    };
   }, [jobs]);
 
   // Loading state
@@ -1289,7 +1364,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
-            <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
+            <p className="mt-1 text-slate-600">
+              จัดการและติดตามงานภาคสนามทั้งหมด
+            </p>
           </div>
           {authUser?.role &&
             [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(
@@ -1315,7 +1392,9 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
               </div>
               <div>
                 <p className="text-sm text-blue-600 font-medium">งานวันนี้</p>
-                <p className="text-2xl font-bold text-blue-800">{jobStats.today}</p>
+                <p className="text-2xl font-bold text-blue-800">
+                  {jobStats.today}
+                </p>
               </div>
             </div>
           </Card>
@@ -1325,8 +1404,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 <PlayIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-amber-600 font-medium">กำลังดำเนินการ</p>
-                <p className="text-2xl font-bold text-amber-800">{jobStats.inProgress}</p>
+                <p className="text-sm text-amber-600 font-medium">
+                  กำลังดำเนินการ
+                </p>
+                <p className="text-2xl font-bold text-amber-800">
+                  {jobStats.inProgress}
+                </p>
               </div>
             </div>
           </Card>
@@ -1336,8 +1419,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 <ClipboardDocumentListIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-purple-600 font-medium">รอดำเนินการ</p>
-                <p className="text-2xl font-bold text-purple-800">{jobStats.pending}</p>
+                <p className="text-sm text-purple-600 font-medium">
+                  รอดำเนินการ
+                </p>
+                <p className="text-2xl font-bold text-purple-800">
+                  {jobStats.pending}
+                </p>
               </div>
             </div>
           </Card>
@@ -1347,8 +1434,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 <DocumentCheckIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-green-600 font-medium">รายงานทั้งหมด</p>
-                <p className="text-2xl font-bold text-green-800">{serviceReports.length}</p>
+                <p className="text-sm text-green-600 font-medium">
+                  รายงานทั้งหมด
+                </p>
+                <p className="text-2xl font-bold text-green-800">
+                  {serviceReports.length}
+                </p>
               </div>
             </div>
           </Card>
@@ -1369,8 +1460,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10"
                   />
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
 
@@ -1396,8 +1497,8 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
 
               {/* Tabs & View Toggles */}
               <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
-                 {/* View Toggles (Only for Schedule Tab) */}
-                 {activeTab === 'schedule' && (
+                {/* View Toggles (Only for Schedule Tab) */}
+                {activeTab === 'schedule' && (
                   <div className="flex items-center rounded-lg bg-slate-100 p-1 order-2 lg:order-1">
                     <Button
                       onClick={() => setView('kanban')}
@@ -1430,28 +1531,31 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-lg order-1 lg:order-2 overflow-x-auto max-w-full">
                   <button
                     onClick={() => setActiveTab('schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
+                      activeTab === 'schedule'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
                     นัดหมาย
                   </button>
                   <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
+                      activeTab === 'reports'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
                     รายงาน
                   </button>
                   <button
                     onClick={() => setActiveTab('work-schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
+                      activeTab === 'work-schedule'
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
                   >
                     ตารางงาน
                   </button>
@@ -1494,7 +1598,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                          <h3 className="font-bold text-slate-700 text-sm truncate" title={col.title}>
+                          <h3
+                            className="font-bold text-slate-700 text-sm truncate"
+                            title={col.title}
+                          >
                             {col.title}
                           </h3>
                         </div>
@@ -1577,14 +1684,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-sm">
-                                  {job.customerName?.charAt(0).toUpperCase() || '-'}
+                                  {job.customerName?.charAt(0).toUpperCase() ||
+                                    '-'}
                                 </span>
                               </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold text-slate-800 truncate">
                                   {job.customerName || '-'}
                                 </p>
-                                <p className="text-xs text-slate-500 truncate max-w-[200px]" title={job.address}>
+                                <p
+                                  className="text-xs text-slate-500 truncate max-w-[200px]"
+                                  title={job.address}
+                                >
                                   {job.address || '-'}
                                 </p>
                               </div>
@@ -1600,28 +1711,40 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                   {formatThaiDate(job.start_time)}
                                 </p>
                                 <p className="text-xs text-slate-500">
-                                  {new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                  {new Date(job.start_time).toLocaleTimeString(
+                                    'th-TH',
+                                    { hour: '2-digit', minute: '2-digit' }
+                                  )}
                                   {' - '}
-                                  {new Date(job.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                  {new Date(job.end_time).toLocaleTimeString(
+                                    'th-TH',
+                                    { hour: '2-digit', minute: '2-digit' }
+                                  )}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm text-slate-600">
-                              {job.work_areas.map((wa) => wa.service_package).join(', ') || '-'}
+                              {job.work_areas
+                                .map((wa) => wa.service_package)
+                                .join(', ') || '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <TechnicianIcon className="h-4 w-4 text-slate-400" />
                               <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                {job.technicians.map((t) => t.nick_name || t.name).join(', ') || '-'}
+                                {job.technicians
+                                  .map((t) => t.nick_name || t.name)
+                                  .join(', ') || '-'}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={job.api_status || job.status} />
+                            <StatusBadge
+                              status={job.api_status || job.status}
+                            />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <Button
@@ -1640,8 +1763,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                         <td colSpan={6} className="px-6 py-16 text-center">
                           <div className="flex flex-col items-center text-slate-400">
                             <ListBulletIcon className="h-12 w-12 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">ไม่พบข้อมูลงาน</p>
-                            <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือสร้างนัดหมายใหม่</p>
+                            <p className="text-lg font-medium">
+                              ไม่พบข้อมูลงาน
+                            </p>
+                            <p className="text-sm mt-1">
+                              ลองเปลี่ยนตัวกรองหรือสร้างนัดหมายใหม่
+                            </p>
                           </div>
                         </td>
                       </tr>
@@ -1697,8 +1824,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                     {paginatedReports.length > 0 ? (
                       paginatedReports.map((report, idx) => {
                         const job = jobs.find((j) => j.id === report.job_id);
-                        const reportDate = report.report_date || report.created_at || '';
-                        const customerName = report.customer_name || job?.customerName || '-';
+                        const reportDate =
+                          report.report_date || report.created_at || '';
+                        const customerName =
+                          report.customer_name || job?.customerName || '-';
 
                         return (
                           <tr
@@ -1714,7 +1843,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                   <p className="text-sm font-semibold text-slate-800 truncate">
                                     {customerName}
                                   </p>
-                                  <p className="text-xs text-slate-500 truncate max-w-[200px]" title={job?.address}>
+                                  <p
+                                    className="text-xs text-slate-500 truncate max-w-[200px]"
+                                    title={job?.address}
+                                  >
                                     {job?.address || '-'}
                                   </p>
                                 </div>
@@ -1732,8 +1864,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                   <p className="text-xs text-slate-500">
                                     {report.time_in && report.time_out
                                       ? `${report.time_in} - ${report.time_out}`
-                                      : new Date(reportDate).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
-                                    }
+                                      : new Date(reportDate).toLocaleTimeString(
+                                          'th-TH',
+                                          { hour: '2-digit', minute: '2-digit' }
+                                        )}
                                   </p>
                                 </div>
                               </div>
@@ -1741,16 +1875,25 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                             <td className="px-6 py-4">
                               <div className="flex flex-wrap gap-1">
                                 {report.service_types?.length ? (
-                                  report.service_types.slice(0, 2).map((type, i) => (
-                                    <span key={i} className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                      {type}
-                                    </span>
-                                  ))
+                                  report.service_types
+                                    .slice(0, 2)
+                                    .map((type, i) => (
+                                      <span
+                                        key={i}
+                                        className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
+                                      >
+                                        {type}
+                                      </span>
+                                    ))
                                 ) : (
-                                  <span className="text-sm text-slate-400">-</span>
+                                  <span className="text-sm text-slate-400">
+                                    -
+                                  </span>
                                 )}
                                 {(report.service_types?.length || 0) > 2 && (
-                                  <span className="text-xs text-slate-400">+{(report.service_types?.length || 0) - 2}</span>
+                                  <span className="text-xs text-slate-400">
+                                    +{(report.service_types?.length || 0) - 2}
+                                  </span>
                                 )}
                               </div>
                             </td>
@@ -1758,14 +1901,18 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                               <div className="flex items-center gap-2">
                                 <TechnicianIcon className="h-4 w-4 text-slate-400" />
                                 <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                  {job?.technicians?.map(t => t.nick_name || t.name).join(', ') ||
+                                  {job?.technicians
+                                    ?.map((t) => t.nick_name || t.name)
+                                    .join(', ') ||
                                     report.signatures?.technician_name ||
                                     '-'}
                                 </span>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <StatusBadge status={report.status || JobStatus.Draft} />
+                              <StatusBadge
+                                status={report.status || JobStatus.Draft}
+                              />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1">
@@ -1774,15 +1921,25 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                     try {
                                       if (report.id) {
                                         setLoadingPdfId(report.id);
-                                        const blob = await ServiceReportApi.getServiceReportPdfById(report.id);
-                                        const url = window.URL.createObjectURL(blob);
+                                        const blob =
+                                          await ServiceReportApi.getServiceReportPdfById(
+                                            report.id
+                                          );
+                                        const url =
+                                          window.URL.createObjectURL(blob);
                                         window.open(url, '_blank');
-                                        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                                        setTimeout(
+                                          () => window.URL.revokeObjectURL(url),
+                                          100
+                                        );
                                       } else {
                                         alert('ไม่พบ ID ของรายงาน');
                                       }
                                     } catch (error) {
-                                      console.error('Error fetching PDF:', error);
+                                      console.error(
+                                        'Error fetching PDF:',
+                                        error
+                                      );
                                       alert('ไม่สามารถดาวน์โหลด PDF ได้');
                                     } finally {
                                       setLoadingPdfId(null);
@@ -1825,8 +1982,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                         <td colSpan={6} className="px-6 py-16 text-center">
                           <div className="flex flex-col items-center text-slate-400">
                             <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
-                            <p className="text-sm mt-1">รายงานจะแสดงเมื่อช่างทำรายงานบริการเสร็จสิ้น</p>
+                            <p className="text-lg font-medium">
+                              ไม่พบรายงานบริการ
+                            </p>
+                            <p className="text-sm mt-1">
+                              รายงานจะแสดงเมื่อช่างทำรายงานบริการเสร็จสิ้น
+                            </p>
                           </div>
                         </td>
                       </tr>
@@ -1934,9 +2095,15 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                       {scheduledJobsForTable.length > 0 ? (
                         scheduledJobsForTable.map((job, idx) => {
                           const customer = customerMap.get(job.customer_id);
-                          const statusUpper = String(job.status || '').toUpperCase();
-                          const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE';
-                          const isInProgress = statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS';
+                          const statusUpper = String(
+                            job.status || ''
+                          ).toUpperCase();
+                          const isCompleted =
+                            statusUpper === 'COMPLETED' ||
+                            statusUpper === 'COMPLETE';
+                          const isInProgress =
+                            statusUpper === 'IN_PROGRESS' ||
+                            statusUpper === 'INPROGRESS';
 
                           return (
                             <tr
@@ -1945,19 +2112,29 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                             >
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
-                                  {new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                                  {new Date(job.start_time).toLocaleTimeString(
+                                    'th-TH',
+                                    { hour: '2-digit', minute: '2-digit' }
+                                  )}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm font-semibold text-slate-800">{job.customerName || '-'} </p>
+                                <p className="text-sm font-semibold text-slate-800">
+                                  {job.customerName || '-'}{' '}
+                                </p>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm text-slate-500 max-w-[200px] truncate" title={job.address}>
+                                <p
+                                  className="text-sm text-slate-500 max-w-[200px] truncate"
+                                  title={job.address}
+                                >
                                   {job.address || '-'}
                                 </p>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm text-slate-600">{customer?.phone || '-'}</span>
+                                <span className="text-sm text-slate-600">
+                                  {customer?.phone || '-'}
+                                </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-center">
                                 {isCompleted || isInProgress ? (
@@ -1985,7 +2162,10 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                                 <span className="text-slate-400">-</span>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm text-slate-500 max-w-[150px] truncate" title={job.remarks}>
+                                <p
+                                  className="text-sm text-slate-500 max-w-[150px] truncate"
+                                  title={job.remarks}
+                                >
                                   {job.remarks || '-'}
                                 </p>
                               </td>
@@ -1997,8 +2177,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                           <td colSpan={8} className="px-6 py-16 text-center">
                             <div className="flex flex-col items-center text-slate-400">
                               <CalendarDaysIcon className="h-12 w-12 mb-3 opacity-50" />
-                              <p className="text-lg font-medium">ไม่มีงานในวันนี้</p>
-                              <p className="text-sm mt-1">ไม่พบงานสำหรับรถคันนี้ในวันที่เลือก</p>
+                              <p className="text-lg font-medium">
+                                ไม่มีงานในวันนี้
+                              </p>
+                              <p className="text-sm mt-1">
+                                ไม่พบงานสำหรับรถคันนี้ในวันที่เลือก
+                              </p>
                             </div>
                           </td>
                         </tr>
@@ -2011,8 +2195,12 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
                   <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                     <CalendarDaysIcon className="h-10 w-10 text-slate-300" />
                   </div>
-                  <p className="text-lg font-medium text-slate-500">เลือกตารางงาน</p>
-                  <p className="text-sm mt-1">กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน</p>
+                  <p className="text-lg font-medium text-slate-500">
+                    เลือกตารางงาน
+                  </p>
+                  <p className="text-sm mt-1">
+                    กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน
+                  </p>
                 </div>
               )}
             </div>
@@ -2114,7 +2302,6 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
         customers={initialCustomers}
         categories={categories}
       />
-
     </>
   );
 };

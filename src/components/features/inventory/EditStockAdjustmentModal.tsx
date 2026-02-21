@@ -31,15 +31,19 @@ interface EditStockAdjustmentModalProps {
   onUpdateAdjustment: (adjustment: StockAdjustmentType) => void;
   warehouses: WarehouseType[];
   products: (Product & { quantity: number; warehouse_id: string })[];
+  stockMap: { [key: string]: { [key: string]: number } };
 }
 
-export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> = ({
+export const EditStockAdjustmentModal: React.FC<
+  EditStockAdjustmentModalProps
+> = ({
   isOpen,
   onClose,
   adjustment,
   onUpdateAdjustment,
   warehouses,
   products,
+  stockMap,
 }) => {
   const [items, setItems] = useState<EditableAdjustmentItem[]>([]);
   const [formData, setFormData] = useState<Partial<StockAdjustmentType>>({});
@@ -47,8 +51,11 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
 
   const productsInWarehouse = useMemo(() => {
     if (!formData.warehouse_id) return [];
-    return products.filter((p) => p.warehouse_id === formData.warehouse_id);
-  }, [formData.warehouse_id, products]);
+    const productIdsInWarehouse = Object.keys(
+      stockMap[formData.warehouse_id] || {}
+    );
+    return products.filter((p) => productIdsInWarehouse.includes(p.id));
+  }, [formData.warehouse_id, products, stockMap]);
 
   const isFormValid = useMemo(() => {
     return (
@@ -57,8 +64,7 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
       items.length > 0 &&
       items.every(
         (item) =>
-          typeof item.quantity_change === 'number' &&
-          item.quantity_change !== 0
+          typeof item.quantity_change === 'number' && item.quantity_change !== 0
       )
     );
   }, [formData.reason, items]);
@@ -82,7 +88,9 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
   }, [adjustment, products]);
 
   const handleAddProducts = (productIds: string[]) => {
-    const selectedProducts = productsInWarehouse.filter((p) => productIds.includes(p.id));
+    const selectedProducts = productsInWarehouse.filter((p) =>
+      productIds.includes(p.id)
+    );
     const newItems: EditableAdjustmentItem[] = selectedProducts.map((p) => ({
       product_id: p.id,
       product: p,
@@ -92,7 +100,9 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
     }));
     setItems((prev) => {
       const existingIds = new Set(prev.map((i) => i.product_id));
-      const uniqueNewItems = newItems.filter((i) => !existingIds.has(i.product_id));
+      const uniqueNewItems = newItems.filter(
+        (i) => !existingIds.has(i.product_id)
+      );
       return [...prev, ...uniqueNewItems];
     });
   };
@@ -122,7 +132,9 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -145,7 +157,8 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
           quantity_change: Number(item.quantity_change) || 0,
           reason: item.reason,
           qty_before: item.qty_before,
-          id: adjustment.items?.find(i => i.product_id === item.product_id)?.id
+          id: adjustment.items?.find((i) => i.product_id === item.product_id)
+            ?.id,
         })),
       };
       onUpdateAdjustment(updatedAdjustment);
@@ -153,7 +166,10 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
     onClose();
   };
 
-  const existingProductIds = useMemo(() => new Set(items.map((i) => i.product_id)), [items]);
+  const existingProductIds = useMemo(
+    () => new Set(items.map((i) => i.product_id)),
+    [items]
+  );
 
   if (!adjustment) return null;
 
@@ -221,7 +237,10 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
                 className="bg-slate-100"
               >
                 <option value={adjustment?.warehouse_id}>
-                  {warehouses.find(w => w.id === adjustment?.warehouse_id)?.name}
+                  {
+                    warehouses.find((w) => w.id === adjustment?.warehouse_id)
+                      ?.name
+                  }
                 </option>
               </Select>
             </FormField>
@@ -346,5 +365,3 @@ export const EditStockAdjustmentModal: React.FC<EditStockAdjustmentModalProps> =
     </>
   );
 };
-
-

@@ -7,7 +7,13 @@ import {
   Select,
   Button,
 } from '../../common';
-import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
+import {
+  Package,
+  PackagePrice,
+  Category,
+  CategoryType,
+  Unit,
+} from '@/src/types';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
 
 interface AddPackageModalProps {
@@ -77,7 +83,10 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
 
   const handleConditionChange = (
     index: number,
-    field: keyof Omit<PackagePrice, 'id' | 'created_at' | 'updated_at' | 'unit'>,
+    field: keyof Omit<
+      PackagePrice,
+      'id' | 'created_at' | 'updated_at' | 'unit'
+    >,
     value: string
   ) => {
     const newConditions = [...conditions];
@@ -108,7 +117,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
       category_id: data['categoryId'] as string,
       visit_limit: parseInt(data['package-visits'] as string, 10),
       remark: data['package-description'] as string,
-      package_price: conditions.map(
+      package_prices: conditions.map(
         (c) =>
           ({
             area_range: c.area_range || 0,
@@ -167,7 +176,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
               name="package-code"
               type="text"
               className="bg-slate-100"
-              placeholder='รหัสเเพ็ตเก็จ'
+              placeholder="รหัสเเพ็ตเก็จ"
             />
           </FormField>
           <FormField label="หมวดหมู่" htmlFor="categoryId">
@@ -279,7 +288,11 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
                         <Select
                           value={cond.unit_id || ''}
                           onChange={(e) =>
-                            handleConditionChange(index, 'unit_id', e.target.value)
+                            handleConditionChange(
+                              index,
+                              'unit_id',
+                              e.target.value
+                            )
                           }
                           className={`${baseInputClasses} h-9 ${normalInputClasses}`}
                           required

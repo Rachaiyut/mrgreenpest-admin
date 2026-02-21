@@ -50,10 +50,10 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     ];
 
     if (customerType === 'บุคคลธรรมดา') {
-        requiredFields.push('first_name', 'last_name');
+      requiredFields.push('first_name', 'last_name');
     } else {
-        requiredFields.push('name');
-        requiredFields.push('contactPerson', 'contactPersonPhone');
+      requiredFields.push('name');
+      requiredFields.push('contactPerson', 'contactPersonPhone');
     }
 
     for (const field of requiredFields) {
@@ -67,10 +67,10 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     let lastName = '';
 
     if (customerType === 'บุคคลธรรมดา') {
-        firstName = data.first_name as string;
-        lastName = data.last_name as string;
+      firstName = data.first_name as string;
+      lastName = data.last_name as string;
     } else {
-        firstName = data.name as string; // Use company name as first name for now or adjust based on backend expectations
+      firstName = data.name as string; // Use company name as first name for now or adjust based on backend expectations
     }
 
     const newCustomer: Omit<Customer, 'id' | 'code'> = {
@@ -385,4 +385,3 @@ export const AddCustomerModal: React.FC<AddCustomerModalProps> = ({
     </Modal>
   );
 };
-

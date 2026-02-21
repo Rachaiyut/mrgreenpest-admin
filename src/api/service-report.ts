@@ -9,9 +9,7 @@ import { ServiceReport } from '../types';
 class ServiceReportService extends AuthService {
   protected path = '/service-report';
 
-  async getAll(
-    query?: IBaseQuery
-  ): Promise<IBaseResponseArray<ServiceReport>> {
+  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<ServiceReport>> {
     const res = await this.http.get<IBaseResponseArray<ServiceReport>>(
       this.path,
       { params: query }
@@ -19,9 +17,7 @@ class ServiceReportService extends AuthService {
     return res.data;
   }
 
-  async getServiceReportPdfById(
-    id: string
-  ): Promise<Blob> {
+  async getServiceReportPdfById(id: string): Promise<Blob> {
     const res = await this.http.get<Blob>(`${this.path}/${id}/pdf`, {
       responseType: 'blob' as any,
     });
@@ -55,4 +51,3 @@ class ServiceReportService extends AuthService {
 }
 
 export const ServiceReportApi = new ServiceReportService();
-

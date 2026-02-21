@@ -43,4 +43,3 @@ class InvoiceService extends AuthService {
 }
 
 export const InvoiceApi = new InvoiceService();
-

@@ -38,7 +38,9 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     'user-email': '',
   };
   const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState<Partial<Record<keyof typeof initialFormData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof typeof initialFormData, string>>
+  >({});
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -180,7 +182,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
         </div>
       }
     >
-      <form id="add-user-form" onSubmit={handleSubmit} className="p-4 bg-slate-50 rounded-lg space-y-6">
+      <form
+        id="add-user-form"
+        onSubmit={handleSubmit}
+        className="p-4 bg-slate-50 rounded-lg space-y-6"
+      >
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex flex-col md:flex-row gap-8">
             {/* Image Upload Section */}
@@ -210,8 +216,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                     <div className="p-4 bg-white rounded-full shadow-sm mb-2">
                       <PhotoIcon className="h-8 w-8 text-slate-300" />
                     </div>
-                    <span className="text-sm font-medium text-slate-500">อัปโหลดรูปภาพ</span>
-                    <span className="text-xs text-slate-400 mt-1">PNG, JPG</span>
+                    <span className="text-sm font-medium text-slate-500">
+                      อัปโหลดรูปภาพ
+                    </span>
+                    <span className="text-xs text-slate-400 mt-1">
+                      PNG, JPG
+                    </span>
                   </div>
                 )}
 
@@ -247,7 +257,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-national-id']}
                       onChange={handleChange}
                     />
-                    {errors['user-national-id'] && <p className="text-red-500 text-sm mt-1">{errors['user-national-id']}</p>}
+                    {errors['user-national-id'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-national-id']}
+                      </p>
+                    )}
                   </FormField>
                 </div>
 
@@ -261,7 +275,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-first-name']}
                       onChange={handleChange}
                     />
-                    {errors['user-first-name'] && <p className="text-red-500 text-sm mt-1">{errors['user-first-name']}</p>}
+                    {errors['user-first-name'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-first-name']}
+                      </p>
+                    )}
                   </FormField>
                   <FormField label="นามสกุล*" htmlFor="user-last-name">
                     <Input
@@ -272,7 +290,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-last-name']}
                       onChange={handleChange}
                     />
-                    {errors['user-last-name'] && <p className="text-red-500 text-sm mt-1">{errors['user-last-name']}</p>}
+                    {errors['user-last-name'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-last-name']}
+                      </p>
+                    )}
                   </FormField>
                 </div>
 
@@ -286,7 +308,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-nickname']}
                       onChange={handleChange}
                     />
-                    {errors['user-nickname'] && <p className="text-red-500 text-sm mt-1">{errors['user-nickname']}</p>}
+                    {errors['user-nickname'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-nickname']}
+                      </p>
+                    )}
                   </FormField>
                   <FormField label="เบอร์โทรศัพท์*" htmlFor="user-phone">
                     <Input
@@ -297,7 +323,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-phone']}
                       onChange={handleChange}
                     />
-                    {errors['user-phone'] && <p className="text-red-500 text-sm mt-1">{errors['user-phone']}</p>}
+                    {errors['user-phone'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-phone']}
+                      </p>
+                    )}
                   </FormField>
                 </div>
               </div>
@@ -317,7 +347,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-email']}
                       onChange={handleChange}
                     />
-                    {errors['user-email'] && <p className="text-red-500 text-sm mt-1">{errors['user-email']}</p>}
+                    {errors['user-email'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-email']}
+                      </p>
+                    )}
                   </FormField>
                   <FormField label="เลือกบทบาท*" htmlFor="user-role-id">
                     <Select
@@ -329,12 +363,16 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                     >
                       <option value="">เลือกบทบาท</option>
                       {roles.map((role) => (
-                          <option key={role.id} value={role.id}>
-                            {getRoleNameTh(role.name)}
-                          </option>
-                        ))}
+                        <option key={role.id} value={role.id}>
+                          {getRoleNameTh(role.name)}
+                        </option>
+                      ))}
                     </Select>
-                    {errors['user-role-id'] && <p className="text-red-500 text-sm mt-1">{errors['user-role-id']}</p>}
+                    {errors['user-role-id'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-role-id']}
+                      </p>
+                    )}
                   </FormField>
                 </div>
 
@@ -348,7 +386,11 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                       value={formData['user-password']}
                       onChange={handleChange}
                     />
-                    {errors['user-password'] && <p className="text-red-500 text-sm mt-1">{errors['user-password']}</p>}
+                    {errors['user-password'] && (
+                      <p className="text-red-500 text-sm mt-1">
+                        {errors['user-password']}
+                      </p>
+                    )}
                   </FormField>
                 </div>
               </div>
@@ -359,4 +401,3 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     </Modal>
   );
 };
-

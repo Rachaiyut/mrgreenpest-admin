@@ -45,4 +45,3 @@ class StockAdjustmentService extends AuthService {
 }
 
 export const StockAdjustmentApi = new StockAdjustmentService();
-

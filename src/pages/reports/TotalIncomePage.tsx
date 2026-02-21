@@ -375,4 +375,3 @@ const TotalIncomePage: React.FC<TotalIncomePageProps> = () => {
 };
 
 export default TotalIncomePage;
-

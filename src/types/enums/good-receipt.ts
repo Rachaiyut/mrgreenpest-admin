@@ -1,5 +1,5 @@
 export enum GoodReceiptStatus {
-    PEDING = 'PENDING',
-    RECEIVED = 'RECEIVED',
-    PARTIAL = 'PARTIAL',
+  PEDING = 'PENDING',
+  RECEIVED = 'RECEIVED',
+  PARTIAL = 'PARTIAL',
 }

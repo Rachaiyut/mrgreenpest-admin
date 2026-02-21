@@ -1,6 +1,10 @@
 import { Status } from './core.interface';
 import { Customer } from './customer.interface';
-import { InvoiceStatus, QuotationStatus, ContractStatus } from '../enums/financial';
+import {
+  InvoiceStatus,
+  QuotationStatus,
+  ContractStatus,
+} from '../enums/financial';
 
 export interface InstallmentPlan {
   id: string;

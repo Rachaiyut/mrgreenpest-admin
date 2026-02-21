@@ -1,6 +1,6 @@
-import { IBase } from "./base.interface";
-import { JobMainStatus } from "../enums/job";
-import { Customer } from "./customer.interface";
+import { IBase } from './base.interface';
+import { JobMainStatus } from '../enums/job';
+import { Customer } from './customer.interface';
 
 export enum ServiceSystem {
   CHEMICAL = 'CHEMICAL',
@@ -29,7 +29,7 @@ export interface Job extends IBase {
   status: JobMainStatus | string;
   service_system?: ServiceSystem | string;
   remark?: string;
-  
+
   // Relations
   customer?: Customer;
   primary_technician?: any;

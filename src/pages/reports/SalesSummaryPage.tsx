@@ -79,7 +79,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((j) => {
-      const d = new Date(j.startTime);
+      const d = new Date(j.start_date);
       return (
         d.getMonth() === selectedMonth &&
         d.getFullYear() === selectedYear &&
@@ -353,4 +353,3 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
 };
 
 export default SalesSummaryPage;
-

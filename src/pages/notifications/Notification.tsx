@@ -5,7 +5,7 @@ import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
 
-interface NotificationsProps { }
+interface NotificationsProps {}
 
 const Notifications: React.FC<NotificationsProps> = () => {
   const [data, setData] = useState<any[]>([]);
@@ -27,7 +27,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
         if (res && Array.isArray(res.data)) {
           setData(res.data);
         } else if (Array.isArray(res)) {
-            setData(res);
+          setData(res);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
@@ -40,7 +40,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
   }, []);
 
   const filteredData = useMemo(() => {
-    return data.map(item => ({
+    return data
+      .map((item) => ({
         contractId: item.contract_code || item.contract_id,
         customerName: item.customer_name,
         nickname: item.nickname || '-',
@@ -62,53 +63,67 @@ const Notifications: React.FC<NotificationsProps> = () => {
         paidDate: item.paid_date || '-',
         visitNumber: Number(item.visit_number) || 0,
         lastServiceDate: item.last_service_date || '-',
-        nextServiceDate: item.next_service_date ? new Date(item.next_service_date) : new Date(),
+        nextServiceDate: item.next_service_date
+          ? new Date(item.next_service_date)
+          : new Date(),
         nextServiceDisplay: item.next_service_date,
         daysRemaining: Number(item.days_remaining) || 0,
-    })).filter((item) => {
-      // 1. Search Logic
-      const term = searchTerm.toLowerCase();
-      const matchName = item.customerName && item.customerName.toLowerCase().includes(term);
-      const matchId = item.contractId && item.contractId.toLowerCase().includes(term);
-      const matchNickname = item.nickname && item.nickname.toLowerCase().includes(term);
-      const matchAddress = item.address && item.address.toLowerCase().includes(term);
-      const matchPhone = item.phone && item.phone.toLowerCase().includes(term);
-      
-      const matchesSearch = !term || matchName || matchId || matchNickname || matchAddress || matchPhone;
+      }))
+      .filter((item) => {
+        // 1. Search Logic
+        const term = searchTerm.toLowerCase();
+        const matchName =
+          item.customerName && item.customerName.toLowerCase().includes(term);
+        const matchId =
+          item.contractId && item.contractId.toLowerCase().includes(term);
+        const matchNickname =
+          item.nickname && item.nickname.toLowerCase().includes(term);
+        const matchAddress =
+          item.address && item.address.toLowerCase().includes(term);
+        const matchPhone =
+          item.phone && item.phone.toLowerCase().includes(term);
 
-      if (!matchesSearch) return false;
+        const matchesSearch =
+          !term ||
+          matchName ||
+          matchId ||
+          matchNickname ||
+          matchAddress ||
+          matchPhone;
 
-      // 2. Filter Logic (filterType)
-      if (filterType === 'ใกล้หมดสัญญา') {
-        const daysToEnd =
-          (new Date(item.endDate).getTime() - new Date().getTime()) /
-          (1000 * 60 * 60 * 24);
-        if (!(daysToEnd <= 60 && daysToEnd > 0)) return false;
-      } else if (filterType === 'ใกล้กำหนดตรวจ') {
-        if (item.daysRemaining > 7) return false;
-      } else if (filterType === 'ค้างชำระ') {
-        if (item.installment === '-') return false;
-      }
+        if (!matchesSearch) return false;
 
-      // 3. Date Range Logic (Start/End Date of Contract)
-      if (startDate) {
-        const itemStart = new Date(item.startDate).getTime();
-        const filterStart = new Date(startDate).getTime();
-        if (itemStart < filterStart) return false;
-      }
-      if (endDate) {
-        const itemEnd = new Date(item.endDate).getTime();
-        const filterEnd = new Date(endDate).getTime();
-        if (itemEnd > filterEnd) return false;
-      }
+        // 2. Filter Logic (filterType)
+        if (filterType === 'ใกล้หมดสัญญา') {
+          const daysToEnd =
+            (new Date(item.endDate).getTime() - new Date().getTime()) /
+            (1000 * 60 * 60 * 24);
+          if (!(daysToEnd <= 60 && daysToEnd > 0)) return false;
+        } else if (filterType === 'ใกล้กำหนดตรวจ') {
+          if (item.daysRemaining > 7) return false;
+        } else if (filterType === 'ค้างชำระ') {
+          if (item.installment === '-') return false;
+        }
 
-      // 4. Invoice Status Logic
-      if (invoiceStatus !== 'ทั้งหมด') {
-        if (item.invoiceStatus !== invoiceStatus) return false;
-      }
+        // 3. Date Range Logic (Start/End Date of Contract)
+        if (startDate) {
+          const itemStart = new Date(item.startDate).getTime();
+          const filterStart = new Date(startDate).getTime();
+          if (itemStart < filterStart) return false;
+        }
+        if (endDate) {
+          const itemEnd = new Date(item.endDate).getTime();
+          const filterEnd = new Date(endDate).getTime();
+          if (itemEnd > filterEnd) return false;
+        }
 
-      return true;
-    });
+        // 4. Invoice Status Logic
+        if (invoiceStatus !== 'ทั้งหมด') {
+          if (item.invoiceStatus !== invoiceStatus) return false;
+        }
+
+        return true;
+      });
   }, [data, searchTerm, filterType, startDate, endDate, invoiceStatus]);
 
   return (
@@ -122,73 +137,73 @@ const Notifications: React.FC<NotificationsProps> = () => {
             ติดตามสถานะสัญญา การชำระเงิน และรอบบริการ
           </p>
         </div>
-        
+
         <div className="flex flex-col 2xl:flex-row gap-3 items-center w-full xl:w-auto">
-            {/* Search Bar */}
-            <div className="relative w-full xl:w-96">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
-              </div>
+          {/* Search Bar */}
+          <div className="relative w-full xl:w-96">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 h-11 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-base shadow-sm transition duration-150 ease-in-out"
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+            {/* Type Filter */}
+            <div className="w-full sm:w-40">
+              <Select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as any)}
+                className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
+                <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
+                <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
+                <option value="ค้างชำระ">ค้างชำระ</option>
+              </Select>
+            </div>
+
+            {/* Date Range */}
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 h-11 shadow-sm w-full sm:w-auto">
+              <CalendarIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
               <input
-                type="text"
-                placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 h-11 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-base shadow-sm transition duration-150 ease-in-out"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
+                placeholder="dd/mm/yyyy"
+              />
+              <span className="text-slate-400">-</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
+                placeholder="dd/mm/yyyy"
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
-              {/* Type Filter */}
-              <div className="w-full sm:w-40">
-                <Select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
-                  className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                >
-                  <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
-                  <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
-                  <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
-                  <option value="ค้างชำระ">ค้างชำระ</option>
-                </Select>
-              </div>
-
-              {/* Date Range */}
-              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 h-11 shadow-sm w-full sm:w-auto">
-                <CalendarIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
-                  placeholder="dd/mm/yyyy"
-                />
-                <span className="text-slate-400">-</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
-                  placeholder="dd/mm/yyyy"
-                />
-              </div>
-
-              {/* Invoice Status */}
-              <div className="w-full sm:w-40">
-                <Select
-                  value={invoiceStatus}
-                  onChange={(e) => setInvoiceStatus(e.target.value)}
-                  className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                >
-                   <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
-                   <option value="PAID">ชำระแล้ว</option>
-                   <option value="PENDING">รอชำระ</option>
-                   <option value="OVERDUE">เกินกำหนด</option>
-                   <option value="DRAFT">ร่าง</option>
-                   <option value="SENT">ส่งแล้ว</option>
-                </Select>
-              </div>
+            {/* Invoice Status */}
+            <div className="w-full sm:w-40">
+              <Select
+                value={invoiceStatus}
+                onChange={(e) => setInvoiceStatus(e.target.value)}
+                className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              >
+                <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
+                <option value="PAID">ชำระแล้ว</option>
+                <option value="PENDING">รอชำระ</option>
+                <option value="OVERDUE">เกินกำหนด</option>
+                <option value="DRAFT">ร่าง</option>
+                <option value="SENT">ส่งแล้ว</option>
+              </Select>
             </div>
+          </div>
         </div>
       </div>
 
@@ -253,115 +268,145 @@ const Notifications: React.FC<NotificationsProps> = () => {
             <tbody className="divide-y divide-slate-200">
               {loading ? (
                 <tr>
-                    <td colSpan={17} className="px-6 py-10 text-center text-slate-500">
-                        กำลังโหลดข้อมูล...
-                    </td>
+                  <td
+                    colSpan={17}
+                    className="px-6 py-10 text-center text-slate-500"
+                  >
+                    กำลังโหลดข้อมูล...
+                  </td>
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                    <td colSpan={17} className="px-6 py-10 text-center text-slate-500">
-                        ไม่พบข้อมูล
-                    </td>
+                  <td
+                    colSpan={17}
+                    className="px-6 py-10 text-center text-slate-500"
+                  >
+                    ไม่พบข้อมูล
+                  </td>
                 </tr>
               ) : (
                 filteredData.map((row) => (
-                <tr
-                  key={row.contractId}
-                  className="hover:bg-slate-50 transition-colors"
-                >
-                  <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-0 z-10 bg-white">
-                    {row.contractId}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
-                    {row.customerName}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                    {row.nickname}
-                  </td>
-                  <td className="px-3 py-3 text-slate-600 min-w-[200px]">
-                    <div className="truncate w-48" title={row.address}>
-                      {row.address}
-                    </div>
-                    <div className="text-slate-400">{row.phone}</div>
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                    {row.contractDetails}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600">
-                    {row.durationYears}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                    {formatThaiDate(row.startDate)}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                    {formatThaiDate(row.endDate)}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-800">
-                    {row.price.toLocaleString()}
-                  </td>
+                  <tr
+                    key={row.contractId}
+                    className="hover:bg-slate-50 transition-colors"
+                  >
+                    <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-0 z-10 bg-white">
+                      {row.contractId}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
+                      {row.customerName}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                      {row.nickname}
+                    </td>
+                    <td className="px-3 py-3 text-slate-600 min-w-[200px]">
+                      <div className="truncate w-48" title={row.address}>
+                        {row.address}
+                      </div>
+                      <div className="text-slate-400">{row.phone}</div>
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                      {row.contractDetails}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600">
+                      {row.durationYears}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                      {formatThaiDate(row.startDate)}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                      {formatThaiDate(row.endDate)}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-800">
+                      {row.price.toLocaleString()}
+                    </td>
 
-                  {/* 🔴 Red Section: Invoice Info */}
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-red-50/50">
-                    {row.installment}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-right text-slate-600 bg-red-50/50">
-                    {row.invoiceAmount > 0 ? row.invoiceAmount.toLocaleString() : '-'}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center bg-red-50/50">
-                    {row.invoiceStatus !== '-' ? (
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${row.invoiceStatus === 'PAID' ? 'bg-green-100 text-green-700' :
-                        row.invoiceStatus === 'OVERDUE' ? 'bg-red-100 text-red-700' :
-                          row.invoiceStatus === 'SENT' ? 'bg-blue-100 text-blue-700' :
-                            'bg-slate-100 text-slate-600'
-                        }`}>
-                        {row.invoiceStatus === 'PAID' ? 'ชำระแล้ว' :
-                          row.invoiceStatus === 'OVERDUE' ? 'เกินกำหนด' :
-                            row.invoiceStatus === 'SENT' ? 'ส่งแล้ว' :
-                              row.invoiceStatus === 'DRAFT' ? 'ร่าง' :
-                                row.invoiceStatus}
-                      </span>
-                    ) : '-'}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-slate-600 bg-red-50/50">
-                    {row.invoiceDueDate !== '-' ? formatThaiDate(row.invoiceDueDate) : '-'}
-                  </td>
+                    {/* 🔴 Red Section: Invoice Info */}
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-red-50/50">
+                      {row.installment}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-right text-slate-600 bg-red-50/50">
+                      {row.invoiceAmount > 0
+                        ? row.invoiceAmount.toLocaleString()
+                        : '-'}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center bg-red-50/50">
+                      {row.invoiceStatus !== '-' ? (
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            row.invoiceStatus === 'PAID'
+                              ? 'bg-green-100 text-green-700'
+                              : row.invoiceStatus === 'OVERDUE'
+                                ? 'bg-red-100 text-red-700'
+                                : row.invoiceStatus === 'SENT'
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {row.invoiceStatus === 'PAID'
+                            ? 'ชำระแล้ว'
+                            : row.invoiceStatus === 'OVERDUE'
+                              ? 'เกินกำหนด'
+                              : row.invoiceStatus === 'SENT'
+                                ? 'ส่งแล้ว'
+                                : row.invoiceStatus === 'DRAFT'
+                                  ? 'ร่าง'
+                                  : row.invoiceStatus}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-slate-600 bg-red-50/50">
+                      {row.invoiceDueDate !== '-'
+                        ? formatThaiDate(row.invoiceDueDate)
+                        : '-'}
+                    </td>
 
-                  {/* 🟢 Green Section: Service Info */}
-                  <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
-                    {row.visitNumber > 0 ? row.visitNumber : '-'} <span className="text-slate-400 mx-1">/</span> {row.visitsRequired || '-'}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
-                    {row.lastServiceDate !== '-'
-                      ? formatThaiDate(row.lastServiceDate)
-                      : '-'}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
-                    {(() => {
-                      const display = row.nextServiceDisplay;
-                      if (display) {
-                        // Check if it's a valid date string (e.g. ISO format or YYYY-MM-DD)
-                        const d = new Date(display);
-                        if (!isNaN(d.getTime()) && String(display).includes('-')) {
-                          return formatThaiDate(display);
+                    {/* 🟢 Green Section: Service Info */}
+                    <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
+                      {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
+                      <span className="text-slate-400 mx-1">/</span>{' '}
+                      {row.visitsRequired || '-'}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                      {row.lastServiceDate !== '-'
+                        ? formatThaiDate(row.lastServiceDate)
+                        : '-'}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                      {(() => {
+                        const display = row.nextServiceDisplay;
+                        if (display) {
+                          // Check if it's a valid date string (e.g. ISO format or YYYY-MM-DD)
+                          const d = new Date(display);
+                          if (
+                            !isNaN(d.getTime()) &&
+                            String(display).includes('-')
+                          ) {
+                            return formatThaiDate(display);
+                          }
+                          return display;
                         }
-                        return display;
-                      }
-                      return formatThaiDate(row.nextServiceDate.toISOString());
-                    })()}
-                  </td>
-                  <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
-                    <span
-                      className={
-                        row.daysRemaining <= 7
-                          ? 'text-red-600'
-                          : 'text-green-600'
-                      }
-                    >
-                      {row.daysRemaining}
-                    </span>
-                  </td>
-                </tr>
-              )))}
+                        return formatThaiDate(
+                          row.nextServiceDate.toISOString()
+                        );
+                      })()}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
+                      <span
+                        className={
+                          row.daysRemaining <= 7
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                        }
+                      >
+                        {row.daysRemaining}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

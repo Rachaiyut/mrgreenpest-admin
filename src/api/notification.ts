@@ -1,5 +1,9 @@
 import { AuthService } from './auth';
-import { IBaseQuery, IBaseResponseArray, IBaseResponse } from '@/src/types/entity/base.interface';
+import {
+  IBaseQuery,
+  IBaseResponseArray,
+  IBaseResponse,
+} from '@/src/types/entity/base.interface';
 
 export interface Notification {
   id: string;
@@ -15,13 +19,13 @@ export interface Notification {
 }
 
 export interface FilterNotification extends IBaseQuery {
-    recipient_id?: string;
-    is_read?: boolean;
-    type?: string;
+  recipient_id?: string;
+  is_read?: boolean;
+  type?: string;
 }
 
 export interface NotificationListResponse extends IBaseResponseArray<Notification> {
-    unread_count?: number;
+  unread_count?: number;
 }
 
 class NotificationService extends AuthService {
@@ -35,24 +39,30 @@ class NotificationService extends AuthService {
     // which usually returns { data: items, meta: ... }
     // My controller returned: successWithData(items, { ...meta, unread_count })
     // So unread_count is in res.data.meta.unread_count
-    
+
     // Check how IBaseResponseArray is defined.
     // If IBaseResponseArray<T> = { data: T[], meta: ... }
     return res.data;
   }
 
   async markAsRead(id: string): Promise<IBaseResponse<Notification>> {
-    const res = await this.http.patch<IBaseResponse<Notification>>(`${this.path}/${id}/read`);
+    const res = await this.http.patch<IBaseResponse<Notification>>(
+      `${this.path}/${id}/read`
+    );
     return res.data;
   }
 
   async markAllAsRead(): Promise<IBaseResponse<{ success: boolean }>> {
-    const res = await this.http.patch<IBaseResponse<{ success: boolean }>>(`${this.path}/read-all`);
+    const res = await this.http.patch<IBaseResponse<{ success: boolean }>>(
+      `${this.path}/read-all`
+    );
     return res.data;
   }
 
   async getDashboardData(): Promise<IBaseResponse<any[]>> {
-    const res = await this.http.get<IBaseResponse<any[]>>(`${this.path}/dashboard`);
+    const res = await this.http.get<IBaseResponse<any[]>>(
+      `${this.path}/dashboard`
+    );
     return res.data;
   }
 }

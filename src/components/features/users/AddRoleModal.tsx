@@ -4,7 +4,10 @@ import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { RoleApi, Role, Permission } from '@/src/api/role';
 import { PermissionApi } from '@/src/api/permission';
-import { PERMISSION_MATRIX, PERMISSION_ACTIONS } from '@/src/constants/permission-matrix';
+import {
+  PERMISSION_MATRIX,
+  PERMISSION_ACTIONS,
+} from '@/src/constants/permission-matrix';
 
 interface AddRoleModalProps {
   isOpen: boolean;
@@ -12,11 +15,17 @@ interface AddRoleModalProps {
   onSuccess?: (role: Role) => void;
 }
 
-export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const AddRoleModal: FC<AddRoleModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+}) => {
   const [roleName, setRoleName] = useState('');
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<
+    Set<string>
+  >(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -62,12 +71,15 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess
       const createdRole = await RoleApi.create({
         name: roleName,
         description: description,
-        status: true
+        status: true,
       });
 
       // 2. Assign Permissions
       if (selectedPermissionIds.size > 0) {
-        await RoleApi.assignPermissions(createdRole.id, Array.from(selectedPermissionIds));
+        await RoleApi.assignPermissions(
+          createdRole.id,
+          Array.from(selectedPermissionIds)
+        );
       }
 
       if (onSuccess) {
@@ -146,10 +158,14 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess
         </div>
 
         <div className="pt-2">
-          <h3 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h3>
+          <h3 className="text-md font-medium text-slate-800 mb-3">
+            สิทธิ์การใช้งาน
+          </h3>
 
           {isLoading ? (
-            <div className="text-center py-4 text-slate-500">กำลังโหลดข้อมูล...</div>
+            <div className="text-center py-4 text-slate-500">
+              กำลังโหลดข้อมูล...
+            </div>
           ) : (
             <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-[60vh]">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -187,18 +203,27 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({ isOpen, onClose, onSuccess
                           {PERMISSION_ACTIONS.map((actionCol) => {
                             // Find permission by pattern: ACTION_MODULE
                             const permName = `${actionCol.action}_${item.module}`;
-                            const perm = permissions.find((p) => p.name === permName);
+                            const perm = permissions.find(
+                              (p) => p.name === permName
+                            );
 
                             const isAvailable = !!perm;
-                            const isChecked = perm ? selectedPermissionIds.has(perm.id) : false;
+                            const isChecked = perm
+                              ? selectedPermissionIds.has(perm.id)
+                              : false;
 
                             return (
-                              <td key={actionCol.action} className="px-4 py-3 text-center">
+                              <td
+                                key={actionCol.action}
+                                className="px-4 py-3 text-center"
+                              >
                                 {isAvailable ? (
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
-                                    onChange={() => perm && handleTogglePermission(perm.id)}
+                                    onChange={() =>
+                                      perm && handleTogglePermission(perm.id)
+                                    }
                                     className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                                   />
                                 ) : (

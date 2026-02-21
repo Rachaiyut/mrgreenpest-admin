@@ -44,10 +44,10 @@ const Returns: React.FC<ReturnsProps> = ({
     warehouses,
     products,
     users,
+    warehouseStocks: stockMap,
     fetchData,
   } = useData();
 
-  const stockMap = useMemo(() => ({}), []);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -71,7 +71,13 @@ const Returns: React.FC<ReturnsProps> = ({
   );
 
   const userMap = useMemo(
-    () => new Map(users.map((u) => [u.id, `${(u as any).first_name || (u as any).firstName} ${(u as any).last_name || (u as any).lastName}`])),
+    () =>
+      new Map(
+        users.map((u) => [
+          u.id,
+          `${(u as any).first_name || (u as any).firstName} ${(u as any).last_name || (u as any).lastName}`,
+        ])
+      ),
     [users]
   );
 
@@ -84,7 +90,9 @@ const Returns: React.FC<ReturnsProps> = ({
     return reversed.filter(
       (item) =>
         item.id.toLowerCase().includes(lowercasedQuery) ||
-        formatThaiDate(item.created_at || (item as any).createdAt).includes(lowercasedQuery)
+        formatThaiDate(item.created_at || (item as any).createdAt).includes(
+          lowercasedQuery
+        )
     );
   }, [returns, searchQuery]);
 
@@ -179,7 +187,9 @@ const Returns: React.FC<ReturnsProps> = ({
   const handleReject = async (returnItem: ReturnType) => {
     try {
       if (confirm('ยืนยันการไม่อนุมัติ?')) {
-        await ProductReturnApi.update(returnItem.id, { status: ProductReturnStatus.REJECTED as any });
+        await ProductReturnApi.update(returnItem.id, {
+          status: ProductReturnStatus.REJECTED as any,
+        });
         fetchData(['productReturns', 'warehouses']);
         setOpenDropdownId(null);
       }
@@ -190,13 +200,48 @@ const Returns: React.FC<ReturnsProps> = ({
   };
 
   const actionItems = (item: ReturnType) => [
-    { label: 'ดูรายละเอียด', icon: EyeIcon, color: 'text-slate-700', hoverBg: 'hover:bg-slate-50', onClick: () => handleViewDetails(item) },
-    ...(item.status !== 'COMPLETED' && item.status !== 'APPROVED' && item.status !== 'REJECTED' && item.status !== 'CANCELLED' ? [
-        { label: 'แก้ไข', icon: PencilIcon, color: 'text-blue-600', hoverBg: 'hover:bg-blue-50', onClick: () => handleEdit(item) },
-        { label: 'อนุมัติ', icon: DocumentCheckIcon, color: 'text-green-600', hoverBg: 'hover:bg-green-50', onClick: () => handleApprove(item) },
-        { label: 'ไม่อนุมัติ', icon: XCircleIcon, color: 'text-red-600', hoverBg: 'hover:bg-red-50', onClick: () => handleReject(item) }
-    ] : []),
-    { label: 'ยกเลิก', icon: TrashIcon, color: 'text-red-600', hoverBg: 'hover:bg-red-50', onClick: () => handleDelete(item) },
+    {
+      label: 'ดูรายละเอียด',
+      icon: EyeIcon,
+      color: 'text-slate-700',
+      hoverBg: 'hover:bg-slate-50',
+      onClick: () => handleViewDetails(item),
+    },
+    ...(item.status !== 'COMPLETED' &&
+    item.status !== 'APPROVED' &&
+    item.status !== 'REJECTED' &&
+    item.status !== 'CANCELLED'
+      ? [
+          {
+            label: 'แก้ไข',
+            icon: PencilIcon,
+            color: 'text-blue-600',
+            hoverBg: 'hover:bg-blue-50',
+            onClick: () => handleEdit(item),
+          },
+          {
+            label: 'อนุมัติ',
+            icon: DocumentCheckIcon,
+            color: 'text-green-600',
+            hoverBg: 'hover:bg-green-50',
+            onClick: () => handleApprove(item),
+          },
+          {
+            label: 'ไม่อนุมัติ',
+            icon: XCircleIcon,
+            color: 'text-red-600',
+            hoverBg: 'hover:bg-red-50',
+            onClick: () => handleReject(item),
+          },
+        ]
+      : []),
+    {
+      label: 'ยกเลิก',
+      icon: TrashIcon,
+      color: 'text-red-600',
+      hoverBg: 'hover:bg-red-50',
+      onClick: () => handleDelete(item),
+    },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -339,8 +384,11 @@ const Returns: React.FC<ReturnsProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedReturns.map((item, index) => {
-                  const fromWarehouse = warehouseMap.get((item as any).vehicle_id) || (item as any).vehicle_id;
-                  const toWarehouse = warehouseMap.get(item.warehouse_id) || item.warehouse_id;
+                  const fromWarehouse =
+                    warehouseMap.get((item as any).vehicle_id) ||
+                    (item as any).vehicle_id;
+                  const toWarehouse =
+                    warehouseMap.get(item.warehouse_id) || item.warehouse_id;
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50">
@@ -354,7 +402,9 @@ const Returns: React.FC<ReturnsProps> = ({
                         {item.code || item.id}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {formatThaiDate(item.created_at || (item as any).createdAt)}
+                        {formatThaiDate(
+                          item.created_at || (item as any).createdAt
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {fromWarehouse || '-'}
@@ -366,7 +416,11 @@ const Returns: React.FC<ReturnsProps> = ({
                         {item.items?.length || 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {userMap.get(item.created_by || (item as any).createdBy) || item.created_by || (item as any).createdBy}
+                        {userMap.get(
+                          item.created_by || (item as any).createdBy
+                        ) ||
+                          item.created_by ||
+                          (item as any).createdBy}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {getStatusBadge(item.status)}
@@ -422,7 +476,7 @@ const Returns: React.FC<ReturnsProps> = ({
             {(() => {
               const returnItem = returns.find((r) => r.id === openDropdownId);
               if (!returnItem) return null;
-              
+
               return actionItems(returnItem).map((action, index) => (
                 <button
                   key={index}
@@ -458,6 +512,7 @@ const Returns: React.FC<ReturnsProps> = ({
         onUpdateReturn={onUpdateReturn}
         warehouses={warehouses}
         products={products}
+        stockMap={stockMap}
       />
       <ReturnDetailsModal
         isOpen={isDetailsModalOpen}
@@ -486,5 +541,3 @@ const Returns: React.FC<ReturnsProps> = ({
 };
 
 export default Returns;
-
-

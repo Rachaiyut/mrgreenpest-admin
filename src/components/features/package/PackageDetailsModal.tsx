@@ -99,8 +99,8 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {pkg.package_price && pkg.package_price.length > 0 ? (
-                  pkg.package_price.map((cond, index) => (
+                {pkg.package_prices && pkg.package_prices.length > 0 ? (
+                  pkg.package_prices.map((cond, index) => (
                     <tr key={cond.id || index} className="hover:bg-slate-50">
                       <td className="px-4 py-3 text-sm text-slate-900">
                         ไม่เกิน {cond.area_range}
@@ -128,10 +128,13 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-slate-900">
                         ฿
-                        {cond.min_price_without_termite.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {cond.min_price_without_termite.toLocaleString(
+                          'th-TH',
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }
+                        )}
                       </td>
                     </tr>
                   ))
@@ -153,4 +156,3 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
     </Modal>
   );
 };
-

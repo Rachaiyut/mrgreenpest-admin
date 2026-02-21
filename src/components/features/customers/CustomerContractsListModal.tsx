@@ -208,5 +208,3 @@ export const CustomerContractsListModal: React.FC<
     </>
   );
 };
-
-

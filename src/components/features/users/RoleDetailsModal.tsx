@@ -3,7 +3,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { RoleApi, Role, Permission } from '@/src/api/role';
-import { PERMISSION_MATRIX, PERMISSION_ACTIONS } from '@/src/constants/permission-matrix';
+import {
+  PERMISSION_MATRIX,
+  PERMISSION_ACTIONS,
+} from '@/src/constants/permission-matrix';
 import { Fragment } from 'react';
 
 interface RoleDetailsModalProps {
@@ -46,7 +49,9 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
     const groups: Record<string, Permission[]> = {};
 
     // Normalize permissions to array of Permission objects
-    const perms = role.permissions.map((p: any) => p.id && p.name ? p : null).filter(Boolean) as Permission[];
+    const perms = role.permissions
+      .map((p: any) => (p.id && p.name ? p : null))
+      .filter(Boolean) as Permission[];
 
     perms.forEach((perm) => {
       const groupName = perm.group || 'Other';
@@ -80,21 +85,29 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
       }
     >
       {loading ? (
-        <div className="text-center py-8 text-slate-500">กำลังโหลดข้อมูล...</div>
+        <div className="text-center py-8 text-slate-500">
+          กำลังโหลดข้อมูล...
+        </div>
       ) : role ? (
         <div className="space-y-6">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 mb-1">ชื่อบทบาท</h4>
+            <h4 className="text-sm font-medium text-slate-500 mb-1">
+              ชื่อบทบาท
+            </h4>
             <p className="text-lg font-semibold text-slate-900">{role.name}</p>
           </div>
 
           <div>
-            <h4 className="text-sm font-medium text-slate-500 mb-1">รายละเอียด</h4>
+            <h4 className="text-sm font-medium text-slate-500 mb-1">
+              รายละเอียด
+            </h4>
             <p className="text-slate-700">{role.description || '-'}</p>
           </div>
 
           <div className="border-t border-slate-200 pt-4">
-            <h4 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h4>
+            <h4 className="text-md font-medium text-slate-800 mb-3">
+              สิทธิ์การใช้งาน
+            </h4>
             <div className="overflow-x-auto border border-slate-200 rounded-lg">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
@@ -131,13 +144,18 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
                           {PERMISSION_ACTIONS.map((actionCol) => {
                             // Find permission by pattern: ACTION_MODULE
                             const permName = `${actionCol.action}_${item.module}`;
-                            const perm = role?.permissions?.find((p: any) => p.name === permName);
+                            const perm = role?.permissions?.find(
+                              (p: any) => p.name === permName
+                            );
 
                             const isAvailable = true; // In view mode we can assume all defined in matrix are potential
                             const isChecked = !!perm;
 
                             return (
-                              <td key={actionCol.action} className="px-4 py-3 text-center">
+                              <td
+                                key={actionCol.action}
+                                className="px-4 py-3 text-center"
+                              >
                                 {isAvailable ? (
                                   <input
                                     type="checkbox"
@@ -158,7 +176,6 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
                 </tbody>
               </table>
             </div>
-
           </div>
         </div>
       ) : (
@@ -167,4 +184,3 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
     </Modal>
   );
 };
-

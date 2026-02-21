@@ -21,7 +21,7 @@ interface EditCustomerModalProps {
 // Define a type for the flat form state
 type FlatCustomerFormData = Partial<Customer> & {
   name?: string;
-  type?: 'บุคคลธรรมดา' | 'นิติบุคคล';
+  type?: CustomerType;
   contactPerson?: string;
   contactPersonPhone?: string;
   gender?: string;
@@ -65,10 +65,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
           (customer.last_name ? ` ${customer.last_name}` : ''),
         first_name: customer.first_name,
         last_name: customer.last_name,
-        type:
-          customer.customer_type === CustomerType.CORPORATE
-            ? 'นิติบุคคล'
-            : 'บุคคลธรรมดา',
+        type: customer.type,
         'address-street': customer.address_house_no,
         'address-subdistrict': customer.sub_district,
         'address-district': customer.district,
@@ -91,7 +88,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTypeChange = (type: 'บุคคลธรรมดา' | 'นิติบุคคล') => {
+  const handleTypeChange = (type: CustomerType) => {
     setFormData((prev) => ({ ...prev, type: type }));
   };
 
@@ -108,10 +105,10 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
         'address-postalcode',
       ];
 
-      if (formData.type === 'บุคคลธรรมดา') {
-          requiredFields.push('first_name', 'last_name');
-      } else {
-          requiredFields.push('name'); // Corporate name
+      if (formData.type === CustomerType.INDIVIDUAL) {
+        requiredFields.push('first_name', 'last_name');
+      } else if (formData.type === CustomerType.CORPORATE) {
+        requiredFields.push('name'); // Corporate name
       }
 
       // Check taxId manually since it's not in the requiredFields array for loop but is now required
@@ -130,21 +127,18 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
       let firstName = '';
       let lastName = '';
 
-      if (formData.type === 'บุคคลธรรมดา') {
-          firstName = formData.first_name || '';
-          lastName = formData.last_name || '';
+      if (formData.type === CustomerType.INDIVIDUAL) {
+        firstName = formData.first_name || '';
+        lastName = formData.last_name || '';
       } else {
-          firstName = formData.name || '';
+        firstName = formData.name || '';
       }
 
       const updatedData: Customer = {
         ...customer,
         first_name: firstName,
         last_name: lastName,
-        type:
-          formData.type === 'นิติบุคคล'
-            ? CustomerType.CORPORATE
-            : CustomerType.INDIVIDUAL,
+        type: formData.type,
         nickname: formData.nickname || '',
         email: formData.email || '',
         phone: formData.phone || '',
@@ -203,8 +197,8 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                 name="customerTypeRadio"
                 value="บุคคลธรรมดา"
                 className="sr-only peer"
-                checked={formData.type === 'บุคคลธรรมดา'}
-                onChange={() => handleTypeChange('บุคคลธรรมดา')}
+                checked={formData.type === CustomerType.INDIVIDUAL}
+                onChange={() => handleTypeChange(CustomerType.INDIVIDUAL)}
               />
               <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                 บุคคลธรรมดา
@@ -216,8 +210,8 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
                 name="customerTypeRadio"
                 value="นิติบุคคล"
                 className="sr-only peer"
-                checked={formData.type === 'นิติบุคคล'}
-                onChange={() => handleTypeChange('นิติบุคคล')}
+                checked={formData.type === CustomerType.CORPORATE}
+                onChange={() => handleTypeChange(CustomerType.CORPORATE)}
               />
               <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
                 นิติบุคคล
@@ -226,7 +220,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
           </div>
         </FormField>
 
-        {formData.type === 'บุคคลธรรมดา' ? (
+        {formData.type === CustomerType.INDIVIDUAL ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="ชื่อจริง" htmlFor="first_name">
@@ -274,7 +268,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               </FormField>
             </div>
           </>
-        ) : (
+        ) : formData.type === CustomerType.CORPORATE ? (
           <>
             <FormField label="ชื่อบริษัท" htmlFor="name">
               <Input
@@ -310,7 +304,7 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
               </FormField>
             </div>
           </>
-        )}
+        ) : null}
 
         <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
           <Input
@@ -535,4 +529,3 @@ export const EditCustomerModal: React.FC<EditCustomerModalProps> = ({
     </Modal>
   );
 };
-

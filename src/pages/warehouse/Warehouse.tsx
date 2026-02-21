@@ -176,9 +176,12 @@ const Warehouse: React.FC = () => {
           (warehouse as any).vehicle_registration ||
           warehouse.vehicle?.vehicle_registration ||
           '';
-        payload.brand = (warehouse as any).brand || warehouse.vehicle?.brand || '';
-        payload.model = (warehouse as any).model || warehouse.vehicle?.model || '';
-        payload.color = (warehouse as any).color || warehouse.vehicle?.color || '';
+        payload.brand =
+          (warehouse as any).brand || warehouse.vehicle?.brand || '';
+        payload.model =
+          (warehouse as any).model || warehouse.vehicle?.model || '';
+        payload.color =
+          (warehouse as any).color || warehouse.vehicle?.color || '';
       }
 
       await WarehouseApi.update(warehouse.id, payload);
@@ -223,17 +226,24 @@ const Warehouse: React.FC = () => {
       try {
         const full = await WarehouseApi.getWarehouseById(warehouseId);
         if (full && full.id) {
-          setWarehouses((prev) => prev.map((w) => (w.id === warehouseId ? (full as any) : w)));
+          setWarehouses((prev) =>
+            prev.map((w) => (w.id === warehouseId ? (full as any) : w))
+          );
           setWarehouseForLimits((prev) =>
             prev && prev.id === warehouseId ? (full as any) : prev
           );
         }
       } catch (e) {
-        console.error('Failed to refetch warehouse after limits update; falling back to local state', e);
+        console.error(
+          'Failed to refetch warehouse after limits update; falling back to local state',
+          e
+        );
         // Fallback: update local state with what we just sent
         setWarehouses((prev) =>
           prev.map((w) =>
-            w.id === warehouseId ? { ...w, withdrawal_limits: limitsArray as any } : w
+            w.id === warehouseId
+              ? { ...w, withdrawal_limits: limitsArray as any }
+              : w
           )
         );
         setWarehouseForLimits((prev) =>
@@ -287,7 +297,9 @@ const Warehouse: React.FC = () => {
   }, [openDropdownId]);
 
   // State for stock map
-  const [stockMap, setStockMap] = useState<Record<string, Record<string, number>>>({});
+  const [stockMap, setStockMap] = useState<
+    Record<string, Record<string, number>>
+  >({});
 
   const handleViewDetails = async (warehouse: WarehouseType) => {
     setSelectedWarehouse(warehouse);
@@ -302,16 +314,19 @@ const Warehouse: React.FC = () => {
 
       if (Array.isArray(stocks)) {
         stocks.forEach((s: any) => {
-          const qty = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity || 0);
+          const qty =
+            typeof s.quantity === 'string'
+              ? parseFloat(s.quantity)
+              : Number(s.quantity || 0);
           const productId = s.product?.id || s.product_id;
           if (productId) {
             map[productId] = qty;
           }
         });
       }
-      setStockMap(prev => ({ ...prev, [warehouse.id]: map }));
+      setStockMap((prev) => ({ ...prev, [warehouse.id]: map }));
     } catch (e) {
-      console.error("Failed to fetch stock for warehouse", warehouse.id, e);
+      console.error('Failed to fetch stock for warehouse', warehouse.id, e);
     }
   };
 
@@ -401,8 +416,7 @@ const Warehouse: React.FC = () => {
       action: handleReturnStock,
       // Only for Vehicle Warehouses
       condition: (w: WarehouseType) =>
-        !!(w as any).vehicle ||
-        w.type === WarehouseTypeEnum.VEHICLE,
+        !!(w as any).vehicle || w.type === WarehouseTypeEnum.VEHICLE,
     },
     { label: 'ลบ', icon: TrashIcon, isDanger: true, action: handleDelete },
   ];
@@ -492,10 +506,11 @@ const Warehouse: React.FC = () => {
                   setActiveTab('all');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'all'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'all'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 ทั้งหมด
               </button>
@@ -504,10 +519,11 @@ const Warehouse: React.FC = () => {
                   setActiveTab('warehouse');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'warehouse'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'warehouse'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 คลังสินค้า
               </button>
@@ -516,10 +532,11 @@ const Warehouse: React.FC = () => {
                   setActiveTab('vehicle');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${activeTab === 'vehicle'
-                  ? 'bg-white text-slate-800 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTab === 'vehicle'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
               >
                 รถบริการ
               </button>
@@ -705,10 +722,11 @@ const Warehouse: React.FC = () => {
                   <button
                     key={action.label}
                     onClick={() => action.action(warehouse)}
-                    className={`flex w-full items-center px-4 py-2 text-sm ${action.isDanger
-                      ? 'text-red-600 hover:bg-red-50'
-                      : 'text-slate-700 hover:bg-slate-100'
-                      }`}
+                    className={`flex w-full items-center px-4 py-2 text-sm ${
+                      action.isDanger
+                        ? 'text-red-600 hover:bg-red-50'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                     {action.label}

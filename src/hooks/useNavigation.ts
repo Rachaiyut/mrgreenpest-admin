@@ -11,7 +11,9 @@ export const useNavigation = () => {
     if (!userRole) return [];
 
     const permissionsRaw =
-      typeof window !== 'undefined' ? localStorage.getItem('permissions') : null;
+      typeof window !== 'undefined'
+        ? localStorage.getItem('permissions')
+        : null;
     const permissions: string[] =
       permissionsRaw && permissionsRaw !== 'undefined'
         ? (() => {
@@ -41,19 +43,17 @@ export const useNavigation = () => {
       }
 
       if (item.type === 'group') {
-        const visibleSubItems = item.subItems.filter(
-          (sub) => {
-            if (sub.roles && !sub.roles.includes(userRole)) {
-              return false;
-            }
-
-            if (!hasPermission(sub.access)) {
-              return false;
-            }
-
-            return true;
+        const visibleSubItems = item.subItems.filter((sub) => {
+          if (sub.roles && !sub.roles.includes(userRole)) {
+            return false;
           }
-        );
+
+          if (!hasPermission(sub.access)) {
+            return false;
+          }
+
+          return true;
+        });
 
         if (visibleSubItems.length > 0) {
           acc.push({

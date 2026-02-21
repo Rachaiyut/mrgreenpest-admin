@@ -67,7 +67,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
         barcode: (data.barcode as string) || '',
         name: data['product-name'] as string,
         category_id: data.categoryId as string,
-        cost_price: (data.costPrice as string) || '0',
+        cost_price: Number(data.costPrice) || 0,
         fda_number: (data.fdaRegNo as string) || '',
         min_stock: Number(data['low-stock-threshold']) || 0,
         unit_id: data.unit as string,
@@ -301,4 +301,3 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
     </Modal>
   );
 };
-

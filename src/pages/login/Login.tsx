@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Checkbox, message, ConfigProvider, Select } from 'antd';
+import {
+  Form,
+  Input,
+  Button,
+  Checkbox,
+  message,
+  ConfigProvider,
+  Select,
+} from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -30,7 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           remember: true,
         });
       }
-    } catch { }
+    } catch {}
 
     // Fetch demo users
     Auth.getDemoUsers()
@@ -126,10 +134,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="w-full max-w-md space-y-4 my-auto relative z-10">
           <div className="text-center">
             <div className="lg:hidden mb-2 flex flex-col items-center justify-center gap-2">
-              <img 
-                src="/mrgreen1.png" 
-                alt="Mr. Green Mascot" 
-                className="h-40 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform duration-300" 
+              <img
+                src="/mrgreen1.png"
+                alt="Mr. Green Mascot"
+                className="h-40 w-auto object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
               />
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
@@ -190,7 +198,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
             <div className="flex items-center justify-between py-1">
               <Form.Item name="remember" valuePropName="checked" noStyle>
-                <Checkbox className="text-slate-600 select-none">จดจำฉันไว้ในระบบ</Checkbox>
+                <Checkbox className="text-slate-600 select-none">
+                  จดจำฉันไว้ในระบบ
+                </Checkbox>
               </Form.Item>
               <a
                 href="#"
@@ -212,19 +222,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </Form.Item>
 
             <div className="pt-2 border-t border-slate-100">
-              <p className="text-xs text-slate-400 mb-2 text-center">เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)</p>
+              <p className="text-xs text-slate-400 mb-2 text-center">
+                เลือกผู้ใช้งานเพื่อทดสอบ (Demo Users)
+              </p>
               {demoUsers.length > 0 ? (
                 <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
                   <Select
                     placeholder="ค้นหาผู้ใช้งาน (Role, ชื่อ, นามสกุล)"
                     showSearch
                     filterOption={(input, option) =>
-                      (option?.label as string ?? '').toLowerCase().includes(input.toLowerCase())
+                      ((option?.label as string) ?? '')
+                        .toLowerCase()
+                        .includes(input.toLowerCase())
                     }
                     className="w-full"
                     size="large"
                     onChange={(value) => {
-                      const selectedUser = demoUsers.find(u => u.citizen_id === value);
+                      const selectedUser = demoUsers.find(
+                        (u) => u.citizen_id === value
+                      );
                       if (selectedUser) {
                         form.setFieldsValue({
                           citizenId: selectedUser.citizen_id,
@@ -232,9 +248,9 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         });
                       }
                     }}
-                    options={demoUsers.map(user => ({
+                    options={demoUsers.map((user) => ({
                       value: user.citizen_id,
-                      label: `${user.role} - ${user.first_name} ${user.last_name} (${user.nick_name || '-'})`
+                      label: `${user.role} - ${user.first_name} ${user.last_name} (${user.nick_name || '-'})`,
                     }))}
                   />
                 </div>

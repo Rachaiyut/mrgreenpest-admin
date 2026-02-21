@@ -43,4 +43,3 @@ class ContractService extends AuthService {
 }
 
 export const ContractApi = new ContractService();
-

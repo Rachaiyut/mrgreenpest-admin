@@ -16,7 +16,7 @@ import {
   NewUsersIcon,
   NewReportIcon,
   BellIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
 } from '../assets/icons/Icons';
 import { Role } from '../types/enums/role';
 
@@ -45,24 +45,28 @@ interface UnifiedConfig {
   icon?: React.ElementType;
   access?: string;
   roles?: Role[];
-  
+
   // Route
   path: string;
   component: React.LazyExoticComponent<any>;
-  
+
   // Grouping
   group?: string;
   subItems?: SubItemConfig[];
-  
+
   // Component props
   getProps?: (data: DataContextType) => Record<string, any>;
 }
 
 // Lazy load all components
-const Dashboard = React.lazy(() => import('../pages/dashboard'));
+const Dashboard = React.lazy(() => import('../pages/dashboard/Dashboard'));
 const Customer = React.lazy(() => import('../pages/customers/Customer'));
-const Assessments = React.lazy(() => import('../pages/assessments/Assessments'));
-const FieldOperations = React.lazy(() => import('../pages/field-operations/FieldOpearation'));
+const Assessments = React.lazy(
+  () => import('../pages/assessments/Assessments')
+);
+const FieldOperations = React.lazy(
+  () => import('../pages/field-operations/FieldOpearation')
+);
 const Quotation = React.lazy(() => import('../pages/quotations/Quotation'));
 const Contract = React.lazy(() => import('../pages/contracts/Contract'));
 const Invoice = React.lazy(() => import('../pages/invoices/Invoice'));
@@ -75,13 +79,25 @@ const Category = React.lazy(() => import('../pages/categories/Category'));
 const Supplier = React.lazy(() => import('../pages/suppliers/Supplier'));
 const User = React.lazy(() => import('../pages/users/User'));
 const Reports = React.lazy(() => import('../pages/reports'));
-const Notification = React.lazy(() => import('../pages/notifications/Notification'));
-const GoodReceipt = React.lazy(() => import('../pages/inventory/goods-receipt/Good-Receipt'));
-const Transfer = React.lazy(() => import('../pages/inventory/transfers/Transfer'));
-const StockAdjustment = React.lazy(() => import('../pages/inventory/stock-adjustment'));
-const ReturnToSupplier = React.lazy(() => import('../pages/inventory/return-to-supplier'));
-const WithDrawVehicle = React.lazy(() => import('../pages/inventory/withdrawals/WithDrawVehicle'));
-const Return = React.lazy(() => import('../pages/inventory/returns/Return'))
+const Notification = React.lazy(
+  () => import('../pages/notifications/Notification')
+);
+const GoodReceipt = React.lazy(
+  () => import('../pages/inventory/goods-receipt/Good-Receipt')
+);
+const Transfer = React.lazy(
+  () => import('../pages/inventory/transfers/Transfer')
+);
+const StockAdjustment = React.lazy(
+  () => import('../pages/inventory/stock-adjustment')
+);
+const ReturnToSupplier = React.lazy(
+  () => import('../pages/inventory/return-to-supplier')
+);
+const WithDrawVehicle = React.lazy(
+  () => import('../pages/inventory/withdrawals/WithDrawVehicle')
+);
+const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 
 // Unified Configuration - All routes and navigation in one place
 const UNIFIED_CONFIG: UnifiedConfig[] = [
@@ -93,17 +109,16 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     access: 'ACCESS_DASHBOARD',
     component: Dashboard,
   },
-  
+
   // System
   {
     name: 'การแจ้งเตือนและนัดหมาย',
     path: 'notifications',
     icon: BellIcon,
-    access: '', 
+    access: '',
     roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
     component: Notification,
   },
-
 
   // Customer Management
   {
@@ -120,7 +135,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     access: 'ACCESS_ASSESSMENT',
     component: Assessments,
   },
-  
+
   // Field Operations
   {
     name: 'ภาคสนาม',
@@ -142,7 +157,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       onCreateQuotation: data.handlers.quotations.create,
     }),
   },
-  
+
   // Billing & Finance Group
   {
     name: 'การเงินและบัญชี',
@@ -188,7 +203,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
-  
+
   // Inventory Groups
   {
     name: 'คลังสินค้า',
@@ -250,7 +265,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
-  
+
   {
     name: 'จัดการสินค้าภายใน',
     path: 'inventory-internal',
@@ -287,7 +302,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
-  
+
   // Product Management
   {
     name: 'ข้อมูลสินค้าเเละคู่ค้า',
@@ -322,7 +337,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
-  
+
   // System Settings
   {
     name: 'การตั้งค่าระบบ',
@@ -350,7 +365,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       onCreateWalletTransaction: data.handlers.userWallets.createTransaction,
     }),
   },
-  
+
   // Reports
   {
     name: 'รายงาน',
@@ -396,20 +411,19 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       },
     ],
   },
-  
 ];
 
 // Generate Routes with proper props
 export const createRoutes = (data: DataContextType): RouteConfig[] => {
   const routes: RouteConfig[] = [];
-  
+
   // Root redirect
   routes.push({
     path: '/',
     element: React.createElement(Navigate, { to: '/dashboard', replace: true }),
   });
-  
-  UNIFIED_CONFIG.forEach(config => {
+
+  UNIFIED_CONFIG.forEach((config) => {
     if (config.subItems) {
       // Handle grouped items - create route for parent first
       const parentProps = config.getProps ? config.getProps(data) : {};
@@ -418,9 +432,9 @@ export const createRoutes = (data: DataContextType): RouteConfig[] => {
         access: config.access,
         element: React.createElement(config.component, parentProps),
       });
-      
+
       // Then create routes for each sub-item
-      config.subItems.forEach(subItem => {
+      config.subItems.forEach((subItem) => {
         const props = subItem.getProps ? subItem.getProps(data) : {};
         const subItemComponent = subItem.component || config.component;
         routes.push({
@@ -439,13 +453,13 @@ export const createRoutes = (data: DataContextType): RouteConfig[] => {
       });
     }
   });
-  
+
   // Fallback redirect
   routes.push({
     path: '*',
     element: React.createElement(Navigate, { to: '/dashboard', replace: true }),
   });
-  
+
   return routes;
 };
 
@@ -457,18 +471,18 @@ export const createNavigationItems = (): NavigationItem[] => {
         type: 'group',
         name: config.name,
         icon: config.icon as React.FC<any>,
-        subItems: config.subItems.map(sub => ({
+        subItems: config.subItems.map((sub) => ({
           name: sub.name as any,
-          icon: sub.icon as React.FC<any> || DocumentTextIcon,
+          icon: (sub.icon as React.FC<any>) || DocumentTextIcon,
           access: sub.access,
         })),
       };
     }
-    
+
     return {
       type: 'link',
       name: config.name as any,
-      icon: config.icon as React.FC<any> || DocumentTextIcon,
+      icon: (config.icon as React.FC<any>) || DocumentTextIcon,
       access: config.access,
       roles: config.roles,
     };
@@ -476,33 +490,44 @@ export const createNavigationItems = (): NavigationItem[] => {
 };
 
 // Generate Page Paths
-export const PAGE_PATH = UNIFIED_CONFIG.reduce((acc, config) => {
-  acc[config.name] = config.path;
-  if (config.subItems) {
-    config.subItems.forEach(sub => {
-      acc[sub.name] = sub.path;
-    });
-  }
-  return acc;
-}, {} as Record<string, string>);
+export const PAGE_PATH = UNIFIED_CONFIG.reduce(
+  (acc, config) => {
+    acc[config.name] = config.path;
+    if (config.subItems) {
+      config.subItems.forEach((sub) => {
+        acc[sub.name] = sub.path;
+      });
+    }
+    return acc;
+  },
+  {} as Record<string, string>
+);
 
 // Navigation Items
 export const NAVIGATION_ITEMS = createNavigationItems();
 
 // Helper functions
 export const getPagePath = (name: string): string | undefined => {
-  const config = UNIFIED_CONFIG.find(c => c.name === name);
+  const config = UNIFIED_CONFIG.find((c) => c.name === name);
   return config ? config.path : undefined;
 };
 
-export const canAccessNavigation = (item: NavigationItem, userRole: string, userPermissions: string[]): boolean => {
+export const canAccessNavigation = (
+  item: NavigationItem,
+  userRole: string,
+  userPermissions: string[]
+): boolean => {
   if (item.roles && !item.roles.includes(userRole as any)) {
     return false;
   }
-  
-  if (item.type === 'link' && item.access && !userPermissions.includes(item.access)) {
+
+  if (
+    item.type === 'link' &&
+    item.access &&
+    !userPermissions.includes(item.access)
+  ) {
     return false;
   }
-  
+
   return true;
 };

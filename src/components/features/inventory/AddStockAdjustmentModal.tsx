@@ -16,6 +16,7 @@ import {
   Status,
   Warehouse as WarehouseType,
 } from '@/src/types/entity/app.interface';
+import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 
 interface AddStockAdjustmentModalProps {
   isOpen: boolean;
@@ -145,14 +146,13 @@ export const AddStockAdjustmentModal: React.FC<
       return;
     }
     const newAdjustment: Omit<StockAdjustmentType, 'id'> = {
-      createdAt: new Date().toISOString(),
-      warehouseId: warehouseId,
+      warehouse_id: warehouseId,
       reason: mainReason,
-      createdBy: 'ผู้ดูแลระบบ',
+      created_by: 'ผู้ดูแลระบบ',
       items: items.map((item) => ({
-        productId: item.productId,
-        originalQuantity: item.originalQuantity,
-        adjustedQuantity: Number(item.adjustedQuantity),
+        product_id: item.productId,
+        qty_before: item.originalQuantity,
+        qty_adjustment: Number(item.adjustedQuantity),
         reason: item.reason,
       })),
       status: Status.Completed,
@@ -164,9 +164,7 @@ export const AddStockAdjustmentModal: React.FC<
   const productsInWarehouse = useMemo(() => {
     if (!selectedWarehouse) return [];
     const whId = selectedWarehouse.id;
-    return products.filter(
-      (p) => p.type === 'สินค้า' && (stockMap[whId]?.[p.id] ?? 0) >= 0
-    );
+    return products.filter((p) => (stockMap[whId]?.[p.id] ?? 0) >= 0);
   }, [selectedWarehouse, products, stockMap]);
   const existingProductIds = useMemo(
     () => items.map((item) => item.productId),
@@ -226,8 +224,9 @@ export const AddStockAdjustmentModal: React.FC<
                 {warehouses.map((wh) => (
                   <option key={wh.id} value={wh.id}>
                     {wh.name}
-                    {wh.type === 'รถ' && wh.licensePlate
-                      ? ` (${wh.licensePlate})`
+                    {wh.type === WarehouseTypeEnum.VEHICLE &&
+                    wh.vehicle?.vehicle_registration
+                      ? ` (${wh.vehicle.vehicle_registration})`
                       : ''}
                   </option>
                 ))}
@@ -338,7 +337,7 @@ export const AddStockAdjustmentModal: React.FC<
                             {difference > 0 ? `+${difference}` : difference}
                           </td>
                           <td className="p-2 align-middle text-center text-slate-700">
-                            {product?.unit || '-'}
+                            {product?.unit?.name || '-'}
                           </td>
                           <td className="p-2 align-middle">
                             <Input
@@ -394,4 +393,3 @@ export const AddStockAdjustmentModal: React.FC<
     </>
   );
 };
-

@@ -56,7 +56,11 @@ const Withdrawals: React.FC = () => {
       // Optional: Show success toast
     } catch (error: any) {
       console.error('Failed to create withdrawal', error);
-      if (error.response && error.response.data && error.response.data.message) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
         alert(error.response.data.message);
       } else {
         alert('ไม่สามารถสร้างใบเบิกได้');
@@ -116,13 +120,19 @@ const Withdrawals: React.FC = () => {
   );
 
   const userMap = useMemo(
-    () => new Map(users.map((u) => {
-      let name = u.name;
-      if (typeof name !== 'string' || name === '[object Object]') {
-        name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown';
-      }
-      return [u.id, name];
-    })),
+    () =>
+      new Map(
+        users.map((u) => {
+          let name = u.name;
+          if (typeof name !== 'string' || name === '[object Object]') {
+            name =
+              `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+              u.nick_name ||
+              'Unknown';
+          }
+          return [u.id, name];
+        })
+      ),
     [users]
   );
 
@@ -143,12 +153,16 @@ const Withdrawals: React.FC = () => {
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       filtered = filtered.filter((withdrawal) => {
-        const totalGoodsAmount = withdrawal.items?.reduce((sum, item) => {
-          const product = productMap.get(item.product_id);
-          return sum + (product ? product.price * item.quantity : 0);
-        }, 0) || 0;
+        const totalGoodsAmount =
+          withdrawal.items?.reduce((sum, item) => {
+            const product = productMap.get(item.product_id);
+            return sum + (product ? product.price * item.quantity : 0);
+          }, 0) || 0;
         const totalExpenseAmount =
-          withdrawal.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) || 0;
+          withdrawal.expenses?.reduce(
+            (sum, exp) => sum + Number(exp.amount),
+            0
+          ) || 0;
         const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
         const productNames = (withdrawal.items || [])
@@ -167,7 +181,8 @@ const Withdrawals: React.FC = () => {
           productNames.includes(lowercasedQuery) ||
           expenseDescriptions.includes(lowercasedQuery) ||
           totalAmount.toString().includes(lowercasedQuery) ||
-          (withdrawal.created_at && formatThaiDate(withdrawal.created_at).includes(lowercasedQuery))
+          (withdrawal.created_at &&
+            formatThaiDate(withdrawal.created_at).includes(lowercasedQuery))
         );
       });
     }
@@ -350,7 +365,9 @@ const Withdrawals: React.FC = () => {
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">เบิกสินค้าเข้าคลังย่อย</h1>
+            <h1 className="text-3xl font-bold text-slate-800">
+              เบิกสินค้าเข้าคลังย่อย
+            </h1>
             <p className="mt-1 text-slate-600">
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
             </p>
@@ -398,13 +415,16 @@ const Withdrawals: React.FC = () => {
             const toWarehouse = withdrawal.to_warehouse_id
               ? warehouseMap.get(withdrawal.to_warehouse_id)
               : null;
-            const totalGoodsAmount = withdrawal.items?.reduce((sum, item) => {
-              const product = productMap.get(item.product_id);
-              return sum + (product ? product.price * item.quantity : 0);
-            }, 0) || 0;
+            const totalGoodsAmount =
+              withdrawal.items?.reduce((sum, item) => {
+                const product = productMap.get(item.product_id);
+                return sum + (product ? product.price * item.quantity : 0);
+              }, 0) || 0;
             const totalExpenseAmount =
-              withdrawal.expenses?.reduce((sum, exp) => sum + Number(exp.amount), 0) ||
-              0;
+              withdrawal.expenses?.reduce(
+                (sum, exp) => sum + Number(exp.amount),
+                0
+              ) || 0;
             const totalAmount = totalGoodsAmount + totalExpenseAmount;
             const recipientName = withdrawal.recipient_id
               ? userMap.get(withdrawal.recipient_id)
@@ -438,7 +458,11 @@ const Withdrawals: React.FC = () => {
                 <div className="mt-4 space-y-3 text-sm text-slate-600">
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>{withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}</span>
+                    <span>
+                      {withdrawal.created_at
+                        ? formatThaiDate(withdrawal.created_at)
+                        : '-'}
+                    </span>
                   </div>
                   <div className="flex items-center">
                     <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
@@ -559,15 +583,13 @@ const Withdrawals: React.FC = () => {
                     (withdrawal.items?.length || 0) +
                     (withdrawal.expenses?.length || 0);
 
-                  const totalGoodsAmount = withdrawal.items?.reduce(
-                    (sum, item) => {
+                  const totalGoodsAmount =
+                    withdrawal.items?.reduce((sum, item) => {
                       const product = productMap.get(item.product_id);
                       return (
                         sum + (product ? product.price * item.quantity : 0)
                       );
-                    },
-                    0
-                  ) || 0;
+                    }, 0) || 0;
                   const totalExpenseAmount =
                     withdrawal.expenses?.reduce(
                       (sum, exp) => sum + Number(exp.amount),
@@ -575,7 +597,7 @@ const Withdrawals: React.FC = () => {
                     ) || 0;
                   const totalAmount = totalGoodsAmount + totalExpenseAmount;
                   const recipientName = withdrawal.recipient_id
-                    ? (userMap.get(withdrawal.recipient_id) || '-')
+                    ? userMap.get(withdrawal.recipient_id) || '-'
                     : '-';
 
                   return (
@@ -590,7 +612,9 @@ const Withdrawals: React.FC = () => {
                         {withdrawal.code}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {withdrawal.created_at ? formatThaiDate(withdrawal.created_at) : '-'}
+                        {withdrawal.created_at
+                          ? formatThaiDate(withdrawal.created_at)
+                          : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
                         {totalItemsCount}
@@ -603,16 +627,25 @@ const Withdrawals: React.FC = () => {
                         })}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {(Array.isArray(withdrawal.reference_ids) ? withdrawal.reference_ids.length : 0)} รายการ
+                        {Array.isArray(withdrawal.reference_ids)
+                          ? withdrawal.reference_ids.length
+                          : 0}{' '}
+                        รายการ
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {(() => {
-                          const creatorName = userMap.get(withdrawal.created_by) || withdrawal.created_by;
-                          return creatorName === '[object Object]' ? 'Unknown' : creatorName;
+                          const creatorName =
+                            userMap.get(withdrawal.created_by) ||
+                            withdrawal.created_by;
+                          return creatorName === '[object Object]'
+                            ? 'Unknown'
+                            : creatorName;
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {recipientName === '[object Object]' ? 'Unknown' : recipientName}
+                        {recipientName === '[object Object]'
+                          ? 'Unknown'
+                          : recipientName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={withdrawal.status} />
@@ -652,43 +685,47 @@ const Withdrawals: React.FC = () => {
         </Card>
       </div>
 
-      {openDropdownId && dropdownPosition && createPortal(
-        <div
-          ref={dropdownRef}
-          style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
-            left: `${dropdownPosition.left}px`,
-            transform: 'translateX(-100%)',
-          }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]"
-          role="menu"
-          aria-orientation="vertical"
-        >
-          <div className="py-1" role="none">
-            {(() => {
-              const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
-              if (!withdrawal) return null;
+      {openDropdownId &&
+        dropdownPosition &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: 'absolute',
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              transform: 'translateX(-100%)',
+            }}
+            className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]"
+            role="menu"
+            aria-orientation="vertical"
+          >
+            <div className="py-1" role="none">
+              {(() => {
+                const withdrawal = withdrawals.find(
+                  (w) => w.id === openDropdownId
+                );
+                if (!withdrawal) return null;
 
-              return getActionItems(withdrawal).map((action, index) => (
-                <button
-                  key={index}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    action.onClick();
-                  }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
-                  role="menuitem"
-                >
-                  <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>{action.label}</span>
-                </button>
-              ));
-            })()}
-          </div>
-        </div>,
-        document.body
-      )}
+                return getActionItems(withdrawal).map((action, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      action.onClick();
+                    }}
+                    className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
+                    role="menuitem"
+                  >
+                    <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                    <span>{action.label}</span>
+                  </button>
+                ));
+              })()}
+            </div>
+          </div>,
+          document.body
+        )}
 
       <AddWithdrawalModal
         isOpen={isAddModalOpen}
@@ -702,7 +739,8 @@ const Withdrawals: React.FC = () => {
         products={products}
         stockMap={stockMap}
         assessments={assessments}
-        contracts={contracts} currentUser={undefined}      
+        contracts={contracts}
+        currentUser={users[0]}
       />
       <ApprovalModal
         isOpen={isApprovalModalOpen}

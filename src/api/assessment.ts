@@ -43,4 +43,3 @@ class AssessmentService extends AuthService {
 }
 
 export const AssessmentApi = new AssessmentService();
-

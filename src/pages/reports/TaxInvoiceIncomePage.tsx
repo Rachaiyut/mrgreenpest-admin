@@ -347,4 +347,3 @@ const TaxInvoiceIncomePage: React.FC<TaxInvoiceIncomePageProps> = () => {
 };
 
 export default TaxInvoiceIncomePage;
-

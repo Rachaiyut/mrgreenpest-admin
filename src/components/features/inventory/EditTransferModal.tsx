@@ -11,7 +11,13 @@ import {
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { PlusIcon, TrashIcon, DocumentTextIcon, TruckIcon, PackageIcon } from '../../../assets/icons/Icons';
+import {
+  PlusIcon,
+  TrashIcon,
+  DocumentTextIcon,
+  TruckIcon,
+  PackageIcon,
+} from '../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Transfer as TransferType,
@@ -45,17 +51,15 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
     [products]
   );
   const fromWarehouseName = useMemo(
-    () => warehouses.find((w) => w.id === formData.from_warehouse_id)?.name || '',
+    () =>
+      warehouses.find((w) => w.id === formData.from_warehouse_id)?.name || '',
     [formData.from_warehouse_id, warehouses]
   );
-  const productsInWarehouse = useMemo(
-    () => products,
-    [products]
-  );
+  const productsInWarehouse = useMemo(() => products, [products]);
 
   const isFormValid = useMemo(() => {
     return (
-      formData.remark && 
+      formData.remark &&
       items.length > 0 &&
       items.every((item) => (item.qty || item.quantity) > 0)
     );
@@ -64,7 +68,9 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
   useEffect(() => {
     if (transfer) {
       setFormData(transfer);
-      setItems(transfer.items ? transfer.items.map((item) => ({ ...item })) : []);
+      setItems(
+        transfer.items ? transfer.items.map((item) => ({ ...item })) : []
+      );
     }
   }, [transfer]);
 
@@ -72,7 +78,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
     const newItems: TransferItem[] = productIds.map((pid) => ({
       product_id: pid,
       qty: 1,
-      quantity: 1
+      quantity: 1,
     }));
     setItems((prev) => [...prev, ...newItems]);
   };
@@ -202,8 +208,9 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                     className="bg-slate-100"
                   >
                     <option value={formData.from_warehouse_id}>
-                      {warehouses.find((w) => w.id === formData.from_warehouse_id)
-                        ?.name || ''}
+                      {warehouses.find(
+                        (w) => w.id === formData.from_warehouse_id
+                      )?.name || ''}
                     </option>
                   </Select>
                 </FormField>
@@ -367,4 +374,3 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
     </>
   );
 };
-

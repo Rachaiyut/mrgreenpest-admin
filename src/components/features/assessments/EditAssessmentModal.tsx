@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, FC, ChangeEvent } from 'react';
 import { Modal } from '../../common/Modal';
 import { AssessmentApi } from '@/src/api';
@@ -12,7 +11,12 @@ import {
 } from '@/src/types/entity/app.interface';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { PaymentMethod } from '@/src/types/enums/financial';
-import { PlusIcon, UserIcon, DocumentIcon, CreditCardIcon } from '../../../assets/icons/Icons';
+import {
+  PlusIcon,
+  UserIcon,
+  DocumentIcon,
+  CreditCardIcon,
+} from '../../../assets/icons/Icons';
 import { WorkAreaForm } from './WorkAreaForm';
 
 interface EditAssessmentModalProps {
@@ -36,15 +40,23 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   customers = [],
   categories = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'payment'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'areas' | 'payment'>(
+    'info'
+  );
   const [formData, setFormData] = useState<Partial<Assessment>>({});
   const [workAreas, setWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
-  const [originalWorkAreas, setOriginalWorkAreas] = useState<Partial<AssessmentWorkArea>[]>([]);
+  const [originalWorkAreas, setOriginalWorkAreas] = useState<
+    Partial<AssessmentWorkArea>[]
+  >([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
     null
   );
-  const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
-  const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
+  const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(
+    PaymentMethod.TRANSFER
+  );
+  const [installments, setInstallments] = useState<
+    Partial<AssessmentInstallment>[]
+  >([]);
 
   const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,68 +68,101 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       if (assessment && isOpen) {
         let loadedAssessment = assessment;
         try {
-           const res = await AssessmentApi.getById(assessment.id);
-           loadedAssessment = (res as any).data || res;
+          const res = await AssessmentApi.getById(assessment.id);
+          loadedAssessment = (res as any).data || res;
         } catch (error) {
-           console.error("Failed to fetch assessment details", error);
+          console.error('Failed to fetch assessment details', error);
         }
 
         const { assessment_areas, ...rest } = loadedAssessment;
         setFormData({
           ...rest,
           created_at: loadedAssessment.created_at
-            ? new Date(loadedAssessment.created_at).toISOString().substring(0, 10)
+            ? new Date(loadedAssessment.created_at)
+                .toISOString()
+                .substring(0, 10)
             : '',
           appointment_date: loadedAssessment.appointment_date
             ? new Date(loadedAssessment.appointment_date)
             : undefined,
         });
         setSelectedPackageId(loadedAssessment.package_id || null);
-        
-        let loadedPaymentCondition = loadedAssessment.payment_condition || PaymentMethod.TRANSFER;
-        
-        if (loadedAssessment.installments && loadedAssessment.installments.length > 0 && loadedPaymentCondition !== PaymentMethod.INSTALLMENT) {
-           loadedPaymentCondition = PaymentMethod.INSTALLMENT;
+
+        let loadedPaymentCondition =
+          loadedAssessment.payment_condition || PaymentMethod.TRANSFER;
+
+        if (
+          loadedAssessment.installments &&
+          loadedAssessment.installments.length > 0 &&
+          loadedPaymentCondition !== PaymentMethod.INSTALLMENT
+        ) {
+          loadedPaymentCondition = PaymentMethod.INSTALLMENT;
         }
 
         setPaymentCondition(loadedPaymentCondition);
 
-        if (loadedAssessment.installments && loadedAssessment.installments.length > 0) {
-          setInstallments(loadedAssessment.installments.map(inst => ({
-             ...inst
-          })));
+        if (
+          loadedAssessment.installments &&
+          loadedAssessment.installments.length > 0
+        ) {
+          setInstallments(
+            loadedAssessment.installments.map((inst) => ({
+              ...inst,
+            }))
+          );
         } else {
           setInstallments([]);
         }
 
-        const rawAreas = assessment_areas || loadedAssessment.assessment_areas || [];
+        const rawAreas =
+          assessment_areas || loadedAssessment.assessment_areas || [];
 
         const enrichArea = (wa: any) => {
           const enrichedItems = (wa.items || []).map((item: any) => {
-            if (item.product_id && (!item.product_name || !item.product_price)) {
+            if (
+              item.product_id &&
+              (!item.product_name || !item.product_price)
+            ) {
               const product = products.find((p) => p.id === item.product_id);
               if (product) {
                 return {
                   ...item,
                   product_name: product.name,
-                  product_price: product.cost_price ? Number(product.cost_price) : 0,
+                  product_price: product.cost_price
+                    ? Number(product.cost_price)
+                    : 0,
                 };
               }
             }
             return item;
           });
 
-          const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
-          
+          const itemsTotal = enrichedItems.reduce(
+            (sum: number, item: any) => sum + (Number(item.total_price) || 0),
+            0
+          );
+
           let packagePrice = 0;
-          const pkg = packages.find(p => p.id === loadedAssessment.package_id);
+          const pkg = packages.find(
+            (p) => p.id === loadedAssessment.package_id
+          );
           if (pkg && wa.area_size) {
-            const sortedConditions = [...(pkg.package_prices || [])].sort((a, b) => a.area_range - b.area_range);
-            const bestFit = sortedConditions.find(c => c.area_range >= wa.area_size);
+            const sortedConditions = [...(pkg.package_prices || [])].sort(
+              (a, b) => a.area_range - b.area_range
+            );
+            const bestFit = sortedConditions.find(
+              (c) => c.area_range >= wa.area_size
+            );
             if (bestFit) {
-              const termiteCategory = categories.find(c => c.name.includes('กำจัดปลวก'));
-              const hasTermites = (wa.category_services || []).some((s: any) => s.category_id === termiteCategory?.id);
-              packagePrice = hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
+              const termiteCategory = categories.find((c) =>
+                c.name.includes('กำจัดปลวก')
+              );
+              const hasTermites = (wa.category_services || []).some(
+                (s: any) => s.category_id === termiteCategory?.id
+              );
+              packagePrice = hasTermites
+                ? bestFit.price_with_termite
+                : bestFit.price_without_termite;
             }
           }
 
@@ -133,7 +178,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         const enrichedAreas = rawAreas.map(enrichArea);
 
         setWorkAreas(enrichedAreas);
-        setOriginalWorkAreas(enrichedAreas.map(a => ({ ...a })));
+        setOriginalWorkAreas(enrichedAreas.map((a) => ({ ...a })));
 
         // Trigger initial price calculation after data is loaded
         if (loadedAssessment.package_id) {
@@ -152,51 +197,64 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   }, [assessment?.id, isOpen, products]);
 
   const totalEstimatedCost = useMemo(
-    () => workAreas.reduce((sum, area) => sum + (Number(area.total_price) || 0), 0),
+    () =>
+      workAreas.reduce((sum, area) => sum + (Number(area.total_price) || 0), 0),
     [workAreas]
   );
 
-  const handleInstallmentChange = (index: number, field: keyof AssessmentInstallment, value: any) => {
-    setInstallments(prev => prev.map((inst, i) => {
-      if (i === index) {
-        return { ...inst, [field]: value };
-      }
-      return inst;
-    }));
+  const handleInstallmentChange = (
+    index: number,
+    field: keyof AssessmentInstallment,
+    value: any
+  ) => {
+    setInstallments((prev) =>
+      prev.map((inst, i) => {
+        if (i === index) {
+          return { ...inst, [field]: value };
+        }
+        return inst;
+      })
+    );
   };
 
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       if (installments.length === 0 && totalEstimatedCost > 0) {
         setInstallments([
-          { 
-              id: crypto.randomUUID(), 
-              installment_no: 1, 
-              amount: totalEstimatedCost / 2, 
-              note: 'งวดที่ 1',
+          {
+            id: crypto.randomUUID(),
+            installment_no: 1,
+            amount: totalEstimatedCost / 2,
+            note: 'งวดที่ 1',
           },
-          { 
-              id: crypto.randomUUID(), 
-              installment_no: 2, 
-              amount: totalEstimatedCost / 2, 
-              note: 'งวดที่ 2',
-          }
+          {
+            id: crypto.randomUUID(),
+            installment_no: 2,
+            amount: totalEstimatedCost / 2,
+            note: 'งวดที่ 2',
+          },
         ]);
       } else if (installments.length > 0 && totalEstimatedCost > 0) {
-        const currentTotal = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-        
-        if (Math.abs(currentTotal - totalEstimatedCost) > 0.05) {
-           const count = installments.length;
-           const baseAmount = Math.floor((totalEstimatedCost / count) * 100) / 100;
-           const remainder = totalEstimatedCost - (baseAmount * count);
+        const currentTotal = installments.reduce(
+          (sum, i) => sum + (Number(i.amount) || 0),
+          0
+        );
 
-           setInstallments(prev => prev.map((inst, index) => {
-             let amount = baseAmount;
-             if (index === count - 1) {
-               amount = Number((baseAmount + remainder).toFixed(2));
-             }
-             return { ...inst, amount };
-           }));
+        if (Math.abs(currentTotal - totalEstimatedCost) > 0.05) {
+          const count = installments.length;
+          const baseAmount =
+            Math.floor((totalEstimatedCost / count) * 100) / 100;
+          const remainder = totalEstimatedCost - baseAmount * count;
+
+          setInstallments((prev) =>
+            prev.map((inst, index) => {
+              let amount = baseAmount;
+              if (index === count - 1) {
+                amount = Number((baseAmount + remainder).toFixed(2));
+              }
+              return { ...inst, amount };
+            })
+          );
         }
       }
     } else {
@@ -207,7 +265,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   const updateInstallmentCount = (count: number) => {
     const newCount = Math.max(1, Math.min(60, count));
     const baseAmount = Math.floor((totalEstimatedCost / newCount) * 100) / 100;
-    const remainder = totalEstimatedCost - (baseAmount * newCount);
+    const remainder = totalEstimatedCost - baseAmount * newCount;
 
     const newInstallments = Array.from({ length: newCount }, (_, i) => {
       let amount = baseAmount;
@@ -225,9 +283,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
   };
 
   const handleFieldChange = (
-    e: ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -288,9 +344,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
     setSelectedPackageId(pkgId);
     setFormData((prev) => ({ ...prev, package_id: pkgId || '' }));
 
-    const selectedPkg = pkgId
-      ? packages.find((p) => p.id === pkgId)
-      : null;
+    const selectedPkg = pkgId ? packages.find((p) => p.id === pkgId) : null;
 
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
@@ -317,10 +371,15 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             ...area,
             package_price: priceToUse,
             package_price_id: bestFit.id,
-            total_price: priceToUse + (area.items || []).reduce(
-              (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
-              0
-            ),
+            total_price:
+              priceToUse +
+              (area.items || []).reduce(
+                (sum, item) =>
+                  sum +
+                  (Number(item.product_price) || 0) *
+                    (Number(item.quantity) || 0),
+                0
+              ),
           };
         } else {
           return { ...area };
@@ -343,13 +402,18 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         newArea.area_size = Number(newArea.area_size);
       }
       const itemsCost = (newArea.items || []).reduce(
-        (sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+        (sum: number, item: any) =>
+          sum +
+          (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
         0
       );
       const baseCost = Number(newArea.package_price) || 0;
       newArea.total_price = baseCost + itemsCost;
 
-      if (newArea.package_price !== undefined && newArea.package_price !== null) {
+      if (
+        newArea.package_price !== undefined &&
+        newArea.package_price !== null
+      ) {
         newArea.package_price = Number(newArea.package_price);
       }
 
@@ -359,7 +423,8 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           product_name: item.product_name || '',
           product_price: Number(item.product_price) || 0,
           quantity: Number(item.quantity) || 1,
-          total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
+          total_price:
+            (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
         };
         if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) {
           sanitizedItem.id = item.id;
@@ -367,10 +432,12 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         return sanitizedItem;
       });
 
-      newArea.category_services = (newArea.category_services || []).map((cat: any) => ({
-        category_id: cat.category_id,
-        ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
-      }));
+      newArea.category_services = (newArea.category_services || []).map(
+        (cat: any) => ({
+          category_id: cat.category_id,
+          ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
+        })
+      );
 
       return newArea;
     });
@@ -380,11 +447,17 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       ...formData,
       updated_by: 'ผู้ดูแลระบบ',
       assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
-      installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments as AssessmentInstallment[] : [],
+      installments:
+        paymentCondition === PaymentMethod.INSTALLMENT
+          ? (installments as AssessmentInstallment[])
+          : [],
       payment_condition: paymentCondition,
       total_price: totalEstimatedCost,
       appointment_date: formData.appointment_date || new Date(),
-      status: statusOverride || (formData.status as AsessmentStatus) || assessment.status,
+      status:
+        statusOverride ||
+        (formData.status as AsessmentStatus) ||
+        assessment.status,
     };
 
     onUpdateAssessment(updatedAssessment);
@@ -406,7 +479,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       size="5xl"
       footer={
         <div className="flex w-full items-center justify-between">
-            <div className="text-lg font-semibold text-slate-800">
+          <div className="text-lg font-semibold text-slate-800">
             ยอดรวมทั้งหมด:{' '}
             <span className="text-primary font-bold">
               ฿
@@ -441,48 +514,57 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             onClick={() => setActiveTab('info')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${activeTab === 'info'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${
+                activeTab === 'info'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
-            <UserIcon className={`
+            <UserIcon
+              className={`
               -ml-0.5 mr-2 h-5 w-5
               ${activeTab === 'info' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
-            `} />
+            `}
+            />
             ข้อมูลทั่วไป
           </button>
           <button
             onClick={() => setActiveTab('areas')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${activeTab === 'areas'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${
+                activeTab === 'areas'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
-            <DocumentIcon className={`
+            <DocumentIcon
+              className={`
               -ml-0.5 mr-2 h-5 w-5
               ${activeTab === 'areas' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
-            `} />
+            `}
+            />
             พื้นที่และบริการ
           </button>
           <button
             onClick={() => setActiveTab('payment')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${activeTab === 'payment'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${
+                activeTab === 'payment'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
-            <CreditCardIcon className={`
+            <CreditCardIcon
+              className={`
               -ml-0.5 mr-2 h-5 w-5
               ${activeTab === 'payment' ? 'text-primary' : 'text-slate-400 group-hover:text-slate-500'}
-            `} />
+            `}
+            />
             การชำระเงิน
           </button>
         </nav>
@@ -492,25 +574,56 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         {activeTab === 'info' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">ข้อมูลลูกค้า</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                ข้อมูลลูกค้า
+              </h3>
               <div className="space-y-4">
-                <p><span className="font-semibold">ชื่อ:</span> {assessment?.customer?.first_name} {assessment?.customer?.last_name}</p>
-                <p><span className="font-semibold">โทรศัพท์:</span> {assessment?.customer?.phone}</p>
-                <p><span className="font-semibold">ที่อยู่:</span> {assessment?.customer?.address_house_no}</p>
+                <p>
+                  <span className="font-semibold">ชื่อ:</span>{' '}
+                  {assessment?.customer?.first_name}{' '}
+                  {assessment?.customer?.last_name}
+                </p>
+                <p>
+                  <span className="font-semibold">โทรศัพท์:</span>{' '}
+                  {assessment?.customer?.phone}
+                </p>
+                <p>
+                  <span className="font-semibold">ที่อยู่:</span>{' '}
+                  {assessment?.customer?.address_house_no}
+                </p>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">รายละเอียดใบประเมิน</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                รายละเอียดใบประเมิน
+              </h3>
               <div className="space-y-4">
-                <p><span className="font-semibold">รหัส:</span> {assessment?.code}</p>
-                <p><span className="font-semibold">วันที่สร้าง:</span> {formData.created_at}</p>
+                <p>
+                  <span className="font-semibold">รหัส:</span>{' '}
+                  {assessment?.code}
+                </p>
+                <p>
+                  <span className="font-semibold">วันที่สร้าง:</span>{' '}
+                  {formData.created_at}
+                </p>
                 <div>
-                  <label htmlFor="appointment_date" className="block text-sm font-medium text-slate-700">วันที่นัดหมาย</label>
+                  <label
+                    htmlFor="appointment_date"
+                    className="block text-sm font-medium text-slate-700"
+                  >
+                    วันที่นัดหมาย
+                  </label>
                   <input
                     type="date"
                     id="appointment_date"
                     name="appointment_date"
-                    value={formData.appointment_date ? new Date(formData.appointment_date).toISOString().substring(0, 10) : ''}
+                    value={
+                      formData.appointment_date
+                        ? new Date(formData.appointment_date)
+                            .toISOString()
+                            .substring(0, 10)
+                        : ''
+                    }
                     onChange={handleDateChange}
                     className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                   />
@@ -523,7 +636,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
         {activeTab === 'areas' && (
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">พื้นที่และบริการ</h3>
+              <h3 className="text-lg font-semibold text-slate-800">
+                พื้นที่และบริการ
+              </h3>
               <button
                 type="button"
                 onClick={handleAddArea}
@@ -536,12 +651,29 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
             <div className="space-y-6">
               {workAreas.map((area, index) => (
-                <div key={area.id} className="p-4 border border-slate-200 rounded-lg">
+                <div
+                  key={area.id}
+                  className="p-4 border border-slate-200 rounded-lg"
+                >
                   <div className="flex justify-between items-center mb-4">
-                    <h4 className="font-semibold text-slate-700">{area.area_name || `พื้นที่ ${index + 1}`}</h4>
+                    <h4 className="font-semibold text-slate-700">
+                      {area.area_name || `พื้นที่ ${index + 1}`}
+                    </h4>
                     <div className="flex gap-2">
-                      <button type="button" onClick={() => handleClearArea(index)} className="text-sm text-slate-500 hover:text-slate-700">ล้างข้อมูล</button>
-                      <button type="button" onClick={() => handleRemoveArea(index)} className="text-sm text-red-500 hover:text-red-700">ลบพื้นที่</button>
+                      <button
+                        type="button"
+                        onClick={() => handleClearArea(index)}
+                        className="text-sm text-slate-500 hover:text-slate-700"
+                      >
+                        ล้างข้อมูล
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveArea(index)}
+                        className="text-sm text-red-500 hover:text-red-700"
+                      >
+                        ลบพื้นที่
+                      </button>
                     </div>
                   </div>
                   <WorkAreaForm
@@ -549,7 +681,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                     index={index}
                     onAreaChange={handleAreaChange}
                     onClearArea={handleClearArea}
-                    selectedPackage={packages.find(p => p.id === selectedPackageId) || null}
+                    selectedPackage={
+                      packages.find((p) => p.id === selectedPackageId) || null
+                    }
                     availablePackages={packages}
                     products={products}
                     categories={categories}
@@ -562,13 +696,19 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
         {activeTab === 'payment' && (
           <div>
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">เงื่อนไขการชำระเงิน</h3>
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">
+              เงื่อนไขการชำระเงิน
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700">วิธีการชำระเงิน</label>
+                <label className="block text-sm font-medium text-slate-700">
+                  วิธีการชำระเงิน
+                </label>
                 <select
                   value={paymentCondition}
-                  onChange={(e) => setPaymentCondition(e.target.value as PaymentMethod)}
+                  onChange={(e) =>
+                    setPaymentCondition(e.target.value as PaymentMethod)
+                  }
                   className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                 >
                   <option value={PaymentMethod.TRANSFER}>โอนเงิน</option>
@@ -580,30 +720,49 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
 
               {paymentCondition === PaymentMethod.INSTALLMENT && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">จำนวนงวด</label>
+                  <label className="block text-sm font-medium text-slate-700">
+                    จำนวนงวด
+                  </label>
                   <input
                     type="number"
                     value={installments.length}
-                    onChange={(e) => updateInstallmentCount(Number(e.target.value))}
+                    onChange={(e) =>
+                      updateInstallmentCount(Number(e.target.value))
+                    }
                     className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                     min="1"
                     max="60"
                   />
                   <div className="mt-4 space-y-2">
                     {installments.map((inst, index) => (
-                      <div key={inst.id} className="grid grid-cols-3 gap-4 items-center">
+                      <div
+                        key={inst.id}
+                        className="grid grid-cols-3 gap-4 items-center"
+                      >
                         <input
                           type="number"
                           placeholder="จำนวนเงิน"
                           value={inst.amount || ''}
-                          onChange={(e) => handleInstallmentChange(index, 'amount', Number(e.target.value))}
+                          onChange={(e) =>
+                            handleInstallmentChange(
+                              index,
+                              'amount',
+                              Number(e.target.value)
+                            )
+                          }
                           className="col-span-1 mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                         />
                         <input
                           type="text"
                           placeholder="หมายเหตุ"
                           value={inst.note || ''}
-                          onChange={(e) => handleInstallmentChange(index, 'note', e.target.value)}
+                          onChange={(e) =>
+                            handleInstallmentChange(
+                              index,
+                              'note',
+                              e.target.value
+                            )
+                          }
                           className="col-span-2 mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
                         />
                       </div>

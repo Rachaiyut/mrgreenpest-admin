@@ -36,25 +36,35 @@ export const SetWithdrawalLimitModal: React.FC<
       WarehouseApi.getWarehouseById(warehouse.id)
         .then((latestWarehouse) => {
           const initialLimits: { [productId: string]: number | '' } = {};
-          
-          if (latestWarehouse && Array.isArray(latestWarehouse.withdrawal_limits)) {
+
+          if (
+            latestWarehouse &&
+            Array.isArray(latestWarehouse.withdrawal_limits)
+          ) {
             latestWarehouse.withdrawal_limits.forEach((limit: any) => {
               if (limit.product_id) {
-                 initialLimits[limit.product_id] = Number(limit.max_return_qty || limit.max_quantity);
+                initialLimits[limit.product_id] = Number(
+                  limit.max_return_qty || limit.max_quantity
+                );
               }
             });
           }
-          
+
           setLimits(initialLimits);
         })
-        .catch(err => {
-          console.error("Failed to fetch warehouse limits", err);
+        .catch((err) => {
+          console.error('Failed to fetch warehouse limits', err);
           // Fallback to prop data if fetch fails
           const initialLimits: { [productId: string]: number | '' } = {};
-          if (warehouse.withdrawal_limits && Array.isArray(warehouse.withdrawal_limits)) {
-             warehouse.withdrawal_limits.forEach((limit: any) => {
+          if (
+            warehouse.withdrawal_limits &&
+            Array.isArray(warehouse.withdrawal_limits)
+          ) {
+            warehouse.withdrawal_limits.forEach((limit: any) => {
               if (limit.product_id) {
-                 initialLimits[limit.product_id] = Number(limit.max_return_qty || limit.max_quantity);
+                initialLimits[limit.product_id] = Number(
+                  limit.max_return_qty || limit.max_quantity
+                );
               }
             });
           }
@@ -190,4 +200,3 @@ export const SetWithdrawalLimitModal: React.FC<
     </Modal>
   );
 };
-

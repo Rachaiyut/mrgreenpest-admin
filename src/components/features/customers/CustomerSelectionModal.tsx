@@ -160,7 +160,7 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
                     {customer.phone}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                    {customer.customer_type}
+                    {customer.type}
                   </td>
                 </tr>
               ))}
@@ -176,4 +176,3 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
     </Modal>
   );
 };
-

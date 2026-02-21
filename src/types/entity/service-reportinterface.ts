@@ -1,12 +1,12 @@
-import { IBase } from "./base.interface";
-import { Customer } from "./customer.interface";
-import { Job } from "./job.interface";
+import { IBase } from './base.interface';
+import { Customer } from './customer.interface';
+import { Job } from './job.interface';
 
 export interface ServiceReport extends IBase {
   job_id: string;
   customer_id: string;
   payment_id?: string;
-  
+
   report_date?: string;
   customer_name?: string;
 
@@ -46,7 +46,7 @@ export interface ServiceReport extends IBase {
 
   job: Job;
   customer: Customer;
-  service_report_pest_detail: ServicReportPestDetail
+  service_report_pest_detail: ServicReportPestDetail;
 }
 
 export interface ServicReportPestDetail extends IBase {

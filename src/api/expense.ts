@@ -36,4 +36,3 @@ class ExpenseService extends AuthService {
 }
 
 export const ExpenseApi = new ExpenseService();
-

@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Card } from '../../components/common/Card';
-import { User, UserRole, WalletTransaction } from '@/src/types/entity/app.interface';
+import {
+  User,
+  UserRole,
+  WalletTransaction,
+} from '@/src/types/entity/app.interface';
 import {
   PlusIcon,
   ShieldCheckIcon,
@@ -38,7 +42,9 @@ const ROLE_NAME_MAPPING: Record<string, string> = {
   tech: 'ช่างเทคนิค',
 };
 
-const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | string }> = ({ role }) => {
+const RoleBadge: React.FC<{
+  role: UserRole | { id: string; name: string } | string;
+}> = ({ role }) => {
   // Handle role as object or string
   let roleNameRaw: string = '-';
   if (typeof role === 'string') {
@@ -54,8 +60,10 @@ const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | stri
     }
   }
 
-  const normalizedName = typeof roleNameRaw === 'string' ? roleNameRaw : String(roleNameRaw);
-  const roleName = ROLE_NAME_MAPPING[normalizedName.toLowerCase()] || normalizedName;
+  const normalizedName =
+    typeof roleNameRaw === 'string' ? roleNameRaw : String(roleNameRaw);
+  const roleName =
+    ROLE_NAME_MAPPING[normalizedName.toLowerCase()] || normalizedName;
 
   const roleColors: Record<string, string> = {
     [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
@@ -71,7 +79,10 @@ const RoleBadge: React.FC<{ role: UserRole | { id: string; name: string } | stri
     [UserRole.SUPERADMIN]: 'bg-purple-100 text-purple-700',
   };
 
-  const colorClass = roleColors[roleNameRaw] || roleColors[roleNameRaw.toUpperCase()] || 'bg-slate-100 text-slate-700';
+  const colorClass =
+    roleColors[roleNameRaw] ||
+    roleColors[roleNameRaw.toUpperCase()] ||
+    'bg-slate-100 text-slate-700';
 
   return (
     <span
@@ -169,10 +180,14 @@ const Users: React.FC<UsersProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase();
     return [...users].reverse().filter((user) => {
       // Handle role as object or string
-      const userRoleName = typeof user.role === 'object' && user.role !== null
-        ? (user.role as { name: string }).name
-        : String(user.role || '');
-      const matchesRole = roleFilter === 'all' || userRoleName === roleFilter || userRoleName.toUpperCase() === roleFilter.toUpperCase();
+      const userRoleName =
+        typeof user.role === 'object' && user.role !== null
+          ? (user.role as { name: string }).name
+          : String(user.role || '');
+      const matchesRole =
+        roleFilter === 'all' ||
+        userRoleName === roleFilter ||
+        userRoleName.toUpperCase() === roleFilter.toUpperCase();
       const matchesSearch =
         !searchQuery ||
         (user.citizen_id || '').toLowerCase().includes(lowercasedQuery) ||
@@ -194,12 +209,14 @@ const Users: React.FC<UsersProps> = ({
     setCurrentPage(1);
   };
 
-  const handleCreateUser = async (data: any) => {
+  const handleCreateUser = async (data: any): Promise<User> => {
     try {
-      await UserApi.create(data);
+      const newUser = await UserApi.create(data);
       fetchUsers();
+      return newUser;
     } catch (error) {
       console.error('Failed to create user:', error);
+      throw error;
     }
   };
 
@@ -269,7 +286,7 @@ const Users: React.FC<UsersProps> = ({
         await RoleApi.delete(roleToDelete.id);
         fetchRoles(); // Refresh
       } catch (error) {
-        console.error("Failed to delete role", error);
+        console.error('Failed to delete role', error);
       }
     }
     setIsDeleteRoleModalOpen(false);
@@ -285,12 +302,13 @@ const Users: React.FC<UsersProps> = ({
   // Calculate user counts per role dynamically
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    roles.forEach(r => counts[r.name] = 0);
+    roles.forEach((r) => (counts[r.name] = 0));
 
-    users.forEach(user => {
-      const roleName = typeof user.role === 'object' && user.role !== null
-        ? (user.role as { name: string }).name
-        : String(user.role || '');
+    users.forEach((user) => {
+      const roleName =
+        typeof user.role === 'object' && user.role !== null
+          ? (user.role as { name: string }).name
+          : String(user.role || '');
       if (counts[roleName] !== undefined) {
         counts[roleName]++;
       } else {
@@ -382,10 +400,26 @@ const Users: React.FC<UsersProps> = ({
                 >
                   <option value="all">ทุกบทบาท</option>
                   {roles.map((role) => {
-                    if (typeof role.name === 'object') console.error('Role name is object:', role);
+                    if (typeof role.name === 'object')
+                      console.error('Role name is object:', role);
                     return (
-                      <option key={role.id} value={typeof role.name === 'string' ? role.name : JSON.stringify(role.name)}>
-                        {ROLE_NAME_MAPPING[(typeof role.name === 'string' ? role.name : '').toLowerCase()] || (typeof role.name === 'string' ? role.name : 'Invalid Name')}
+                      <option
+                        key={role.id}
+                        value={
+                          typeof role.name === 'string'
+                            ? role.name
+                            : JSON.stringify(role.name)
+                        }
+                      >
+                        {ROLE_NAME_MAPPING[
+                          (typeof role.name === 'string'
+                            ? role.name
+                            : ''
+                          ).toLowerCase()
+                        ] ||
+                          (typeof role.name === 'string'
+                            ? role.name
+                            : 'Invalid Name')}
                       </option>
                     );
                   })}
@@ -396,7 +430,6 @@ const Users: React.FC<UsersProps> = ({
                 สร้างผู้ใช้งาน
               </Button>
             </div>
-
 
             <Card className="!p-0">
               <div className="overflow-x-auto">
@@ -553,7 +586,10 @@ const Users: React.FC<UsersProps> = ({
                   <tbody className="bg-white divide-y divide-slate-200">
                     {roles.length === 0 && (
                       <tr>
-                        <td colSpan={4} className="px-6 py-10 text-center text-slate-500">
+                        <td
+                          colSpan={4}
+                          className="px-6 py-10 text-center text-slate-500"
+                        >
                           ไม่พบข้อมูลบทบาทใระบบ
                         </td>
                       </tr>
@@ -564,8 +600,12 @@ const Users: React.FC<UsersProps> = ({
                           <div className="text-sm font-medium text-slate-900">
                             {(() => {
                               const rName = role.name;
-                              const safeName = typeof rName === 'string' ? rName : 'Unknown';
-                              return ROLE_NAME_MAPPING[safeName.toLowerCase()] || safeName;
+                              const safeName =
+                                typeof rName === 'string' ? rName : 'Unknown';
+                              return (
+                                ROLE_NAME_MAPPING[safeName.toLowerCase()] ||
+                                safeName
+                              );
                             })()}
                           </div>
                         </td>
@@ -599,7 +639,7 @@ const Users: React.FC<UsersProps> = ({
             </Card>
           </>
         )}
-      </div >
+      </div>
       {openDropdownId && dropdownPosition && (
         <div
           ref={dropdownRef}
@@ -673,19 +713,28 @@ const Users: React.FC<UsersProps> = ({
                 </a>
                 <Button
                   onClick={() => {
-                    const role = roles.find(r => r.id === openDropdownId);
+                    const role = roles.find((r) => r.id === openDropdownId);
                     if (role) handleDeleteRole(role);
                   }}
-                  disabled={roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0}
+                  disabled={
+                    roleCounts[
+                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                    ] > 0
+                  }
                   title={
-                    roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0
+                    roleCounts[
+                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                    ] > 0
                       ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
                       : 'ลบบทบาท'
                   }
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${roleCounts[roles.find(r => r.id === openDropdownId)?.name || ''] > 0
-                    ? 'text-slate-400 cursor-not-allowed'
-                    : 'text-red-700 hover:bg-red-50'
-                    }`}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${
+                    roleCounts[
+                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                    ] > 0
+                      ? 'text-slate-400 cursor-not-allowed'
+                      : 'text-red-700 hover:bg-red-50'
+                  }`}
                   role="menuitem"
                   variant="ghost"
                 >
@@ -696,8 +745,7 @@ const Users: React.FC<UsersProps> = ({
             )}
           </div>
         </div>
-      )
-      }
+      )}
       <AddRoleModal
         isOpen={isAddRoleModalOpen}
         onClose={() => setIsAddRoleModalOpen(false)}
@@ -713,6 +761,7 @@ const Users: React.FC<UsersProps> = ({
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onCreateUser={handleCreateUser}
+        onUpdateUser={handleUpdateUser}
         roles={roles as any}
       />
       <EditUserModal

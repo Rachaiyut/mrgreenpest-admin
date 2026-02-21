@@ -7,12 +7,12 @@ import {
 } from '../../common/FormControls';
 
 // Interface
-import { ISupplier } from '@/src/types/entity/supplier.interface';
+import { Supplier } from '@/src/types/entity/supplier.interface';
 
 interface SupplierDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  supplier: ISupplier | null;
+  supplier: Supplier | null;
 }
 
 export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
@@ -26,7 +26,7 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดผู้จัดจำหน่าย: ${supplier.company_name}`}
+      title={`รายละเอียดผู้จัดจำหน่าย: ${supplier.name}`}
       size="2xl"
     >
       <div className="space-y-4 text-sm">
@@ -58,4 +58,3 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
     </Modal>
   );
 };
-

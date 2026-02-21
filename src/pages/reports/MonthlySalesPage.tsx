@@ -58,15 +58,11 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
     return filteredData.map((q, index) => {
       const assessment = assessments.find((a) => a.id === q.assessment_id);
       const totalArea =
-        assessment?.workAreas?.reduce(
-          (sum, wa) => sum + (wa.areaSize || 0),
+        assessment?.assessment_areas?.reduce(
+          (sum, wa) => sum + (wa.area_size || 0),
           0
         ) || 0;
-      const totalLinear =
-        assessment?.workAreas?.reduce(
-          (sum, wa) => sum + (wa.linearMeters || 0),
-          0
-        ) || 0;
+      const totalLinear = 0; // No linearMeters property in assessment_areas
       const areaStr =
         totalLinear > 0 ? `${totalLinear} ม.` : `${totalArea} ตร.ม.`;
 
@@ -79,7 +75,7 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
       const comPercent = 3;
       const comAmount = basePriceForCom * (comPercent / 100);
 
-      const saleName = assessment?.createdBy || 'Unknown';
+      const saleName = assessment?.created_by || 'Unknown';
 
       return {
         index: index + 1,
@@ -89,7 +85,7 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
         priceInclVat,
         priceExclVat,
         status: q.status,
-        package: assessment?.workAreas?.[0]?.serviceType?.join(', ') || '-',
+        package: assessment?.assessment_areas?.[0]?.service_system || '-',
         basePriceForCom,
         afterDed10,
         date: new Date(q.created_at).toLocaleDateString('th-TH', {
@@ -437,4 +433,3 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
 };
 
 export default MonthlySalesPage;
-

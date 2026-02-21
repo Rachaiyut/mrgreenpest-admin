@@ -10,8 +10,9 @@ import {
 } from '@/src/types/entity/financial.interface';
 import { Status } from '@/src/types/entity/core.interface';
 import { Warehouse as WarehouseType } from '@/src/types/entity/inventory.interface';
+import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 import { Supplier } from '@/src/types/entity/supplier.interface';
-import { Product } from '@/src/types/entity/package.interface';
+import { Product } from '@/src/types/entity/product.interface';
 
 interface AddReturnToSupplierModalProps {
   isOpen: boolean;
@@ -217,8 +218,9 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                 {warehouses.map((wh) => (
                   <option key={wh.id} value={wh.id}>
                     {wh.name}
-                    {wh.type === 'รถ' && wh.license_plate
-                      ? ` (${wh.license_plate})`
+                    {wh.type === WarehouseTypeEnum.VEHICLE &&
+                    wh.vehicle?.vehicle_registration
+                      ? ` (${wh.vehicle.vehicle_registration})`
                       : ''}
                   </option>
                 ))}
@@ -229,7 +231,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                 <option value="">-- เลือกผู้จำหน่าย --</option>
                 {suppliers.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.company_name}
+                    {s.name}
                   </option>
                 ))}
               </Select>
@@ -389,4 +391,3 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
     </Fragment>
   );
 };
-

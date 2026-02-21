@@ -1,4 +1,9 @@
-import { StorageModel, UploadMultipleStorageDto, UploadStorageDto, UpdateStorageDto } from '@/src/types/entity/storage.interface';
+import {
+  StorageModel,
+  UploadMultipleStorageDto,
+  UploadStorageDto,
+  UpdateStorageDto,
+} from '@/src/types/entity/storage.interface';
 import { AuthService } from './auth';
 
 class StorageService extends AuthService {
@@ -15,15 +20,21 @@ class StorageService extends AuthService {
     if (data.entity_type) formData.append('entity_type', data.entity_type);
     if (data.entity_id) formData.append('entity_id', data.entity_id);
 
-    const res = await this.http.post<StorageModel>(`${this.path}/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await this.http.post<StorageModel>(
+      `${this.path}/upload`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return res.data;
   }
 
-  async uploadMultiple(data: UploadMultipleStorageDto): Promise<StorageModel[]> {
+  async uploadMultiple(
+    data: UploadMultipleStorageDto
+  ): Promise<StorageModel[]> {
     const formData = new FormData();
     data.files.forEach((file) => {
       formData.append('files', file);
@@ -36,11 +47,15 @@ class StorageService extends AuthService {
     if (data.entity_type) formData.append('entity_type', data.entity_type);
     if (data.entity_id) formData.append('entity_id', data.entity_id);
 
-    const res = await this.http.post<StorageModel[]>(`${this.path}/upload/multiple`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const res = await this.http.post<StorageModel[]>(
+      `${this.path}/upload/multiple`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return res.data;
   }
 
@@ -50,14 +65,19 @@ class StorageService extends AuthService {
   }
 
   async remove(id: string): Promise<{ success: boolean }> {
-    const res = await this.http.delete<{ success: boolean }>(`${this.path}/${id}`);
+    const res = await this.http.delete<{ success: boolean }>(
+      `${this.path}/${id}`
+    );
     return res.data;
   }
 
   async getSignedUrl(id: string, expiresIn?: number): Promise<{ url: string }> {
-    const res = await this.http.get<{ url: string }>(`${this.path}/${id}/signed-url`, {
-      params: { expiresIn },
-    });
+    const res = await this.http.get<{ url: string }>(
+      `${this.path}/${id}/signed-url`,
+      {
+        params: { expiresIn },
+      }
+    );
     return res.data;
   }
 }

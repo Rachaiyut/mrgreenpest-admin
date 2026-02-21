@@ -1,5 +1,5 @@
-import { Role } from "../enums/role";
-import { IBaseQuery } from "./base.interface";
+import { Role } from '../enums/role';
+import { IBaseQuery } from './base.interface';
 
 export enum Status {
   Draft = 'จัดทำ',
@@ -74,4 +74,3 @@ export interface Address {
   roadLine?: string;
   sequence?: string;
 }
-

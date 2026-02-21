@@ -79,7 +79,7 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
     }
 
     return reversedAdjustments.filter((adjustment) => {
-      const adjustmentDate = formatThaiDate(adjustment.createdAt);
+      const adjustmentDate = formatThaiDate(adjustment.created_at);
 
       return (
         adjustment.id.toLowerCase().includes(lowercasedQuery) ||
@@ -266,16 +266,16 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                       {adj.id}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {formatThaiDate(adj.createdAt)}
+                      {formatThaiDate(adj.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {warehouseMap.get(adj.warehouseId) || '-'}
+                      {warehouseMap.get(adj.warehouse_id) || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
                       {adj.items.length}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {adj.createdBy}
+                      {adj.created_by}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm">
                       {adj.reason}
@@ -374,7 +374,12 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
         adjustment={adjustmentToEdit}
         onUpdateAdjustment={onUpdateAdjustment}
         warehouses={warehouses}
-        products={products}
+        products={products.map((p) => ({
+          ...p,
+          quantity: 0,
+          warehouse_id: '',
+        }))}
+        stockMap={stockMap}
       />
       <StockAdjustmentDetailsModal
         isOpen={isDetailsModalOpen}
@@ -403,5 +408,3 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
 };
 
 export default StockAdjustment;
-
-

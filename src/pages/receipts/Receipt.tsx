@@ -67,9 +67,13 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [isAddReceiptModalOpen, setIsAddReceiptModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [targetStatus, setTargetStatus] = useState<ReceiptStatus>(ReceiptStatus.DRAFT);
-  
-  const [openReceiptDropdownId, setOpenReceiptDropdownId] = useState<string | null>(null);
+  const [targetStatus, setTargetStatus] = useState<ReceiptStatus>(
+    ReceiptStatus.DRAFT
+  );
+
+  const [openReceiptDropdownId, setOpenReceiptDropdownId] = useState<
+    string | null
+  >(null);
   const [receiptDropdownPosition, setReceiptDropdownPosition] = useState<{
     top: number;
     left: number;
@@ -81,13 +85,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [receiptFormInvoiceId, setReceiptFormInvoiceId] = useState('');
   const [receiptFormCustomerId, setReceiptFormCustomerId] = useState('');
   const [receiptFormCustomerName, setReceiptFormCustomerName] = useState('');
-  const [receiptFormReceivedAt, setReceiptFormReceivedAt] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10)
+  const [receiptFormReceivedAt, setReceiptFormReceivedAt] = useState<string>(
+    () => new Date().toISOString().slice(0, 10)
   );
   const [receiptFormPaymentMethod, setReceiptFormPaymentMethod] =
     useState<string>('TRANSFER');
   const [receiptFormAmount, setReceiptFormAmount] = useState<number>(0);
-  const [receiptFormPaymentReference, setReceiptFormPaymentReference] = useState<string>('');
+  const [receiptFormPaymentReference, setReceiptFormPaymentReference] =
+    useState<string>('');
   const [receiptFormNotes, setReceiptFormNotes] = useState<string>('');
 
   const receiptData = receipts || [];
@@ -95,7 +100,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     () => Array.from(new Set(receiptData.map((r) => r.payment_method))),
     [receiptData]
   );
-  
+
   const filteredReceipts = useMemo(() => {
     const q = receiptSearchQuery.trim().toLowerCase();
     const start = receiptStartDate ? new Date(receiptStartDate) : null;
@@ -167,8 +172,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
       return receivedDate === todayStr;
     });
     const todayCount = todayReceipts.length;
-    const todayAmount = todayReceipts.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
-    const totalAmount = receiptData.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+    const todayAmount = todayReceipts.reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
+    const totalAmount = receiptData.reduce(
+      (sum, r) => sum + (Number(r.amount) || 0),
+      0
+    );
 
     return { total, todayCount, todayAmount, totalAmount };
   }, [receiptData]);
@@ -232,8 +243,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">ใบกำกับภาษี / ใบเสร็จรับเงิน</h1>
-          <p className="mt-1 text-slate-600">จัดการใบกำกับภาษีและใบเสร็จรับเงิน</p>
+          <h1 className="text-3xl font-bold text-slate-800">
+            ใบกำกับภาษี / ใบเสร็จรับเงิน
+          </h1>
+          <p className="mt-1 text-slate-600">
+            จัดการใบกำกับภาษีและใบเสร็จรับเงิน
+          </p>
         </div>
         {onCreateReceipt && (
           <Button onClick={() => setIsAddReceiptModalOpen(true)}>
@@ -252,7 +267,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </div>
             <div>
               <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-              <p className="text-2xl font-bold text-blue-800">{receiptStats.total}</p>
+              <p className="text-2xl font-bold text-blue-800">
+                {receiptStats.total}
+              </p>
             </div>
           </div>
         </Card>
@@ -263,7 +280,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </div>
             <div>
               <p className="text-sm text-green-600 font-medium">วันนี้</p>
-              <p className="text-2xl font-bold text-green-800">{receiptStats.todayCount}</p>
+              <p className="text-2xl font-bold text-green-800">
+                {receiptStats.todayCount}
+              </p>
             </div>
           </div>
         </Card>
@@ -275,7 +294,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <div>
               <p className="text-sm text-emerald-600 font-medium">รับวันนี้</p>
               <p className="text-lg font-bold text-emerald-800">
-                ฿{receiptStats.todayAmount.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                ฿
+                {receiptStats.todayAmount.toLocaleString('th-TH', {
+                  minimumFractionDigits: 0,
+                })}
               </p>
             </div>
           </div>
@@ -288,7 +310,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <div>
               <p className="text-sm text-purple-600 font-medium">รับทั้งหมด</p>
               <p className="text-lg font-bold text-purple-800">
-                ฿{receiptStats.totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                ฿
+                {receiptStats.totalAmount.toLocaleString('th-TH', {
+                  minimumFractionDigits: 0,
+                })}
               </p>
             </div>
           </div>
@@ -382,15 +407,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {paginatedReceipts.map((r, index) => {
-                const customer = r.customer || customers?.find(
-                  (c) => c.id === r.customer_id
-                );
+                const customer =
+                  r.customer || customers?.find((c) => c.id === r.customer_id);
                 return (
                   <tr key={r.id}>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(receiptPage - 1) * receiptItemsPerPage +
-                        index +
-                        1}
+                      {(receiptPage - 1) * receiptItemsPerPage + index + 1}
                     </td>
                     <td
                       className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
@@ -404,7 +426,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                     <td className="px-4 py-3 text-sm text-slate-500">
                       {r.customer_name}
                       <div className="text-xs text-slate-400 mt-0.5">
-                        Ref: {invoices?.find(i => i.id === r.invoice_id)?.code || r.invoice_id}
+                        Ref:{' '}
+                        {invoices?.find((i) => i.id === r.invoice_id)?.code ||
+                          r.invoice_id}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">
@@ -436,7 +460,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                             onClick={async (e) => {
                               e.stopPropagation();
                               if (isDownloading === r.id) return;
-                              
+
                               try {
                                 setIsDownloading(r.id);
                                 const blob = await ReceiptApi.getPdfBlob(r.id);
@@ -603,10 +627,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             {/* Left Column */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">ข้อมูลเอกสาร (Document Info)</h3>
+                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">
+                  ข้อมูลเอกสาร (Document Info)
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">ใบแจ้งหนี้ที่อ้างอิง (Reference Invoice)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      ใบแจ้งหนี้ที่อ้างอิง (Reference Invoice)
+                    </label>
                     <Select
                       value={receiptFormInvoiceId}
                       onChange={(e) => {
@@ -624,21 +652,28 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <option value="">-- เลือกใบแจ้งหนี้ (ถ้ามี) --</option>
                       {(invoices || []).map((i) => (
                         <option key={i.id} value={i.id}>
-                          {i.code || i.id} — {i.customer_name} (฿{(i.total || 0).toLocaleString()})
+                          {i.code || i.id} — {i.customer_name} (฿
+                          {(i.total || 0).toLocaleString()})
                         </option>
                       ))}
                     </Select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">ลูกค้า (Customer) <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      ลูกค้า (Customer) <span className="text-red-500">*</span>
+                    </label>
                     <Select
                       value={receiptFormCustomerId}
                       onChange={(e) => {
-                        const cust = customers?.find((c) => c.id === e.target.value);
+                        const cust = customers?.find(
+                          (c) => c.id === e.target.value
+                        );
                         setReceiptFormCustomerId(e.target.value);
                         if (cust) {
-                          setReceiptFormCustomerName(`${cust.first_name} ${cust.last_name}`);
+                          setReceiptFormCustomerName(
+                            `${cust.first_name} ${cust.last_name}`
+                          );
                         }
                       }}
                       className="w-full"
@@ -656,23 +691,33 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">การชำระเงิน (Payment Details)</h3>
+                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">
+                  การชำระเงิน (Payment Details)
+                </h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">วันที่รับชำระ <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        วันที่รับชำระ <span className="text-red-500">*</span>
+                      </label>
                       <Input
                         type="date"
                         value={receiptFormReceivedAt}
-                        onChange={(e) => setReceiptFormReceivedAt(e.target.value)}
+                        onChange={(e) =>
+                          setReceiptFormReceivedAt(e.target.value)
+                        }
                         className="w-full"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">วิธีชำระเงิน</label>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        วิธีชำระเงิน
+                      </label>
                       <Select
                         value={receiptFormPaymentMethod}
-                        onChange={(e) => setReceiptFormPaymentMethod(e.target.value)}
+                        onChange={(e) =>
+                          setReceiptFormPaymentMethod(e.target.value)
+                        }
                         className="w-full"
                       >
                         <option value="TRANSFER">โอนเงิน</option>
@@ -683,13 +728,17 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       </Select>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">เลขอ้างอิง (Reference No.)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      เลขอ้างอิง (Reference No.)
+                    </label>
                     <Input
                       type="text"
                       value={receiptFormPaymentReference}
-                      onChange={(e) => setReceiptFormPaymentReference(e.target.value)}
+                      onChange={(e) =>
+                        setReceiptFormPaymentReference(e.target.value)
+                      }
                       placeholder="เช่น เลขที่เช็ค, เลขที่สลิปโอนเงิน"
                       className="w-full"
                     />
@@ -701,12 +750,18 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             {/* Right Column */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">ยอดเงิน (Amount)</h3>
+                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">
+                  ยอดเงิน (Amount)
+                </h3>
                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-600 mb-1">จำนวนเงินที่ได้รับ (Amount Received)</label>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      จำนวนเงินที่ได้รับ (Amount Received)
+                    </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">฿</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                        ฿
+                      </span>
                       <Input
                         type="number"
                         value={String(receiptFormAmount)}
@@ -720,7 +775,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       />
                     </div>
                   </div>
-                  
+
                   {receiptFormInvoiceId && (
                     <p className="text-xs text-blue-600 flex items-center gap-1">
                       <CheckCircleIcon className="w-3 h-3" />
@@ -731,7 +786,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">หมายเหตุ (Notes)</h3>
+                <h3 className="text-lg font-semibold text-slate-800 border-b pb-2 mb-4">
+                  หมายเหตุ (Notes)
+                </h3>
                 <textarea
                   value={receiptFormNotes}
                   onChange={(e) => setReceiptFormNotes(e.target.value)}
@@ -755,36 +812,50 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         }
       >
         {selectedReceipt && (
-            <div className="space-y-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <div className="text-sm text-slate-600">เลขที่เอกสาร</div>
-                        <div className="text-sm text-slate-800">{selectedReceipt.code || selectedReceipt.id}</div>
-                    </div>
-                    <div>
-                        <div className="text-sm text-slate-600">ลูกค้า</div>
-                        <div className="text-sm text-slate-800">{selectedReceipt.customer_name}</div>
-                    </div>
-                    <div>
-                        <div className="text-sm text-slate-600">วันที่รับชำระ</div>
-                        <div className="text-sm text-slate-800">{formatThaiDate(selectedReceipt.received_at)}</div>
-                    </div>
-                    <div>
-                        <div className="text-sm text-slate-600">วิธีชำระ</div>
-                        <div className="text-sm text-slate-800">{getPaymentMethodLabel(selectedReceipt.payment_method)}</div>
-                    </div>
-                    <div>
-                        <div className="text-sm text-slate-600">ยอดเงิน</div>
-                        <div className="text-sm text-slate-800">฿{selectedReceipt.amount.toLocaleString()}</div>
-                    </div>
-                    {selectedReceipt.invoice_id && (
-                        <div>
-                            <div className="text-sm text-slate-600">อ้างอิงใบแจ้งหนี้</div>
-                            <div className="text-sm text-slate-800">{selectedReceipt.invoice_id}</div>
-                        </div>
-                    )}
+          <div className="space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm text-slate-600">เลขที่เอกสาร</div>
+                <div className="text-sm text-slate-800">
+                  {selectedReceipt.code || selectedReceipt.id}
                 </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-600">ลูกค้า</div>
+                <div className="text-sm text-slate-800">
+                  {selectedReceipt.customer_name}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-600">วันที่รับชำระ</div>
+                <div className="text-sm text-slate-800">
+                  {formatThaiDate(selectedReceipt.received_at)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-600">วิธีชำระ</div>
+                <div className="text-sm text-slate-800">
+                  {getPaymentMethodLabel(selectedReceipt.payment_method)}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm text-slate-600">ยอดเงิน</div>
+                <div className="text-sm text-slate-800">
+                  ฿{selectedReceipt.amount.toLocaleString()}
+                </div>
+              </div>
+              {selectedReceipt.invoice_id && (
+                <div>
+                  <div className="text-sm text-slate-600">
+                    อ้างอิงใบแจ้งหนี้
+                  </div>
+                  <div className="text-sm text-slate-800">
+                    {selectedReceipt.invoice_id}
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
         )}
       </Modal>
 
@@ -807,12 +878,19 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         title="อัปเดตสถานะ"
         message={
           <div className="space-y-4 text-left">
-            <p>กรุณาเลือกสถานะใหม่สำหรับใบเสร็จรับเงิน <strong>{selectedReceipt?.code || selectedReceipt?.id}</strong></p>
+            <p>
+              กรุณาเลือกสถานะใหม่สำหรับใบเสร็จรับเงิน{' '}
+              <strong>{selectedReceipt?.code || selectedReceipt?.id}</strong>
+            </p>
             <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                สถานะ
+              </label>
               <Select
                 value={targetStatus}
-                onChange={(e) => setTargetStatus(e.target.value as ReceiptStatus)}
+                onChange={(e) =>
+                  setTargetStatus(e.target.value as ReceiptStatus)
+                }
                 className="w-full"
               >
                 {Object.values(ReceiptStatus).map((status) => (

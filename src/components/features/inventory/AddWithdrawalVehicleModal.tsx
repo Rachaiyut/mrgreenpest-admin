@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from 'react';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -24,11 +30,14 @@ import {
   Assessment,
   Contract,
 } from '@/src/types/entity/app.interface';
-import { WarehouseType as InventoryWarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
+import {
+  WarehouseType as InventoryWarehouseType,
+  WithdrawalStatus,
+} from '@/src/types/enums/inventory';
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
-import { useData } from '../../../contexts/DataContext';
+
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
 interface AddWithdrawalModalProps {
@@ -44,6 +53,7 @@ interface AddWithdrawalModalProps {
   stockMap: Map<string, Map<string, number>>;
   assessments: Assessment[];
   contracts: Contract[];
+  currentUser?: User;
 }
 
 interface LineItem {
@@ -71,32 +81,38 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   stockMap,
   assessments,
   contracts,
+  currentUser,
 }) => {
-  const { currentUser } = useData();
-  const fullCurrentUser = currentUser ? users.find(u => u.id === currentUser.id) : null;
+  const fullCurrentUser = currentUser
+    ? users.find((u) => u.id === currentUser.id)
+    : null;
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
   const [errors, setErrors] = useState<any>({});
 
   const [toWarehouseId, setToWarehouseId] = useState('');
-  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
+  const [destinationLimits, setDestinationLimits] = useState<
+    Map<string, number>
+  >(new Map());
 
   useEffect(() => {
     if (toWarehouseId) {
-      WarehouseApi.getWarehouseById(toWarehouseId).then((warehouse) => {
-        const limits = new Map<string, number>();
-        if (warehouse && Array.isArray(warehouse.withdrawal_limits)) {
-          warehouse.withdrawal_limits.forEach((limit: any) => {
-            if (limit.product_id) {
-              limits.set(limit.product_id, Number(limit.max_quantity));
-            }
-          });
-        }
-        setDestinationLimits(limits);
-      }).catch(err => {
-        console.error("Failed to fetch destination warehouse limits", err);
-        setDestinationLimits(new Map());
-      });
+      WarehouseApi.getWarehouseById(toWarehouseId)
+        .then((warehouse) => {
+          const limits = new Map<string, number>();
+          if (warehouse && Array.isArray(warehouse.withdrawal_limits)) {
+            warehouse.withdrawal_limits.forEach((limit: any) => {
+              if (limit.product_id) {
+                limits.set(limit.product_id, Number(limit.max_quantity));
+              }
+            });
+          }
+          setDestinationLimits(limits);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch destination warehouse limits', err);
+          setDestinationLimits(new Map());
+        });
     } else {
       setDestinationLimits(new Map());
     }
@@ -104,14 +120,19 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const [requesterId, setRequesterId] = useState<string>('');
   const [recipientId, setRecipientId] = useState<string>('');
-  const requesterUser = useMemo(() => users.find(u => u.id === requesterId), [users, requesterId]);
+  const requesterUser = useMemo(
+    () => users.find((u) => u.id === requesterId),
+    [users, requesterId]
+  );
   const recipientName = useMemo(() => {
     if (!requesterUser) return '';
     return `${requesterUser.first_name} ${requesterUser.last_name}`;
   }, [requesterUser]);
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
+  const [userOptions, setUserOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isCustomerSelectionModalOpen, setIsCustomerSelectionModalOpen] =
     useState(false);
@@ -119,22 +140,38 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const [createdBy, setCreatedBy] = useState('');
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
 
-  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
+  const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
   const [fetchedJobs, setFetchedJobs] = useState<FieldJob[]>([]);
 
   // Reference Type State
-  const [referenceType, setReferenceType] = useState<'JOB' | 'ASSESSMENT' | 'CONTRACT'>('JOB');
+  const [referenceType, setReferenceType] = useState<
+    'JOB' | 'ASSESSMENT' | 'CONTRACT'
+  >('JOB');
   const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>('');
   const [selectedContractId, setSelectedContractId] = useState<string>('');
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
-  const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number } | null>(null);
+  const [walletInfo, setWalletInfo] = useState<{
+    balance: number;
+    expense_limit: number;
+  } | null>(null);
 
   const techRoles = ['LEAD_TECH', 'TECH'];
-  const isTechUser = fullCurrentUser && techRoles.includes(typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as any)?.name);
+  const isTechUser =
+    fullCurrentUser &&
+    techRoles.includes(
+      typeof fullCurrentUser.role === 'string'
+        ? fullCurrentUser.role
+        : (fullCurrentUser.role as any)?.name
+    );
 
   const isTechnician = useMemo(() => {
     if (!currentUser || !currentUser.role) return false;
-    const userRole = typeof currentUser.role === 'string' ? currentUser.role : currentUser.role.name;
+    const userRole =
+      typeof currentUser.role === 'string'
+        ? currentUser.role
+        : currentUser.role.name;
     return ['TECH', 'LEAD_TECH'].includes(userRole);
   }, [currentUser]);
 
@@ -145,7 +182,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     [products]
   );
 
-  const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
+  const [localStockMap, setLocalStockMap] = useState<
+    Map<string, Map<string, number>>
+  >(new Map());
 
   const fetchWarehouses = useCallback(async () => {
     try {
@@ -156,11 +195,18 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock = new Map<string, number>();
-          const stockItems = Array.isArray(w.stock) ? w.stock : (Array.isArray(w.stock_balances) ? w.stock_balances : []);
+          const stockItems = Array.isArray(w.stock)
+            ? w.stock
+            : Array.isArray(w.stock_balances)
+              ? w.stock_balances
+              : [];
 
           stockItems.forEach((s: any) => {
             const productId = s.product_id || s.product?.id;
-            const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
+            const quantity =
+              typeof s.quantity === 'string'
+                ? parseFloat(s.quantity)
+                : Number(s.quantity);
 
             if (productId && !isNaN(quantity)) {
               warehouseStock.set(productId, quantity);
@@ -176,7 +222,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         setVehicleWarehouseOptions(vehicleWhs);
       }
     } catch (error) {
-      console.error("Failed to fetch warehouses", error);
+      console.error('Failed to fetch warehouses', error);
       const vehicleWhs = warehouses
         .filter((w) => w.type === InventoryWarehouseType.VEHICLE)
         .map((w) => ({ value: w.id, label: w.name }));
@@ -196,7 +242,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
   const productsInWarehouse = useMemo(() => {
     if (!sourceWarehouse) return [];
-    
+
     // Use effective stock map to get products with > 0 quantity
     const stock = effectiveStockMap.get(sourceWarehouse.id);
     if (!stock) return [];
@@ -243,7 +289,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   // Fetch jobs when customer changes
   useEffect(() => {
     if (selectedCustomerIds.length > 0) {
-      const customerJobs = jobs.filter(j => {
+      const customerJobs = jobs.filter((j) => {
         const cId = (j as any).customer_id || (j as any).customer?.id;
         return selectedCustomerIds.includes(cId);
       });
@@ -271,7 +317,11 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
     setGoodsItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleGoodsItemChange = (id: string, field: keyof LineItem, value: any) => {
+  const handleGoodsItemChange = (
+    id: string,
+    field: keyof LineItem,
+    value: any
+  ) => {
     setGoodsItems((prev) =>
       prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
     );
@@ -304,9 +354,10 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       alert('กรุณาเลือกผู้เบิก');
       return;
     }
-    
+
     // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(requesterId)) {
       alert('รหัสผู้เบิกไม่ถูกต้อง กรุณาเลือกผู้เบิกใหม่');
       return;
@@ -331,13 +382,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         amount: Number(item.amount),
       })),
       notes: (e.target as any).remarks?.value,
-      status: WithdrawalStatus.PENDING, 
+      status: WithdrawalStatus.PENDING,
     };
 
     if (referenceIds.length > 0) {
       payload.reference_ids = referenceIds;
     }
-    
+
     // Add customer info if available
     if (selectedCustomerIds.length > 0) {
       payload.customer_id = selectedCustomerIds[0];
@@ -353,14 +404,15 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       alert('กรุณาเลือกผู้เบิก');
       return;
     }
-    
+
     // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(requesterId)) {
       alert('รหัสผู้เบิกไม่ถูกต้อง กรุณาเลือกผู้เบิกใหม่');
       return;
     }
-    
+
     // Logic for saving as draft
     const payload: any = {
       vehicle_id: toWarehouseId,
@@ -384,12 +436,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       status: WithdrawalStatus.DRAFT,
       notes: goodsFormRef.current?.remarks?.value,
     };
-    
+
     if (referenceIds.length > 0) {
       payload.reference_ids = referenceIds;
     }
 
-     if (selectedCustomerIds.length > 0) {
+    if (selectedCustomerIds.length > 0) {
       payload.customer_id = selectedCustomerIds[0];
     }
 
@@ -418,19 +470,19 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   const jobsForSelectedCustomers = useMemo(() => {
     if (selectedCustomerIds.length === 0) return jobs;
     return jobs.filter((job) => {
-        const cId = (job as any).customer_id || (job as any).customer?.id;
-        return selectedCustomerIds.includes(cId);
+      const cId = (job as any).customer_id || (job as any).customer?.id;
+      return selectedCustomerIds.includes(cId);
     });
   }, [jobs, selectedCustomerIds]);
 
   const allUsedReferenceIds = useMemo(() => {
-      // Collect all reference IDs used in existing withdrawals to disable them if needed
-      // For now, return empty or implement if required
-      return [];
+    // Collect all reference IDs used in existing withdrawals to disable them if needed
+    // For now, return empty or implement if required
+    return [];
   }, []);
 
   const isAnyItemOverLimit = useMemo(() => {
-    return goodsItems.some(item => {
+    return goodsItems.some((item) => {
       const limit = destinationLimits.get(item.productId);
       return limit !== undefined && item.quantity > limit;
     });
@@ -440,21 +492,25 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
   useEffect(() => {
     if (requesterId) {
       // Fetch from API to get the latest creditLimit
-      UserApi.getById(requesterId).then(u => {
-        setFetchedRequester(u);
-      }).catch(err => {
-        console.error("Failed to fetch requester details", err);
-        const found = users.find(u => u.id === requesterId);
-        if (found) setFetchedRequester(found);
-      });
+      UserApi.getById(requesterId)
+        .then((u) => {
+          setFetchedRequester(u);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch requester details', err);
+          const found = users.find((u) => u.id === requesterId);
+          if (found) setFetchedRequester(found);
+        });
 
       // Fetch wallet info
-      UserApi.getWallet(requesterId).then(wallet => {
-        setWalletInfo(wallet);
-      }).catch(err => {
-        console.error("Failed to fetch wallet info", err);
-        setWalletInfo(null);
-      });
+      UserApi.getWallet(requesterId)
+        .then((wallet) => {
+          setWalletInfo(wallet);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch wallet info', err);
+          setWalletInfo(null);
+        });
     } else {
       setFetchedRequester(null);
       setWalletInfo(null);
@@ -520,7 +576,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 type="submit"
                 form="add-goods-withdrawal-form"
                 className={`py-2 px-6 rounded-lg text-white font-semibold shadow-sm disabled:bg-slate-300 disabled:cursor-not-allowed transition-all ${
-                  isOverLimit || isAnyItemOverLimit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
+                  isOverLimit || isAnyItemOverLimit
+                    ? 'bg-amber-500 hover:bg-amber-600'
+                    : 'bg-primary hover:bg-primary/90'
                 }`}
                 title={
                   isOverLimit
@@ -530,7 +588,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                       : ''
                 }
               >
-                {isAnyItemOverLimit || isOverLimit ? 'ส่งเพื่อขออนุมัติ' : 'บันทึกและตัดสต็อก'}
+                {isAnyItemOverLimit || isOverLimit
+                  ? 'ส่งเพื่อขออนุมัติ'
+                  : 'บันทึกและตัดสต็อก'}
               </Button>
             </div>
           </div>
@@ -542,17 +602,20 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
           onSubmit={handleSubmit}
         >
           <div className="flex flex-col gap-6">
-            
             {/* Logistics Header Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                   <TruckIcon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
+                <h3 className="text-base font-semibold text-slate-800">
+                  การเคลื่อนย้ายสินค้า
+                </h3>
                 <div className="ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
                   <CalendarDaysIcon className="w-4 h-4 text-slate-400" />
-                  <span className="text-xs text-slate-500 font-medium">วันที่เบิก:</span>
+                  <span className="text-xs text-slate-500 font-medium">
+                    วันที่เบิก:
+                  </span>
                   <input
                     type="date"
                     name="createdAt"
@@ -577,7 +640,8 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                       if (currentStock) {
                         setGoodsItems((prev) =>
                           prev.filter(
-                            (item) => (currentStock.get(item.productId) || 0) > 0
+                            (item) =>
+                              (currentStock.get(item.productId) || 0) > 0
                           )
                         );
                       }
@@ -597,8 +661,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                     <DocumentCheckIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-slate-800">รายการสินค้า</h3>
-                    <p className="text-xs text-slate-500">สินค้าที่ต้องการเบิกออกจากคลัง</p>
+                    <h3 className="text-base font-semibold text-slate-800">
+                      รายการสินค้า
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      สินค้าที่ต้องการเบิกออกจากคลัง
+                    </p>
                   </div>
                 </div>
                 <Button
@@ -607,7 +675,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   variant="outline"
                   className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 transition-all text-sm font-medium"
                   disabled={!toWarehouseId}
-                  title={!toWarehouseId ? 'กรุณาเลือกรถบริการก่อน' : 'เพิ่มสินค้า'}
+                  title={
+                    !toWarehouseId ? 'กรุณาเลือกรถบริการก่อน' : 'เพิ่มสินค้า'
+                  }
                 >
                   <PlusIcon className="w-4 h-4 mr-1.5" />
                   เพิ่มสินค้า
@@ -620,8 +690,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                     <div className="bg-slate-50 p-4 rounded-full mb-3 border border-dashed border-slate-200 animate-pulse">
                       <TruckIcon className="w-8 h-8 text-slate-300" />
                     </div>
-                    <p className="font-medium text-slate-600 text-sm">ยังไม่มีรายการสินค้า</p>
-                    <p className="text-xs mt-1 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง</p>
+                    <p className="font-medium text-slate-600 text-sm">
+                      ยังไม่มีรายการสินค้า
+                    </p>
+                    <p className="text-xs mt-1 text-slate-400">
+                      กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากคลัง
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -631,21 +705,24 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                       <div className="col-span-2 text-center">หน่วย</div>
                       <div className="col-span-3 text-center">จัดการ</div>
                     </div>
-                    
+
                     {goodsItems.map((item, index) => {
                       const product = productMap.get(item.productId);
                       const available = sourceWarehouse
-                        ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.productId) || 0
+                        ? effectiveStockMap
+                            .get(sourceWarehouse.id)
+                            ?.get(item.productId) || 0
                         : 0;
                       const limit = destinationLimits.get(item.productId);
-                      const isItemOverLimit = limit !== undefined && item.quantity > limit;
-                      
+                      const isItemOverLimit =
+                        limit !== undefined && item.quantity > limit;
+
                       return (
                         <div
                           key={item.id}
                           className={`p-4 rounded-xl border transition-all shadow-sm group ${
-                            isItemOverLimit 
-                              ? 'bg-red-50 border-red-200' 
+                            isItemOverLimit
+                              ? 'bg-red-50 border-red-200'
                               : 'bg-white border-slate-200 hover:border-indigo-200 hover:shadow-md'
                           }`}
                         >
@@ -656,14 +733,17 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                               </div>
                               <div className="flex flex-wrap gap-2 mt-2">
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                                  Code: {product?.code || product?.id?.substring(0, 8)}
+                                  Code:{' '}
+                                  {product?.code ||
+                                    product?.id?.substring(0, 8)}
                                 </span>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
-                                  Stock: {available.toLocaleString()} {product?.unit?.name || '-'}
+                                  Stock: {available.toLocaleString()}{' '}
+                                  {product?.unit?.name || '-'}
                                 </span>
                               </div>
                             </div>
-                            
+
                             <div className="col-span-2 flex flex-col items-end gap-1">
                               <Input
                                 type="number"
@@ -678,16 +758,21 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                                   )
                                 }
                                 className={`w-24 text-right transition-all h-9 text-sm font-bold ${
-                                  item.quantity > available 
-                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200' 
+                                  item.quantity > available
+                                    ? 'border-red-300 text-red-600 focus:border-red-500 focus:ring-red-200'
                                     : isItemOverLimit
                                       ? 'border-orange-300 text-orange-600 focus:border-orange-500 focus:ring-orange-200 bg-orange-50'
                                       : 'border-slate-200 focus:border-indigo-500'
                                 }`}
                               />
-                              {(item.quantity > available || isItemOverLimit) && (
-                                <span className={`text-[10px] font-bold ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}>
-                                  {item.quantity > available ? 'เกินสต็อก' : `เกินลิมิตรถ (${limit})`}
+                              {(item.quantity > available ||
+                                isItemOverLimit) && (
+                                <span
+                                  className={`text-[10px] font-bold ${item.quantity > available ? 'text-red-600' : 'text-orange-600'}`}
+                                >
+                                  {item.quantity > available
+                                    ? 'เกินสต็อก'
+                                    : `เกินลิมิตรถ (${limit})`}
                                 </span>
                               )}
                             </div>
@@ -695,7 +780,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                             <div className="col-span-2 flex items-center justify-center text-sm text-slate-600">
                               {product?.unit?.name || 'หน่วย'}
                             </div>
-                            
+
                             <div className="col-span-3 flex justify-center">
                               <button
                                 type="button"
@@ -721,7 +806,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 <div className="p-2 bg-green-50 rounded-lg text-green-600">
                   <UserIcon className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-800">ข้อมูลผู้เบิกและผู้รับ</h3>
+                <h3 className="text-base font-semibold text-slate-800">
+                  ข้อมูลผู้เบิกและผู้รับ
+                </h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex-1 w-full">
@@ -730,7 +817,11 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   </label>
                   {isTechUser ? (
                     <Input
-                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      value={
+                        fullCurrentUser
+                          ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}`
+                          : ''
+                      }
                       readOnly
                       className="bg-slate-100 border-slate-200"
                     />
@@ -749,7 +840,11 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                   </label>
                   {isTechUser ? (
                     <Input
-                      value={fullCurrentUser ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}` : ''}
+                      value={
+                        fullCurrentUser
+                          ? `${fullCurrentUser.first_name} ${fullCurrentUser.last_name}`
+                          : ''
+                      }
                       readOnly
                       className="bg-slate-100 border-slate-200"
                     />
@@ -767,14 +862,18 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
             </div>
 
             {/* Finance Card (Wallet & Expenses) */}
-            <div className={`p-5 rounded-xl border shadow-sm transition-all ${
-              isOverLimit 
-                ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' 
-                : 'bg-white border-slate-200'
-            }`}>
+            <div
+              className={`p-5 rounded-xl border shadow-sm transition-all ${
+                isOverLimit
+                  ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100'
+                  : 'bg-white border-slate-200'
+              }`}
+            >
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-                  <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200 font-serif">฿</span>
+                  <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200 font-serif">
+                    ฿
+                  </span>
                   การเงิน & ค่าใช้จ่าย
                 </h3>
                 <Button
@@ -791,33 +890,57 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               {walletInfo && (
                 <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold text-slate-500">สถานะวงเงิน</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isOverLimit ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
-                    }`}>
+                    <span className="text-xs font-semibold text-slate-500">
+                      สถานะวงเงิน
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        isOverLimit
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                      }`}
+                    >
                       {isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}
                     </span>
                   </div>
-                  
+
                   <div className="flex items-end justify-between mb-1">
                     <span className="text-xs text-slate-400">คงเหลือสุทธิ</span>
-                    <span className={`text-lg font-bold ${
-                      (walletInfo.balance - totalExpenses) < 0 ? 'text-red-600' : 'text-slate-800'
-                    }`}>
-                      {(walletInfo.balance - totalExpenses).toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+                    <span
+                      className={`text-lg font-bold ${
+                        walletInfo.balance - totalExpenses < 0
+                          ? 'text-red-600'
+                          : 'text-slate-800'
+                      }`}
+                    >
+                      {(walletInfo.balance - totalExpenses).toLocaleString()}{' '}
+                      <span className="text-xs font-normal text-slate-400">
+                        บาท
+                      </span>
                     </span>
                   </div>
 
                   <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                    <div 
-                      style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, (((walletInfo.expense_limit - walletInfo.balance) + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }}
+                    <div
+                      style={{
+                        width: `${walletInfo.expense_limit > 0 ? Math.min(100, ((walletInfo.expense_limit - walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%`,
+                      }}
                       className={`h-full transition-all duration-500 ${isOverLimit ? 'bg-red-500' : 'bg-emerald-500'}`}
                     />
                   </div>
-                  
+
                   <div className="flex justify-between text-[10px] text-slate-400 font-medium">
-                    <span>ใช้ไป: {((walletInfo.expense_limit - walletInfo.balance) + totalExpenses).toLocaleString()}</span>
-                    <span>วงเงิน: {walletInfo.expense_limit.toLocaleString()}</span>
+                    <span>
+                      ใช้ไป:{' '}
+                      {(
+                        walletInfo.expense_limit -
+                        walletInfo.balance +
+                        totalExpenses
+                      ).toLocaleString()}
+                    </span>
+                    <span>
+                      วงเงิน: {walletInfo.expense_limit.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               )}
@@ -825,14 +948,23 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
               {/* Expense Items List */}
               <div className="space-y-2">
                 {expenseItems.map((item) => (
-                  <div key={item.id} className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm group">
+                  <div
+                    key={item.id}
+                    className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm group"
+                  >
                     <div className="p-1.5 bg-slate-100 rounded text-slate-400">
                       <BanknotesIcon className="w-3 h-3" />
                     </div>
                     <input
                       type="text"
                       value={item.description}
-                      onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                      onChange={(e) =>
+                        handleExpenseItemChange(
+                          item.id,
+                          'description',
+                          e.target.value
+                        )
+                      }
                       placeholder="ระบุรายละเอียด..."
                       className="flex-grow min-w-0 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs px-0 py-1 bg-transparent font-medium text-slate-700 placeholder:text-slate-300"
                     />
@@ -841,7 +973,13 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                         type="number"
                         min="0"
                         value={item.amount}
-                        onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                        onChange={(e) =>
+                          handleExpenseItemChange(
+                            item.id,
+                            'amount',
+                            e.target.value
+                          )
+                        }
                         placeholder="0.00"
                         className="w-16 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs text-right px-0 py-1 font-bold text-slate-800 bg-transparent placeholder:text-slate-300"
                       />
@@ -856,7 +994,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                     </button>
                   </div>
                 ))}
-                
+
                 {expenseItems.length === 0 && (
                   <div className="text-center py-6 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs bg-slate-50/50">
                     ไม่มีรายการค่าใช้จ่ายเพิ่มเติม
@@ -865,8 +1003,12 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
 
                 {expenseItems.length > 0 && (
                   <div className="flex justify-between items-center pt-3 border-t border-slate-200 mt-3">
-                    <span className="text-xs font-bold text-slate-600">รวมค่าใช้จ่าย</span>
-                    <span className="text-sm font-bold text-primary">{totalExpenses.toLocaleString()} บาท</span>
+                    <span className="text-xs font-bold text-slate-600">
+                      รวมค่าใช้จ่าย
+                    </span>
+                    <span className="text-sm font-bold text-primary">
+                      {totalExpenses.toLocaleString()} บาท
+                    </span>
                   </div>
                 )}
               </div>
@@ -878,12 +1020,14 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                 <DocumentCheckIcon className="w-4 h-4 text-slate-400" />
                 ข้อมูลอ้างอิง
               </h3>
-              
+
               <div className="space-y-4">
                 {/* Customer */}
                 <div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-semibold text-slate-500 ml-1">ลูกค้า</label>
+                    <label className="text-xs font-semibold text-slate-500 ml-1">
+                      ลูกค้า
+                    </label>
                     <button
                       type="button"
                       onClick={() => setIsCustomerSelectionModalOpen(true)}
@@ -899,7 +1043,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                           key={customer.id}
                           className="flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded-md border border-slate-200 shadow-sm"
                         >
-                          <span className="truncate max-w-[150px] font-medium">{customer.first_name} {customer.last_name}</span>
+                          <span className="truncate max-w-[150px] font-medium">
+                            {customer.first_name} {customer.last_name}
+                          </span>
                           <button
                             type="button"
                             onClick={() => handleRemoveCustomer(customer.id)}
@@ -931,20 +1077,28 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
                       <option value="JOB">ใบงาน (Job)</option>
                     </select>
                     <div className="w-2/3">
-                       {referenceType === 'JOB' && (
+                      {referenceType === 'JOB' && (
                         <SearchableSelect
                           value={referenceIds[0] || ''}
-                          onChange={(value) => setReferenceIds(value ? [value] : [])}
-                          options={(fetchedJobs.length > 0 ? fetchedJobs : jobs).map(j => {
+                          onChange={(value) =>
+                            setReferenceIds(value ? [value] : [])
+                          }
+                          options={(fetchedJobs.length > 0
+                            ? fetchedJobs
+                            : jobs
+                          ).map((j) => {
                             const c = (j as any).customer;
                             const customerName = c
                               ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
                               : (j as any).customer_name || 'Unknown';
-                            const jobDate = (j as any).start_date || (j as any).created_at;
-                            const dateStr = jobDate ? new Date(jobDate).toLocaleDateString('th-TH') : '-';
+                            const jobDate =
+                              (j as any).start_date || (j as any).created_at;
+                            const dateStr = jobDate
+                              ? new Date(jobDate).toLocaleDateString('th-TH')
+                              : '-';
                             return {
                               value: j.id,
-                              label: `${customerName} (${dateStr})`
+                              label: `${customerName} (${dateStr})`,
                             };
                           })}
                           placeholder="เลือกใบงาน..."
@@ -980,7 +1134,9 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
         products={productsInWarehouse}
         existingProductIds={existingProductIds}
         disableFetch={true}
-        stockMap={toWarehouseId ? effectiveStockMap.get(toWarehouseId) : undefined}
+        stockMap={
+          toWarehouseId ? effectiveStockMap.get(toWarehouseId) : undefined
+        }
       />
 
       <ReferenceSelectionModal

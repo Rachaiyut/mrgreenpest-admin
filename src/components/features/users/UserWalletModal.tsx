@@ -1,9 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  User,
-  UserWallet,
-} from '@/src/types/entity/app.interface';
+import { User, UserWallet } from '@/src/types/entity/app.interface';
 import { FormField, Input, Button } from '../../common/FormControls';
 import { formatThaiDateTime } from '../../../utils/date';
 import { PlusIcon, PencilIcon } from '../../../assets/icons/Icons';
@@ -60,7 +57,8 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
   const sortedTransactions = useMemo(() => {
     if (!wallet || !wallet.transactions) return [];
     return [...wallet.transactions].sort(
-      (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a: any, b: any) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }, [wallet]);
 
@@ -82,10 +80,14 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
         setShowForm(false);
       } catch (error: any) {
         console.error('Failed to create expense:', error);
-        if (error.response && error.response.data && error.response.data.message) {
-            alert(error.response.data.message);
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.message
+        ) {
+          alert(error.response.data.message);
         } else {
-            alert('ไม่สามารถบันทึกรายการได้');
+          alert('ไม่สามารถบันทึกรายการได้');
         }
       }
     }
@@ -152,16 +154,16 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
             onSubmit={handleUpdateLimit}
             className="p-4 border rounded-lg bg-slate-50 space-y-4"
           >
-            <h3 className="font-semibold text-slate-800">
-              แก้ไขวงเงินอนุมัติ
-            </h3>
+            <h3 className="font-semibold text-slate-800">แก้ไขวงเงินอนุมัติ</h3>
             <FormField label="วงเงิน (บาท)" htmlFor="limit-amount">
               <Input
                 id="limit-amount"
                 type="number"
                 value={limitAmount}
                 onChange={(e) =>
-                  setLimitAmount(e.target.value === '' ? '' : Number(e.target.value))
+                  setLimitAmount(
+                    e.target.value === '' ? '' : Number(e.target.value)
+                  )
                 }
                 min="0"
                 step="0.01"
@@ -276,8 +278,11 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                         {txn.description}
                       </td>
                       <td
-                        className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-right ${txn.type === 'รายรับ' ? 'text-green-600' : 'text-red-600'
-                          }`}
+                        className={`px-4 py-3 whitespace-nowrap text-sm font-semibold text-right ${
+                          txn.type === 'รายรับ'
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`}
                       >
                         {txn.type === 'รายรับ' ? '+' : '-'}
                         {txn.amount.toLocaleString('th-TH', {

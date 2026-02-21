@@ -28,10 +28,7 @@ import { useData } from '../../../contexts/DataContext';
 import { TransferApi } from '@/src/api/inventory/transfer';
 
 const Transfers: React.FC = () => {
-  const {
-    warehouses,
-    products,
-  } = useData();
+  const { warehouses, products } = useData();
 
   const stockMap = useMemo(() => {
     const map: Record<string, Record<string, number>> = {};
@@ -110,7 +107,9 @@ const Transfers: React.FC = () => {
         }
       }
 
-      alert('Update transfer details not supported by API yet. Only Status update is supported.');
+      alert(
+        'Update transfer details not supported by API yet. Only Status update is supported.'
+      );
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update transfer:', error);
@@ -140,7 +139,9 @@ const Transfers: React.FC = () => {
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     return reversed.filter(
       (transfer) =>
-        (transfer.code || transfer.id).toLowerCase().includes(lowercasedQuery) ||
+        (transfer.code || transfer.id)
+          .toLowerCase()
+          .includes(lowercasedQuery) ||
         formatThaiDate(transfer.created_at).includes(lowercasedQuery)
     );
   }, [transfers, searchQuery]);
@@ -240,8 +241,20 @@ const Transfers: React.FC = () => {
       isDanger: false,
       show: (t: TransferType) => t.status === TransferStatus.PENDING,
     },
-    { label: 'แก้ไข', icon: PencilIcon, handler: handleEdit, isDanger: false, show: (t: TransferType) => t.status === TransferStatus.PENDING },
-    { label: 'ลบ', icon: TrashIcon, handler: handleDelete, isDanger: true, show: (t: TransferType) => t.status === TransferStatus.PENDING },
+    {
+      label: 'แก้ไข',
+      icon: PencilIcon,
+      handler: handleEdit,
+      isDanger: false,
+      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+    },
+    {
+      label: 'ลบ',
+      icon: TrashIcon,
+      handler: handleDelete,
+      isDanger: true,
+      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+    },
   ];
 
   return (
@@ -337,14 +350,18 @@ const Transfers: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedTransfers.map((transfer, index) => {
-                  const fromWarehouse = warehouseMap.get(
-                    transfer.from_warehouse_id
-                  ) || (transfer as any).from_warehouse?.name;
-                  const toWarehouse = warehouseMap.get(transfer.to_warehouse_id) || (transfer as any).to_warehouse?.name;
-                  const totalQuantity = transfer.items?.reduce(
-                    (sum, item) => sum + Number(item.qty || item.quantity || 0),
-                    0
-                  ) || 0;
+                  const fromWarehouse =
+                    warehouseMap.get(transfer.from_warehouse_id) ||
+                    (transfer as any).from_warehouse?.name;
+                  const toWarehouse =
+                    warehouseMap.get(transfer.to_warehouse_id) ||
+                    (transfer as any).to_warehouse?.name;
+                  const totalQuantity =
+                    transfer.items?.reduce(
+                      (sum, item) =>
+                        sum + Number(item.qty || item.quantity || 0),
+                      0
+                    ) || 0;
 
                   return (
                     <tr key={transfer.id} className="hover:bg-slate-50">

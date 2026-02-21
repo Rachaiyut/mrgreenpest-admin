@@ -9,16 +9,32 @@ import {
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { User } from '@/src/types/entity/core.interface';
-import {
-  Job,
-  ServiceSystem,
-} from '@/src/types/entity/job.interface';
+import { Job, ServiceSystem } from '@/src/types/entity/job.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
-import { RefreshIcon, UserIcon, CalendarIcon, TruckIcon, DocumentIcon, CheckCircleIcon, PhoneIcon, MapPinIcon, ClockIcon, ArrowLeftIcon, ArrowRightIcon } from '../../../assets/icons/Icons';
-import { AssessmentApi, ContractApi, CustomerApi, WarehouseApi, UserApi, InvoiceApi } from '@/src/api';
+import {
+  RefreshIcon,
+  UserIcon,
+  CalendarIcon,
+  TruckIcon,
+  DocumentIcon,
+  CheckCircleIcon,
+  PhoneIcon,
+  MapPinIcon,
+  ClockIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+} from '../../../assets/icons/Icons';
+import {
+  AssessmentApi,
+  ContractApi,
+  CustomerApi,
+  WarehouseApi,
+  UserApi,
+  InvoiceApi,
+} from '@/src/api';
 import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
 import { Assessment } from '@/src/types/entity/app.interface';
@@ -91,7 +107,10 @@ const JobWorkAreaForm: React.FC<{
 interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateJob: (jobData: Omit<Job, 'id'> | any, assessmentId?: string) => void | Promise<void>;
+  onCreateJob: (
+    jobData: Omit<Job, 'id'> | any,
+    assessmentId?: string
+  ) => void | Promise<void>;
   warehouses: Warehouse[];
   initialContractId?: string;
   initialWorkDateIso?: string;
@@ -118,10 +137,13 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const [selectedReference, setSelectedReference] = useState('');
   const [selectedInvoiceId, setSelectedInvoiceId] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [selectedCustomerData, setSelectedCustomerData] = useState<Customer | null>(null);
-  
+  const [selectedCustomerData, setSelectedCustomerData] =
+    useState<Customer | null>(null);
+
   // Explicitly fetch assessments and contracts
-  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
+  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>(
+    []
+  );
   const [fetchedContracts, setFetchedContracts] = useState<Contract[]>([]);
   const [fetchedInvoices, setFetchedInvoices] = useState<Invoice[]>([]);
 
@@ -150,17 +172,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   const [leadTechSearch, setLeadTechSearch] = useState('');
   const [leadTechnicianOptions, setLeadTechnicianOptions] = useState<User[]>(
     users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+      const roleName =
+        typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
       return roleName === UserRole.TECH;
     })
   );
 
   const [additionalTechSearch, setAdditionalTechSearch] = useState('');
   const [additionalTechnicianOptions, setAdditionalTechnicianOptions] =
-    useState<User[]>(users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
-      return roleName === UserRole.TECH;
-    }));
+    useState<User[]>(
+      users.filter((u) => {
+        const roleName =
+          typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+        return roleName === UserRole.TECH;
+      })
+    );
 
   const fetchCustomers = async (search: string) => {
     try {
@@ -276,7 +302,10 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     // Prefer fetched assessments if available
     if (fetchedAssessments.length > 0) {
       return fetchedAssessments.filter(
-        (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT
+        (a) =>
+          a.status === AsessmentStatus.DRAFT ||
+          a.status === AsessmentStatus.COMPLETE ||
+          a.status === AsessmentStatus.APPOINTMENT
       );
     }
 
@@ -284,12 +313,14 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       const customer =
         (selectedCustomerData?.id === selectedCustomerId
           ? selectedCustomerData
-          : undefined) ||
-        customers.find((c) => c.id === selectedCustomerId);
+          : undefined) || customers.find((c) => c.id === selectedCustomerId);
 
       if (customer?.assessments) {
         return customer.assessments.filter(
-          (a) => a.status === AsessmentStatus.DRAFT || a.status === AsessmentStatus.COMPLETE || a.status === AsessmentStatus.APPOINTMENT
+          (a) =>
+            a.status === AsessmentStatus.DRAFT ||
+            a.status === AsessmentStatus.COMPLETE ||
+            a.status === AsessmentStatus.APPOINTMENT
         );
       }
     }
@@ -311,8 +342,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       const customer =
         (selectedCustomerData?.id === selectedCustomerId
           ? selectedCustomerData
-          : undefined) ||
-        customers.find((c) => c.id === selectedCustomerId);
+          : undefined) || customers.find((c) => c.id === selectedCustomerId);
 
       if (customer?.contracts) {
         return customer.contracts.filter(
@@ -360,7 +390,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     const lower = referenceSearch.toLowerCase();
     return refs.filter((r) => r.label.toLowerCase().includes(lower));
   }, [availableAssessments, availableContracts, referenceSearch]);
-
 
   const bookedSlots = useMemo(() => {
     if (!selectedVehicleId || !workDate) return [];
@@ -428,7 +457,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     }
     setSelectedReference('');
     setWorkAreas([]);
-    
+
     // Clear previous fetched data
     setFetchedAssessments([]);
     setFetchedContracts([]);
@@ -438,24 +467,25 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         // Fetch full customer details
         const fullCustomer = await CustomerApi.getCustomerById(customerId);
         if (fullCustomer) {
-             // Handle potential API response wrapper
-             const customerData = (fullCustomer as any).data || fullCustomer;
-             setSelectedCustomerData(customerData);
+          // Handle potential API response wrapper
+          const customerData = (fullCustomer as any).data || fullCustomer;
+          setSelectedCustomerData(customerData);
         }
-        
+
         // Parallel fetch for assessments and contracts
         Promise.all([
           AssessmentApi.getAll({ customer_id: customerId }),
           ContractApi.getAll({ customer_id: customerId }),
-          InvoiceApi.getAll({ customer_id: customerId })
-        ]).then(([assessmentRes, contractRes, invoiceRes]) => {
-          setFetchedAssessments(assessmentRes.data || []);
-          setFetchedContracts(contractRes.data || []);
-          setFetchedInvoices(invoiceRes.data || []);
-        }).catch(err => {
-          console.error('Error fetching customer documents:', err);
-        });
-
+          InvoiceApi.getAll({ customer_id: customerId }),
+        ])
+          .then(([assessmentRes, contractRes, invoiceRes]) => {
+            setFetchedAssessments(assessmentRes.data || []);
+            setFetchedContracts(contractRes.data || []);
+            setFetchedInvoices(invoiceRes.data || []);
+          })
+          .catch((err) => {
+            console.error('Error fetching customer documents:', err);
+          });
       } catch (error) {
         console.error('Error fetching full customer details:', error);
       }
@@ -469,19 +499,25 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
-      const assessment = availableAssessments.find((a) => a.id === assessmentId);
-      if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
+      const assessment = availableAssessments.find(
+        (a) => a.id === assessmentId
+      );
+      if (
+        assessment &&
+        assessment.assessment_areas &&
+        assessment.assessment_areas.length > 0
+      ) {
         // Auto-populate service system from the first area of the assessment
         const system = assessment.assessment_areas[0].service_system;
         if (system) {
           setServiceSystem(system);
         }
-        
+
         // Populate work areas
         const areas = assessment.assessment_areas.map((area, index) => ({
-           id: `area-${Date.now()}-${index}`,
-           name: area.area_name,
-           service_package: area.service_system || ''
+          id: `area-${Date.now()}-${index}`,
+          name: area.area_name,
+          service_package: area.service_system || '',
         }));
         setWorkAreas(areas);
       }
@@ -496,13 +532,13 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       try {
         const invoice = await InvoiceApi.getById(invoiceId);
         if (invoice && invoice.items && invoice.items.length > 0) {
-           // Populate work areas from invoice items
-           const areas = invoice.items.map((item: any, index: number) => ({
-             id: `area-${Date.now()}-${index}`,
-             name: item.description,
-             service_package: item.product?.name || ''
-           }));
-           setWorkAreas(areas);
+          // Populate work areas from invoice items
+          const areas = invoice.items.map((item: any, index: number) => ({
+            id: `area-${Date.now()}-${index}`,
+            name: item.description,
+            service_package: item.product?.name || '',
+          }));
+          setWorkAreas(areas);
         }
       } catch (error) {
         console.error('Error fetching invoice details:', error);
@@ -602,10 +638,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
     });
   };
 
-  const handleAreaChange = (
-    index: number,
-    updatedArea: Partial<Job>
-  ) => {
+  const handleAreaChange = (index: number, updatedArea: Partial<Job>) => {
     setWorkAreas((prev) =>
       prev.map((area, i) => (i === index ? updatedArea : area))
     );
@@ -646,19 +679,19 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       id: 0,
       label: 'ข้อมูลลูกค้า & กำหนดการ',
       icon: <UserIcon className="w-5 h-5" />,
-      isValid: !!selectedCustomerId && !!workDate && !!startTime && !!endTime
+      isValid: !!selectedCustomerId && !!workDate && !!startTime && !!endTime,
     },
     {
       id: 1,
       label: 'รายละเอียดบริการ',
       icon: <DocumentIcon className="w-5 h-5" />,
-      isValid: true
+      isValid: true,
     },
     {
       id: 2,
       label: 'ทีมช่าง & ยานพาหนะ',
       icon: <TruckIcon className="w-5 h-5" />,
-      isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError
+      isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError,
     },
   ];
 
@@ -683,12 +716,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         <div className="flex justify-between items-center w-full px-2">
           {/* Left: Step Indicator */}
           <div className="text-slate-500 font-medium">
-             ขั้นตอนที่ {currentStep + 1} จาก {steps.length}
+            ขั้นตอนที่ {currentStep + 1} จาก {steps.length}
           </div>
 
           {/* Right: Navigation Buttons */}
           <div className="flex gap-3">
-             {currentStep > 0 && (
+            {currentStep > 0 && (
               <Button
                 type="button"
                 onClick={handlePrevStep}
@@ -733,16 +766,19 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             {steps.map((step, index) => {
               const isCompleted = visitedSteps.includes(index) && step.isValid;
               const isCurrent = currentStep === index;
-              
+
               return (
-                <li key={step.id} className="flex items-center gap-2 bg-white p-2">
+                <li
+                  key={step.id}
+                  className="flex items-center gap-2 bg-white p-2"
+                >
                   <span
                     className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all ${
                       isCurrent
                         ? 'border-primary bg-primary text-white'
                         : isCompleted
-                        ? 'border-green-500 bg-green-500 text-white'
-                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                          ? 'border-green-500 bg-green-500 text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-500'
                     }`}
                   >
                     {isCompleted && !isCurrent ? (
@@ -751,7 +787,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                       <span className="text-sm font-bold">{index + 1}</span>
                     )}
                   </span>
-                  <span className={`${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-green-600' : 'text-slate-500'}`}>
+                  <span
+                    className={`${isCurrent ? 'text-primary font-bold' : isCompleted ? 'text-green-600' : 'text-slate-500'}`}
+                  >
                     {step.label}
                   </span>
                 </li>
@@ -762,149 +800,168 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
       </div>
 
       <form id="add-job-form" onSubmit={handleSubmit} className="space-y-6">
-        
         {/* STEP 0: Customer & Schedule */}
         <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
             {/* Customer Section */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
-                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                    <UserIcon className="w-5 h-5" />
-                  </div>
-                  ข้อมูลลูกค้า
-                </h3>
-                
-                <div className="space-y-6 flex-1 flex flex-col">
-                  <SearchableSelect
-                    label="ค้นหาลูกค้า"
-                    options={filteredCustomers.map((c) => ({
-                      value: c.id,
-                      label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
-                      description: c.phone || '',
-                    }))}
-                    value={selectedCustomerId}
-                    onChange={handleCustomerChange}
-                    onSearchChange={setCustomerSearch}
-                    placeholder="พิมพ์ชื่อ, เบอร์โทร หรือที่อยู่..."
-                    required
-                  />
-
-                  {selectedCustomerData ? (
-                    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-4">
-                           <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-lg font-bold text-slate-700 shadow-sm">
-                              {selectedCustomerData.first_name?.[0]}
-                           </div>
-                           <div>
-                              <h4 className="text-base font-bold text-slate-800">
-                                {selectedCustomerData.first_name} {selectedCustomerData.last_name}
-                              </h4>
-                              {selectedCustomerData.nickname && (
-                                <span className="text-xs text-slate-500 font-medium bg-white px-2 py-0.5 rounded-full border border-slate-200 inline-block mt-1">
-                                  ชื่อเล่น: {selectedCustomerData.nickname}
-                                </span>
-                              )}
-                           </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 space-y-3">
-                        {selectedCustomerData.phone && (
-                          <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                            <PhoneIcon className="w-4 h-4 text-slate-400" />
-                            <span className="font-medium">{selectedCustomerData.phone}</span>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-start gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                           <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
-                           <span className="leading-relaxed">
-                              {[
-                                selectedCustomerData.address_house_no,
-                                selectedCustomerData.sub_district,
-                                selectedCustomerData.district,
-                                selectedCustomerData.province,
-                                selectedCustomerData.postal_code
-                              ].filter(Boolean).join(' ') || '-'}
-                           </span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center flex-1">
-                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                          <UserIcon className="w-6 h-6 text-slate-300" />
-                       </div>
-                       <p className="text-slate-500 font-medium">กรุณาเลือกลูกค้า</p>
-                       <p className="text-xs text-slate-400 mt-1">เพื่อดำเนินการต่อในขั้นตอนถัดไป</p>
-                    </div>
-                  )}
+              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                  <UserIcon className="w-5 h-5" />
                 </div>
+                ข้อมูลลูกค้า
+              </h3>
+
+              <div className="space-y-6 flex-1 flex flex-col">
+                <SearchableSelect
+                  label="ค้นหาลูกค้า"
+                  options={filteredCustomers.map((c) => ({
+                    value: c.id,
+                    label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
+                    description: c.phone || '',
+                  }))}
+                  value={selectedCustomerId}
+                  onChange={handleCustomerChange}
+                  onSearchChange={setCustomerSearch}
+                  placeholder="พิมพ์ชื่อ, เบอร์โทร หรือที่อยู่..."
+                  required
+                />
+
+                {selectedCustomerData ? (
+                  <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-lg font-bold text-slate-700 shadow-sm">
+                          {selectedCustomerData.first_name?.[0]}
+                        </div>
+                        <div>
+                          <h4 className="text-base font-bold text-slate-800">
+                            {selectedCustomerData.first_name}{' '}
+                            {selectedCustomerData.last_name}
+                          </h4>
+                          {selectedCustomerData.nickname && (
+                            <span className="text-xs text-slate-500 font-medium bg-white px-2 py-0.5 rounded-full border border-slate-200 inline-block mt-1">
+                              ชื่อเล่น: {selectedCustomerData.nickname}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 space-y-3">
+                      {selectedCustomerData.phone && (
+                        <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                          <PhoneIcon className="w-4 h-4 text-slate-400" />
+                          <span className="font-medium">
+                            {selectedCustomerData.phone}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                        <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
+                        <span className="leading-relaxed">
+                          {[
+                            selectedCustomerData.address_house_no,
+                            selectedCustomerData.sub_district,
+                            selectedCustomerData.district,
+                            selectedCustomerData.province,
+                            selectedCustomerData.postal_code,
+                          ]
+                            .filter(Boolean)
+                            .join(' ') || '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center flex-1">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                      <UserIcon className="w-6 h-6 text-slate-300" />
+                    </div>
+                    <p className="text-slate-500 font-medium">
+                      กรุณาเลือกลูกค้า
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      เพื่อดำเนินการต่อในขั้นตอนถัดไป
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Schedule Section */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
-                <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
-                  <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
-                    <CalendarIcon className="w-5 h-5" />
-                  </div>
-                  กำหนดการปฏิบัติงาน
-                </h3>
-                
-                <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <div className="p-2 bg-slate-100 rounded-lg text-slate-600">
+                  <CalendarIcon className="w-5 h-5" />
+                </div>
+                กำหนดการปฏิบัติงาน
+              </h3>
+
+              <div className="space-y-6">
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                  <FormField
+                    label="วันที่ปฏิบัติงาน"
+                    htmlFor="work-date"
+                    className="mb-0"
+                  >
+                    <div className="relative">
+                      <Input
+                        id="work-date"
+                        type="date"
+                        value={workDate}
+                        onChange={(e) => setWorkDate(e.target.value)}
+                        required
+                        className="pl-10 h-12"
+                      />
+                      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                    </div>
+                  </FormField>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                     <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date" className="mb-0">
-                        <div className="relative">
-                          <Input
-                            id="work-date"
-                            type="date"
-                            value={workDate}
-                            onChange={(e) => setWorkDate(e.target.value)}
-                            required
-                            className="pl-10 h-12"
-                          />
-                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                        </div>
-                     </FormField>
+                    <FormField
+                      label="เวลาเริ่มต้น"
+                      htmlFor="start-time"
+                      className="mb-0"
+                    >
+                      <div className="relative">
+                        <Input
+                          id="start-time"
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          required
+                          className="pl-10 h-12 text-center font-medium"
+                        />
+                        <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </FormField>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                        <FormField label="เวลาเริ่มต้น" htmlFor="start-time" className="mb-0">
-                           <div className="relative">
-                              <Input
-                                id="start-time"
-                                type="time"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                required
-                                className="pl-10 h-12 text-center font-medium"
-                              />
-                              <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                           </div>
-                        </FormField>
-                    </div>
-                    
-                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                        <FormField label="เวลาสิ้นสุด" htmlFor="end-time" className="mb-0">
-                           <div className="relative">
-                              <Input
-                                id="end-time"
-                                type="time"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                required
-                                className="pl-10 h-12 text-center font-medium"
-                              />
-                              <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                           </div>
-                        </FormField>
-                    </div>
+                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                    <FormField
+                      label="เวลาสิ้นสุด"
+                      htmlFor="end-time"
+                      className="mb-0"
+                    >
+                      <div className="relative">
+                        <Input
+                          id="end-time"
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          required
+                          className="pl-10 h-12 text-center font-medium"
+                        />
+                        <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                      </div>
+                    </FormField>
                   </div>
                 </div>
+              </div>
             </div>
           </div>
         </div>
@@ -913,51 +970,54 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         <div className={currentStep === 1 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div className="space-y-4">
-                  <SearchableSelect
-                     label="อ้างอิง (ใบประเมิน/สัญญา)"
-                     options={filteredReferences}
-                     value={selectedReference}
-                     onChange={handleReferenceChange}
-                     onSearchChange={setReferenceSearch}
-                     placeholder={
-                       selectedCustomerId
-                         ? 'เลือกรายการอ้างอิง...'
-                         : 'กรุณาเลือกลูกค้าก่อน'
-                     }
-                     className={
-                       !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-                     }
-                   />
+              <div className="space-y-4">
+                <SearchableSelect
+                  label="อ้างอิง (ใบประเมิน/สัญญา)"
+                  options={filteredReferences}
+                  value={selectedReference}
+                  onChange={handleReferenceChange}
+                  onSearchChange={setReferenceSearch}
+                  placeholder={
+                    selectedCustomerId
+                      ? 'เลือกรายการอ้างอิง...'
+                      : 'กรุณาเลือกลูกค้าก่อน'
+                  }
+                  className={
+                    !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+                  }
+                />
 
-                  <SearchableSelect
-                     label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)"
-                     options={filteredInvoices}
-                     value={selectedInvoiceId}
-                     onChange={handleInvoiceChange}
-                     onSearchChange={setInvoiceSearch}
-                     placeholder={
-                       selectedCustomerId
-                         ? 'เลือกใบแจ้งหนี้...'
-                         : 'กรุณาเลือกลูกค้าก่อน'
-                     }
-                     className={
-                       !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-                     }
-                   />
-               </div>
+                <SearchableSelect
+                  label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)"
+                  options={filteredInvoices}
+                  value={selectedInvoiceId}
+                  onChange={handleInvoiceChange}
+                  onSearchChange={setInvoiceSearch}
+                  placeholder={
+                    selectedCustomerId
+                      ? 'เลือกใบแจ้งหนี้...'
+                      : 'กรุณาเลือกลูกค้าก่อน'
+                  }
+                  className={
+                    !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
+                  }
+                />
+              </div>
 
-                <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
-                  <Textarea
-                    id="operation-details"
-                    name="operationDetails"
-                    value={operationDetails}
-                    onChange={(e) => setOperationDetails(e.target.value)}
-                    placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
-                    rows={4}
-                    className="bg-slate-50 focus:bg-white transition-colors h-full"
-                  />
-                </FormField>
+              <FormField
+                label="รายละเอียดการปฏิบัติงาน"
+                htmlFor="operation-details"
+              >
+                <Textarea
+                  id="operation-details"
+                  name="operationDetails"
+                  value={operationDetails}
+                  onChange={(e) => setOperationDetails(e.target.value)}
+                  placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้"
+                  rows={4}
+                  className="bg-slate-50 focus:bg-white transition-colors h-full"
+                />
+              </FormField>
             </div>
 
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
@@ -969,22 +1029,31 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   <div className="flex flex-col gap-2 items-end">
                     {selectedReference && (
                       <div className="text-sm text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
-                         อ้างอิง: {
-                           isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : 
-                           (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)
-                         }
+                        อ้างอิง:{' '}
+                        {isAssessment
+                          ? availableAssessments.find(
+                              (a) =>
+                                a.id === selectedReference.replace('asm-', '')
+                            )?.code || selectedReference
+                          : availableContracts.find(
+                              (c) =>
+                                c.id === selectedReference.replace('cnt-', '')
+                            )?.code || selectedReference}
                       </div>
                     )}
                     {selectedInvoiceId && (
                       <div className="text-sm text-green-600 font-medium px-3 py-1 bg-green-50 rounded-full border border-green-100">
-                         ใบแจ้งหนี้: {availableInvoices.find(inv => inv.id === selectedInvoiceId)?.code || selectedInvoiceId}
+                        ใบแจ้งหนี้:{' '}
+                        {availableInvoices.find(
+                          (inv) => inv.id === selectedInvoiceId
+                        )?.code || selectedInvoiceId}
                       </div>
                     )}
                   </div>
                 )}
               </div>
-              
-              {(selectedReference || selectedInvoiceId) ? (
+
+              {selectedReference || selectedInvoiceId ? (
                 <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
                   <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -999,71 +1068,122 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                           {selectedReference && (
                             <span>
                               {isAssessment ? 'ใบประเมิน: ' : 'สัญญา: '}
-                              {isAssessment ? (availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code || selectedReference) : (availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code || selectedReference)}
+                              {isAssessment
+                                ? availableAssessments.find(
+                                    (a) =>
+                                      a.id ===
+                                      selectedReference.replace('asm-', '')
+                                  )?.code || selectedReference
+                                : availableContracts.find(
+                                    (c) =>
+                                      c.id ===
+                                      selectedReference.replace('cnt-', '')
+                                  )?.code || selectedReference}
                             </span>
                           )}
                           {selectedInvoiceId && (
                             <span>
-                              ใบแจ้งหนี้: {availableInvoices.find(inv => inv.id === selectedInvoiceId)?.code || selectedInvoiceId}
+                              ใบแจ้งหนี้:{' '}
+                              {availableInvoices.find(
+                                (inv) => inv.id === selectedInvoiceId
+                              )?.code || selectedInvoiceId}
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   {isAssessment && availableAssessments.length > 0 && (
                     <div className="p-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                         {(() => {
                           const asmId = selectedReference.replace('asm-', '');
-                          const asm = availableAssessments.find(a => a.id === asmId);
+                          const asm = availableAssessments.find(
+                            (a) => a.id === asmId
+                          );
                           if (!asm) return null;
 
                           return (
                             <>
                               <div className="space-y-3 text-sm">
-                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
+                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">
+                                  ข้อมูลทั่วไป
+                                </h5>
                                 <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">ที่อยู่:</span>
+                                  <span className="text-slate-500">
+                                    ที่อยู่:
+                                  </span>
                                   <span className="text-slate-800">
-                                    {[asm.address, asm.sub_district, asm.district, asm.province, asm.zipcode].filter(Boolean).join(' ')}
+                                    {[
+                                      asm.address,
+                                      asm.sub_district,
+                                      asm.district,
+                                      asm.province,
+                                      asm.zipcode,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(' ')}
                                   </span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">โซน/สาย:</span>
+                                  <span className="text-slate-500">
+                                    โซน/สาย:
+                                  </span>
                                   <span className="text-slate-800">
-                                    {asm.zone} / {asm.road_line} (Seq: {asm.sequence})
+                                    {asm.zone} / {asm.road_line} (Seq:{' '}
+                                    {asm.sequence})
                                   </span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">วันนัดหมาย:</span>
+                                  <span className="text-slate-500">
+                                    วันนัดหมาย:
+                                  </span>
                                   <span className="text-slate-800">
-                                    {asm.appointment_date ? new Date(asm.appointment_date).toLocaleDateString('th-TH') : '-'}
+                                    {asm.appointment_date
+                                      ? new Date(
+                                          asm.appointment_date
+                                        ).toLocaleDateString('th-TH')
+                                      : '-'}
                                   </span>
                                 </div>
                               </div>
 
                               <div className="space-y-3 text-sm">
-                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
+                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">
+                                  เงื่อนไขการเงิน
+                                </h5>
                                 <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">การชำระเงิน:</span>
+                                  <span className="text-slate-500">
+                                    การชำระเงิน:
+                                  </span>
                                   <span className="text-slate-800">
-                                    {asm.payment_condition === 'CASH' ? 'ชำระเต็มจำนวน' : 
-                                     asm.payment_condition === 'INSTALLMENT' ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)` : 
-                                     asm.payment_condition}
+                                    {asm.payment_condition === 'CASH'
+                                      ? 'ชำระเต็มจำนวน'
+                                      : asm.payment_condition === 'INSTALLMENT'
+                                        ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)`
+                                        : asm.payment_condition}
                                   </span>
                                 </div>
                                 <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">ราคารวม:</span>
+                                  <span className="text-slate-500">
+                                    ราคารวม:
+                                  </span>
                                   <span className="font-bold text-primary">
                                     ฿{(asm.total_price || 0).toLocaleString()}
                                   </span>
                                 </div>
                                 {asm.google_map_link && (
                                   <div className="grid grid-cols-[100px_1fr] gap-2">
-                                    <span className="text-slate-500">Google Map:</span>
-                                    <a href={asm.google_map_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline truncate">
+                                    <span className="text-slate-500">
+                                      Google Map:
+                                    </span>
+                                    <a
+                                      href={asm.google_map_link}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-blue-600 hover:underline truncate"
+                                    >
                                       เปิดแผนที่
                                     </a>
                                   </div>
@@ -1078,87 +1198,140 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                         <span>พื้นที่บริการในเอกสาร</span>
                         <span className="text-xs font-normal normal-case bg-slate-100 px-2 py-1 rounded text-slate-500">
                           {(() => {
-                             const asmId = selectedReference.replace('asm-', '');
-                             const asm = availableAssessments.find(a => a.id === asmId);
-                             return asm?.assessment_areas?.length || 0;
-                          })()} พื้นที่
+                            const asmId = selectedReference.replace('asm-', '');
+                            const asm = availableAssessments.find(
+                              (a) => a.id === asmId
+                            );
+                            return asm?.assessment_areas?.length || 0;
+                          })()}{' '}
+                          พื้นที่
                         </span>
                       </h4>
                       <div className="space-y-4">
                         {(() => {
                           const asmId = selectedReference.replace('asm-', '');
-                          const asm = availableAssessments.find(a => a.id === asmId);
-                          if (!asm || !asm.assessment_areas) return <p className="text-slate-400 italic">ไม่พบข้อมูลพื้นที่</p>;
-                          
+                          const asm = availableAssessments.find(
+                            (a) => a.id === asmId
+                          );
+                          if (!asm || !asm.assessment_areas)
+                            return (
+                              <p className="text-slate-400 italic">
+                                ไม่พบข้อมูลพื้นที่
+                              </p>
+                            );
+
                           return asm.assessment_areas.map((area, idx) => (
-                            <div key={idx} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                            <div
+                              key={idx}
+                              className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden"
+                            >
                               <div className="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
                                 <div className="flex items-center gap-2">
                                   <span className="bg-white border border-slate-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold text-slate-600">
                                     {idx + 1}
                                   </span>
-                                  <h5 className="font-semibold text-slate-800">{area.area_name}</h5>
+                                  <h5 className="font-semibold text-slate-800">
+                                    {area.area_name}
+                                  </h5>
                                 </div>
                                 <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
                                   {area.building_type}
                                 </span>
                               </div>
-                              
+
                               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                                 <div className="space-y-2">
                                   <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
-                                    <span className="font-semibold text-slate-600">ข้อมูลพื้นที่</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">ขนาด:</span>
-                                    <span className="font-medium">{area.area_size || '-'} ตร.ม.</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">ระบบ:</span>
-                                    <span className="font-medium">
-                                      {area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ'}
+                                    <span className="font-semibold text-slate-600">
+                                      ข้อมูลพื้นที่
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
-                                    <span className="text-slate-500">ราคาบริการ:</span>
-                                    <span className="font-medium">฿{(area.base_service_price || 0).toLocaleString()}</span>
+                                    <span className="text-slate-500">
+                                      ขนาด:
+                                    </span>
+                                    <span className="font-medium">
+                                      {area.area_size || '-'} ตร.ม.
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">
+                                      ระบบ:
+                                    </span>
+                                    <span className="font-medium">
+                                      {area.service_system ===
+                                      ServiceSystem.CHEMICAL
+                                        ? 'สารเคมี'
+                                        : 'เหยื่อ'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-500">
+                                      ราคาบริการ:
+                                    </span>
+                                    <span className="font-medium">
+                                      ฿
+                                      {(
+                                        area.package_price || 0
+                                      ).toLocaleString()}
+                                    </span>
                                   </div>
                                 </div>
 
                                 <div className="space-y-2">
                                   <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
-                                    <span className="font-semibold text-slate-600">รายละเอียดเพิ่มเติม</span>
+                                    <span className="font-semibold text-slate-600">
+                                      รายละเอียดเพิ่มเติม
+                                    </span>
                                   </div>
-                                  
+
                                   {/* Products/Items used */}
                                   <div className="mb-2">
-                                    <span className="text-slate-500 block mb-1 text-xs">สินค้า/อุปกรณ์ที่ใช้:</span>
+                                    <span className="text-slate-500 block mb-1 text-xs">
+                                      สินค้า/อุปกรณ์ที่ใช้:
+                                    </span>
                                     {area.items && area.items.length > 0 ? (
                                       <ul className="list-disc list-inside space-y-0.5">
                                         {area.items.map((item, i) => (
-                                          <li key={i} className="text-slate-700 text-xs">
-                                            {item.product_name} x {item.quantity}
+                                          <li
+                                            key={i}
+                                            className="text-slate-700 text-xs"
+                                          >
+                                            {item.product_name} x{' '}
+                                            {item.quantity}
                                           </li>
                                         ))}
                                       </ul>
                                     ) : (
-                                      <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>
+                                      <span className="text-slate-400 text-xs">
+                                        - ไม่ระบุ -
+                                      </span>
                                     )}
                                   </div>
 
                                   {/* Problems/Pests found */}
                                   <div>
-                                    <span className="text-slate-500 block mb-1 text-xs">ปัญหาที่พบ:</span>
-                                    {area.category_services && area.category_services.length > 0 ? (
+                                    <span className="text-slate-500 block mb-1 text-xs">
+                                      ปัญหาที่พบ:
+                                    </span>
+                                    {area.category_services &&
+                                    area.category_services.length > 0 ? (
                                       <div className="flex flex-wrap gap-1">
-                                        {area.category_services.map((cat, i) => (
-                                          <span key={i} className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[10px]">
-                                            {cat.name || 'Unknown'}
-                                          </span>
-                                        ))}
+                                        {area.category_services.map(
+                                          (cat, i) => (
+                                            <span
+                                              key={i}
+                                              className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[10px]"
+                                            >
+                                              {cat.name || 'Unknown'}
+                                            </span>
+                                          )
+                                        )}
                                       </div>
                                     ) : (
-                                      <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>
+                                      <span className="text-slate-400 text-xs">
+                                        - ไม่ระบุ -
+                                      </span>
                                     )}
                                   </div>
                                 </div>
@@ -1192,15 +1365,19 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                           id="numberOfAreas"
                           value={workAreas.length}
                           onChange={(e) =>
-                            handleNumberOfAreasChange(parseInt(e.target.value, 10))
+                            handleNumberOfAreasChange(
+                              parseInt(e.target.value, 10)
+                            )
                           }
                         >
                           <option value="0">ยังไม่ระบุพื้นที่</option>
-                          {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
-                            <option key={num} value={num}>
-                              {num} พื้นที่
-                            </option>
-                          ))}
+                          {Array.from({ length: 30 }, (_, i) => i + 1).map(
+                            (num) => (
+                              <option key={num} value={num}>
+                                {num} พื้นที่
+                              </option>
+                            )
+                          )}
                         </Select>
                       </FormField>
                     </div>
@@ -1209,7 +1386,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                       กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
                     </div>
                   )}
-                  
+
                   <div className="grid grid-cols-1 gap-4">
                     {workAreas.map((area, index) => (
                       <JobWorkAreaForm
@@ -1231,7 +1408,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         {/* STEP 2: Team & Vehicle */}
         <div className={currentStep === 2 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-6">
-            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Vehicle Selection */}
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
@@ -1241,39 +1417,39 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   </div>
                   ยานพาหนะ
                 </h3>
-                
+
                 <div className="space-y-4">
                   <SearchableSelect
-                      label="เลือกรถที่ปฏิบัติงาน"
-                      options={filteredVehicles}
-                      value={selectedVehicleId}
-                      onChange={setSelectedVehicleId}
-                      onSearchChange={setVehicleSearch}
-                      placeholder="ค้นหารถบริการ..."
-                      required
-                    />
+                    label="เลือกรถที่ปฏิบัติงาน"
+                    options={filteredVehicles}
+                    value={selectedVehicleId}
+                    onChange={setSelectedVehicleId}
+                    onSearchChange={setVehicleSearch}
+                    placeholder="ค้นหารถบริการ..."
+                    required
+                  />
 
-                    {timeConflictError && (
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
-                        <span className="text-lg">⚠️</span>
-                        <p>{timeConflictError}</p>
-                      </div>
-                    )}
+                  {timeConflictError && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2">
+                      <span className="text-lg">⚠️</span>
+                      <p>{timeConflictError}</p>
+                    </div>
+                  )}
 
-                    {bookedSlots.length > 0 && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
-                        <p className="font-semibold text-amber-800 mb-1">
-                          ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
-                        </p>
-                        <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
-                          {bookedSlots.map((slot) => (
-                            <li key={slot.start}>
-                              {slot.start} - {slot.end} ({slot.customer})
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                  {bookedSlots.length > 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
+                      <p className="font-semibold text-amber-800 mb-1">
+                        ช่วงเวลาที่ไม่ว่างสำหรับรถคันนี้:
+                      </p>
+                      <ul className="list-disc list-inside mt-1 text-amber-700 space-y-1">
+                        {bookedSlots.map((slot) => (
+                          <li key={slot.start}>
+                            {slot.start} - {slot.end} ({slot.customer})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1312,14 +1488,14 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                 </div>
                 ลูกทีม (Members)
               </h3>
-              
+
               <div className="mb-6">
-                 <Input
-                    placeholder="ค้นหาช่างเพิ่มเติม..."
-                    value={additionalTechSearch}
-                    onChange={(e) => setAdditionalTechSearch(e.target.value)}
-                    className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
-                  />
+                <Input
+                  placeholder="ค้นหาช่างเพิ่มเติม..."
+                  value={additionalTechSearch}
+                  onChange={(e) => setAdditionalTechSearch(e.target.value)}
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all"
+                />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1328,9 +1504,11 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                     key={tech.id}
                     className={`
                       relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
-                      ${selectedTechnicianIds.includes(tech.id) 
-                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' 
-                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}
+                      ${
+                        selectedTechnicianIds.includes(tech.id)
+                          ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      }
                     `}
                   >
                     <div className="pt-1">
@@ -1342,11 +1520,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                       />
                     </div>
                     <div className="flex flex-col">
-                      <span className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}>
+                      <span
+                        className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}
+                      >
                         {getTechnicianName(tech)}
                       </span>
-                      {tech.nick_name && <span className="text-xs text-slate-500 font-medium">({tech.nick_name})</span>}
-                      {tech.phone && <span className="text-xs text-slate-400 mt-1">{tech.phone}</span>}
+                      {tech.nick_name && (
+                        <span className="text-xs text-slate-500 font-medium">
+                          ({tech.nick_name})
+                        </span>
+                      )}
+                      {tech.phone && (
+                        <span className="text-xs text-slate-400 mt-1">
+                          {tech.phone}
+                        </span>
+                      )}
                     </div>
                   </label>
                 ))}
@@ -1359,7 +1547,6 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             </div>
           </div>
         </div>
-
       </form>
     </Modal>
   );

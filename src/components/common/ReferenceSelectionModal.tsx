@@ -160,5 +160,3 @@ export const ReferenceSelectionModal: React.FC<
     </Modal>
   );
 };
-
-

@@ -42,16 +42,24 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
             <DetailsItem label="ชื่อคลัง" valueClassName="font-semibold">
               {warehouse.name}
             </DetailsItem>
-            <DetailsItem label="ประเภท">{warehouse.type === WarehouseType.VEHICLE ? 'รถ' : 'คลัง'}</DetailsItem>
+            <DetailsItem label="ประเภท">
+              {warehouse.type === WarehouseType.VEHICLE ? 'รถ' : 'คลัง'}
+            </DetailsItem>
           </DetailsList>
           {warehouse.type === WarehouseType.VEHICLE && (
             <DetailsList cols={4} className="mt-2 pt-2 border-t text-sm">
               <DetailsItem label="ทะเบียนรถ">
                 {warehouse.vehicle?.vehicle_registration || '-'}
               </DetailsItem>
-              <DetailsItem label="ยี่ห้อ">{warehouse.vehicle?.brand || '-'}</DetailsItem>
-              <DetailsItem label="รุ่น">{warehouse.vehicle?.model || '-'}</DetailsItem>
-              <DetailsItem label="สี">{warehouse.vehicle?.color || '-'}</DetailsItem>
+              <DetailsItem label="ยี่ห้อ">
+                {warehouse.vehicle?.brand || '-'}
+              </DetailsItem>
+              <DetailsItem label="รุ่น">
+                {warehouse.vehicle?.model || '-'}
+              </DetailsItem>
+              <DetailsItem label="สี">
+                {warehouse.vehicle?.color || '-'}
+              </DetailsItem>
             </DetailsList>
           )}
         </div>
@@ -143,4 +151,3 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
     </Modal>
   );
 };
-

@@ -228,4 +228,3 @@ export const EditProductModal: React.FC<EditProductModalProps> = ({
     </Modal>
   );
 };
-

@@ -4,7 +4,10 @@ import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { RoleApi, Role, Permission } from '@/src/api/role';
 import { PermissionApi } from '@/src/api/permission';
-import { PERMISSION_MATRIX, PERMISSION_ACTIONS } from '@/src/constants/permission-matrix';
+import {
+  PERMISSION_MATRIX,
+  PERMISSION_ACTIONS,
+} from '@/src/constants/permission-matrix';
 import { Fragment } from 'react';
 
 interface EditRoleModalProps {
@@ -14,11 +17,18 @@ interface EditRoleModalProps {
   onSuccess?: (role: Role) => void;
 }
 
-export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId, onSuccess }) => {
+export const EditRoleModal: FC<EditRoleModalProps> = ({
+  isOpen,
+  onClose,
+  roleId,
+  onSuccess,
+}) => {
   const [roleName, setRoleName] = useState('');
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<
+    Set<string>
+  >(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -40,7 +50,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
       // Fetch all permissions and role details in parallel
       const [permRes, roleRes] = await Promise.all([
         PermissionApi.getAll(),
-        RoleApi.getById(roleId)
+        RoleApi.getById(roleId),
       ]);
 
       setPermissions(permRes.data || []);
@@ -52,9 +62,11 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
       // Set selected permissions
       if (role.permissions && Array.isArray(role.permissions)) {
         // Handle various potential formats of permissions (array of strings, or objects)
-        const ids = role.permissions.map((p: any) =>
-          typeof p === 'string' ? p : (p.id || p.permission_id)
-        ).filter(Boolean);
+        const ids = role.permissions
+          .map((p: any) =>
+            typeof p === 'string' ? p : p.id || p.permission_id
+          )
+          .filter(Boolean);
         setSelectedPermissionIds(new Set(ids));
       }
     } catch (error) {
@@ -117,7 +129,10 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
       });
 
       // 2. Assign Permissions
-      await RoleApi.assignPermissions(roleId, Array.from(selectedPermissionIds));
+      await RoleApi.assignPermissions(
+        roleId,
+        Array.from(selectedPermissionIds)
+      );
 
       if (onSuccess) {
         onSuccess(updatedRole);
@@ -160,10 +175,14 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
     >
       <form id="edit-role-form" onSubmit={handleSubmit} className="space-y-6">
         <div className="pt-2">
-          <h3 className="text-md font-medium text-slate-800 mb-3">สิทธิ์การใช้งาน</h3>
+          <h3 className="text-md font-medium text-slate-800 mb-3">
+            สิทธิ์การใช้งาน
+          </h3>
 
           {isLoading ? (
-            <div className="text-center py-4 text-slate-500">กำลังโหลดข้อมูล...</div>
+            <div className="text-center py-4 text-slate-500">
+              กำลังโหลดข้อมูล...
+            </div>
           ) : (
             <div className="overflow-x-auto border border-slate-200 rounded-lg">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -201,21 +220,30 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({ isOpen, onClose, roleId,
                           {PERMISSION_ACTIONS.map((actionCol) => {
                             // Find permission by pattern: ACTION_MODULE
                             const permName = `${actionCol.action}_${item.module}`;
-                            const perm = permissions.find((p) => p.name === permName);
+                            const perm = permissions.find(
+                              (p) => p.name === permName
+                            );
                             // Some actions might not apply to some modules (e.g. APPROVE only for some)
                             // Ideally we check if perm exists. If not, maybe show disabled or empty.
                             // But since we mapped modules that mostly support CRUD, we'll assume it exists if in DB.
 
                             const isAvailable = !!perm;
-                            const isChecked = perm ? selectedPermissionIds.has(perm.id) : false;
+                            const isChecked = perm
+                              ? selectedPermissionIds.has(perm.id)
+                              : false;
 
                             return (
-                              <td key={actionCol.action} className="px-4 py-3 text-center">
+                              <td
+                                key={actionCol.action}
+                                className="px-4 py-3 text-center"
+                              >
                                 {isAvailable ? (
                                   <input
                                     type="checkbox"
                                     checked={isChecked}
-                                    onChange={() => perm && handleTogglePermission(perm.id)}
+                                    onChange={() =>
+                                      perm && handleTogglePermission(perm.id)
+                                    }
                                     className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
                                   />
                                 ) : (

@@ -6,7 +6,6 @@ import {
 
 // Interface
 
-
 // Service
 import { AuthService } from './auth';
 import { Product } from '../types/entity/product.interface';
@@ -47,4 +46,3 @@ class ProductService extends AuthService {
 }
 
 export const ProductApi = new ProductService();
-

@@ -27,8 +27,8 @@ export interface Customer extends IBase {
   service_group: string;
   google_map_link?: string;
 
-  assessments: Assessment[]
-  contracts: any[]
+  assessments: Assessment[];
+  contracts: any[];
 }
 
 export interface CustomerService extends IBase {
@@ -54,12 +54,10 @@ export interface CustomerService extends IBase {
   service_group: string;
   google_map_link?: string;
 
-  assessments: Assessment[]
-  contracts: any[]
+  assessments: Assessment[];
+  contracts: any[];
 }
 
-
-
 export interface CustomerQuery extends IBaseQuery {
-  type?: string
+  type?: string;
 }

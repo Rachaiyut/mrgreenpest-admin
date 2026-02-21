@@ -9,114 +9,115 @@ import { Quotation } from '../../types/entity/financial.interface';
 import { QuotationStatus } from '@/src/types';
 
 const EditQuotationPage: React.FC = () => {
-    const navigate = useNavigate();
-    const { id } = useParams<{ id: string }>();
-    const [searchParams] = useSearchParams();
-    const mode = searchParams.get('mode') === 'revise' ? 'revise' : 'edit';
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const mode = searchParams.get('mode') === 'revise' ? 'revise' : 'edit';
 
-    const { handlers, quotations } = useData();
-    const [quotation, setQuotation] = useState<Quotation | null>(null);
-    const [loading, setLoading] = useState(true);
+  const { handlers, quotations } = useData();
+  const [quotation, setQuotation] = useState<Quotation | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    // Fetch quotation data
-    useEffect(() => {
-        const fetchQuotation = async () => {
-            if (!id) return;
+  // Fetch quotation data
+  useEffect(() => {
+    const fetchQuotation = async () => {
+      if (!id) return;
 
-            // First try to find in context
-            const found = quotations?.find(q => q.id === id);
-            if (found) {
-                console.log('Found quotation in context:', found);
-                setQuotation(found);
-                setLoading(false);
-                return;
-            }
+      // First try to find in context
+      const found = quotations?.find((q) => q.id === id);
+      if (found) {
+        console.log('Found quotation in context:', found);
+        setQuotation(found);
+        setLoading(false);
+        return;
+      }
 
-            // Fallback to API
-            try {
-                const res = await QuotationApi.getById(id);
-                if (res) {
-                    setQuotation(res);
-                }
-                setLoading(false);
-            } catch (error) {
-                console.error('Failed to fetch quotation:', error);
-                setLoading(false);
-            }
-        };
-
-        fetchQuotation();
-    }, [id, quotations]);
-
-    const title = useMemo(() => {
-        if (mode === 'revise') return 'สร้างใบเสนอราคา (ฉบับแก้ไข)';
-        return 'แก้ไขใบเสนอราคา';
-    }, [mode]);
-
-    const description = useMemo(() => {
-        if (mode === 'revise') return 'สร้างใบเสนอราคาฉบับใหม่โดยอ้างอิงข้อมูลเดิม';
-        return 'แก้ไขข้อมูลใบเสนอราคา';
-    }, [mode]);
-
-    const handleSubmit = async (data: any) => {
-        try {
-            if (mode === 'revise') {
-                const { id: _, ...createData } = data;
-
-
-                await handlers.quotations.create({
-                    ...createData,
-                    status: QuotationStatus.DRAFT,
-                });
-            } else {
-                await handlers.quotations.update(data);
-            }
-            navigate('/quotations');
-        } catch (error) {
-            console.error(`Failed to ${mode} quotation:`, error);
-            alert(`เกิดข้อผิดพลาดในการ${mode === 'revise' ? 'สร้าง' : 'แก้ไข'}ใบเสนอราคา`);
+      // Fallback to API
+      try {
+        const res = await QuotationApi.getById(id);
+        if (res) {
+          setQuotation(res);
         }
+        setLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch quotation:', error);
+        setLoading(false);
+      }
     };
 
-    if (loading) {
-        return <div className="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>;
-    }
+    fetchQuotation();
+  }, [id, quotations]);
 
-    if (!quotation) {
-        return (
-            <div className="p-8 text-center">
-                <p className="text-red-500 mb-4">ไม่พบข้อมูลใบเสนอราคา</p>
-                <Button onClick={() => navigate('/quotations')}>ย้อนกลับ</Button>
-            </div>
-        );
-    }
+  const title = useMemo(() => {
+    if (mode === 'revise') return 'สร้างใบเสนอราคา (ฉบับแก้ไข)';
+    return 'แก้ไขใบเสนอราคา';
+  }, [mode]);
 
+  const description = useMemo(() => {
+    if (mode === 'revise') return 'สร้างใบเสนอราคาฉบับใหม่โดยอ้างอิงข้อมูลเดิม';
+    return 'แก้ไขข้อมูลใบเสนอราคา';
+  }, [mode]);
+
+  const handleSubmit = async (data: any) => {
+    try {
+      if (mode === 'revise') {
+        const { id: _, ...createData } = data;
+
+        await handlers.quotations.create({
+          ...createData,
+          status: QuotationStatus.DRAFT,
+        });
+      } else {
+        await handlers.quotations.update(data);
+      }
+      navigate('/quotations');
+    } catch (error) {
+      console.error(`Failed to ${mode} quotation:`, error);
+      alert(
+        `เกิดข้อผิดพลาดในการ${mode === 'revise' ? 'สร้าง' : 'แก้ไข'}ใบเสนอราคา`
+      );
+    }
+  };
+
+  if (loading) {
     return (
-        <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-            {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" onClick={() => navigate('/quotations')}>
-                    <LeftArrowIcon className="w-6 h-6" />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800">
-                        {title}
-                    </h1>
-                    <p className="text-slate-600 text-sm mt-1">
-                        {description} {quotation.code}
-                    </p>
-                </div>
-            </div>
-
-            <QuotationForm
-                key={`${quotation.id}-${mode}`}
-                mode={mode}
-                initialValues={quotation}
-                onSubmit={handleSubmit}
-                onCancel={() => navigate('/quotations')}
-            />
-        </div>
+      <div className="p-8 text-center text-slate-500">กำลังโหลดข้อมูล...</div>
     );
+  }
+
+  if (!quotation) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-red-500 mb-4">ไม่พบข้อมูลใบเสนอราคา</p>
+        <Button onClick={() => navigate('/quotations')}>ย้อนกลับ</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/quotations')}>
+          <LeftArrowIcon className="w-6 h-6" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
+          <p className="text-slate-600 text-sm mt-1">
+            {description} {quotation.code}
+          </p>
+        </div>
+      </div>
+
+      <QuotationForm
+        key={`${quotation.id}-${mode}`}
+        mode={mode}
+        initialValues={quotation}
+        onSubmit={handleSubmit}
+        onCancel={() => navigate('/quotations')}
+      />
+    </div>
+  );
 };
 
 export default EditQuotationPage;

@@ -36,4 +36,3 @@ class WithdrawalService extends AuthService {
 }
 
 export const WithdrawalApi = new WithdrawalService();
-

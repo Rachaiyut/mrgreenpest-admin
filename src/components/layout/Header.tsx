@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
   const currentUser = useCurrentUser();
-  
+
   return (
     <header className="bg-white shadow-sm z-10">
       <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end h-16">
@@ -22,8 +22,15 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
             <div className="relative">
               <Button variant="ghost" className="flex items-center space-x-2">
                 <img
-                  src={'https://ui-avatars.com/api/?name=' + currentUser.firstName + ' ' + (currentUser.lastName || '')}
-                  alt={currentUser.firstName + ' ' + (currentUser.lastName || '')}
+                  src={
+                    'https://ui-avatars.com/api/?name=' +
+                    currentUser.firstName +
+                    ' ' +
+                    (currentUser.lastName || '')
+                  }
+                  alt={
+                    currentUser.firstName + ' ' + (currentUser.lastName || '')
+                  }
                   className="h-9 w-9 rounded-full object-cover"
                 />
                 <div className="hidden sm:flex flex-col items-start">

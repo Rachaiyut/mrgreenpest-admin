@@ -114,4 +114,3 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     </Modal>
   );
 };
-

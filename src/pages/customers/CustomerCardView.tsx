@@ -86,4 +86,3 @@ const CustomerCardView: React.FC<{
 );
 
 export default CustomerCardView;
-

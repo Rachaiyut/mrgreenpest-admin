@@ -83,7 +83,7 @@ export const ReturnToSupplierDetailsModal: React.FC<
             <div>
               <dt className="font-medium text-slate-500">คืนจากคลัง</dt>
               <dd className="mt-1 text-slate-900">
-                {warehouseMap[returnToSupplier.warehouseId]}
+                {warehouseMap[returnToSupplier.warehouse_id]}
               </dd>
             </div>
             <div>
@@ -91,8 +91,8 @@ export const ReturnToSupplierDetailsModal: React.FC<
                 ผู้จำหน่ายที่รับคืน
               </dt>
               <dd className="mt-1 text-slate-900">
-                {supplierMap[returnToSupplier.supplierId] ||
-                  returnToSupplier.supplierId}
+                {supplierMap[returnToSupplier.supplier_id] ||
+                  returnToSupplier.supplier_id}
               </dd>
             </div>
             <div>
@@ -104,26 +104,26 @@ export const ReturnToSupplierDetailsModal: React.FC<
             <div>
               <dt className="font-medium text-slate-500">อ้างอิง</dt>
               <dd className="mt-1 text-slate-900">
-                {returnToSupplier.referenceId || '-'}
+                {returnToSupplier.reference_id || '-'}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">วันที่สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {formatThaiDate(returnToSupplier.createdAt)}
+                {formatThaiDate(returnToSupplier.created_at)}
               </dd>
             </div>
             <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {returnToSupplier.createdBy}
+                {returnToSupplier.created_by}
               </dd>
             </div>
-            {returnToSupplier.approvedBy && (
+            {returnToSupplier.approved_by && (
               <div>
                 <dt className="font-medium text-slate-500">ผู้อนุมัติ</dt>
                 <dd className="mt-1 text-slate-900">
-                  {returnToSupplier.approvedBy}
+                  {returnToSupplier.approved_by}
                 </dd>
               </div>
             )}
@@ -187,14 +187,14 @@ export const ReturnToSupplierDetailsModal: React.FC<
               <tbody className="bg-white divide-y divide-slate-200">
                 {returnToSupplier.items.length > 0 ? (
                   returnToSupplier.items.map((item, index) => {
-                    const product = productMap.get(item.productId);
+                    const product = productMap.get(item.product_id);
                     return (
                       <tr key={index} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {item.productId}
+                          {item.product_id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                           {product?.name || 'ไม่พบสินค้า'}
@@ -203,7 +203,7 @@ export const ReturnToSupplierDetailsModal: React.FC<
                           {item.quantity}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {product?.unit || 'ชิ้น'}
+                          {product?.unit?.name || 'ชิ้น'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                           {item.reason || '-'}
@@ -229,5 +229,3 @@ export const ReturnToSupplierDetailsModal: React.FC<
     </Modal>
   );
 };
-
-

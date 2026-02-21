@@ -1,5 +1,9 @@
-import { IBaseResponseArray,} from '@/src/types/entity/base.interface';
-import { Warehouse, WarehouseQuery, WarehouseStats } from '@/src/types/entity/inventory.interface';
+import { IBaseResponseArray } from '@/src/types/entity/base.interface';
+import {
+  Warehouse,
+  WarehouseQuery,
+  WarehouseStats,
+} from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
 class VehicleService extends AuthService {
@@ -18,14 +22,13 @@ class VehicleService extends AuthService {
     return res.data;
   }
 
-   async getVehiclesWithUserJobs(): Promise<IBaseResponseArray<Warehouse>> {
+  async getVehiclesWithUserJobs(): Promise<IBaseResponseArray<Warehouse>> {
     const res = await this.http.get<IBaseResponseArray<Warehouse>>(
       `${this.path}/jobs`
     );
 
     return res.data;
   }
-
 
   async getVehicleById(id: string): Promise<Warehouse> {
     const res = await this.http.get<Warehouse>(`${this.path}/${id}`);
@@ -48,4 +51,3 @@ class VehicleService extends AuthService {
 }
 
 export const VehicleApi = new VehicleService();
-

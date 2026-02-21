@@ -20,4 +20,3 @@ export interface NavGroup {
   subItems: { name: Page; icon?: FC<any>; roles?: Role[]; access?: string }[];
   roles?: Role[];
 }
-
