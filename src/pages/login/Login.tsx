@@ -64,9 +64,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         onLogin(citizenId, remember);
 
-        // Cache user for DataContext and handle redirect
         const user = response.user;
-        localStorage.setItem('currentUser', JSON.stringify(user));
 
         // Wait for state updates to propagate before redirect
         setTimeout(() => {

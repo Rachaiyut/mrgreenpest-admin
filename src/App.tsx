@@ -17,7 +17,6 @@ import { socket } from './lib/socket';
 import { DataProvider } from './contexts/DataContext';
 
 const App: FC = () => {
-  // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
       return !!localStorage.getItem(STORAGE_KEYS.TOKEN);
@@ -70,8 +69,10 @@ const App: FC = () => {
 
     setIsAuthenticated(false);
     try {
-      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
-      localStorage.removeItem(STORAGE_KEYS.USER_PROFILE);
+      localStorage.removeItem('user_info');
+      localStorage.removeItem('permissions');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       localStorage.removeItem('isAuthenticated');
     } catch {}
   }, []);

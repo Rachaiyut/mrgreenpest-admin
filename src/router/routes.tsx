@@ -104,11 +104,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
       access: 'ACCESS_OPERATION',
     },
     {
-      path: '/withdraw-vehicle',
-      element: <WithDrawVehicle />,
-      access: 'ACCESS_VEHICLE',
-    },
-    {
       path: '/field-jobs',
       element: <Navigate to="/field-operations" replace />,
       access: 'ACCESS_OPERATION',
@@ -234,6 +229,11 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/withdrawals',
       element: <Withdrawals />,
+      access: 'ACCESS_SUMMARY_WITHDRAW',
+    },
+    {
+      path: '/withdraw-vehicle',
+      element: <WithDrawVehicle />,
       access: 'ACCESS_WITHDRAW_NOTE',
     },
     {
@@ -262,11 +262,6 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
         />
       ),
       access: 'ACCESS_RETURN_NOTE',
-    },
-    {
-      path: '/requisitions',
-      element: <Requisitions />,
-      access: 'ACCESS_SUMMARY_WITHDRAW',
     },
     {
       path: '/return-to-supplier',
@@ -332,7 +327,7 @@ export const getRoutes = (data: DataContextType): RouteConfig[] => {
     {
       path: '/reports/daily-cash',
       element: <DailyCash />,
-      access: 'ACCESS_REPORT_FINANCIAL', // Assuming this report relates to financials
+      access: 'ACCESS_REPORT_FINANCIAL', 
     },
     {
       path: '/reports/direct-expenses',
