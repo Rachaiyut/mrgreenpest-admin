@@ -1,4 +1,4 @@
-import { PAGE_PATH } from '@/src/constants/route';
+import { PAGE_PATH } from '@/src/constants/navigate-item';
 import { Page } from '@/src/types/page';
 import { NavigationItem } from '@/src/types/nav';
 import { FC, useEffect, useRef } from 'react';

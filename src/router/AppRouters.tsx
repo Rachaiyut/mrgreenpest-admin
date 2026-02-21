@@ -9,7 +9,7 @@ import {
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 
 // Config
-import { PAGE_PATH } from '../constants/route';
+import { PAGE_PATH } from '../constants/navigate-item';
 import { getCurrentPageFromPath } from '../utils/route';
 import { getRoutes } from './routes';
 import { Page } from '../types/page';

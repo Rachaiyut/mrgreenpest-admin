@@ -47,6 +47,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     {
         groupName: 'กลุ่ม คลังสินค้า',
         items: [
+            { label: 'หทวดหมู่', module: 'CATEGORY' },
             { label: 'แพ็กเกจ', module: 'PACKAGES' },
             { label: 'สินค้า/บริการ', module: 'PRODUCT' },
             { label: 'คลังสินค้า', module: 'WAREHOUSE' },

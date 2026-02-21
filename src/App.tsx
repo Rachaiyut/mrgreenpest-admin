@@ -6,7 +6,7 @@ import { ConfigProvider } from 'antd';
 import { STORAGE_KEYS } from './constants';
 
 // Router
-import { AppRouter } from '@/src/router/router';
+import { AppRouter } from '@/src/router/AppRouters';
 
 // Service
 import { Auth } from '@/src/api/auth';
