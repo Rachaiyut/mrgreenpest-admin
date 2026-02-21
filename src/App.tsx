@@ -11,7 +11,7 @@ import { AppRouter } from '@/src/router/AppRouters';
 // Service
 import { Auth } from '@/src/api/auth';
 
-import { socket } from './lib/socket';
+import { socket } from './config/socket';
 
 // Context
 import { DataProvider } from './contexts/DataContext';

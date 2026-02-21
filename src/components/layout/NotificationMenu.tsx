@@ -3,7 +3,7 @@ import { Popover, Transition } from '@headlessui/react';
 import { BellIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@/src/assets/icons/Icons';
 import type { Notification } from '@/src/api/notification';
 import { useNavigate } from 'react-router-dom';
-import { socket } from '@/src/lib/socket';
+import { socket } from '@/src/config/socket';
 
 export const NotificationMenu: React.FC = () => {
     const [notifications, setNotifications] = useState<Notification[]>([]);

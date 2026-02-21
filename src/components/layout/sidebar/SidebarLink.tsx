@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Link } from 'react-router-dom';
 
 import { NavLink } from '@/src/types/entity/nav.interface';
-import { PAGE_PATH } from '@/src/constants/navigate-item';
+import { PAGE_PATH } from '@/src/router/app-config';
 import { Page } from '@/src/types/page';
 
 interface SidebarLinkProps {

@@ -9,9 +9,8 @@ import {
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 
 // Config
-import { PAGE_PATH } from '../constants/navigate-item';
+import { createRoutes, PAGE_PATH, createNavigationItems } from './index';
 import { getCurrentPageFromPath } from '../utils/route';
-import { getRoutes } from './routes';
 import { Page } from '../types/page';
 
 // Components
@@ -37,89 +36,77 @@ export const AppRouter = (props: AppRouterProps) => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const data = useData();
+  const pagePaths = PAGE_PATH;
 
   const PATH_PAGE = useMemo(
     () =>
       Object.fromEntries(
-        Object.entries(PAGE_PATH).map(([k, v]) => ['/' + v, k])
+        Object.entries(pagePaths).map(([k, v]) => ['/' + v, k])
       ) as Record<string, Page>,
-    []
+    [pagePaths]
   );
 
-  const currentPage: Page = useMemo(() => {
-    return getCurrentPageFromPath(location.pathname, PATH_PAGE);
-  }, [location.pathname, PATH_PAGE]);
+  const [currentPage, setCurrentPage] = useState<Page>(() =>
+    getCurrentPageFromPath(location.pathname, PATH_PAGE)
+  );
 
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const routes = useMemo(() => createRoutes(data), [data]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('sidebarExpanded');
-    if (stored !== null) {
-      setSidebarOpen(stored === 'true');
-    }
+    setCurrentPage(getCurrentPageFromPath(location.pathname, PATH_PAGE));
+  }, [location.pathname, PATH_PAGE]);
+
+  const handleNavigation = useCallback(
+    (page: Page) => {
+      navigate('/' + pagePaths[page]);
+    },
+    [navigate, pagePaths]
+  );
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prev => !prev);
   }, []);
 
-  const toggleSidebarState = useCallback(() => {
-    setSidebarOpen((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('sidebarExpanded', String(next));
-      } catch {}
-      return next;
-    });
-  }, []);
-
-  if (!isAuthenticated)
+  if (!isAuthenticated) {
     return (
-      <Suspense
-        fallback={
-          <div className="p-8">
-            <p className="text-slate-600">กำลังโหลด...</p>
-          </div>
-        }
-      >
-        <Login onLogin={onLogin} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <Routes>
+          <Route path="/login" element={<Login onLogin={onLogin} />} />
+          <Route path="*" element={<Login onLogin={onLogin} />} />
+        </Routes>
       </Suspense>
     );
-
-  const routes = getRoutes(data);
+  }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100">
+    <div className="flex h-screen bg-gray-50">
       <Sidebar
         currentPage={currentPage}
-        onPageChange={(page) => navigate('/' + PAGE_PATH[page])}
         isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebarState}
+        toggleSidebar={toggleSidebar}
+        onPageChange={handleNavigation}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebarState} onLogout={onLogout} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            <Suspense
-              fallback={
-                <div className="p-8">
-                  <p className="text-slate-600">กำลังโหลด...</p>
-                </div>
-              }
-            >
-              <Routes>
-                {routes.map((route, index) => (
-                  <Route
-                    key={route.path + index}
-                    path={route.path}
-                    element={
-                      <ProtectedRoute access={route.access}>
-                        {route.element}
-                      </ProtectedRoute>
-                    }
-                  />
-                ))}
-              </Routes>
-            </Suspense>
-          </div>
+        <Header toggleSidebar={toggleSidebar} onLogout={onLogout} />
+        <main className="flex-1 overflow-auto">
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              {routes.map((route, index) => (
+                <Route
+                  key={index}
+                  path={route.path}
+                  element={
+                    <ProtectedRoute access={route.access}>
+                      {route.element}
+                    </ProtectedRoute>
+                  }
+                />
+              ))}
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </div>

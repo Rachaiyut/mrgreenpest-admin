@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { NavigationItem } from '@/src/types/nav';
 import { useUserRole } from './useUserRole';
-import { NAVIGATION_ITEMS } from '../constants';
+import { createNavigationItems } from '../router/index';
 
 export const useNavigation = () => {
   const userRole = useUserRole();
+  const navigationItems = useMemo(() => createNavigationItems(), []);
 
   const filteredNavigationItems = useMemo(() => {
     if (!userRole) return [];
@@ -28,7 +29,7 @@ export const useNavigation = () => {
       return permissions.includes(access);
     };
 
-    return NAVIGATION_ITEMS.reduce<NavigationItem[]>((acc, item) => {
+    return navigationItems.reduce<NavigationItem[]>((acc, item) => {
       // First, honor role-based restrictions if defined
       if (item.roles && !item.roles.includes(userRole)) {
         return acc;
@@ -54,22 +55,19 @@ export const useNavigation = () => {
           }
         );
 
-        if (visibleSubItems.length === 0) {
-          return acc;
+        if (visibleSubItems.length > 0) {
+          acc.push({
+            ...item,
+            subItems: visibleSubItems,
+          });
         }
-
-        acc.push({
-          ...item,
-          subItems: visibleSubItems,
-        });
       } else {
         acc.push(item);
       }
 
       return acc;
     }, []);
-  }, [userRole]);
+  }, [userRole, navigationItems]);
 
   return filteredNavigationItems;
 };
-
