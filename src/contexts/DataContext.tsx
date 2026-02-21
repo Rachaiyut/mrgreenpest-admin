@@ -1,34 +1,15 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-  useMemo,
-} from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 
 // Entities
 import { User } from '@/src/types/entity/core.interface';
 import { Job } from '@/src/types/entity/job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
-import {
-  Quotation,
-  Invoice,
-  Receipt,
-  ReturnToSupplier,
-  UserWallet,
-} from '@/src/types/entity/financial.interface';
+import { Quotation, Invoice, Receipt, ReturnToSupplier } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Product } from '@/src/types/entity/product.interface';
-import {
-  Warehouse,
-  Withdrawal,
-  Transfer,
-  StockAdjustment,
-  ProductReturn,
-} from '@/src/types/entity/inventory.interface';
-import { Requisition, RequisitionStatus } from '@/src/types/entity/requisition.interface'; // New Import
+import { Warehouse, Withdrawal, Transfer, StockAdjustment, ProductReturn } from '@/src/types/entity/inventory.interface';
+import { Requisition } from '@/src/types/entity/requisition.interface';
 import { GoodsReceipt } from '@/src/types/entity/good-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 
@@ -73,8 +54,6 @@ export type ResourceType =
   | 'requisitions';
 
 export interface DataContextType {
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
   users: User[];
   jobs: Job[];
   assessments: Assessment[];
@@ -93,7 +72,6 @@ export interface DataContextType {
   productReturns: ProductReturn[];
   returnToSuppliers: ReturnToSupplier[];
   requisitions: Requisition[];
-  categories: any[];
 
   fetchData: (resources?: ResourceType[]) => Promise<void>;
 
@@ -187,7 +165,6 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -202,15 +179,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>(
-    []
-  );
+  const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>([]);
   const [productReturns, setProductReturns] = useState<ProductReturn[]>([]);
-  const [returnToSuppliers, setReturnToSuppliers] = useState<
-    ReturnToSupplier[]
-  >([]);
+  const [returnToSuppliers, setReturnToSuppliers] = useState<ReturnToSupplier[]>([]);
   const [requisitions, setRequisitions] = useState<Requisition[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
 
   // Helper to safely fetch data - returns empty array if API fails
   const safeFetch = async <T,>(
@@ -246,7 +218,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     }
     if (shouldFetch('quotations')) {
       promises.push(safeFetch(() => QuotationApi.getAll({ limit: 10 })).then((data: any) => setQuotations(data)));
-      // setQuotations([]);
     }
     if (shouldFetch('invoices')) {
       promises.push(safeFetch(() => InvoiceApi.getAll({ limit: 10 })).then((data: any) => setInvoices(data)));
@@ -281,22 +252,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       promises.push(safeFetch(() => WithdrawalApi.getAll({ limit: 10 })).then((data: any) => setWithdrawals(data)));
     }
     if (shouldFetch('transfers')) {
-      // promises.push(safeFetch(() => TransferApi.getAll({ limit: 10})).then(setTransfers));
       setTransfers([]);
     }
     if (shouldFetch('stockAdjustments')) {
-      // promises.push(safeFetch(() => StockAdjustmentApi.getAll({ limit: 10})).then(setStockAdjustments));
       setStockAdjustments([]);
     }
     if (shouldFetch('productReturns')) {
       promises.push(safeFetch(() => ProductReturnApi.getAll({ limit: 10 })).then((data: any) => setProductReturns(data)));
     }
     if (shouldFetch('returnToSuppliers')) {
-      // promises.push(safeFetch(() => ReturnToSupplierApi.getAll({ limit: 10})).then(setReturnToSuppliers));
       setReturnToSuppliers([]);
     }
     if (shouldFetch('requisitions')) {
-      // promises.push(safeFetch(() => RequisitionApi.getAll({ limit: 10})).then(setRequisitions));
       setRequisitions([]);
     }
 
@@ -308,13 +275,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   useEffect(() => {
-    // Initial fetch of active modules
-    fetchData();
-
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
+    fetchData(['users', 'jobs', 'assessments', 'customers', 'products', 'warehouses', 'suppliers']);
   }, []);
 
   const handlers = useMemo(
@@ -378,19 +339,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       quotations: {
         create: async (data: any) => {
           await QuotationApi.create(data);
-          // fetchData(['quotations']);
         },
         update: async (data: any) => {
           await QuotationApi.update(data.id, data);
-          // fetchData(['quotations']);
         },
         delete: async (id: string) => {
           await QuotationApi.delete(id);
-          // fetchData(['quotations']);
         },
         revise: async (id: string) => {
-          console.log('Revise quotation', id);
-          // fetchData(['quotations']);
+          // Revise quotation logic
         },
       },
       invoices: {
@@ -461,7 +418,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       withdrawals: {
         create: async (data: any) => {
           await WithdrawalApi.create(data);
-          fetchData(['withdrawals', 'products', 'warehouses']); // Creating withdrawal affects stock and products logic potentially
+          fetchData(['withdrawals', 'products', 'warehouses']);
         },
         update: async (data: any) => {
           await WithdrawalApi.update(data.id, data);
@@ -475,29 +432,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       transfers: {
         create: async (data: any) => {
           await TransferApi.create(data);
-          // fetchData(['transfers']);
         },
         update: async (data: any) => {
           await TransferApi.update(data.id, data);
-          // fetchData(['transfers']);
         },
         delete: async (id: string) => {
           await TransferApi.delete(id);
-          // fetchData(['transfers']);
         },
       },
       stockAdjustments: {
         create: async (data: any) => {
           await StockAdjustmentApi.create(data);
-          // fetchData(['stockAdjustments']);
         },
         update: async (data: any) => {
           await StockAdjustmentApi.update(data.id, data);
-          // fetchData(['stockAdjustments']);
         },
         delete: async (id: string) => {
           await StockAdjustmentApi.delete(id);
-          // fetchData(['stockAdjustments']);
         },
       },
       productReturns: {
@@ -517,39 +468,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       returnToSuppliers: {
         create: async (data: any) => {
           await ReturnToSupplierApi.create(data);
-          // fetchData(['returnToSuppliers']);
         },
         update: async (data: any) => {
           await ReturnToSupplierApi.update(data.id, data);
-          // fetchData(['returnToSuppliers']);
         },
         delete: async (id: string) => {
           await ReturnToSupplierApi.delete(id);
-          // fetchData(['returnToSuppliers']);
         },
       },
       requisitions: {
         create: async (data: any) => {
           await RequisitionApi.create(data);
-          // fetchData(['requisitions']);
         },
         update: async (data: any) => {
           await RequisitionApi.update(data.id, data);
-          // fetchData(['requisitions']);
         },
         delete: async (id: string) => {
           await RequisitionApi.delete(id);
-          // fetchData(['requisitions']);
         },
         approve: async (id: string, data: any) => {
           await RequisitionApi.approve(id, data);
-          // fetchData(['requisitions']);
         }
       },
       userWallets: {
         createTransaction: async (userId: string, data: any) => {
-          console.log('Create wallet transaction', userId, data);
-          // fetchData(['users']);
+          // Create wallet transaction logic
         },
       },
     }),
@@ -559,8 +502,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   return (
     <DataContext.Provider
       value={{
-        currentUser,
-        setCurrentUser,
         users,
         jobs,
         assessments,
@@ -579,7 +520,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         productReturns,
         returnToSuppliers,
         requisitions,
-        categories,
         fetchData,
         handlers,
       }}
