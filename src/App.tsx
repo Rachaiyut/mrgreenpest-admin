@@ -27,6 +27,8 @@ const App: FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
+      const token = localStorage.getItem('access_token');
+      socket.auth = { token: `Bearer ${token}` };
       socket.connect();
       console.log('Socket connecting...');
 
