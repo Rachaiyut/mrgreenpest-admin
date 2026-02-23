@@ -3,11 +3,9 @@ import {
   useState,
   useEffect,
   useMemo,
-  useCallback,
   FC,
   ChangeEvent,
   FormEvent,
-  Fragment,
 } from 'react';
 import { Modal } from '../../common/Modal';
 import {
@@ -44,6 +42,8 @@ import {
   MapPinIcon,
   PhoneIcon,
 } from '../../../assets/icons/Icons';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface AddAssessmentModalProps {
   isOpen: boolean;
@@ -149,9 +149,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: new Date(value) }));
+  const handleDateChange = (name: string, date: Date | null) => {
+    setFormData((prev) => ({ ...prev, [name]: date ? date.toISOString() : null }));
   };
 
   const handleCustomerSelect = (customerId: string | null) => {
@@ -641,7 +640,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                     }))}
                     value={formData.customer_id || ''}
                     onChange={handleCustomerSelect}
-                    onSearchChange={setSearchQuery}
                     required
                   />
 
@@ -721,14 +719,19 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                       htmlFor="created_at"
                       className="mb-0"
                     >
-                      <Input
-                        name="created_at"
-                        type="date"
-                        value={formData.created_at?.substring(0, 10) || ''}
-                        onChange={handleFieldChange}
-                        required
-                        className="bg-white h-12"
-                      />
+                      <div className="relative">
+                        <DatePicker
+                          selected={formData.created_at ? new Date(formData.created_at) : new Date()}
+                          onChange={(date: Date | null) => handleDateChange('created_at', date)}
+                          placeholderText="dd/mm/yyyy"
+                          dateFormat="dd/MM/yy"
+                          locale="th"
+                          wrapperClassName="w-full"
+                          className="bg-white h-10 border text-sm rounded-md p-2 w-full"
+                          required
+                        />
+                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                      </div>
                     </FormField>
                   </div>
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
@@ -737,21 +740,19 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                       htmlFor="appointment_date"
                       className="mb-0"
                     >
-                      <Input
-                        name="appointment_date"
-                        type="date"
-                        value={
-                          formData.appointment_date &&
-                          !isNaN(new Date(formData.appointment_date).getTime())
-                            ? new Date(formData.appointment_date)
-                                .toISOString()
-                                .substring(0, 10)
-                            : ''
-                        }
-                        onChange={handleDateChange}
-                        required
-                        className="bg-white h-12"
-                      />
+                      <div className="relative">
+                        <DatePicker
+                          selected={formData.appointment_date ? new Date(formData.appointment_date) : null}
+                          onChange={(date: Date | null) => handleDateChange('appointment_date', date)}
+                          placeholderText="dd/mm/yyyy"
+                          dateFormat="dd/MM/yy"
+                          locale="th"
+                          wrapperClassName="w-full"
+                          className="bg-white h-10 border text-sm rounded-md p-2 w-full"
+                          required
+                        />
+                        <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                      </div>
                     </FormField>
                   </div>
                 </div>
