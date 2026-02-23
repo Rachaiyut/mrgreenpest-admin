@@ -51,7 +51,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   isEditing = false,
   onApprove,
 }) => {
-  // Track if this is the initial load - skip auto-recalculation if editing existing data
   const isInitialLoad = useRef(true);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -69,7 +68,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     [ServiceSystem.CHEMICAL]: 'สารเคมีชีวภาพ',
   };
 
-  // Derived logic for package conditions
   const sortedConditions = useMemo(() => {
     if (!selectedPackage) return [];
     return [...(selectedPackage.package_prices || [])].sort(
@@ -85,6 +83,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   }, [selectedPackage, area.area_size, sortedConditions]);
 
   const renderPriceSection = () => {
+    // กรณีไม่ได้เลือกแพ็กเกจ ให้กรอกราคาเอง
     if (!selectedPackage) {
       return (
         <div className="pt-4 border-t space-y-4">
@@ -113,107 +112,42 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       );
     }
 
-    if (selectedCondition) {
-      return (
-        <div className="pt-4 border-t">
-          <h4 className="text-base font-semibold text-slate-700 mb-3">
-            แพ็กเกจที่เลือก
-          </h4>
-          <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="font-semibold text-slate-800">
-                  {selectedPackage.name}
-                </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  {selectedPackage.visit_limit} ครั้ง &nbsp;
-                  {selectedCondition.area_range} ตร.ม.
-                </div>
-              </div>
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-slate-700">฿</span>
-                  <Input
-                    type="number"
-                    className={`w-20 text-right font-bold text-sm h-9 !py-1 ${isPriceInvalid ? 'text-red-600 border-red-500 focus:ring-red-500' : 'text-primary border-slate-300 focus:ring-primary focus:border-primary'}`}
-                    value={
-                      area.package_price === undefined ? '' : area.package_price
-                    }
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      onAreaChange(index, {
-                        ...area,
-                        package_price:
-                          e.target.value === ''
-                            ? undefined
-                            : parseFloat(e.target.value),
-                      });
-                    }}
-                    step="0.01"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-                {isPriceInvalid && selectedCondition && (
-                  <div className="flex items-center justify-end mt-1.5 text-xs text-red-600 font-medium">
-                    <p>
-                      ⚠️ ราคาต่ำกว่าเกณฑ์มาตรฐาน (ส่วนต่าง ฿
-                      {(() => {
-                        const minPrice = Math.min(
-                          selectedCondition.min_price_with_termite,
-                          selectedCondition.min_price_without_termite
-                        );
-                        return minPrice - (area.package_price || 0);
-                      })().toLocaleString('th-TH')}
-                      )
-                    </p>
-                    {onApprove && (
-                      <button
-                        type="button"
-                        onClick={() => onApprove(index)}
-                        className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 rounded-md text-xs font-semibold hover:bg-green-200"
-                      >
-                        อนุมัติ
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
+    // กรณีเลือกแพ็กเกจแล้ว (เอาหน้าต่างซ้ำซ้อนออก เหลือแค่สรุปราคา)
     return (
-      <div className="pt-4 border-t">
-        <h4 className="text-base font-semibold text-slate-700">
-          แพ็กเกจที่เลือก
-        </h4>
-        <div className="p-3 border rounded-lg bg-primary/5 border-primary/20 mt-2">
-          <div className="flex justify-between items-start">
+      <div className="pt-4 border-t mt-4">
+        <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
+          <div className="flex justify-between items-center">
             <div>
               <div className="font-semibold text-slate-800">
-                {selectedPackage.name}
+                ราคาบริการหลัก
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                {selectedPackage.visit_limit} ครั้ง
-              </div>
-              <div className="text-xs text-amber-600 mt-1">
-                กรุณาระบุขนาดพื้นที่เพื่อคำนวณราคา (หรือระบุราคาเอง)
-              </div>
+              {selectedCondition && (
+                <div className="text-xs text-slate-500 mt-1">
+                  สามารถปรับราคาเองได้ (ขั้นต่ำ ฿
+                  {Math.min(
+                    selectedCondition.min_price_with_termite,
+                    selectedCondition.min_price_without_termite
+                  ).toLocaleString('th-TH')}
+                  )
+                </div>
+              )}
             </div>
             <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <span className="font-semibold text-slate-700">฿</span>
                 <Input
                   type="number"
-                  className="w-20 text-right font-bold text-sm h-9 !py-1 text-primary border-slate-300 focus:ring-primary focus:border-primary"
+                  className={`w-28 text-right font-bold text-sm h-10 !py-1 ${
+                    isPriceInvalid
+                      ? 'text-red-600 border-red-500 focus:ring-red-500 bg-red-50'
+                      : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
+                  }`}
                   value={
                     area.package_price === undefined ? '' : area.package_price
                   }
+                  onClick={(e) => e.stopPropagation()}
                   onChange={(e) => {
+                    e.stopPropagation();
                     onAreaChange(index, {
                       ...area,
                       package_price:
@@ -224,8 +158,33 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   }}
                   step="0.01"
                   placeholder="0.00"
+                  required
                 />
               </div>
+              {isPriceInvalid && selectedCondition && (
+                <div className="flex items-center justify-end mt-2 text-xs text-red-600 font-medium">
+                  <p>
+                    ⚠️ ต่ำกว่าเกณฑ์ (ส่วนต่าง ฿
+                    {(() => {
+                      const minPrice = Math.min(
+                        selectedCondition.min_price_with_termite,
+                        selectedCondition.min_price_without_termite
+                      );
+                      return minPrice - (area.package_price || 0);
+                    })().toLocaleString('th-TH')}
+                    )
+                  </p>
+                  {onApprove && (
+                    <button
+                      type="button"
+                      onClick={() => onApprove(index)}
+                      className="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-semibold hover:bg-red-200 transition-colors"
+                    >
+                      อนุมัติราคา
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -236,7 +195,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   useEffect(() => {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
-      // If editing, and a price is already set, don't override it on initial load.
       if (
         isEditing &&
         typeof area.package_price === 'number' &&
@@ -255,11 +213,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         (c) => c.area_range >= area.area_size!
       );
 
-      // When the size or package results in a new price condition, set a default price.
-      // The user can then override this by clicking a price option or typing a new price.
       if (condition) {
         if (area.package_price_id !== condition.id) {
-          const defaultPrice = condition.price_without_termite;
+          const isWithTermite = area.package_type === PackageType.WITH_TERMITE;
+          const defaultPrice = isWithTermite ? condition.price_with_termite : condition.price_without_termite;
           onAreaChange(index, {
             ...area,
             package_price: defaultPrice,
@@ -276,7 +233,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           });
         }
       } else {
-        // No suitable price condition found, reset the price.
         if (area.package_price !== 0 || area.package_price_id) {
           onAreaChange(index, {
             ...area,
@@ -293,14 +249,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         }
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area.area_size, selectedPackage?.id, isEditing, index]);
 
   const isPriceInvalid = useMemo(() => {
     if (!selectedCondition || typeof area.package_price !== 'number')
       return false;
 
-    // Use the overall minimum price as the threshold.
     const minPrice = Math.min(
       selectedCondition.min_price_with_termite,
       selectedCondition.min_price_without_termite
@@ -320,16 +274,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
     const currentEstimatedCost = area.total_price || 0;
 
-    // Only update if the total actually changed (avoid infinite loop)
     if (Math.abs(currentEstimatedCost - newTotalCost) > 0.001) {
       onAreaChange(index, { ...area, total_price: newTotalCost });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     area.items,
     area.package_price,
-    // NOTE: Removed area.total_price to prevent infinite loop
-    // We're calculating and setting total_price, so it shouldn't be a dependency
     index,
   ]);
 
@@ -348,21 +298,23 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     onAreaChange(index, updatedArea);
   };
 
-  // Specific handler for Radio change
   const handleAreaSizeRadioChange = (size: number) => {
     onAreaChange(index, { ...area, area_size: size });
   };
 
-  // Handler for price option selection
   const handlePriceOptionChange = (
     price: number,
-    hasTermiteProtection: PackageType
+    hasTermiteProtection: PackageType,
+    priceConditionId?: string,
+    newPackageId?: string
   ) => {
     setSelectedStandardPrice(price);
     onAreaChange(index, {
       ...area,
       package_price: price,
       package_type: hasTermiteProtection,
+      ...(priceConditionId ? { package_price_id: priceConditionId } : {}),
+      ...(newPackageId ? { package_id: newPackageId } : {}),
       total_price:
         price +
         (area.items || []).reduce(
@@ -427,7 +379,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       return item;
     });
 
-    // Recalculate total
     const productsTotal = newItems.reduce(
       (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
       0
@@ -445,7 +396,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     const currentItems = area.items || [];
     const newItems = currentItems.filter((_, idx) => idx !== itemIndex);
 
-    // Recalculate total
     const productsTotal = newItems.reduce(
       (sum, item) => sum + (item.product_price || 0) * (item.quantity || 0),
       0
@@ -667,15 +617,32 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   )
                                   : null;
 
-                                const isSelected =
-                                  selectedPackage?.id === pkg.id;
+                                // ✅ ให้ยึด package_id จาก state ปัจจุบันที่อัปเดตเร็วกว่าก่อน
+                                const activePackageId = area.package_id || selectedPackage?.id;
+                                const isSelected = activePackageId === pkg.id;
+
+                                const isWithTermiteSelected = isSelected && (
+                                  area.package_type === PackageType.WITH_TERMITE || 
+                                  (!area.package_type && area.package_price === fit?.price_with_termite)
+                                );
+                                
+                                const isWithoutTermiteSelected = isSelected && (
+                                  area.package_type === PackageType.WITHOUT_TERMITE || 
+                                  (!area.package_type && area.package_price === fit?.price_without_termite)
+                                );
 
                                 return (
-                                  <button
+                                  <div
                                     key={pkg.id}
-                                    type="button"
-                                    onClick={() => onSelectPackage?.(pkg.id)}
-                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => {
+                                      onSelectPackage?.(pkg.id);
+                                      if (area.package_id !== pkg.id) {
+                                        onAreaChange(index, { ...area, package_id: pkg.id });
+                                      }
+                                    }}
+                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full cursor-pointer ${isSelected
                                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
                                         : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
                                       }`}
@@ -685,7 +652,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                     >
                                       {pkg.name}
                                     </div>
-                                    {selectedPackage ? (
+                                    {fit ? (
                                       <div
                                         className={`w-full mt-2 text-lg font-bold ${isSelected ? 'text-primary' : 'text-slate-700'} group-hover:text-primary`}
                                       >
@@ -695,79 +662,87 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                             *
                                           </span>
                                         </label>
-                                        {fit && (
-                                          <div className="grid grid-cols-2 gap-2 w-full">
-                                            {/* Option 1: With Termites */}
-                                            <label
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePriceOptionChange(
-                                                  fit.price_with_termite,
-                                                  PackageType.WITH_TERMITE
-                                                );
-                                              }}
-                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isSelected && area.package_type === PackageType.WITH_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                  ? 'bg-green-50 border-green-500'
-                                                  : 'bg-white border-slate-300 hover:border-slate-400'
-                                                }`}
-                                            >
-                                              <div className="text-[10px] text-slate-500">
-                                                มีปลวก
+                                        <div className="grid grid-cols-2 gap-2 w-full">
+                                          {/* Option 1: With Termites */}
+                                          <label
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (!isSelected && onSelectPackage) {
+                                                onSelectPackage(pkg.id);
+                                              }
+                                              handlePriceOptionChange(
+                                                fit.price_with_termite,
+                                                PackageType.WITH_TERMITE,
+                                                fit.id,
+                                                pkg.id
+                                              );
+                                            }}
+                                            className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isWithTermiteSelected
+                                                ? 'bg-green-50 border-green-500'
+                                                : 'bg-white border-slate-300 hover:border-slate-400'
+                                              }`}
+                                          >
+                                            <div className="text-[10px] text-slate-500">
+                                              มีปลวก
+                                            </div>
+                                            <div className="flex items-center mt-1">
+                                              <div
+                                                className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithTermiteSelected
+                                                    ? 'border-green-600'
+                                                    : 'border-slate-400'
+                                                  }`}
+                                              >
+                                                {isWithTermiteSelected && (
+                                                  <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
+                                                )}
                                               </div>
-                                              <div className="flex items-center mt-1">
-                                                <div
-                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected && area.package_type === PackageType.WITH_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                      ? 'border-green-600'
-                                                      : 'border-slate-400'
-                                                    }`}
-                                                >
-                                                  {isSelected && area.package_type === PackageType.WITH_TERMITE && ( /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
-                                                  )}
-                                                </div>
-                                                <div className="font-semibold text-sm text-slate-800 ml-2">
-                                                  ฿
-                                                  {fit.price_with_termite.toLocaleString()}
-                                                </div>
+                                              <div className="font-semibold text-sm text-slate-800 ml-2">
+                                                ฿
+                                                {fit.price_with_termite.toLocaleString()}
                                               </div>
-                                            </label>
+                                            </div>
+                                          </label>
 
-                                            {/* Option 2: Without Termites */}
-                                            <label
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePriceOptionChange(
-                                                  fit.price_without_termite,
-                                                  PackageType.WITHOUT_TERMITE
-                                                );
-                                              }}
-                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isSelected && area.package_type === PackageType.WITHOUT_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                  ? 'bg-green-50 border-green-500'
-                                                  : 'bg-white border-slate-300 hover:border-slate-400'
-                                                }`}
-                                            >
-                                              <div className="text-[10px] text-slate-500">
-                                                ไม่มีปลวก
+                                          {/* Option 2: Without Termites */}
+                                          <label
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              if (!isSelected && onSelectPackage) {
+                                                onSelectPackage(pkg.id);
+                                              }
+                                              handlePriceOptionChange(
+                                                fit.price_without_termite,
+                                                PackageType.WITHOUT_TERMITE,
+                                                fit.id,
+                                                pkg.id
+                                              );
+                                            }}
+                                            className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isWithoutTermiteSelected
+                                                ? 'bg-green-50 border-green-500'
+                                                : 'bg-white border-slate-300 hover:border-slate-400'
+                                              }`}
+                                          >
+                                            <div className="text-[10px] text-slate-500">
+                                              ไม่มีปลวก
+                                            </div>
+                                            <div className="flex items-center mt-1">
+                                              <div
+                                                className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithoutTermiteSelected
+                                                    ? 'border-green-600'
+                                                    : 'border-slate-400'
+                                                  }`}
+                                              >
+                                                {isWithoutTermiteSelected && (
+                                                  <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
+                                                )}
                                               </div>
-                                              <div className="flex items-center mt-1">
-                                                <div
-                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected && area.package_type === PackageType.WITHOUT_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                      ? 'border-green-600'
-                                                      : 'border-slate-400'
-                                                    }`}
-                                                >
-                                                  {isSelected && area.package_type === PackageType.WITHOUT_TERMITE && ( /* <--- เพิ่ม isSelected && ตรงนี้ */
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
-                                                  )}
-                                                </div>
-                                                <div className="font-semibold text-sm text-slate-800 ml-2">
-                                                  ฿
-                                                  {fit.price_without_termite.toLocaleString()}
-                                                </div>
+                                              <div className="font-semibold text-sm text-slate-800 ml-2">
+                                                ฿
+                                                {fit.price_without_termite.toLocaleString()}
                                               </div>
-                                            </label>
-                                          </div>
-                                        )}
+                                            </div>
+                                          </label>
+                                        </div>
                                       </div>
                                     ) : (
                                       <div className="mt-2 text-xs text-slate-400">
@@ -782,7 +757,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                     {isSelected && (
                                       <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                                     )}
-                                  </button>
+                                  </div>
                                 );
                               })}
                             </div>
