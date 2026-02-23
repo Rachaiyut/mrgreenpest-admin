@@ -79,8 +79,8 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
           ...rest,
           created_at: loadedAssessment.created_at
             ? new Date(loadedAssessment.created_at)
-                .toISOString()
-                .substring(0, 10)
+              .toISOString()
+              .substring(0, 10)
             : '',
           appointment_date: loadedAssessment.appointment_date
             ? new Date(loadedAssessment.appointment_date)
@@ -142,27 +142,21 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             0
           );
 
-          let packagePrice = 0;
-          const pkg = packages.find(
-            (p) => p.id === loadedAssessment.package_id
-          );
-          if (pkg && wa.area_size) {
-            const sortedConditions = [...(pkg.package_prices || [])].sort(
-              (a, b) => a.area_range - b.area_range
-            );
-            const bestFit = sortedConditions.find(
-              (c) => c.area_range >= wa.area_size
-            );
-            if (bestFit) {
-              const termiteCategory = categories.find((c) =>
-                c.name.includes('กำจัดปลวก')
-              );
-              const hasTermites = (wa.category_services || []).some(
-                (s: any) => s.category_id === termiteCategory?.id
-              );
-              packagePrice = hasTermites
-                ? bestFit.price_with_termite
-                : bestFit.price_without_termite;
+          let packagePrice = wa.package_price !== undefined && wa.package_price !== null
+            ? Number(wa.package_price)
+            : 0;
+
+          // คำนวณใหม่เฉพาะกรณีที่ Database ไม่มีค่า package_price มาให้เท่านั้น
+          if (wa.package_price === undefined || wa.package_price === null) {
+            const pkg = packages.find((p) => p.id === loadedAssessment.package_id);
+            if (pkg && wa.area_size) {
+              const sortedConditions = [...(pkg.package_prices || [])].sort((a, b) => a.area_range - b.area_range);
+              const bestFit = sortedConditions.find((c) => c.area_range >= wa.area_size);
+              if (bestFit) {
+                const termiteCategory = categories.find((c) => c.name.includes('กำจัดปลวก'));
+                const hasTermites = (wa.category_services || []).some((s: any) => s.category_id === termiteCategory?.id);
+                packagePrice = hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
+              }
             }
           }
 
@@ -171,7 +165,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             items: enrichedItems,
             category_services: wa.category_services || [],
             package_price: packagePrice,
-            total_price: packagePrice + itemsTotal,
+            total_price: (wa.total_price !== undefined && wa.total_price !== null) 
+              ? Number(wa.total_price) 
+              : (packagePrice + itemsTotal),
           };
         };
 
@@ -377,7 +373,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                 (sum, item) =>
                   sum +
                   (Number(item.product_price) || 0) *
-                    (Number(item.quantity) || 0),
+                  (Number(item.quantity) || 0),
                 0
               ),
           };
@@ -514,10 +510,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             onClick={() => setActiveTab('info')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${
-                activeTab === 'info'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${activeTab === 'info'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
@@ -533,10 +528,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             onClick={() => setActiveTab('areas')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${
-                activeTab === 'areas'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${activeTab === 'areas'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
@@ -552,10 +546,9 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
             onClick={() => setActiveTab('payment')}
             className={`
               group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-              ${
-                activeTab === 'payment'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ${activeTab === 'payment'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
@@ -620,8 +613,8 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                     value={
                       formData.appointment_date
                         ? new Date(formData.appointment_date)
-                            .toISOString()
-                            .substring(0, 10)
+                          .toISOString()
+                          .substring(0, 10)
                         : ''
                     }
                     onChange={handleDateChange}
@@ -687,6 +680,8 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                     availablePackages={packages}
                     products={products}
                     categories={categories}
+                    isEditing={true} 
+                    originalArea={originalWorkAreas[index]}
                   />
                 </div>
               ))}

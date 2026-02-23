@@ -270,7 +270,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 (sum, item) =>
                   sum +
                   (Number(item.product_price) || 0) *
-                    (Number(item.quantity) || 0),
+                  (Number(item.quantity) || 0),
                 0
               ),
           });
@@ -286,7 +286,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               (sum, item) =>
                 sum +
                 (Number(item.product_price) || 0) *
-                  (Number(item.quantity) || 0),
+                (Number(item.quantity) || 0),
               0
             ),
           });
@@ -663,8 +663,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 ].sort((a, b) => a.area_range - b.area_range);
                                 const fit = area.area_size
                                   ? conditions.find(
-                                      (c) => c.area_range >= area.area_size!
-                                    )
+                                    (c) => c.area_range >= area.area_size!
+                                  )
                                   : null;
 
                                 const isSelected =
@@ -675,11 +675,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                     key={pkg.id}
                                     type="button"
                                     onClick={() => onSelectPackage?.(pkg.id)}
-                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${
-                                      isSelected
+                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${isSelected
                                         ? 'border-primary bg-primary/5 ring-1 ring-primary'
                                         : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
-                                    }`}
+                                      }`}
                                   >
                                     <div
                                       className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}
@@ -707,27 +706,22 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                                   PackageType.WITH_TERMITE
                                                 );
                                               }}
-                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
-                                                selectedStandardPrice ===
-                                                fit.price_with_termite
+                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isSelected && area.package_type === PackageType.WITH_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                   ? 'bg-green-50 border-green-500'
                                                   : 'bg-white border-slate-300 hover:border-slate-400'
-                                              }`}
+                                                }`}
                                             >
                                               <div className="text-[10px] text-slate-500">
                                                 มีปลวก
                                               </div>
                                               <div className="flex items-center mt-1">
                                                 <div
-                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                                                    selectedStandardPrice ===
-                                                    fit.price_with_termite
+                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected && area.package_type === PackageType.WITH_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                       ? 'border-green-600'
                                                       : 'border-slate-400'
-                                                  }`}
+                                                    }`}
                                                 >
-                                                  {selectedStandardPrice ===
-                                                    fit.price_with_termite && (
+                                                  {isSelected && area.package_type === PackageType.WITH_TERMITE && ( /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                     <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
                                                   )}
                                                 </div>
@@ -747,27 +741,22 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                                   PackageType.WITHOUT_TERMITE
                                                 );
                                               }}
-                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${
-                                                selectedStandardPrice ===
-                                                fit.price_without_termite
+                                              className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full flex-1 ${isSelected && area.package_type === PackageType.WITHOUT_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                   ? 'bg-green-50 border-green-500'
                                                   : 'bg-white border-slate-300 hover:border-slate-400'
-                                              }`}
+                                                }`}
                                             >
                                               <div className="text-[10px] text-slate-500">
                                                 ไม่มีปลวก
                                               </div>
                                               <div className="flex items-center mt-1">
                                                 <div
-                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
-                                                    selectedStandardPrice ===
-                                                    fit.price_without_termite
+                                                  className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isSelected && area.package_type === PackageType.WITHOUT_TERMITE /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                       ? 'border-green-600'
                                                       : 'border-slate-400'
-                                                  }`}
+                                                    }`}
                                                 >
-                                                  {selectedStandardPrice ===
-                                                    fit.price_without_termite && (
+                                                  {isSelected && area.package_type === PackageType.WITHOUT_TERMITE && ( /* <--- เพิ่ม isSelected && ตรงนี้ */
                                                     <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>
                                                   )}
                                                 </div>
@@ -811,11 +800,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                           {sortedConditions.map((condition, idx) => (
                             <label
                               key={condition.id || idx}
-                              className={`relative block p-3 border rounded-lg cursor-pointer ${
-                                selectedCondition?.id === condition.id
+                              className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
                                   ? 'border-primary ring-2 ring-primary bg-primary/5'
                                   : 'bg-white hover:border-slate-400'
-                              }`}
+                                }`}
                             >
                               <input
                                 type="radio"
