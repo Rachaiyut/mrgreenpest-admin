@@ -590,8 +590,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         </div>
       </Card>
 
-
-
       {/* Dropdown Menu (Portal) */}
       {openDropdownId && dropdownPosition && selectedContract && (
         <div

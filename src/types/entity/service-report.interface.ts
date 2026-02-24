@@ -13,6 +13,7 @@ export interface ServiceReport extends IBase {
   // Payment
   payment_condition?: string;
   payment_installment_count?: number;
+  payment_amount?: number;
 
   // ประเภทบริการ
   is_service_termite: boolean;

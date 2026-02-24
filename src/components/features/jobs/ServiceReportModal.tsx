@@ -35,7 +35,7 @@ interface ServiceReportModalProps {
   ) => void;
   finalStatus: JobStatus;
   currentUser: User;
-  contracts: any[]; // Changed from Contract[] to any[] or remove import if unused. Contract was imported.
+  contracts: any[];
   products: Product[];
   jobs?: FieldJob[];
 }
@@ -70,7 +70,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   products = [],
   jobs = [],
 }) => {
-  const [reportState, setReportState] = useState<Partial<ServiceReport>>({});
+  // เพิ่ม Type ให้รองรับ payment_amount ชั่วคราวใน Partial State
+  const [reportState, setReportState] = useState<Partial<ServiceReport & { payment_amount?: string | number }>>({});
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
@@ -191,10 +192,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   useEffect(() => {
     if (isOpen && job) {
-      let initialReport: Partial<ServiceReport>;
+      let initialReport: Partial<ServiceReport & { payment_amount?: string | number }>;
 
       if (job.service_report) {
-        const r = job.service_report;
+        const r = job.service_report as any;
         const d = r.service_report_pest_detail || {};
 
         const types: string[] = [];
@@ -229,14 +230,15 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         if (r.next_service_purpose) {
           const purposes = r.next_service_purpose
             .split(',')
-            .map((s) => s.trim());
-          purposes.forEach((p) => {
+            .map((s: string) => s.trim());
+          purposes.forEach((p: string) => {
             if (!nextReasons.includes(p)) nextReasons.push(p);
           });
         }
 
         initialReport = {
           ...r,
+          payment_amount: r.payment_amount || job?.invoice?.total || '', // ดึงยอดมาเป็นค่าตั้งต้น
           quotation_id: r.quotation_id,
           service_types: types,
           service_actions: actions,
@@ -308,6 +310,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       } else {
         initialReport = {
           created_at: new Date().toISOString().substring(0, 10),
+          payment_amount: job?.invoice?.total || '', // ดึงยอดจาก invoice กรณีสร้างใหม่
           check_in_time: job.actual_start_time
             ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
                 hour: '2-digit',
@@ -359,6 +362,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       status: nextStatus,
       job_id: job.id,
       customer_id: job.customer_id,
+      payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0, // แนบข้อมูล payment_amount ลง payload
       report_date: new Date().toISOString(),
       customer_name: (job as any).customerName || (job as any).customer_name,
 
@@ -502,9 +506,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const currentValues =
         field === 'next_appointment_reasons'
           ? prev.next_appointment?.reasons || []
-          : prev[field] || [];
+          : (prev as any)[field] || [];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter((v) => v !== value)
+        ? currentValues.filter((v: string) => v !== value)
         : [...currentValues, value];
 
       if (field === 'next_appointment_reasons') {
@@ -527,7 +531,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   ) => {
     setReportState((prev) => ({
       ...prev,
-      [pest]: { ...(prev[pest] || {}), [key]: value },
+      [pest]: { ...(prev[pest as keyof typeof prev] || {}), [key]: value },
     }));
   };
 
@@ -1341,9 +1345,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
         </div>
 
-        {/* Payment Info Section - Moved out for better UI */}
+        {/* Payment Info Section */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100">
-          {/* Header with Gradient */}
           <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 flex items-center gap-2.5">
               <div className="p-1.5 bg-white rounded-lg shadow-sm text-green-600">
@@ -1355,7 +1358,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
           <div className="p-6">
             <div className="flex flex-col md:flex-row gap-8 items-stretch">
-              {/* Invoice Details (if linked) */}
+              {/* Invoice Details */}
               {job.invoice ? (
                 <div className="flex-1 w-full relative group">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-white rounded-2xl transform transition-transform group-hover:scale-[1.01] duration-300 border border-green-100 shadow-sm"></div>
@@ -1416,18 +1419,24 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 </label>
 
                 <div className="space-y-4">
+                  {/* 1. เลือกช่องทางการชำระเงิน */}
                   <div className="relative">
                     <Select
                       value={reportState.payment_condition || ''}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const condition = e.target.value;
                         setReportState((prev) => ({
                           ...prev,
-                          payment_condition: e.target.value as any,
+                          payment_condition: condition as any,
+                          // เติมยอดเงินให้อัตโนมัติถ้าเลือกช่องทางชำระเงินแล้วช่องเงินยังว่างอยู่
+                          payment_amount: condition && !prev.payment_amount && job.invoice 
+                            ? job.invoice.total 
+                            : (condition ? prev.payment_amount : ''),
                           payment_installment_count:
                             job.invoice?.term || prev.payment_installment_count,
-                        }))
-                      }
-                      className="h-14 text-base w-full pl-4 pr-10 bg-white border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-slate-900"
+                        }));
+                      }}
+                      className="h-12 text-base w-full pl-4 pr-10 bg-white border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-slate-900"
                     >
                       <option value="">ยังไม่ได้รับชำระ / วางบิล</option>
                       <option value="CASH">เงินสด</option>
@@ -1437,11 +1446,35 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     </Select>
                   </div>
 
+                  {/* 2. ช่องกรอกจำนวนเงิน (แสดงเมื่อมีการเลือกช่องทางชำระเงิน) */}
                   <div
-                    className={`
-                                transition-all duration-500 ease-in-out overflow-hidden
-                                ${reportState.payment_condition ? 'max-h-20 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'}
-                            `}
+                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                      reportState.payment_condition ? 'max-h-24 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'
+                    }`}
+                  >
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      จำนวนเงินที่รับ (บาท)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="ระบุจำนวนเงิน..."
+                      value={reportState.payment_amount || ''}
+                      onChange={(e) =>
+                        setReportState((prev) => ({
+                          ...prev,
+                          payment_amount: e.target.value,
+                        }))
+                      }
+                      className="h-12 text-base font-semibold text-green-700"
+                    />
+                  </div>
+
+                  {/* 3. กล่องข้อความยืนยัน */}
+                  <div
+                    className={`transition-all duration-500 ease-in-out overflow-hidden ${
+                      reportState.payment_condition && reportState.payment_amount ? 'max-h-20 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'
+                    }`}
                   >
                     <div className="bg-green-50/80 border border-green-100 rounded-xl p-3 flex items-center gap-3 text-green-800">
                       <div className="bg-white p-1.5 rounded-full shadow-sm">
@@ -1449,10 +1482,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       </div>
                       <div>
                         <p className="text-sm font-bold">
-                          บันทึกการรับชำระเงินแล้ว
+                          พร้อมบันทึกการรับชำระเงิน
                         </p>
                         <p className="text-xs text-green-600">
-                          ข้อมูลการเงินจะถูกอัปเดตเมื่อบันทึกรายงาน
+                          ยอดเงินจะถูกอัปเดตเข้าระบบเมื่อบันทึกรายงาน
                         </p>
                       </div>
                     </div>
