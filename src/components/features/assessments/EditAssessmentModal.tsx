@@ -438,9 +438,19 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
       return newArea;
     });
 
+    const mergedData = { ...assessment, ...formData };
+
+
+    const {
+      customer,
+      package: packageData,
+      assessment_areas: oldAreas,
+      installments: oldInstallments,
+      ...cleanPayload
+    } = mergedData as any;
+
     const updatedAssessment: Assessment = {
-      ...assessment,
-      ...formData,
+      ...cleanPayload,
       updated_by: 'ผู้ดูแลระบบ',
       assessment_areas: sanitizedWorkAreas as AssessmentWorkArea[],
       installments:
