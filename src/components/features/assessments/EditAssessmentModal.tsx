@@ -674,6 +674,7 @@ export const EditAssessmentModal: FC<EditAssessmentModalProps> = ({
                     index={index}
                     onAreaChange={handleAreaChange}
                     onClearArea={handleClearArea}
+                    onSelectPackage={handlePackageSelect}
                     selectedPackage={
                       packages.find((p) => p.id === selectedPackageId) || null
                     }
