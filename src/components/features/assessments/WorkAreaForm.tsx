@@ -19,6 +19,7 @@ import { PackageType } from '@/src/types/enums/package';
 interface WorkAreaFormProps {
   area: Partial<AssessmentWorkArea>;
   index: number;
+  errors?: Record<string, string>;
   onAreaChange: (
     index: number,
     updatedArea: Partial<AssessmentWorkArea>
@@ -38,6 +39,7 @@ interface WorkAreaFormProps {
 export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   area,
   index,
+  errors,
   onAreaChange,
   onClearArea,
   onRemoveArea,
@@ -494,8 +496,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   value={area.area_name || ''}
                   onChange={handleFieldChange}
                   placeholder="เช่น บ้าน A-1, อาคาร Lobby"
+                  className={errors?.[`area_${index}_area_name`] ? 'border-red-500 bg-red-50/50' : ''}
                   required
                 />
+                {errors?.[`area_${index}_area_name`] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_area_name`]}</p>
+                )}
               </FormField>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -507,6 +513,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     name="building_type"
                     value={area.building_type || ''}
                     onChange={handleFieldChange}
+                    className={errors?.[`area_${index}_building_type`] ? 'border-red-500 bg-red-50/50' : ''}
                     required
                   >
                     <option value="">เลือกประเภท</option>
@@ -514,7 +521,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     <option value="HOUSE">บ้าน</option>
                     <option value="OTHER">อื่นๆ</option>
                   </Select>
+                  {errors?.[`area_${index}_building_type`] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_building_type`]}</p>
+                  )}
                 </FormField>
+
                 <FormField
                   label="ระบบใช้บริการ"
                   htmlFor={`serviceSystem-${index}`}
@@ -523,6 +534,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     name="service_system"
                     value={area.service_system || ''}
                     onChange={handleFieldChange}
+                    className={errors?.[`area_${index}_service_system`] ? 'border-red-500 bg-red-50/50' : ''}
                     required
                   >
                     <option value="">เลือกระบบ</option>
@@ -532,6 +544,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       </option>
                     ))}
                   </Select>
+                  {errors?.[`area_${index}_service_system`] && (
+                    <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_service_system`]}</p>
+                  )}
                 </FormField>
               </div>
 
@@ -545,7 +560,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       >
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}
                           checked={(area.category_services || []).some(
                             (s) => s.category_id === cat.id
                           )}
@@ -556,6 +571,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     ))}
                   </div>
                 </FormField>
+                {errors?.[`area_${index}_category_services`] && (
+                  <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_category_services`]}</p>
+                )}
               </div>
 
               {/* Measurement Selection */}

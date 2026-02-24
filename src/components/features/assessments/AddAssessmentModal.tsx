@@ -1,4 +1,3 @@
-// Re-trigger build
 import {
   useState,
   useEffect,
@@ -86,6 +85,9 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     Partial<AssessmentInstallment>[]
   >([]);
 
+  // 🔴 เพิ่ม State สำหรับจัดการ Error ของฟอร์ม
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (isOpen) {
       setCurrentStep(0);
@@ -111,6 +113,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       // Reset form
       setFormData({
         status: AsessmentStatus.DRAFT,
+        created_at: new Date().toISOString(), // ตั้งค่า Default ให้วันที่สร้าง
       });
       setWorkAreas([
         {
@@ -127,14 +130,9 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       setSelectedPackageId(null);
       setVisitedSteps([0]);
       setSelectedCustomerData(null);
+      setErrors({}); // Reset error เมื่อเปิดใหม่
     }
   }, [isOpen]);
-
-  const suggestedPackageOptions = useMemo(() => {
-    return packages.filter(
-      (pkg) => pkg.package_prices && pkg.package_prices.length > 0
-    );
-  }, [packages]);
 
   const totalEstimatedCost = useMemo(
     () =>
@@ -147,10 +145,18 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // 🟢 เคลียร์ Error ทันทีเมื่อผู้ใช้เริ่มพิมพ์แก้ในช่องนั้น
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleDateChange = (name: string, date: Date | null) => {
     setFormData((prev) => ({ ...prev, [name]: date ? date.toISOString() : null }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleCustomerSelect = (customerId: string | null) => {
@@ -163,7 +169,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     const customer = customers.find((c) => c.id === customerId);
     if (customer) {
       setSelectedCustomerData(customer);
-      // Auto-fill address if available and empty
       setFormData((prev) => ({
         ...prev,
         customer_id: customerId,
@@ -173,6 +178,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         province: prev.province || customer.province || '',
         zipcode: prev.zipcode || customer.postal_code || '',
       }));
+      // เคลียร์ error ถ้ามีข้อมูลแล้ว
+      setErrors((prev) => ({ ...prev, customer_id: '', address: '' }));
     }
   };
 
@@ -198,6 +205,17 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     setWorkAreas((prev) =>
       prev.map((area, i) => (i === index ? updatedArea : area))
     );
+
+    // 🟢 เคลียร์ Error ของ Step 2 อัตโนมัติเมื่อ User เลือก/พิมพ์แก้
+    setErrors((prev) => {
+      const newErrs = { ...prev };
+      if (updatedArea.area_name) delete newErrs[`area_${index}_area_name`];
+      if (updatedArea.building_type) delete newErrs[`area_${index}_building_type`];
+      if (updatedArea.service_system) delete newErrs[`area_${index}_service_system`];
+      if (updatedArea.category_services?.length) delete newErrs[`area_${index}_category_services`];
+      // หากมีหน่วยวัดพื้นที่: if (updatedArea.area_unit) delete newErrs[`area_${index}_area_unit`];
+      return newErrs;
+    });
   };
 
   const handleClearArea = (index: number) => {
@@ -255,7 +273,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
           return {
             ...area,
             base_service_price: priceToUse,
-            package_price: priceToUse, // Set package price snapshot
+            package_price: priceToUse,
             package_price_id: bestFit.id,
             total_price:
               priceToUse +
@@ -274,7 +292,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     );
   };
 
-  // Handlers for Installments
   const handleAddInstallment = () => {
     setInstallments((prev) => {
       const newCount = prev.length + 1;
@@ -287,7 +304,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         {
           id: crypto.randomUUID(),
           installment_no: newCount,
-          amount: 0, // Will be updated below
+          amount: 0,
           note: `งวดที่ ${newCount}`,
         },
       ];
@@ -348,11 +365,9 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     );
   };
 
-  // Auto-calculate installments when total price changes or payment condition changes
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       if (installments.length === 0 && totalEstimatedCost > 0) {
-        // Default to 2 installments if none exist
         setInstallments([
           {
             id: crypto.randomUUID(),
@@ -368,7 +383,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
           },
         ]);
       } else if (installments.length > 0 && totalEstimatedCost > 0) {
-        // Recalculate existing installments based on new total
         const currentTotal = installments.reduce(
           (sum, i) => sum + (Number(i.amount) || 0),
           0
@@ -396,13 +410,11 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         setInstallments([]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paymentCondition, totalEstimatedCost]);
 
   const handleSubmit = (e?: FormEvent) => {
     if (e) e.preventDefault();
 
-    // Sanitize work areas before submission
     const sanitizedWorkAreas = (workAreas as AssessmentWorkArea[]).map(
       (area) => {
         const newArea = { ...area };
@@ -419,15 +431,10 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     const newAssessment: Omit<Assessment, 'id' | 'code'> & {
       installments?: Partial<AssessmentInstallment>[];
     } = {
-      // Defaults
       status: AsessmentStatus.DRAFT,
       created_by: 'ผู้ดูแลระบบ',
       updated_by: 'ผู้ดูแลระบบ',
-
-      // Spread form data
       ...formData,
-
-      // Overrides/Calculated
       assessment_areas: sanitizedWorkAreas,
       total_price: totalEstimatedCost,
       payment_condition: paymentCondition,
@@ -435,8 +442,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         paymentCondition === PaymentMethod.INSTALLMENT
           ? (installments as any)
           : [],
-
-      // Ensure required fields
       customer_id: formData.customer_id || '',
       address: formData.address || '',
       sub_district: formData.sub_district || '',
@@ -447,8 +452,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
         ? new Date(formData.created_at).toISOString()
         : new Date().toISOString(),
       appointment_date: formData.appointment_date,
-
-      // Other fields
       zone: formData.zone || '',
       route_group: formData.route_group || '',
       road_line: formData.road_line || '',
@@ -460,31 +463,56 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
     onClose();
   };
 
-  const isStepValid = useMemo(() => {
+  // 🔴 ฟังก์ชัน Validate แยก Step (ตรวจก่อนให้กด ถัดไป)
+  const validateStep = (): boolean => {
     if (currentStep === 0) {
-      return !!(
-        formData.created_at &&
-        formData.appointment_date &&
-        formData.customer_id &&
-        formData.address &&
-        formData.sub_district &&
-        formData.district &&
-        formData.province &&
-        formData.zipcode
-      );
+      const newErrors: Record<string, string> = {};
+
+      if (!formData.customer_id) newErrors.customer_id = 'กรุณาเลือกลูกค้า';
+      if (!formData.created_at) newErrors.created_at = 'กรุณาระบุวันที่สร้าง';
+      if (!formData.appointment_date) newErrors.appointment_date = 'กรุณาระบุวันที่นัดหมาย';
+      if (!formData.address || !formData.address.trim()) newErrors.address = 'กรุณากรอกที่อยู่';
+      if (!formData.google_map_link || !formData.google_map_link.trim()) newErrors.google_map_link = 'กรุณากรอก Link Google Map';
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
     }
+
     if (currentStep === 1) {
       if (workAreas.length === 0) return false;
-      return workAreas.every(
-        (area) =>
-          area.area_name &&
-          area.building_type &&
-          area.category_services &&
-          area.category_services.length > 0 &&
-          area.area_size &&
-          area.area_size > 0
-      );
+      
+      let isValid = true;
+      const newErrors: Record<string, string> = {};
+
+      workAreas.forEach((area, index) => {
+        if (!area.area_name?.trim()) {
+          newErrors[`area_${index}_area_name`] = 'กรุณาระบุชื่อพื้นที่';
+          isValid = false;
+        }
+        if (!area.building_type) {
+          newErrors[`area_${index}_building_type`] = 'กรุณาระบุประเภทสิ่งปลูกสร้าง';
+          isValid = false;
+        }
+        if (!area.service_system) {
+          newErrors[`area_${index}_service_system`] = 'กรุณาระบุระบบใช้บริการ';
+          isValid = false;
+        }
+        if (!area.category_services || area.category_services.length === 0) {
+          newErrors[`area_${index}_category_services`] = 'กรุณาระบุประเภทบริการ';
+          isValid = false;
+        }
+        
+        // * หากในระบบคุณมีฟิลด์ "เลือกหน่วยวัดพื้นที่" ให้เช็คเพิ่มตรงนี้ได้ครับ
+        // if (!area.area_unit) {
+        //   newErrors[`area_${index}_area_unit`] = 'กรุณาเลือกหน่วยวัดพื้นที่';
+        //   isValid = false;
+        // }
+      });
+
+      setErrors(newErrors);
+      return isValid;
     }
+
     if (currentStep === 2) {
       if (paymentCondition === PaymentMethod.INSTALLMENT) {
         const totalInstallment = installments.reduce(
@@ -495,18 +523,11 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       }
       return true;
     }
-    return false;
-  }, [
-    currentStep,
-    formData,
-    workAreas,
-    paymentCondition,
-    installments,
-    totalEstimatedCost,
-  ]);
+    return true;
+  };
 
   const handleNext = () => {
-    if (!isStepValid) return;
+    if (!validateStep()) return; // ถ้า Validate ไม่ผ่าน จะโชว์กรอบแดงและไม่ให้ไปต่อ
 
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((prev) => {
@@ -522,9 +543,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
       setCurrentStep((prev) => prev - 1);
     }
   };
-
-  // Set search query state
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <Modal
@@ -553,9 +571,8 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
             {currentStep < STEPS.length - 1 ? (
               <Button
                 type="button"
-                onClick={handleNext}
+                onClick={handleNext} // กดปุ่มจะเรียก HandleNext() ที่ครอบ Validation อยู่
                 variant="primary"
-                disabled={!isStepValid}
                 className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
               >
                 ถัดไป
@@ -564,9 +581,10 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
             ) : (
               <Button
                 type="button"
-                onClick={() => handleSubmit()}
+                onClick={() => {
+                  if (validateStep()) handleSubmit();
+                }}
                 variant="primary"
-                disabled={!isStepValid}
                 className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
               >
                 บันทึกใบประเมิน
@@ -631,17 +649,21 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                   ข้อมูลลูกค้า
                 </h3>
                 <div className="space-y-6 flex-1 flex flex-col">
-                  <SearchableSelect
-                    label="ค้นหาลูกค้า"
-                    options={(customers || []).map((c) => ({
-                      value: c.id,
-                      label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.phone}`,
-                      description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
-                    }))}
-                    value={formData.customer_id || ''}
-                    onChange={handleCustomerSelect}
-                    required
-                  />
+                  <div>
+                    <SearchableSelect
+                      label="ค้นหาลูกค้า *"
+                      options={(customers || []).map((c) => ({
+                        value: c.id,
+                        label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.phone}`,
+                        description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
+                      }))}
+                      value={formData.customer_id || ''}
+                      onChange={handleCustomerSelect}
+                    />
+                    {errors.customer_id && (
+                      <p className="text-red-500 text-xs mt-1 font-medium">{errors.customer_id}</p>
+                    )}
+                  </div>
 
                   {selectedCustomerData ? (
                     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
@@ -689,7 +711,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-center flex-1">
+                    <div className={`flex flex-col items-center justify-center py-12 px-4 rounded-xl border border-dashed text-center flex-1 ${errors.customer_id ? 'bg-red-50 border-red-300' : 'bg-slate-50 border-slate-300'}`}>
                       <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
                         <UserIcon className="w-6 h-6 text-slate-300" />
                       </div>
@@ -713,9 +735,11 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                   ข้อมูลนัดหมาย
                 </h3>
                 <div className="space-y-6">
-                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+                  
+                  {/* 🔴 วันที่สร้าง พร้อม Validate กรอบแดง */}
+                  <div className={`p-4 rounded-xl border transition-colors ${errors.created_at ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField
-                      label="วันที่สร้าง"
+                      label="วันที่สร้าง *"
                       htmlFor="created_at"
                       className="mb-0"
                     >
@@ -727,16 +751,18 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                           dateFormat="dd/MM/yy"
                           locale="th"
                           wrapperClassName="w-full"
-                          className="bg-white h-10 border text-sm rounded-md p-2 w-full"
-                          required
+                          className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`}
                         />
                         <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
+                    {errors.created_at && <p className="text-red-500 text-xs mt-1 font-medium">{errors.created_at}</p>}
                   </div>
-                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
+
+                  {/* 🔴 วันที่นัดหมาย พร้อม Validate กรอบแดง */}
+                  <div className={`p-4 rounded-xl border transition-colors ${errors.appointment_date ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField
-                      label="วันที่นัดหมาย"
+                      label="วันที่นัดหมาย *"
                       htmlFor="appointment_date"
                       className="mb-0"
                     >
@@ -748,13 +774,14 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                           dateFormat="dd/MM/yy"
                           locale="th"
                           wrapperClassName="w-full"
-                          className="bg-white h-10 border text-sm rounded-md p-2 w-full"
-                          required
+                          className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`}
                         />
                         <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
+                    {errors.appointment_date && <p className="text-red-500 text-xs mt-1 font-medium">{errors.appointment_date}</p>}
                   </div>
+
                 </div>
               </div>
             </div>
@@ -765,23 +792,29 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                 ที่อยู่สำหรับเข้าประเมิน (สามารถแก้ไขได้)
               </h3>
-              <FormField label="ที่อยู่ (บ้านเลขที่, ถนน)" htmlFor="address">
-                <Textarea
-                  name="address"
-                  value={formData.address || ''}
-                  onChange={handleFieldChange}
-                  required
-                  className="bg-slate-50 focus:bg-white"
-                  rows={2}
-                />
-              </FormField>
+              
+              {/* 🔴 ควบคุม CSS แสดงกรอบแดงจาก State errors */}
+              <div className="mb-4">
+                 <label className="block text-sm font-medium text-slate-700 mb-1">
+                    ที่อยู่ (บ้านเลขที่, ถนน) <span className="text-red-500">*</span>
+                 </label>
+                 <Textarea
+                    name="address"
+                    value={formData.address || ''}
+                    onChange={handleFieldChange}
+                    className={`transition-colors ${errors.address ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`}
+                    rows={2}
+                 />
+                 {errors.address && <p className="text-red-500 text-xs mt-1 font-medium">{errors.address}</p>}
+              </div>
+
+              {/* 🟢 เอา Required ออก */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField label="แขวง/ตำบล" htmlFor="sub_district">
                   <Input
                     name="sub_district"
                     value={formData.sub_district || ''}
                     onChange={handleFieldChange}
-                    required
                     className="bg-slate-50 focus:bg-white"
                   />
                 </FormField>
@@ -790,7 +823,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                     name="district"
                     value={formData.district || ''}
                     onChange={handleFieldChange}
-                    required
                     className="bg-slate-50 focus:bg-white"
                   />
                 </FormField>
@@ -799,7 +831,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                     name="province"
                     value={formData.province || ''}
                     onChange={handleFieldChange}
-                    required
                     className="bg-slate-50 focus:bg-white"
                   />
                 </FormField>
@@ -808,7 +839,6 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                     name="zipcode"
                     value={formData.zipcode || ''}
                     onChange={handleFieldChange}
-                    required
                     className="bg-slate-50 focus:bg-white"
                   />
                 </FormField>
@@ -849,20 +879,21 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                 </FormField>
               </div>
 
-              <FormField
-                label="Link Google Map"
-                htmlFor="google_map_link"
-                className="mt-4"
-              >
-                <Input
-                  name="google_map_link"
-                  type="url"
-                  placeholder="https://maps.app.goo.gl/..."
-                  value={formData.google_map_link || ''}
-                  onChange={handleFieldChange}
-                  className="bg-slate-50 focus:bg-white"
-                />
-              </FormField>
+              {/* 🔴 ควบคุม CSS แสดงกรอบแดงจาก State errors */}
+              <div className="mt-4">
+                 <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Link Google Map <span className="text-red-500">*</span>
+                 </label>
+                 <Input
+                    name="google_map_link"
+                    type="url"
+                    placeholder="https://maps.app.goo.gl/..."
+                    value={formData.google_map_link || ''}
+                    onChange={handleFieldChange}
+                    className={`transition-colors ${errors.google_map_link ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`}
+                 />
+                 {errors.google_map_link && <p className="text-red-500 text-xs mt-1 font-medium">{errors.google_map_link}</p>}
+              </div>
             </div>
           </div>
         )}
@@ -887,6 +918,9 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                   key={area.id || index}
                   area={area}
                   index={index}
+                  // 🔴 ส่งผ่าน prop errors ไปที่คอมโพเนนต์ลูก
+                  // @ts-ignore (ถ้า TS แดงในฝั่งของคุณ ให้ไปเพิ่ม Interface errors?: Record<string, string> ใน WorkAreaForm)
+                  errors={errors} 
                   onAreaChange={handleAreaChange}
                   onClearArea={handleClearArea}
                   onRemoveArea={handleRemoveArea}
