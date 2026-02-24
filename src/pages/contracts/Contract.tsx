@@ -346,10 +346,11 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       </div>
 
       {/* Toolbar */}
-      <Card className="!p-4">
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+      <Card
+        className="!p-0"
+        actions={
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
-            <div className="relative flex-1 sm:min-w-[240px]">
+            <div className="w-full sm:w-64">
               <Input
                 type="search"
                 placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
@@ -390,204 +391,206 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                 className="w-full sm:w-40"
               />
             </div>
+
+            <div className="w-full lg:w-48">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatus);
+                  setCurrentPage(1);
+                }}
+                className="w-full"
+              >
+                <option value="ทั้งหมด">สถานะทั้งหมด</option>
+                {Object.values(ContractStatus).map((status) => (
+                  <option key={status} value={status}>
+                    {statusLabels[status]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+        }
+      >
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    ลำดับ
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    เลขที่สัญญา
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    ลูกค้า
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    ประเภทบริการ
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    ระยะเวลา
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    วันเริ่มต้น
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    วันสิ้นสุด
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    สถานะ
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    มูลค่า
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                    จัดการ
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedContracts.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center text-slate-400">
+                        <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
+                        <p className="text-sm mt-1">
+                          ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedContracts.map((c, index) => {
+                    const customerName = c.customer
+                      ? `${c.customer.first_name} ${c.customer.last_name || ''}`.trim()
+                      : c.customer_name;
+
+                    return (
+                      <tr
+                        key={c.id}
+                        className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                      >
+                        <td className="px-6 py-4 text-sm text-slate-500">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className="text-sm font-semibold text-primary hover:text-primary-dark cursor-pointer transition-colors"
+                            onClick={() => handleViewDetails(c)}
+                            title={c.id}
+                          >
+                            {c.code || `CT-${c.id.slice(0, 8).toUpperCase()}`}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-primary font-bold text-xs">
+                                {(customerName || '?').charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 truncate">
+                                {customerName || '-'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {c.service_type || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {c.contract_duration || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {formatThaiDate(c.start_date)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-600">
+                          {formatThaiDate(c.end_date)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <StatusBadge
+                            status={
+                              statusLabels[c.status as ContractStatus] || c.status
+                            }
+                          />
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
+                          ฿
+                          {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              className="px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm border-none flex items-center gap-2 hover:shadow-md transition-shadow bg-emerald-500 text-white hover:bg-emerald-600"
+                              disabled={loadingPdfId === c.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (loadingPdfId === c.id) return;
+
+                                setLoadingPdfId(c.id);
+                                (async () => {
+                                  try {
+                                    const blob = await ContractApi.getPdf(c.id);
+                                    const url = window.URL.createObjectURL(blob);
+                                    window.open(url, '_blank');
+                                  } catch (error) {
+                                    console.error('Error viewing PDF:', error);
+                                    alert('ไม่สามารถเปิด PDF ได้');
+                                  } finally {
+                                    setLoadingPdfId(null);
+                                  }
+                                })();
+                              }}
+                            >
+                              {loadingPdfId === c.id ? (
+                                <LoadingIcon className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <EyeIcon className="w-3 h-3" />
+                              )}
+                              {loadingPdfId === c.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                            </Button>
+                            <Button
+                              data-contract-id={c.id}
+                              onClick={(e) => handleDropdownToggle(e, c.id)}
+                              variant="ghost"
+                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                            >
+                              <ManageIcon className="w-5 h-5" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
 
-          <div className="w-full lg:w-48">
-            <Select
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatus);
-                setCurrentPage(1);
-              }}
-              className="w-full"
-            >
-              <option value="ทั้งหมด">สถานะทั้งหมด</option>
-              {Object.values(ContractStatus).map((status) => (
-                <option key={status} value={status}>
-                  {statusLabels[status]}
-                </option>
-              ))}
-            </Select>
-          </div>
+          {/* Pagination */}
+          {totalItems > 0 && (
+            <div className="border-t border-slate-100">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          )}
         </div>
       </Card>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  ลำดับ
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  เลขที่สัญญา
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  ลูกค้า
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  ประเภทบริการ
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  ระยะเวลา
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  วันเริ่มต้น
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  วันสิ้นสุด
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  สถานะ
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  มูลค่า
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  จัดการ
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {paginatedContracts.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center text-slate-400">
-                      <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
-                      <p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
-                      <p className="text-sm mt-1">
-                        ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่
-                      </p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                paginatedContracts.map((c, index) => {
-                  const customerName = c.customer
-                    ? `${c.customer.first_name} ${c.customer.last_name || ''}`.trim()
-                    : c.customer_name;
 
-                  return (
-                    <tr
-                      key={c.id}
-                      className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
-                    >
-                      <td className="px-6 py-4 text-sm text-slate-500">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className="text-sm font-semibold text-primary hover:text-primary-dark cursor-pointer transition-colors"
-                          onClick={() => handleViewDetails(c)}
-                          title={c.id}
-                        >
-                          {c.code || `CT-${c.id.slice(0, 8).toUpperCase()}`}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-primary font-bold text-xs">
-                              {(customerName || '?').charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 truncate">
-                              {customerName || '-'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {c.service_type || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {c.contract_duration || '-'}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {formatThaiDate(c.start_date)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {formatThaiDate(c.end_date)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge
-                          status={
-                            statusLabels[c.status as ContractStatus] || c.status
-                          }
-                        />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
-                        ฿
-                        {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            className="px-3 py-1.5 text-xs font-bold rounded-lg shadow-sm border-none flex items-center gap-2 hover:shadow-md transition-shadow bg-emerald-500 text-white hover:bg-emerald-600"
-                            disabled={loadingPdfId === c.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (loadingPdfId === c.id) return;
-
-                              setLoadingPdfId(c.id);
-                              (async () => {
-                                try {
-                                  const blob = await ContractApi.getPdf(c.id);
-                                  const url = window.URL.createObjectURL(blob);
-                                  window.open(url, '_blank');
-                                } catch (error) {
-                                  console.error('Error viewing PDF:', error);
-                                  alert('ไม่สามารถเปิด PDF ได้');
-                                } finally {
-                                  setLoadingPdfId(null);
-                                }
-                              })();
-                            }}
-                          >
-                            {loadingPdfId === c.id ? (
-                              <LoadingIcon className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <EyeIcon className="w-3 h-3" />
-                            )}
-                            {loadingPdfId === c.id ? 'กำลังโหลด...' : 'ดู PDF'}
-                          </Button>
-                          <Button
-                            data-contract-id={c.id}
-                            onClick={(e) => handleDropdownToggle(e, c.id)}
-                            variant="ghost"
-                            className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                          >
-                            <ManageIcon className="w-5 h-5" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalItems > 0 && (
-          <div className="border-t border-slate-100">
-            <Pagination
-              currentPage={currentPage}
-              totalItems={totalItems}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </div>
-        )}
-      </div>
 
       {/* Dropdown Menu (Portal) */}
       {openDropdownId && dropdownPosition && selectedContract && (
