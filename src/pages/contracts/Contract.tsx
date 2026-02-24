@@ -43,20 +43,17 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   onUpdateContract,
   onDeleteContract,
 }) => {
-  const { contracts, customers, quotations } = useData();
+  const { customers, quotations } = useData();
   const navigate = useNavigate();
 
+  const [contracts, setContracts] = useState<Contract[]>([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-  const [targetStatus, setTargetStatus] = useState<ContractStatus>(
-    ContractStatus.DRAFT
-  );
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(
-    null
-  );
+  const [targetStatus, setTargetStatus] = useState<ContractStatus>(ContractStatus.DRAFT);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -73,6 +70,21 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   );
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  useEffect(() => {
+    const fetchContracts = async () => {
+      try {
+        const response = await ContractApi.getAll();
+        if (response && response.data) {
+          setContracts(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch contracts:', error);
+      }
+    };
+
+    fetchContracts();
+  }, []);
 
   // Stats calculations
   const stats = useMemo(() => {

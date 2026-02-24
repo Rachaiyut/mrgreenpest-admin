@@ -410,11 +410,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
                   ยอดรวม
                 </th>
-                {(onUpdateInvoice || onDeleteInvoice) && (
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                    จัดการ
-                  </th>
-                )}
+                <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                  จัดการ
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -461,45 +459,43 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    {(onUpdateInvoice || onDeleteInvoice) && (
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                          <Button
-                            variant="primary"
-                            className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"
-                            onClick={() => handleViewPdf(i)}
-                            disabled={pdfLoadingId === i.id}
-                            title="ดู PDF"
-                          >
-                            {pdfLoadingId === i.id ? (
-                              <span className="flex items-center gap-2">
-                                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                                <span>กำลังโหลด...</span>
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-2">
-                                <EyeIcon className="w-3.5 h-3.5 shrink-0" />
-                                <span>ดู PDF</span>
-                              </span>
-                            )}
-                          </Button>
-                          <Button
-                            data-invoice-id={i.id}
-                            onClick={(e) =>
-                              handleInvoiceDropdownToggle(e, i.id, i)
-                            }
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </div>
-                      </td>
-                    )}
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                        <Button
+                          variant="primary"
+                          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"
+                          onClick={() => handleViewPdf(i)}
+                          disabled={pdfLoadingId === i.id}
+                          title="ดู PDF"
+                        >
+                          {pdfLoadingId === i.id ? (
+                            <span className="flex items-center gap-2">
+                              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
+                              <span>กำลังโหลด...</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2">
+                              <EyeIcon className="w-3.5 h-3.5 shrink-0" />
+                              <span>ดู PDF</span>
+                            </span>
+                          )}
+                        </Button>
+                        <Button
+                          data-invoice-id={i.id}
+                          onClick={(e) =>
+                            handleInvoiceDropdownToggle(e, i.id, i)
+                          }
+                          variant="icon"
+                          title="ตัวเลือก"
+                        >
+                          <span className="sr-only">Open options</span>
+                          <ManageIcon
+                            className="h-5 w-5"
+                            aria-hidden="true"
+                          />
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}

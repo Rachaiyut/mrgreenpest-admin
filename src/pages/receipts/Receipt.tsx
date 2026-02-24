@@ -29,7 +29,6 @@ const statusLabels: Record<ReceiptStatus, string> = {
 };
 
 interface ReceiptsPageProps {
-  onCreateReceipt?: (data: Omit<Receipt, 'id'>) => void | Promise<void>;
   onUpdateReceipt?: (updated: Receipt) => void | Promise<void>;
   onDeleteReceipt?: (id: string) => void | Promise<void>;
 }
@@ -47,11 +46,11 @@ const getPaymentMethodLabel = (method: string): string => {
 };
 
 const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
-  onCreateReceipt,
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const { receipts, invoices, customers } = useData();
+  const { invoices, customers, receipts, fetchData } = useData();
+
 
   const [receiptPage, setReceiptPage] = useState(1);
   const [receiptItemsPerPage, setReceiptItemsPerPage] = useState(10);
@@ -93,6 +92,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   const [receiptFormAmount, setReceiptFormAmount] = useState<number>(0);
   const [receiptFormPaymentReference, setReceiptFormPaymentReference] =
     useState<string>('');
+
+  useEffect(() => {
+    fetchData(['receipts', 'customers', 'invoices']);
+  }, []);
   const [receiptFormNotes, setReceiptFormNotes] = useState<string>('');
 
   const receiptData = receipts || [];
@@ -250,12 +253,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             จัดการใบกำกับภาษีและใบเสร็จรับเงิน
           </p>
         </div>
-        {onCreateReceipt && (
-          <Button onClick={() => setIsAddReceiptModalOpen(true)}>
-            <PlusIcon className="h-5 w-5" />
-            สร้างเอกสาร
-          </Button>
-        )}
+        <Button onClick={() => setIsAddReceiptModalOpen(true)}>
+          <PlusIcon className="h-5 w-5" />
+          สร้างเอกสาร
+        </Button>
       </div>
 
       {/* Receipt Stats Cards */}
@@ -398,11 +399,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
                   จำนวนเงิน
                 </th>
-                {(onUpdateReceipt || onDeleteReceipt) && (
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
-                    จัดการ
-                  </th>
-                )}
+                <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                  จัดการ
+                </th>                
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -447,69 +446,67 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         maximumFractionDigits: 2,
                       })}
                     </td>
-                    {(onUpdateReceipt || onDeleteReceipt) && (
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="primary"
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                              isDownloading === r.id
-                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
-                            }`}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (isDownloading === r.id) return;
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="primary"
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                            isDownloading === r.id
+                              ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                              : 'bg-green-600 hover:bg-green-700 text-white'
+                          }`}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (isDownloading === r.id) return;
 
-                              try {
-                                setIsDownloading(r.id);
-                                const blob = await ReceiptApi.getPdfBlob(r.id);
-                                const url = window.URL.createObjectURL(blob);
-                                window.open(url, '_blank');
-                              } catch (err) {
-                                console.error('Failed to view PDF', err);
-                                alert('ไม่สามารถดู PDF ได้');
-                              } finally {
-                                setIsDownloading(null);
-                              }
+                            try {
+                              setIsDownloading(r.id);
+                              const blob = await ReceiptApi.getPdfBlob(r.id);
+                              const url = window.URL.createObjectURL(blob);
+                              window.open(url, '_blank');
+                            } catch (err) {
+                              console.error('Failed to view PDF', err);
+                              alert('ไม่สามารถดู PDF ได้');
+                            } finally {
+                              setIsDownloading(null);
+                            }
+                          }}
+                          disabled={isDownloading === r.id}
+                        >
+                          {isDownloading === r.id ? (
+                            <LoadingIcon className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <EyeIcon className="h-4 w-4" />
+                          )}
+                          {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                        </Button>
+                        <div className="inline-block text-left">
+                          <Button
+                            data-receipt-id={r.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = (
+                                e.currentTarget as HTMLButtonElement
+                              ).getBoundingClientRect();
+                              setSelectedReceipt(r);
+                              setOpenReceiptDropdownId(r.id);
+                              setReceiptDropdownPosition({
+                                top: rect.bottom + window.scrollY,
+                                left: rect.right + window.scrollX,
+                              });
                             }}
-                            disabled={isDownloading === r.id}
+                            variant="icon"
+                            title="ตัวเลือก"
                           >
-                            {isDownloading === r.id ? (
-                              <LoadingIcon className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <EyeIcon className="h-4 w-4" />
-                            )}
-                            {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                            <span className="sr-only">Open options</span>
+                            <ManageIcon
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
                           </Button>
-                          <div className="inline-block text-left">
-                            <Button
-                              data-receipt-id={r.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const rect = (
-                                  e.currentTarget as HTMLButtonElement
-                                ).getBoundingClientRect();
-                                setSelectedReceipt(r);
-                                setOpenReceiptDropdownId(r.id);
-                                setReceiptDropdownPosition({
-                                  top: rect.bottom + window.scrollY,
-                                  left: rect.right + window.scrollX,
-                                });
-                              }}
-                              variant="icon"
-                              title="ตัวเลือก"
-                            >
-                              <span className="sr-only">Open options</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
                         </div>
-                      </td>
-                    )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
@@ -592,7 +589,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </Button>
             <Button
               onClick={() => {
-                if (!onCreateReceipt) return;
                 const payload: Omit<Receipt, 'id'> = {
                   invoice_id: receiptFormInvoiceId || undefined,
                   customer_id: receiptFormCustomerId,
@@ -603,7 +599,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   payment_reference: receiptFormPaymentReference || undefined,
                   notes: receiptFormNotes || undefined,
                 };
-                onCreateReceipt(payload);
                 setIsAddReceiptModalOpen(false);
                 setReceiptFormInvoiceId('');
                 setReceiptFormCustomerId('');
