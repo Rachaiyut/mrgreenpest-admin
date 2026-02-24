@@ -5,7 +5,6 @@ import {
   PlusIcon,
   TrashIcon,
   RefreshIcon,
-  ShieldCheckIcon,
   ChevronDownIcon,
 } from '../../../assets/icons/Icons';
 import {
@@ -52,11 +51,25 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   onApprove,
 }) => {
   const isInitialLoad = useRef(true);
+  const prevAreaSizeRef = useRef(area.area_size);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedStandardPrice, setSelectedStandardPrice] = useState<
     number | undefined
   >(area.package_price);
+
+  const [optimisticPackageId, setOptimisticPackageId] = useState<string | null>(
+    selectedPackage?.id || null
+  );
+
+  useEffect(() => {
+    setOptimisticPackageId(selectedPackage?.id || null);
+  }, [selectedPackage?.id]);
+
+  const activePackageId = optimisticPackageId || selectedPackage?.id;
+  const activePackage = useMemo(() => {
+    return availablePackages.find((p) => p.id === activePackageId) || selectedPackage;
+  }, [activePackageId, availablePackages, selectedPackage]);
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -69,22 +82,21 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   };
 
   const sortedConditions = useMemo(() => {
-    if (!selectedPackage) return [];
-    return [...(selectedPackage.package_prices || [])].sort(
+    if (!activePackage) return [];
+    return [...(activePackage.package_prices || [])].sort(
       (a, b) => a.area_range - b.area_range
     );
-  }, [selectedPackage]);
+  }, [activePackage]);
 
   const selectedCondition = useMemo(() => {
-    if (!selectedPackage || !area.area_size) return null;
+    if (!activePackage || !area.area_size) return null;
     return (
       sortedConditions.find((c) => c.area_range >= area.area_size!) || null
     );
-  }, [selectedPackage, area.area_size, sortedConditions]);
+  }, [activePackage, area.area_size, sortedConditions]);
 
   const renderPriceSection = () => {
-    // กรณีไม่ได้เลือกแพ็กเกจ ให้กรอกราคาเอง
-    if (!selectedPackage) {
+    if (!activePackage) {
       return (
         <div className="pt-4 border-t space-y-4">
           <FormField
@@ -112,7 +124,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       );
     }
 
-    // กรณีเลือกแพ็กเกจแล้ว (เอาหน้าต่างซ้ำซ้อนออก เหลือแค่สรุปราคา)
     return (
       <div className="pt-4 border-t mt-4">
         <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
@@ -195,61 +206,44 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   useEffect(() => {
     if (isInitialLoad.current) {
       isInitialLoad.current = false;
-      if (
-        isEditing &&
-        typeof area.package_price === 'number' &&
-        area.package_price > 0
-      ) {
+      if (isEditing && typeof area.package_price === 'number' && area.package_price > 0) {
         return;
       }
     }
 
-    if (selectedPackage && area.area_size) {
-      const sortedPrices = [...(selectedPackage.package_prices || [])].sort(
-        (a, b) => a.area_range - b.area_range
-      );
+    if (area.area_size !== prevAreaSizeRef.current) {
+      prevAreaSizeRef.current = area.area_size;
 
-      const condition = sortedPrices.find(
-        (c) => c.area_range >= area.area_size!
-      );
+      if (activePackage && area.area_size) {
+        const condition = sortedConditions.find(
+          (c) => c.area_range >= area.area_size!
+        );
 
-      if (condition) {
-        if (area.package_price_id !== condition.id) {
-          const isWithTermite = area.package_type === PackageType.WITH_TERMITE;
-          const defaultPrice = isWithTermite ? condition.price_with_termite : condition.price_without_termite;
+        if (condition) {
+          if (area.package_type) {
+            const isWithTermite = area.package_type === PackageType.WITH_TERMITE;
+            const defaultPrice = isWithTermite ? condition.price_with_termite : condition.price_without_termite;
+            
+            onAreaChange(index, {
+              ...area,
+              package_price: defaultPrice,
+              package_price_id: condition.id,
+              total_price: defaultPrice + (area.items || []).reduce((sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
+            });
+          }
+        } else {
           onAreaChange(index, {
             ...area,
-            package_price: defaultPrice,
-            package_price_id: condition.id,
-            total_price:
-              defaultPrice +
-              (area.items || []).reduce(
-                (sum, item) =>
-                  sum +
-                  (Number(item.product_price) || 0) *
-                  (Number(item.quantity) || 0),
-                0
-              ),
-          });
-        }
-      } else {
-        if (area.package_price !== 0 || area.package_price_id) {
-          onAreaChange(index, {
-            ...area,
-            package_price: 0,
+            package_price: undefined, // ✅ เปลี่ยนจาก 0 เป็น undefined
             package_price_id: undefined,
-            total_price: (area.items || []).reduce(
-              (sum, item) =>
-                sum +
-                (Number(item.product_price) || 0) *
-                (Number(item.quantity) || 0),
-              0
-            ),
+            package_type: undefined as any,
+            total_price: (area.items || []).reduce((sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
           });
         }
       }
     }
-  }, [area.area_size, selectedPackage?.id, isEditing, index]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area.area_size, area.package_type, activePackage, sortedConditions, index]);
 
   const isPriceInvalid = useMemo(() => {
     if (!selectedCondition || typeof area.package_price !== 'number')
@@ -277,6 +271,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (Math.abs(currentEstimatedCost - newTotalCost) > 0.001) {
       onAreaChange(index, { ...area, total_price: newTotalCost });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     area.items,
     area.package_price,
@@ -306,15 +301,19 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     price: number,
     hasTermiteProtection: PackageType,
     priceConditionId?: string,
-    newPackageId?: string
+    pkgId?: string
   ) => {
     setSelectedStandardPrice(price);
+    
+    if (pkgId) {
+      setOptimisticPackageId(pkgId);
+    }
+
     onAreaChange(index, {
       ...area,
       package_price: price,
       package_type: hasTermiteProtection,
       ...(priceConditionId ? { package_price_id: priceConditionId } : {}),
-      ...(newPackageId ? { package_id: newPackageId } : {}),
       total_price:
         price +
         (area.items || []).reduce(
@@ -452,7 +451,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     {area.area_size ? `${area.area_size} ตร.ม.` : 'ไม่ระบุขนาด'}
                   </span>
                   {area.building_type && <span>• {area.building_type}</span>}
-                  {selectedPackage && <span>• {selectedPackage.name}</span>}
+                  {activePackage && <span>• {activePackage.name}</span>}
                 </div>
               )}
             </div>
@@ -617,16 +616,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   )
                                   : null;
 
-                                // ✅ ให้ยึด package_id จาก state ปัจจุบันที่อัปเดตเร็วกว่าก่อน
-                                const activePackageId = area.package_id || selectedPackage?.id;
                                 const isSelected = activePackageId === pkg.id;
 
-                                const isWithTermiteSelected = isSelected && (
+                                const isWithTermiteSelected = isSelected && area.package_price_id === fit?.id && (
                                   area.package_type === PackageType.WITH_TERMITE || 
                                   (!area.package_type && area.package_price === fit?.price_with_termite)
                                 );
                                 
-                                const isWithoutTermiteSelected = isSelected && (
+                                const isWithoutTermiteSelected = isSelected && area.package_price_id === fit?.id && (
                                   area.package_type === PackageType.WITHOUT_TERMITE || 
                                   (!area.package_type && area.package_price === fit?.price_without_termite)
                                 );
@@ -637,9 +634,21 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                     role="button"
                                     tabIndex={0}
                                     onClick={() => {
-                                      onSelectPackage?.(pkg.id);
-                                      if (area.package_id !== pkg.id) {
-                                        onAreaChange(index, { ...area, package_id: pkg.id });
+                                      if (activePackageId !== pkg.id) {
+                                        setOptimisticPackageId(pkg.id);
+                                        onSelectPackage?.(pkg.id);
+                                        
+                                        // ✅ บังคับล้างเป็น undefined แทน 0 เพื่อไม่ให้เกิด Error ราคาต่ำกว่าเกณฑ์
+                                        onAreaChange(index, {
+                                          ...area,
+                                          package_price: undefined, 
+                                          package_price_id: undefined,
+                                          package_type: undefined as any,
+                                          total_price: (area.items || []).reduce(
+                                            (sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0),
+                                            0
+                                          ),
+                                        });
                                       }
                                     }}
                                     className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full cursor-pointer ${isSelected
@@ -766,7 +775,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       )}
 
                     {/* Standard Size Options */}
-                    {selectedPackage && sortedConditions.length > 0 && (
+                    {activePackage && sortedConditions.length > 0 && (
                       <div className="mb-4">
                         <p className="text-sm font-medium text-slate-800 mb-2">
                           เลือกจากขนาดมาตรฐาน:
@@ -823,19 +832,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       </div>
                     </div>
 
-                    {/* Show current package price if calculated */}
-                    {selectedPackage &&
-                      area.area_size &&
-                      area.area_size > 0 && (
-                        <div className="mt-2 p-3 bg-primary/5  border border-blue-100 rounded-lg flex justify-between items-center">
-                          <span className="text-sm text-primary font-medium">
-                            ราคาแพ็กเกจสำหรับ {area.area_size} ตร.ม.:
-                          </span>
-                          <span className="text-lg text-primary font-bold">
-                            ฿{(area.package_price || 0).toLocaleString()}
-                          </span>
-                        </div>
-                      )}
                   </div>
                 )}
               </div>
