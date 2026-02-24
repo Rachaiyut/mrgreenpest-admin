@@ -71,19 +71,19 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  useEffect(() => {
-    const fetchContracts = async () => {
-      try {
-        const response = await ContractApi.getAll();
-        if (response && response.data) {
-          setContracts(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch contracts:', error);
+  const fetchContractsData = async () => {
+    try {
+      const response = await ContractApi.getAll();
+      if (response && response.data) {
+        setContracts(response.data);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch contracts:', error);
+    }
+  };
 
-    fetchContracts();
+  useEffect(() => {
+    fetchContractsData();
   }, []);
 
   // Stats calculations
@@ -219,8 +219,19 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   };
 
   const handleConfirmDelete = async () => {
-    if (selectedContract && onDeleteContract) {
-      await onDeleteContract(selectedContract.id);
+    if (selectedContract) {
+      try {
+        if (onDeleteContract) {
+          await onDeleteContract(selectedContract.id);
+        } else {
+          // ถ้าไม่มี Props ส่งมา ให้เรียก API ลบโดยตรง
+          await ContractApi.delete(selectedContract.id); // *ตรวจสอบให้แน่ใจว่าใน API คุณชื่อฟังก์ชัน delete() หรือ remove()*
+        }
+        // ลบสำเร็จ ให้ดึงข้อมูลมาแสดงใหม่
+        fetchContractsData();
+      } catch (error) {
+        console.error('Failed to delete contract:', error);
+      }
     }
     setIsDeleteModalOpen(false);
     setSelectedContract(null);
@@ -241,9 +252,16 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   };
 
   const handleStatusConfirm = async () => {
-    if (selectedContract && onUpdateContract) {
+    if (selectedContract) {
       try {
-        await onUpdateContract({ ...selectedContract, status: targetStatus });
+        if (onUpdateContract) {
+          await onUpdateContract({ ...selectedContract, status: targetStatus });
+        } else {
+          // ถ้าไม่มี Props ส่งมา ให้เรียก API อัปเดตโดยตรง
+          await ContractApi.update(selectedContract.id, { ...selectedContract, status: targetStatus });
+        }
+        // อัปเดตสำเร็จ ให้ดึงข้อมูลมาแสดงใหม่
+        fetchContractsData();
       } catch (error) {
         console.error('Failed to update status:', error);
       }
@@ -659,6 +677,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       <CreateContractModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchContractsData}
       />
 
       <EditContractModal
@@ -668,6 +687,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           setSelectedContract(null);
         }}
         contract={selectedContract}
+        onSuccess={fetchContractsData}
       />
 
       {/* Delete Confirmation Modal */}

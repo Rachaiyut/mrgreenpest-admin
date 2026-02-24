@@ -75,9 +75,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   // Local state for fetched data
   const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
-  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>(
-    []
-  );
+  const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
   const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
   const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
 
@@ -103,19 +101,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     initData();
   }, []);
 
-  // Ensure we use the most complete list of categories (Context + potentially fetched)
-  // For now, relying on Context 'categories' is standard pattern in this app.
-  // If 'categories' is empty, we might want to trigger a fetch in DataContext or here.
-
   // Service Type Options derived from categories
   const serviceTypeOptions = useMemo(() => {
     const sourceCategories = fetchedCategories;
     return sourceCategories
       .filter((c: any) => c.type === 'SERVICE')
       .map((c: any) => ({
-        value: c.name, // Use name as value to match backend expectation of string
+        value: c.name,
         label: c.name,
-        id: c.id, // Keep ID for reference if needed
+        id: c.id,
       }));
   }, [fetchedCategories]);
 
@@ -199,7 +193,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       ? new Date(initialValues.created_at).toISOString().substring(0, 10)
       : ''
   );
-  const [validityDays, setValidityDays] = useState(30); // Default, logic to calc from existing expiry needed if edit
+  const [validityDays, setValidityDays] = useState(30);
   const [expiresAt, setExpiresAt] = useState(
     initialValues?.expires_at
       ? new Date(initialValues.expires_at).toISOString().substring(0, 10)
@@ -228,28 +222,26 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     initialValues?.system_used || ''
   );
 
-  // Convert comma-separated string back to array if needed, or default to empty array
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
     initialValues?.service_type
       ? initialValues.service_type
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       : []
   );
-  // Keep serviceType state synced for backward compatibility or simple submission logic
+
   const [serviceType, setServiceType] = useState(
     initialValues?.service_type || ''
   );
 
-  // Sync serviceType string when selectedServiceTypes changes
   useEffect(() => {
     setServiceType(selectedServiceTypes.join(', '));
   }, [selectedServiceTypes]);
 
   const [paymentTerms, setPaymentTerms] = useState(
     initialValues?.payment_terms ||
-      'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย'
+    'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย'
   );
   const [notes, setNotes] = useState(initialValues?.notes || '');
   const [contractDuration, setContractDuration] = useState(
@@ -259,16 +251,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     initialValues?.service_count || '7 ครั้ง'
   );
 
-  // Reset when usePackagePricing changes back to false if needed, but usually we keep last valid or default
-  // Logic to sync package defaults if package changes is handled in useEffect[selectedAssessment]
-
   // Line items
   const [items, setItems] = useState<QuotationItem[]>(
     initialValues?.items
       ?.filter((item: any) => {
-        // Filter legacy artifacts from bug
         if (item.unit === 'พื้นที่' && !item.product_id) return false;
-        // Filter out package items if they are accidentally in the list (identified by unit 'งาน/แพ็กเกจ' or description starting with 'แพ็กเกจ:')
         if (
           item.unit === 'งาน/แพ็กเกจ' ||
           item.description?.startsWith('แพ็กเกจ:')
@@ -297,7 +284,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     ]
   );
 
-  // Standard service counts for dropdown
   const standardServiceCounts = [
     '1 ครั้ง',
     '3 ครั้ง',
@@ -308,7 +294,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     '24 ครั้ง',
   ];
 
-  // Ensure custom service count is available in options
   const serviceCountOptions = useMemo(() => {
     const options = [...standardServiceCounts];
     if (serviceCount && !options.includes(serviceCount)) {
@@ -322,19 +307,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return options;
   }, [serviceCount]);
 
-  // VAT settings
   const [includeVat, setIncludeVat] = useState(
     initialValues?.include_vat ?? true
   );
   const vatRate = 0.07;
 
-  // Product options for dropdown (filter out PACKAGE items)
   const productOptions = useMemo(() => {
     return (
       products
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        .filter((p) => p.type !== 'PACKAGE') // Filter out products with type 'PACKAGE'
+        .filter((p) => p.type !== 'PACKAGE')
         .map((p) => ({
           value: p.id,
           label: `${p.code} - ${p.name}`,
@@ -343,7 +325,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     );
   }, [products]);
 
-  // Assessment options for dropdown
   const assessmentOptions = useMemo(() => {
     return (fetchedAssessments || []).map((a) => {
       const customerName = a.customer
@@ -357,11 +338,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     });
   }, [fetchedAssessments]);
 
-  // Selected assessment details
   const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
   const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null);
 
-  // Fetch full assessment details when ID changes
   useEffect(() => {
     if (selectedAssessmentId) {
       const fetchFull = async () => {
@@ -369,14 +348,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           const res = await AssessmentApi.getById(selectedAssessmentId);
           setFullAssessment(res);
 
-          // If assessment has package_id (or nested package object with ID), fetch package details explicitly
           const packageId = res.package_id || (res.package && res.package.id);
 
           if (packageId) {
             try {
               const pkgRes = await PackageApi.getPackageById(packageId);
               setFetchedPackage(pkgRes);
-              setSelectedPackageId(packageId); // Sync selection
+              setSelectedPackageId(packageId);
             } catch (pkgErr) {
               console.error('Error fetching package details:', pkgErr);
               setFetchedPackage(null);
@@ -393,7 +371,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       };
       fetchFull();
     } else if (selectedPackageId) {
-      // Manual Package Selection
       const pkg = fetchedPackages.find((p) => p.id === selectedPackageId);
       if (pkg) {
         setFetchedPackage(pkg);
@@ -416,7 +393,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         : fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
 
     if (assessment && fetchedPackage) {
-      // Check if assessment links to this package either via package_id OR if the nested package object has the same ID
       const assessmentPkgId =
         assessment.package_id || (assessment.package && assessment.package.id);
 
@@ -424,9 +400,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         return {
           ...assessment,
           package: {
-            ...assessment.package, // Keep existing props
-            ...fetchedPackage, // Overwrite with full master details
-            // Ensure package_price is carried over
+            ...assessment.package,
+            ...fetchedPackage,
             package_prices:
               fetchedPackage.package_prices ||
               assessment.package?.package_prices,
@@ -442,12 +417,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     fetchedPackage,
   ]);
 
-  // Selected customer details
   const selectedCustomer = useMemo(() => {
     return fetchedCustomers.find((c) => c.id === selectedCustomerId);
   }, [fetchedCustomers, selectedCustomerId]);
 
-  // Initialize dates if create mode
   useEffect(() => {
     if (mode === 'create' && !initialValues) {
       const today = new Date();
@@ -461,7 +434,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       initialValues?.created_at &&
       initialValues?.expires_at
     ) {
-      // Calculate validity days from existing dates
       const start = new Date(initialValues.created_at);
       const end = new Date(initialValues.expires_at);
       const diffTime = Math.abs(end.getTime() - start.getTime());
@@ -470,25 +442,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [mode, initialValues]);
 
-  // Auto-fill from assessment when selected (only if not editing/revising existing data, or user explicitly changes assessment)
-  // We need to be careful not to overwrite data when loading an existing quotation
-  // For now, we'll only auto-fill if the selectedAssessmentId changes and it matches the one passed in via props/init only if we are in create mode or explicit change
-  // Actually, safer to just run this if it's a NEW selection.
-  // To simplify: if mode is Create, we behave as before.
-  // If mode is Edit/Revise, we assume data is loaded from initialValues, but if user changes assessment, we might want to prompt or just not auto-fill blindly.
-  // For this task, let's keep the logic but maybe guard it.
-
-  // Package Info from Assessment
   const [packagePrice, setPackagePrice] = useState(0);
   const [packageName, setPackageName] = useState('');
   const [usePackagePricing, setUsePackagePricing] = useState(false);
 
-  // Payment Condition
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(
     PaymentMethod.TRANSFER
   );
 
-  // Installment Logic
   const [isInstallment, setIsInstallment] = useState(
     !!(
       initialValues?.is_installment ||
@@ -498,34 +459,30 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [installments, setInstallments] = useState<any[]>(
     initialValues?.installments && initialValues.installments.length > 0
       ? [...initialValues.installments]
-          .sort((a: any, b: any) => a.installment_no - b.installment_no)
-          .map((inst: any) => ({
-            installment_no: inst.installment_no,
-            amount: inst.amount,
-            notes: inst.notes || '',
-          }))
+        .sort((a: any, b: any) => a.installment_no - b.installment_no)
+        .map((inst: any) => ({
+          installment_no: inst.installment_no,
+          amount: inst.amount,
+          notes: inst.notes || '',
+        }))
       : []
   );
 
-  // Effect to init paymentCondition based on initialValues
   useEffect(() => {
     if (initialValues?.installments && initialValues.installments.length > 0) {
       setPaymentCondition(PaymentMethod.INSTALLMENT);
     }
   }, [initialValues]);
 
-  // Auto-fill from Package (Direct Selection)
   useEffect(() => {
     if (fetchedPackage && !selectedAssessmentId) {
       setUsePackagePricing(true);
       setPackageName(fetchedPackage.name);
 
-      // Service Count
       if (fetchedPackage.visit_limit) {
         setServiceCount(`${fetchedPackage.visit_limit} ครั้ง`);
       }
 
-      // Duration
       if (fetchedPackage.visit_limit) {
         const period = Number(fetchedPackage.visit_limit);
         if (period >= 12) {
@@ -535,7 +492,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
       }
 
-      // Price Calculation
       let areaSize = 0;
       if (serviceArea) {
         areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
@@ -553,7 +509,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         );
 
         if (condition) {
-          // Check for Termite service
           const hasTermite = selectedServiceTypes.some((s) =>
             /ปลวก|termite/i.test(s)
           );
@@ -577,10 +532,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
 
-  // Auto-fill from assessment when selected
   useEffect(() => {
     if (selectedAssessment) {
-      // Set customer
       if (
         selectedAssessment.customer_id &&
         (mode === 'create' || !selectedCustomerId)
@@ -588,7 +541,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         setSelectedCustomerId(selectedAssessment.customer_id);
       }
 
-      // Set service location if empty
       if (!serviceLocation) {
         const address = [
           selectedAssessment.address,
@@ -602,54 +554,36 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         setServiceLocation(address);
       }
 
-      // Auto-fill buildingType, serviceArea, serviceType, serviceSystem from assessment_areas
-      // These are needed for validation and backward compatibility
       if (
         selectedAssessment.assessment_areas &&
         selectedAssessment.assessment_areas.length > 0
       ) {
-        console.log(
-          '🔍 Auto-filling from assessment_areas:',
-          selectedAssessment.assessment_areas
-        );
-
-        // Aggregate from all areas - always set when assessment is selected
         const buildingTypes = selectedAssessment.assessment_areas
           .map((a) => a.building_type)
           .filter(Boolean);
         if (buildingTypes.length > 0) {
           const uniqueTypes = [...new Set(buildingTypes)];
-          console.log('✅ Setting buildingType:', uniqueTypes[0]);
           setBuildingType(uniqueTypes[0]);
         }
 
-        // Sum all areas
         const totalArea = selectedAssessment.assessment_areas.reduce(
           (sum, a) => sum + (Number(a.area_size) || 0),
           0
         );
         if (totalArea > 0) {
-          console.log(
-            '✅ Setting serviceArea:',
-            `${totalArea.toFixed(2)} ตร.ม.`
-          );
           setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
         }
 
-        // Aggregate service systems
         const systems = selectedAssessment.assessment_areas
           .map((a) => a.service_system)
           .filter(Boolean);
         if (systems.length > 0) {
           const uniqueSystems = [...new Set(systems)];
-          console.log('✅ Setting serviceSystem:', uniqueSystems[0]);
           setServiceSystem(uniqueSystems[0]);
         }
 
-        // Aggregate all category_services
         const allCategories = new Set<string>();
         selectedAssessment.assessment_areas.forEach((area) => {
-          console.log('📋 Area category_services:', area.category_services);
           area.category_services?.forEach((cat) => {
             const categoryName = cat.category?.name || cat.name;
             if (categoryName) {
@@ -657,34 +591,23 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             }
           });
         });
-        console.log('📋 All categories found:', Array.from(allCategories));
         if (allCategories.size > 0) {
           const categoryString = Array.from(allCategories).join(', ');
-          console.log('✅ Setting serviceType:', categoryString);
           setServiceType(categoryString);
           setSelectedServiceTypes(Array.from(allCategories));
-        } else {
-          console.warn('⚠️ No categories found in assessment_areas!');
         }
       }
 
-      // Check for Package
       if (selectedAssessment.package) {
         setUsePackagePricing(true);
         setPackageName(selectedAssessment.package.name);
-        // Use Master Package Price instead of Assessment Total
         let masterPrice = 0;
 
-        // Prioritize fetchedPackage (Master Data) over selectedAssessment.package
-        // Because selectedAssessment.package might have stale or incomplete data (e.g. missing prices)
         const pkg = fetchedPackage || selectedAssessment.package;
 
         if (pkg) {
-          // Check for both property names just in case (backend inconsistency between finding by ID vs relation)
           const pkgPrices = pkg.package_prices;
 
-          // Determine Area Size: Use form value (editable) or fallback to assessment area
-          // Parse "68.00 ตร.ม." -> 68.00
           let areaSize = 0;
           if (serviceArea) {
             areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
@@ -704,40 +627,29 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             Array.isArray(pkgPrices) &&
             pkgPrices.length > 0
           ) {
-            // Update Service Count from Package
             if (pkg.visit_limit) {
               setServiceCount(`${pkg.visit_limit} ครั้ง`);
             }
 
-            // Update Contract Duration from Package
             if (pkg.visit_limit) {
               const period = Number(pkg.visit_limit);
-              // Only update if not already set by user?
-              // Since this effect runs on assessment selection, we assume user wants the package defaults.
               if (period >= 12) {
-                // If period is multiple of 12, show in years
                 const years = period / 12;
-                // Handle integer vs float if needed
                 setContractDuration(`${years} ปี`);
               } else {
                 setContractDuration(`${period} เดือน`);
               }
             }
 
-            // Sort by area_range ASC
-            // Sort by area_range ASC
             const sortedPrices = [...pkgPrices].sort(
               (a: any, b: any) => Number(a.area_range) - Number(b.area_range)
             );
 
-            // Find first tier where area_range >= area_size
             const condition = sortedPrices.find(
               (p: any) => Number(p.area_range) >= areaSize
             );
 
             if (condition) {
-              // Check for Termite service
-              // We check the assessment area categories to see if "Termite" service is required
               let hasTermite = false;
 
               if (
@@ -769,16 +681,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           }
         }
 
-        // Fallback to assessment total if calculation failed or returned 0 (and we have no package data)
         if (masterPrice === 0 && selectedAssessment.total_price) {
           masterPrice = Number(selectedAssessment.total_price);
         }
 
         setPackagePrice(masterPrice);
 
-        // If using package pricing, we also populate items from areas if available (as additional items)
         if (mode === 'create' && (!items || items.length === 0)) {
-          // Check if there are items in assessment areas
           if (
             selectedAssessment.assessment_areas &&
             selectedAssessment.assessment_areas.length > 0
@@ -787,18 +696,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
             selectedAssessment.assessment_areas.forEach((area) => {
               if (area.items && area.items.length > 0) {
-                // Map specific product items
                 area.items.forEach((item) => {
-                  if (!item.product_id) return; // Skip items without product ID
+                  if (!item.product_id) return;
 
-                  // Find master product price to ensure accuracy
                   const masterProduct = products.find(
                     (p) => p.id === item.product_id
                   );
                   const unitPrice = masterProduct
                     ? Number(masterProduct.price) ||
-                      Number(masterProduct.cost_price) ||
-                      0
+                    Number(masterProduct.cost_price) ||
+                    0
                     : Number(item.product_price) || 0;
 
                   newItems.push({
@@ -820,7 +727,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           }
         }
       } else if (mode === 'create' && !initialValues?.items) {
-        // Fallback: No package, map areas to items
         if (
           selectedAssessment.assessment_areas &&
           selectedAssessment.assessment_areas.length > 0
@@ -829,18 +735,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
           selectedAssessment.assessment_areas.forEach((area) => {
             if (area.items && area.items.length > 0) {
-              // Map specific product items
               area.items.forEach((item) => {
-                if (!item.product_id) return; // Skip items without product ID
+                if (!item.product_id) return;
 
-                // Find master product price to ensure accuracy (optional, but requested implicitly)
                 const masterProduct = products.find(
                   (p) => p.id === item.product_id
                 );
                 const unitPrice = masterProduct
                   ? Number(masterProduct.price) ||
-                    Number(masterProduct.cost_price) ||
-                    0
+                  Number(masterProduct.cost_price) ||
+                  0
                   : Number(item.product_price) || 0;
 
                 newItems.push({
@@ -860,40 +764,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
       }
 
-      // Auto-fill Installments
       if (
         selectedAssessment.installments &&
         selectedAssessment.installments.length > 0
       ) {
-        console.log(
-          '✅ Auto-filling installments from assessment:',
-          selectedAssessment.installments
-        );
         setPaymentCondition(PaymentMethod.INSTALLMENT);
 
-        // If includeVat is true, we need to scale the installments to match Net Total
-        // Calculate total assessment amount to use as base for proportion
         const totalAssessmentAmount = selectedAssessment.installments.reduce(
           (sum: number, i: any) => sum + (Number(i.amount) || 0),
           0
         );
 
-        // Determine target total:
-        // Since items/packagePrice are set above, we can estimate the subtotal
-        // Logic mirrors the 'subtotal' useMemo
         let estimatedSubtotal = 0;
 
-        // If package pricing is used (set above)
         if (selectedAssessment.package) {
           estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
-          // Note: masterPrice calculation logic above is complex, but generally matches total_price or package_price
-          // If we can't perfectly replicate it here without code duplication,
-          // we can rely on totalAssessmentAmount if it matches total_price.
         } else {
-          // Items sum
-          // We just created 'newItems' above or have existing items
-          // If we just set items, we can't access 'items' state immediately here
-          // So we use totalAssessmentAmount as proxy for subtotal if it matches assessment total
           estimatedSubtotal =
             Number(selectedAssessment.total_price) || totalAssessmentAmount;
         }
@@ -903,13 +789,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           ? estimatedSubtotal * 1.07
           : estimatedSubtotal;
 
-        // Scale factor
         const scale =
           totalAssessmentAmount > 0 ? targetTotal / totalAssessmentAmount : 1;
 
         let accumulatedAmount = 0;
 
-        // Sort installments by installment_no before processing
         const sortedAssessmentInstallments = [
           ...selectedAssessment.installments,
         ].sort((a: any, b: any) => a.installment_no - b.installment_no);
@@ -920,12 +804,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             let newAmount = 0;
 
             if (index === sortedAssessmentInstallments.length - 1) {
-              // Last installment takes the remainder to ensure exact match
               newAmount = targetTotal - accumulatedAmount;
             } else {
               newAmount = originalAmount * scale;
-              // Round to 2 decimals usually, but let's keep precision until display?
-              // No, form inputs need defined values.
               newAmount = Math.round(newAmount * 100) / 100;
               accumulatedAmount += newAmount;
             }
@@ -950,7 +831,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     serviceArea,
   ]);
 
-  // Update expiry date when validity days change
   useEffect(() => {
     if (quotationDate) {
       const date = new Date(quotationDate);
@@ -959,10 +839,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [quotationDate, validityDays]);
 
-  // Auto-fill customer info
   useEffect(() => {
     if (selectedCustomer) {
-      // Fill address if empty or creating new
       if (!serviceLocation || mode === 'create') {
         if (!serviceLocation) {
           const address = [
@@ -979,14 +857,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
       }
 
-      // Fill contact phone if empty
       if (!contactPhone) {
         setContactPhone(selectedCustomer.phone || '');
       }
     }
   }, [selectedCustomer]);
 
-  // Handle item changes
   const handleItemChange = (
     id: string,
     field: keyof QuotationItem,
@@ -998,7 +874,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         const updated = { ...item, [field]: value };
 
-        // Recalculate amount
         if (field === 'quantity' || field === 'unitPrice') {
           updated.amount = updated.quantity * updated.unitPrice;
         }
@@ -1008,7 +883,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     );
   };
 
-  // Handle product selection
   const handleProductSelect = (itemId: string, productId: string) => {
     const product = products.find((p) => p.id === productId);
     setItems((prev) =>
@@ -1064,7 +938,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     setUsePackagePricing(isChecked);
 
     if (isChecked) {
-      // Auto-fill package info if available
       const pkg = selectedAssessment?.package || fetchedPackage;
       if (pkg) {
         setPackageName(pkg.name);
@@ -1072,11 +945,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           setPackagePrice(Number(selectedAssessment.total_price) || 0);
         }
       }
-
-      // Clear items for "Add-ons" (user adds manually)
       setItems([]);
     } else {
-      // Restore items from assessment areas if available
       if (
         selectedAssessment?.assessment_areas &&
         selectedAssessment.assessment_areas.length > 0
@@ -1085,18 +955,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         selectedAssessment.assessment_areas.forEach((area) => {
           if (area.items && area.items.length > 0) {
-            // Map specific product items
             area.items.forEach((item) => {
-              if (!item.product_id) return; // Skip items without product ID
+              if (!item.product_id) return;
 
-              // Find master product price to ensure accuracy (optional, but requested implicitly)
               const masterProduct = products.find(
                 (p) => p.id === item.product_id
               );
               const unitPrice = masterProduct
                 ? Number(masterProduct.price) ||
-                  Number(masterProduct.cost_price) ||
-                  0
+                Number(masterProduct.cost_price) ||
+                0
                 : Number(item.product_price) || 0;
 
               newItems.push({
@@ -1117,20 +985,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   };
 
-  // Calculate totals
   const subtotal = useMemo(() => {
-    // 1. If Assessment is selected (or we have quotation areas from initialValues)
     if (selectedAssessmentId) {
-      // 1a. Global Package Pricing (Override)
       if (usePackagePricing) {
         return packagePrice;
       }
 
-      // 1b. Per-Area Pricing (Sum of Areas)
-      // Prioritize quotation_areas (saved state) over assessment_areas (source state)
       const areas =
         initialValues?.quotation_areas &&
-        initialValues.quotation_areas.length > 0
+          initialValues.quotation_areas.length > 0
           ? initialValues.quotation_areas
           : selectedAssessment?.assessment_areas;
 
@@ -1142,7 +1005,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
 
-    // 2. Manual Quotation (or fallback if no areas found)
     const itemsTotal = items.reduce(
       (sum, item) => sum + (Number(item.amount) || 0),
       0
@@ -1203,14 +1065,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     );
   };
 
-  // Auto-calculate installments when netTotal changes or payment condition changes
   useEffect(() => {
     if (
       paymentCondition === PaymentMethod.INSTALLMENT &&
       installments.length === 0 &&
       netTotal > 0
     ) {
-      // Default to 2 installments if none exist
       setInstallments([
         {
           id: crypto.randomUUID(),
@@ -1225,12 +1085,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           notes: 'งวดที่ 2',
         },
       ]);
-    } else if (paymentCondition !== PaymentMethod.INSTALLMENT) {
-      // If switching away from Installment, we might want to clear, but let's be safe and only clear if not initial load
-      // For now, let's just clear if user explicitly switches.
-      // Ideally we need a flag to know if this is user action vs initial load.
-      // But simpler: if condition is Transfer, we just don't show the table.
-      // When submitting, we check the condition.
     }
   }, [paymentCondition, netTotal]);
 
@@ -1242,8 +1096,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       return;
     }
 
-    // Skip buildingType and serviceType validation if creating from assessment
-    // Backend will copy the data from assessment_areas
     if (!selectedAssessmentId) {
       if (!buildingType) {
         alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)');
@@ -1255,13 +1107,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
 
-    // Validation: If no items AND no package, alert
     const hasValidItems = items.some(
       (item) => item.description && item.amount > 0
     );
 
-    // Relax validation: Allow if assessment is linked (data might come from backend or be draft)
-    // Also allow if package pricing is selected, even if calculated price is 0 (can be edited later)
     const isAssessmentLinked = !!selectedAssessmentId;
 
     if (!hasValidItems && !usePackagePricing && !isAssessmentLinked) {
@@ -1269,7 +1118,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       return;
     }
 
-    // Validation: If installments enabled, check totals
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       const totalInstallment = installments.reduce(
         (sum, inst) => sum + (Number(inst.amount) || 0),
@@ -1283,11 +1131,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
 
-    // Prepare items: If usePackagePricing is true, add it as the first item
     let finalItems = items.map((item, index) => ({
       id: '',
       quotation_id: '',
-      sequence: index + 1, // temporary, will fix below
+      sequence: index + 1,
       product_id: item.productId || null,
       description: item.description,
       quantity: item.quantity,
@@ -1308,14 +1155,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         unit_price: packagePrice,
         amount: packagePrice,
       };
-      // Add to start
       finalItems = [packageItem, ...finalItems];
     } else {
-      // Filter out empty lines if any (optional, but good practice)
       finalItems = finalItems.filter((i) => i.description || i.amount > 0);
     }
 
-    // Re-sequence
     finalItems = finalItems.map((item, idx) => ({
       ...item,
       id: '',
@@ -1324,7 +1168,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }));
 
     const quotationData: Partial<Quotation> = {
-      ...initialValues, // preserve ID and other fields if editing
+      ...initialValues,
       assessment_id: selectedAssessmentId || undefined,
       customer_id: selectedCustomerId,
       customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
@@ -1354,8 +1198,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       installments:
         paymentCondition === PaymentMethod.INSTALLMENT
           ? installments.map((inst) => ({
-              ...inst,
-            }))
+            ...inst,
+          }))
           : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
     };
@@ -1363,7 +1207,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     await onSubmit(quotationData);
   };
 
-  // Helper for Section Header
   const SectionHeader = ({
     icon: Icon,
     title,
@@ -1378,6 +1221,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>
     </div>
   );
+
+  // 1. ฟังก์ชันแปลประเภทสิ่งปลูกสร้าง
+  const getBuildingTypeName = (type: string) => {
+    const t = (type || '').toUpperCase();
+    if (t === 'HOUSE') return 'บ้าน';
+    if (t === 'OFFICE') return 'ออฟฟิศ';
+    if (t === 'CONDO') return 'คอนโด';
+    if (t === 'TOWNHOUSE') return 'ทาวน์โฮม/ทาวน์เฮาส์';
+    if (t === 'FACTORY') return 'โรงงาน';
+    if (t === 'RESTAURANT') return 'ร้านอาหาร';
+    return type || '-';
+  };
 
   return (
     <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
@@ -1511,16 +1366,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         {/* Assessment/Quotation Area Details Section */}
         {(() => {
-          // Determine which areas to display
           const areasToDisplay =
             initialValues?.quotation_areas &&
-            initialValues.quotation_areas.length > 0
+              initialValues.quotation_areas.length > 0
               ? initialValues.quotation_areas
               : selectedAssessment?.assessment_areas;
 
           const sectionTitle =
             initialValues?.quotation_areas &&
-            initialValues.quotation_areas.length > 0
+              initialValues.quotation_areas.length > 0
               ? 'รายละเอียดพื้นที่ในใบเสนอราคา'
               : 'รายละเอียดพื้นที่ที่ประเมิน';
 
@@ -1566,8 +1420,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                             <div className="text-xs text-slate-500 mb-1">
                               ประเภทสิ่งปลูกสร้าง
                             </div>
+                            {/* 1. เรียกใช้ฟังก์ชันแปลประเภทสิ่งปลูกสร้าง */}
                             <div className="font-medium text-slate-800">
-                              {area.building_type || '-'}
+                              {getBuildingTypeName(area.building_type)}
                             </div>
                           </div>
                           <div>
@@ -1637,16 +1492,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                                 <div className="font-medium text-blue-900">
                                   {area.packagePriceRelation.package
                                     ?.contract_period
-                                    ? `${
-                                        area.packagePriceRelation.package
-                                          .contract_period >= 12
-                                          ? area.packagePriceRelation.package
-                                              .contract_period /
-                                              12 +
-                                            ' ปี'
-                                          : area.packagePriceRelation.package
-                                              .contract_period + ' เดือน'
-                                      }`
+                                    ? `${area.packagePriceRelation.package
+                                      .contract_period >= 12
+                                      ? area.packagePriceRelation.package
+                                        .contract_period /
+                                      12 +
+                                      ' ปี'
+                                      : area.packagePriceRelation.package
+                                        .contract_period + ' เดือน'
+                                    }`
                                     : '-'}
                                 </div>
                               </div>
@@ -1661,37 +1515,37 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                           <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                               {serviceTypeOptions.map((option) => {
-                                const isChecked = area.category_services?.some(
-                                  (cat: any) => {
-                                    const catId =
-                                      cat.category_id ||
-                                      cat.category?.id ||
-                                      cat.id;
-                                    const catName =
-                                      cat.name || cat.category?.name;
+                                // ดึง List บริการออกมา
+                                const serviceList = area.category_services || area.categories || [];
 
-                                    const matchId =
-                                      catId && catId === option.id;
-                                    const matchName =
-                                      catName && catName === option.value;
+                                // ใช้เทคนิคแปลงเป็น String เพื่อค้นหาแบบครอบจักรวาล
+                                const isChecked = serviceList.some((cat: any) => {
+                                  if (!cat) return false;
 
-                                    return matchId || matchName;
-                                  }
-                                );
+                                  // ไม่ว่า cat จะเป็น String หรือ Object ซ้อนลึกแค่ไหน ก็แปลงเป็น Text ทั้งหมด
+                                  const catString = typeof cat === 'string' ? cat : JSON.stringify(cat);
+
+                                  // เช็คว่าใน Text นั้น มี ID หรือ ชื่อบริการ ซ่อนอยู่หรือไม่
+                                  const hasId = option.id && catString.includes(String(option.id));
+                                  const hasName = option.value && catString.includes(String(option.value));
+
+                                  return hasId || hasName;
+                                });
 
                                 return (
                                   <label
                                     key={option.id}
-                                    className="flex items-center gap-2 cursor-pointer pointer-events-none"
+                                    className="flex items-center gap-2 cursor-pointer"
                                   >
                                     <input
                                       type="checkbox"
-                                      checked={isChecked}
+                                      checked={!!isChecked}
                                       readOnly
-                                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white h-4 w-4"
+                                      // **จุดสำคัญ:** ลบ bg-white ออกไป เพื่อไม่ให้มันไปบังสีตอนติ๊กถูก
+                                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 h-4 w-4"
                                     />
                                     <span
-                                      className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}
+                                      className={`text-sm ${isChecked ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}
                                     >
                                       {option.label}
                                     </span>
@@ -1758,7 +1612,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           );
         })()}
 
-        {/* 6. Payment Terms (Moved above Items & Pricing) */}
+        {/* 6. Payment Terms */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
           <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
 
@@ -1767,11 +1621,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               <label
                 className={`
                                 relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
-                                ${
-                                  paymentCondition === PaymentMethod.TRANSFER
-                                    ? 'border-green-500 bg-green-50 shadow-md'
-                                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                                }
+                                ${paymentCondition === PaymentMethod.TRANSFER
+                    ? 'border-green-500 bg-green-50 shadow-md'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }
                             `}
               >
                 <input
@@ -1795,13 +1648,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
               <label
                 className={`
-                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
-                                ${
-                                  paymentCondition === PaymentMethod.INSTALLMENT
-                                    ? 'border-green-500 bg-green-50 shadow-md'
-                                    : 'border-slate-200 hover:border-slate-300 bg-white'
-                                }
-                            `}
+                    relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
+                    ${paymentCondition === PaymentMethod.INSTALLMENT
+                    ? 'border-green-500 bg-green-50 shadow-md'
+                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }
+                `}
               >
                 <input
                   type="radio"
@@ -1918,11 +1770,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     0
                   ) - netTotal
                 ) >= 1 && (
-                  <p className="text-xs text-red-500 text-right">
-                    * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ (
-                    {netTotal.toLocaleString()} บาท)
-                  </p>
-                )}
+                    <p className="text-xs text-red-500 text-right">
+                      * ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ (
+                      {netTotal.toLocaleString()} บาท)
+                    </p>
+                  )}
               </div>
             )}
           </div>
@@ -1938,12 +1790,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               />
               <div className="space-y-4">
                 {items.map((item, index) => {
-                  // Find product name for display
-                  const product = products.find((p) => p.id === item.productId);
-                  const productName = product
-                    ? `${product.code} - ${product.name}`
-                    : item.description;
-
                   return (
                     <div
                       key={item.id}
@@ -2124,8 +1970,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Installment Plan Preview - REMOVED */}
       </div>
     </form>
   );
