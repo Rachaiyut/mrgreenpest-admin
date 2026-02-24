@@ -35,13 +35,11 @@ const statusLabels: Record<ContractStatus, string> = {
 };
 
 interface ContractsPageProps {
-  onCreateContract?: (data: Omit<Contract, 'id'>) => void;
   onUpdateContract?: (updated: Contract) => void;
   onDeleteContract?: (id: string) => void;
 }
 
 const ContractsPage: React.FC<ContractsPageProps> = ({
-  onCreateContract,
   onUpdateContract,
   onDeleteContract,
 }) => {

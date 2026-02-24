@@ -261,17 +261,15 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <h1 className="text-3xl font-bold text-slate-800">ใบแจ้งหนี้</h1>
           <p className="mt-1 text-slate-600">จัดการใบแจ้งหนี้ทั้งหมด</p>
         </div>
-        {onCreateInvoice && (
-          <Button
-            onClick={() => {
-              setInvoiceInitialValues(undefined);
-              setIsAddInvoiceModalOpen(true);
-            }}
-          >
-            <PlusIcon className="h-5 w-5" />
-            สร้างใบแจ้งหนี้
-          </Button>
-        )}
+        <Button
+          onClick={() => {
+            setInvoiceInitialValues(undefined);
+            setIsAddInvoiceModalOpen(true);
+          }}
+        >
+          <PlusIcon className="h-5 w-5" />
+          สร้างใบแจ้งหนี้
+        </Button>
       </div>
 
       {/* Invoice Stats Cards */}
