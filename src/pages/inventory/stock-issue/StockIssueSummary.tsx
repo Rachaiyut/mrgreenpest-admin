@@ -2,56 +2,49 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
-import { StatusBadge } from '../../../components/common/StatusBadge';
 import {
   PlusIcon,
   ManageIcon,
   EyeIcon,
-  DocumentCheckIcon,
-  XCircleIcon,
   TrashIcon,
-  TruckIcon,
   UserIcon,
   CurrencyDollarIcon,
   CalendarDaysIcon,
   PencilIcon,
+  TruckIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
 import {
-  Withdrawal as WithdrawalType,
+  StockIssueSummary as StockIssueSummaryType,
   Warehouse as WarehouseEntity,
 } from '@/src/types/entity/inventory.interface';
-import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
-import {
-  Status,
-} from '@/src/types/entity/app.interface';
-import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalModal';
-import { ApprovalModal } from '../../../components/common/ApprovalModal';
-import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
+import { WarehouseType } from '@/src/types/enums/inventory';
 import { Input, Select, Button } from '../../../components/common/FormControls';
-
 import { useData } from '../../../contexts/DataContext';
-import { EditWithdrawalModal } from '@/src/components/features/inventory/EditWithdrawalModal';
+import { AddStockIssueSummaryModal } from '../../../components/features/inventory/AddStockIssueSummaryModal';
+import { EditStockIssueSummaryModal } from '../../../components/features/inventory/EditStockIssueSummaryModal';
+import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
 
-const StockIssueSummary: React.FC = () => {
+const StockIssueSummaryPage: React.FC = () => {
   const {
-    withdrawals,
+    stockIssueSummaries,
     users,
     warehouses,
-    jobs,
-    customers,
     products,
-    assessments,
-    contracts,
     handlers,
+    fetchData,
   } = useData();
 
-  const onCreateWithdrawal = async (data: Omit<WithdrawalType, 'id'>) => {
+  // Fetch stock issue summaries on mount
+  useEffect(() => {
+    fetchData(['stockIssueSummaries']);
+  }, []);
+
+  const onCreateStockIssueSummary = async (data: Omit<StockIssueSummaryType, 'id'>) => {
     try {
-      await handlers.withdrawals.create(data);
-      // Optional: Show success toast
+      await handlers.stockIssueSummaries.create(data);
     } catch (error: any) {
-      console.error('Failed to create withdrawal', error);
+      console.error('Failed to create stock issue summary', error);
       if (
         error.response &&
         error.response.data &&
@@ -64,26 +57,21 @@ const StockIssueSummary: React.FC = () => {
     }
   };
 
-  const onUpdateWithdrawal = async (updatedItem: WithdrawalType) => {
+  const onUpdateStockIssueSummary = async (updatedItem: StockIssueSummaryType) => {
     try {
-      await handlers.withdrawals.update(updatedItem);
-      // Optional: Show success toast
+      await handlers.stockIssueSummaries.update(updatedItem);
     } catch (error) {
-      console.error('Failed to update withdrawal', error);
+      console.error('Failed to update stock issue summary', error);
     }
   };
 
-  const onDeleteWithdrawal = async (id: string) => {
+  const onDeleteStockIssueSummary = async (id: string) => {
     try {
-      await handlers.withdrawals.delete(id);
-      // Optional: Show success toast
+      await handlers.stockIssueSummaries.delete(id);
     } catch (error) {
-      console.error('Failed to delete withdrawal', error);
+      console.error('Failed to delete stock issue summary', error);
     }
   };
-
-  const stockMap = useMemo(() => new Map<string, Map<string, number>>(), []);
-  const currentUser = users.length > 0 ? users[0] : null;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -93,15 +81,11 @@ const StockIssueSummary: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [selectedWithdrawal, setSelectedWithdrawal] =
-    useState<WithdrawalType | null>(null);
+  const [selectedSummary, setSelectedSummary] =
+    useState<StockIssueSummaryType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<
-    'approve' | 'reject' | null
-  >(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
 
@@ -133,61 +117,49 @@ const StockIssueSummary: React.FC = () => {
   );
 
   const uniqueCreators = useMemo(
-    () => [...new Set(withdrawals.map((w) => w.created_by))],
-    [withdrawals]
+    () => [...new Set(stockIssueSummaries.map((s) => s.created_by).filter(Boolean))],
+    [stockIssueSummaries]
   );
 
-  const filteredWithdrawals = useMemo(() => {
-    let filtered = [...withdrawals].reverse();
+  const filteredSummaries = useMemo(() => {
+    let filtered = [...stockIssueSummaries].reverse();
 
     // Filter by creator
     if (creatorFilter !== 'all') {
-      filtered = filtered.filter((w) => w.created_by === creatorFilter);
+      filtered = filtered.filter((s) => s.created_by === creatorFilter);
     }
 
     // Filter by search query
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
-      filtered = filtered.filter((withdrawal) => {
-        const totalGoodsAmount =
-          withdrawal.items?.reduce((sum, item) => {
+      filtered = filtered.filter((summary) => {
+        const totalAmount =
+          summary.items?.reduce((sum, item) => {
             const product = productMap.get(item.product_id);
             return sum + (product ? product.price * item.quantity : 0);
           }, 0) || 0;
-        const totalExpenseAmount =
-          withdrawal.expenses?.reduce(
-            (sum, exp) => sum + Number(exp.amount),
-            0
-          ) || 0;
-        const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
-        const productNames = (withdrawal.items || [])
-          .map((item) => productMap.get(item.product_id)?.name || '')
-          .join(' ')
-          .toLowerCase();
-
-        const expenseDescriptions = (
-          withdrawal.expenses?.map((exp) => exp.description) || []
-        )
+        const productNames = (summary.items || [])
+          .map((item) => item.product_name || productMap.get(item.product_id)?.name || '')
           .join(' ')
           .toLowerCase();
 
         return (
-          (withdrawal.id || '').toLowerCase().includes(lowercasedQuery) ||
+          (summary.id || '').toLowerCase().includes(lowercasedQuery) ||
           productNames.includes(lowercasedQuery) ||
-          expenseDescriptions.includes(lowercasedQuery) ||
           totalAmount.toString().includes(lowercasedQuery) ||
-          (withdrawal.created_at &&
-            formatThaiDate(withdrawal.created_at).includes(lowercasedQuery))
+          (summary.created_at &&
+            formatThaiDate(summary.created_at).includes(lowercasedQuery)) ||
+          (summary.notes || '').toLowerCase().includes(lowercasedQuery)
         );
       });
     }
 
     return filtered;
-  }, [withdrawals, searchQuery, creatorFilter, productMap]);
+  }, [stockIssueSummaries, searchQuery, creatorFilter, productMap]);
 
-  const totalItems = filteredWithdrawals.length;
-  const paginatedWithdrawals = filteredWithdrawals.slice(
+  const totalItems = filteredSummaries.length;
+  const paginatedSummaries = filteredSummaries.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -197,27 +169,27 @@ const StockIssueSummary: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (withdrawal: WithdrawalType) => {
-    setSelectedWithdrawal(withdrawal);
+  const handleViewDetails = (summary: StockIssueSummaryType) => {
+    setSelectedSummary(summary);
     setIsDetailsModalOpen(true);
   };
 
-  const handleEditWithdrawal = (withdrawal: WithdrawalType) => {
-    setSelectedWithdrawal(withdrawal);
+  const handleEditSummary = (summary: StockIssueSummaryType) => {
+    setSelectedSummary(summary);
     setIsEditModalOpen(true);
     setOpenDropdownId(null);
   };
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
-    withdrawalId: string
+    summaryId: string
   ) => {
     event.stopPropagation();
-    if (openDropdownId === withdrawalId) {
+    if (openDropdownId === summaryId) {
       setOpenDropdownId(null);
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
-      setOpenDropdownId(withdrawalId);
+      setOpenDropdownId(summaryId);
       setDropdownPosition({
         top: buttonRect.bottom + window.scrollY,
         left: buttonRect.right + window.scrollX,
@@ -225,55 +197,21 @@ const StockIssueSummary: React.FC = () => {
     }
   };
 
-  const handleApprovalAction = (action: 'approve' | 'reject') => {
-    const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
-    if (withdrawal) {
-      setSelectedWithdrawal(withdrawal);
-      setApprovalAction(action);
-      setIsApprovalModalOpen(true);
-      setOpenDropdownId(null);
-    }
-  };
-
-  const handleConfirmApproval = (withdrawalId: string, remarks: string) => {
-    const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
-    if (withdrawalToUpdate) {
-      onUpdateWithdrawal({
-        ...withdrawalToUpdate,
-        status:
-          approvalAction === 'approve'
-            ? WithdrawalStatus.APPROVED
-            : WithdrawalStatus.REJECTED,
-        notes: remarks,
-        // approvedBy: 'ผู้ดูแลระบบ', // Mock approver - field might not exist in type
-        updated_by: 'ผู้ดูแลระบบ',
-      });
-    }
-    setIsApprovalModalOpen(false);
-    setApprovalAction(null);
-    setSelectedWithdrawal(null);
-  };
-
-  const handleCancel = (withdrawalId: string) => {
-    const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
-    if (withdrawalToUpdate) {
-      onUpdateWithdrawal({
-        ...withdrawalToUpdate,
-        status: WithdrawalStatus.CANCELLED,
-        notes: 'ยกเลิกโดยผู้ใช้',
-      });
+  const handleDelete = (summaryId: string) => {
+    if (confirm('ยืนยันการลบใบเบิก?')) {
+      onDeleteStockIssueSummary(summaryId);
     }
     setOpenDropdownId(null);
   };
 
-  // Effect to close dropdown when modal opens, ensuring state updates correctly.
+  // Effect to close dropdown when modal opens
   useEffect(() => {
-    if (isDetailsModalOpen || isApprovalModalOpen) {
+    if (isDetailsModalOpen) {
       setOpenDropdownId(null);
     }
-  }, [isDetailsModalOpen, isApprovalModalOpen]);
+  }, [isDetailsModalOpen]);
 
-  // Effect to handle clicks outside the dropdown to close it.
+  // Effect to handle clicks outside the dropdown to close it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -281,7 +219,7 @@ const StockIssueSummary: React.FC = () => {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         if (
-          !(event.target as HTMLElement).closest('button[data-withdrawal-id]')
+          !(event.target as HTMLElement).closest('button[data-summary-id]')
         ) {
           setOpenDropdownId(null);
         }
@@ -297,61 +235,30 @@ const StockIssueSummary: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const getActionItems = (withdrawal: WithdrawalType) => {
+  const getActionItems = (summary: StockIssueSummaryType) => {
     const actions = [
       {
         label: 'ดูรายละเอียด',
         icon: EyeIcon,
         color: 'text-slate-700',
         hoverBg: 'hover:bg-slate-50',
-        onClick: () => handleViewDetails(withdrawal),
+        onClick: () => handleViewDetails(summary),
       },
-    ];
-
-    // Allow editing for Draft and PendingApproval statuses
-    if (
-      withdrawal.status === WithdrawalStatus.DRAFT ||
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.Draft ||
-      withdrawal.status === Status.PendingApproval
-    ) {
-      actions.push({
+      {
         label: 'แก้ไข',
         icon: PencilIcon,
         color: 'text-blue-600',
         hoverBg: 'hover:bg-blue-50',
-        onClick: () => handleEditWithdrawal(withdrawal),
-      });
-    }
-
-    if (
-      withdrawal.status === WithdrawalStatus.PENDING ||
-      withdrawal.status === Status.PendingApproval
-    ) {
-      actions.push(
-        {
-          label: 'อนุมัติ',
-          icon: DocumentCheckIcon,
-          color: 'text-green-600',
-          hoverBg: 'hover:bg-green-50',
-          onClick: () => handleApprovalAction('approve'),
-        },
-        {
-          label: 'ไม่อนุมัติ',
-          icon: XCircleIcon,
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-          onClick: () => handleApprovalAction('reject'),
-        },
-        {
-          label: 'ยกเลิก',
-          icon: TrashIcon,
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-          onClick: () => handleCancel(withdrawal.id),
-        }
-      );
-    }
+        onClick: () => handleEditSummary(summary),
+      },
+      {
+        label: 'ลบ',
+        icon: TrashIcon,
+        color: 'text-red-600',
+        hoverBg: 'hover:bg-red-50',
+        onClick: () => handleDelete(summary.id),
+      },
+    ];
 
     return actions;
   };
@@ -362,7 +269,7 @@ const StockIssueSummary: React.FC = () => {
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
-              สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย
+              สรุปการเบิกสินค้า/อุปกรณ์
             </h1>
             <p className="mt-1 text-slate-600">
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
@@ -372,13 +279,13 @@ const StockIssueSummary: React.FC = () => {
             <div className="w-64">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, สินค้า, ค่าใช้จ่าย, จำนวนเงิน, วันที่)..."
+                placeholder="ค้นหา (เลขที่, สินค้า, จำนวนเงิน, วันที่)..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                title="ค้นหาด้วย: เลขที่เอกสารเบิก, สินค้า/อุปกรณ์, รายการค่าใช้จ่าย, จำนวนเงินที่เบิก, วันที่เบิก"
+                title="ค้นหาด้วย: เลขที่เอกสารเบิก, สินค้า/อุปกรณ์, จำนวนเงินที่เบิก, วันที่เบิก"
               />
             </div>
             <div className="w-48">
@@ -406,45 +313,33 @@ const StockIssueSummary: React.FC = () => {
 
         {/* Mobile View: Cards */}
         <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
-          {paginatedWithdrawals.map((withdrawal) => {
-            const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
-            const toWarehouse = withdrawal.to_warehouse_id
-              ? warehouseMap.get(withdrawal.to_warehouse_id)
-              : null;
-            const totalGoodsAmount =
-              withdrawal.items?.reduce((sum, item) => {
+          {paginatedSummaries.map((summary) => {
+            const warehouse = warehouseMap.get(summary.warehouse_id);
+            const totalAmount =
+              summary.items?.reduce((sum, item) => {
                 const product = productMap.get(item.product_id);
                 return sum + (product ? product.price * item.quantity : 0);
               }, 0) || 0;
-            const totalExpenseAmount =
-              withdrawal.expenses?.reduce(
-                (sum, exp) => sum + Number(exp.amount),
-                0
-              ) || 0;
-            const totalAmount = totalGoodsAmount + totalExpenseAmount;
-            const recipientName = withdrawal.recipient_id
-              ? userMap.get(withdrawal.recipient_id)
+            const requesterName = summary.requester_id
+              ? userMap.get(summary.requester_id)
               : '-';
 
             return (
-              <Card key={withdrawal.id} className="p-4">
+              <Card key={summary.id} className="p-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <p
                       className="font-bold text-primary hover:underline cursor-pointer"
-                      onClick={() => handleViewDetails(withdrawal)}
+                      onClick={() => handleViewDetails(summary)}
                     >
-                      {withdrawal.id}
+                      {summary.id}
                     </p>
-                    <div className="mt-2">
-                      <StatusBadge status={withdrawal.status} />
-                    </div>
                   </div>
                   <div className="relative">
                     <Button
                       variant="icon"
-                      data-withdrawal-id={withdrawal.id}
-                      onClick={(e) => handleDropdownToggle(e, withdrawal.id)}
+                      data-summary-id={summary.id}
+                      onClick={(e) => handleDropdownToggle(e, summary.id)}
                       className="-mr-2 -mt-2"
                     >
                       <ManageIcon className="h-5 w-5" />
@@ -455,8 +350,8 @@ const StockIssueSummary: React.FC = () => {
                   <div className="flex items-center">
                     <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                     <span>
-                      {withdrawal.created_at
-                        ? formatThaiDate(withdrawal.created_at)
+                      {summary.created_at
+                        ? formatThaiDate(summary.created_at)
                         : '-'}
                     </span>
                   </div>
@@ -473,18 +368,16 @@ const StockIssueSummary: React.FC = () => {
                   <div className="flex items-center">
                     <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                     <span className="truncate">
-                      {fromWarehouse?.name} &rarr; {toWarehouse?.name}{' '}
-                      {toWarehouse?.type === 'VEHICLE' && // Assuming string check if enum not available easily or map
-                        `(${toWarehouse.vehicle?.vehicle_registration || '-'})`}
+                      {warehouse?.name || '-'}
                     </span>
                   </div>
                   <div className="flex items-center">
                     <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้สร้าง: {withdrawal.created_by}</span>
+                    <span>ผู้สร้าง: {summary.created_by || '-'}</span>
                   </div>
                   <div className="flex items-center">
                     <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้เบิก/ผู้รับเงิน: {recipientName}</span>
+                    <span>ผู้เบิก: {requesterName}</span>
                   </div>
                 </div>
               </Card>
@@ -515,12 +408,6 @@ const StockIssueSummary: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    เลขที่เอกสารเบิก
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
                     วันที่เบิก
                   </th>
                   <th
@@ -537,9 +424,9 @@ const StockIssueSummary: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    อ้างอิง
+                    คลัง
                   </th>
                   <th
                     scope="col"
@@ -551,13 +438,7 @@ const StockIssueSummary: React.FC = () => {
                     scope="col"
                     className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
-                    ผู้เบิก/ผู้รับเงิน
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    สถานะ
+                    ผู้เบิก
                   </th>
                   <th
                     scope="col"
@@ -568,48 +449,29 @@ const StockIssueSummary: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedWithdrawals.map((withdrawal, index) => {
-                  const fromWarehouse = warehouseMap.get(
-                    withdrawal.warehouse_id
-                  );
-                  const toWarehouse = withdrawal.to_warehouse_id
-                    ? warehouseMap.get(withdrawal.to_warehouse_id)
-                    : null;
-                  const totalItemsCount =
-                    (withdrawal.items?.length || 0) +
-                    (withdrawal.expenses?.length || 0);
+                {paginatedSummaries.map((summary, index) => {
+                  const warehouse = warehouseMap.get(summary.warehouse_id);
+                  const totalItemsCount = summary.items?.length || 0;
 
-                  const totalGoodsAmount =
-                    withdrawal.items?.reduce((sum, item) => {
+                  const totalAmount =
+                    summary.items?.reduce((sum, item) => {
                       const product = productMap.get(item.product_id);
                       return (
                         sum + (product ? product.price * item.quantity : 0)
                       );
                     }, 0) || 0;
-                  const totalExpenseAmount =
-                    withdrawal.expenses?.reduce(
-                      (sum, exp) => sum + Number(exp.amount),
-                      0
-                    ) || 0;
-                  const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                  const recipientName = withdrawal.recipient_id
-                    ? userMap.get(withdrawal.recipient_id) || '-'
+                  const requesterName = summary.requester_id
+                    ? userMap.get(summary.requester_id) || '-'
                     : '-';
 
                   return (
-                    <tr key={withdrawal.id} className="hover:bg-slate-50">
+                    <tr key={summary.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
-                        onClick={() => handleViewDetails(withdrawal)}
-                      >
-                        {withdrawal.code}
-                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {withdrawal.created_at
-                          ? formatThaiDate(withdrawal.created_at)
+                        {summary.created_at
+                          ? formatThaiDate(summary.created_at)
                           : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
@@ -622,37 +484,22 @@ const StockIssueSummary: React.FC = () => {
                           maximumFractionDigits: 2,
                         })}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {Array.isArray(withdrawal.reference_ids)
-                          ? withdrawal.reference_ids.length
-                          : 0}{' '}
-                        รายการ
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {warehouse?.name || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {(() => {
-                          const creatorName =
-                            userMap.get(withdrawal.created_by) ||
-                            withdrawal.created_by;
-                          return creatorName === '[object Object]'
-                            ? 'Unknown'
-                            : creatorName;
-                        })()}
+                        {summary.created_by || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {recipientName === '[object Object]'
-                          ? 'Unknown'
-                          : recipientName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <StatusBadge status={withdrawal.status} />
+                        {requesterName}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">
                           <Button
                             variant="icon"
-                            data-withdrawal-id={withdrawal.id}
+                            data-summary-id={summary.id}
                             onClick={(e) =>
-                              handleDropdownToggle(e, withdrawal.id)
+                              handleDropdownToggle(e, summary.id)
                             }
                           >
                             <span className="sr-only">จัดการ</span>
@@ -698,12 +545,12 @@ const StockIssueSummary: React.FC = () => {
           >
             <div className="py-1" role="none">
               {(() => {
-                const withdrawal = withdrawals.find(
-                  (w) => w.id === openDropdownId
+                const summary = stockIssueSummaries.find(
+                  (s) => s.id === openDropdownId
                 );
-                if (!withdrawal) return null;
+                if (!summary) return null;
 
-                return getActionItems(withdrawal).map((action, index) => (
+                return getActionItems(summary).map((action, index) => (
                   <button
                     key={index}
                     onClick={(e) => {
@@ -723,54 +570,38 @@ const StockIssueSummary: React.FC = () => {
           document.body
         )}
 
-      <AddWithdrawalModal
+      {/* Add Modal */}
+      <AddStockIssueSummaryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateWithdrawal={onCreateWithdrawal}
-        withdrawals={withdrawals}
-        users={users}
+        onCreate={onCreateStockIssueSummary}
         warehouses={warehouses}
-        jobs={jobs as any}
-        customers={customers}
         products={products}
-        stockMap={stockMap}
-        assessments={assessments}
-        contracts={contracts}
+        users={users}
       />
-      <ApprovalModal
-        isOpen={isApprovalModalOpen}
-        onClose={() => setIsApprovalModalOpen(false)}
-        action={approvalAction}
-        item={selectedWithdrawal as any}
-        onConfirm={handleConfirmApproval}
-      />
-      <WithdrawalDetailsModal
+
+      {/* Details Modal */}
+      <StockIssueSummaryDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
-        withdrawal={selectedWithdrawal}
+        summary={selectedSummary}
         warehouses={warehouses}
         products={products}
         users={users}
       />
-      <EditWithdrawalModal
+
+      {/* Edit Modal */}
+      <EditStockIssueSummaryModal
         isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setSelectedWithdrawal(null);
-        }}
-        onUpdateWithdrawal={onUpdateWithdrawal}
-        withdrawal={selectedWithdrawal}
-        users={users}
+        onClose={() => setIsEditModalOpen(false)}
+        onUpdate={onUpdateStockIssueSummary}
+        summary={selectedSummary}
         warehouses={warehouses}
-        jobs={jobs as any}
-        customers={customers}
         products={products}
-        stockMap={stockMap}
-        assessments={assessments}
-        contracts={contracts}
+        users={users}
       />
     </>
   );
 };
 
-export default StockIssueSummary;
+export default StockIssueSummaryPage;

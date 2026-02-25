@@ -198,3 +198,20 @@ export interface ProductReturn extends IBase {
   updated_by?: string;
   items?: ProductReturnItem[];
 }
+
+// Stock Issue Summary Interfaces
+export interface StockIssueItemSummary extends IBase {
+  stock_issue_summary_id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit: string;
+}
+
+export interface StockIssueSummary extends IBase {
+  warehouse_id: string;
+  notes?: string;
+  requester_id?: string;
+  created_by?: string;
+  items?: StockIssueItemSummary[];
+}

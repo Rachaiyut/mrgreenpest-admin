@@ -17,6 +17,7 @@ export * from './receipt';
 export * from './return-to-supplier';
 export * from './service-report';
 export * from './stock-adjustment';
+export * from './stock-issue-summary';
 export * from './supplier';
 export * from './transfer';
 export * from './unit';

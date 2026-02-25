@@ -22,7 +22,7 @@ import {
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import {
   Withdrawal as WithdrawalType,
-  User,
+  User, 
   Warehouse as WarehouseType,
   FieldJob,
   Customer,

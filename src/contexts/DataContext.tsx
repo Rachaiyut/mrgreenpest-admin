@@ -26,6 +26,7 @@ import {
   Transfer,
   StockAdjustment,
   ProductReturn,
+  StockIssueSummary,
 } from '@/src/types/entity/inventory.interface';
 import { Requisition } from '@/src/types/entity/requisition.interface';
 import { GoodsReceipt } from '@/src/types/entity/good-receipt';
@@ -50,6 +51,7 @@ import { ProductReturnApi } from '@/src/api/product-return';
 import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
 import { WithdrawalApi } from '@/src/api/withdrawal';
 import { RequisitionApi } from '@/src/api/requisition';
+import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
 
 export type ResourceType =
   | 'users'
@@ -70,7 +72,8 @@ export type ResourceType =
   | 'productReturns'
   | 'returnToSuppliers'
   | 'requisitions'
-  | 'warehouseStocks';
+  | 'warehouseStocks'
+  | 'stockIssueSummaries';
 
 export interface DataContextType {
   users: User[];
@@ -92,6 +95,7 @@ export interface DataContextType {
   returnToSuppliers: ReturnToSupplier[];
   requisitions: Requisition[];
   warehouseStocks: { [key: string]: { [key: string]: number } };
+  stockIssueSummaries: StockIssueSummary[];
 
   fetchData: (resources?: ResourceType[]) => Promise<void>;
 
@@ -177,6 +181,11 @@ export interface DataContextType {
     userWallets: {
       createTransaction: (userId: string, data: any) => Promise<void>;
     };
+    stockIssueSummaries: {
+      create: (data: any) => Promise<void>;
+      update: (data: any) => Promise<void>;
+      delete: (id: string) => Promise<void>;
+    };
   };
 }
 
@@ -210,6 +219,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   const [warehouseStocks, setWarehouseStocks] = useState<{
     [key: string]: { [key: string]: number };
   }>({});
+  const [stockIssueSummaries, setStockIssueSummaries] = useState<StockIssueSummary[]>([]);
 
   // Helper to safely fetch data - returns empty array if API fails
   const safeFetch = async <T,>(fetchFn: () => Promise<any>): Promise<T[]> => {
@@ -315,7 +325,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     }
     if (shouldFetch('withdrawals')) {
       promises.push(
-        safeFetch(() => WithdrawalApi.getAll({ limit: 10 })).then((data: any) =>
+        safeFetch(() => WithdrawalApi.getAll()).then((data: any) =>
           setWithdrawals(data)
         )
       );
@@ -352,6 +362,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
             });
             setWarehouseStocks(stockMap);
           }
+        )
+      );
+    }
+    if (shouldFetch('stockIssueSummaries')) {
+      promises.push(
+        safeFetch(() => StockIssueSummaryApi.getAll()).then((data: any) =>
+          setStockIssueSummaries(data)
         )
       );
     }
@@ -593,6 +610,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
           // Create wallet transaction logic
         },
       },
+      stockIssueSummaries: {
+        create: async (data: any) => {
+          await StockIssueSummaryApi.create(data);
+          fetchData(['stockIssueSummaries', 'warehouseStocks']);
+        },
+        update: async (data: any) => {
+          await StockIssueSummaryApi.update(data.id, data);
+          fetchData(['stockIssueSummaries']);
+        },
+        delete: async (id: string) => {
+          await StockIssueSummaryApi.delete(id);
+          fetchData(['stockIssueSummaries', 'warehouseStocks']);
+        },
+      },
     }),
     []
   );
@@ -619,6 +650,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         returnToSuppliers,
         requisitions,
         warehouseStocks,
+        stockIssueSummaries,
         fetchData,
         handlers,
       }}
