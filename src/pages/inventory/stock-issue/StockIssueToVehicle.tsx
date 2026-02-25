@@ -29,7 +29,7 @@ import {
   Customer,
   Product,
 } from '@/src/types/entity/app.interface';
-import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithDrawModal';
+import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddStockIssueToVehicleModal';
 import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
@@ -728,7 +728,7 @@ const Withdrawals: React.FC = () => {
           document.body
         )}
 
-      <AddWithdrawalModal
+      <AddStockIssueToVehicleModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreateWithdrawal={onCreateWithdrawal}

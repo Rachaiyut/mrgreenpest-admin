@@ -37,7 +37,7 @@ import {
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 
-interface AddWithdrawalModalProps {
+interface AddStockIssueToVehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateWithdrawal: (withdrawal: Omit<WithdrawalType, 'id'>) => void;
@@ -60,7 +60,7 @@ interface ExpenseLineItem {
   amount: number | '';
 }
 
-export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
+export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalProps> = ({
   isOpen,
   onClose,
   onCreateWithdrawal,
