@@ -53,6 +53,7 @@ const Withdrawals: React.FC = () => {
   const onCreateWithdrawal = async (data: Omit<WithdrawalType, 'id'>) => {
     try {
       await handlers.withdrawals.create(data);
+      setIsAddModalOpen(false);
       // Optional: Show success toast
     } catch (error: any) {
       console.error('Failed to create withdrawal', error);
@@ -731,15 +732,10 @@ const Withdrawals: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreateWithdrawal={onCreateWithdrawal}
-        withdrawals={withdrawals}
         users={users}
         warehouses={warehouses}
-        jobs={jobs as any}
-        customers={customers}
         products={products}
         stockMap={stockMap}
-        assessments={assessments}
-        contracts={contracts}
         currentUser={users[0]}
       />
       <ApprovalModal

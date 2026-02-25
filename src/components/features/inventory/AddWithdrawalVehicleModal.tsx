@@ -542,7 +542,7 @@ export const AddWithdrawalModal: React.FC<AddWithdrawalModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="สร้างใบเบิกสินค้า/อุปกรณ์"
+        title="สร้างสรุปเบิกสินค้า/อุปกรณ์"
         size="5xl"
         footer={
           <div className="flex w-full justify-between items-center">
