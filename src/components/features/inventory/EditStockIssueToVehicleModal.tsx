@@ -214,6 +214,35 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
     }
   }, [isOpen, withdrawal, fetchWarehouses]); // มั่นใจว่ามี withdrawal ใน dependency
 
+  useEffect(() => {
+    if (users.length > 0) {
+      setUserOptions(users.map((u) => ({
+        value: u.id,
+        label: `${u.first_name} ${u.last_name}${u.nick_name ? ` (${u.nick_name})` : ''}`,
+      })));
+    }
+  }, [users]);
+
+  useEffect(() => {
+    if (isOpen && withdrawal) {
+      // โหลดสต็อกล่าสุดจาก API ทันทีเมื่อเปิด Modal
+      fetchWarehouses();
+
+      setFromWarehouseId(withdrawal.warehouse_id || '');
+      setToWarehouseId(withdrawal.to_warehouse_id || '');
+
+      // ตั้งค่ารายการสินค้าจากข้อมูลที่ Api ส่งมาให้ (withdrawal)
+      if (withdrawal.items) {
+        setGoodsItems(withdrawal.items.map((item, idx) => ({
+          id: `item-${idx}-${crypto.randomUUID()}`,
+          productId: item.product_id,
+          quantity: item.quantity,
+        })));
+      }
+      // ... ค่าอื่นๆ
+    }
+  }, [isOpen, withdrawal, fetchWarehouses]); // มั่นใจว่ามี withdrawal ใน dependency
+
   const handleAddProducts = (productIds: string[]) => {
     const newItems: LineItem[] = productIds.map((pid) => ({ id: crypto.randomUUID(), productId: pid, quantity: 1 }));
     setGoodsItems((prev) => [...prev, ...newItems]);

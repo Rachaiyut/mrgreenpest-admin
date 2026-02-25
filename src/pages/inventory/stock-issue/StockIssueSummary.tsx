@@ -25,13 +25,13 @@ import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
 import {
   Status,
 } from '@/src/types/entity/app.interface';
-import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalVehicleModal';
+import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
-import { EditWithdrawalModal } from '@/src/components/features/inventory/EditWithDrawฟสModal';
+import { EditWithdrawalModal } from '@/src/components/features/inventory/EditWithdrawalModal';
 
 const StockIssueSummary: React.FC = () => {
   const {
