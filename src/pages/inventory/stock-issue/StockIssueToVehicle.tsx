@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
@@ -25,36 +25,72 @@ import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
 import {
   Status,
   User,
-  FieldJob,
   Customer,
   Product,
 } from '@/src/types/entity/app.interface';
 import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddStockIssueToVehicleModal';
-import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
+import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/EditStockIssueToVehicleModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 
+import {
+  WithdrawalApi,
+  UserApi,
+  WarehouseApi,
+  CustomerApi,
+  ProductApi,
+} from '../../../api';
 import { useData } from '../../../contexts/DataContext';
 
-const Withdrawals: React.FC = () => {
-  const {
-    withdrawals,
-    users,
-    warehouses,
-    jobs,
-    customers,
-    products,
-    assessments,
-    contracts,
-    handlers,
-  } = useData();
+const StockIssueToVehicle: React.FC = () => {
+  const { handlers } = useData();
 
+  const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseEntity[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  // 1. แยก fetchAllData ออกมาไว้ข้างนอก และใช้ useCallback เพื่อให้เรียกซ้ำได้
+  const fetchAllData = useCallback(async () => {
+    try {
+      const [
+        withdrawalsRes,
+        usersRes,
+        warehousesRes,
+        customersRes,
+        productsRes,
+      ] = await Promise.all([
+        WithdrawalApi.getAll(),
+        UserApi.getAll(),
+        WarehouseApi.getWarehouses(), 
+        CustomerApi.getCustomers(),
+        ProductApi.getProducts(), 
+      ]);
+
+      if (withdrawalsRes?.data) setWithdrawals(withdrawalsRes.data);
+      if (usersRes?.data) setUsers(usersRes.data);
+      if (warehousesRes?.data) setWarehouses(warehousesRes.data);
+      if (customersRes?.data) setCustomers(customersRes.data);
+      if (productsRes?.data) setProducts(productsRes.data);
+
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  }, []);
+
+  // 2. เรียกใช้ fetchAllData ตอนโหลดหน้าครั้งแรก
+  useEffect(() => {
+    fetchAllData();
+  }, [fetchAllData]);
+
+  // 3. เพิ่ม await fetchAllData() หลังจาก Create สำเร็จ
   const onCreateWithdrawal = async (data: Omit<WithdrawalType, 'id'>) => {
     try {
       await handlers.withdrawals.create(data);
-      setIsAddModalOpen(false);
-      // Optional: Show success toast
+      setIsAddModalOpen(false); // ปิด Modal
+      await fetchAllData();     // รีเฟรชข้อมูลใหม่จาก API
     } catch (error: any) {
       console.error('Failed to create withdrawal', error);
       if (
@@ -69,21 +105,27 @@ const Withdrawals: React.FC = () => {
     }
   };
 
+  // 4. เพิ่ม await fetchAllData() หลังจาก Update สำเร็จ
   const onUpdateWithdrawal = async (updatedItem: WithdrawalType) => {
     try {
       await handlers.withdrawals.update(updatedItem);
-      // Optional: Show success toast
+      setIsEditModalOpen(false);  // ปิด Modal (เผื่อว่า Modal ลูกยังไม่ได้ปิด)
+      setSelectedWithdrawal(null);
+      await fetchAllData();       // รีเฟรชข้อมูลใหม่จาก API
     } catch (error) {
       console.error('Failed to update withdrawal', error);
+      alert('ไม่สามารถอัปเดตข้อมูลได้');
     }
   };
 
+  // 5. เพิ่ม await fetchAllData() หลังจาก Delete สำเร็จ
   const onDeleteWithdrawal = async (id: string) => {
     try {
       await handlers.withdrawals.delete(id);
-      // Optional: Show success toast
+      await fetchAllData();       // รีเฟรชข้อมูลใหม่จาก API
     } catch (error) {
       console.error('Failed to delete withdrawal', error);
+      alert('ไม่สามารถลบข้อมูลได้');
     }
   };
 
@@ -145,12 +187,10 @@ const Withdrawals: React.FC = () => {
   const filteredWithdrawals = useMemo(() => {
     let filtered = [...withdrawals].reverse();
 
-    // Filter by creator
     if (creatorFilter !== 'all') {
       filtered = filtered.filter((w) => w.created_by === creatorFilter);
     }
 
-    // Filter by search query
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       filtered = filtered.filter((withdrawal) => {
@@ -240,17 +280,17 @@ const Withdrawals: React.FC = () => {
     }
   };
 
-  const handleConfirmApproval = (withdrawalId: string, remarks: string) => {
+  // เพิ่ม await fetchAllData ในสถานะ Approval / Cancel ด้วย
+  const handleConfirmApproval = async (withdrawalId: string, remarks: string) => {
     const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
     if (withdrawalToUpdate) {
-      onUpdateWithdrawal({
+      await onUpdateWithdrawal({
         ...withdrawalToUpdate,
         status:
           approvalAction === 'approve'
             ? WithdrawalStatus.APPROVED
             : WithdrawalStatus.REJECTED,
         notes: remarks,
-        // approvedBy: 'ผู้ดูแลระบบ', // Mock approver - field might not exist in type
         updated_by: 'ผู้ดูแลระบบ',
       });
     }
@@ -259,10 +299,10 @@ const Withdrawals: React.FC = () => {
     setSelectedWithdrawal(null);
   };
 
-  const handleCancel = (withdrawalId: string) => {
+  const handleCancel = async (withdrawalId: string) => {
     const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
     if (withdrawalToUpdate) {
-      onUpdateWithdrawal({
+      await onUpdateWithdrawal({
         ...withdrawalToUpdate,
         status: WithdrawalStatus.CANCELLED,
         notes: 'ยกเลิกโดยผู้ใช้',
@@ -271,14 +311,12 @@ const Withdrawals: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  // Effect to close dropdown when modal opens, ensuring state updates correctly.
   useEffect(() => {
     if (isDetailsModalOpen || isApprovalModalOpen) {
       setOpenDropdownId(null);
     }
   }, [isDetailsModalOpen, isApprovalModalOpen]);
 
-  // Effect to handle clicks outside the dropdown to close it.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -313,7 +351,6 @@ const Withdrawals: React.FC = () => {
       },
     ];
 
-    // Allow editing for Draft and PendingApproval statuses
     if (
       withdrawal.status === WithdrawalStatus.DRAFT ||
       withdrawal.status === WithdrawalStatus.PENDING ||
@@ -753,25 +790,21 @@ const Withdrawals: React.FC = () => {
         products={products}
         users={users}
       />
-      <EditWithdrawalModal
+      <EditStockIssueToVehicleModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedWithdrawal(null);
-        }}
+        } }
         onUpdateWithdrawal={onUpdateWithdrawal}
         withdrawal={selectedWithdrawal}
         users={users}
         warehouses={warehouses}
-        jobs={jobs as any}
-        customers={customers}
         products={products}
-        stockMap={stockMap}
-        assessments={assessments}
-        contracts={contracts}
+        stockMap={stockMap}      
       />
     </>
   );
 };
 
-export default Withdrawals;
+export default StockIssueToVehicle;

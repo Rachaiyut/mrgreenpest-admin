@@ -24,20 +24,16 @@ import {
 import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
 import {
   Status,
-  User,
-  FieldJob,
-  Customer,
-  Product,
 } from '@/src/types/entity/app.interface';
 import { AddWithdrawalModal } from '../../../components/features/inventory/AddWithdrawalVehicleModal';
-import { EditWithdrawalModal } from '../../../components/features/inventory/EditWithdrawalModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
+import { EditWithdrawalModal } from '@/src/components/features/inventory/EditWithDrawฟสModal';
 
-const Withdrawals: React.FC = () => {
+const StockIssueSummary: React.FC = () => {
   const {
     withdrawals,
     users,
@@ -777,4 +773,4 @@ const Withdrawals: React.FC = () => {
   );
 };
 
-export default Withdrawals;
+export default StockIssueSummary;
