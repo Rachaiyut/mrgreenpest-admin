@@ -35,14 +35,15 @@ class NotificationService extends AuthService {
     const res = await this.http.get<any>(this.path, {
       params: query,
     });
-    // The backend returns { data: items, meta: ..., unread_count: ... } wrapped in successWithData
-    // which usually returns { data: items, meta: ... }
-    // My controller returned: successWithData(items, { ...meta, unread_count })
-    // So unread_count is in res.data.meta.unread_count
 
-    // Check how IBaseResponseArray is defined.
-    // If IBaseResponseArray<T> = { data: T[], meta: ... }
-    return res.data;
+    const payload = res.data?.data || {};
+
+    return {
+      data: (payload.items || []) as Notification[],
+      meta: payload.meta || {},
+      // keep optional unread_count extension if backend adds it later
+      unread_count: (payload.meta && (payload.meta as any).unread_count) ?? undefined,
+    } as NotificationListResponse;
   }
 
   async markAsRead(id: string): Promise<IBaseResponse<Notification>> {

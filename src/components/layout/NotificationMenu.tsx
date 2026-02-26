@@ -6,6 +6,7 @@ import {
   ExclamationTriangleIcon,
 } from '@/src/assets/icons/Icons';
 import type { Notification } from '@/src/api/notification';
+import { NotificationApi } from '@/src/api/notification';
 import { useNavigate } from 'react-router-dom';
 import { socket } from '@/src/config/socket';
 
@@ -15,17 +16,40 @@ export const NotificationMenu: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Initial load from backend
+    (async () => {
+      try {
+        const res = await NotificationApi.getAll({ page: 0, limit: 20 });
+        const items = Array.isArray(res.data) ? res.data : [];
+        setNotifications(items);
+
+        if (typeof res.unread_count === 'number') {
+          setUnreadCount(res.unread_count);
+        } else {
+          const count = items.filter((n) => !n.is_read).length;
+          setUnreadCount(count);
+        }
+      } catch (e) {
+        console.error('Failed to load notifications', e);
+      }
+    })();
+
     // Listen for connection confirmation
     function onConnect() {
       console.log('NotificationMenu: Socket connected!');
     }
     socket.on('connect', onConnect);
 
-    // Listen for incoming notifications
+    // Listen for incoming notifications via socket (real-time push)
     function onNewNotification(newNotification: Notification) {
       console.log('Received new notification:', newNotification);
-      setNotifications((prev) => [newNotification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+      setNotifications((prev) => {
+        const safePrev = Array.isArray(prev) ? prev : [];
+        const exists = safePrev.some((n) => n.id === newNotification.id);
+        if (exists) return safePrev;
+        return [newNotification, ...safePrev];
+      });
+      setUnreadCount((prev) => (typeof prev === 'number' ? prev + 1 : 1));
     }
     socket.on('notification', onNewNotification);
 
@@ -35,15 +59,20 @@ export const NotificationMenu: React.FC = () => {
     };
   }, []);
 
-  const handleClick = (notification: Notification, close: () => void) => {
-    // Mark as read locally
-    if (!notification.is_read) {
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, is_read: true } : n
-        )
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+  const handleClick = async (notification: Notification, close: () => void) => {
+    try {
+      if (!notification.is_read) {
+        await NotificationApi.markAsRead(notification.id);
+
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, is_read: true } : n
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    } catch (e) {
+      console.error('Failed to mark notification as read', e);
     }
 
     close();
@@ -56,9 +85,14 @@ export const NotificationMenu: React.FC = () => {
     }
   };
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    setUnreadCount(0);
+  const handleMarkAllRead = async () => {
+    try {
+      await NotificationApi.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch (e) {
+      console.error('Failed to mark all notifications as read', e);
+    }
   };
 
   return (
