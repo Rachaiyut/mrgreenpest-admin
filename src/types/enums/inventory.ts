@@ -13,10 +13,7 @@ export enum VehicleStatus {
 
 export enum WithdrawalStatus {
   DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
   COMPLETED = 'COMPLETED',
-  REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
 }
 

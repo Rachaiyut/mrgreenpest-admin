@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/common/FormControls';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
-import { useData } from '../../contexts/DataContext';
 import { QuotationForm } from '../../components/features/quotations/QuotationForm';
+import { QuotationApi } from '../../api/quotation';
 
 const CreateQuotationPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { handlers } = useData();
   const [assessmentId, setAssessmentId] = useState<string | null>(null);
 
   // Check URL params for assessmentId
@@ -21,7 +20,7 @@ const CreateQuotationPage: React.FC = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      await handlers.quotations.create(data);
+      await QuotationApi.create(data);
       navigate('/quotations');
     } catch (error) {
       console.error('Failed to create quotation:', error);

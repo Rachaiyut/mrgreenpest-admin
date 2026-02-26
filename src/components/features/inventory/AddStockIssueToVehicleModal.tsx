@@ -94,12 +94,59 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
+  // ==========================================
+  // 🌟 Logic: จัดการ User & Role แบบครอบจักรวาล
+  // ==========================================
+  
+  // 1. ดึงข้อมูลคนล็อกอิน (เช็คครอบคลุมทั้ง Prop และ LocalStorage)
+  const loggedInUser = useMemo(() => {
+    let role = '';
+    let id = currentUser?.id || '';
+    let name = currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'ผู้เบิก (ตัวฉันเอง)';
+
+    try {
+      const raw = localStorage.getItem('user_info');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const rawRole = parsed?.role || parsed?.role_name || parsed?.role_code || parsed?.role_id || '';
+        role = String(rawRole).toUpperCase().trim();
+        id = parsed?.id || parsed?.user_id || id;
+        if (parsed?.first_name) {
+          name = `${parsed.first_name} ${parsed.last_name || ''}`.trim();
+        }
+      }
+    } catch (e) {
+      console.error("Localstorage parsing error", e);
+    }
+
+    return { id: String(id), role, name };
+  }, [currentUser]);
+
+  // 2. เช็คว่าเป็น Role ที่ถูกล็อคหรือไม่
+  const isLockedRole = useMemo(() => {
+    return ['LEAD_TEACH', 'TECH'].includes(loggedInUser.role);
+  }, [loggedInUser.role]);
+
+  // 3. ตัวเลือกผู้ใช้งานทั้งหมด (แปลง ID เป็น String ป้องกันบัคเปรียบเทียบค่า)
   const userOptions = useMemo(() => {
     return users.map((u) => ({
-      value: u.id,
+      value: String(u.id),
       label: `${u.first_name} ${u.last_name}${u.nick_name ? ` (${u.nick_name})` : ''}`,
     }));
   }, [users]);
+
+  // 4. ตัวเลือกสำหรับ "ผู้เบิก" (ล็อครายชื่อตาม Role)
+  const requesterOptions = useMemo(() => {
+    if (isLockedRole) {
+      const myOption = userOptions.find((opt) => opt.value === loggedInUser.id);
+      return myOption ? [myOption] : [{ value: loggedInUser.id, label: loggedInUser.name }];
+    }
+    return userOptions;
+  }, [userOptions, isLockedRole, loggedInUser]);
+
+  // ==========================================
+  // 🌟 Logic: ดึงข้อมูลคลังสินค้า & เซ็ตค่าเริ่มต้น
+  // ==========================================
 
   const fetchWarehouses = useCallback(async () => {
     try {
@@ -150,17 +197,25 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     });
   }, [sourceWarehouse, products, effectiveStockMap]);
 
+  // รีเซ็ตฟอร์ม & ใส่ค่า Default เมื่อเปิด Modal
   useEffect(() => {
     if (isOpen) {
       setGoodsItems([]);
       setExpenseItems([]);
       setFromWarehouseId('');
       setToWarehouseId('');
-      setRequesterId(currentUser?.id || '');
-      setRecipientId('');
+      
+      // บังคับให้เป็นคน Login เสมอ
+      setRequesterId(loggedInUser.id);
+      setRecipientId(loggedInUser.id);
+      
       fetchWarehouses();
     }
-  }, [isOpen, currentUser, fetchWarehouses]);
+  }, [isOpen, loggedInUser.id, fetchWarehouses]);
+
+  // ==========================================
+  // 🌟 Logic: จัดการ Form Actions & Wallet
+  // ==========================================
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: LineItem[] = productIds.map((pid) => ({ id: crypto.randomUUID(), productId: pid, quantity: 1 }));
@@ -187,7 +242,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     if (!fromWarehouseId) newErrors.fromWarehouseId = 'กรุณาเลือกคลังต้นทาง';
     if (!requesterId) newErrors.requesterId = 'กรุณาเลือกผู้เบิก';
     if (goodsItems.length === 0) newErrors.goodsItems = 'ต้องมีสินค้าอย่างน้อย 1 รายการ';
-    
+
     goodsItems.forEach((item, index) => {
       if (!item.quantity || item.quantity <= 0) {
         if (!newErrors.goods) newErrors.goods = [];
@@ -223,7 +278,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
         };
       }),
       expenses: expenseItems.map((item) => ({ type: 'INCOME', description: item.description, amount: Number(item.amount) })),
-      status: WithdrawalStatus.PENDING,
+      status: WithdrawalStatus.COMPLETED,
     };
     onCreateWithdrawal(payload);
   };
@@ -262,7 +317,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   useEffect(() => {
     if (requesterId) {
       UserApi.getById(requesterId).then(setFetchedRequester).catch(() => {
-        const found = users.find((u) => u.id === requesterId);
+        const found = users.find((u) => String(u.id) === String(requesterId));
         if (found) setFetchedRequester(found);
       });
       UserApi.getWallet(requesterId).then(setWalletInfo).catch(() => setWalletInfo(null));
@@ -272,11 +327,14 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     }
   }, [requesterId, users]);
 
-  const selectedRequester = useMemo(() => fetchedRequester || users.find((u) => u.id === requesterId), [fetchedRequester, requesterId, users]);
+  const selectedRequester = useMemo(() => fetchedRequester || users.find((u) => String(u.id) === String(requesterId)), [fetchedRequester, requesterId, users]);
   const totalExpenses = useMemo(() => expenseItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), [expenseItems]);
-  
+
+  // เช็ค Over Limit แบบเติมเงิน (Income)
   const isOverLimit = useMemo(() => {
-    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
+    if (walletInfo && typeof walletInfo.balance === 'number') {
+      return (walletInfo.balance + totalExpenses) > walletInfo.expense_limit;
+    }
     if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
     return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
@@ -314,6 +372,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
         }
       >
         <form ref={goodsFormRef} id="add-goods-withdrawal-form" onSubmit={handleSubmit}>
+
           <div className="flex flex-col gap-6">
             {/* 1. Logistics Header Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -326,23 +385,72 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                   <input type="date" className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32" defaultValue={new Date().toISOString().substring(0, 10)} />
                 </div>
               </div>
-            
+
+              {/* 2. Logistics Selectors */}
               <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
-                <div className="flex-1 w-full">
+                <div className="flex-1 w-full relative z-50">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">เบิกจากคลัง (ต้นทาง) <span className="text-red-500">*</span></label>
-                  <SearchableSelect value={fromWarehouseId} onChange={(v) => { setFromWarehouseId(v); setErrors((prev: any) => ({ ...prev, fromWarehouseId: undefined })); }} options={sourceWarehouseOptions} placeholder="เลือกคลังสินค้า" className="w-full bg-white shadow-sm border-slate-200" />
+                  <SearchableSelect 
+                    value={fromWarehouseId} 
+                    onChange={(v) => { setFromWarehouseId(v); setErrors((prev: any) => ({ ...prev, fromWarehouseId: undefined })); }} 
+                    options={sourceWarehouseOptions} 
+                    placeholder="เลือกคลังสินค้า" 
+                    className="w-full bg-white shadow-sm border-slate-200" 
+                  />
                   {errors.fromWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouseId}</p>}
                 </div>
                 <div className="pt-6"><ArrowRightIcon className="w-5 h-5 text-slate-400" /></div>
-                <div className="flex-1 w-full">
+                <div className="flex-1 w-full relative z-40">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ไปยังคลัง/รถ (ปลายทาง)</label>
-                  <SearchableSelect value={toWarehouseId} onChange={setToWarehouseId} options={vehicleWarehouseOptions} placeholder="เลือกรถบริการ (ถ้ามี)" className="w-full bg-white shadow-sm border-slate-200" />
+                  <SearchableSelect 
+                    value={toWarehouseId} 
+                    onChange={setToWarehouseId} 
+                    options={vehicleWarehouseOptions} 
+                    placeholder="เลือกรถบริการ (ถ้ามี)" 
+                    className="w-full bg-white shadow-sm border-slate-200" 
+                  />
                 </div>
               </div>
             </div>
 
-            {/* 2. Items List Card */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px]">
+            {/* 3. People Card */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-30">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2"><UserIcon className="w-4 h-4 text-slate-400" />ผู้เกี่ยวข้อง</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="relative z-30">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                    ผู้เบิก (Requester) <span className="text-red-500">*</span>
+                  </label>
+                  <SearchableSelect
+                    value={requesterId}
+                    onChange={(v) => {
+                      if (isLockedRole) return; // ล็อคไม่ให้เปลี่ยนถ้าเป็น LEAD_TEACH หรือ TECH
+                      setRequesterId(v);
+                      setErrors((prev: any) => ({ ...prev, requesterId: undefined }));
+                    }}
+                    options={requesterOptions} // ใช้ Option ที่ถูก Filter แล้ว
+                    placeholder="ค้นหาชื่อผู้เบิก"
+                    className="w-full text-sm"
+                  />
+                  {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
+                </div>
+               <div className="relative z-20">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                  ผู้รับเงิน (Recipient)
+                </label>
+                <SearchableSelect 
+                  value={recipientId} 
+                  onChange={setRecipientId} 
+                  options={userOptions} // อันนี้ไม่ถูกล็อค เลือกใครก็ได้
+                  placeholder="ค้นหาชื่อผู้รับเงิน" 
+                  className="w-full text-sm" 
+                />
+              </div>
+              </div>
+            </div>
+
+            {/* 4. Items List Card */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-10">
               <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600"><DocumentCheckIcon className="w-5 h-5" /></div>
@@ -370,10 +478,10 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                           <div className="col-span-2 text-sm font-bold text-slate-800 text-left">{product?.code || 'ID:' + item.id.slice(0, 4)}</div>
                           <div className="col-span-4 text-left font-bold text-slate-800 text-sm">{product?.name || 'Unknown Product'}</div>
                           <div className="col-span-2 text-sm font-bold text-slate-800">คงเหลือ: {available.toLocaleString()}</div>
-                          <div className="col-span-1 text-sm font-bold text-slate-800">{product?.unit?.name || '-'}</div>
                           <div className="col-span-2 flex flex-col items-end gap-1">
                             <Input type="number" value={item.quantity} onChange={(e) => handleGoodsItemChange(item.id, 'quantity', Number(e.target.value))} className="w-28 text-right h-9 text-sm font-bold" />
                           </div>
+                          <div className="col-span-1 text-sm font-bold text-slate-800">{product?.unit?.name || '-'}</div>
                           <div className="col-span-1 flex justify-center"><button type="button" onClick={() => handleRemoveGoodsItem(item.id)} className="text-red-500 p-2 hover:bg-red-50 rounded-lg"><TrashIcon className="w-5 h-5" /></button></div>
                         </div>
                       );
@@ -383,23 +491,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
               </div>
             </div>
 
-            {/* 3. People Card */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2"><UserIcon className="w-4 h-4 text-slate-400" />ผู้เกี่ยวข้อง</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้เบิก (Requester) <span className="text-red-500">*</span></label>
-                  <SearchableSelect value={requesterId} onChange={(v) => { setRequesterId(v); setErrors((prev: any) => ({ ...prev, requesterId: undefined })); }} options={userOptions} placeholder="ค้นหาชื่อผู้เบิก" className="w-full text-sm" />
-                  {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้รับเงิน (Recipient)</label>
-                  <SearchableSelect value={recipientId} onChange={setRecipientId} options={userOptions} placeholder="ค้นหาชื่อผู้รับเงิน" className="w-full text-sm" />
-                </div>
-              </div>
-            </div>
-
-            {/* 4. Finance Card */}
+            {/* 5. Finance Card */}
             <div className={`p-5 rounded-xl border shadow-sm transition-all ${isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide pb-2"><span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200">฿</span> การเงิน & ค่าใช้จ่าย</h3>
@@ -409,12 +501,13 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                 <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                   <div className="flex justify-between text-xs font-semibold text-slate-500 mb-2"><span>สถานะวงเงิน</span><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOverLimit ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}</span></div>
                   <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">วงเงิน</span><span className="text-sm font-medium text-slate-600">{walletInfo.expense_limit.toLocaleString()} บาท</span></div>
-                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือปัจจุบัน</span><span className="text-sm font-medium text-slate-600">{walletInfo.balance.toLocaleString()} บาท</span></div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">เบิกค่าใช้จ่ายครั้งนี้</span><span className="text-sm font-medium text-emerald-600">+{totalExpenses.toLocaleString()} บาท</span></div>
                   )}
-                  <div className="flex items-end justify-between mb-1"><span className="text-xs font-semibold text-slate-500">คงเหลือสุทธิ</span><span className={`text-lg font-bold text-emerald-600`}>{(walletInfo.balance + totalExpenses).toLocaleString()} บาท</span></div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden"><div style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, ((walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }} className="h-full bg-emerald-500" /></div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs font-semibold text-slate-500">คงเหลือสุทธิ</span><span className={`text-lg font-bold ${isOverLimit ? 'text-red-600' : 'text-emerald-600'}`}>{(walletInfo.balance + totalExpenses).toLocaleString()} บาท</span></div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, ((walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }} className={`h-full ${isOverLimit ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                  </div>
                 </div>
               )}
               <div className="space-y-2">

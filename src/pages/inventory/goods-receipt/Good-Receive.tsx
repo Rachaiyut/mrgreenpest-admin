@@ -419,15 +419,17 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
       )}
 
       {/* 🟢 6. เปลี่ยน onCreateReceipt ส่งเป็น handleCreate แทน */}
-      <AddGoodsReceiptModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreateReceipt={handleCreate as any} 
-        receipts={receipts as any}
-        warehouses={warehouses}
-        suppliers={suppliers}
-        products={products}
-      />
+      {isAddModalOpen && (
+        <AddGoodsReceiptModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onCreateReceipt={handleCreate as any} 
+          receipts={receipts as any}
+          warehouses={warehouses}
+          suppliers={suppliers}
+          products={products}
+        />
+      )}
       <GoodsReceiptDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}

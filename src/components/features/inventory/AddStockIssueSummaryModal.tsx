@@ -96,6 +96,53 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   // ==========================================
+  // 🌟 Logic: จัดการ User & Role แบบครอบจักรวาล
+  // ==========================================
+  
+  const loggedInUser = useMemo(() => {
+    let role = '';
+    let id = currentUser?.id || '';
+    let name = currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'ผู้เบิก (ตัวฉันเอง)';
+
+    try {
+      const raw = localStorage.getItem('user_info');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const rawRole = parsed?.role || parsed?.role_name || parsed?.role_code || parsed?.role_id || '';
+        role = String(rawRole).toUpperCase().trim();
+        id = parsed?.id || parsed?.user_id || id;
+        if (parsed?.first_name) {
+          name = `${parsed.first_name} ${parsed.last_name || ''}`.trim();
+        }
+      }
+    } catch (e) {
+      console.error("Localstorage parsing error", e);
+    }
+
+    return { id: String(id), role, name };
+  }, [currentUser]);
+
+  const isLockedRole = useMemo(() => {
+    // รองรับทั้ง LEAD_TEACH และ LEAD_TECH เพื่อป้องกันปัญหาพิมพ์ผิด
+    return ['LEAD_TEACH', 'LEAD_TECH', 'TECH'].includes(loggedInUser.role);
+  }, [loggedInUser.role]);
+
+  const userOptions = useMemo(() => {
+    return users.map((u) => ({
+      value: String(u.id),
+      label: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
+    }));
+  }, [users]);
+
+  const requesterOptions = useMemo(() => {
+    if (isLockedRole) {
+      const myOption = userOptions.find((opt) => opt.value === loggedInUser.id);
+      return myOption ? [myOption] : [{ value: loggedInUser.id, label: loggedInUser.name }];
+    }
+    return userOptions;
+  }, [userOptions, isLockedRole, loggedInUser]);
+
+  // ==========================================
   // 2. DATA FETCHING & LOGIC
   // ==========================================
   const fetchWarehouses = useCallback(async () => {
@@ -133,11 +180,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
-  const userOptions = useMemo(() => users.map((u) => ({
-    value: u.id,
-    label: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown'
-  })), [users]);
-
   const displayJobs = useMemo(() => {
     if (selectedCustomerIds.length > 0) {
       return jobs.filter((j) => {
@@ -151,7 +193,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   useEffect(() => {
     if (isOpen) {
       setWarehouseId('');
-      setRecipientId('');
       setNotes('');
       setItems([]);
       setExpenseItems([]);
@@ -159,21 +200,14 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
       setReferenceIds([]);
       setIsSubmitting(false);
       
+      // บังคับให้เป็นคน Login เสมอ
+      setRequesterId(loggedInUser.id);
+      setRecipientId(loggedInUser.id);
+
       fetchWarehouses();
-
-      const currentU = currentUser ? users.find((u) => u.id === currentUser.id) : null;
-      const isTech = currentU && ['LEAD_TECH', 'TECH'].includes(
-        typeof currentU.role === 'string' ? currentU.role : (currentU.role as any)?.name
-      );
-
-      if (isTech && currentU) {
-        setRequesterId(currentU.id);
-      } else {
-        setRequesterId('');
-      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, fetchWarehouses]); 
+  }, [isOpen, fetchWarehouses, loggedInUser.id]); 
 
   useEffect(() => {
     if (requesterId) {
@@ -185,9 +219,10 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     }
   }, [requesterId]);
 
-  const selectedRequester = useMemo(() => fetchedRequester || users.find((u) => u.id === requesterId), [fetchedRequester, requesterId, users]);
+  const selectedRequester = useMemo(() => fetchedRequester || users.find((u) => String(u.id) === String(requesterId)), [fetchedRequester, requesterId, users]);
   const totalExpenses = useMemo(() => expenseItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), [expenseItems]);
   
+  // เช็ควงเงินเบิกจ่าย (EXPENSE) ถ้ายอดเบิก > ยอดเงินคงเหลือ = เกินวงเงิน
   const isOverLimit = useMemo(() => {
     if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
     if (!selectedRequester || typeof (selectedRequester as any).creditLimit !== 'number') return false;
@@ -298,7 +333,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
   const sourceWarehouse = useMemo(() => warehouses.find((w) => w.id === warehouseId) || { id: warehouseId }, [warehouseId, warehouses]);
   const existingProductIds = useMemo(() => Array.from(new Set(items.map((item) => item.product_id))), [items]);
-  const isTechUserForUI = currentUser && ['LEAD_TECH', 'TECH'].includes(typeof currentUser.role === 'string' ? currentUser.role : (currentUser.role as any)?.name);
 
   // ==========================================
   // 4. UI RENDER 
@@ -352,7 +386,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
           <div className="flex flex-col gap-6">
             
             {/* Card 1: Logistics Header */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                   <TruckIcon className="w-5 h-5" />
@@ -365,8 +399,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                 </div>
               </div>
 
-              <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100">
-                <div className="flex-1 w-full">
+              <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-4 rounded-lg border border-slate-100 relative z-50">
+                <div className="flex-1 w-full relative z-50">
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">เบิกจากรถ <span className="text-red-500">*</span></label>
                   <SearchableSelect
                     options={vehicleWarehouseOptions}
@@ -379,8 +413,39 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
               </div>
             </div>
 
-            {/* Card 2: Items List */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px]">
+            {/* Card 2: Requester / Recipient Card */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-40">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-green-50 rounded-lg text-green-600"><UserIcon className="w-5 h-5" /></div>
+                <h3 className="text-base font-semibold text-slate-800">ข้อมูลผู้เบิกและผู้รับ</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex-1 w-full relative z-40">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้เบิก (Requester) <span className="text-red-500">*</span></label>
+                  <SearchableSelect 
+                    options={requesterOptions} 
+                    value={requesterId} 
+                    onChange={(v) => {
+                      if (isLockedRole) return; // ล็อคไม่ให้เปลี่ยน
+                      setRequesterId(v);
+                    }} 
+                    placeholder="ค้นหาผู้เบิก..." 
+                  />
+                </div>
+                <div className="flex-1 w-full relative z-30">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้รับเงิน (Recipient)</label>
+                  <SearchableSelect 
+                    options={userOptions} 
+                    value={recipientId} 
+                    onChange={setRecipientId} 
+                    placeholder="ค้นหาผู้รับเงิน..." 
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Items List */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-20">
               <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -488,34 +553,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
               </div>
             </div>
 
-            {/* Card 3: Requester / Recipient Card */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-green-50 rounded-lg text-green-600"><UserIcon className="w-5 h-5" /></div>
-                <h3 className="text-base font-semibold text-slate-800">ข้อมูลผู้เบิกและผู้รับ</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้เบิก (Requester) <span className="text-red-500">*</span></label>
-                  {isTechUserForUI ? (
-                    <Input value={currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : ''} readOnly className="bg-slate-100 border-slate-200" />
-                  ) : (
-                    <SearchableSelect options={userOptions} value={requesterId} onChange={setRequesterId} placeholder="ค้นหาผู้เบิก..." />
-                  )}
-                </div>
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">ผู้รับเงิน (Recipient)</label>
-                  {isTechUserForUI ? (
-                    <Input value={currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : ''} readOnly className="bg-slate-100 border-slate-200" />
-                  ) : (
-                    <SearchableSelect options={userOptions} value={recipientId} onChange={setRecipientId} placeholder="ค้นหาผู้รับเงิน..." />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 🟢 Card 4: Finance Card (UI เก่าที่คุณต้องการ) */}
-            <div className={`p-5 rounded-xl border shadow-sm transition-all ${isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'}`}>
+            {/* Card 4: Finance Card */}
+            <div className={`p-5 rounded-xl border shadow-sm transition-all relative z-10 ${isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                 <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide pb-2">
                   <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200">฿</span> การเงิน & ค่าใช้จ่าย
@@ -534,7 +573,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                     </span>
                   </div>
                   <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">วงเงิน</span><span className="text-sm font-medium text-slate-600">{walletInfo.expense_limit.toLocaleString()} บาท</span></div>
-                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือปัจจุบัน</span><span className="text-sm font-medium text-slate-600">{walletInfo.balance.toLocaleString()} บาท</span></div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">ค่าใช้จ่ายครั้งนี้</span><span className="text-sm font-medium text-amber-600">-{totalExpenses.toLocaleString()} บาท</span></div>
                   )}
@@ -569,7 +607,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
             </div>
 
             {/* Card 5: Reference Card */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-0">
               <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
                 <DocumentCheckIcon className="w-4 h-4 text-slate-400" /> ข้อมูลอ้างอิง
               </h3>
@@ -592,7 +630,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">เอกสารอ้างอิง</label>
-                  <div className="flex gap-2 mb-2">
+                  <div className="flex gap-2 mb-2 relative z-20">
                     <select className="w-1/3 border border-slate-300 rounded-lg p-2 bg-slate-50 text-xs" value={referenceType} onChange={(e) => setReferenceType(e.target.value as any)}>
                       <option value="JOB">ใบงาน (Job)</option>
                     </select>

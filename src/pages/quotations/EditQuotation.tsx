@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '../../components/common/FormControls';
 import { LeftArrowIcon } from '../../assets/icons/Icons';
-import { useData } from '../../contexts/DataContext';
 import { QuotationForm } from '../../components/features/quotations/QuotationForm';
 import { QuotationApi } from '../../api/quotation';
 import { Quotation } from '../../types/entity/financial.interface';
@@ -13,8 +12,6 @@ const EditQuotationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') === 'revise' ? 'revise' : 'edit';
-
-  const { handlers, quotations } = useData();
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,16 +20,6 @@ const EditQuotationPage: React.FC = () => {
     const fetchQuotation = async () => {
       if (!id) return;
 
-      // First try to find in context
-      const found = quotations?.find((q) => q.id === id);
-      if (found) {
-        console.log('Found quotation in context:', found);
-        setQuotation(found);
-        setLoading(false);
-        return;
-      }
-
-      // Fallback to API
       try {
         const res = await QuotationApi.getById(id);
         if (res) {
@@ -46,7 +33,7 @@ const EditQuotationPage: React.FC = () => {
     };
 
     fetchQuotation();
-  }, [id, quotations]);
+  }, [id]);
 
   const title = useMemo(() => {
     if (mode === 'revise') return 'สร้างใบเสนอราคา (ฉบับแก้ไข)';
@@ -63,12 +50,13 @@ const EditQuotationPage: React.FC = () => {
       if (mode === 'revise') {
         const { id: _, ...createData } = data;
 
-        await handlers.quotations.create({
-          ...createData,
+        await QuotationApi.create({
+          ...(createData as any),
           status: QuotationStatus.DRAFT,
-        });
+        } as any);
       } else {
-        await handlers.quotations.update(data);
+        if (!id) throw new Error('Missing quotation id');
+        await QuotationApi.update(id, data);
       }
       navigate('/quotations');
     } catch (error) {
