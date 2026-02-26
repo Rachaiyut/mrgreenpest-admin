@@ -1,4 +1,5 @@
-import { GoodReceiptStatus } from '../enums/good-receipt';
+import { GoodsReceiptStatus } from '../enums/inventory';
+import { Status } from '../enums/base';
 import { IBase } from './base.interface';
 import { Product } from './product.interface';
 
@@ -7,7 +8,7 @@ export interface GoodsReceipt extends IBase {
   supplier_id: string;
   code: string;
   receipt_no: string;
-  status: GoodReceiptStatus;
+  status: GoodsReceiptStatus | Status;
   items: Item[];
 }
 

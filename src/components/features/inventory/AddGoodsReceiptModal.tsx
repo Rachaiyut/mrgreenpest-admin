@@ -14,7 +14,6 @@ import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 import {
   GoodsReceipt,
-  GoodsReceiptItem,
   Status,
   Warehouse as WarehouseType,
   Supplier,
@@ -42,7 +41,6 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   isOpen,
   onClose,
   onCreateReceipt,
-  receipts,
   warehouses,
   suppliers,
   products,

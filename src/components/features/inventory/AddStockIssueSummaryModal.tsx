@@ -19,7 +19,7 @@ import {
   BanknotesIcon,
 } from '../../../assets/icons/Icons';
 
-// Import Modals ต่างๆ
+// Import Modals
 import { ProductSelectionModal } from '../products/ProductSelectionModal';
 import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
 import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
@@ -75,10 +75,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const [recipientId, setRecipientId] = useState('');
   const [notes, setNotes] = useState('');
   
-  // รายการสินค้า
   const [items, setItems] = useState<Omit<StockIssueItemSummary, 'id' | 'stock_issue_summary_id'>[]>([]);
   
-  // States สำหรับ Expenses & References (Flow เก่า)
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [referenceType, setReferenceType] = useState<'JOB'>('JOB');
@@ -87,7 +85,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; } | null>(null);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
 
-  // States สำหรับดึงสต็อกคลัง/รถ
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -99,7 +96,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   // ==========================================
-  // 2. DATA FETCHING & PREPARATION
+  // 2. DATA FETCHING & LOGIC
   // ==========================================
   const fetchWarehouses = useCallback(async () => {
     try {
@@ -110,33 +107,22 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
         allWarehouses.forEach((w: any) => {
           const warehouseStock = new Map<string, number>();
-          const stockItems = Array.isArray(w.stock)
-            ? w.stock
-            : Array.isArray(w.stock_balances)
-              ? w.stock_balances
-              : [];
-
+          const stockItems = Array.isArray(w.stock) ? w.stock : Array.isArray(w.stock_balances) ? w.stock_balances : [];
           stockItems.forEach((s: any) => {
             const productId = s.product_id || s.product?.id;
             const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
-            if (productId && !isNaN(quantity)) {
-              warehouseStock.set(productId, quantity);
-            }
+            if (productId && !isNaN(quantity)) warehouseStock.set(productId, quantity);
           });
           newStockMap.set(w.id, warehouseStock);
         });
         setLocalStockMap(newStockMap);
 
-        const vehicleWhs = allWarehouses
-          .filter((w: any) => w.type === WarehouseType.VEHICLE)
-          .map((w: any) => ({ value: w.id, label: w.name }));
+        const vehicleWhs = allWarehouses.filter((w: any) => w.type === WarehouseType.VEHICLE).map((w: any) => ({ value: w.id, label: w.name }));
         setVehicleWarehouseOptions(vehicleWhs);
       }
     } catch (error) {
       console.error('Failed to fetch warehouses', error);
-      const vehicleWhs = warehouses
-        .filter((w) => w.type === WarehouseType.VEHICLE)
-        .map((w) => ({ value: w.id, label: w.name }));
+      const vehicleWhs = warehouses.filter((w) => w.type === WarehouseType.VEHICLE).map((w) => ({ value: w.id, label: w.name }));
       setVehicleWarehouseOptions(vehicleWhs);
     }
   }, [warehouses]);
@@ -152,7 +138,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     label: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown'
   })), [users]);
 
-  // ค้นหา Job ตามลูกค้าที่เลือก
   const displayJobs = useMemo(() => {
     if (selectedCustomerIds.length > 0) {
       return jobs.filter((j) => {
@@ -163,7 +148,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     return jobs;
   }, [selectedCustomerIds, jobs]);
 
-  // Reset form & Fetch Data
   useEffect(() => {
     if (isOpen) {
       setWarehouseId('');
@@ -191,7 +175,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fetchWarehouses]); 
 
-  // Effects for Wallet Fetching
   useEffect(() => {
     if (requesterId) {
       UserApi.getById(requesterId).then(setFetchedRequester).catch(() => setFetchedRequester(null));
@@ -206,9 +189,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const totalExpenses = useMemo(() => expenseItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), [expenseItems]);
   
   const isOverLimit = useMemo(() => {
-    if (walletInfo && typeof walletInfo.balance === 'number') {
-      return totalExpenses > walletInfo.balance;
-    }
+    if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
     if (!selectedRequester || typeof (selectedRequester as any).creditLimit !== 'number') return false;
     return totalExpenses > (selectedRequester as any).creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
@@ -239,17 +220,14 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     setItems(newItems);
   };
 
-  // --- Expenses Flow ---
   const handleAddExpense = () => setExpenseItems((prev) => [...prev, { id: crypto.randomUUID(), description: '', amount: '' }]);
   const handleRemoveExpenseItem = (id: string) => setExpenseItems((prev) => prev.filter((item) => item.id !== id));
   const handleExpenseItemChange = (id: string, field: keyof ExpenseLineItem, value: any) => {
     setExpenseItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
-  // --- Submit Flows ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!warehouseId) return alert('กรุณาเลือกรถบริการ');
     if (items.length === 0) return alert('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ');
 
@@ -264,12 +242,9 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         recipient_id: recipientId || undefined, 
         purpose: 'เบิกสินค้า/อุปกรณ์', 
         notes: notes || undefined,
-        status: 'PENDING', // กำหนด Status
+        status: 'PENDING',
         items: items as StockIssueItemSummary[],
-        expenses: expenseItems.map((item) => ({
-          description: item.description,
-          amount: Number(item.amount),
-        })),
+        expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
       };
 
       if (referenceIds.length > 0) payload.reference_ids = referenceIds;
@@ -277,19 +252,15 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
       await onCreate(payload);
       onClose();
-
     } catch (error) {
       console.error('Failed to create stock issue summary', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // นำฟังก์ชัน Save Draft กลับมา
   const handleSaveDraft = async () => {
     if (!warehouseId) return alert('กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง');
-
     setIsSubmitting(true);
     try {
       const payload: any = {
@@ -298,12 +269,9 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         recipient_id: recipientId || undefined,
         purpose: 'เบิกสินค้า/อุปกรณ์ (Draft)',
         notes: notes || undefined,
-        status: 'DRAFT', // สถานะฉบับร่าง
+        status: 'DRAFT', 
         items: items as StockIssueItemSummary[],
-        expenses: expenseItems.map((item) => ({
-          description: item.description,
-          amount: Number(item.amount),
-        })),
+        expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
       };
 
       if (referenceIds.length > 0) payload.reference_ids = referenceIds;
@@ -311,10 +279,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
       await onCreate(payload);
       onClose();
-
     } catch (error) {
       console.error('Failed to save draft', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกฉบับร่าง');
     } finally {
       setIsSubmitting(false);
     }
@@ -322,12 +288,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
   const productsInWarehouse = useMemo(() => {
     if (!warehouseId) return [];
-    
-    // ดึงสต็อกของรถคันที่เลือก
     const warehouseStock = effectiveStockMap.get(warehouseId);
     if (!warehouseStock) return [];
-
-    // กรองสินค้าทั้งหมด ให้เหลือแค่ที่มีในรถคันนี้
     return products.filter((p) => {
       const qty = warehouseStock.get(p.id);
       return qty !== undefined && qty > 0;
@@ -336,10 +298,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
   const sourceWarehouse = useMemo(() => warehouses.find((w) => w.id === warehouseId) || { id: warehouseId }, [warehouseId, warehouses]);
   const existingProductIds = useMemo(() => Array.from(new Set(items.map((item) => item.product_id))), [items]);
-
-  const isTechUserForUI = currentUser && ['LEAD_TECH', 'TECH'].includes(
-    typeof currentUser.role === 'string' ? currentUser.role : (currentUser.role as any)?.name
-  );
+  const isTechUserForUI = currentUser && ['LEAD_TECH', 'TECH'].includes(typeof currentUser.role === 'string' ? currentUser.role : (currentUser.role as any)?.name);
 
   // ==========================================
   // 4. UI RENDER 
@@ -368,7 +327,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
               <Button 
                 variant="secondary" 
                 type="button" 
-                onClick={handleSaveDraft} // ผูกฟังก์ชัน Draft กลับมาใช้งาน
+                onClick={handleSaveDraft}
                 disabled={isSubmitting || !warehouseId}
                 className="py-2 px-4 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-medium border border-slate-300"
               >
@@ -447,38 +406,78 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                     <p className="text-xs mt-1 text-slate-400">กดปุ่ม "เพิ่มสินค้า" เพื่อเลือกจากรถ</p>
                   </div>
                 ) : (
-                  <div className="space-y-3 mt-2">
-                    <div className="grid grid-cols-12 gap-4 px-6 py-2 text-xs font-bold text-slate-500 border-b border-slate-100 pb-2 mb-3">
-                      <div className="col-span-2 text-left">รหัส</div>
-                      <div className="col-span-3 text-left">ชื่อสินค้า</div>
-                      <div className="col-span-2 text-center">สต๊อกคงเหลือ</div>
-                      <div className="col-span-1 text-center">หน่วย</div>
-                      <div className="col-span-3 text-center text-emerald-600">จำนวนที่ใช้</div>
+                  <div className="space-y-3 mt-4">
+                    <div className="grid grid-cols-12 gap-4 px-5 py-2.5 bg-slate-50/80 rounded-lg text-xs font-bold text-slate-500 uppercase tracking-wider border border-slate-100 items-center">
+                      <div className="col-span-5">รายละเอียดสินค้า</div>
+                      <div className="col-span-3 text-center">สต๊อกคงเหลือ</div>
+                      <div className="col-span-3 text-center text-emerald-600">จำนวนที่ใช้จริง</div>
                       <div className="col-span-1 text-center">จัดการ</div>
                     </div>
 
                     {items.map((item, index) => {
                       const product = productMap.get(item.product_id);
                       const available = sourceWarehouse?.id ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.product_id) || 0 : 0;
+                      const isOverStock = available > 0 && item.quantity > available;
 
                       return (
-                        <div key={index} className="px-6 py-4 rounded-xl border shadow-sm flex items-center bg-white border-slate-200 hover:border-slate-300">
+                        <div 
+                          key={index} 
+                          className={`px-5 py-4 rounded-xl border transition-all duration-200 flex items-center bg-white shadow-sm hover:shadow-md ${
+                            isOverStock ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
+                          }`}
+                        >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
-                            <div className="col-span-2 font-bold text-slate-800 text-sm">{product?.code || product?.id?.substring(0, 8)}</div>
-                            <div className="col-span-3 font-bold text-slate-800 text-sm truncate">{item.product_name || 'Unknown Product'}</div>
-                            <div className="col-span-2 font-bold text-slate-600 text-sm text-center">คงเหลือ: {available.toLocaleString()}</div>
-                            <div className="col-span-1 font-bold text-slate-600 text-sm text-center">{item.unit || 'หน่วย'}</div>
-                            <div className="col-span-3 flex flex-col items-center justify-center relative">
-                              <Input
-                                type="number" min="1" max={available > 0 ? available : undefined}
-                                value={item.quantity}
-                                onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
-                                className={`w-full max-w-[100px] text-center h-9 text-sm font-bold rounded-lg ${available > 0 && item.quantity > available ? 'border-red-300 text-red-600 focus:border-red-500' : 'border-slate-300 focus:border-primary text-slate-800'}`}
-                              />
-                              {available > 0 && item.quantity > available && <span className="text-[10px] font-bold absolute -bottom-5 whitespace-nowrap text-red-600">เกินสต็อก</span>}
+                            <div className="flex flex-col justify-center col-span-5">
+                              <span className="font-bold text-slate-800 text-sm truncate pr-2" title={item.product_name}>
+                                {item.product_name || 'Unknown Product'}
+                              </span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
+                                  {product?.code || product?.id?.substring(0, 8)}
+                                </span>
+                              </div>
                             </div>
+
+                            <div className="flex flex-col items-center justify-center col-span-3">
+                              <span className="text-[11px] text-slate-400 font-medium mb-0.5">ในรถมี</span>
+                              <span className={`text-sm font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                {available.toLocaleString()} <span className="text-xs font-normal text-slate-500 ml-0.5">{item.unit}</span>
+                              </span>
+                            </div>
+                            
+                            <div className="col-span-3 flex flex-col items-center justify-center relative">
+                              <div className="relative flex items-center w-full max-w-[120px] group">
+                                <Input
+                                  type="number" 
+                                  min="1" 
+                                  max={available > 0 ? available : undefined}
+                                  value={item.quantity}
+                                  onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
+                                  className={`w-full text-center h-10 text-sm font-bold rounded-lg pr-8 transition-all ${
+                                    isOverStock 
+                                      ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50' 
+                                      : 'border-slate-300 text-emerald-700 focus:border-emerald-500 focus:ring-emerald-200 bg-slate-50 group-hover:bg-white'
+                                  }`}
+                                />
+                                <span className="absolute right-3 text-[10px] font-semibold text-slate-400 pointer-events-none">
+                                  {item.unit}
+                                </span>
+                              </div>
+                              {isOverStock && (
+                                <span className="text-[10px] font-bold absolute -bottom-5 whitespace-nowrap text-red-500 flex items-center gap-1">
+                                  <XCircleIcon className="w-3 h-3" /> เกินสต๊อก
+                                </span>
+                              )}
+                            </div>
+                            
                             <div className="col-span-1 flex justify-center">
-                              <button type="button" onClick={() => handleRemoveItem(index)} className="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors"><TrashIcon className="w-5 h-5" /></button>
+                              <button 
+                                type="button" 
+                                onClick={() => handleRemoveItem(index)} 
+                                className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none"
+                              >
+                                <TrashIcon className="w-5 h-5" />
+                              </button>
                             </div>
                           </div>
                         </div>
@@ -515,20 +514,21 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
               </div>
             </div>
 
-            {/* Card 4: Finance Card (การเงินและค่าใช้จ่ายแบบเก่า) */}
+            {/* 🟢 Card 4: Finance Card (UI เก่าที่คุณต้องการ) */}
             <div className={`p-5 rounded-xl border shadow-sm transition-all ${isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-                  <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200 font-serif">฿</span>
-                  การเงิน & ค่าใช้จ่าย
+                <h3 className="text-base font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide pb-2">
+                  <span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200">฿</span> การเงิน & ค่าใช้จ่าย
                 </h3>
-                <Button type="button" onClick={handleAddExpense} variant="ghost" className="text-xs text-primary hover:bg-primary/5 px-2 py-1 font-medium">+ เพิ่มรายการ</Button>
+                <Button type="button" onClick={handleAddExpense} variant="outline" className="text-primary border-primary/20 bg-primary/5 text-sm font-medium">
+                  <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
+                </Button>
               </div>
-
+              
               {walletInfo && (
                 <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-semibold text-slate-500">สถานะวงเงิน</span>
+                  <div className="flex justify-between text-xs font-semibold text-slate-500 mb-2">
+                    <span>สถานะวงเงิน</span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOverLimit ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                       {isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}
                     </span>
@@ -536,7 +536,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                   <div className="flex items-end justify-between mb-1">
                     <span className="text-xs text-slate-400">คงเหลือสุทธิ</span>
                     <span className={`text-lg font-bold ${walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-slate-800'}`}>
-                      {(walletInfo.balance - totalExpenses).toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+                      {(walletInfo.balance - totalExpenses).toLocaleString()} บาท
                     </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
@@ -544,24 +544,26 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                   </div>
                 </div>
               )}
-
+              
               <div className="space-y-2">
                 {expenseItems.map((item) => (
                   <div key={item.id} className="flex gap-2 items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm group">
                     <div className="p-1.5 bg-slate-100 rounded text-slate-400"><BanknotesIcon className="w-3 h-3" /></div>
-                    <input type="text" value={item.description} onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)} placeholder="ระบุรายละเอียด..." className="flex-grow min-w-0 border-0 focus:ring-0 text-xs px-0 py-1 bg-transparent font-medium" />
-                    <div className="flex items-center gap-1">
-                      <input type="number" min="0" value={item.amount} onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)} placeholder="0.00" className="w-16 border-0 focus:ring-0 text-xs text-right px-0 py-1 font-bold bg-transparent" />
-                      <span className="text-[10px] text-slate-400">฿</span>
-                    </div>
-                    <button type="button" onClick={() => handleRemoveExpenseItem(item.id)} className="text-slate-300 hover:text-red-500 p-1"><XCircleIcon className="w-4 h-4" /></button>
+                    <input type="text" value={item.description} onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)} placeholder="ระบุรายละเอียด..." className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm bg-transparent font-medium" />
+                    <input type="number" value={item.amount} onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)} placeholder="0.00" className="w-16 border-0 border-b border-transparent focus:border-primary focus:ring-0 text-xs text-right font-bold" />
+                    <button type="button" onClick={() => handleRemoveExpenseItem(item.id)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><XCircleIcon className="w-4 h-4" /></button>
                   </div>
                 ))}
-                {expenseItems.length === 0 && <div className="text-center py-6 border border-dashed border-slate-300 rounded-lg text-slate-400 text-xs bg-slate-50/50">ไม่มีรายการค่าใช้จ่ายเพิ่มเติม</div>}
+                {expenseItems.length > 0 && (
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-200 mt-3">
+                    <span className="text-xs font-bold text-slate-600">รวมค่าใช้จ่าย</span>
+                    <span className="text-sm font-bold text-primary">{totalExpenses.toLocaleString()} บาท</span>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Card 5: Reference Card (ข้อมูลอ้างอิงแบบเก่า) */}
+            {/* Card 5: Reference Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
                 <DocumentCheckIcon className="w-4 h-4 text-slate-400" /> ข้อมูลอ้างอิง
@@ -613,7 +615,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         </form>
       </Modal>
 
-      {/* Modals ที่เกี่ยวข้อง */}
+      {/* Modals */}
       {isProductModalOpen && (
         <ProductSelectionModal
           isOpen={isProductModalOpen}

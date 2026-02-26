@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Card } from '../../../components/common/Card';
 import { formatThaiDate } from '../../../utils/date';
 import {
@@ -15,8 +15,6 @@ import {
   GoodsReceipt as GoodsReceiptType,
   Status,
   Warehouse as WarehouseType,
-  Supplier,
-  Product,
 } from '@/src/types/entity/app.interface';
 import { GoodsReceiptDetailsModal } from '../../../components/features/inventory/GoodsReceiptDetailsModal';
 import { Pagination } from '../../../components/common/Pagination';
@@ -24,90 +22,124 @@ import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';
+import { GoodsReceiptApi } from '../../../api/goods-receipt'; 
 
 // FIX: Define props interface
-interface GoodsReceiptProps {
-  onCreateReceipt: (receipt: Omit<GoodsReceiptType, 'id'>) => void;
-  onUpdateReceipt: (receipt: GoodsReceiptType) => void;
-  onDeleteReceipt: (receiptId: string) => void;
+interface GoodsReceiveProps {
+  onCreateReceipt: (receipt: Omit<GoodsReceiptType, 'id'>) => Promise<void> | void;
+  onUpdateReceipt: (receipt: GoodsReceiptType) => Promise<void> | void;
+  onDeleteReceipt: (receiptId: string) => Promise<void> | void;
 }
 
-const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
+const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
   onCreateReceipt,
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const {
-    goodsReceipts: receipts,
-    warehouses,
-    suppliers,
-    products,
-  } = useData();
+  const { warehouses, suppliers, products } = useData();
+
+  const [receipts, setReceipts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<
-    'approve' | 'reject' | null
-  >(null);
-  const [selectedReceipt, setSelectedReceipt] =
-    useState<GoodsReceiptType | null>(null);
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiptType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number;
-    left: number;
-  } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const reversedReceipts = useMemo(() => [...receipts].reverse(), [receipts]);
+  const fetchReceipts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await GoodsReceiptApi.getAll();
+      if (response && response.data) {
+        setReceipts(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch goods receipts', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // 🟢 3. ดึงข้อมูลครั้งแรกเมื่อเปิดหน้า
+  useEffect(() => {
+    fetchReceipts();
+  }, [fetchReceipts]);
+
+  // 🟢 4. สร้าง Wrapper Functions เพื่อดึงข้อมูลใหม่หลัง Action สำเร็จ
+  const handleCreate = async (data: Omit<GoodsReceiptType, 'id'>) => {
+    try {
+      await onCreateReceipt(data);
+      await fetchReceipts(); // ดึงใหม่หลังสร้างเสร็จ
+      setIsAddModalOpen(false); // ปิด Modal ฝั่ง Parent เพื่อความชัวร์
+    } catch (error) {
+      console.error('Create error', error);
+    }
+  };
+
+  const handleUpdate = async (data: GoodsReceiptType) => {
+    try {
+      await onUpdateReceipt(data);
+      await fetchReceipts(); // ดึงใหม่หลังอัปเดตเสร็จ
+    } catch (error) {
+      console.error('Update error', error);
+    }
+  };
+
+  const handleDeleteItem = async (id: string) => {
+    try {
+      await onDeleteReceipt(id);
+      await fetchReceipts(); // ดึงใหม่หลังลบเสร็จ
+    } catch (error) {
+      console.error('Delete error', error);
+    }
+  };
+
+  // =====================================
+
+  const sortedReceipts = useMemo(() => [...receipts], [receipts]);
 
   const warehouseMap = useMemo(() => {
-    return warehouses.reduce(
-      (acc, wh) => {
-        acc[wh.id] = wh.name;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
+    return warehouses.reduce((acc, wh) => {
+      acc[wh.id] = wh.name;
+      return acc;
+    }, {} as Record<string, string>);
   }, [warehouses]);
 
   const supplierMap = useMemo(() => {
-    return suppliers.reduce(
-      (acc, s) => {
-        acc[s.id] = s.name;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
+    return suppliers.reduce((acc, s) => {
+      acc[s.id] = s.name;
+      return acc;
+    }, {} as Record<string, string>);
   }, [suppliers]);
 
   const filteredReceipts = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (!lowercasedQuery) {
-      return reversedReceipts;
-    }
+    // เปลี่ยนจาก reversedReceipts เป็น sortedReceipts
+    if (!lowercasedQuery) return sortedReceipts; 
 
-    return reversedReceipts.filter((receipt) => {
-      const supplierName =
-        (receipt.supplier_id && supplierMap[receipt.supplier_id]) || '';
+    // เปลี่ยนจาก reversedReceipts เป็น sortedReceipts
+    return sortedReceipts.filter((receipt) => { 
+      const supplierName = (receipt.supplier_id && supplierMap[receipt.supplier_id]) || '';
       const receiptDate = formatThaiDate(receipt.created_at);
 
       return (
-        (receipt.code &&
-          receipt.code.toLowerCase().includes(lowercasedQuery)) ||
-        (receipt.receipt_no &&
-          receipt.receipt_no.toLowerCase().includes(lowercasedQuery)) ||
+        (receipt.code && receipt.code.toLowerCase().includes(lowercasedQuery)) ||
+        (receipt.receipt_no && receipt.receipt_no.toLowerCase().includes(lowercasedQuery)) ||
         supplierName.toLowerCase().includes(lowercasedQuery) ||
         receiptDate.includes(lowercasedQuery) ||
-        (receipt.status &&
-          receipt.status.toLowerCase().includes(lowercasedQuery))
+        (receipt.status && receipt.status.toLowerCase().includes(lowercasedQuery))
       );
     });
-  }, [reversedReceipts, searchQuery, supplierMap]);
-
+  }, [sortedReceipts, searchQuery, supplierMap]);
+  
   const totalItems = filteredReceipts.length;
   const paginatedReceipts = filteredReceipts.slice(
     (currentPage - 1) * itemsPerPage,
@@ -125,10 +157,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
-    receiptId: string
-  ) => {
+  const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, receiptId: string) => {
     event.stopPropagation();
     if (openDropdownId === receiptId) {
       setOpenDropdownId(null);
@@ -154,7 +183,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   const handleConfirmApproval = (receiptId: string, remarks: string) => {
     const receiptToUpdate = receipts.find((r) => r.id === receiptId);
     if (receiptToUpdate) {
-      onUpdateReceipt({
+      // 🟢 5. เปลี่ยนมาเรียกใช้ handleUpdate ที่เราสร้างไว้แทน
+      handleUpdate({
         ...receiptToUpdate,
         status: approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
         remarks: remarks,
@@ -169,7 +199,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   const handleCancel = (receiptId: string) => {
     const receiptToUpdate = receipts.find((r) => r.id === receiptId);
     if (receiptToUpdate) {
-      onUpdateReceipt({
+       // 🟢 5. เปลี่ยนมาเรียกใช้ handleUpdate ที่เราสร้างไว้แทน
+      handleUpdate({
         ...receiptToUpdate,
         status: 'CANCELLED',
         remarks: 'ยกเลิกโดยผู้ใช้',
@@ -182,15 +213,8 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!openDropdownId) return;
-      if (
-        dropdownRef.current &&
-        dropdownRef.current.contains(event.target as Node)
-      ) {
-        return;
-      }
-      if ((event.target as HTMLElement).closest('button[data-receipt-id]')) {
-        return;
-      }
+      if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
+      if ((event.target as HTMLElement).closest('button[data-receipt-id]')) return;
       setOpenDropdownId(null);
     };
 
@@ -219,10 +243,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       </a>,
     ];
 
-    if (
-      selectedReceipt.status === 'PENDING' ||
-      selectedReceipt.status === Status.PendingApproval
-    ) {
+    if (selectedReceipt.status === 'PENDING' || selectedReceipt.status === Status.PendingApproval) {
       actions.push(
         <a
           key="approve"
@@ -234,10 +255,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
           className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
           role="menuitem"
         >
-          <DocumentCheckIcon
-            className="mr-3 h-5 w-5 text-green-500"
-            aria-hidden="true"
-          />
+          <DocumentCheckIcon className="mr-3 h-5 w-5 text-green-500" aria-hidden="true" />
           <span>อนุมัติ</span>
         </a>,
         <a
@@ -256,10 +274,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
       );
     }
 
-    if (
-      selectedReceipt.status === Status.Draft ||
-      selectedReceipt.status === Status.PendingApproval
-    ) {
+    if (selectedReceipt.status === Status.Draft || selectedReceipt.status === Status.PendingApproval) {
       actions.push(
         <a
           key="cancel"
@@ -296,7 +311,7 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset page on search
+                  setCurrentPage(1); 
                 }}
                 title="ค้นหาด้วย: เลขที่เอกสาร, เลขที่อ้างอิง, ผู้จัดจำหน่าย, วันที่, สถานะ"
               />
@@ -308,59 +323,27 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
           </div>
         </div>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col">
+        <Card className="!p-0 flex-grow min-h-0 flex flex-col relative">
+          
+          {/* 🟢 Loading Spinner */}
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-20 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          )}
+
           <div className="overflow-auto flex-grow">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    ลำดับ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    เลขที่ใบรับเข้า
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    เลขที่อ้างอิง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    วันที่
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    คลัง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    ผู้จัดจำหน่าย
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    จัดการ
-                  </th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">เลขที่ใบรับเข้า</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">เลขที่อ้างอิง</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">วันที่</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">คลัง</th>
+                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ผู้จัดจำหน่าย</th>
+                  <th className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap">สถานะ</th>
+                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -375,34 +358,20 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                     >
                       {receipt.code || receipt.id.substring(0, 8)}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{receipt.receipt_no || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatThaiDate(receipt.created_at)}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {receipt.receipt_no || '-'}
+                      {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {formatThaiDate(receipt.created_at)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {/* Try to use nested warehouse name if available, otherwise map id */}
-                      {(receipt as any).warehouse?.name ||
-                        warehouseMap[receipt.warehouse_id] ||
-                        '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {receipt.supplier_id
-                        ? supplierMap[receipt.supplier_id]
-                        : '-'}
+                      {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <StatusBadge status={receipt.status} />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
-                        <Button
-                          data-receipt-id={receipt.id}
-                          onClick={(e) => handleDropdownToggle(e, receipt.id)}
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
+                        <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
                           <span className="sr-only">Open options</span>
                           <ManageIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
@@ -410,6 +379,11 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
                     </td>
                   </tr>
                 ))}
+                {paginatedReceipts.length === 0 && !isLoading && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูล</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -444,10 +418,11 @@ const GoodsReceipt: React.FC<GoodsReceiptProps> = ({
         </div>
       )}
 
+      {/* 🟢 6. เปลี่ยน onCreateReceipt ส่งเป็น handleCreate แทน */}
       <AddGoodsReceiptModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateReceipt={onCreateReceipt as any}
+        onCreateReceipt={handleCreate as any} 
         receipts={receipts as any}
         warehouses={warehouses}
         suppliers={suppliers}
