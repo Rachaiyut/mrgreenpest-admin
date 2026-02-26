@@ -229,6 +229,15 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     return totalExpenses > (selectedRequester as any).creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
 
+  // เช็คว่ามีสินค้าตัวไหนในรถถูกเบิกเกินจำนวนที่มีอยู่จริงหรือไม่
+  const isAnyItemOverLimit = useMemo(() => {
+    if (!warehouseId) return false;
+    return items.some((item) => {
+      const available = effectiveStockMap.get(warehouseId)?.get(item.product_id) || 0;
+      return item.quantity > available;
+    });
+  }, [items, warehouseId, effectiveStockMap]);
+
   const selectedCustomers = useMemo(() => customers.filter((c) => selectedCustomerIds.includes(c.id)), [customers, selectedCustomerIds]);
 
   // ==========================================
@@ -271,13 +280,16 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
     setIsSubmitting(true);
     try {
+      // 🌟 เพิ่มเงื่อนไขส่งสถานะที่นี่: ถ้าของเกิน หรือเงินเกิน = PENDING, ไม่เกิน = COMPLETED
+      const finalStatus = (isOverLimit || isAnyItemOverLimit) ? 'PENDING' : 'COMPLETED';
+
       const payload: any = {
         warehouse_id: warehouseId,
         requester_id: requesterId || undefined,
         recipient_id: recipientId || undefined, 
         purpose: 'เบิกสินค้า/อุปกรณ์', 
         notes: notes || undefined,
-        status: 'PENDING',
+        status: finalStatus, // <--- ใช้ finalStatus ที่คำนวณไว้
         items: items as StockIssueItemSummary[],
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
@@ -573,6 +585,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                     </span>
                   </div>
                   <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">วงเงิน</span><span className="text-sm font-medium text-slate-600">{walletInfo.expense_limit.toLocaleString()} บาท</span></div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือปัจจุบัน</span><span className="text-sm font-medium text-slate-600">{walletInfo.balance.toLocaleString()} บาท</span></div>
                   {totalExpenses > 0 && (
                     <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">ค่าใช้จ่ายครั้งนี้</span><span className="text-sm font-medium text-amber-600">-{totalExpenses.toLocaleString()} บาท</span></div>
                   )}

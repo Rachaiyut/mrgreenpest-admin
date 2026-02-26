@@ -25,6 +25,24 @@ import { AddStockIssueSummaryModal } from '../../../components/features/inventor
 import { EditStockIssueSummaryModal } from '../../../components/features/inventory/EditStockIssueSummaryModal';
 import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
 
+// Helper function สำหรับแสดงสถานะเป็นภาษาไทยและสี
+const getStatusBadge = (status?: string) => {
+  switch (status) {
+    case 'DRAFT':
+      return { text: 'ฉบับร่าง', className: 'bg-slate-100 text-slate-700 border-slate-200' };
+    case 'PENDING':
+      return { text: 'รออนุมัติ', className: 'bg-amber-100 text-amber-700 border-amber-200' };
+    case 'CANCELLED':
+      return { text: 'ยกเลิก', className: 'bg-red-100 text-red-700 border-red-200' };
+    case 'APPROVED':
+      return { text: 'อนุมัติแล้ว', className: 'bg-blue-100 text-blue-700 border-blue-200' };
+    case 'COMPLETED':
+      return { text: 'เสร็จสิ้น', className: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+    default:
+      return { text: status || '-', className: 'bg-slate-100 text-slate-700 border-slate-200' };
+  }
+};
+
 const StockIssueSummaryPage: React.FC = () => {
   const {
     stockIssueSummaries,
@@ -323,6 +341,7 @@ const StockIssueSummaryPage: React.FC = () => {
             const requesterName = summary.requester_id
               ? userMap.get(summary.requester_id)
               : '-';
+            const statusBadge = getStatusBadge(summary.status);
 
             return (
               <Card key={summary.id} className="p-4">
@@ -334,6 +353,11 @@ const StockIssueSummaryPage: React.FC = () => {
                     >
                       {summary.id}
                     </p>
+                    <div className="mt-1">
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
+                        {statusBadge.text}
+                      </span>
+                    </div>
                   </div>
                   <div className="relative">
                     <Button
@@ -442,6 +466,12 @@ const StockIssueSummaryPage: React.FC = () => {
                   </th>
                   <th
                     scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                  >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
                     className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
                   >
                     จัดการ
@@ -463,6 +493,8 @@ const StockIssueSummaryPage: React.FC = () => {
                   const requesterName = summary.requester_id
                     ? userMap.get(summary.requester_id) || '-'
                     : '-';
+                  
+                  const statusBadge = getStatusBadge(summary.status);
 
                   return (
                     <tr key={summary.id} className="hover:bg-slate-50">
@@ -492,6 +524,11 @@ const StockIssueSummaryPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
                         {requesterName}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
+                          {statusBadge.text}
+                        </span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="inline-block text-left">

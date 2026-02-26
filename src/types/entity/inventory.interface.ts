@@ -6,6 +6,7 @@ import {
   StockAdjustmentStatus,
   TransferStatus,
   GoodsReceiptStatus,
+  IssueSummaryStatus,
 } from '../enums/inventory';
 import { Status } from './app.interface';
 import { IBase, IBaseQuery } from './base.interface';
@@ -211,6 +212,7 @@ export interface StockIssueItemSummary extends IBase {
 export interface StockIssueSummary extends IBase {
   warehouse_id: string;
   notes?: string;
+  status: IssueSummaryStatus
   requester_id?: string;
   created_by?: string;
   items?: StockIssueItemSummary[];

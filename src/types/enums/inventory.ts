@@ -50,3 +50,13 @@ export enum GoodsReceiptStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }
+
+export enum IssueSummaryStatus {
+	DRAFT = 'DRAFT',
+	PENDING = 'PENDING',
+	CANCELLED = 'CANCELLED',
+    APPROVED = 'APPROVED',
+    COMPLETED = 'COMPLETED'
+}
+
+
