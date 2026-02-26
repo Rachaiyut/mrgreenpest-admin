@@ -222,7 +222,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
           unit: product?.unit?.symbol || 'หน่วย',
         };
       }),
-      expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
+      expenses: expenseItems.map((item) => ({ type: 'INCOME', description: item.description, amount: Number(item.amount) })),
       status: WithdrawalStatus.PENDING,
     };
     onCreateWithdrawal(payload);
@@ -245,7 +245,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
           unit: product?.unit?.symbol || 'หน่วย',
         };
       }),
-      expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
+      expenses: expenseItems.map((item) => ({ type: 'INCOME', description: item.description, amount: Number(item.amount) })),
       status: WithdrawalStatus.DRAFT,
     };
     onCreateWithdrawal(payload);
@@ -408,8 +408,13 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
               {walletInfo && (
                 <div className="mb-5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
                   <div className="flex justify-between text-xs font-semibold text-slate-500 mb-2"><span>สถานะวงเงิน</span><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isOverLimit ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>{isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}</span></div>
-                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือสุทธิ</span><span className={`text-lg font-bold ${walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-slate-800'}`}>{(walletInfo.balance - totalExpenses).toLocaleString()} บาท</span></div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden"><div style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, ((walletInfo.expense_limit - walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }} className={`h-full ${isOverLimit ? 'bg-red-500' : 'bg-emerald-500'}`} /></div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">วงเงิน</span><span className="text-sm font-medium text-slate-600">{walletInfo.expense_limit.toLocaleString()} บาท</span></div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือปัจจุบัน</span><span className="text-sm font-medium text-slate-600">{walletInfo.balance.toLocaleString()} บาท</span></div>
+                  {totalExpenses > 0 && (
+                    <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">เบิกค่าใช้จ่ายครั้งนี้</span><span className="text-sm font-medium text-emerald-600">+{totalExpenses.toLocaleString()} บาท</span></div>
+                  )}
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs font-semibold text-slate-500">คงเหลือสุทธิ</span><span className={`text-lg font-bold text-emerald-600`}>{(walletInfo.balance + totalExpenses).toLocaleString()} บาท</span></div>
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden"><div style={{ width: `${walletInfo.expense_limit > 0 ? Math.min(100, ((walletInfo.balance + totalExpenses) / walletInfo.expense_limit) * 100) : 100}%` }} className="h-full bg-emerald-500" /></div>
                 </div>
               )}
               <div className="space-y-2">

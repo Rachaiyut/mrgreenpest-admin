@@ -244,7 +244,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         notes: notes || undefined,
         status: 'PENDING',
         items: items as StockIssueItemSummary[],
-        expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
+        expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
       if (referenceIds.length > 0) payload.reference_ids = referenceIds;
@@ -271,7 +271,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         notes: notes || undefined,
         status: 'DRAFT', 
         items: items as StockIssueItemSummary[],
-        expenses: expenseItems.map((item) => ({ description: item.description, amount: Number(item.amount) })),
+        expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
       if (referenceIds.length > 0) payload.reference_ids = referenceIds;
@@ -533,9 +533,14 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                       {isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}
                     </span>
                   </div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">วงเงิน</span><span className="text-sm font-medium text-slate-600">{walletInfo.expense_limit.toLocaleString()} บาท</span></div>
+                  <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">คงเหลือปัจจุบัน</span><span className="text-sm font-medium text-slate-600">{walletInfo.balance.toLocaleString()} บาท</span></div>
+                  {totalExpenses > 0 && (
+                    <div className="flex items-end justify-between mb-1"><span className="text-xs text-slate-400">ค่าใช้จ่ายครั้งนี้</span><span className="text-sm font-medium text-amber-600">-{totalExpenses.toLocaleString()} บาท</span></div>
+                  )}
                   <div className="flex items-end justify-between mb-1">
-                    <span className="text-xs text-slate-400">คงเหลือสุทธิ</span>
-                    <span className={`text-lg font-bold ${walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-slate-800'}`}>
+                    <span className="text-xs font-semibold text-slate-500">คงเหลือสุทธิ</span>
+                    <span className={`text-lg font-bold ${walletInfo.balance - totalExpenses < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                       {(walletInfo.balance - totalExpenses).toLocaleString()} บาท
                     </span>
                   </div>

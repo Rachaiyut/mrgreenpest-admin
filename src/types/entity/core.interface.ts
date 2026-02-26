@@ -55,8 +55,7 @@ export interface User {
   role?: any;
   stroage_id?: string;
   creditLimit?: number;
-  remaining_amount: number;
-  // Computed property for display
+  current_balance: number;
   name: string;
   avatarUrl?: string;
 }

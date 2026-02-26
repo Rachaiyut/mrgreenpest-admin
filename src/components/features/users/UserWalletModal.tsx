@@ -49,7 +49,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
 
   const balance = useMemo(() => {
     if (wallet && 'balance' in wallet) {
-      return wallet.balance;
+      return wallet.expense_limit;
     }
     return 0;
   }, [wallet]);

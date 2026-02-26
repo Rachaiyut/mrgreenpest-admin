@@ -285,6 +285,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
         };
       }),
       expenses: expenseItems.map((item) => ({
+        type: 'INCOME',
         description: item.description,
         amount: Number(item.amount)
       })),

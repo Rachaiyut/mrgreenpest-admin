@@ -83,7 +83,7 @@ const Notification = React.lazy(
   () => import('../pages/notifications/Notification')
 );
 const GoodReceipt = React.lazy(
-  () => import('../pages/inventory/goods-receipt/Good-Receipt')
+  () => import('../pages/inventory/goods-receipt/Good-Receive')
 );
 const Transfer = React.lazy(
   () => import('../pages/inventory/transfers/Transfer')

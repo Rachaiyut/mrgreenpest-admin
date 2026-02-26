@@ -286,6 +286,10 @@ const StockIssueToVehicle: React.FC = () => {
     if (withdrawalToUpdate) {
       await onUpdateWithdrawal({
         ...withdrawalToUpdate,
+        expenses: (withdrawalToUpdate.expenses || []).map((exp: any) => ({
+          ...exp,
+          type: exp.type || 'INCOME',
+        })),
         status:
           approvalAction === 'approve'
             ? WithdrawalStatus.APPROVED
@@ -304,6 +308,10 @@ const StockIssueToVehicle: React.FC = () => {
     if (withdrawalToUpdate) {
       await onUpdateWithdrawal({
         ...withdrawalToUpdate,
+        expenses: (withdrawalToUpdate.expenses || []).map((exp: any) => ({
+          ...exp,
+          type: exp.type || 'INCOME',
+        })),
         status: WithdrawalStatus.CANCELLED,
         notes: 'ยกเลิกโดยผู้ใช้',
       });

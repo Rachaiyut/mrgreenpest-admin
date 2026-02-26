@@ -35,8 +35,11 @@ export class AuthService extends BaseHttpClient {
   }
 
   protected async handleRefreshToken(): Promise<string> {
-    const res = await this.http.post<{ token: string }>(`${this.path}/refresh`);
-    const newToken = res.data.token;
+    const refreshToken = localStorage.getItem('refresh_token');
+    const res = await this.http.post<any>(`${this.path}/refresh`, {
+      refresh_token: refreshToken,
+    });
+    const newToken = res.data.data.access_token;
     localStorage.setItem(STORAGE_KEYS.TOKEN, newToken);
     return newToken;
   }
