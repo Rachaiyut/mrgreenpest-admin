@@ -35,6 +35,8 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 import { User, FieldJob, Customer } from '@/src/types/entity/app.interface';
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
+import { JobApi } from '../../../api/job';
+import { Job } from '@/src/types/entity/job.interface';
 
 interface ExpenseLineItem {
   id: string;
@@ -49,7 +51,7 @@ interface AddStockIssueSummaryModalProps {
   warehouses: Warehouse[];
   products: Product[];
   users: User[];
-  jobs?: FieldJob[];
+  // 🌟 เอา jobs ออกจาก props เพราะเราจะ fetch เองข้างใน
   customers?: Customer[];
   currentUser?: User;
   stockMap?: Map<string, Map<string, number>>;
@@ -62,7 +64,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   warehouses,
   products,
   users,
-  jobs = [],
   customers = [],
   currentUser,
   stockMap = new Map(),
@@ -84,7 +85,11 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; } | null>(null);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
+  
+  // 🌟 State สำหรับเก็บ Job ที่เรียกจาก API
+  const [fetchedJobs, setFetchedJobs] = useState<Job[]>([]); 
 
+  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -96,9 +101,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const goodsFormRef = useRef<HTMLFormElement>(null);
 
   // ==========================================
-  // 🌟 Logic: จัดการ User & Role แบบครอบจักรวาล
+  // 🌟 Logic: จัดการ User & Role
   // ==========================================
-  
   const loggedInUser = useMemo(() => {
     let role = '';
     let id = currentUser?.id || '';
@@ -123,7 +127,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   }, [currentUser]);
 
   const isLockedRole = useMemo(() => {
-    // รองรับทั้ง LEAD_TEACH และ LEAD_TECH เพื่อป้องกันปัญหาพิมพ์ผิด
     return ['LEAD_TEACH', 'LEAD_TECH', 'TECH'].includes(loggedInUser.role);
   }, [loggedInUser.role]);
 
@@ -174,21 +177,49 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     }
   }, [warehouses]);
 
+  // 🌟 ฟังก์ชันดึง Vehicle Limit
+  const fetchVehicleLimits = useCallback(async (selectedWarehouseId: string) => {
+    try {
+      setDestinationLimits(new Map()); 
+    } catch (error) {
+      console.error('Failed to fetch vehicle limits', error);
+      setDestinationLimits(new Map());
+    }
+  }, []);
+
+  // 🌟 ฟังก์ชันเรียก API Job (ดึงทั้งหมด หรือ ดึงตาม Customer ID)
+  const fetchJobs = useCallback(async (customerIds: string[] = []) => {
+    try {
+      let queryParams: any = { limit: 10 };
+      
+      // ถ้ามีการเลือกลูกค้า ให้ส่ง filter ไปหา backend (ถ้า backend รองรับ) 
+      // หรือดึงมาทั้งหมดแล้วมา filter ฝั่ง frontend
+      const res = await JobApi.getAll(queryParams);
+      
+      if (res && res.data) {
+        let jobsData = res.data;
+        
+        // กรองฝั่ง Frontend อีกรอบถ้าเลือกลูกค้าไว้
+        if (customerIds.length > 0) {
+          jobsData = jobsData.filter((j: any) => {
+            const cId = j.customer_id || j.customer?.id;
+            return customerIds.includes(cId);
+          });
+        }
+        
+        setFetchedJobs(jobsData);
+      }
+    } catch (error) {
+      console.error('Failed to fetch jobs', error);
+      setFetchedJobs([]);
+    }
+  }, []);
+
   const effectiveStockMap = useMemo(() => {
     return localStockMap.size > 0 ? localStockMap : stockMap;
   }, [stockMap, localStockMap]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-
-  const displayJobs = useMemo(() => {
-    if (selectedCustomerIds.length > 0) {
-      return jobs.filter((j) => {
-        const cId = (j as any).customer_id || (j as any).customer?.id;
-        return selectedCustomerIds.includes(cId);
-      });
-    }
-    return jobs;
-  }, [selectedCustomerIds, jobs]);
 
   useEffect(() => {
     if (isOpen) {
@@ -198,16 +229,40 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
       setExpenseItems([]);
       setSelectedCustomerIds([]);
       setJobId('');
+      setDestinationLimits(new Map());
       setIsSubmitting(false);
       
-      // บังคับให้เป็นคน Login เสมอ
       setRequesterId(loggedInUser.id);
       setRecipientId(loggedInUser.id);
 
       fetchWarehouses();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, fetchWarehouses, loggedInUser.id]); 
+  }, [isOpen, fetchWarehouses, fetchJobs, loggedInUser.id]); 
+
+  // 🌟 รีโหลด Job ใหม่เมื่อเปลี่ยนลูกค้าที่เลือก
+  useEffect(() => {
+    if (isOpen) {
+       fetchJobs(selectedCustomerIds);
+       
+       // ถ้า Job ที่เลือกไว้ก่อนหน้า ไม่ได้อยู่ในรายชื่อของลูกค้าคนใหม่ ให้เคลียร์ JobId ทิ้ง
+       if (jobId && selectedCustomerIds.length > 0) {
+          const isJobStillValid = fetchedJobs.some(j => j.id === jobId);
+          if(!isJobStillValid) {
+             setJobId('');
+          }
+       }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCustomerIds, fetchJobs, isOpen]);
+
+  useEffect(() => {
+    if (warehouseId) {
+      fetchVehicleLimits(warehouseId);
+    } else {
+      setDestinationLimits(new Map());
+    }
+  }, [warehouseId, fetchVehicleLimits]);
 
   useEffect(() => {
     if (requesterId) {
@@ -222,21 +277,24 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const selectedRequester = useMemo(() => fetchedRequester || users.find((u) => String(u.id) === String(requesterId)), [fetchedRequester, requesterId, users]);
   const totalExpenses = useMemo(() => expenseItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0), [expenseItems]);
   
-  // เช็ควงเงินเบิกจ่าย (EXPENSE) ถ้ายอดเบิก > ยอดเงินคงเหลือ = เกินวงเงิน
   const isOverLimit = useMemo(() => {
     if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
     if (!selectedRequester || typeof (selectedRequester as any).creditLimit !== 'number') return false;
     return totalExpenses > (selectedRequester as any).creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
 
-  // เช็คว่ามีสินค้าตัวไหนในรถถูกเบิกเกินจำนวนที่มีอยู่จริงหรือไม่
   const isAnyItemOverLimit = useMemo(() => {
     if (!warehouseId) return false;
     return items.some((item) => {
       const available = effectiveStockMap.get(warehouseId)?.get(item.product_id) || 0;
-      return item.quantity > available;
+      if (item.quantity > available) return true;
+
+      const limit = destinationLimits.get(item.product_id);
+      if (limit !== undefined && item.quantity > limit) return true;
+
+      return false;
     });
-  }, [items, warehouseId, effectiveStockMap]);
+  }, [items, warehouseId, effectiveStockMap, destinationLimits]);
 
   const selectedCustomers = useMemo(() => customers.filter((c) => selectedCustomerIds.includes(c.id)), [customers, selectedCustomerIds]);
 
@@ -280,7 +338,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
     setIsSubmitting(true);
     try {
-      // 🌟 เพิ่มเงื่อนไขส่งสถานะที่นี่: ถ้าของเกิน หรือเงินเกิน = PENDING, ไม่เกิน = COMPLETED
       const finalStatus = (isOverLimit || isAnyItemOverLimit) ? 'PENDING' : 'COMPLETED';
 
       const payload: any = {
@@ -289,7 +346,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         recipient_id: recipientId || undefined, 
         purpose: 'เบิกสินค้า/อุปกรณ์', 
         notes: notes || undefined,
-        status: finalStatus, // <--- ใช้ finalStatus ที่คำนวณไว้
+        status: finalStatus, 
         items: items as StockIssueItemSummary[],
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
@@ -360,9 +417,9 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
           <div className="flex w-full justify-between items-center">
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
-              {isOverLimit && (
+              {(isOverLimit || isAnyItemOverLimit) && (
                 <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                  ⚠️ ยอดรวมเกินวงเงินที่กำหนด (ต้องได้รับการอนุมัติ)
+                  ⚠️ ยอดรวมหรือจำนวนสินค้าเกินที่กำหนด (ต้องได้รับการอนุมัติ)
                 </span>
               )}
             </div>
@@ -385,10 +442,10 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                 form="add-stock-issue-summary-form"
                 disabled={isSubmitting || !warehouseId || items.length === 0}
                 className={`py-2 px-6 rounded-lg text-white font-semibold shadow-sm transition-all disabled:bg-slate-300 ${
-                  isOverLimit ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
+                  (isOverLimit || isAnyItemOverLimit) ? 'bg-amber-500 hover:bg-amber-600' : 'bg-primary hover:bg-primary/90'
                 }`}
               >
-                {isSubmitting ? 'กำลังบันทึก...' : isOverLimit ? 'ส่งเพื่อขออนุมัติ' : 'บันทึกและตัดสต็อก'}
+                {isSubmitting ? 'กำลังบันทึก...' : (isOverLimit || isAnyItemOverLimit) ? 'ส่งเพื่อขออนุมัติ' : 'บันทึกและตัดสต็อก'}
               </Button>
             </div>
           </div>
@@ -494,13 +551,17 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                     {items.map((item, index) => {
                       const product = productMap.get(item.product_id);
                       const available = sourceWarehouse?.id ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.product_id) || 0 : 0;
+                      const limit = destinationLimits.get(item.product_id);
+                      
                       const isOverStock = available > 0 && item.quantity > available;
+                      const isOverLimitObj = limit !== undefined && item.quantity > limit;
+                      const hasWarning = isOverStock || isOverLimitObj;
 
                       return (
                         <div 
                           key={index} 
                           className={`px-5 py-4 rounded-xl border transition-all duration-200 flex items-center bg-white shadow-sm hover:shadow-md ${
-                            isOverStock ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
+                            hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
@@ -512,6 +573,11 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                                 <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
                                   {product?.code || product?.id?.substring(0, 8)}
                                 </span>
+                                {limit !== undefined && (
+                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-200">
+                                    จำกัด: {limit}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -527,11 +593,10 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                                 <Input
                                   type="number" 
                                   min="1" 
-                                  max={available > 0 ? available : undefined}
                                   value={item.quantity}
                                   onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
                                   className={`w-full text-center h-10 text-sm font-bold rounded-lg pr-8 transition-all ${
-                                    isOverStock 
+                                    hasWarning 
                                       ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50' 
                                       : 'border-slate-300 text-emerald-700 focus:border-emerald-500 focus:ring-emerald-200 bg-slate-50 group-hover:bg-white'
                                   }`}
@@ -543,6 +608,11 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                               {isOverStock && (
                                 <span className="text-[10px] font-bold absolute -bottom-5 whitespace-nowrap text-red-500 flex items-center gap-1">
                                   <XCircleIcon className="w-3 h-3" /> เกินสต๊อก
+                                </span>
+                              )}
+                              {!isOverStock && isOverLimitObj && (
+                                <span className="text-[10px] font-bold absolute -bottom-5 whitespace-nowrap text-amber-500 flex items-center gap-1">
+                                  <XCircleIcon className="w-3 h-3" /> เกินโควต้า
                                 </span>
                               )}
                             </div>
@@ -626,34 +696,20 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
               </h3>
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="text-xs font-semibold text-slate-500 ml-1">ลูกค้า</label>
-                    <button type="button" onClick={() => setIsCustomerSelectionModalOpen(true)} className="text-[10px] font-bold text-primary hover:text-primary/80 bg-primary/5 px-2 py-0.5 rounded">+ เลือกลูกค้า</button>
-                  </div>
-                  {selectedCustomers.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedCustomers.map((c) => (
-                        <div key={c.id} className="flex items-center gap-1 bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded-md border border-slate-200">
-                          <span className="truncate max-w-[150px] font-medium">{c.first_name} {c.last_name}</span>
-                          <button type="button" onClick={() => setSelectedCustomerIds(prev => prev.filter(id => id !== c.id))} className="text-slate-400 hover:text-red-500"><XCircleIcon className="h-3 w-3" /></button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <div className="text-xs text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed border-slate-200 text-center">ยังไม่ได้ระบุลูกค้า</div>}
-                </div>
-                <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">เอกสารอ้างอิง</label>
                   <div className="flex gap-2 mb-2 relative z-20">
                     <select className="w-1/3 border border-slate-300 rounded-lg p-2 bg-slate-50 text-xs" value={referenceType} onChange={(e) => setReferenceType(e.target.value as any)}>
                       <option value="JOB">ใบงาน (Job)</option>
                     </select>
                     <div className="w-2/3">
+                      {/* 🌟 แสดงรายการ Job จาก State fetchedJobs ที่ดึงจาก API */}
                       <SearchableSelect
                         value={jobId || ''}
                         onChange={(value) => setJobId(value || '')}
-                        options={displayJobs.map((j) => {
+                        options={fetchedJobs.map((j) => {
                           const c = (j as any).customer;
-                          return { value: j.id, label: `${c ? `${c.first_name} ${c.last_name}` : 'Unknown'}` };
+                          const jobDate = (j.created_at);
+                          return { value: j.id, label: `[${jobDate}] ${c ? `${c.first_name} ${c.last_name}` : 'Unknown'}` };
                         })}
                         placeholder="เลือกใบงาน..."
                       />
@@ -689,7 +745,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
           isOpen={isReferenceModalOpen}
           onClose={() => setIsReferenceModalOpen(false)}
           onAddReferences={(refIds) => setJobId(refIds[0] || '')}
-          jobs={displayJobs}
+          jobs={fetchedJobs}
           currentSelection={jobId ? [jobId] : []}
           allUsedReferenceIds={[]}
         />
