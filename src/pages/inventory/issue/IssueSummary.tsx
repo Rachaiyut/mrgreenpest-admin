@@ -13,7 +13,7 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddStockIssueSummaryModal } from '../../../components/features/inventory/AddStockIssueSummaryModal';
+import { AddIssueSummaryModal } from '../../../components/features/inventory/AddIssueSummaryModal';
 import { EditStockIssueSummaryModal } from '../../../components/features/inventory/EditStockIssueSummaryModal';
 import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
 import { Card } from '../../../components/common/Card';
@@ -620,7 +620,7 @@ const IssueSummaryPage: React.FC = () => {
         )}
 
       {/* Add Modal */}
-      <AddStockIssueSummaryModal
+      <AddIssueSummaryModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onCreate={onCreateStockIssueSummary}

@@ -208,7 +208,7 @@ export interface ProductReturn extends IBase {
 }
 
 // Stock Issue Summary Interfaces
-export interface StockIssueItemSummary extends IBase {
+export interface IssueItemSummary extends IBase {
   stock_issue_summary_id: string;
   product_id: string;
   product_name: string;
@@ -223,5 +223,11 @@ export interface StockIssueSummary extends IBase {
   status: IssueSummaryStatus
   requester_id?: string;
   created_by?: string;
-  items?: StockIssueItemSummary[];
+  items?: IssueItemSummary[];
+}
+
+export interface ExpenseItem {
+  id: string;
+  description: string;
+  amount: number | '';
 }

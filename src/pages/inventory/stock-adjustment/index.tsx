@@ -10,7 +10,7 @@ import {
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
-import { AddStockAdjustmentModal } from '../../../components/features/inventory/AddStockAdjustmentModal';
+import { AddStockAdjustmentModal } from '../../../components/features/inventory/AddAdjustmentModal';
 import {
   StockAdjustment as StockAdjustmentType,
   Warehouse as WarehouseType,

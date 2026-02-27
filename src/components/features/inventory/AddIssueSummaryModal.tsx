@@ -1,63 +1,66 @@
+// ===== React =====
 import React, {
-  useState,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
-  useCallback,
+  useState,
 } from 'react';
+
+// ===== Types / Enums =====
+import { 
+  User as UserType, 
+  Job as JobType, 
+  Customer as CustomerType, 
+  ExpenseItem as ExpenseItemType, 
+  IssueItemSummary as IssueItemSummaryType, 
+  Warehouse, 
+  Product as ProductType,
+  IssueItemSummary
+} from '@/src/types/entity/app.interface';
+import { WarehouseType } from '@/src/types/enums/inventory';
+
+// ===== Components =====
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+
+import { ProductSelectionModal } from '../products/ProductSelectionModal';
+import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
+import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
+
+// ===== API =====
+import { JobApi } from '../../../api/job';
+import { UserApi } from '../../../api/user';
+import { VehicleApi } from '../../../api/vehicle';
+import { WarehouseApi } from '../../../api/warehouse';
+
+// ===== Assets =====
 import {
+  BanknotesIcon,
+  CalendarDaysIcon,
+  DocumentCheckIcon,
   PlusIcon,
   TrashIcon,
-  XCircleIcon,
   TruckIcon,
-  DocumentCheckIcon,
-  CalendarDaysIcon,
   UserIcon,
-  BanknotesIcon,
+  XCircleIcon,
 } from '../../../assets/icons/Icons';
 
-// Import Modals
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
-import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
-import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
 
-// Types & APIs
-import {
-  StockIssueSummary,
-  StockIssueItemSummary,
-  Warehouse,
-} from '@/src/types/entity/inventory.interface';
-import { Product } from '@/src/types/entity/product.interface';
-import { WarehouseType } from '@/src/types/enums/inventory';
-import { User, FieldJob, Customer } from '@/src/types/entity/app.interface';
-import { UserApi } from '../../../api/user';
-import { WarehouseApi } from '../../../api/warehouse';
-import { JobApi } from '../../../api/job';
-import { VehicleApi } from '../../../api/vehicle';
-import { Job } from '@/src/types/entity/job.interface';
-
-interface ExpenseLineItem {
-  id: string;
-  description: string;
-  amount: number | '';
-}
-
-interface AddStockIssueSummaryModalProps {
+interface AddIssueSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (data: any) => Promise<void>;
   warehouses: Warehouse[];
-  products: Product[];
-  users: User[];
-  customers?: Customer[];
-  currentUser?: User;
+  products: ProductType[];
+  users: UserType[];
+  customers?: CustomerType[];
+  currentUser?: UserType;
   stockMap?: Map<string, Map<string, number>>;
 }
 
-export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps> = ({
+export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   isOpen,
   onClose,
   onCreate,
@@ -76,17 +79,17 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const [recipientId, setRecipientId] = useState('');
   const [notes, setNotes] = useState('');
   
-  const [items, setItems] = useState<Omit<StockIssueItemSummary, 'id' | 'stock_issue_summary_id'>[]>([]);
+  const [items, setItems] = useState<Omit<IssueItemSummary, 'id' | 'stock_issue_summary_id'>[]>([]);
   
-  const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
+  const [expenseItems, setExpenseItems] = useState<ExpenseItemType[]>([]);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [referenceType, setReferenceType] = useState<'JOB'>('JOB');
   const [jobId, setJobId] = useState<string>('');
   
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; } | null>(null);
-  const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
+  const [fetchedRequester, setFetchedRequester] = useState<UserType | null>(null);
   
-  const [fetchedJobs, setFetchedJobs] = useState<Job[]>([]); 
+  const [fetchedJobs, setFetchedJobs] = useState<JobType[]>([]); 
 
   const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
@@ -327,7 +330,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
   const handleAddExpense = () => setExpenseItems((prev) => [...prev, { id: crypto.randomUUID(), description: '', amount: '' }]);
   const handleRemoveExpenseItem = (id: string) => setExpenseItems((prev) => prev.filter((item) => item.id !== id));
-  const handleExpenseItemChange = (id: string, field: keyof ExpenseLineItem, value: any) => {
+  const handleExpenseItemChange = (id: string, field: keyof ExpenseItemType, value: any) => {
     setExpenseItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
 
@@ -357,7 +360,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         purpose: 'เบิกสินค้า/อุปกรณ์', 
         notes: notes || undefined,
         status: finalStatus, 
-        items: items as StockIssueItemSummary[],
+        items: items as IssueItemSummaryType[],
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
@@ -384,7 +387,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         purpose: 'เบิกสินค้า/อุปกรณ์ (Draft)',
         notes: notes || undefined,
         status: 'DRAFT', 
-        items: items as StockIssueItemSummary[],
+        items: items as IssueItemSummary[],
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
