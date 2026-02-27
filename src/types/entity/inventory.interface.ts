@@ -65,6 +65,13 @@ export interface Vehicle extends IBase {
   jobs: Job[];
 }
 
+export interface VehicleStockLimit extends IBase {
+  warehouse_id: string;
+  vehicle_id: string;
+  product_id: string;
+  max_return_qty: number;
+}
+
 export interface WarehouseStats {
   total: string;
   fixed: string;

@@ -1,5 +1,6 @@
 import { IBaseResponseArray } from '@/src/types/entity/base.interface';
 import {
+  VehicleStockLimit,
   Warehouse,
   WarehouseQuery,
   WarehouseStats,
@@ -47,6 +48,13 @@ class VehicleService extends AuthService {
 
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
+  }
+
+  async getVehicleStockLimit(id: string): Promise<VehicleStockLimit[]> {
+    const res = await this.http.get<VehicleStockLimit[]>(
+      `${this.path}/${id}/vehicle-stock-limit`
+    );
+    return res.data;
   }
 }
 

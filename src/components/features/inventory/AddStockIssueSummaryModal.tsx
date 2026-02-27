@@ -36,6 +36,7 @@ import { User, FieldJob, Customer } from '@/src/types/entity/app.interface';
 import { UserApi } from '../../../api/user';
 import { WarehouseApi } from '../../../api/warehouse';
 import { JobApi } from '../../../api/job';
+import { VehicleApi } from '../../../api/vehicle';
 import { Job } from '@/src/types/entity/job.interface';
 
 interface ExpenseLineItem {
@@ -51,7 +52,6 @@ interface AddStockIssueSummaryModalProps {
   warehouses: Warehouse[];
   products: Product[];
   users: User[];
-  // 🌟 เอา jobs ออกจาก props เพราะเราจะ fetch เองข้างใน
   customers?: Customer[];
   currentUser?: User;
   stockMap?: Map<string, Map<string, number>>;
@@ -86,7 +86,6 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; } | null>(null);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
   
-  // 🌟 State สำหรับเก็บ Job ที่เรียกจาก API
   const [fetchedJobs, setFetchedJobs] = useState<Job[]>([]); 
 
   const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
@@ -177,29 +176,35 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
     }
   }, [warehouses]);
 
-  // 🌟 ฟังก์ชันดึง Vehicle Limit
   const fetchVehicleLimits = useCallback(async (selectedWarehouseId: string) => {
     try {
-      setDestinationLimits(new Map()); 
+      const res = await VehicleApi.getVehicleStockLimit(selectedWarehouseId);
+      const limitMap = new Map<string, number>();
+      
+      const limitsData = Array.isArray(res) ? res : (res as any)?.data || [];
+      
+      if (limitsData && limitsData.length > 0) {
+        limitsData.forEach((limit: any) => {
+          limitMap.set(limit.product_id, Number(limit.max_return_qty));
+        });
+      }
+      
+      setDestinationLimits(limitMap); 
     } catch (error) {
       console.error('Failed to fetch vehicle limits', error);
       setDestinationLimits(new Map());
     }
   }, []);
 
-  // 🌟 ฟังก์ชันเรียก API Job (ดึงทั้งหมด หรือ ดึงตาม Customer ID)
   const fetchJobs = useCallback(async (customerIds: string[] = []) => {
     try {
       let queryParams: any = { limit: 10 };
       
-      // ถ้ามีการเลือกลูกค้า ให้ส่ง filter ไปหา backend (ถ้า backend รองรับ) 
-      // หรือดึงมาทั้งหมดแล้วมา filter ฝั่ง frontend
       const res = await JobApi.getAll(queryParams);
       
       if (res && res.data) {
         let jobsData = res.data;
         
-        // กรองฝั่ง Frontend อีกรอบถ้าเลือกลูกค้าไว้
         if (customerIds.length > 0) {
           jobsData = jobsData.filter((j: any) => {
             const cId = j.customer_id || j.customer?.id;
@@ -240,12 +245,10 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, fetchWarehouses, fetchJobs, loggedInUser.id]); 
 
-  // 🌟 รีโหลด Job ใหม่เมื่อเปลี่ยนลูกค้าที่เลือก
   useEffect(() => {
     if (isOpen) {
        fetchJobs(selectedCustomerIds);
        
-       // ถ้า Job ที่เลือกไว้ก่อนหน้า ไม่ได้อยู่ในรายชื่อของลูกค้าคนใหม่ ให้เคลียร์ JobId ทิ้ง
        if (jobId && selectedCustomerIds.length > 0) {
           const isJobStillValid = fetchedJobs.some(j => j.id === jobId);
           if(!isJobStillValid) {
@@ -335,6 +338,13 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
 
     const invalidItems = items.filter((item) => !item.product_id || item.quantity <= 0);
     if (invalidItems.length > 0) return alert('กรุณาระบุจำนวนสินค้าให้ถูกต้อง');
+
+    // 🌟 Validate: หากมีการใช้เงินเกินวงเงิน หรือเบิกสินค้าเกินโควต้า ต้องบังคับเลือก Job และ Notes
+    if (isOverLimit || isAnyItemOverLimit) {
+      if (!jobId || !notes.trim()) {
+        return alert('กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า');
+      }
+    }
 
     setIsSubmitting(true);
     try {
@@ -542,8 +552,9 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                 ) : (
                   <div className="space-y-3 mt-4">
                     <div className="grid grid-cols-12 gap-4 px-5 py-2.5 bg-slate-50/80 rounded-lg text-xs font-bold text-slate-500 uppercase tracking-wider border border-slate-100 items-center">
-                      <div className="col-span-5">รายละเอียดสินค้า</div>
-                      <div className="col-span-3 text-center">สต๊อกคงเหลือ</div>
+                      <div className="col-span-4">รายละเอียดสินค้า</div>
+                      <div className="col-span-2 text-center">สต๊อกคงเหลือ</div>
+                      <div className="col-span-2 text-center text-blue-600">Limit รถ</div>
                       <div className="col-span-3 text-center text-emerald-600">จำนวนที่ใช้จริง</div>
                       <div className="col-span-1 text-center">จัดการ</div>
                     </div>
@@ -565,7 +576,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
-                            <div className="flex flex-col justify-center col-span-5">
+                            <div className="flex flex-col justify-center col-span-4">
                               <span className="font-bold text-slate-800 text-sm truncate pr-2" title={item.product_name}>
                                 {item.product_name || 'Unknown Product'}
                               </span>
@@ -573,18 +584,20 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                                 <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">
                                   {product?.code || product?.id?.substring(0, 8)}
                                 </span>
-                                {limit !== undefined && (
-                                  <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-200">
-                                    จำกัด: {limit}
-                                  </span>
-                                )}
                               </div>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center col-span-3">
+                            <div className="flex flex-col items-center justify-center col-span-2">
                               <span className="text-[11px] text-slate-400 font-medium mb-0.5">ในรถมี</span>
                               <span className={`text-sm font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
                                 {available.toLocaleString()} <span className="text-xs font-normal text-slate-500 ml-0.5">{item.unit}</span>
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center col-span-2">
+                              <span className="text-[11px] text-blue-400 font-medium mb-0.5">จำกัด</span>
+                              <span className="text-sm font-bold text-blue-600">
+                                {limit !== undefined ? limit.toLocaleString() : '-'} <span className="text-xs font-normal text-blue-400 ml-0.5">{limit !== undefined ? item.unit : ''}</span>
                               </span>
                             </div>
                             
@@ -690,19 +703,29 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
             </div>
 
             {/* Card 5: Reference Card */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-0">
+            <div className={`bg-white p-5 rounded-xl border shadow-sm relative z-0 transition-all ${
+                (isOverLimit || isAnyItemOverLimit) ? 'border-amber-400 ring-1 ring-amber-100 bg-amber-50/10' : 'border-slate-200'
+              }`}>
               <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 uppercase tracking-wide border-b border-slate-100 pb-2">
                 <DocumentCheckIcon className="w-4 h-4 text-slate-400" /> ข้อมูลอ้างอิง
               </h3>
+              
+              {(isOverLimit || isAnyItemOverLimit) && (
+                 <div className="mb-4 text-xs font-semibold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                   * จำเป็นต้องระบุ "เอกสารอ้างอิง" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า
+                 </div>
+              )}
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">เอกสารอ้างอิง</label>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                    เอกสารอ้างอิง {(isOverLimit || isAnyItemOverLimit) && <span className="text-red-500">*</span>}
+                  </label>
                   <div className="flex gap-2 mb-2 relative z-20">
                     <select className="w-1/3 border border-slate-300 rounded-lg p-2 bg-slate-50 text-xs" value={referenceType} onChange={(e) => setReferenceType(e.target.value as any)}>
                       <option value="JOB">ใบงาน (Job)</option>
                     </select>
                     <div className="w-2/3">
-                      {/* 🌟 แสดงรายการ Job จาก State fetchedJobs ที่ดึงจาก API */}
                       <SearchableSelect
                         value={jobId || ''}
                         onChange={(value) => setJobId(value || '')}
@@ -717,8 +740,18 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">หมายเหตุ (Notes)</label>
-                  <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full border border-slate-300 rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none bg-slate-50 placeholder:text-slate-400 shadow-sm" placeholder="ระบุหมายเหตุเพิ่มเติม..." />
+                  <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">
+                    หมายเหตุ (Notes) {(isOverLimit || isAnyItemOverLimit) && <span className="text-red-500">*</span>}
+                  </label>
+                  <textarea 
+                    value={notes} 
+                    onChange={(e) => setNotes(e.target.value)} 
+                    rows={3} 
+                    className={`w-full border rounded-lg p-3 text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none shadow-sm ${
+                      (isOverLimit || isAnyItemOverLimit) && !notes.trim() ? 'border-amber-300 bg-amber-50 placeholder:text-amber-300' : 'border-slate-300 bg-slate-50 placeholder:text-slate-400'
+                    }`}
+                    placeholder="ระบุหมายเหตุเพิ่มเติม..." 
+                  />
                 </div>
               </div>
             </div>

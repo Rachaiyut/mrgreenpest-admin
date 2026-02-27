@@ -373,34 +373,34 @@ const StockIssueToVehicle: React.FC = () => {
       });
     }
 
-    // if (
-    //   withdrawal.status === WithdrawalStatus.PENDING ||
-    //   withdrawal.status === Status.PendingApproval
-    // ) {
-    //   actions.push(
-    //     {
-    //       label: 'อนุมัติ',
-    //       icon: DocumentCheckIcon,
-    //       color: 'text-green-600',
-    //       hoverBg: 'hover:bg-green-50',
-    //       onClick: () => handleApprovalAction('approve'),
-    //     },
-    //     {
-    //       label: 'ไม่อนุมัติ',
-    //       icon: XCircleIcon,
-    //       color: 'text-red-600',
-    //       hoverBg: 'hover:bg-red-50',
-    //       onClick: () => handleApprovalAction('reject'),
-    //     },
-    //     {
-    //       label: 'ยกเลิก',
-    //       icon: TrashIcon,
-    //       color: 'text-red-600',
-    //       hoverBg: 'hover:bg-red-50',
-    //       onClick: () => handleCancel(withdrawal.id),
-    //     }
-    //   );
-    // }
+    if (
+      withdrawal.status === WithdrawalStatus.PENDING ||
+      withdrawal.status === Status.PendingApproval
+    ) {
+      actions.push(
+        {
+          label: 'อนุมัติ',
+          icon: DocumentCheckIcon,
+          color: 'text-green-600',
+          hoverBg: 'hover:bg-green-50',
+          onClick: () => handleApprovalAction('approve'),
+        },
+        {
+          label: 'ไม่อนุมัติ',
+          icon: XCircleIcon,
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+          onClick: () => handleApprovalAction('reject'),
+        },
+        {
+          label: 'ยกเลิก',
+          icon: TrashIcon,
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+          onClick: () => handleCancel(withdrawal.id),
+        }
+      );
+    }
 
     return actions;
   };
