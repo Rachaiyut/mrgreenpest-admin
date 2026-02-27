@@ -80,7 +80,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [referenceType, setReferenceType] = useState<'JOB'>('JOB');
-  const [referenceIds, setReferenceIds] = useState<string[]>([]);
+  const [jobId, setJobId] = useState<string>('');
   
   const [walletInfo, setWalletInfo] = useState<{ balance: number; expense_limit: number; } | null>(null);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
@@ -197,7 +197,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
       setItems([]);
       setExpenseItems([]);
       setSelectedCustomerIds([]);
-      setReferenceIds([]);
+      setJobId('');
       setIsSubmitting(false);
       
       // บังคับให้เป็นคน Login เสมอ
@@ -294,7 +294,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
-      if (referenceIds.length > 0) payload.reference_ids = referenceIds;
+      if (jobId) payload.job_id = jobId;
       if (selectedCustomerIds.length > 0) payload.customer_id = selectedCustomerIds[0];
 
       await onCreate(payload);
@@ -321,7 +321,7 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         expenses: expenseItems.map((item) => ({ type: 'EXPENSE', description: item.description, amount: Number(item.amount) })),
       };
 
-      if (referenceIds.length > 0) payload.reference_ids = referenceIds;
+      if (jobId) payload.job_id = jobId;
       if (selectedCustomerIds.length > 0) payload.customer_id = selectedCustomerIds[0];
 
       await onCreate(payload);
@@ -649,8 +649,8 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
                     </select>
                     <div className="w-2/3">
                       <SearchableSelect
-                        value={referenceIds[0] || ''}
-                        onChange={(value) => setReferenceIds(value ? [value] : [])}
+                        value={jobId || ''}
+                        onChange={(value) => setJobId(value || '')}
                         options={displayJobs.map((j) => {
                           const c = (j as any).customer;
                           return { value: j.id, label: `${c ? `${c.first_name} ${c.last_name}` : 'Unknown'}` };
@@ -688,9 +688,9 @@ export const AddStockIssueSummaryModal: React.FC<AddStockIssueSummaryModalProps>
         <ReferenceSelectionModal
           isOpen={isReferenceModalOpen}
           onClose={() => setIsReferenceModalOpen(false)}
-          onAddReferences={(refIds) => setReferenceIds((prev) => Array.from(new Set([...prev, ...refIds])))}
+          onAddReferences={(refIds) => setJobId(refIds[0] || '')}
           jobs={displayJobs}
-          currentSelection={referenceIds}
+          currentSelection={jobId ? [jobId] : []}
           allUsedReferenceIds={[]}
         />
       )}

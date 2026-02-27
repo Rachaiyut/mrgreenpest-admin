@@ -212,6 +212,7 @@ export interface StockIssueItemSummary extends IBase {
 export interface StockIssueSummary extends IBase {
   warehouse_id: string;
   notes?: string;
+  job_id?: string;
   status: IssueSummaryStatus
   requester_id?: string;
   created_by?: string;

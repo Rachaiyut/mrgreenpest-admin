@@ -49,13 +49,14 @@ const StockIssueSummaryPage: React.FC = () => {
     users,
     warehouses,
     products,
+    jobs,
     handlers,
     fetchData,
   } = useData();
 
-  // Fetch stock issue summaries on mount
+  // Fetch stock issue summaries and jobs on mount
   useEffect(() => {
-    fetchData(['stockIssueSummaries']);
+    fetchData(['stockIssueSummaries', 'jobs']);
   }, []);
 
   const onCreateStockIssueSummary = async (data: Omit<StockIssueSummaryType, 'id'>) => {
@@ -615,6 +616,7 @@ const StockIssueSummaryPage: React.FC = () => {
         warehouses={warehouses}
         products={products}
         users={users}
+        jobs={jobs}
       />
 
       {/* Details Modal */}
