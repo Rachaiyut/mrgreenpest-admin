@@ -54,7 +54,7 @@ const getStatusBadge = (status?: string) => {
   }
 };
 
-const StockIssueSummaryPage: React.FC = () => {
+const IssueSummaryPage: React.FC = () => {
   const {
     stockIssueSummaries,
     users,
@@ -653,4 +653,4 @@ const StockIssueSummaryPage: React.FC = () => {
   );
 };
 
-export default StockIssueSummaryPage;
+export default IssueSummaryPage;

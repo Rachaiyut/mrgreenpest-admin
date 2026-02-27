@@ -71,7 +71,7 @@ const Contract = React.lazy(() => import('../pages/contracts/Contract'));
 const Invoice = React.lazy(() => import('../pages/invoices/Invoice'));
 const Receipt = React.lazy(() => import('../pages/receipts/Receipt'));
 const Warehouse = React.lazy(() => import('../pages/warehouse/Warehouse'));
-const Withdrawals = React.lazy(() => import('../pages/inventory/stock-issue/StockIssueSummary'));
+const Withdrawals = React.lazy(() => import('../pages/inventory/issue/IssueSummary'));
 const Product = React.lazy(() => import('../pages/inventory/products/Product'));
 const Package = React.lazy(() => import('../pages/packages/Package'));
 const Category = React.lazy(() => import('../pages/categories/Category'));
@@ -94,7 +94,7 @@ const ReturnToSupplier = React.lazy(
   () => import('../pages/inventory/return-to-supplier')
 );
 const WithDrawVehicle = React.lazy(
-  () => import('../pages/inventory/stock-issue/StockIssueToVehicle')
+  () => import('../pages/inventory/issue/Issue')
 );
 const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 

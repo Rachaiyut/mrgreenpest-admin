@@ -1,33 +1,40 @@
+// ===== React =====
 import type { FC, FormEvent, MouseEvent } from 'react';
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+
+// ===== Types / Enums =====
+import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
+import {
+  GoodsReceive as GoodsReceiveType,
+  Product as ProductType,
+  Supplier as SupplierType,
+  Warehouse as WarehouseType,
+  Status,
+} from '@/src/types/entity/app.interface';
+
+// ===== Components =====
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { ProductSelectionModal } from '../products/ProductSelectionModal';
+
+// ===== Assets =====
 import {
+  DocumentTextIcon,
+  PackageIcon,
   PlusIcon,
   TrashIcon,
-  DocumentTextIcon,
   TruckIcon,
-  PackageIcon,
 } from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
-import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
-import {
-  GoodsReceipt,
-  Status,
-  Warehouse as WarehouseType,
-  Supplier,
-  Product,
-} from '@/src/types/entity/app.interface';
 
 interface AddGoodsReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateReceipt: (receipt: Omit<GoodsReceipt, 'id'>) => void;
-  receipts: GoodsReceipt[];
+  onCreateReceipt: (receipt: Omit<GoodsReceiveType, 'id'>) => void;
+  receipts: GoodsReceiveType[];
   warehouses: WarehouseType[];
-  suppliers: Supplier[];
-  products: Product[];
+  suppliers: SupplierType[];
+  products: ProductType[];
 }
 
 interface LineItem {

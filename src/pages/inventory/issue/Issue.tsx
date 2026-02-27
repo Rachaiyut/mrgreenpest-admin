@@ -24,7 +24,7 @@ import { WithdrawalStatus } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddStockIssueToVehicleModal';
+import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddIssueModal';
 import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/EditStockIssueToVehicleModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
 
@@ -61,7 +61,7 @@ import {
   XCircleIcon,
 } from '../../../assets/icons/Icons';
 
-const StockIssueToVehicle: React.FC = () => {
+const Issue: React.FC = () => {
   const { handlers } = useData();
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
@@ -832,4 +832,4 @@ const StockIssueToVehicle: React.FC = () => {
   );
 };
 
-export default StockIssueToVehicle;
+export default Issue;
