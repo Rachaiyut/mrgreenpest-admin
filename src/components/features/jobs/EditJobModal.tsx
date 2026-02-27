@@ -337,10 +337,10 @@ export const EditJobModal: FC<EditJobModalProps> = ({
             setAssessment((prev) =>
               prev
                 ? {
-                    ...prev,
-                    payment_condition: loadedPaymentCondition,
-                    payment_installment_count: loadedInstallmentCount,
-                  }
+                  ...prev,
+                  payment_condition: loadedPaymentCondition,
+                  payment_installment_count: loadedInstallmentCount,
+                }
                 : null
             );
 
@@ -686,10 +686,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     const installmentCount = (assessment as any).payment_installment_count;
     const total = (assessment as any).total_price || 0;
 
-    // Logic: If installments exist, keep them. If not, generate if count > 0.
-    // If installments exist but total mismatch, we MIGHT want to adjust, but be careful not to overwrite user edits if in edit mode.
-    // For now, let's trust the loaded installments if they exist.
-
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       if (installments.length === 0 && installmentCount > 0) {
         // Generate new if none exist
@@ -716,13 +712,42 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           });
         }
         setInstallments(newInst);
-      } else if (installments.length > 0) {
-        // If exists, ensure they are sorted
-        setInstallments((prev) =>
-          [...prev].sort(
-            (a: any, b: any) => a.installment_no - b.installment_no
-          )
+      } else if (installments.length > 0 && total > 0) {
+        
+        // --- ส่วนที่แก้ไข: กระจายยอดเงินใหม่ถ้ายอดรวม (Total Price) เปลี่ยนแปลง ---
+        const currentTotal = installments.reduce(
+          (sum, i) => sum + (Number(i.amount) || 0),
+          0
         );
+
+        // ถ้ายอดรวมงวดปัจจุบัน ไม่ตรงกับ ยอดรวมสุทธิของบิล ให้ปรับปรุงยอดแต่ละงวดใหม่
+        if (Math.abs(currentTotal - total) > 0.05) {
+          const count = installments.length;
+          const baseAmount = Math.floor((total / count) * 100) / 100;
+          const remainder = total - baseAmount * count;
+
+          setInstallments((prev) => {
+            const sorted = [...prev].sort(
+              (a: any, b: any) => a.installment_no - b.installment_no
+            );
+            return sorted.map((inst, index) => {
+              let amount = baseAmount;
+              if (index === count - 1) {
+                amount = Number((baseAmount + remainder).toFixed(2));
+              }
+              return { ...inst, amount };
+            });
+          });
+        } else {
+          // ถ้ายอดตรงกันอยู่แล้ว แค่จัดเรียงตามเดิม
+          setInstallments((prev) =>
+            [...prev].sort(
+              (a: any, b: any) => a.installment_no - b.installment_no
+            )
+          );
+        }
+        // -------------------------------------------------------------
+        
       }
     } else {
       if (
@@ -737,6 +762,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     assessment?.payment_installment_count,
     assessment?.total_price,
   ]);
+ 
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -809,9 +835,14 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         if (!assessment) return undefined;
 
         let shouldBePending = false;
+        // ... ภายในฟังก์ชัน createJobObject ...
+
         const mappedAreas = ((assessment as any)?.assessment_areas || []).map(
           (area: any) => {
-            // Check for price condition
+            // 1. ดึงค่า package_type จากตัว area ไว้ก่อน (ซึ่งได้รับมาจาก WorkAreaForm)
+            const currentPackageType = area.package_type;
+
+            // Check for price condition (Logic เดิมของคุณ)
             if (assessment.package_id) {
               const pkg = packages.find((p) => p.id === assessment.package_id);
               if (pkg) {
@@ -822,8 +853,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                   0
                 );
                 const minExpectedTotal = standardBasePrice + itemsTotal;
-
-                // Allow for small floating point differences
                 if (Number(area.total_price) < minExpectedTotal - 0.01) {
                   shouldBePending = true;
                 }
@@ -835,12 +864,15 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               package_price:
                 area.package_price !== undefined && area.package_price !== null
                   ? Number(area.package_price)
-                  : undefined, // Include package price in payload
+                  : undefined,
+
+              // --- เพิ่มบรรทัดนี้เพื่อส่ง package_type ในระดับ Area ---
+              package_type: currentPackageType,
+
               area_name: area.area_name,
               building_type: area.building_type,
               service_system: area.service_system,
               area_size: area.area_size,
-              // base_service_price: area.base_service_price, // Removed as requested
               total_price: area.total_price,
               category_services: (area.category_services || []).map(
                 (c: any) => ({
@@ -853,18 +885,23 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                 product_price: it.product_price,
                 quantity: it.quantity,
                 total_price: it.total_price,
+
+                // --- เพิ่มบรรทัดนี้เพื่อส่ง package_type ในระดับ Item (ถ้า API ต้องการ) ---
+                package_type: currentPackageType,
               })),
             };
           }
         );
+
+        // ... ส่วนที่เหลือของฟังก์ชันคงเดิม ...
 
         return {
           customer_id: currentJob.customer_id,
           package_id: (assessment as any).package_id,
           appointment_date: assessment.appointment_date
             ? new Date(assessment.appointment_date)
-                .toISOString()
-                .substring(0, 10)
+              .toISOString()
+              .substring(0, 10)
             : undefined,
           address: currentJob.address,
           sub_district:
@@ -999,19 +1036,30 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       if (!prev) return prev;
       const areas = [...(prev.assessment_areas || [])];
 
-      // Calculate new price if area size changed and package selected
       let newArea = { ...updatedArea };
+      
+      // ซิงค์ค่า package_price ที่รับมาจาก WorkArea ให้ตรงกับ base_service_price เพื่อให้ระบบจำค่าได้
+      if (newArea.package_price !== undefined) {
+        newArea.base_service_price = newArea.package_price;
+      }
+
       if (selectedPackageId) {
         const pkg = packages.find((p) => p.id === selectedPackageId);
         if (pkg) {
-          // Use the price from the form (which allows manual edits), don't force recalculation
-          const basePrice = Number(newArea.base_service_price || 0);
+          // ใช้ base_service_price หรือ package_price ที่อัปเดตแล้ว
+          const basePrice = Number(newArea.base_service_price || newArea.package_price || 0);
           const itemsTotal = (newArea.items || []).reduce(
             (sum: number, item: any) => sum + Number(item.total_price || 0),
             0
           );
           newArea.base_service_price = basePrice;
-          newArea.total_price = basePrice + itemsTotal;
+          
+          // รับค่า total_price ที่ถูกคำนวณมาแล้วจาก WorkAreaForm ก่อนเสมอ ถ้าไม่มีค่อยบวกใหม่
+          if (updatedArea.total_price !== undefined) {
+            newArea.total_price = updatedArea.total_price;
+          } else {
+            newArea.total_price = basePrice + itemsTotal;
+          }
         }
       }
 
@@ -1021,6 +1069,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         (sum, a) => sum + Number(a.total_price || 0),
         0
       );
+      
       return {
         ...prev,
         assessment_areas: areas,
@@ -1205,10 +1254,10 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       const fallbackParts = name
         ? [name]
         : [
-            tech?.first_name || '',
-            tech?.last_name || '',
-            tech?.nick_name || tech?.nickname || '',
-          ].filter(Boolean);
+          tech?.first_name || '',
+          tech?.last_name || '',
+          tech?.nick_name || tech?.nickname || '',
+        ].filter(Boolean);
       return fallbackParts.join(' ');
     }
     return '';
@@ -1270,10 +1319,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
               onClick={() => setActiveTab(tab.id as any)}
               className={`
                 flex items-center gap-2 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors
-                ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                ${activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }
               `}
             >
@@ -1535,8 +1583,8 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     selectedPackage={
                       selectedPackageId
                         ? (packages.find(
-                            (p) => p.id === selectedPackageId
-                          ) as any)!
+                          (p) => p.id === selectedPackageId
+                        ) as any)!
                         : null
                     }
                     availablePackages={packages}
@@ -1579,7 +1627,7 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                           checked={
                             !(assessment as any).payment_condition ||
                             (assessment as any).payment_condition !==
-                              PaymentMethod.INSTALLMENT
+                            PaymentMethod.INSTALLMENT
                           }
                           onChange={() =>
                             setAssessment((prev: any) => ({
@@ -1614,182 +1662,182 @@ export const EditJobModal: FC<EditJobModalProps> = ({
 
                     {(assessment as any).payment_condition ===
                       PaymentMethod.INSTALLMENT && (
-                      <div className="space-y-4 animate-fadeIn">
-                        <FormField
-                          label="จำนวนงวด"
-                          htmlFor="payment_installment_count"
-                        >
-                          <Input
-                            name="payment_installment_count"
-                            type="number"
-                            placeholder="ระบุจำนวนงวด"
-                            value={
-                              (assessment as any).payment_installment_count ||
-                              ''
-                            }
-                            onChange={(e) => {
-                              const newCount =
-                                parseInt(e.target.value, 10) || 0;
-                              setAssessment((prev: any) => ({
-                                ...prev,
-                                payment_installment_count: newCount,
-                              }));
+                        <div className="space-y-4 animate-fadeIn">
+                          <FormField
+                            label="จำนวนงวด"
+                            htmlFor="payment_installment_count"
+                          >
+                            <Input
+                              name="payment_installment_count"
+                              type="number"
+                              placeholder="ระบุจำนวนงวด"
+                              value={
+                                (assessment as any).payment_installment_count ||
+                                ''
+                              }
+                              onChange={(e) => {
+                                const newCount =
+                                  parseInt(e.target.value, 10) || 0;
+                                setAssessment((prev: any) => ({
+                                  ...prev,
+                                  payment_installment_count: newCount,
+                                }));
 
-                              setInstallments((prev) => {
-                                let updatedInstallments = [...prev];
+                                setInstallments((prev) => {
+                                  let updatedInstallments = [...prev];
 
-                                if (newCount > prev.length) {
-                                  // Add new installments
-                                  const toAdd = newCount - prev.length;
-                                  const startDate = assessment?.appointment_date
-                                    ? new Date(assessment.appointment_date)
-                                    : new Date();
+                                  if (newCount > prev.length) {
+                                    // Add new installments
+                                    const toAdd = newCount - prev.length;
+                                    const startDate = assessment?.appointment_date
+                                      ? new Date(assessment.appointment_date)
+                                      : new Date();
 
-                                  const newItems = Array.from(
-                                    { length: toAdd },
-                                    (_, i) => {
-                                      const nextNo = prev.length + i + 1;
-                                      const dueDate = new Date(startDate);
-                                      dueDate.setMonth(
-                                        dueDate.getMonth() + (prev.length + i)
-                                      );
+                                    const newItems = Array.from(
+                                      { length: toAdd },
+                                      (_, i) => {
+                                        const nextNo = prev.length + i + 1;
+                                        const dueDate = new Date(startDate);
+                                        dueDate.setMonth(
+                                          dueDate.getMonth() + (prev.length + i)
+                                        );
 
-                                      return {
-                                        id: crypto.randomUUID(),
-                                        installment_no: nextNo,
-                                        amount: 0,
-                                        note: `งวดที่ ${nextNo}`,
-                                        due_date: dueDate
-                                          .toISOString()
-                                          .substring(0, 10),
-                                      };
-                                    }
-                                  );
-                                  updatedInstallments = [...prev, ...newItems];
-                                } else if (newCount < prev.length) {
-                                  // Remove excess installments
-                                  updatedInstallments = prev.slice(0, newCount);
-                                }
+                                        return {
+                                          id: crypto.randomUUID(),
+                                          installment_no: nextNo,
+                                          amount: 0,
+                                          note: `งวดที่ ${nextNo}`,
+                                          due_date: dueDate
+                                            .toISOString()
+                                            .substring(0, 10),
+                                        };
+                                      }
+                                    );
+                                    updatedInstallments = [...prev, ...newItems];
+                                  } else if (newCount < prev.length) {
+                                    // Remove excess installments
+                                    updatedInstallments = prev.slice(0, newCount);
+                                  }
 
-                                // Recalculate amounts to split total evenly
-                                const total =
-                                  (assessment as any).total_price || 0;
-                                if (
-                                  total > 0 &&
-                                  updatedInstallments.length > 0
-                                ) {
-                                  const amountPerInst =
-                                    Math.floor(
-                                      (total / updatedInstallments.length) * 100
-                                    ) / 100;
-                                  const lastAmount =
-                                    total -
-                                    amountPerInst *
+                                  // Recalculate amounts to split total evenly
+                                  const total =
+                                    (assessment as any).total_price || 0;
+                                  if (
+                                    total > 0 &&
+                                    updatedInstallments.length > 0
+                                  ) {
+                                    const amountPerInst =
+                                      Math.floor(
+                                        (total / updatedInstallments.length) * 100
+                                      ) / 100;
+                                    const lastAmount =
+                                      total -
+                                      amountPerInst *
                                       (updatedInstallments.length - 1);
 
-                                  updatedInstallments = updatedInstallments.map(
-                                    (inst, index) => ({
-                                      ...inst,
-                                      amount:
-                                        index === updatedInstallments.length - 1
-                                          ? lastAmount
-                                          : amountPerInst,
-                                    })
-                                  );
-                                }
-
-                                return updatedInstallments;
-                              });
-                            }}
-                            className="bg-white max-w-[200px]"
-                            required
-                            min={2}
-                          />
-                        </FormField>
-
-                        {/* Installment Details */}
-                        {installments.length > 0 && (
-                          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-                            <h4 className="font-medium text-slate-700 mb-3">
-                              รายละเอียดการแบ่งชำระ
-                            </h4>
-                            <div className="space-y-3">
-                              {installments.map((inst, idx) => (
-                                <div key={idx} className="flex gap-3 items-end">
-                                  <div className="w-16 pt-2 text-sm font-medium text-slate-500">
-                                    งวดที่ {inst.installment_no}
-                                  </div>
-                                  <div className="flex-1">
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                      จำนวนเงิน
-                                    </label>
-                                    <Input
-                                      type="number"
-                                      value={inst.amount}
-                                      onChange={(e) => {
-                                        const val =
-                                          parseFloat(e.target.value) || 0;
-                                        handleInstallmentAmountChange(idx, val);
-                                      }}
-                                      step="0.01"
-                                      className="bg-white"
-                                    />
-                                  </div>
-
-                                  <div className="flex-1">
-                                    <label className="block text-xs text-slate-400 mb-1">
-                                      หมายเหตุ
-                                    </label>
-                                    <Input
-                                      type="text"
-                                      value={inst.note || ''}
-                                      placeholder="เช่น มัดจำ"
-                                      onChange={(e) => {
-                                        handleInstallmentNoteChange(
-                                          idx,
-                                          e.target.value
-                                        );
-                                      }}
-                                      className="bg-white"
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                              <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
-                                <span>รวม</span>
-                                <span
-                                  className={
-                                    installments.reduce(
-                                      (sum, i) => sum + Number(i.amount || 0),
-                                      0
-                                    ) === (assessment as any).total_price
-                                      ? 'text-green-600'
-                                      : 'text-red-500'
+                                    updatedInstallments = updatedInstallments.map(
+                                      (inst, index) => ({
+                                        ...inst,
+                                        amount:
+                                          index === updatedInstallments.length - 1
+                                            ? lastAmount
+                                            : amountPerInst,
+                                      })
+                                    );
                                   }
-                                >
-                                  {installments
-                                    .reduce(
-                                      (sum, i) => sum + Number(i.amount || 0),
-                                      0
-                                    )
-                                    .toLocaleString(undefined, {
+
+                                  return updatedInstallments;
+                                });
+                              }}
+                              className="bg-white max-w-[200px]"
+                              required
+                              min={2}
+                            />
+                          </FormField>
+
+                          {/* Installment Details */}
+                          {installments.length > 0 && (
+                            <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                              <h4 className="font-medium text-slate-700 mb-3">
+                                รายละเอียดการแบ่งชำระ
+                              </h4>
+                              <div className="space-y-3">
+                                {installments.map((inst, idx) => (
+                                  <div key={idx} className="flex gap-3 items-end">
+                                    <div className="w-16 pt-2 text-sm font-medium text-slate-500">
+                                      งวดที่ {inst.installment_no}
+                                    </div>
+                                    <div className="flex-1">
+                                      <label className="block text-xs text-slate-400 mb-1">
+                                        จำนวนเงิน
+                                      </label>
+                                      <Input
+                                        type="number"
+                                        value={inst.amount}
+                                        onChange={(e) => {
+                                          const val =
+                                            parseFloat(e.target.value) || 0;
+                                          handleInstallmentAmountChange(idx, val);
+                                        }}
+                                        step="0.01"
+                                        className="bg-white"
+                                      />
+                                    </div>
+
+                                    <div className="flex-1">
+                                      <label className="block text-xs text-slate-400 mb-1">
+                                        หมายเหตุ
+                                      </label>
+                                      <Input
+                                        type="text"
+                                        value={inst.note || ''}
+                                        placeholder="เช่น มัดจำ"
+                                        onChange={(e) => {
+                                          handleInstallmentNoteChange(
+                                            idx,
+                                            e.target.value
+                                          );
+                                        }}
+                                        className="bg-white"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                                <div className="pt-2 flex justify-between text-sm font-semibold text-slate-700 border-t mt-2">
+                                  <span>รวม</span>
+                                  <span
+                                    className={
+                                      installments.reduce(
+                                        (sum, i) => sum + Number(i.amount || 0),
+                                        0
+                                      ) === (assessment as any).total_price
+                                        ? 'text-green-600'
+                                        : 'text-red-500'
+                                    }
+                                  >
+                                    {installments
+                                      .reduce(
+                                        (sum, i) => sum + Number(i.amount || 0),
+                                        0
+                                      )
+                                      .toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}{' '}
+                                    /{' '}
+                                    {(
+                                      (assessment as any).total_price || 0
+                                    ).toLocaleString(undefined, {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2,
-                                    })}{' '}
-                                  /{' '}
-                                  {(
-                                    (assessment as any).total_price || 0
-                                  ).toLocaleString(undefined, {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}
-                                </span>
+                                    })}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          )}
+                        </div>
+                      )}
                   </div>
 
                   {/* Summary for Job Edit */}
@@ -1935,10 +1983,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                     key={tech.id}
                     className={`
                       relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
-                      ${
-                        selectedTechnicianIds.includes(tech.id)
-                          ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      ${selectedTechnicianIds.includes(tech.id)
+                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
                       }
                     `}
                   >

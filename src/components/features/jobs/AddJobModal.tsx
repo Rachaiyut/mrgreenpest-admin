@@ -39,6 +39,7 @@ import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
 import { UserRole } from '@/src/types/entity/core.interface';
 import { Assessment } from '@/src/types/entity/app.interface';
 import { Invoice } from '@/src/types/entity/financial.interface';
+import DatePicker from 'react-datepicker';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: React.FC<{
@@ -773,13 +774,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   className="flex items-center gap-2 bg-white p-2"
                 >
                   <span
-                    className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isCurrent
-                        ? 'border-primary bg-primary text-white'
-                        : isCompleted
-                          ? 'border-green-500 bg-green-500 text-white'
-                          : 'border-slate-200 bg-slate-50 text-slate-500'
-                    }`}
+                    className={`h-8 w-8 rounded-full flex items-center justify-center border-2 transition-all ${isCurrent
+                      ? 'border-primary bg-primary text-white'
+                      : isCompleted
+                        ? 'border-green-500 bg-green-500 text-white'
+                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                      }`}
                   >
                     {isCompleted && !isCurrent ? (
                       <CheckCircleIcon className="w-5 h-5" />
@@ -906,16 +906,35 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                     htmlFor="work-date"
                     className="mb-0"
                   >
-                    <div className="relative">
-                      <Input
+                    <div className="relative w-full">
+                      {/* CORRECTED DATEPICKER */}
+                      <DatePicker
                         id="work-date"
-                        type="date"
-                        value={workDate}
-                        onChange={(e) => setWorkDate(e.target.value)}
+                        // 1. Use 'selected' and parse the string back to a Date object for the picker
+                        selected={workDate ? new Date(workDate) : null}
+                        // 2. Handle the Date object returned by onChange
+                        onChange={(date: Date | null) => {
+                          if (date) {
+                            // Convert Date object back to the expected string format (YYYY-MM-DD)
+                            // We use local time to avoid timezone offset issues
+                            const yyyy = date.getFullYear();
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            setWorkDate(`${yyyy}-${mm}-${dd}`);
+                          } else {
+                            setWorkDate('');
+                          }
+                        }}
                         required
-                        className="pl-10 h-12"
+                        wrapperClassName="w-full"
+                        placeholderText="dd/mm/yyyy"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        // 3. Styling adjustments
+                        className="w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm"
                       />
-                      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+
+                      <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
                     </div>
                   </FormField>
                 </div>
@@ -934,9 +953,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
                           required
-                          className="pl-10 h-12 text-center font-medium"
+                          // 🌟 เพิ่มคลาส [&::-webkit-datetime-edit-ampm-field]:hidden เพื่อซ่อน AM/PM
+                          className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden"
                         />
-                        <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
                   </div>
@@ -954,9 +973,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
                           required
-                          className="pl-10 h-12 text-center font-medium"
+                          // 🌟 เพิ่มคลาส [&::-webkit-datetime-edit-ampm-field]:hidden เพื่อซ่อน AM/PM
+                          className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden"
                         />
-                        <ClockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
                   </div>
@@ -1032,13 +1051,13 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                         อ้างอิง:{' '}
                         {isAssessment
                           ? availableAssessments.find(
-                              (a) =>
-                                a.id === selectedReference.replace('asm-', '')
-                            )?.code || selectedReference
+                            (a) =>
+                              a.id === selectedReference.replace('asm-', '')
+                          )?.code || selectedReference
                           : availableContracts.find(
-                              (c) =>
-                                c.id === selectedReference.replace('cnt-', '')
-                            )?.code || selectedReference}
+                            (c) =>
+                              c.id === selectedReference.replace('cnt-', '')
+                          )?.code || selectedReference}
                       </div>
                     )}
                     {selectedInvoiceId && (
@@ -1070,15 +1089,15 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                               {isAssessment ? 'ใบประเมิน: ' : 'สัญญา: '}
                               {isAssessment
                                 ? availableAssessments.find(
-                                    (a) =>
-                                      a.id ===
-                                      selectedReference.replace('asm-', '')
-                                  )?.code || selectedReference
+                                  (a) =>
+                                    a.id ===
+                                    selectedReference.replace('asm-', '')
+                                )?.code || selectedReference
                                 : availableContracts.find(
-                                    (c) =>
-                                      c.id ===
-                                      selectedReference.replace('cnt-', '')
-                                  )?.code || selectedReference}
+                                  (c) =>
+                                    c.id ===
+                                    selectedReference.replace('cnt-', '')
+                                )?.code || selectedReference}
                             </span>
                           )}
                           {selectedInvoiceId && (
@@ -1142,8 +1161,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                                   <span className="text-slate-800">
                                     {asm.appointment_date
                                       ? new Date(
-                                          asm.appointment_date
-                                        ).toLocaleDateString('th-TH')
+                                        asm.appointment_date
+                                      ).toLocaleDateString('th-TH')
                                       : '-'}
                                   </span>
                                 </div>
@@ -1260,7 +1279,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                                     </span>
                                     <span className="font-medium">
                                       {area.service_system ===
-                                      ServiceSystem.CHEMICAL
+                                        ServiceSystem.CHEMICAL
                                         ? 'สารเคมี'
                                         : 'เหยื่อ'}
                                     </span>
@@ -1315,7 +1334,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                                       ปัญหาที่พบ:
                                     </span>
                                     {area.category_services &&
-                                    area.category_services.length > 0 ? (
+                                      area.category_services.length > 0 ? (
                                       <div className="flex flex-wrap gap-1">
                                         {area.category_services.map(
                                           (cat, i) => (
@@ -1504,10 +1523,9 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                     key={tech.id}
                     className={`
                       relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group
-                      ${
-                        selectedTechnicianIds.includes(tech.id)
-                          ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                      ${selectedTechnicianIds.includes(tech.id)
+                        ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
                       }
                     `}
                   >
