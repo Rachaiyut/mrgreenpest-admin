@@ -866,7 +866,7 @@ const Job: React.FC<JobProps> = ({
       (status as unknown as string) === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'เขียน/แก้ไขรายงาน',
+        label: 'แก้ไขรายงานบริการ',
         icon: DocumentCheckIcon,
         onClick: () => handleWriteReport(selectedJob),
       });

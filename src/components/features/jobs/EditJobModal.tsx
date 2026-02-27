@@ -1,19 +1,14 @@
+// ===== React =====
 import {
-  useState,
-  useEffect,
-  useMemo,
   FC,
   ChangeEvent,
   FormEvent,
+  useEffect,
+  useMemo,
+  useState,
 } from 'react';
-import { Modal } from '../../common/Modal';
-import {
-  Button,
-  FormField,
-  Input,
-  Select,
-  Textarea,
-} from '../../common/FormControls';
+
+// ===== Types / Enums =====
 import {
   Assessment,
   User,
@@ -24,35 +19,51 @@ import {
   AssessmentWorkArea,
   AssessmentInstallment,
 } from '@/src/types/entity/app.interface';
+
 import {
   FieldJob,
   FieldJobWorkArea,
 } from '@/src/types/entity/field-job.interface';
+
+import { Package } from '@/src/types/entity/package.interface';
+
 import { JobStatus, JobMainStatus } from '@/src/types/enums/job';
-import {
-  PlusIcon,
-  RefreshIcon,
-  LoadingIcon,
-  UserIcon,
-  CalendarIcon,
-  DocumentIcon,
-  CreditCardIcon,
-  TruckIcon,
-} from '../../../assets/icons/Icons';
-import { SearchableSelect } from '../../common/SearchableSelect';
-import { WarehouseType, CategoryType } from '@/src/types';
-import {
-  AssessmentApi,
-  ProductApi,
-  CategoryApi,
-  PackageApi,
-  JobApi,
-  CustomerApi,
-} from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
+import { WarehouseType, CategoryType } from '@/src/types';
+
+// ===== Components =====
+import { Modal } from '../../common/Modal';
+import {
+  Button,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+} from '../../common/FormControls';
+import { SearchableSelect } from '../../common/SearchableSelect';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
-import { Package } from '@/src/types/entity/package.interface';
+
+// ===== API =====
+import {
+  AssessmentApi,
+  CategoryApi,
+  CustomerApi,
+  JobApi,
+  PackageApi,
+  ProductApi,
+} from '@/src/api';
+
+// ===== Assets =====
+import {
+  CalendarIcon,
+  CreditCardIcon,
+  DocumentIcon,
+  PlusIcon,
+  RefreshIcon,
+  TruckIcon,
+  UserIcon,
+} from '../../../assets/icons/Icons';
 
 // A component to manage a single work area within the job form
 const JobWorkAreaForm: FC<{
@@ -280,11 +291,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
     ) {
       const idToFetch =
         currentJob?.assessment_id || (currentJob as any)?.assessment?.id;
-      console.log('EditJobModal: Fetching assessment', idToFetch);
       AssessmentApi.getById(idToFetch)
         .then((res: any) => {
           const rawAssessment = res.data || res || null;
-          console.log('EditJobModal: Fetched assessment', rawAssessment);
           if (rawAssessment) {
             // Helper to derive base price (Logic sync with EditAssessmentModal)
             const enrichArea = (wa: any) => {
@@ -402,7 +411,6 @@ export const EditJobModal: FC<EditJobModalProps> = ({
         // If assessmentId exists in a different casing or property
         // This block is just a safeguard, usually job.assessment_id is correct
       } else {
-        console.log('EditJobModal: No assessment_id in job object', currentJob);
         setAssessment(null);
       }
     }
@@ -628,38 +636,17 @@ export const EditJobModal: FC<EditJobModalProps> = ({
       if (isNaN(existingJobStart.getTime()) || isNaN(existingJobEnd.getTime()))
         return false;
 
-      // Robust Date comparison (Local vs Local)
-      // Use getFullYear(), getMonth(), getDate() to build local YYYY-MM-DD
       const existingDateLocal = `${existingJobStart.getFullYear()}-${String(existingJobStart.getMonth() + 1).padStart(2, '0')}-${String(existingJobStart.getDate()).padStart(2, '0')}`;
-
-      // Parse workDate parts to ensure format matches regardless of input type
-      // workDate comes from input[type="date"] so it should be YYYY-MM-DD
-      // But let's be safe
 
       if (existingDateLocal !== workDate) {
         return false;
       }
-
-      // Check for overlap: (StartA < EndB) and (EndA > StartB)
-      // Note: newJobStart/End are created with local time string "YYYY-MM-DDTHH:mm", so they are effectively local time
-      // But existingJobStart/End are typically UTC from DB.
-      // To compare correctly, we should compare time strings if date matches, OR convert everything to same basis.
-      // Since we already matched the date string (local day), we can just compare time-of-day?
-      // No, existingJob might span midnight (unlikely but possible).
-
-      // BETTER APPROACH: Convert existing times to local date objects for comparison
-      // But we don't know the timezone of the browser vs the server intended time?
-      // Usually existingJob.start_time is an ISO string. new Date(iso) gives a Date object in browser's local time.
-      // So existingJobStart is in local time.
-      // newJobStart is constructed from "YYYY-MM-DD" + "THH:mm". This is parsed as local time by `new Date()`.
-      // So both are local. Comparison should be valid.
 
       return newJobStart < existingJobEnd && newJobEnd > existingJobStart;
     });
 
     if (conflictingJob) {
       // For debugging
-      console.log('Conflict found with job:', conflictingJob);
       setTimeConflictError(
         `เวลานี้ทับซ้อนกับงานของ ${conflictingJob.customerName} (${new Date(conflictingJob.start_time).toTimeString().substring(0, 5)} - ${new Date(conflictingJob.end_time).toTimeString().substring(0, 5)})`
       );

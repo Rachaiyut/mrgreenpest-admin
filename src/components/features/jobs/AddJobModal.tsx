@@ -1,4 +1,22 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// ===== React =====
+import React, { useEffect, useMemo, useState } from 'react';
+
+// ===== External Libraries =====
+import DatePicker from 'react-datepicker';
+
+// ===== Types / Enums =====
+import { AsessmentStatus, Role, ServiceSystem, WarehouseType } from '@/src/types';
+
+import { JobMainStatus } from '@/src/types/enums/job';
+
+import { User, UserRole } from '@/src/types/entity/core.interface';
+import { Job } from '@/src/types/entity/job.interface';
+import { Contract, Invoice } from '@/src/types/entity/financial.interface';
+import { Customer } from '@/src/types/entity/customer.interface';
+import { Warehouse } from '@/src/types/entity/inventory.interface';
+import { Assessment } from '@/src/types/entity/app.interface';
+
+// ===== Components =====
 import { Modal } from '../../common/Modal';
 import {
   FormField,
@@ -8,40 +26,31 @@ import {
   Button,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { User } from '@/src/types/entity/core.interface';
-import { Job, ServiceSystem } from '@/src/types/entity/job.interface';
-import { Contract } from '@/src/types/entity/financial.interface';
-import { Customer } from '@/src/types/entity/customer.interface';
-import { Warehouse } from '@/src/types/entity/inventory.interface';
-import { JobMainStatus } from '@/src/types/enums/job';
-import {
-  RefreshIcon,
-  UserIcon,
-  CalendarIcon,
-  TruckIcon,
-  DocumentIcon,
-  CheckCircleIcon,
-  PhoneIcon,
-  MapPinIcon,
-  ClockIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-} from '../../../assets/icons/Icons';
+
+// ===== API =====
 import {
   AssessmentApi,
   ContractApi,
   CustomerApi,
-  WarehouseApi,
-  UserApi,
   InvoiceApi,
+  UserApi,
+  WarehouseApi,
 } from '@/src/api';
-import { AsessmentStatus, Role, WarehouseType } from '@/src/types';
-import { UserRole } from '@/src/types/entity/core.interface';
-import { Assessment } from '@/src/types/entity/app.interface';
-import { Invoice } from '@/src/types/entity/financial.interface';
-import DatePicker from 'react-datepicker';
 
-// A component to manage a single work area within the job form
+// ===== Assets =====
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  CheckCircleIcon,
+  DocumentIcon,
+  MapPinIcon,
+  PhoneIcon,
+  RefreshIcon,
+  TruckIcon,
+  UserIcon,
+} from '../../../assets/icons/Icons';
+
 const JobWorkAreaForm: React.FC<{
   area: any;
   index: number;

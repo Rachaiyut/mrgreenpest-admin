@@ -1,11 +1,7 @@
 import { IBase } from './base.interface';
 import { JobMainStatus } from '../enums/job';
 import { Customer } from './customer.interface';
-
-export enum ServiceSystem {
-  CHEMICAL = 'CHEMICAL',
-  PREY = 'PREY',
-}
+import { ServiceSystem } from '../enums/assessment';
 
 export interface TeamMember {
   id?: string;
