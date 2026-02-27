@@ -303,6 +303,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
                 items: wa.items || [],
                 category_services: wa.category_services || [],
                 base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+                package_price: wa.package_price !== undefined && wa.package_price !== null 
+                  ? Number(wa.package_price) 
+                  : (derivedBasePrice > 0 ? derivedBasePrice : 0),
               };
             };
 
@@ -534,6 +537,9 @@ export const EditJobModal: FC<EditJobModalProps> = ({
           items: wa.items || [],
           category_services: wa.category_services || [],
           base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+          package_price: wa.package_price !== undefined && wa.package_price !== null 
+            ? Number(wa.package_price) 
+            : (derivedBasePrice > 0 ? derivedBasePrice : 0),
         };
       };
 
