@@ -10,3 +10,4 @@ export * from './product.interface';
 export * from './package.interface';
 export * from './supplier.interface';
 export * from './unit.interface';
+export * from './inventory.interface';

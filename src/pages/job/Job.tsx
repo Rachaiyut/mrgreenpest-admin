@@ -1,466 +1,88 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Card } from '../../components/common/Card';
-import { StatusBadge } from '../../components/common/StatusBadge';
-import { Status, User, UserRole } from '../../types/entity/core.interface';
+// ===== React =====
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+// ===== Absolute Types =====
 import {
   FieldJob,
   ServiceReport,
 } from '@/src/types/entity/field-job.interface';
+
+import { Category } from '@/src/types/entity/category.interface';
+import { JobMainStatus, JobStatus, WarehouseType } from '@/src/types';
+
+// ===== Relative Types =====
+import { Status, User, UserRole } from '../../types/entity/core.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract, Quotation } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Package } from '../../types/entity/package.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
-import { Category } from '@/src/types/entity/category.interface';
-import { JobMainStatus, JobStatus, WarehouseType } from '@/src/types';
+import { Role } from '../../types/enums/role';
 
+// ===== Hooks =====
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+
+// ===== Components (Features) =====
+import { AddJobModal } from '../../components/features/jobs/AddJobModal';
+import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
+import { EditJobModal } from '../../components/features/jobs/EditJobModal';
+import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
+import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
+import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
+
+// ===== Components (Common) =====
+import { Card } from '../../components/common/Card';
+import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { Pagination } from '../../components/common/Pagination';
+import { StatusBadge } from '../../components/common/StatusBadge';
+import { Select, Input, Button, FormField } from '../../components/common/FormControls';
+
+// ===== Local Components =====
+import JobCard from './JobCard';
+import JobCalendar from './JobCalendar';
+
+// ===== API =====
 import {
-  PlusIcon,
-  ListBulletIcon,
-  ViewColumnsIcon,
-  ManageIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  XCircleIcon,
-  MapPinIcon,
-  PlayIcon,
-  DocumentCheckIcon,
-  TechnicianIcon,
+  AssessmentApi,
+  CategoryApi,
+  CustomerApi,
+  JobApi,
+  PackageApi,
+  ProductApi,
+  ServiceReportApi,
+  StorageApi,
+  VehicleApi,
+} from '@/src/api';
+
+// ===== Utils =====
+import { formatThaiDate, formatThaiDateTime } from '@/src/utils/date';
+
+// ===== Assets =====
+import {
   CalendarDaysIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ClipboardDocumentListIcon,
+  DocumentCheckIcon,
+  EyeIcon,
   JobDateIcon,
   JobTimeIcon,
+  ListBulletIcon,
   LoadingIcon,
-  ClipboardDocumentListIcon,
+  ManageIcon,
+  MapPinIcon,
+  PencilIcon,
+  PlayIcon,
+  PlusIcon,
+  TechnicianIcon,
+  TrashIcon,
+  ViewColumnsIcon,
+  XCircleIcon,
 } from '../../assets/icons/Icons';
-import { AddJobModal } from '../../components/features/jobs/AddJobModal';
-import { Pagination } from '../../components/common/Pagination';
-import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
-import { EditJobModal } from '../../components/features/jobs/EditJobModal';
-import { formatThaiDate, formatThaiDateTime } from '@/src/utils/date';
-import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
-import { Select, Input, Button } from '../../components/common/FormControls';
-import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
-import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { FormField } from '../../components/common/FormControls';
-import { useCurrentUser } from '../../hooks/useCurrentUser';
-import { Role } from '../../types/enums/role';
 
-const JobCard: React.FC<{
-  job: FieldJob;
-  onDropdownToggle: (
-    event: React.MouseEvent<HTMLButtonElement>,
-    jobId: string
-  ) => void;
-  onStatusChange: (jobId: string, newStatus: JobStatus) => void;
-  onViewDetails: (job: FieldJob) => void;
-  onWriteReport: (job: FieldJob) => void;
-  currentUser: User;
-  isAnyJobInProgressForCurrentUser: boolean;
-}> = ({
-  job,
-  onDropdownToggle,
-  onStatusChange,
-  onViewDetails,
-  onWriteReport,
-  currentUser,
-  isAnyJobInProgressForCurrentUser,
-}) => {
-  const currentUserId = (currentUser as any)?.id as string | undefined;
 
-  const isAssignedToCurrentUser = useMemo(
-    () =>
-      !!currentUserId &&
-      (job.technicians || []).some((tech) => tech && tech.id === currentUserId),
-    [job.technicians, currentUserId]
-  );
-
-  const showCheckInButton =
-    isAssignedToCurrentUser &&
-    ((job.status as unknown as JobStatus) === JobStatus.Planned ||
-      (job.status as unknown as string).toUpperCase() === 'PENDING');
-
-  const showCheckOutButton =
-    isAssignedToCurrentUser &&
-    ((job.status as unknown as JobStatus) === JobStatus.InProgress ||
-      (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' ||
-      (job.status as unknown as string).toUpperCase() === 'INPROGRESS');
-
-  const showReportButton = showCheckOutButton && !job.service_report;
-
-  let checkInTooltip = '';
-  if (isAssignedToCurrentUser) {
-    if (isAnyJobInProgressForCurrentUser) {
-      checkInTooltip = 'คุณกำลังเช็คอินในงานอื่นอยู่';
-    } else {
-      checkInTooltip = 'เช็คอินเพื่อเริ่มงาน';
-    }
-  }
-
-  const jobDate = formatThaiDate(job.start_time);
-  const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  const jobEndTime = new Date(job.end_time).toLocaleTimeString('th-TH', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  const hasActions =
-    (job.status as unknown as JobStatus) !== JobStatus.Completed;
-
-  // Get status color for left border
-  const getStatusColor = () => {
-    const statusUpper = String(
-      job.status || job.api_status || ''
-    ).toUpperCase();
-    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS')
-      return 'border-l-amber-500';
-    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
-      return 'border-l-green-500';
-    if (statusUpper === 'CANCELLED') return 'border-l-red-500';
-    return 'border-l-primary';
-  };
-
-  return (
-    <div
-      className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all duration-200 border-l-4 ${getStatusColor()}`}
-    >
-      {/* Header */}
-      <div className="px-4 pt-4 pb-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
-              {job.customerName}
-            </h4>
-            {job.work_areas?.length > 0 && (
-              <p className="text-xs text-slate-500 mt-1 truncate">
-                {job.work_areas.map((wa) => wa.service_package).join(', ')}
-              </p>
-            )}
-          </div>
-          <Button
-            data-job-id={job.id}
-            onClick={(e) => onDropdownToggle(e, job.id)}
-            variant="ghost"
-            className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
-            title="ตัวเลือก"
-          >
-            <ManageIcon className="h-4 w-4 text-slate-400" />
-          </Button>
-        </div>
-        <div className="mt-2">
-          <StatusBadge status={job.api_status} />
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="px-4 pb-3 space-y-2">
-        <div className="flex items-start gap-2.5 text-sm">
-          <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
-          <span className="text-slate-600 line-clamp-2 leading-snug">
-            {job.address || '-'}
-          </span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <JobDateIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-600">{jobDate}</span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <JobTimeIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span className="text-slate-700 font-medium">
-            {jobStartTime} - {jobEndTime}
-          </span>
-        </div>
-        <div className="flex items-center gap-2.5 text-sm">
-          <TechnicianIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span
-            className="text-slate-600 truncate"
-            title={job.technicians?.map((t) => t.name).join(', ')}
-          >
-            {job.technicians?.length > 0 ? (
-              job.technicians.map((t) => t.name).join(', ')
-            ) : (
-              <span className="text-slate-400 italic">ยังไม่มอบหมาย</span>
-            )}
-          </span>
-        </div>
-      </div>
-
-      {/* Actions */}
-      {hasActions && (
-        <div className="px-4 py-3 bg-slate-50/50 border-t border-slate-100 space-y-2">
-          <Button
-            onClick={() => onViewDetails(job)}
-            title="ดูรายละเอียดงาน"
-            variant="ghost"
-            className="w-full py-2 text-sm font-semibold text-slate-600 hover:bg-white hover:text-slate-800 rounded-lg border border-slate-200 h-auto"
-          >
-            <EyeIcon className="h-4 w-4 mr-1.5" />
-            ดูรายละเอียด
-          </Button>
-
-          {showCheckInButton && (
-            <Button
-              onClick={() => onStatusChange(job.id, JobStatus.InProgress)}
-              disabled={isAnyJobInProgressForCurrentUser}
-              title={checkInTooltip}
-              variant="primary"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-            >
-              <PlayIcon className="h-4 w-4 mr-1.5" />
-              เช็คอิน
-            </Button>
-          )}
-          {showReportButton && (
-            <Button
-              onClick={() => onWriteReport(job)}
-              title="บันทึกรายงานบริการ"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
-            >
-              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-              บันทึกรายงาน
-            </Button>
-          )}
-          {showCheckOutButton && (
-            <Button
-              onClick={() => onStatusChange(job.id, JobStatus.Completed)}
-              title="เช็คเอาท์เพื่อจบงาน"
-              variant="accent"
-              className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
-            >
-              <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
-              เช็คเอาท์
-            </Button>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const CalendarView: React.FC<{
-  jobs: FieldJob[];
-  onJobClick: (job: FieldJob) => void;
-}> = ({ jobs, onJobClick }) => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-
-  const handlePrevMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    );
-  };
-  const handleNextMonth = () => {
-    setCurrentDate(
-      new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-    );
-  };
-  const handleGoToToday = () => {
-    setCurrentDate(new Date());
-  };
-
-  const monthYearString = currentDate.toLocaleDateString('th-TH', {
-    month: 'long',
-    year: 'numeric',
-  });
-
-  const daysOfWeek = [
-    'อาทิตย์',
-    'จันทร์',
-    'อังคาร',
-    'พุธ',
-    'พฤหัสฯ',
-    'ศุกร์',
-    'เสาร์',
-  ];
-
-  const calendarGrid = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    const firstDayOfMonth = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const grid = [];
-
-    // Days from previous month
-    const daysInPrevMonth = new Date(year, month, 0).getDate();
-    for (let i = 0; i < firstDayOfMonth; i++) {
-      const date = new Date(
-        year,
-        month - 1,
-        daysInPrevMonth - firstDayOfMonth + 1 + i
-      );
-      grid.push({ date, isCurrentMonth: false, isToday: false });
-    }
-
-    // Days of current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      const date = new Date(year, month, i);
-      const isToday = date.getTime() === today.getTime();
-      grid.push({ date, isCurrentMonth: true, isToday });
-    }
-
-    // Days from next month
-    const gridEndIndex = grid.length;
-    const remainingCells = 7 - (gridEndIndex % 7);
-    if (remainingCells < 7) {
-      for (let i = 1; i <= remainingCells; i++) {
-        const date = new Date(year, month + 1, i);
-        grid.push({ date, isCurrentMonth: false, isToday: false });
-      }
-    }
-
-    return grid;
-  }, [currentDate]);
-
-  const getJobStatusStyle = (status: string) => {
-    const statusUpper = String(status || '').toUpperCase();
-    if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS')
-      return 'bg-amber-50 text-amber-700 border-l-amber-500';
-    if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
-      return 'bg-green-50 text-green-700 border-l-green-500';
-    if (statusUpper === 'CANCELLED')
-      return 'bg-red-50 text-red-600 border-l-red-500';
-    if (statusUpper === 'PENDING' || statusUpper === 'PLANNED')
-      return 'bg-blue-50 text-blue-700 border-l-blue-500';
-    return 'bg-primary/5 text-primary border-l-primary';
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      {/* Calendar Header */}
-      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-slate-800">
-            {monthYearString}
-          </h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handlePrevMonth}
-            variant="ghost"
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 h-auto"
-          >
-            <ChevronLeftIcon className="h-5 w-5" />
-          </Button>
-          <Button
-            onClick={handleGoToToday}
-            className="text-sm font-semibold text-slate-600 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm h-auto"
-          >
-            วันนี้
-          </Button>
-          <Button
-            onClick={handleNextMonth}
-            variant="ghost"
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 h-auto"
-          >
-            <ChevronRightIcon className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="p-4">
-        <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-xl overflow-hidden">
-          {/* Day Headers */}
-          {daysOfWeek.map((day, i) => (
-            <div
-              key={day}
-              className={`text-center py-3 text-xs font-semibold uppercase tracking-wider ${i === 0 ? 'bg-red-50/50 text-red-400' : i === 6 ? 'bg-blue-50/50 text-blue-400' : 'bg-slate-50 text-slate-500'}`}
-            >
-              {day}
-            </div>
-          ))}
-
-          {/* Calendar Days */}
-          {calendarGrid.map((day, index) => {
-            const jobsOnDay = jobs
-              .filter((job) => {
-                const jobDate = new Date(job.start_time);
-                return (
-                  jobDate.getFullYear() === day.date.getFullYear() &&
-                  jobDate.getMonth() === day.date.getMonth() &&
-                  jobDate.getDate() === day.date.getDate()
-                );
-              })
-              .sort(
-                (a, b) =>
-                  new Date(a.start_time).getTime() -
-                  new Date(b.start_time).getTime()
-              );
-
-            const dayOfWeek = day.date.getDay();
-            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-
-            return (
-              <div
-                key={index}
-                className={`relative min-h-[120px] p-2 flex flex-col ${
-                  day.isCurrentMonth
-                    ? isWeekend
-                      ? 'bg-slate-50/50'
-                      : 'bg-white'
-                    : 'bg-slate-100/50'
-                } ${day.isToday ? 'ring-2 ring-primary ring-inset' : ''}`}
-              >
-                <time
-                  dateTime={day.date.toISOString().substring(0, 10)}
-                  className={`text-sm font-semibold mb-1 ${
-                    day.isToday
-                      ? 'bg-primary text-white rounded-full h-7 w-7 flex items-center justify-center mx-auto'
-                      : day.isCurrentMonth
-                        ? dayOfWeek === 0
-                          ? 'text-red-400'
-                          : dayOfWeek === 6
-                            ? 'text-blue-400'
-                            : 'text-slate-700'
-                        : 'text-slate-300'
-                  }`}
-                >
-                  {day.date.getDate()}
-                </time>
-                <div className="flex-grow overflow-y-auto space-y-1 scrollbar-thin">
-                  {jobsOnDay.slice(0, 3).map((job) => (
-                    <div
-                      key={job.id}
-                      onClick={() => onJobClick(job)}
-                      className={`px-2 py-1 rounded text-xs cursor-pointer hover:shadow-sm transition-shadow border-l-2 ${getJobStatusStyle(job.api_status || job.status)}`}
-                    >
-                      <p className="font-semibold truncate">
-                        <span className="text-[10px] opacity-70 mr-1">
-                          {new Date(job.start_time)
-                            .toTimeString()
-                            .substring(0, 5)}
-                        </span>
-                        {job.customerName}
-                      </p>
-                    </div>
-                  ))}
-                  {jobsOnDay.length > 3 && (
-                    <div className="text-xs text-center text-slate-400 font-medium pt-1">
-                      +{jobsOnDay.length - 3} งาน
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface FieldOperationsProps {
+interface JobProps {
   users: User[];
   jobs: FieldJob[];
   assessments: Assessment[];
@@ -477,19 +99,7 @@ interface FieldOperationsProps {
   ) => void;
 }
 
-import {
-  AssessmentApi,
-  CustomerApi,
-  ProductApi,
-  VehicleApi,
-  JobApi,
-  CategoryApi,
-  ServiceReportApi,
-  PackageApi,
-  StorageApi,
-} from '@/src/api';
-
-const FieldOperations: React.FC<FieldOperationsProps> = ({
+const Job: React.FC<JobProps> = ({
   users,
   jobs: initialJobs, // Rename prop to avoid conflict if we use state
   assessments: initialAssessments,
@@ -1791,7 +1401,7 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
           )}
 
           {activeTab === 'schedule' && view === 'calendar' && (
-            <CalendarView jobs={filteredJobs} onJobClick={handleViewDetails} />
+            <JobCalendar jobs={filteredJobs} onJobClick={handleViewDetails} />
           )}
 
           {activeTab === 'reports' && (
@@ -2306,4 +1916,4 @@ const FieldOperations: React.FC<FieldOperationsProps> = ({
   );
 };
 
-export default FieldOperations;
+export default Job;

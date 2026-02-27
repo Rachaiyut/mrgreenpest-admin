@@ -1,56 +1,74 @@
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+// ===== React / External =====
+import React, { 
+  useCallback, 
+  useEffect, 
+  useMemo, 
+  useRef, 
+  useState 
+} from 'react';
 import { createPortal } from 'react-dom';
+
+// ===== Types =====
+import {
+  Status,
+  User as UserType,
+  Customer as CustomerType,
+  Product as ProductType,
+  Withdrawal as WithdrawalType,
+  Warehouse as WarehouseType,
+} from '@/src/types/entity/app.interface';
+
+import { WithdrawalStatus } from '@/src/types/enums/inventory';
+
+// ===== Context =====
+import { useData } from '../../../contexts/DataContext';
+
+// ===== Components =====
+import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddStockIssueToVehicleModal';
+import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/EditStockIssueToVehicleModal';
+import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
+
+import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Card } from '../../../components/common/Card';
+import { Input, Select, Button } from '../../../components/common/FormControls';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
+
+// ===== API =====
 import {
-  PlusIcon,
-  ManageIcon,
-  EyeIcon,
+  CustomerApi,
+  ProductApi,
+  UserApi,
+  WarehouseApi,
+  WithdrawalApi,
+} from '../../../api';
+
+// ===== Utils =====
+import { formatThaiDate } from '../../../utils/date';
+
+// ===== Assets =====
+import {
+  CalendarDaysIcon,
+  CurrencyDollarIcon,
   DocumentCheckIcon,
-  XCircleIcon,
+  EyeIcon,
+  ManageIcon,
+  PencilIcon,
+  PlusIcon,
   TrashIcon,
   TruckIcon,
   UserIcon,
-  CurrencyDollarIcon,
-  CalendarDaysIcon,
-  PencilIcon,
+  XCircleIcon,
 } from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../utils/date';
-import {
-  Withdrawal as WithdrawalType,
-  Warehouse as WarehouseEntity,
-} from '@/src/types/entity/inventory.interface';
-import { WarehouseType, WithdrawalStatus } from '@/src/types/enums/inventory';
-import {
-  Status,
-  User,
-  Customer,
-  Product,
-} from '@/src/types/entity/app.interface';
-import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddStockIssueToVehicleModal';
-import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/EditStockIssueToVehicleModal';
-import { ApprovalModal } from '../../../components/common/ApprovalModal';
-import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
-import { Input, Select, Button } from '../../../components/common/FormControls';
-
-import {
-  WithdrawalApi,
-  UserApi,
-  WarehouseApi,
-  CustomerApi,
-  ProductApi,
-} from '../../../api';
-import { useData } from '../../../contexts/DataContext';
 
 const StockIssueToVehicle: React.FC = () => {
   const { handlers } = useData();
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [warehouses, setWarehouses] = useState<WarehouseEntity[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+  const [customers, setCustomers] = useState<CustomerType[]>([]);
+  const [products, setProducts] = useState<ProductType[]>([]);
 
   // 1. แยก fetchAllData ออกมาไว้ข้างนอก และใช้ useCallback เพื่อให้เรียกซ้ำได้
   const fetchAllData = useCallback(async () => {

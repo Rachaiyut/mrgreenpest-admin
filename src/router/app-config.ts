@@ -64,7 +64,7 @@ const Assessments = React.lazy(
   () => import('../pages/assessments/Assessments')
 );
 const FieldOperations = React.lazy(
-  () => import('../pages/field-operations/FieldOpearation')
+  () => import('../pages/job/Job')
 );
 const Quotation = React.lazy(() => import('../pages/quotations/Quotation'));
 const Contract = React.lazy(() => import('../pages/contracts/Contract'));

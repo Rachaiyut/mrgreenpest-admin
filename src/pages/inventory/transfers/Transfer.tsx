@@ -1,31 +1,45 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Card } from '../../../components/common/Card';
-import { Pagination } from '../../../components/common/Pagination';
-import { StatusBadge } from '../../../components/common/StatusBadge';
-import {
-  PlusIcon,
-  ManageIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  CheckCircleIcon,
-} from '../../../assets/icons/Icons';
-import { formatThaiDate } from '../../../utils/date';
+// ===== React =====
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+// ===== Types =====
 import {
   Transfer as TransferType,
   Status,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { TransferStatus } from '@/src/types/enums/inventory';
-import { AddTransferModal } from '../../../components/features/inventory/AddTransferModal';
-import { TransferDetailsModal } from '../../../components/features/inventory/TransferDetailsModal';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
-import { EditTransferModal } from '../../../components/features/inventory/EditTransferModal';
-import { Input, Button } from '../../../components/common/FormControls';
 
-import { useData } from '../../../contexts/DataContext';
+import { TransferStatus } from '@/src/types/enums/inventory';
+
+// ===== API =====
 import { TransferApi } from '@/src/api/inventory/transfer';
+
+// ===== Context =====
+import { useData } from '../../../contexts/DataContext';
+
+// ===== Components =====
+import { AddTransferModal } from '../../../components/features/inventory/AddTransferModal';
+import { EditTransferModal } from '../../../components/features/inventory/EditTransferModal';
+import { TransferDetailsModal } from '../../../components/features/inventory/TransferDetailsModal';
+
+import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
+import { Card } from '../../../components/common/Card';
+import { Input, Button } from '../../../components/common/FormControls';
+import { Pagination } from '../../../components/common/Pagination';
+import { StatusBadge } from '../../../components/common/StatusBadge';
+
+// ===== Utils =====
+import { formatThaiDate } from '../../../utils/date';
+
+// ===== Assets =====
+import {
+  CheckCircleIcon,
+  EyeIcon,
+  ManageIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../../../assets/icons/Icons';
 
 const Transfers: React.FC = () => {
   const { warehouses, products } = useData();
