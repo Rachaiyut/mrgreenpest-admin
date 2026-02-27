@@ -3,7 +3,7 @@ import { Status } from '../enums/base';
 import { IBase } from './base.interface';
 import { Product } from './product.interface';
 
-export interface GoodsReceipt extends IBase {
+export interface GoodsReceive extends IBase {
   warehouse_id: string;
   supplier_id: string;
   code: string;

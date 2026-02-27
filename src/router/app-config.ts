@@ -12,7 +12,6 @@ import {
   ShieldCheckIcon,
   NewWarehouseIcon,
   PackageIcon,
-  BookOpenIcon,
   NewUsersIcon,
   NewReportIcon,
   BellIcon,
@@ -83,7 +82,7 @@ const Notification = React.lazy(
   () => import('../pages/notifications/Notification')
 );
 const GoodReceipt = React.lazy(
-  () => import('../pages/inventory/goods-receipt/Good-Receive')
+  () => import('../pages/inventory/goods-receipt/GoodReceive')
 );
 const Transfer = React.lazy(
   () => import('../pages/inventory/transfers/Transfer')

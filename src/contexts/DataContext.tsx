@@ -29,7 +29,7 @@ import {
   StockIssueSummary,
 } from '@/src/types/entity/inventory.interface';
 import { Requisition } from '@/src/types/entity/requisition.interface';
-import { GoodsReceipt } from '@/src/types/entity/good-receipt';
+import { GoodsReceipt } from '@/src/types/entity/goods-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 
 // APIs

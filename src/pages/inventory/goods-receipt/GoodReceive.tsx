@@ -1,51 +1,72 @@
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { Card } from '../../../components/common/Card';
-import { formatThaiDate } from '../../../utils/date';
+// ===== React / Core =====
+import React, { 
+  useCallback, 
+  useEffect, 
+  useMemo, 
+  useRef, 
+  useState 
+} from 'react';
+
+// ===== Absolute Imports =====
 import {
-  PlusIcon,
-  ManageIcon,
-  EyeIcon,
-  DocumentCheckIcon,
-  XCircleIcon,
-  TrashIcon,
-} from '../../../assets/icons/Icons';
-import { AddGoodsReceiptModal } from '../../../components/features/inventory/AddGoodsReceiptModal';
-import { StatusBadge } from '../../../components/common/StatusBadge';
-import {
-  GoodsReceipt as GoodsReceiptType,
+  GoodsReceive as GoodsReceiveType,
   Status,
   Warehouse as WarehouseType,
 } from '@/src/types/entity/app.interface';
-import { GoodsReceiptDetailsModal } from '../../../components/features/inventory/GoodsReceiptDetailsModal';
-import { Pagination } from '../../../components/common/Pagination';
-import { ApprovalModal } from '../../../components/common/ApprovalModal';
-import { Input, Button } from '../../../components/common/FormControls';
 
-import { useData } from '../../../contexts/DataContext';
-import { GoodsReceiptApi } from '../../../api/goods-receipt'; 
+// ===== Components =====
+import { ApprovalModal } from '../../../components/common/ApprovalModal';
+import { Card } from '../../../components/common/Card';
+import { Input, Button } from '../../../components/common/FormControls';
+import { Pagination } from '../../../components/common/Pagination';
+import { StatusBadge } from '../../../components/common/StatusBadge';
+import { AddGoodsReceiptModal } from '../../../components/features/inventory/AddGoodsReceiveModal';
+import { GoodsReceiptDetailsModal } from '../../../components/features/inventory/GoodsReceiptDetailsModal';
+
+// ===== Utils =====
+import { formatThaiDate } from '../../../utils/date';
+
+// ===== API =====
+import { GoodsReceiptApi } from '../../../api/goods-receipt';
+import { ProductApi } from '../../../api/product';
+import { SupplierApi } from '../../../api/supplier';
+import { WarehouseApi } from '../../../api/warehouse';
+
+// ===== Assets =====
+import {
+  DocumentCheckIcon,
+  EyeIcon,
+  ManageIcon,
+  PlusIcon,
+  TrashIcon,
+  XCircleIcon,
+} from '../../../assets/icons/Icons';
+
 
 // FIX: Define props interface
 interface GoodsReceiveProps {
-  onCreateReceipt: (receipt: Omit<GoodsReceiptType, 'id'>) => Promise<void> | void;
-  onUpdateReceipt: (receipt: GoodsReceiptType) => Promise<void> | void;
+  onCreateReceipt: (receipt: Omit<GoodsReceiveType, 'id'>) => Promise<void> | void;
+  onUpdateReceipt: (receipt: GoodsReceiveType) => Promise<void> | void;
   onDeleteReceipt: (receiptId: string) => Promise<void> | void;
 }
 
-const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
+const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   onCreateReceipt,
   onUpdateReceipt,
   onDeleteReceipt,
 }) => {
-  const { warehouses, suppliers, products } = useData();
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
-  const [receipts, setReceipts] = useState<any[]>([]);
+  const [receipts, setReceipts] = useState<GoodsReceiveType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
-  const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiptType | null>(null);
+  const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiveType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -54,7 +75,7 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchReceipts = useCallback(async () => {
+  const fetchGoodReceives = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await GoodsReceiptApi.getAll();
@@ -70,24 +91,43 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
 
   // 🟢 3. ดึงข้อมูลครั้งแรกเมื่อเปิดหน้า
   useEffect(() => {
-    fetchReceipts();
-  }, [fetchReceipts]);
+    fetchGoodReceives();
+  }, [fetchGoodReceives]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
+          WarehouseApi.getWarehouses(),
+          SupplierApi.getSuppliers({} as any),
+          ProductApi.getProducts(),
+        ]);
+        setWarehouses(warehousesRes.data || []);
+        setSuppliers(suppliersRes.data || []);
+        setProducts(productsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch initial data', error);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   // 🟢 4. สร้าง Wrapper Functions เพื่อดึงข้อมูลใหม่หลัง Action สำเร็จ
-  const handleCreate = async (data: Omit<GoodsReceiptType, 'id'>) => {
+  const handleCreate = async (data: Omit<GoodsReceiveType, 'id'>) => {
     try {
       await onCreateReceipt(data);
-      await fetchReceipts(); // ดึงใหม่หลังสร้างเสร็จ
+      await fetchGoodReceives(); // ดึงใหม่หลังสร้างเสร็จ
       setIsAddModalOpen(false); // ปิด Modal ฝั่ง Parent เพื่อความชัวร์
     } catch (error) {
       console.error('Create error', error);
     }
   };
 
-  const handleUpdate = async (data: GoodsReceiptType) => {
+  const handleUpdate = async (data: GoodsReceiveType) => {
     try {
       await onUpdateReceipt(data);
-      await fetchReceipts(); // ดึงใหม่หลังอัปเดตเสร็จ
+      await fetchGoodReceives(); // ดึงใหม่หลังอัปเดตเสร็จ
     } catch (error) {
       console.error('Update error', error);
     }
@@ -96,7 +136,7 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
   const handleDeleteItem = async (id: string) => {
     try {
       await onDeleteReceipt(id);
-      await fetchReceipts(); // ดึงใหม่หลังลบเสร็จ
+      await fetchGoodReceives(); // ดึงใหม่หลังลบเสร็จ
     } catch (error) {
       console.error('Delete error', error);
     }
@@ -151,7 +191,7 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
     setCurrentPage(1);
   };
 
-  const handleViewDetails = (receipt: GoodsReceiptType) => {
+  const handleViewDetails = (receipt: GoodsReceiveType) => {
     setSelectedReceipt(receipt);
     setIsDetailsModalOpen(true);
     setOpenDropdownId(null);
@@ -448,4 +488,4 @@ const GoodsReceipt: React.FC<GoodsReceiveProps> = ({
   );
 };
 
-export default GoodsReceipt;
+export default GoodsReceive;

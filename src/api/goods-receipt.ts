@@ -2,7 +2,7 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { GoodsReceipt } from '../types/entity/good-receipt';
+import { GoodsReceipt } from '../types/entity/goods-receipt';
 import { AuthService } from '.';
 
 class GoodsReceiptService extends AuthService {

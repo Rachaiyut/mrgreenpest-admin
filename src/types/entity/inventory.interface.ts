@@ -125,7 +125,7 @@ export interface GoodsReceiptItem {
   updated_at?: string;
 }
 
-export interface GoodsReceipt extends IBase {
+export interface GoodsReceive extends IBase {
   code?: string;
   receipt_no?: string;
   warehouse_id: string;

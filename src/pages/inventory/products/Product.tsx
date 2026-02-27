@@ -1,30 +1,36 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card } from '../../../components/common/Card';
-import {
-  PlusIcon,
-  ManageIcon,
-  PencilIcon,
-  TrashIcon,
-} from '../../../assets/icons/Icons';
+// ===== React =====
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-// Enum
+// ===== Enums =====
 import { CategoryType } from '@/src/types/enums/category';
 
-// Interface
-import { Product as IProduct } from '@/src/types/entity/product.interface';
+// ===== Interfaces =====
 import { Category } from '@/src/types/entity/category.interface';
+import { Product as IProduct } from '@/src/types/entity/product.interface';
 import { Unit } from '@/src/types/entity/unit.interface';
 
-// API
-import { ProductApi } from '@/src/api/product';
+// ===== API =====
 import { CategoryApi } from '@/src/api/category';
+import { ProductApi } from '@/src/api/product';
 import { Unit as UnitApi } from '@/src/api/unit';
 
-import { Pagination } from '../../../components/common/Pagination';
-import { Input, Button } from '../../../components/common/FormControls';
+// ===== Components (Absolute) =====
 import { AddProductModal } from '@/src/components/features/products/AddProductModal';
 import { EditProductModal } from '@/src/components/features/products/EditProductModal';
 import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
+
+// ===== Components (Relative) =====
+import { Card } from '../../../components/common/Card';
+import { Input, Button } from '../../../components/common/FormControls';
+import { Pagination } from '../../../components/common/Pagination';
+
+// ===== Assets =====
+import {
+  ManageIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+} from '../../../assets/icons/Icons';
 
 const Product: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
