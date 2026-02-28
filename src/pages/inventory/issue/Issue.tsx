@@ -40,7 +40,7 @@ import {
   ProductApi,
   UserApi,
   WarehouseApi,
-  WithdrawalApi,
+  IssueNoteApi,
 } from '../../../api';
 
 // ===== Utils =====
@@ -80,7 +80,7 @@ const Issue: React.FC = () => {
         customersRes,
         productsRes,
       ] = await Promise.all([
-        WithdrawalApi.getAll(),
+        IssueNoteApi.getAll(),
         UserApi.getAll(),
         WarehouseApi.getWarehouses(), 
         CustomerApi.getCustomers(),

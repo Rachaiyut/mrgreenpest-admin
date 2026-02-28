@@ -45,3 +45,8 @@ export enum ContractStatus {
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED',
 }
+
+export enum ExpenseType {
+  INCOME = 'INCOME',
+  EXPENSE = 'EXPENSE'
+}

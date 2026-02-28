@@ -24,7 +24,7 @@ export * from './unit';
 export * from './user';
 export * from './wallet-transaction';
 export * from './warehouse';
-export * from './withdrawal';
+export * from './issue-note';
 export * from './vehicle';
 export * from './price-engine';
 export * from './role';

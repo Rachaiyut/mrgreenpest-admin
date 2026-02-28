@@ -5,8 +5,8 @@ import {
 import { Withdrawal } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
-class WithdrawalService extends AuthService {
-  protected path = '/withdrawals';
+class IssueNoteService extends AuthService {
+  protected path = '/issue-note';
 
   async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<Withdrawal>> {
     const res = await this.http.get<IBaseResponseArray<Withdrawal>>(this.path, {
@@ -35,4 +35,4 @@ class WithdrawalService extends AuthService {
   }
 }
 
-export const WithdrawalApi = new WithdrawalService();
+export const IssueNoteApi = new IssueNoteService();

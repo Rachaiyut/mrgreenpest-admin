@@ -8,9 +8,10 @@ import {
   GoodsReceiptStatus,
   IssueSummaryStatus,
 } from '../enums/inventory';
-import { Status } from './app.interface';
+import { IndirectExpense, Status } from './app.interface';
 import { IBase, IBaseQuery } from './base.interface';
 import { Job } from './job.interface';
+import { UserExpense } from './user-expense.interface';
 
 export interface WarehouseQuery extends IBaseQuery {
   code?: string;
@@ -224,6 +225,7 @@ export interface StockIssueSummary extends IBase {
   requester_id?: string;
   created_by?: string;
   items?: IssueItemSummary[];
+  expense_item: UserExpense[];
 }
 
 export interface ExpenseItem {

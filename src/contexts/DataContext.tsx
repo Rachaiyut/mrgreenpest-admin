@@ -27,9 +27,9 @@ import {
   StockAdjustment,
   ProductReturn,
   StockIssueSummary,
+  GoodsReceive,
 } from '@/src/types/entity/inventory.interface';
 import { Requisition } from '@/src/types/entity/requisition.interface';
-import { GoodsReceipt } from '@/src/types/entity/goods-receipt';
 import { Supplier } from '@/src/types/entity/supplier.interface';
 
 // APIs
@@ -49,7 +49,7 @@ import { TransferApi } from '@/src/api/transfer';
 import { StockAdjustmentApi } from '@/src/api/stock-adjustment';
 import { ProductReturnApi } from '@/src/api/product-return';
 import { ReturnToSupplierApi } from '@/src/api/return-to-supplier';
-import { WithdrawalApi } from '@/src/api/withdrawal';
+import { IssueNoteApi } from '@/src/api/issue-note';
 import { RequisitionApi } from '@/src/api/requisition';
 import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
 
@@ -66,7 +66,7 @@ export type ResourceType =
   | 'warehouses'
   | 'suppliers'
   | 'goodsReceipts'
-  | 'withdrawals'
+  | 'issues'
   | 'transfers'
   | 'stockAdjustments'
   | 'productReturns'
@@ -87,7 +87,7 @@ export interface DataContextType {
   products: Product[];
   warehouses: Warehouse[];
   suppliers: Supplier[];
-  goodsReceipts: GoodsReceipt[];
+  goodsReceipts: GoodsReceive[];
   withdrawals: Withdrawal[];
   transfers: Transfer[];
   stockAdjustments: StockAdjustment[];
@@ -205,7 +205,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceipt[]>([]);
+  const [goodsReceipts, setGoodsReceipts] = useState<GoodsReceive[]>([]);
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [stockAdjustments, setStockAdjustments] = useState<StockAdjustment[]>(
@@ -323,9 +323,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
         )
       );
     }
-    if (shouldFetch('withdrawals')) {
+    if (shouldFetch('issues')) {
       promises.push(
-        safeFetch(() => WithdrawalApi.getAll()).then((data: any) =>
+        safeFetch(() => IssueNoteApi.getAll()).then((data: any) =>
           setWithdrawals(data)
         )
       );
@@ -532,16 +532,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       },
       withdrawals: {
         create: async (data: any) => {
-          await WithdrawalApi.create(data);
-          fetchData(['withdrawals', 'products', 'warehouses']);
+          await IssueNoteApi.create(data);
         },
         update: async (data: any) => {
-          await WithdrawalApi.update(data.id, data);
-          fetchData(['withdrawals']);
+          await IssueNoteApi.update(data.id, data);
         },
         delete: async (id: string) => {
-          await WithdrawalApi.delete(id);
-          fetchData(['withdrawals']);
+          await IssueNoteApi.delete(id);
         },
       },
       transfers: {
