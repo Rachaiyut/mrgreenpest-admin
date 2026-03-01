@@ -542,20 +542,65 @@ export const ContractForm: FC<ContractFormProps> = ({
     field: keyof InstallmentPlan,
     value: any
   ) => {
-    setInstallments((prev) =>
-      prev.map((inst) => {
-        if (inst.id !== id) return inst;
-        const updated = { ...inst, [field]: value };
-        if (field === 'percentage') {
-          updated.amount = Math.round(totalAmount * (Number(value) / 100));
+    setInstallments((prev) => {
+      // 1. หา Index ของงวดที่กำลังถูกแก้ไข
+      const currentIndex = prev.findIndex((inst) => inst.id === id);
+      if (currentIndex === -1) return prev;
+
+      const updatedList = [...prev];
+      const currentInst = { ...updatedList[currentIndex] };
+      
+      // 2. อัปเดตค่าที่ User พิมพ์เข้ามา
+      if (field === 'percentage') {
+        currentInst.percentage = Number(value) || 0;
+        currentInst.amount = Math.round(totalAmount * (currentInst.percentage / 100));
+      } else if (field === 'amount') {
+        currentInst.amount = Number(value) || 0;
+        currentInst.percentage = totalAmount > 0 ? (currentInst.amount / totalAmount) * 100 : 0;
+      } else {
+        // สำหรับฟิลด์อื่นๆ (description, due_date, status) ให้ทำงานตามปกติ
+        updatedList[currentIndex] = { ...currentInst, [field]: value };
+        return updatedList;
+      }
+
+      updatedList[currentIndex] = currentInst;
+
+      // 3. Logic การคำนวณส่วนต่าง (Auto-balancing)
+      // เราจะเอางวดที่ "เหลืออยู่" (งวดที่ index มากกว่า currentIndex) มาหารเฉลี่ยส่วนต่าง
+      const remainingInsts = updatedList.slice(currentIndex + 1);
+      
+      if (remainingInsts.length > 0) {
+        // หา % ที่เหลือที่ต้องกระจาย (100% - % ของงวดก่อนหน้าทั้งหมด)
+        const percentUsedBefore = updatedList
+          .slice(0, currentIndex + 1)
+          .reduce((sum, inst) => sum + inst.percentage, 0);
+        
+        const percentLeftToDistribute = 100 - percentUsedBefore;
+        const avgPercent = percentLeftToDistribute / remainingInsts.length;
+
+        // กระจายค่าลงในงวดที่เหลือ
+        let currentTotalPercent = percentUsedBefore;
+
+        for (let i = currentIndex + 1; i < updatedList.length; i++) {
+          let p = Math.floor(avgPercent * 100) / 100; // ตัดเศษ 2 ตำแหน่ง
+
+          // งวดสุดท้ายให้ใช้ค่าที่เหลือจริงเพื่อให้ครบ 100.00 พอดี
+          if (i === updatedList.length - 1) {
+            p = Number((100 - currentTotalPercent).toFixed(2));
+          } else {
+            currentTotalPercent += p;
+          }
+
+          updatedList[i] = {
+            ...updatedList[i],
+            percentage: p,
+            amount: Math.round(totalAmount * (p / 100)),
+          };
         }
-        if (field === 'amount') {
-          updated.percentage =
-            totalAmount > 0 ? (Number(value) / totalAmount) * 100 : 0;
-        }
-        return updated;
-      })
-    );
+      }
+
+      return updatedList;
+    });
   };
 
   const addInstallment = () => {
