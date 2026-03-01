@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 // ===== External Libraries =====
 import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css'; 
 
 // ===== Types / Enums =====
 import { AsessmentStatus, Role, ServiceSystem, WarehouseType } from '@/src/types';
