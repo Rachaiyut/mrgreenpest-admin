@@ -4,7 +4,9 @@ import {
   InvoiceStatus,
   QuotationStatus,
   ContractStatus,
+  InstallmentStatus,
 } from '../enums/financial';
+import { IBase } from './base.interface';
 
 export interface InstallmentPlan {
   id: string;
@@ -218,4 +220,18 @@ export interface IndirectExpense {
   item: string;
   amount: number;
   wallet: string;
+}
+
+
+export interface InvoiceSchedule extends IBase {
+  contract_id: string; 
+  installment_no: number;
+  description: string;
+  percentage: number;
+  amount: number;
+  paid_amount: number;
+  due_date: Date;
+  status: InstallmentStatus;
+  paid_at?: Date
+  notes?: string
 }

@@ -2,7 +2,7 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { Invoice } from '@/src/types/entity/financial.interface';
+import { Invoice, InvoiceSchedule } from '@/src/types/entity/financial.interface';
 import { AuthService } from './auth';
 
 class InvoiceService extends AuthService {
@@ -12,6 +12,11 @@ class InvoiceService extends AuthService {
     const res = await this.http.get<IBaseResponseArray<Invoice>>(this.path, {
       params: query,
     });
+    return res.data;
+  }
+
+  async getAllInvoiceSChedule(id: string): Promise<IBaseResponseArray<InvoiceSchedule>> {
+    const res = await this.http.get<IBaseResponseArray<InvoiceSchedule>>(`${this.path}/${id}/invoice-schedules`);
     return res.data;
   }
 

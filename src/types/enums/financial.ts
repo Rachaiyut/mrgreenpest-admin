@@ -50,3 +50,10 @@ export enum ExpenseType {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE'
 }
+
+export enum InstallmentStatus {
+  PENDING = 'PENDING',
+  PARTIAL = 'PARTIAL',
+  PAID = 'PAID',
+  OVERDUE = 'OVERDUE',
+}
