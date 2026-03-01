@@ -22,13 +22,13 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
   onSubmit,
 }) => {
   const getTitle = () => {
-    if (mode === 'create') return 'สร้างใบเสนอราคาใหม่ (New Quotation)';
+    if (mode === 'create') return 'สร้างใบเสนอราคาใหม่';
     if (mode === 'edit')
-      return `แก้ไขใบเสนอราคา (Edit Quotation) ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+      return `แก้ไขใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     if (mode === 'revise')
-      return `แก้ไขใบเสนอราคา (Revise Quotation) ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+      return `xiy[xi6'ใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     if (mode === 'detail')
-      return `รายละเอียดใบเสนอราคา (Quotation Details) ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+      return `รายละเอียดใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     return 'ใบเสนอราคา';
   };
 

@@ -137,7 +137,8 @@ export interface Contract {
   contract_duration?: string;
   service_count?: number;
   total_amount: number;
-  status: ContractStatus | Status; // Support both for backwards compatibility
+  vat_amount: number;
+  status: ContractStatus | Status;
   start_date: string;
   end_date: string;
   notes?: string;
@@ -145,7 +146,6 @@ export interface Contract {
   updated_by?: string;
   created_at?: string;
   updated_at?: string;
-  // Legacy/backwards compatibility fields (camelCase aliases)
   customerId?: string;
   quotationId?: string;
   customerName?: string;

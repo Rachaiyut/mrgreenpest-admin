@@ -251,7 +251,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     initialValues?.service_count || '7 ครั้ง'
   );
 
-  // Line items
+  // --- เริ่มต้นตรวจสอบข้อมูล Package ที่บันทึกไว้ในตอนแรก เพื่อไม่ให้ข้อมูลหาย ---
+  const initialPackageItem = useMemo(() => {
+    return initialValues?.items?.find((item: any) => 
+      item.unit === 'งาน/แพ็กเกจ' || item.description?.startsWith('แพ็กเกจ:')
+    );
+  }, [initialValues]);
+
+  const [packagePrice, setPackagePrice] = useState(
+    initialPackageItem ? Number(initialPackageItem.unit_price || initialPackageItem.amount || 0) : 0
+  );
+  const [packageName, setPackageName] = useState(
+    initialPackageItem ? initialPackageItem.description?.replace('แพ็กเกจ: ', '') || '' : ''
+  );
+  const [usePackagePricing, setUsePackagePricing] = useState(!!initialPackageItem);
+
+  // Line items (แยก package ออกจากการแสดงผล items ปกติ)
   const [items, setItems] = useState<QuotationItem[]>(
     initialValues?.items
       ?.filter((item: any) => {
@@ -442,10 +457,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [mode, initialValues]);
 
-  const [packagePrice, setPackagePrice] = useState(0);
-  const [packageName, setPackageName] = useState('');
-  const [usePackagePricing, setUsePackagePricing] = useState(false);
-
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(
     PaymentMethod.TRANSFER
   );
@@ -456,13 +467,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       (initialValues?.installments && initialValues.installments.length > 0)
     )
   );
+
+  // --- อัปเดต state installments ให้รองรับ percentage ---
   const [installments, setInstallments] = useState<any[]>(
     initialValues?.installments && initialValues.installments.length > 0
       ? [...initialValues.installments]
         .sort((a: any, b: any) => a.installment_no - b.installment_no)
         .map((inst: any) => ({
+          id: inst.id || crypto.randomUUID(),
           installment_no: inst.installment_no,
           amount: inst.amount,
+          percentage: inst.percentage || 0,
           notes: inst.notes || '',
         }))
       : []
@@ -532,162 +547,208 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
 
+  // --- Logic แก้อาการ Overwrite ข้อมูลเดิมในโหมด Edit ---
   useEffect(() => {
     if (selectedAssessment) {
+      // ตรวจสอบว่าเป็นการโหลดฟอร์มครั้งแรกเพื่อแก้ไข Quotation อันเดิมหรือไม่
+      const isEditingOriginalAssessment = 
+        mode !== 'create' && selectedAssessmentId === initialValues?.assessment_id;
+
       if (
         selectedAssessment.customer_id &&
-        (mode === 'create' || !selectedCustomerId)
+        (mode === 'create' || (!selectedCustomerId && !isEditingOriginalAssessment))
       ) {
         setSelectedCustomerId(selectedAssessment.customer_id);
       }
 
-      if (!serviceLocation) {
-        const address = [
-          selectedAssessment.address,
-          selectedAssessment.sub_district,
-          selectedAssessment.district,
-          selectedAssessment.province,
-          selectedAssessment.zipcode,
-        ]
-          .filter(Boolean)
-          .join(' ');
-        setServiceLocation(address);
-      }
-
-      if (
-        selectedAssessment.assessment_areas &&
-        selectedAssessment.assessment_areas.length > 0
-      ) {
-        const buildingTypes = selectedAssessment.assessment_areas
-          .map((a) => a.building_type)
-          .filter(Boolean);
-        if (buildingTypes.length > 0) {
-          const uniqueTypes = [...new Set(buildingTypes)];
-          setBuildingType(uniqueTypes[0]);
+      // ทำการเขียนทับค่าอัตโนมัติเฉพาะตอน Create หรือผู้ใช้เปลี่ยนใบ Assessment ใหม่เท่านั้น!
+      if (!isEditingOriginalAssessment) {
+        if (!serviceLocation) {
+          const address = [
+            selectedAssessment.address,
+            selectedAssessment.sub_district,
+            selectedAssessment.district,
+            selectedAssessment.province,
+            selectedAssessment.zipcode,
+          ]
+            .filter(Boolean)
+            .join(' ');
+          setServiceLocation(address);
         }
 
-        const totalArea = selectedAssessment.assessment_areas.reduce(
-          (sum, a) => sum + (Number(a.area_size) || 0),
-          0
-        );
-        if (totalArea > 0) {
-          setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
-        }
+        if (
+          selectedAssessment.assessment_areas &&
+          selectedAssessment.assessment_areas.length > 0
+        ) {
+          const buildingTypes = selectedAssessment.assessment_areas
+            .map((a) => a.building_type)
+            .filter(Boolean);
+          if (buildingTypes.length > 0) {
+            const uniqueTypes = [...new Set(buildingTypes)];
+            setBuildingType(uniqueTypes[0]);
+          }
 
-        const systems = selectedAssessment.assessment_areas
-          .map((a) => a.service_system)
-          .filter(Boolean);
-        if (systems.length > 0) {
-          const uniqueSystems = [...new Set(systems)];
-          setServiceSystem(uniqueSystems[0]);
-        }
+          const totalArea = selectedAssessment.assessment_areas.reduce(
+            (sum, a) => sum + (Number(a.area_size) || 0),
+            0
+          );
+          if (totalArea > 0) {
+            setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
+          }
 
-        const allCategories = new Set<string>();
-        selectedAssessment.assessment_areas.forEach((area) => {
-          area.category_services?.forEach((cat) => {
-            const categoryName = cat.category?.name || cat.name;
-            if (categoryName) {
-              allCategories.add(categoryName);
-            }
+          const systems = selectedAssessment.assessment_areas
+            .map((a) => a.service_system)
+            .filter(Boolean);
+          if (systems.length > 0) {
+            const uniqueSystems = [...new Set(systems)];
+            setServiceSystem(uniqueSystems[0]);
+          }
+
+          const allCategories = new Set<string>();
+          selectedAssessment.assessment_areas.forEach((area) => {
+            area.category_services?.forEach((cat) => {
+              const categoryName = cat.category?.name || cat.name;
+              if (categoryName) {
+                allCategories.add(categoryName);
+              }
+            });
           });
-        });
-        if (allCategories.size > 0) {
-          const categoryString = Array.from(allCategories).join(', ');
-          setServiceType(categoryString);
-          setSelectedServiceTypes(Array.from(allCategories));
+          if (allCategories.size > 0) {
+            const categoryString = Array.from(allCategories).join(', ');
+            setServiceType(categoryString);
+            setSelectedServiceTypes(Array.from(allCategories));
+          }
         }
-      }
 
-      if (selectedAssessment.package) {
-        setUsePackagePricing(true);
-        setPackageName(selectedAssessment.package.name);
-        let masterPrice = 0;
+        if (selectedAssessment.package) {
+          setUsePackagePricing(true);
+          setPackageName(selectedAssessment.package.name);
+          let masterPrice = 0;
 
-        const pkg = fetchedPackage || selectedAssessment.package;
+          const pkg = fetchedPackage || selectedAssessment.package;
 
-        if (pkg) {
-          const pkgPrices = pkg.package_prices;
+          if (pkg) {
+            const pkgPrices = pkg.package_prices;
 
-          let areaSize = 0;
-          if (serviceArea) {
-            areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-          }
-
-          if (
-            areaSize === 0 &&
-            selectedAssessment.assessment_areas &&
-            selectedAssessment.assessment_areas.length > 0
-          ) {
-            areaSize =
-              Number(selectedAssessment.assessment_areas[0].area_size) || 0;
-          }
-
-          if (
-            areaSize > 0 &&
-            Array.isArray(pkgPrices) &&
-            pkgPrices.length > 0
-          ) {
-            if (pkg.visit_limit) {
-              setServiceCount(`${pkg.visit_limit} ครั้ง`);
+            let areaSize = 0;
+            if (serviceArea) {
+              areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
             }
 
-            if (pkg.visit_limit) {
-              const period = Number(pkg.visit_limit);
-              if (period >= 12) {
-                const years = period / 12;
-                setContractDuration(`${years} ปี`);
-              } else {
-                setContractDuration(`${period} เดือน`);
+            if (
+              areaSize === 0 &&
+              selectedAssessment.assessment_areas &&
+              selectedAssessment.assessment_areas.length > 0
+            ) {
+              areaSize =
+                Number(selectedAssessment.assessment_areas[0].area_size) || 0;
+            }
+
+            if (
+              areaSize > 0 &&
+              Array.isArray(pkgPrices) &&
+              pkgPrices.length > 0
+            ) {
+              if (pkg.visit_limit) {
+                setServiceCount(`${pkg.visit_limit} ครั้ง`);
+              }
+
+              if (pkg.visit_limit) {
+                const period = Number(pkg.visit_limit);
+                if (period >= 12) {
+                  const years = period / 12;
+                  setContractDuration(`${years} ปี`);
+                } else {
+                  setContractDuration(`${period} เดือน`);
+                }
+              }
+
+              const sortedPrices = [...pkgPrices].sort(
+                (a: any, b: any) => Number(a.area_range) - Number(b.area_range)
+              );
+
+              const condition = sortedPrices.find(
+                (p: any) => Number(p.area_range) >= areaSize
+              );
+
+              if (condition) {
+                let hasTermite = false;
+
+                if (
+                  selectedAssessment.assessment_areas &&
+                  selectedAssessment.assessment_areas.length > 0
+                ) {
+                  const area = selectedAssessment.assessment_areas[0];
+                  hasTermite =
+                    area.category_services?.some((c: any) => {
+                      if (c.name && /ปลวก|termite/i.test(c.name)) return true;
+                      const masterCat = fetchedCategories.find(
+                        (cat: any) => cat.id === c.category_id
+                      );
+                      return masterCat && /ปลวก|termite/i.test(masterCat.name);
+                    }) || false;
+                }
+
+                const priceWith = Number(condition.price_with_termite);
+                const priceWithout = Number(condition.price_without_termite);
+
+                masterPrice = hasTermite
+                  ? priceWith > 0
+                    ? priceWith
+                    : priceWithout
+                  : priceWithout > 0
+                    ? priceWithout
+                    : priceWith;
               }
             }
+          }
 
-            const sortedPrices = [...pkgPrices].sort(
-              (a: any, b: any) => Number(a.area_range) - Number(b.area_range)
-            );
+          if (masterPrice === 0 && selectedAssessment.total_price) {
+            masterPrice = Number(selectedAssessment.total_price);
+          }
 
-            const condition = sortedPrices.find(
-              (p: any) => Number(p.area_range) >= areaSize
-            );
+          setPackagePrice(masterPrice);
 
-            if (condition) {
-              let hasTermite = false;
+          if (!items || items.length === 0) {
+            if (
+              selectedAssessment.assessment_areas &&
+              selectedAssessment.assessment_areas.length > 0
+            ) {
+              const newItems: QuotationItem[] = [];
 
-              if (
-                selectedAssessment.assessment_areas &&
-                selectedAssessment.assessment_areas.length > 0
-              ) {
-                const area = selectedAssessment.assessment_areas[0];
-                hasTermite =
-                  area.category_services?.some((c: any) => {
-                    if (c.name && /ปลวก|termite/i.test(c.name)) return true;
-                    const masterCat = fetchedCategories.find(
-                      (cat: any) => cat.id === c.category_id
+              selectedAssessment.assessment_areas.forEach((area) => {
+                if (area.items && area.items.length > 0) {
+                  area.items.forEach((item) => {
+                    if (!item.product_id) return;
+
+                    const masterProduct = products.find(
+                      (p) => p.id === item.product_id
                     );
-                    return masterCat && /ปลวก|termite/i.test(masterCat.name);
-                  }) || false;
+                    const unitPrice = masterProduct
+                      ? Number(masterProduct.price) ||
+                      Number(masterProduct.cost_price) ||
+                      0
+                      : Number(item.product_price) || 0;
+
+                    newItems.push({
+                      id: crypto.randomUUID(),
+                      productId: item.product_id,
+                      description: item.product_name,
+                      quantity: Number(item.quantity) || 1,
+                      unit: 'ครั้ง',
+                      unitPrice: unitPrice,
+                      amount: (Number(item.quantity) || 1) * unitPrice,
+                    });
+                  });
+                }
+              });
+
+              if (newItems.length > 0) {
+                setItems(newItems);
               }
-
-              const priceWith = Number(condition.price_with_termite);
-              const priceWithout = Number(condition.price_without_termite);
-
-              masterPrice = hasTermite
-                ? priceWith > 0
-                  ? priceWith
-                  : priceWithout
-                : priceWithout > 0
-                  ? priceWithout
-                  : priceWith;
             }
           }
-        }
-
-        if (masterPrice === 0 && selectedAssessment.total_price) {
-          masterPrice = Number(selectedAssessment.total_price);
-        }
-
-        setPackagePrice(masterPrice);
-
-        if (mode === 'create' && (!items || items.length === 0)) {
+        } else if (!initialValues?.items) {
           if (
             selectedAssessment.assessment_areas &&
             selectedAssessment.assessment_areas.length > 0
@@ -721,106 +782,71 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               }
             });
 
-            if (newItems.length > 0) {
-              setItems(newItems);
-            }
+            setItems(newItems.length > 0 ? newItems : []);
           }
         }
-      } else if (mode === 'create' && !initialValues?.items) {
+
         if (
-          selectedAssessment.assessment_areas &&
-          selectedAssessment.assessment_areas.length > 0
+          selectedAssessment.installments &&
+          selectedAssessment.installments.length > 0
         ) {
-          const newItems: QuotationItem[] = [];
+          setPaymentCondition(PaymentMethod.INSTALLMENT);
 
-          selectedAssessment.assessment_areas.forEach((area) => {
-            if (area.items && area.items.length > 0) {
-              area.items.forEach((item) => {
-                if (!item.product_id) return;
+          const totalAssessmentAmount = selectedAssessment.installments.reduce(
+            (sum: number, i: any) => sum + (Number(i.amount) || 0),
+            0
+          );
 
-                const masterProduct = products.find(
-                  (p) => p.id === item.product_id
-                );
-                const unitPrice = masterProduct
-                  ? Number(masterProduct.price) ||
-                  Number(masterProduct.cost_price) ||
-                  0
-                  : Number(item.product_price) || 0;
+          let estimatedSubtotal = 0;
 
-                newItems.push({
-                  id: crypto.randomUUID(),
-                  productId: item.product_id,
-                  description: item.product_name,
-                  quantity: Number(item.quantity) || 1,
-                  unit: 'ครั้ง',
-                  unitPrice: unitPrice,
-                  amount: (Number(item.quantity) || 1) * unitPrice,
-                });
-              });
-            }
-          });
-
-          setItems(newItems.length > 0 ? newItems : []);
-        }
-      }
-
-      if (
-        selectedAssessment.installments &&
-        selectedAssessment.installments.length > 0
-      ) {
-        setPaymentCondition(PaymentMethod.INSTALLMENT);
-
-        const totalAssessmentAmount = selectedAssessment.installments.reduce(
-          (sum: number, i: any) => sum + (Number(i.amount) || 0),
-          0
-        );
-
-        let estimatedSubtotal = 0;
-
-        if (selectedAssessment.package) {
-          estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
-        } else {
-          estimatedSubtotal =
-            Number(selectedAssessment.total_price) || totalAssessmentAmount;
-        }
-
-        const shouldIncludeVat = mode === 'create' ? true : includeVat;
-        const targetTotal = shouldIncludeVat
-          ? estimatedSubtotal * 1.07
-          : estimatedSubtotal;
-
-        const scale =
-          totalAssessmentAmount > 0 ? targetTotal / totalAssessmentAmount : 1;
-
-        let accumulatedAmount = 0;
-
-        const sortedAssessmentInstallments = [
-          ...selectedAssessment.installments,
-        ].sort((a: any, b: any) => a.installment_no - b.installment_no);
-
-        const newInstallments = sortedAssessmentInstallments.map(
-          (inst: any, index: number) => {
-            const originalAmount = Number(inst.amount);
-            let newAmount = 0;
-
-            if (index === sortedAssessmentInstallments.length - 1) {
-              newAmount = targetTotal - accumulatedAmount;
-            } else {
-              newAmount = originalAmount * scale;
-              newAmount = Math.round(newAmount * 100) / 100;
-              accumulatedAmount += newAmount;
-            }
-
-            return {
-              id: inst.id || crypto.randomUUID(),
-              installment_no: inst.installment_no,
-              amount: newAmount > 0 ? newAmount : 0,
-              notes: inst.note || `งวดที่ ${inst.installment_no}`,
-            };
+          if (selectedAssessment.package) {
+            estimatedSubtotal = Number(selectedAssessment.total_price) || 0;
+          } else {
+            estimatedSubtotal =
+              Number(selectedAssessment.total_price) || totalAssessmentAmount;
           }
-        );
 
-        setInstallments(newInstallments);
+          const shouldIncludeVat = mode === 'create' ? true : includeVat;
+          const targetTotal = shouldIncludeVat
+            ? estimatedSubtotal * 1.07
+            : estimatedSubtotal;
+
+          const scale =
+            totalAssessmentAmount > 0 ? targetTotal / totalAssessmentAmount : 1;
+
+          let accumulatedAmount = 0;
+
+          const sortedAssessmentInstallments = [
+            ...selectedAssessment.installments,
+          ].sort((a: any, b: any) => a.installment_no - b.installment_no);
+
+          const newInstallments = sortedAssessmentInstallments.map(
+            (inst: any, index: number) => {
+              const originalAmount = Number(inst.amount);
+              let newAmount = 0;
+
+              if (index === sortedAssessmentInstallments.length - 1) {
+                newAmount = targetTotal - accumulatedAmount;
+              } else {
+                newAmount = originalAmount * scale;
+                newAmount = Math.round(newAmount * 100) / 100;
+                accumulatedAmount += newAmount;
+              }
+
+              const pct = targetTotal > 0 ? (newAmount / targetTotal) * 100 : 0;
+
+              return {
+                id: inst.id || crypto.randomUUID(),
+                installment_no: inst.installment_no,
+                percentage: Number(pct.toFixed(2)),
+                amount: newAmount > 0 ? newAmount : 0,
+                notes: inst.note || `งวดที่ ${inst.installment_no}`,
+              };
+            }
+          );
+
+          setInstallments(newInstallments);
+        }
       }
     }
   }, [
@@ -829,6 +855,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     fetchedCategories,
     fetchedPackage,
     serviceArea,
+    initialValues, // Dependency เพิ่มเติมเพื่อป้องกัน Bug
+    selectedAssessmentId
   ]);
 
   useEffect(() => {
@@ -1027,12 +1055,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return subtotal + vatAmount;
   }, [subtotal, vatAmount]);
 
+  // --- Logic การจัดการงวดงานที่อัปเดตใหม่ (คำนวณ %) ---
   const handleAddInstallment = () => {
     setInstallments((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
         installment_no: prev.length + 1,
+        percentage: 0,
         amount: 0,
         notes: `งวดที่ ${prev.length + 1}`,
       },
@@ -1042,11 +1072,26 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const handleRemoveInstallment = (index: number) => {
     setInstallments((prev) => {
       const filtered = prev.filter((_, i) => i !== index);
-      return filtered.map((inst, i) => ({
+      const mapped = filtered.map((inst, i) => ({
         ...inst,
         installment_no: i + 1,
         notes: inst.notes?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.notes,
       }));
+      
+      // Auto-balance งวดสุดท้ายใหม่หลังลบ
+      if (mapped.length > 0 && netTotal > 0) {
+        let sumPct = 0;
+        let sumAmt = 0;
+        for (let i = 0; i < mapped.length - 1; i++) {
+          sumPct += Number(mapped[i].percentage) || 0;
+          sumAmt += Number(mapped[i].amount) || 0;
+        }
+        const lastIdx = mapped.length - 1;
+        mapped[lastIdx].percentage = Number(Math.max(0, 100 - sumPct).toFixed(2));
+        mapped[lastIdx].amount = Number(Math.max(0, netTotal - sumAmt).toFixed(2));
+      }
+
+      return mapped;
     });
   };
 
@@ -1055,16 +1100,62 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     field: string,
     value: any
   ) => {
-    setInstallments((prev) =>
-      prev.map((inst, i) => {
-        if (i === index) {
-          return { ...inst, [field]: value };
+    setInstallments((prev) => {
+      const newInst = [...prev];
+      const current = { ...newInst[index] };
+
+      if (field === 'percentage') {
+        const pct = Number(value);
+        current.percentage = pct;
+        current.amount = netTotal > 0 ? Number(((pct / 100) * netTotal).toFixed(2)) : 0;
+        newInst[index] = current;
+
+        // Auto-adjust งวดสุดท้ายให้ครบ 100% เสมอ
+        if (newInst.length > 1 && index !== newInst.length - 1) {
+          let sumPct = 0;
+          let sumAmt = 0;
+          for (let i = 0; i < newInst.length - 1; i++) {
+            sumPct += Number(newInst[i].percentage) || 0;
+            sumAmt += Number(newInst[i].amount) || 0;
+          }
+          const lastIdx = newInst.length - 1;
+          newInst[lastIdx] = {
+            ...newInst[lastIdx],
+            percentage: Number(Math.max(0, 100 - sumPct).toFixed(2)),
+            amount: Number(Math.max(0, netTotal - sumAmt).toFixed(2)),
+          };
         }
-        return inst;
-      })
-    );
+      } else if (field === 'amount') {
+        const amt = Number(value);
+        current.amount = amt;
+        current.percentage = netTotal > 0 ? Number(((amt / netTotal) * 100).toFixed(2)) : 0;
+        newInst[index] = current;
+
+        // Auto-adjust งวดสุดท้ายให้ครบจำนวนเงินรวม
+        if (newInst.length > 1 && index !== newInst.length - 1) {
+          let sumAmt = 0;
+          let sumPct = 0;
+          for (let i = 0; i < newInst.length - 1; i++) {
+            sumAmt += Number(newInst[i].amount) || 0;
+            sumPct += Number(newInst[i].percentage) || 0;
+          }
+          const lastIdx = newInst.length - 1;
+          newInst[lastIdx] = {
+            ...newInst[lastIdx],
+            amount: Number(Math.max(0, netTotal - sumAmt).toFixed(2)),
+            percentage: Number(Math.max(0, 100 - sumPct).toFixed(2)),
+          };
+        }
+      } else {
+        current[field] = value;
+        newInst[index] = current;
+      }
+
+      return newInst;
+    });
   };
 
+  // 1. กำหนดค่าเริ่มต้น 2 งวดให้เป็น 50%
   useEffect(() => {
     if (
       paymentCondition === PaymentMethod.INSTALLMENT &&
@@ -1075,18 +1166,55 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         {
           id: crypto.randomUUID(),
           installment_no: 1,
-          amount: netTotal / 2,
+          percentage: 50,
+          amount: Number((netTotal / 2).toFixed(2)),
           notes: 'งวดที่ 1',
         },
         {
           id: crypto.randomUUID(),
           installment_no: 2,
-          amount: netTotal / 2,
+          percentage: 50,
+          amount: Number((netTotal / 2).toFixed(2)),
           notes: 'งวดที่ 2',
         },
       ]);
     }
   }, [paymentCondition, netTotal]);
+
+  // --- ป้องกันการกระจายยอดเงินเองเมื่อโหลดหน้า Edit ครั้งแรก ---
+  const prevNetTotalRef = useRef(netTotal);
+
+  useEffect(() => {
+    // ถ้าไม่มีการเปลี่ยนยอดเงินจริงๆ ห้ามคำนวณใหม่
+    if (prevNetTotalRef.current === netTotal) return;
+    prevNetTotalRef.current = netTotal;
+
+    if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length > 0 && netTotal > 0) {
+      setInstallments((prev) => {
+        let accumulatedAmt = 0;
+        return prev.map((inst, index) => {
+          const pct = inst.percentage || (netTotal > 0 ? (inst.amount / netTotal * 100) : 0);
+          
+          if (index === prev.length - 1) {
+            // แถวสุดท้าย เอายอดคงเหลือมาใส่เพื่อป้องกันทศนิยมขาดเกิน
+            return {
+              ...inst,
+              percentage: Number(pct.toFixed(2)),
+              amount: Number((netTotal - accumulatedAmt).toFixed(2))
+            };
+          } else {
+            const amt = Number(((pct / 100) * netTotal).toFixed(2));
+            accumulatedAmt += amt;
+            return {
+              ...inst,
+              percentage: Number(pct.toFixed(2)),
+              amount: amt
+            };
+          }
+        });
+      });
+    }
+  }, [netTotal]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -1195,10 +1323,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       vat_amount: vatAmount,
       include_vat: includeVat,
       items: finalItems,
+      // --- ส่งค่า percentage เข้า API ด้วย ---
       installments:
         paymentCondition === PaymentMethod.INSTALLMENT
           ? installments.map((inst) => ({
             ...inst,
+            percentage: inst.percentage || 0,
           }))
           : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
@@ -1619,13 +1749,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label
-                className={`
-                                relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all
-                                ${paymentCondition === PaymentMethod.TRANSFER
-                    ? 'border-green-500 bg-green-50 shadow-md'
-                    : 'border-slate-200 hover:border-slate-300 bg-white'
+                className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${paymentCondition === PaymentMethod.TRANSFER
+                  ? 'border-green-500 bg-green-50 shadow-md'
+                  : 'border-slate-200 hover:border-slate-300 bg-white'
                   }
-                            `}
+                `}
               >
                 <input
                   type="radio"
@@ -1705,7 +1833,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
                           รายละเอียด
                         </th>
-                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">
+                        {/* --- เพิ่ม Column สัดส่วน (%) ตรงนี้ --- */}
+                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-28">
+                          สัดส่วน (%)
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-36">
                           จำนวนเงิน
                         </th>
                         {!isReadOnly && <th className="px-2 py-3 w-10"></th>}
@@ -1732,15 +1864,34 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                               disabled={isReadOnly}
                             />
                           </td>
+                          {/* --- เพิ่ม Input สำหรับกรอกเปอร์เซ็นต์ ตรงนี้ --- */}
                           <td className="px-4 py-2">
                             <Input
                               type="number"
-                              value={inst.amount}
+                              value={inst.percentage || ''}
+                              onChange={(e) =>
+                                handleInstallmentChange(
+                                  idx,
+                                  'percentage',
+                                  e.target.value
+                                )
+                              }
+                              className="h-9 text-right text-sm font-mono"
+                              disabled={isReadOnly}
+                              min={0}
+                              max={100}
+                              step="0.01"
+                            />
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input
+                              type="number"
+                              value={inst.amount || ''}
                               onChange={(e) =>
                                 handleInstallmentChange(
                                   idx,
                                   'amount',
-                                  Number(e.target.value)
+                                  e.target.value
                                 )
                               }
                               className="h-9 text-right text-sm font-mono"

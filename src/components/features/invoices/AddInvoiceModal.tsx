@@ -12,7 +12,6 @@ import { Status } from '../../../types/entity/core.interface';
 import { Invoice, Contract, Quotation } from '../../../types/entity/financial.interface';
 import { InvoiceStatus } from '../../../types/enums/financial';
 
-const VAT_RATE = 0.07;
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'ร่าง',
   PENDING: 'รอชำระ',
@@ -118,9 +117,27 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   // -- Derived Data & Calculations --
   const totals = useMemo(() => {
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-    const vatAmount = formData.includeVat ? subtotal * VAT_RATE : 0;
-    return { subtotal, vatAmount, netTotal: subtotal + vatAmount };
+    // ยอดรวมทั้งหมด (ดึงมาจากรายการสินค้า/งวด ซึ่งถือเป็นยอดรวมสุทธิ)
+    const itemsTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+    if (formData.includeVat) {
+      // 💡 สูตรถอด VAT 7% (Inclusive VAT)
+      const vatAmount = Number((itemsTotal * (7 / 107)).toFixed(2));
+      const subtotal = Number((itemsTotal - vatAmount).toFixed(2));
+      
+      return { 
+        subtotal, 
+        vatAmount, 
+        netTotal: itemsTotal 
+      };
+    } else {
+      // กรณีไม่คิด VAT
+      return { 
+        subtotal: itemsTotal, 
+        vatAmount: 0, 
+        netTotal: itemsTotal 
+      };
+    }
   }, [items, formData.includeVat]);
 
   const selectedCustomer = useMemo(() => 
@@ -201,7 +218,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const handleSelectInstallment = (inst: any) => {
     setFormData(prev => ({ ...prev, term: inst.term }));
-    // เมื่อเลือกงวด ให้เซ็ตรายการสินค้าเป็นงวดนั้นอัตโนมัติ 
+    // เมื่อเลือกงวด ให้เซ็ตรายการสินค้าเป็นงวดนั้นอัตโนมัติ (ยอดนี้ถือเป็นยอดรวม VAT แล้ว)
     setItems([{
       id: crypto.randomUUID(),
       description: inst.description,
@@ -470,17 +487,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               </h3>
             </div>
 
-            {referenceSource.installments && (
-              <div className="mb-4 p-4 bg-orange-50 border border-orange-100 rounded-md">
-                <h4 className="text-sm font-semibold text-orange-800 mb-1">
-                  เงื่อนไขการชำระเงิน
-                </h4>
-                <p className="text-sm text-orange-700">
-                  {/* {referenceSource} */}
-                </p>
-              </div>
-            )}
-
             <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
@@ -500,7 +506,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       </th>
                     )}
                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
-                      ยอดชำระ
+                      ยอดชำระ (รวม VAT)
                     </th>
                   </tr>
                 </thead>
@@ -532,7 +538,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         </td>
                       )}
                       <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">
-                        ฿{Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        ฿{Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   ))}
@@ -639,8 +645,10 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
           <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4 shadow-sm">
             <div className="flex justify-between text-sm text-slate-600">
-              <span>รวมเป็นเงิน</span>
-              <span className="font-medium text-slate-900">{totals.subtotal.toLocaleString()} บาท</span>
+              <span>มูลค่าสินค้า/บริการ (Subtotal)</span>
+              <span className="font-medium text-slate-900">
+                {totals.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+              </span>
             </div>
             <div className="flex justify-between items-center text-sm text-slate-600">
               <div className="flex items-center gap-2">
@@ -651,13 +659,17 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, includeVat: e.target.checked }))}
                   className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
                 />
-                <label htmlFor="includeVat" className="cursor-pointer select-none">ภาษีมูลค่าเพิ่ม 7% (VAT)</label>
+                <label htmlFor="includeVat" className="cursor-pointer select-none">รวมภาษีมูลค่าเพิ่ม 7% (ถอด VAT)</label>
               </div>
-              <span className="font-medium text-slate-900">{totals.vatAmount.toLocaleString()} บาท</span>
+              <span className="font-medium text-slate-900">
+                {totals.vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+              </span>
             </div>
             <div className="flex justify-between text-xl font-bold border-t border-slate-200 pt-4 text-slate-800 items-end">
               <span>ยอดรวมสุทธิ (Net Total)</span>
-              <span className="text-3xl text-primary">{totals.netTotal.toLocaleString()} <span className="text-sm text-slate-500 font-normal">บาท</span></span>
+              <span className="text-3xl text-primary">
+                {totals.netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm text-slate-500 font-normal">บาท</span>
+              </span>
             </div>
           </div>
         </div>
