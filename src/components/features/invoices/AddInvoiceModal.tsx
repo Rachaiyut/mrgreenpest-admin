@@ -57,6 +57,12 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [invoiceSchedules, setInvoiceSchedules] = useState<any[]>([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+
+  // 💡 State ใหม่สำหรับรองรับการออกบิลอิสระ (Ad-hoc)
+  const [isAdhocMode, setIsAdhocMode] = useState<boolean>(false);
+
   // -- Form States --
   const [formData, setFormData] = useState({
     code: initialValues?.code || '',
@@ -73,6 +79,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     contractId: (initialValues as any)?.contract_id || initialContractId || '',
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
+    selectedScheduleId: null as string | null, // 💡 เก็บ ID ของงวดที่เลือก (รองรับ ID จำลองตอนปิดยอด)
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
@@ -115,28 +122,42 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     loadMasterData();
   }, []);
 
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      if (formData.contractId) {
+        setIsLoadingSchedules(true);
+        try {
+          const res = await InvoiceApi.getAllInvoiceSchedule(formData.contractId);
+          const data = (res as any).data || res;
+          setInvoiceSchedules(Array.isArray(data) ? data : []);
+          
+          // รีเซ็ตโหมด Ad-hoc เมื่อเปลี่ยนสัญญา
+          setIsAdhocMode(false);
+          setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
+        } catch (error) {
+          console.error('Error fetching invoice schedules:', error);
+          setInvoiceSchedules([]);
+        } finally {
+          setIsLoadingSchedules(false);
+        }
+      } else {
+        setInvoiceSchedules([]);
+      }
+    };
+
+    fetchSchedules();
+  }, [formData.contractId]);
+
   // -- Derived Data & Calculations --
   const totals = useMemo(() => {
-    // ยอดรวมทั้งหมด (ดึงมาจากรายการสินค้า/งวด ซึ่งถือเป็นยอดรวมสุทธิ)
     const itemsTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
     if (formData.includeVat) {
-      // 💡 สูตรถอด VAT 7% (Inclusive VAT)
       const vatAmount = Number((itemsTotal * (7 / 107)).toFixed(2));
       const subtotal = Number((itemsTotal - vatAmount).toFixed(2));
-      
-      return { 
-        subtotal, 
-        vatAmount, 
-        netTotal: itemsTotal 
-      };
+      return { subtotal, vatAmount, netTotal: itemsTotal };
     } else {
-      // กรณีไม่คิด VAT
-      return { 
-        subtotal: itemsTotal, 
-        vatAmount: 0, 
-        netTotal: itemsTotal 
-      };
+      return { subtotal: itemsTotal, vatAmount: 0, netTotal: itemsTotal };
     }
   }, [items, formData.includeVat]);
 
@@ -152,11 +173,29 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     quotations.find(q => q.id === formData.quotationId), 
   [quotations, formData.quotationId]);
 
-  // หาที่มาของข้อมูล (ให้ความสำคัญกับ Contract ก่อน ถ้าไม่มีค่อยดู Quotation)
   const referenceSource = selectedContract || selectedQuotation;
 
-  // หา Installments ที่พร้อมให้เบิกจ่าย (ยังไม่ถูก Invoice)
   const availableInstallments = useMemo(() => {
+    if (formData.contractId && invoiceSchedules.length > 0) {
+      return invoiceSchedules.filter((inst: any) => {
+        const term = inst.installment_no || inst.sequence;
+        const status = String(inst.status).toUpperCase();
+        
+        if (initialValues?.id && initialValues.term === term) return true;
+        // ปล่อยให้ตัวเลือก PAY_ALL ผ่านมาด้วย
+        if (inst.is_pay_all) return true;
+        
+        return status === 'PENDING' || status === 'PARTIAL';
+      }).map((inst: any) => ({
+        id: inst.id,
+        term: inst.installment_no || inst.sequence,
+        description: inst.description || inst.notes || `งวดที่ ${inst.installment_no || inst.sequence}`,
+        percentage: inst.percentage || 0,
+        amount: Number(inst.amount || inst.expected_amount || 0),
+        is_pay_all: inst.is_pay_all || false, // 💡 แมพ Flag กลับมาให้ React รู้จัก
+      }));
+    }
+
     if (!referenceSource?.installments || referenceSource.installments.length === 0) return [];
     
     const sourceId = referenceSource.id;
@@ -178,8 +217,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       description: inst.description || inst.notes || `งวดที่ ${inst.term || inst.installment_no}`,
       percentage: inst.percentage || 0,
       amount: Number(inst.amount),
+      is_pay_all: false,
     }));
-  }, [referenceSource, invoices, initialValues]);
+  }, [referenceSource, invoices, initialValues, formData.contractId, invoiceSchedules]);
 
   // -- Handlers --
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -203,6 +243,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           updated.customerId = contract.customer_id;
           updated.quotationId = contract.quotation_id || prev.quotationId;
           updated.term = null;
+          updated.selectedScheduleId = null;
         }
       }
       if (field === 'quotationId' && value && !prev.contractId) {
@@ -210,23 +251,37 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         if (quote) {
           updated.customerId = quote.customer_id;
           updated.term = null;
+          updated.selectedScheduleId = null;
         }
       }
       return updated;
     });
   };
 
+  // 💡 เมื่อแอดมินเลือกงวด (ปกติ หรือ ปิดยอด)
   const handleSelectInstallment = (inst: any) => {
-    setFormData(prev => ({ ...prev, term: inst.term }));
-    // เมื่อเลือกงวด ให้เซ็ตรายการสินค้าเป็นงวดนั้นอัตโนมัติ (ยอดนี้ถือเป็นยอดรวม VAT แล้ว)
+    setIsAdhocMode(false); // ปิดโหมดคีย์อิสระ
+    setFormData(prev => ({ 
+      ...prev, 
+      term: inst.term,
+      selectedScheduleId: inst.id 
+    }));
+    
     setItems([{
       id: crypto.randomUUID(),
       description: inst.description,
       quantity: 1,
-      unit: 'งวด',
+      unit: inst.is_pay_all ? 'สัญญา' : 'งวด',
       unitPrice: inst.amount,
       amount: inst.amount
     }]);
+  };
+
+  // 💡 เมื่อแอดมินกดปุ่ม "สร้างใบแจ้งหนี้พิเศษ (คีย์รายการเอง)"
+  const handleEnableAdhocMode = () => {
+    setIsAdhocMode(true);
+    setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
+    setItems([{ id: crypto.randomUUID(), description: 'บริการเพิ่มเติม (นอกเหนือสัญญา)', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }]);
   };
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
@@ -255,13 +310,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   };
 
-  const addItem = () => {
-    setItems(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }]);
-  };
-
-  const removeItem = (id: string) => {
-    if (items.length > 1) setItems(prev => prev.filter(i => i.id !== id));
-  };
+  const addItem = () => setItems(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }]);
+  const removeItem = (id: string) => { if (items.length > 1) setItems(prev => prev.filter(i => i.id !== id)); };
 
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,20 +321,18 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       return;
     }
 
-    // ถ้าระบบมีงวดแต่ผู้ใช้ไม่ได้เลือก
-    if (availableInstallments.length > 0 && !formData.term) {
-      alert('กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน');
+    // 💡 Validation: ถ้าไม่ได้เปิดโหมด Ad-hoc และมีตารางงวดอยู่ ต้องบังคับเลือก
+    if (!isAdhocMode && availableInstallments.length > 0 && !formData.selectedScheduleId) {
+      alert('กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "ออกบิลแบบกำหนดเอง"');
       return;
     }
 
     setIsSaving(true);
     try {
-      const inst = availableInstallments.find((i: any) => i.term === formData.term);
+      const selectedInst = availableInstallments.find((i: any) => i.id === formData.selectedScheduleId);
 
       const payload = {
         contract_id: formData.contractId || undefined,
-        term: formData.term || undefined,
-        installment_id: inst?.id || undefined,
         quotation_id: formData.quotationId || undefined,
         customer_id: formData.customerId,
         customer_name: selectedCustomer ? `${selectedCustomer.first_name} ${selectedCustomer.last_name}` : 'Unknown',
@@ -296,6 +344,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         total: totals.netTotal,
         status: formData.status,
         notes: formData.notes,
+        
+        // 💡 ส่ง Flag ให้ตรงกับ Backend
+        is_pay_all: selectedInst?.is_pay_all || undefined,
+        is_ad_hoc: isAdhocMode || undefined,
+        term: (!selectedInst?.is_pay_all && !isAdhocMode) ? formData.term : undefined, // ส่ง term เฉพาะงวดปกติ
+        invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
+
         items: items.map((item, index) => ({
           id: item.id,
           sequence: index + 1,
@@ -324,7 +379,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   return (
     <form onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
-      {/* Top Section: Document Header */}
+      {/* ... ส่วน Top Section และ Customer Data (เหมือนเดิมเป๊ะ) ... */}
       <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-6 border-b border-slate-200 pb-6">
           <div>
@@ -376,7 +431,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column: Customer */}
         <div className="space-y-6 h-full">
           <div className="bg-white p-6 rounded-xl border border-slate-200 h-full shadow-sm hover:shadow-md transition-shadow">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 pb-4 border-b border-slate-100">
@@ -433,7 +487,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           </div>
         </div>
 
-        {/* Right Column: References */}
         <div className="space-y-6 h-full">
           <div className="bg-white p-6 rounded-xl border border-slate-200 h-full shadow-sm hover:shadow-md transition-shadow">
             <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2 pb-4 border-b border-slate-100">
@@ -477,37 +530,35 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       {/* Bottom Section: Items / Installments */}
       <div className="pt-8 border-t border-slate-200">
         
-        {/* เช็คว่าเอกสารอ้างอิงมีการแบ่งงวดหรือไม่ */}
-        {referenceSource && availableInstallments.length > 0 ? (
-          // --- 1. แสดงตารางการแบ่งงวดชำระ (Installments) แทนที่ Items แบบเดิม ---
+        {isLoadingSchedules ? (
+          <div className="flex items-center justify-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 font-medium gap-3">
+            <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
+            กำลังดึงข้อมูลตารางการวางบิล...
+          </div>
+        ) : referenceSource && availableInstallments.length > 0 && !isAdhocMode ? (
+          // --- 1. แสดงตารางงวดชำระ (ถ้าไม่ได้อยู่ในโหมด Ad-hoc) ---
           <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-2 border-b border-slate-100">
               <h3 className="font-semibold text-slate-800 text-lg">
-                รายการเรียกเก็บเงินตามงวด (อ้างอิงจากเอกสาร)
+                รายการเรียกเก็บเงินตามงวด (อ้างอิงจากแผนการวางบิล)
               </h3>
+              {/* 💡 ปุ่มสำหรับสลับไปออกบิลอิสระ (Ad-hoc) */}
+              <Button type="button" variant="outline" onClick={handleEnableAdhocMode} className="text-orange-600 border-orange-200 hover:bg-orange-50 text-sm">
+                <PlusIcon className="w-4 h-4 mr-2" /> สร้างบิลพิเศษ (กำหนดรายการเอง)
+              </Button>
             </div>
 
             <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-center w-16 text-xs font-semibold text-slate-600 uppercase">
-                      เลือก
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                      งวดที่
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
-                      รายละเอียด
-                    </th>
+                    <th className="px-4 py-3 text-center w-16 text-xs font-semibold text-slate-600 uppercase">เลือก</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">งวดที่</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">รายละเอียด</th>
                     {availableInstallments.some(i => i.percentage > 0) && (
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
-                        เปอร์เซ็น
-                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
                     )}
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
-                      ยอดชำระ (รวม VAT)
-                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
@@ -515,26 +566,26 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                     <tr 
                       key={inst.id} 
                       onClick={() => handleSelectInstallment(inst)}
-                      className={`cursor-pointer transition-colors ${formData.term === inst.term ? 'bg-indigo-50/50' : 'hover:bg-slate-50'}`}
+                      className={`cursor-pointer transition-colors ${formData.selectedScheduleId === inst.id ? (inst.is_pay_all ? 'bg-amber-50' : 'bg-indigo-50/50') : 'hover:bg-slate-50'}`}
                     >
                       <td className="px-4 py-4 text-center">
                         <input
                           type="radio"
                           name="selected_installment"
-                          checked={formData.term === inst.term}
+                          checked={formData.selectedScheduleId === inst.id}
                           onChange={() => handleSelectInstallment(inst)}
                           className="w-4 h-4 text-primary focus:ring-primary cursor-pointer border-slate-300"
                         />
                       </td>
                       <td className="px-4 py-4 text-sm font-medium text-slate-900">
-                        งวดที่ {inst.term}
+                        {inst.is_pay_all ? '⭐ รวบยอด' : `งวดที่ ${inst.term}`}
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-600">
+                      <td className={`px-4 py-4 text-sm ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
                         {inst.description}
                       </td>
                       {availableInstallments.some(i => i.percentage > 0) && (
                         <td className="px-4 py-4 text-sm text-right text-slate-600">
-                          {inst.percentage > 0 ? `${inst.percentage}%` : '-'}
+                          {!inst.is_pay_all && inst.percentage > 0 ? `${inst.percentage}%` : '-'}
                         </td>
                       )}
                       <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">
@@ -547,14 +598,28 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             </div>
           </div>
         ) : (
-          // --- 2. แสดงตาราง Items & Services แบบเดิม (ถ้าไม่มีการแบ่งงวด) ---
-          <>
+          // --- 2. แสดงตาราง Items & Services (โหมดปกติ หรือ โหมด Ad-hoc) ---
+          <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
-                รายการสินค้าและบริการ (Items & Services)
-              </h3>
-              <div className="flex gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
+                  รายการสินค้าและบริการ (Items & Services)
+                </h3>
+                {/* 💡 ป้ายบอกสถานะ Ad-hoc */}
+                {isAdhocMode && (
+                   <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200">
+                     โหมดกำหนดรายการเอง (Ad-hoc)
+                   </span>
+                )}
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto items-center">
+                 {/* 💡 ปุ่มยกเลิกโหมด Ad-hoc เพื่อกลับไปเลือกตารางงวด */}
+                 {isAdhocMode && availableInstallments.length > 0 && (
+                   <Button type="button" variant="ghost" onClick={() => setIsAdhocMode(false)} className="text-slate-500 text-sm">
+                     กลับไปเลือกงวด
+                   </Button>
+                 )}
                 <Button type="button" variant="outline" onClick={addItem} className="flex-1 sm:flex-none text-primary border-primary hover:bg-primary/5 shadow-sm">
                   <PlusIcon className="w-4 h-4 mr-2" /> เพิ่มรายการ
                 </Button>
@@ -626,7 +691,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </table>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* ยอดรวม (Subtotal & Total) */}
@@ -680,7 +745,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         <Button type="button" variant="outline" onClick={onCancel} className="px-6 h-10 border-slate-300 text-slate-700 hover:bg-slate-50">
           ยกเลิก
         </Button>
-        <Button type="submit" disabled={isSaving} variant="primary" className="px-8 h-10 shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5">
+        <Button type="submit" disabled={isSaving || isLoadingSchedules} variant="primary" className="px-8 h-10 shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5">
           {isSaving ? 'กำลังบันทึก...' : mode === 'create' ? 'สร้างใบแจ้งหนี้' : 'บันทึกการแก้ไข'}
         </Button>
       </div>

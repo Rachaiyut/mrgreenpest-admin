@@ -15,7 +15,7 @@ class InvoiceService extends AuthService {
     return res.data;
   }
 
-  async getAllInvoiceSChedule(id: string): Promise<IBaseResponseArray<InvoiceSchedule>> {
+  async getAllInvoiceSchedule(id: string): Promise<IBaseResponseArray<InvoiceSchedule>> {
     const res = await this.http.get<IBaseResponseArray<InvoiceSchedule>>(`${this.path}/${id}/invoice-schedules`);
     return res.data;
   }

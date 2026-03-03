@@ -162,7 +162,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 name="citizenId"
                 label={
                   <span className="text-slate-700 font-medium">
-                    รหัสบัตรประชาชน / Username
+                    รหัสบัตรประชาชน
                   </span>
                 }
                 rules={[

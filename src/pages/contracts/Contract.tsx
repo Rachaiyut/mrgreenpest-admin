@@ -539,7 +539,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
                           ฿
-                          {(Number(c.total_amount) + Number(c.vat_amount) || 0).toLocaleString('th-TH', {
+                          {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
