@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 // ===== External Libraries =====
 import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css'; 
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ===== Types / Enums =====
 import { AsessmentStatus, Role, ServiceSystem, WarehouseType } from '@/src/types';
@@ -289,6 +289,10 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
 
   // Use vehicleOptions for display instead of just initialWarehouses filtering
   const vehicleWarehouses = useMemo(() => vehicleOptions, [vehicleOptions]);
+
+  const selectedInvoiceData = useMemo(() => {
+    return fetchedInvoices.find((inv) => inv.id === selectedInvoiceId);
+  }, [fetchedInvoices, selectedInvoiceId]);
 
   const filteredCustomers = useMemo(() => {
     if (
@@ -998,6 +1002,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         {/* STEP 1: Service Details */}
         <div className={currentStep === 1 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-6">
+            {/* ส่วนเลือกการอ้างอิงเอกสาร */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <SearchableSelect
@@ -1006,14 +1011,8 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   value={selectedReference}
                   onChange={handleReferenceChange}
                   onSearchChange={setReferenceSearch}
-                  placeholder={
-                    selectedCustomerId
-                      ? 'เลือกรายการอ้างอิง...'
-                      : 'กรุณาเลือกลูกค้าก่อน'
-                  }
-                  className={
-                    !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-                  }
+                  placeholder={selectedCustomerId ? 'เลือกรายการอ้างอิง...' : 'กรุณาเลือกลูกค้าก่อน'}
+                  className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''}
                 />
 
                 <SearchableSelect
@@ -1022,21 +1021,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   value={selectedInvoiceId}
                   onChange={handleInvoiceChange}
                   onSearchChange={setInvoiceSearch}
-                  placeholder={
-                    selectedCustomerId
-                      ? 'เลือกใบแจ้งหนี้...'
-                      : 'กรุณาเลือกลูกค้าก่อน'
-                  }
-                  className={
-                    !selectedCustomerId ? 'opacity-50 pointer-events-none' : ''
-                  }
+                  placeholder={selectedCustomerId ? 'เลือกใบแจ้งหนี้...' : 'กรุณาเลือกลูกค้าก่อน'}
+                  className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''}
                 />
               </div>
 
-              <FormField
-                label="รายละเอียดการปฏิบัติงาน"
-                htmlFor="operation-details"
-              >
+              <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
                 <Textarea
                   id="operation-details"
                   name="operationDetails"
@@ -1049,387 +1039,212 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
               </FormField>
             </div>
 
+            {/* SECTION: รายละเอียดพื้นที่บริการ */}
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-lg font-semibold text-slate-800">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <MapPinIcon className="w-5 h-5 text-slate-400" />
                   รายละเอียดพื้นที่บริการ
                 </h3>
-                {(selectedReference || selectedInvoiceId) && (
-                  <div className="flex flex-col gap-2 items-end">
-                    {selectedReference && (
-                      <div className="text-sm text-blue-600 font-medium px-3 py-1 bg-blue-50 rounded-full border border-blue-100">
-                        อ้างอิง:{' '}
-                        {isAssessment
-                          ? availableAssessments.find(
-                            (a) =>
-                              a.id === selectedReference.replace('asm-', '')
-                          )?.code || selectedReference
-                          : availableContracts.find(
-                            (c) =>
-                              c.id === selectedReference.replace('cnt-', '')
-                          )?.code || selectedReference}
-                      </div>
-                    )}
-                    {selectedInvoiceId && (
-                      <div className="text-sm text-green-600 font-medium px-3 py-1 bg-green-50 rounded-full border border-green-100">
-                        ใบแจ้งหนี้:{' '}
-                        {availableInvoices.find(
-                          (inv) => inv.id === selectedInvoiceId
-                        )?.code || selectedInvoiceId}
-                      </div>
-                    )}
+                {selectedReference && (
+                  <div className="text-xs font-medium px-3 py-1 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                    อ้างอิง: {isAssessment ? 'ใบประเมิน ' : 'สัญญา '}
+                    {isAssessment
+                      ? availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code
+                      : availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code}
                   </div>
                 )}
               </div>
 
-              {selectedReference || selectedInvoiceId ? (
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-                        <DocumentIcon className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-slate-800">
-                          ข้อมูลอ้างอิง
-                        </p>
-                        <div className="text-sm text-slate-500 flex flex-col">
-                          {selectedReference && (
-                            <span>
-                              {isAssessment ? 'ใบประเมิน: ' : 'สัญญา: '}
-                              {isAssessment
-                                ? availableAssessments.find(
-                                  (a) =>
-                                    a.id ===
-                                    selectedReference.replace('asm-', '')
-                                )?.code || selectedReference
-                                : availableContracts.find(
-                                  (c) =>
-                                    c.id ===
-                                    selectedReference.replace('cnt-', '')
-                                )?.code || selectedReference}
-                            </span>
-                          )}
-                          {selectedInvoiceId && (
-                            <span>
-                              ใบแจ้งหนี้:{' '}
-                              {availableInvoices.find(
-                                (inv) => inv.id === selectedInvoiceId
-                              )?.code || selectedInvoiceId}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+              {selectedReference ? (
+                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                  {/* ข้อมูลอ้างอิง Header (แบบรูปที่ 2) */}
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                      <DocumentIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">ข้อมูลอ้างอิง</p>
+                      <p className="text-xs text-slate-500">
+                        {isAssessment ? `ใบประเมิน: ${availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code}` : `สัญญา: ${availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code}`}
+                      </p>
                     </div>
                   </div>
 
+                  {/* รายละเอียด Assessment Areas */}
                   {isAssessment && availableAssessments.length > 0 && (
                     <div className="p-6">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        {(() => {
-                          const asmId = selectedReference.replace('asm-', '');
-                          const asm = availableAssessments.find(
-                            (a) => a.id === asmId
-                          );
-                          if (!asm) return null;
-
-                          return (
-                            <>
-                              <div className="space-y-3 text-sm">
-                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">
-                                  ข้อมูลทั่วไป
-                                </h5>
-                                <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">
-                                    ที่อยู่:
-                                  </span>
-                                  <span className="text-slate-800">
-                                    {[
-                                      asm.address,
-                                      asm.sub_district,
-                                      asm.district,
-                                      asm.province,
-                                      asm.zipcode,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(' ')}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">
-                                    โซน/สาย:
-                                  </span>
-                                  <span className="text-slate-800">
-                                    {asm.zone} / {asm.road_line} (Seq:{' '}
-                                    {asm.sequence})
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">
-                                    วันนัดหมาย:
-                                  </span>
-                                  <span className="text-slate-800">
-                                    {asm.appointment_date
-                                      ? new Date(
-                                        asm.appointment_date
-                                      ).toLocaleDateString('th-TH')
-                                      : '-'}
-                                  </span>
-                                </div>
+                      {/* ส่วนข้อมูลทั่วไป */}
+                      {(() => {
+                        const asmId = selectedReference.replace('asm-', '');
+                        const asm = availableAssessments.find(a => a.id === asmId);
+                        if (!asm) return null;
+                        return (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div className="space-y-3 text-sm">
+                              <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
+                              <div className="grid grid-cols-[100px_1fr] gap-2">
+                                <span className="text-slate-500">ที่อยู่:</span>
+                                <span className="text-slate-800">{[asm.address, asm.sub_district, asm.district, asm.province, asm.zipcode].filter(Boolean).join(' ')}</span>
                               </div>
-
-                              <div className="space-y-3 text-sm">
-                                <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">
-                                  เงื่อนไขการเงิน
-                                </h5>
-                                <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">
-                                    การชำระเงิน:
-                                  </span>
-                                  <span className="text-slate-800">
-                                    {asm.payment_condition === 'CASH'
-                                      ? 'ชำระเต็มจำนวน'
-                                      : asm.payment_condition === 'INSTALLMENT'
-                                        ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)`
-                                        : asm.payment_condition}
-                                  </span>
-                                </div>
-                                <div className="grid grid-cols-[100px_1fr] gap-2">
-                                  <span className="text-slate-500">
-                                    ราคารวม:
-                                  </span>
-                                  <span className="font-bold text-primary">
-                                    ฿{(asm.total_price || 0).toLocaleString()}
-                                  </span>
-                                </div>
-                                {asm.google_map_link && (
-                                  <div className="grid grid-cols-[100px_1fr] gap-2">
-                                    <span className="text-slate-500">
-                                      Google Map:
-                                    </span>
-                                    <a
-                                      href={asm.google_map_link}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-blue-600 hover:underline truncate"
-                                    >
-                                      เปิดแผนที่
-                                    </a>
-                                  </div>
-                                )}
+                              <div className="grid grid-cols-[100px_1fr] gap-2">
+                                <span className="text-slate-500">โซน/สาย:</span>
+                                <span className="text-slate-800">{asm.zone} {asm.road_line ? ` / ${asm.road_line}` : '-'}</span>
                               </div>
-                            </>
-                          );
-                        })()}
-                      </div>
+                              <div className="grid grid-cols-[100px_1fr] gap-2">
+                                <span className="text-slate-500">วันนัดหมาย:</span>
+                                <span className="text-slate-800">{asm.appointment_date ? new Date(asm.appointment_date).toLocaleDateString('th-TH') : '-'}</span>
+                              </div>
+                            </div>
+                            <div className="space-y-3 text-sm">
+                              <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
+                              <div className="grid grid-cols-[100px_1fr] gap-2">
+                                <span className="text-slate-500">การชำระเงิน:</span>
+                                <span className="text-slate-800">{asm.payment_condition === 'CASH' ? 'ชำระเต็มจำนวน' : asm.payment_condition === 'INSTALLMENT' ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)` : asm.payment_condition}</span>
+                              </div>
+                              <div className="grid grid-cols-[100px_1fr] gap-2">
+                                <span className="text-slate-500">ราคารวม:</span>
+                                <span className="font-bold text-primary">฿{(asm.total_price || 0).toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
 
                       <h4 className="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wider flex items-center justify-between">
                         <span>พื้นที่บริการในเอกสาร</span>
-                        <span className="text-xs font-normal normal-case bg-slate-100 px-2 py-1 rounded text-slate-500">
-                          {(() => {
-                            const asmId = selectedReference.replace('asm-', '');
-                            const asm = availableAssessments.find(
-                              (a) => a.id === asmId
-                            );
-                            return asm?.assessment_areas?.length || 0;
-                          })()}{' '}
-                          พื้นที่
+                        <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">
+                          {availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.assessment_areas?.length || 0} พื้นที่
                         </span>
                       </h4>
+
                       <div className="space-y-4">
-                        {(() => {
-                          const asmId = selectedReference.replace('asm-', '');
-                          const asm = availableAssessments.find(
-                            (a) => a.id === asmId
-                          );
-                          if (!asm || !asm.assessment_areas)
-                            return (
-                              <p className="text-slate-400 italic">
-                                ไม่พบข้อมูลพื้นที่
-                              </p>
-                            );
-
-                          return asm.assessment_areas.map((area, idx) => (
-                            <div
-                              key={idx}
-                              className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden"
-                            >
-                              <div className="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-white border border-slate-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold text-slate-600">
-                                    {idx + 1}
-                                  </span>
-                                  <h5 className="font-semibold text-slate-800">
-                                    {area.area_name}
-                                  </h5>
-                                </div>
-                                <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
-                                  {area.building_type}
-                                </span>
+                        {availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.assessment_areas?.map((area, idx) => (
+                          <div key={idx} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
+                            <div className="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                <span className="bg-white border border-slate-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold text-slate-600">{idx + 1}</span>
+                                <h5 className="font-semibold text-slate-800">{area.area_name}</h5>
                               </div>
-
-                              <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                                <div className="space-y-2">
-                                  <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
-                                    <span className="font-semibold text-slate-600">
-                                      ข้อมูลพื้นที่
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">
-                                      ขนาด:
-                                    </span>
-                                    <span className="font-medium">
-                                      {area.area_size || '-'} ตร.ม.
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">
-                                      ระบบ:
-                                    </span>
-                                    <span className="font-medium">
-                                      {area.service_system ===
-                                        ServiceSystem.CHEMICAL
-                                        ? 'สารเคมี'
-                                        : 'เหยื่อ'}
-                                    </span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">
-                                      ราคาบริการ:
-                                    </span>
-                                    <span className="font-medium">
-                                      ฿
-                                      {(
-                                        area.package_price || 0
-                                      ).toLocaleString()}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <div className="flex justify-between border-b border-slate-200 pb-1 mb-2">
-                                    <span className="font-semibold text-slate-600">
-                                      รายละเอียดเพิ่มเติม
-                                    </span>
-                                  </div>
-
-                                  {/* Products/Items used */}
-                                  <div className="mb-2">
-                                    <span className="text-slate-500 block mb-1 text-xs">
-                                      สินค้า/อุปกรณ์ที่ใช้:
-                                    </span>
-                                    {area.items && area.items.length > 0 ? (
-                                      <ul className="list-disc list-inside space-y-0.5">
-                                        {area.items.map((item, i) => (
-                                          <li
-                                            key={i}
-                                            className="text-slate-700 text-xs"
-                                          >
-                                            {item.product_name} x{' '}
-                                            {item.quantity}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    ) : (
-                                      <span className="text-slate-400 text-xs">
-                                        - ไม่ระบุ -
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Problems/Pests found */}
-                                  <div>
-                                    <span className="text-slate-500 block mb-1 text-xs">
-                                      ปัญหาที่พบ:
-                                    </span>
-                                    {area.category_services &&
-                                      area.category_services.length > 0 ? (
-                                      <div className="flex flex-wrap gap-1">
-                                        {area.category_services.map(
-                                          (cat, i) => (
-                                            <span
-                                              key={i}
-                                              className="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[10px]"
-                                            >
-                                              {cat.name || 'Unknown'}
-                                            </span>
-                                          )
-                                        )}
-                                      </div>
-                                    ) : (
-                                      <span className="text-slate-400 text-xs">
-                                        - ไม่ระบุ -
-                                      </span>
-                                    )}
-                                  </div>
+                              <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">{area.building_type}</span>
+                            </div>
+                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                              <div className="space-y-2">
+                                <div className="flex justify-between border-b border-slate-200 pb-1 mb-2"><span className="font-semibold text-slate-600">ข้อมูลพื้นที่</span></div>
+                                <div className="flex justify-between"><span className="text-slate-500">ขนาด:</span><span className="font-medium">{area.area_size || '-'} ตร.ม.</span></div>
+                                <div className="flex justify-between"><span className="text-slate-500">ระบบ:</span><span className="font-medium">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ'}</span></div>
+                                <div className="flex justify-between"><span className="text-slate-500">ราคาบริการ:</span><span className="font-medium">฿{(area.package_price || 0).toLocaleString()}</span></div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex justify-between border-b border-slate-200 pb-1 mb-2"><span className="font-semibold text-slate-600">รายละเอียดเพิ่มเติม</span></div>
+                                <div className="mb-2">
+                                  <span className="text-slate-500 block mb-1 text-xs">สินค้า/อุปกรณ์ที่ใช้:</span>
+                                  {area.items && area.items.length > 0 ? (
+                                    <ul className="list-disc list-inside text-xs">{area.items.map((item, i) => <li key={i}>{item.product_name} x {item.quantity}</li>)}</ul>
+                                  ) : <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>}
                                 </div>
                               </div>
                             </div>
-                          ));
-                        })()}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {/* Fallback info box */}
-                  <div className="p-4 bg-blue-50 text-blue-800 text-sm border-t border-blue-100 flex items-start gap-2">
-                    <span className="text-lg">ℹ️</span>
-                    <p>
-                      ข้อมูลพื้นที่และสินค้าจะถูกบันทึกโดยอัตโนมัติตามเอกสารอ้างอิงที่เลือก
-                      คุณไม่จำเป็นต้องกรอกข้อมูลซ้ำในส่วนนี้
-                    </p>
+                  <div className="p-4 bg-blue-50/50 text-blue-800 text-xs border-t border-blue-100 flex items-start gap-2">
+                    <span className="text-base">ℹ️</span>
+                    <p>ข้อมูลพื้นที่และสินค้าจะถูกบันทึกโดยอัตโนมัติตามเอกสารอ้างอิงที่เลือก คุณไม่จำเป็นต้องกรอกข้อมูลซ้ำในส่วนนี้</p>
                   </div>
                 </div>
               ) : (
+                /* Manual Form */
                 <div className="space-y-4">
                   {selectedCustomerId ? (
                     <div className="flex items-end gap-4">
-                      <FormField
-                        label="จำนวนพื้นที่ที่ต้องการเข้าบริการ"
-                        htmlFor="numberOfAreas"
-                        className="mb-0 flex-1"
-                      >
-                        <Select
-                          id="numberOfAreas"
-                          value={workAreas.length}
-                          onChange={(e) =>
-                            handleNumberOfAreasChange(
-                              parseInt(e.target.value, 10)
-                            )
-                          }
-                        >
+                      <FormField label="จำนวนพื้นที่ที่ต้องการเข้าบริการ" htmlFor="numberOfAreas" className="mb-0 flex-1">
+                        <Select id="numberOfAreas" value={workAreas.length} onChange={(e) => handleNumberOfAreasChange(parseInt(e.target.value, 10))}>
                           <option value="0">ยังไม่ระบุพื้นที่</option>
-                          {Array.from({ length: 30 }, (_, i) => i + 1).map(
-                            (num) => (
-                              <option key={num} value={num}>
-                                {num} พื้นที่
-                              </option>
-                            )
-                          )}
+                          {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                            <option key={num} value={num}>{num} พื้นที่</option>
+                          ))}
                         </Select>
                       </FormField>
                     </div>
                   ) : (
-                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
-                      กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
-                    </div>
+                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่</div>
                   )}
-
                   <div className="grid grid-cols-1 gap-4">
                     {workAreas.map((area, index) => (
-                      <JobWorkAreaForm
-                        key={area.id || index}
-                        area={area}
-                        index={index}
-                        onAreaChange={handleAreaChange}
-                        onClearArea={handleClearArea}
-                        isReadOnly={!!selectedReference}
-                      />
+                      <JobWorkAreaForm key={area.id || index} area={area} index={index} onAreaChange={handleAreaChange} onClearArea={handleClearArea} isReadOnly={!!selectedReference} />
                     ))}
                   </div>
                 </div>
               )}
+
+            {/* SECTION: สรุปข้อมูลใบแจ้งหนี้  */}
+            {/* SECTION: สรุปข้อมูลใบแจ้งหนี้  */}
+            {selectedInvoiceId && selectedInvoiceData && (
+              <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm animate-fadeIn mt-6">
+                
+                {/* Header (สไตล์เดียวกับ ข้อมูลอ้างอิง) */}
+                <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
+                      <DocumentIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800">สรุปข้อมูลใบแจ้งหนี้</p>
+                      <p className="text-xs text-slate-500">
+                        อ้างอิงจากระบบบัญชี
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold shadow-sm ${selectedInvoiceData.status === 'PAID' ? 'bg-emerald-500 text-white' : 'bg-orange-500 text-white'}`}>
+                    {selectedInvoiceData.status}
+                  </span>
+                </div>
+
+                {/* Content Body */}
+                <div className="p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    {/* ข้อมูลทั่วไป */}
+                    <div className="space-y-3 text-sm">
+                      <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
+                      <div className="grid grid-cols-[100px_1fr] gap-2">
+                        <span className="text-slate-500">เลขที่อ้างอิง:</span>
+                        <span className="text-slate-800">{selectedInvoiceData.code}</span>
+                      </div>
+                      <div className="grid grid-cols-[100px_1fr] gap-2">
+                        <span className="text-slate-500">วันที่ออกเอกสาร:</span>
+                        <span className="text-slate-800">{selectedInvoiceData.issued_at ? new Date(selectedInvoiceData.issued_at).toLocaleDateString('th-TH') : '-'}</span>
+                      </div>
+                      <div className="grid grid-cols-[100px_1fr] gap-2">
+                        <span className="text-slate-500">วันครบกำหนด:</span>
+                        <span className="text-slate-800">{selectedInvoiceData.due_at ? new Date(selectedInvoiceData.due_at).toLocaleDateString('th-TH') : '-'}</span>
+                      </div>
+                    </div>
+
+                    {/* เงื่อนไขการเงิน */}
+                    <div className="space-y-3 text-sm">
+                      <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
+                      <div className="grid grid-cols-[100px_1fr] gap-2">
+                        <span className="text-slate-500">ยอดสุทธิ:</span>
+                        <span className="font-bold text-green-600 text-primary">฿{(selectedInvoiceData.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                {/* Footer Info Box */}
+                <div className="p-4 bg-blue-50/50 text-blue-800 text-xs border-t border-blue-100 flex items-start gap-2">
+                  <span className="text-base">ℹ️</span>
+                  <p>ข้อมูลใบแจ้งหนี้อ้างอิงจากระบบบัญชีเพื่อประกอบการปฏิบัติงาน</p>
+                </div>
+                
+              </div>
+            )}
             </div>
           </div>
         </div>
