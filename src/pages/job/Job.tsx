@@ -244,6 +244,7 @@ const Job: React.FC<JobProps> = ({
               service_report: reportsData.find((r: any) => r.job_id === job.id),
               remarks: job.remark,
               invoice_id: job.invoice_id,
+              invoice: job.invoice,
             } as any;
           })
       );
@@ -986,18 +987,34 @@ const Job: React.FC<JobProps> = ({
           )}
 
           {/* === REPORTS VIEW === */}
+          {/* === REPORTS VIEW === */}
           {activeTab === 'reports' && (
-            <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm h-full">
-              <div className="overflow-auto flex-1">
+            // 🌟 1. เปลี่ยนคลาสตรงนี้ เพิ่ม absolute inset-0 เพื่อบังคับให้ Card มีความสูงพอดีกับพื้นที่ที่เหลือเป๊ะๆ
+            <Card className="!p-0 absolute inset-0 w-full flex flex-col overflow-hidden border border-slate-200 shadow-sm">
+              
+              {/* 🌟 2. ส่วนตารางให้ยืดเต็มพื้นที่และ Scroll ได้ */}
+              <div className="flex-1 overflow-auto">
                 <table className="min-w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า/สถานที่</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วัน-เวลา</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">บริการ</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ช่าง</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ลูกค้า/สถานที่
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        วัน-เวลา
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        บริการ
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        ช่าง
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        สถานะ
+                      </th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        จัดการ
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -1042,15 +1059,14 @@ const Job: React.FC<JobProps> = ({
                                 ) : (
                                   <span className="text-sm text-slate-400">-</span>
                                 )}
-                                {(report.service_types?.length || 0) > 2 && (
-                                  <span className="text-xs text-slate-400">+{(report.service_types?.length || 0) - 2}</span>
-                                )}
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <TechnicianIcon className="h-4 w-4 text-slate-400" />
-                                <span className="text-sm text-slate-600 truncate max-w-[120px]">{job?.technicians?.map((t) => t.nick_name || t.name).join(', ') || report.signatures?.technician_name || '-'}</span>
+                                <span className="text-sm text-slate-600 truncate max-w-[120px]">
+                                  {job?.technicians?.map((t) => t.nick_name || t.name).join(', ') || report.signatures?.technician_name || '-'}
+                                </span>
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
@@ -1058,14 +1074,24 @@ const Job: React.FC<JobProps> = ({
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1">
-                                <Button onClick={() => {}} className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto" title="ดู PDF" disabled={loadingPdfId === report.id}>
-                                  <span className="flex items-center gap-1.5"><EyeIcon className="h-4 w-4" /> ดู PDF</span>
+                                <Button
+                                  onClick={async () => { /* PDF Logic */ }}
+                                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
+                                  title="ดู PDF"
+                                  disabled={loadingPdfId === report.id}
+                                >
+                                  {loadingPdfId === report.id ? (
+                                    <LoadingIcon className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <span className="flex items-center gap-1.5"><EyeIcon className="h-4 w-4" /> ดู PDF</span>
+                                  )}
                                 </Button>
                                 <Button
-                                  onClick={() => { if (job) { handleWriteReport(job); } else { alert('ไม่พบข้อมูลงานสำหรับรายงานนี้'); } }}
-                                  variant="ghost" className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600" title="แก้ไขรายงาน"
+                                  onClick={() => { if (job) handleWriteReport(job); }}
+                                  variant="ghost"
+                                  className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
                                 >
-                                  <PencilIcon className="h-4 w-4" />
+                                  <ManageIcon className="h-5 w-5" />
                                 </Button>
                               </div>
                             </td>
@@ -1078,7 +1104,6 @@ const Job: React.FC<JobProps> = ({
                           <div className="flex flex-col items-center text-slate-400">
                             <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
-                            <p className="text-sm mt-1">รายงานจะแสดงเมื่อช่างทำรายงานบริการเสร็จสิ้น</p>
                           </div>
                         </td>
                       </tr>
@@ -1086,13 +1111,22 @@ const Job: React.FC<JobProps> = ({
                   </tbody>
                 </table>
               </div>
+
+              {/* 🌟 3. Pagination เปลี่ยนมาใช้ shrink-0 เพื่อไม่ให้โดนตารางดันบีบจนหายไป */}
               {paginatedReports.length > 0 && (
-                <div className="border-t border-slate-100 bg-white sticky bottom-0 z-20">
-                  <Pagination currentPage={reportCurrentPage} totalItems={serviceReports.length} itemsPerPage={reportItemsPerPage} onPageChange={setReportCurrentPage} onItemsPerPageChange={handleReportItemsPerPageChange} />
+                <div className="shrink-0 border-t border-slate-100 bg-white z-20">
+                  <Pagination
+                    currentPage={reportCurrentPage}
+                    totalItems={serviceReports.length}
+                    itemsPerPage={reportItemsPerPage}
+                    onPageChange={setReportCurrentPage}
+                    onItemsPerPageChange={handleReportItemsPerPageChange}
+                  />
                 </div>
               )}
             </Card>
           )}
+          
 
           {/* === WORK SCHEDULE VIEW === */}
           {activeTab === 'work-schedule' && (

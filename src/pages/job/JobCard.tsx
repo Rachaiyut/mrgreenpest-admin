@@ -119,7 +119,7 @@ const JobCard: React.FC<{
           <Button
             data-job-id={job.id}
             onClick={(e) => onDropdownToggle(e, job.id)}
-            variant="outline"
+            variant="ghost"
             className="p-1.5 h-auto rounded-lg hover:bg-slate-100 -mr-1 -mt-1 flex-shrink-0"
             title="ตัวเลือก"
           >
