@@ -18,6 +18,7 @@ import {
   TrashIcon,
   ViewColumnsIcon,
   ListBulletIcon,
+  LoadingIcon, // Assumed available based on previous requests
 } from '../../assets/icons/Icons';
 
 import CustomerCardView from './CustomerCardView';
@@ -57,7 +58,7 @@ const Customers: React.FC = () => {
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState(undefined);
+  const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<SupplierType | undefined>(
     undefined
   );
@@ -195,94 +196,114 @@ const Customers: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 shrink-0">
+          <div className="shrink-0">
             <h1 className="text-3xl font-bold text-slate-800">ลูกค้า</h1>
             <p className="mt-1 text-slate-600">จัดการฐานข้อมูลลูกค้าของคุณ</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto xl:flex-nowrap">
+            <div className="w-full sm:flex-1 xl:w-72">
               <Input
                 type="search"
                 placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร, ที่อยู่)..."
-                value={searchQuery}
+                value={searchQuery || ''}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1); // Reset page on search
                 }}
+                className="w-full"
                 title="ค้นหาด้วย: เลขที่สัญญา, รหัสลูกค้า, ชื่อนามสกุล, ชื่อเล่น, เบอร์โทรศัพท์, ที่อยู่"
               />
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48 shrink-0">
               <Select
-                value={typeFilter}
+                value={typeFilter || ''}
                 onChange={(e) => {
                   setTypeFilter(e.target.value as SupplierType);
                   setCurrentPage(1);
                 }}
+                className="w-full"
               >
                 <option value="">ทุกประเภท</option>
                 <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
                 <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
             </div>
-            <div className="flex items-center rounded-lg bg-slate-200 p-1">
-              <Button
-                onClick={() => setView('list')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                title="มุมมองรายการ"
-              >
-                <ListBulletIcon className="h-5 w-5" />
-              </Button>
-              <Button
-                onClick={() => setView('card')}
-                variant="ghost"
-                className={`px-3 py-1 text-sm font-medium rounded-md h-auto ${view === 'card' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                title="มุมมองการ์ด"
-              >
-                <ViewColumnsIcon className="h-5 w-5" />
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <div className="flex items-center rounded-lg bg-slate-200 p-1 shrink-0">
+                <Button
+                  onClick={() => setView('list')}
+                  variant="ghost"
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
+                  title="มุมมองรายการ"
+                >
+                  <ListBulletIcon className="h-5 w-5" />
+                </Button>
+                <Button
+                  onClick={() => setView('card')}
+                  variant="ghost"
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'card' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
+                  title="มุมมองการ์ด"
+                >
+                  <ViewColumnsIcon className="h-5 w-5" />
+                </Button>
+              </div>
+              <Button onClick={() => setIsModalOpen(true)} className="shrink-0 flex-1 sm:flex-none justify-center">
+                <PlusIcon className="h-5 w-5 sm:mr-2" />
+                 <span className="hidden sm:inline">สร้างลูกค้า</span>
+                 <span className="sm:hidden">สร้าง</span>
               </Button>
             </div>
-            <Button onClick={() => setIsModalOpen(true)}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างลูกค้า
-            </Button>
           </div>
         </div>
 
-        {view === 'list' ? (
-          <Card className="!p-0">
-            <CustomerListView
-              customers={customers}
-              handleDropdownToggle={handleDropdownToggle}
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-            />
-            <Pagination
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+        {/* 🌟 Content Area with Loading State */}
+        {loading ? (
+           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+              <div className="flex flex-col items-center justify-center text-slate-500">
+                <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                <p className="text-base font-medium">กำลังโหลดข้อมูลลูกค้า...</p>
+              </div>
+           </Card>
+        ) : view === 'list' ? (
+          <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+            <div className="overflow-auto w-full flex-1 relative">
+              <CustomerListView
+                customers={customers}
+                handleDropdownToggle={handleDropdownToggle}
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+              />
+            </div>
+            <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full pb-safe">
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
           </Card>
         ) : (
-          <>
-            <CustomerCardView
-              customers={customers}
-              handleDropdownToggle={handleDropdownToggle}
-            />
-            <Pagination
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-              className="mt-6 rounded-lg shadow-sm"
-            />
-          </>
+          <div className="flex flex-col w-full space-y-6 flex-1">
+             <div className="flex-1">
+              <CustomerCardView
+                customers={customers}
+                handleDropdownToggle={handleDropdownToggle}
+              />
+            </div>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 mt-auto sticky bottom-0 z-20">
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -328,7 +349,7 @@ const Customers: React.FC = () => {
                     setOpenDropdownId(null);
                   }
                 }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                className={`flex items-center w-full text-left px-4 py-2.5 text-sm transition-colors ${action.isDanger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
                 role="menuitem"
               >
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
@@ -376,7 +397,7 @@ const Customers: React.FC = () => {
           </p>
         }
         confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
     </>
   );

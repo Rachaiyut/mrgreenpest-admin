@@ -40,8 +40,8 @@ import {
   PlusIcon,
   TrashIcon,
   XCircleIcon,
+  LoadingIcon, // 🌟 เพิ่ม LoadingIcon
 } from '../../../assets/icons/Icons';
-
 
 // FIX: Define props interface
 interface GoodsReceiveProps {
@@ -162,10 +162,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
   const filteredReceipts = useMemo(() => {
     const lowercasedQuery = searchQuery.toLowerCase().trim();
-    // เปลี่ยนจาก reversedReceipts เป็น sortedReceipts
     if (!lowercasedQuery) return sortedReceipts; 
 
-    // เปลี่ยนจาก reversedReceipts เป็น sortedReceipts
     return sortedReceipts.filter((receipt) => { 
       const supplierName = (receipt.supplier_id && supplierMap[receipt.supplier_id]) || '';
       const receiptDate = formatThaiDate(receipt.created_at);
@@ -223,7 +221,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const handleConfirmApproval = (receiptId: string, remarks: string) => {
     const receiptToUpdate = receipts.find((r) => r.id === receiptId);
     if (receiptToUpdate) {
-      // 🟢 5. เปลี่ยนมาเรียกใช้ handleUpdate ที่เราสร้างไว้แทน
       handleUpdate({
         ...receiptToUpdate,
         status: approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
@@ -239,7 +236,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const handleCancel = (receiptId: string) => {
     const receiptToUpdate = receipts.find((r) => r.id === receiptId);
     if (receiptToUpdate) {
-       // 🟢 5. เปลี่ยนมาเรียกใช้ handleUpdate ที่เราสร้างไว้แทน
       handleUpdate({
         ...receiptToUpdate,
         status: 'CANCELLED',
@@ -275,10 +271,10 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
           e.preventDefault();
           handleViewDetails(selectedReceipt);
         }}
-        className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+        className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
         role="menuitem"
       >
-        <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+        <EyeIcon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
         <span>ดูรายละเอียด</span>
       </a>,
     ];
@@ -292,10 +288,10 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             e.preventDefault();
             handleApprovalAction('approve');
           }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
           role="menuitem"
         >
-          <DocumentCheckIcon className="mr-3 h-5 w-5 text-green-500" aria-hidden="true" />
+          <DocumentCheckIcon className="mr-3 h-5 w-5 text-emerald-500" aria-hidden="true" />
           <span>อนุมัติ</span>
         </a>,
         <a
@@ -305,10 +301,10 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             e.preventDefault();
             handleApprovalAction('reject');
           }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
           role="menuitem"
         >
-          <XCircleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+          <XCircleIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
           <span>ไม่อนุมัติ</span>
         </a>
       );
@@ -316,19 +312,22 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
     if (selectedReceipt.status === Status.Draft || selectedReceipt.status === Status.PendingApproval) {
       actions.push(
-        <a
-          key="cancel"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            handleCancel(selectedReceipt.id);
-          }}
-          className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-          role="menuitem"
-        >
-          <TrashIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-          <span>ยกเลิก</span>
-        </a>
+        <>
+          <div key="divider" className="border-t border-slate-100 my-1"></div>
+          <a
+            key="cancel"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              handleCancel(selectedReceipt.id);
+            }}
+            className="flex items-center w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            role="menuitem"
+          >
+            <TrashIcon className="mr-3 h-5 w-5 text-red-500" aria-hidden="true" />
+            <span>ยกเลิก</span>
+          </a>
+        </>
       );
     }
 
@@ -337,14 +336,18 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full gap-6">
-        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
-          <div>
+      {/* 🌟 1. ปรับ Container หลักให้ยืดเต็มจอ (min-h) และใช้ Flex Column */}
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
+        
+        {/* 🌟 2. Header & Filters (ให้คงขนาดไว้ด้วย shrink-0) */}
+        <div className="shrink-0 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div className="shrink-0">
             <h1 className="text-3xl font-bold text-slate-800">รับสินค้าเข้า</h1>
             <p className="mt-1 text-slate-600">จัดการการรับสินค้าเข้าคลัง</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
+            <div className="w-full sm:w-64 xl:w-72">
               <Input
                 type="search"
                 placeholder="ค้นหา (เลขที่, อ้างอิง, ผู้ขาย)..."
@@ -353,26 +356,21 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1); 
                 }}
+                className="w-full"
                 title="ค้นหาด้วย: เลขที่เอกสาร, เลขที่อ้างอิง, ผู้จัดจำหน่าย, วันที่, สถานะ"
               />
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <PlusIcon className="h-5 w-5" />
+            <Button onClick={() => setIsAddModalOpen(true)} variant="primary" className="w-full sm:w-auto justify-center shrink-0">
+              <PlusIcon className="h-5 w-5 mr-2" />
               สร้างใบรับเข้า
             </Button>
           </div>
         </div>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col relative">
-          
-          {/* 🟢 Loading Spinner */}
-          {isLoading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-20 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          )}
-
-          <div className="overflow-auto flex-grow">
+        {/* 🌟 3. Content Area (ยืดขยายตามพื้นที่ที่เหลือด้วย flex-1) */}
+        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+          {/* พื้นที่ตาราง ใส่ overflow-auto และ flex-1 เพื่อให้ Scroll ได้แค่ข้างในนี้ */}
+          <div className="overflow-auto w-full flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
@@ -387,47 +385,66 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedReceipts.map((receipt, index) => (
-                  <tr key={receipt.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
-                    <td
-                      className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
-                      onClick={() => handleViewDetails(receipt as any)}
-                    >
-                      {receipt.code || receipt.id.substring(0, 8)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{receipt.receipt_no || '-'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatThaiDate(receipt.created_at)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-center">
-                      <StatusBadge status={receipt.status} />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="inline-block text-left">
-                        <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon className="h-5 w-5" aria-hidden="true" />
-                        </Button>
+                {/* 🌟 4. ปรับ Loading ให้เป็นแบบตารางหมุน (เหมือนหน้าอื่นๆ) */}
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูลใบรับเข้า...</p>
                       </div>
                     </td>
                   </tr>
-                ))}
-                {paginatedReceipts.length === 0 && !isLoading && (
+                ) : paginatedReceipts.length > 0 ? (
+                  paginatedReceipts.map((receipt, index) => (
+                    <tr key={receipt.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {(currentPage - 1) * itemsPerPage + index + 1}
+                      </td>
+                      <td
+                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:text-primary-dark cursor-pointer transition-colors"
+                        onClick={() => handleViewDetails(receipt as any)}
+                      >
+                        {receipt.code || receipt.id.substring(0, 8)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{receipt.receipt_no || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatThaiDate(receipt.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                        <StatusBadge status={receipt.status} />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="inline-block text-left">
+                          <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
+                            <span className="sr-only">Open options</span>
+                            <ManageIcon className="h-5 w-5 text-slate-400 hover:text-slate-600" aria-hidden="true" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-slate-500">ไม่มีข้อมูล</td>
+                    <td colSpan={8} className="px-6 py-16 text-center text-slate-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบรับเข้า</p>
+                        <p className="text-sm mt-1">ลองเปลี่ยนคำค้นหา หรือสร้างใบรับเข้าใหม่</p>
+                      </div>
+                    </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          
+          {/* พื้นที่ Pagination ใช้ mt-auto ดันลงล่าง และ sticky bottom-0 เพื่อให้เกาะขอบล่างเสมอ */}
+          <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full pb-safe">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -439,6 +456,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         </Card>
       </div>
 
+      {/* Dropdown Menu */}
       {openDropdownId && dropdownPosition && (
         <div
           ref={dropdownRef}
@@ -448,7 +466,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
         >

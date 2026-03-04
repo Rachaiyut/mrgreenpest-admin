@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import {
-  GoodsReceipt,
+  GoodsReceive as GoodsReceiveType,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
@@ -12,7 +12,7 @@ import { StatusBadge } from '../../common/StatusBadge';
 interface GoodsReceiptDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  receipt: GoodsReceipt | null;
+  receipt: GoodsReceiveType | null;
   warehouses: WarehouseType[];
   products: Product[];
 }

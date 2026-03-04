@@ -15,6 +15,7 @@ import {
   LimitIcon,
   NewWarehouseIcon,
   TruckIcon,
+  LoadingIcon, // Added LoadingIcon
 } from '../../assets/icons/Icons';
 import { Button, Input } from '../../components/common/FormControls';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
@@ -423,33 +424,38 @@ const Warehouse: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
-        {/* Header */}
-        <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
+      {/* 🌟 1. ปรับ Container หลักให้เป็น flex flex-col และกำหนดความสูงขั้นต่ำ (min-h) ให้เต็มจอ */}
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
+        {/* 🌟 2. Header (ให้คงขนาดไว้ด้วย shrink-0) */}
+        <div className="shrink-0 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">คลังสินค้า</h1>
             <p className="mt-1 text-slate-600">
               จัดการข้อมูลคลังสินค้าและรถบริการของบริษัท
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
+            <div className="w-full sm:w-64">
               <Input
                 type="search"
                 placeholder="ค้นหา..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full"
               />
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)} variant="primary">
+            <Button onClick={() => setIsAddModalOpen(true)} variant="primary" className="w-full sm:w-auto justify-center shrink-0">
               <PlusIcon className="h-5 w-5 mr-2" />
               เพิ่มคลัง/รถบริการ
             </Button>
           </div>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* 🌟 Statistics Cards (shrink-0) */}
+        <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
             <div className="flex-shrink-0 p-3 rounded-xl bg-white text-blue-600">
               <NewWarehouseIcon className="h-6 w-6" />
@@ -496,9 +502,9 @@ const Warehouse: React.FC = () => {
           </div>
         </div>
 
-        {/* Card & Filter */}
-        <Card className="p-0 grow min-h-0 flex flex-col">
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* 🌟 3. Content Area (ยืดขยายตามพื้นที่ที่เหลือด้วย flex-1) */}
+        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
             {/* Tabs */}
             <div className="flex bg-slate-100 p-1 rounded-lg self-start">
               <button
@@ -543,7 +549,8 @@ const Warehouse: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-auto grow">
+          {/* พื้นที่ตาราง ใส่ overflow-auto และ flex-1 เพื่อให้ Scroll ได้แค่ข้างในนี้ */}
+          <div className="overflow-auto w-full flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
@@ -594,11 +601,11 @@ const Warehouse: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-10 text-center text-slate-500"
-                    >
-                      Loading...
+                    <td colSpan={7} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูลคลังสินค้า...</p>
+                      </div>
                     </td>
                   </tr>
                 ) : warehouses.length > 0 ? (
@@ -686,7 +693,9 @@ const Warehouse: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0 border-t border-slate-200 bg-slate-50">
+          
+          {/* พื้นที่ Pagination ใช้ mt-auto ดันลงล่าง และ sticky bottom-0 เพื่อให้เกาะขอบล่างเสมอ */}
+          <div className="border-t border-slate-200 bg-slate-50 mt-auto sticky bottom-0 z-20 w-full pb-safe">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
