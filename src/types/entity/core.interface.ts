@@ -57,7 +57,7 @@ export interface User {
   creditLimit?: number;
   current_balance: number;
   name: string;
-  avatarUrl?: string;
+  url?: string;
 }
 
 export interface Address {

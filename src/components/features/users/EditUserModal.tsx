@@ -30,7 +30,6 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
 
   useEffect(() => {
     if (user) {
-      // Map user entity to form data
       setFormData({
         ...user,
         first_name: (user as any).first_name || user.name.split(' ')[0] || '',
@@ -42,7 +41,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         role_id: typeof user.role === 'object' ? (user.role as any).id : '',
         citizen_id: user.citizen_id,
       });
-      setImagePreview(user.avatarUrl);
+    
+      setImagePreview((user as any).avatarUrl || (user as any).url || (user as any).avatar_url || null);
+      
+      console.log("User Data in Modal:", user); 
     }
     if (!isOpen) {
       setImagePreview(null);

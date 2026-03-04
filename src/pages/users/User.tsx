@@ -220,11 +220,20 @@ const Users: React.FC<UsersProps> = ({
     }
   };
 
+  // แก้ไขฟังก์ชัน handleUpdateUser
   const handleUpdateUser = async (data: any) => {
     try {
       if (data.id) {
+        // 1. รอให้อัปเดตข้อมูลเสร็จ
         await UserApi.update(data.id, data);
-        fetchUsers();
+        
+        // 2. รอให้ Fetch ข้อมูลใหม่จนเสร็จ
+        await fetchUsers(); 
+        
+        // 3. (สำคัญมาก) เรียก prop onUpdateUser ที่รับมาจาก Component แม่ เผื่อแม่ต้องใช้ทำอะไรต่อ
+        if (typeof onUpdateUser === 'function') {
+          onUpdateUser(data);
+        }
       }
     } catch (error) {
       console.error('Failed to update user:', error);
@@ -482,7 +491,7 @@ const Users: React.FC<UsersProps> = ({
                             <div className="flex-shrink-0 h-10 w-10">
                               <img
                                 className="h-10 w-10 rounded-full object-cover"
-                                src={user.avatarUrl}
+                                src={user.url}
                                 alt=""
                               />
                             </div>
