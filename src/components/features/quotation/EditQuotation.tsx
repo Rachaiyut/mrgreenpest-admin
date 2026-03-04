@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Button } from '../../components/common/FormControls';
-import { LeftArrowIcon } from '../../assets/icons/Icons';
-import { QuotationForm } from '../../components/features/quotations/QuotationForm';
-import { QuotationApi } from '../../api/quotation';
-import { Quotation } from '../../types/entity/financial.interface';
+import { Button } from '../../common/FormControls';
+import { LeftArrowIcon } from '../../../assets/icons/Icons';
+import { QuotationForm } from '../quotations/QuotationForm';
+import { QuotationApi } from '../../../api/quotation';
+import { Quotation } from '../../../types/entity/financial.interface';
 import { QuotationStatus } from '@/src/types';
 
 const EditQuotationPage: React.FC = () => {

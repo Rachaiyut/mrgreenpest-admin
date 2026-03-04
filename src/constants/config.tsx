@@ -6,5 +6,5 @@ export const API_CONFIG = {
       ? (process.env as any)?.API_BASE_URL
       : '') ||
     '',
-  timeout: 10000,
+  timeout: 30000,
 } as const;

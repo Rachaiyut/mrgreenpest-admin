@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '../../components/common/FormControls';
-import { LeftArrowIcon } from '../../assets/icons/Icons';
-import { QuotationForm } from '../../components/features/quotations/QuotationForm';
-import { QuotationApi } from '../../api/quotation';
+import { Button } from '../../common/FormControls';
+import { LeftArrowIcon } from '../../../assets/icons/Icons';
+import { QuotationForm } from '../quotations/QuotationForm';
+import { QuotationApi } from '../../../api/quotation';
 
 const CreateQuotationPage: React.FC = () => {
   const navigate = useNavigate();

@@ -13,6 +13,7 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   PlusIcon,
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
@@ -49,13 +50,25 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   onUpdateInvoice,
   onDeleteInvoice,
 }) => {
-  const { invoices, customers, quotations, fetchData } = useData();
+  const { invoices, customers, fetchData } = useData();
 
   useEffect(() => {
-    fetchData(['invoices', 'customers', 'quotations']);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await fetchData(['invoices', 'customers', 'quotations']);
+      } catch (error) {
+        console.error('Failed to fetch invoice data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const [invoicePage, setInvoicePage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
   const [invoiceItemsPerPage, setInvoiceItemsPerPage] = useState(10);
   const [invoiceSearchQuery, setInvoiceSearchQuery] = useState('');
   const [invoiceStatusFilter, setInvoiceStatusFilter] = useState<
@@ -416,89 +429,113 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {paginatedInvoices.map((i, index) => {
-                const customer =
-                  i.customer || customers?.find((c) => c.id === i.customer_id);
-                return (
-                  <tr key={i.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
-                    </td>
-                    <td
-                      className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
-                      onClick={() => {
-                        setSelectedInvoice(i);
-                        setIsInvoiceModalOpen(true);
-                      }}
-                    >
-                      {i.code || i.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {customer
-                        ? `${customer.first_name} ${customer.last_name || ''}`.trim()
-                        : i.customer_name || 'Unknown'}
-                      {i.term && (
-                        <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                          งวดที่ {i.term}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatPhoneNumber(customer?.phone)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatThaiDate(i.due_at)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <StatusBadge status={getInvoiceStatusLabel(i.status)} />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      ฿
-                      {i.total.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
-                        <Button
-                          variant="primary"
-                          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"
-                          onClick={() => handleViewPdf(i)}
-                          disabled={pdfLoadingId === i.id}
-                          title="ดู PDF"
-                        >
-                          {pdfLoadingId === i.id ? (
-                            <span className="flex items-center gap-2">
-                              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                              <span>กำลังโหลด...</span>
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-2">
-                              <EyeIcon className="w-3.5 h-3.5 shrink-0" />
-                              <span>ดู PDF</span>
-                            </span>
-                          )}
-                        </Button>
-                        <Button
-                          data-invoice-id={i.id}
-                          onClick={(e) =>
-                            handleInvoiceDropdownToggle(e, i.id, i)
-                          }
-                          variant="icon"
-                          title="ตัวเลือก"
-                        >
-                          <span className="sr-only">Open options</span>
-                          <ManageIcon
-                            className="h-5 w-5"
-                            aria-hidden="true"
-                          />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-500">
+                      {/* อย่าลืมตรวจสอบว่าคุณมีการ import LoadingIcon มาใช้ในไฟล์นี้แล้วหรือยัง */}
+                      <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                      <p className="text-base font-medium">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedInvoices.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center text-slate-400">
+                      <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+                      <p className="text-lg font-medium">ไม่พบข้อมูลใบแจ้งหนี้</p>
+                      <p className="text-sm mt-1">
+                        ลองปรับตัวกรองหรือสร้างใบแจ้งหนี้ใหม่
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedInvoices.map((i, index) => {
+                  const customer =
+                    i.customer || customers?.find((c) => c.id === i.customer_id);
+                  return (
+                    <tr key={i.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
+                        onClick={() => {
+                          setSelectedInvoice(i);
+                          setIsInvoiceModalOpen(true);
+                        }}
+                      >
+                        {i.code || i.id}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {customer
+                          ? `${customer.first_name} ${customer.last_name || ''}`.trim()
+                          : i.customer_name || 'Unknown'}
+                        {i.term && (
+                          <span className="ml-2 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                            งวดที่ {i.term}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {formatPhoneNumber(customer?.phone)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {formatThaiDate(i.due_at)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <StatusBadge status={getInvoiceStatusLabel(i.status)} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        ฿
+                        {Number(i.total).toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                          <Button
+                            variant="primary"
+                            className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"
+                            onClick={() => handleViewPdf(i)}
+                            disabled={pdfLoadingId === i.id}
+                            title="ดู PDF"
+                          >
+                            {pdfLoadingId === i.id ? (
+                              <span className="flex items-center gap-2">
+                                <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
+                                <span>กำลังโหลด...</span>
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-2">
+                                <EyeIcon className="w-3.5 h-3.5 shrink-0" />
+                                <span>ดู PDF</span>
+                              </span>
+                            )}
+                          </Button>
+                          <Button
+                            data-invoice-id={i.id}
+                            onClick={(e) =>
+                              handleInvoiceDropdownToggle(e, i.id, i)
+                            }
+                            variant="icon"
+                            title="ตัวเลือก"
+                          >
+                            <span className="sr-only">Open options</span>
+                            <ManageIcon
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

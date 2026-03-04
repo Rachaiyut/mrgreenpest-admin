@@ -1,7 +1,6 @@
 import axios, {
   AxiosInstance,
   AxiosHeaders,
-  InternalAxiosRequestConfig,
 } from 'axios';
 
 export abstract class BaseHttpClient {

@@ -521,7 +521,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedQuotations.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสนอราคา...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedQuotations.length === 0 ? (
                   <tr>
                     <td
                       colSpan={10}

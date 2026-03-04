@@ -50,8 +50,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   onDeleteReceipt,
 }) => {
   const { invoices, customers, receipts, fetchData } = useData();
-
-
+  const [isLoading, setIsLoading] = useState(false);
   const [receiptPage, setReceiptPage] = useState(1);
   const [receiptItemsPerPage, setReceiptItemsPerPage] = useState(10);
   const [receiptSearchQuery, setReceiptSearchQuery] = useState('');
@@ -94,8 +93,21 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     useState<string>('');
 
   useEffect(() => {
-    fetchData(['receipts', 'customers', 'invoices']);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await fetchData(['receipts', 'customers', 'invoices']);
+      } catch (error) {
+        console.error('Failed to fetch receipt data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   const [receiptFormNotes, setReceiptFormNotes] = useState<string>('');
 
   const receiptData = receipts || [];
@@ -405,111 +417,134 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
-              {paginatedReceipts.map((r, index) => {
-                const customer =
-                  r.customer || customers?.find((c) => c.id === r.customer_id);
-                return (
-                  <tr key={r.id}>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                      {(receiptPage - 1) * receiptItemsPerPage + index + 1}
-                    </td>
-                    <td
-                      className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
-                      onClick={() => {
-                        setSelectedReceipt(r);
-                        setIsReceiptModalOpen(true);
-                      }}
-                    >
-                      {r.code || r.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {r.customer_name}
-                      <div className="text-xs text-slate-400 mt-0.5">
-                        Ref:{' '}
-                        {invoices?.find((i) => i.id === r.invoice_id)?.code ||
-                          r.invoice_id}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatPhoneNumber(customer?.phone || '-')}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {formatThaiDate(r.received_at || r.paid_at)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      {getPaymentMethodLabel(r.payment_method)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
-                      ฿
-                      {r.amount.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Button
-                          variant="primary"
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                            isDownloading === r.id
-                              ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                              : 'bg-green-600 hover:bg-green-700 text-white'
-                          }`}
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (isDownloading === r.id) return;
-
-                            try {
-                              setIsDownloading(r.id);
-                              const blob = await ReceiptApi.getPdfBlob(r.id);
-                              const url = window.URL.createObjectURL(blob);
-                              window.open(url, '_blank');
-                            } catch (err) {
-                              console.error('Failed to view PDF', err);
-                              alert('ไม่สามารถดู PDF ได้');
-                            } finally {
-                              setIsDownloading(null);
-                            }
-                          }}
-                          disabled={isDownloading === r.id}
-                        >
-                          {isDownloading === r.id ? (
-                            <LoadingIcon className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <EyeIcon className="h-4 w-4" />
-                          )}
-                          {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
-                        </Button>
-                        <div className="inline-block text-left">
-                          <Button
-                            data-receipt-id={r.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = (
-                                e.currentTarget as HTMLButtonElement
-                              ).getBoundingClientRect();
-                              setSelectedReceipt(r);
-                              setOpenReceiptDropdownId(r.id);
-                              setReceiptDropdownPosition({
-                                top: rect.bottom + window.scrollY,
-                                left: rect.right + window.scrollX,
-                              });
-                            }}
-                            variant="icon"
-                            title="ตัวเลือก"
-                          >
-                            <span className="sr-only">Open options</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-500">
+                      <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                      <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสร็จรับเงิน...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedReceipts.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-16 text-center">
+                    <div className="flex flex-col items-center text-slate-400">
+                      <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+                      <p className="text-lg font-medium">ไม่พบข้อมูลใบเสร็จรับเงิน</p>
+                      <p className="text-sm mt-1">
+                        ลองปรับตัวกรองหรือสร้างเอกสารใหม่
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedReceipts.map((r, index) => {
+                  const customer =
+                    r.customer || customers?.find((c) => c.id === r.customer_id);
+                  return (
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        {(receiptPage - 1) * receiptItemsPerPage + index + 1}
+                      </td>
+                      <td
+                        className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
+                        onClick={() => {
+                          setSelectedReceipt(r);
+                          setIsReceiptModalOpen(true);
+                        }}
+                      >
+                        {r.code || r.id}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {r.customer_name}
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          Ref:{' '}
+                          {invoices?.find((i) => i.id === r.invoice_id)?.code ||
+                            r.invoice_id}
                         </div>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {formatPhoneNumber(customer?.phone || '-')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {formatThaiDate(r.received_at || r.paid_at)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {getPaymentMethodLabel(r.payment_method)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        ฿
+                        {r.amount.toLocaleString('th-TH', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="primary"
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                              isDownloading === r.id
+                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                            }`}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (isDownloading === r.id) return;
+
+                              try {
+                                setIsDownloading(r.id);
+                                const blob = await ReceiptApi.getPdfBlob(r.id);
+                                const url = window.URL.createObjectURL(blob);
+                                window.open(url, '_blank');
+                              } catch (err) {
+                                console.error('Failed to view PDF', err);
+                                alert('ไม่สามารถดู PDF ได้');
+                              } finally {
+                                setIsDownloading(null);
+                              }
+                            }}
+                            disabled={isDownloading === r.id}
+                          >
+                            {isDownloading === r.id ? (
+                              <LoadingIcon className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <EyeIcon className="h-4 w-4" />
+                            )}
+                            {isDownloading === r.id ? 'กำลังโหลด...' : 'ดู PDF'}
+                          </Button>
+                          <div className="inline-block text-left">
+                            <Button
+                              data-receipt-id={r.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const rect = (
+                                  e.currentTarget as HTMLButtonElement
+                                ).getBoundingClientRect();
+                                setSelectedReceipt(r);
+                                setOpenReceiptDropdownId(r.id);
+                                setReceiptDropdownPosition({
+                                  top: rect.bottom + window.scrollY,
+                                  left: rect.right + window.scrollX,
+                                });
+                              }}
+                              variant="icon"
+                              title="ตัวเลือก"
+                            >
+                              <span className="sr-only">Open options</span>
+                              <ManageIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

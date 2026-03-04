@@ -47,6 +47,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const navigate = useNavigate();
 
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -72,6 +73,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [endDate, setEndDate] = useState('');
 
   const fetchContractsData = async () => {
+    setIsLoading(true); // เริ่มหมุน
     try {
       const response = await ContractApi.getAll();
       if (response && response.data) {
@@ -79,6 +81,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       }
     } catch (error) {
       console.error('Failed to fetch contracts:', error);
+    } finally {
+      setIsLoading(false); // หยุดหมุน
     }
   };
 
@@ -469,7 +473,16 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {paginatedContracts.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={10} className="px-6 py-16 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูลสัญญา...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedContracts.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center text-slate-400">
