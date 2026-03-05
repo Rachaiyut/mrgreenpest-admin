@@ -369,7 +369,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
 
         items: isAdhocMode ? [{
-          id: crypto.randomUUID(),
+          id: crypto.randomUUID(), // เพิ่ม id เพื่อแก้ปัญหา Type Error
           sequence: 1,
           description: adhocData.description || 'บริการเพิ่มเติม',
           quantity: 1,
@@ -563,7 +563,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           </div>
         ) : !isAdhocMode && referenceSource && availableInstallments.length > 0 ? (
           
-          /* 🌟 NEW INSTALLMENT UI: ปรับหน้าตาให้เหมือน Ad-hoc แต่ไอคอนสีเขียว (ตรงกับรูป Screenshot 3) */
+          /* 🌟 INSTALLMENT UI */
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
             
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
@@ -573,7 +573,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">รายการเรียกเก็บเงินตามงวด (อ้างอิงจากแผนการวางบิล)</h3>
-                  <p className="text-sm text-slate-500 mt-0.5 font-medium">เลือกงวดชำระเงินที่ต้องการออกใบแจ้งหนี้จากตารางด้านล่าง</p>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">เลือกงวดชำระเงินที่ต้องการออกใบแจ้งหนี้</p>
                 </div>
               </div>
               
@@ -638,7 +638,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           </div>
         ) : isAdhocMode ? (
           
-          /* 🌟 AD-HOC UI: (ตรงกับรูป Screenshot 4) ไอคอนสีส้ม */
+          /* 🌟 AD-HOC UI */
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
             
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
@@ -647,8 +647,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   <CurrencyDollarIcon className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-800">สร้างบิลพิเศษ (Ad-hoc Invoice)</h3>
-                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายละเอียดและยอดเงินที่ต้องการเรียกเก็บ (ไม่มีหน่วย/จำนวน)</p>
+                  <h3 className="text-lg font-bold text-slate-800">สร้างบิลพิเศษ</h3>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายละเอียดและยอดเงินที่ต้องการเรียกเก็บ</p>
                 </div>
               </div>
               
@@ -696,7 +696,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
         ) : (
           
-          /* NORMAL ITEMS: รายการสินค้าและบริการ (ตรงกับรูป Screenshot 1) */
+          /* NORMAL ITEMS: รายการสินค้าและบริการ */
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -710,9 +710,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               </div>
 
               <div className="flex gap-3 w-full sm:w-auto items-center">
-                 <Button type="button" variant="outline" onClick={handleEnableAdhocMode} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
-                   สลับไปเปิดบิลพิเศษแบบรวบยอด
-                 </Button>
+                 {/* 🌟 ลบปุ่ม "สลับไปเปิดบิลพิเศษแบบรวบยอด" ออกไปแล้วจากตรงนี้ */}
                  <Button type="button" variant="outline" onClick={addItem} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
                     <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
                  </Button>

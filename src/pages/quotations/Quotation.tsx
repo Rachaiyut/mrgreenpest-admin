@@ -731,12 +731,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         assessmentId={selectedAssessmentId}
         onSubmit={handleModalSubmit}
       />
-      {/* <QuotationDetailsModal
-                isOpen={isDetailsModalOpen}
-                onClose={() => setIsDetailsModalOpen(false)}
-                quotation={selectedQuotation}
-                allQuotations={quotations}
-            /> */}
+
 
       <ConfirmationModal
         isOpen={isStatusModalOpen}
