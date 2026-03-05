@@ -24,6 +24,7 @@ import { Modal } from '../../components/common/Modal';
 import { InvoiceForm } from '../../components/features/invoices/InvoiceForm';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
+import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
 
 interface InvoicesPageProps {
   onCreateInvoice?: (data: Omit<Invoice, 'id'>) => void | Promise<void>;
@@ -583,27 +584,19 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       )}
 
       {/* Invoice Modals */}
-      <Modal
+      <InvoiceModal
         isOpen={isAddInvoiceModalOpen}
         onClose={() => setIsAddInvoiceModalOpen(false)}
-        title="สร้างใบแจ้งหนี้"
-        size="6xl"
-        footer={null}
-      >
-        <InvoiceForm
-          mode="create"
-          initialValues={invoiceInitialValues}
-          embedded={true}
-          onSubmit={async (data) => {
-            if (onCreateInvoice) {
-              await onCreateInvoice(data);
-              setIsAddInvoiceModalOpen(false);
-            }
-          }}
-          onCancel={() => setIsAddInvoiceModalOpen(false)}
-        />
-      </Modal>
-
+        mode='create'
+        initialValues={invoiceInitialValues}
+        onSubmit={async (data) => {
+          if (onCreateInvoice) {
+            await onCreateInvoice(data);
+            setIsAddInvoiceModalOpen(false);
+          }
+        }}
+      />
+      
       <Modal
         isOpen={isInvoiceEditModalOpen}
         onClose={() => setIsInvoiceEditModalOpen(false)}

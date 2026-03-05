@@ -33,11 +33,10 @@ interface InvoiceItem {
 }
 
 export interface InvoiceFormProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'detail';
   initialValues?: Partial<Invoice>;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
-  initialContractId?: string;
   embedded?: boolean;
 }
 
@@ -46,7 +45,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   initialValues,
   onSubmit,
   onCancel,
-  initialContractId,
   embedded = false,
 }) => {
   const { customers, products, invoices, fetchData } = useData();
@@ -81,7 +79,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     notes: initialValues?.notes || '',
     includeVat: initialValues?.include_vat ?? true,
     customerId: initialValues?.customer_id || '',
-    contractId: (initialValues as any)?.contract_id || initialContractId || '',
+    contractId: undefined,
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
     selectedScheduleId: null as string | null,
@@ -404,7 +402,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   };
 
   return (
-    <form onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
+    <form id="invoice-form" onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
       {/* Top Header Section */}
       <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-6 border-b border-slate-200 pb-6">
@@ -849,14 +847,14 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 sticky bottom-0 bg-white/80 backdrop-blur-sm p-4 -mx-6 -mb-6 rounded-b-xl z-10">
+      {/* <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 sticky bottom-0 bg-white/80 backdrop-blur-sm p-4 -mx-6 -mb-6 rounded-b-xl z-10">
         <Button type="button" variant="outline" onClick={onCancel} className="px-6 h-10 border-slate-300 text-slate-700 hover:bg-slate-50">
           ยกเลิก
         </Button>
         <Button type="submit" disabled={isSaving || isLoadingSchedules} variant="primary" className="px-8 h-10 shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5">
           {isSaving ? 'กำลังบันทึก...' : mode === 'create' ? 'สร้างใบแจ้งหนี้' : 'บันทึกการแก้ไข'}
         </Button>
-      </div>
+      </div> */}
     </form>
   );
 };
