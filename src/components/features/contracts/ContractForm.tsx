@@ -750,6 +750,57 @@ export const ContractForm: FC<ContractFormProps> = ({
     0
   );
 
+  // 1. สร้าง State แบบ Array เพื่อรองรับหลายพื้นที่
+  const [customAreas, setCustomAreas] = useState([
+    {
+      id: crypto.randomUUID(),
+      title: 'พื้นที่ 1',
+      buildingType: initialValues?.building_type || '',
+      contractDuration: initialValues?.contract_duration || '1 ปี',
+      systemUsed: initialValues?.system_used || '',
+      serviceCount: initialValues?.service_count || 7,
+      selectedServiceTypes: initialValues?.service_type
+        ? initialValues.service_type.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
+    }
+  ]);
+
+  // 2. ฟังก์ชันเพิ่มพื้นที่ใหม่
+  const handleAddArea = () => {
+    setCustomAreas((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        title: `พื้นที่ ${prev.length + 1}`,
+        buildingType: '',
+        contractDuration: '1 ปี',
+        systemUsed: '',
+        serviceCount: 7,
+        selectedServiceTypes: [],
+      },
+    ]);
+  };
+
+  // 3. ฟังก์ชันลบพื้นที่ (และรันเลขพื้นที่ใหม่)
+  const handleRemoveArea = (id: string) => {
+    setCustomAreas((prev) => {
+      const filtered = prev.filter((area) => area.id !== id);
+      return filtered.map((area, index) => ({
+        ...area,
+        title: `พื้นที่ ${index + 1}`,
+      }));
+    });
+  };
+
+  // 4. ฟังก์ชันจัดการการเปลี่ยนแปลงข้อมูลในแต่ละพื้นที่
+  const handleAreaChange = (id: string, field: string, value: any) => {
+    setCustomAreas((prev) =>
+      prev.map((area) =>
+        area.id === id ? { ...area, [field]: value } : area
+      )
+    );
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1188,101 +1239,157 @@ export const ContractForm: FC<ContractFormProps> = ({
           );
         })()}
 
-        {/* Service Details - Full Width */}
+        {/* Service Details - Dynamic Areas */}
         {!selectedQuotationId && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-            <SectionHeader
-              icon={MapIcon}
-              title="รายละเอียดการบริการ (Service Details)"
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <FormField label="ประเภทสิ่งปลูกสร้าง" htmlFor="buildingType">
-                <Select
-                  id="buildingType"
-                  value={buildingType}
-                  onChange={(e) => setBuildingType(e.target.value)}
-                >
-                  <option value="">เลือกประเภทสิ่งปลูกสร้าง</option>
-                  <option value="HOUSE">บ้าน</option>
-                  <option value="OFFICE">ออฟฟิศ</option>
-                </Select>
-              </FormField>
-
-              <FormField label="ระบบที่ใช้" htmlFor="systemUsed">
-                <Input
-                  id="systemUsed"
-                  value={systemUsed}
-                  onChange={(e) => setSystemUsed(e.target.value)}
-                  placeholder="เช่น ระบบเหยื่อ, ระบบฉีดพ่น"
-                />
-              </FormField>
-
-              <FormField label="ระยะเวลาสัญญา" htmlFor="duration">
-                <Select
-                  id="duration"
-                  value={contractDuration}
-                  onChange={(e) => setContractDuration(e.target.value)}
-                >
-                  <option value="1 ปี">1 ปี</option>
-                  <option value="6 เดือน">6 เดือน</option>
-                  <option value="3 เดือน">3 เดือน</option>
-                  <option value="ครั้งเดียว">ครั้งเดียว</option>
-                </Select>
-              </FormField>
-
-              <FormField label="จำนวนครั้งเข้าบริการ" htmlFor="serviceCount">
-                <Input
-                  id="serviceCount"
-                  type="number"
-                  value={serviceCount}
-                  onChange={(e) => setServiceCount(Number(e.target.value))}
-                />
-              </FormField>
-
-              <div className="col-span-1 md:col-span-2 lg:col-span-4">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  ประเภทบริการ<span className="text-red-500">*</span>
-                </label>
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {serviceTypeOptions.map((option) => (
-                      <label
-                        key={option.id}
-                        className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-2 rounded transition-colors"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedServiceTypes.includes(option.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedServiceTypes([
-                                ...selectedServiceTypes,
-                                option.value,
-                              ]);
-                            } else {
-                              setSelectedServiceTypes(
-                                selectedServiceTypes.filter(
-                                  (t) => t !== option.value
-                                )
-                              );
-                            }
-                          }}
-                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                        />
-                        <span className="text-sm text-slate-700">
-                          {option.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  {selectedServiceTypes.length === 0 && (
-                    <p className="text-xs text-red-500 mt-2">
-                      กรุณาเลือกอย่างน้อย 1 รายการ
-                    </p>
-                  )}
+            
+            {/* Header + ปุ่มเพิ่มพื้นที่ */}
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                  <ClipboardDocumentListIcon className="w-5 h-5" />
                 </div>
+                <h3 className="font-semibold text-slate-800 text-lg">
+                  รายละเอียดการบริการ (Service Details)
+                </h3>
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddArea}
+                className="text-sm py-1.5 px-3 flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50 transition-colors"
+              >
+                <PlusIcon className="w-4 h-4" /> เพิ่มพื้นที่
+              </Button>
+            </div>
+
+            {/* วนลูปแสดงผลการ์ดแต่ละพื้นที่ */}
+            <div className="space-y-6">
+              {customAreas.map((area) => (
+                <div key={area.id} className="border border-slate-200 rounded-lg overflow-hidden relative">
+                  
+                  {/* Card Header ของแต่ละพื้นที่ */}
+                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                      <h4 className="font-semibold text-slate-800">
+                        {area.title}
+                      </h4>
+                    </div>
+                    {/* ซ่อนปุ่มลบหากเหลือแค่ 1 พื้นที่ */}
+                    {customAreas.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveArea(area.id)}
+                        className="text-slate-400 hover:text-red-500 text-sm flex items-center gap-1 transition-colors"
+                      >
+                        <TrashIcon className="w-4 h-4" /> ลบพื้นที่
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          ประเภทสิ่งปลูกสร้าง
+                        </div>
+                        <Select
+                          value={area.buildingType}
+                          onChange={(e) => handleAreaChange(area.id, 'buildingType', e.target.value)}
+                          className="w-full text-sm"
+                        >
+                          <option value="">เลือกประเภท...</option>
+                          <option value="HOUSE">บ้าน</option>
+                          <option value="OFFICE">ออฟฟิศ</option>
+                        </Select>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          ระยะเวลาสัญญา
+                        </div>
+                        <Select
+                          value={area.contractDuration}
+                          onChange={(e) => handleAreaChange(area.id, 'contractDuration', e.target.value)}
+                          className="w-full text-sm"
+                        >
+                          <option value="1 ปี">1 ปี</option>
+                          <option value="6 เดือน">6 เดือน</option>
+                          <option value="3 เดือน">3 เดือน</option>
+                          <option value="ครั้งเดียว">ครั้งเดียว</option>
+                        </Select>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          ระบบที่ใช้
+                        </div>
+                        <Input
+                          value={area.systemUsed}
+                          onChange={(e) => handleAreaChange(area.id, 'systemUsed', e.target.value)}
+                          placeholder="เช่น เหยื่อ, เคมี"
+                          className="w-full text-sm"
+                        />
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">
+                          จำนวนครั้งบริการ
+                        </div>
+                        <Input
+                          type="number"
+                          value={area.serviceCount}
+                          onChange={(e) => handleAreaChange(area.id, 'serviceCount', Number(e.target.value))}
+                          className="w-full text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mb-2">
+                      <label className="block text-xs text-slate-500 mb-2">
+                        ประเภทบริการ<span className="text-red-500">*</span>
+                      </label>
+                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {serviceTypeOptions.map((option) => {
+                            const isChecked = area.selectedServiceTypes.includes(option.value);
+                            return (
+                              <label
+                                key={option.id}
+                                className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-1.5 -m-1.5 rounded transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    let newTypes = [...area.selectedServiceTypes];
+                                    if (e.target.checked) {
+                                      newTypes.push(option.value);
+                                    } else {
+                                      newTypes = newTypes.filter((t) => t !== option.value);
+                                    }
+                                    handleAreaChange(area.id, 'selectedServiceTypes', newTypes);
+                                  }}
+                                  className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white"
+                                />
+                                <span
+                                  className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}
+                                >
+                                  {option.label}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {area.selectedServiceTypes.length === 0 && (
+                        <p className="text-xs text-red-500 mt-2">
+                          กรุณาเลือกอย่างน้อย 1 รายการ
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

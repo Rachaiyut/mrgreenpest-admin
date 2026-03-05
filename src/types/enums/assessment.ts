@@ -10,3 +10,9 @@ export enum ServiceSystem {
   PREY = 'PREY',
   CHEMICAL = 'CHEMICAL',
 }
+
+export enum BuildingType {
+  OFFICE = 'OFFICE',
+  HOUSE = 'HOUSE',
+  OTHER = 'OTHER'
+}
