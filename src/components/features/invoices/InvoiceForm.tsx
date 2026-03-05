@@ -62,6 +62,12 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const [isAdhocMode, setIsAdhocMode] = useState<boolean>(false);
 
+  // -- Ad-hoc State --
+  const [adhocData, setAdhocData] = useState({
+    description: 'บริการเพิ่มเติม (นอกเหนือสัญญา)',
+    amount: 0,
+  });
+
   // -- Form States --
   const [formData, setFormData] = useState({
     code: initialValues?.code || '',
@@ -148,7 +154,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   // -- Derived Data & Calculations --
   const totals = useMemo(() => {
-    const itemsTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const itemsTotal = isAdhocMode 
+      ? Number(adhocData.amount || 0) 
+      : items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
     if (formData.includeVat) {
       const vatAmount = Number((itemsTotal * (7 / 107)).toFixed(2));
@@ -157,7 +165,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     } else {
       return { subtotal: itemsTotal, vatAmount: 0, netTotal: itemsTotal };
     }
-  }, [items, formData.includeVat]);
+  }, [items, formData.includeVat, isAdhocMode, adhocData.amount]);
 
   const selectedCustomer = useMemo(() => 
     [...customers, ...searchedCustomers].find(c => c.id === formData.customerId), 
@@ -286,7 +294,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const handleEnableAdhocMode = () => {
     setIsAdhocMode(true);
     setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
-    setItems([{ id: crypto.randomUUID(), description: 'บริการเพิ่มเติม (นอกเหนือสัญญา)', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }]);
   };
 
   const updateItem = (id: string, field: keyof InvoiceItem, value: any) => {
@@ -361,8 +368,16 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         term: (!selectedInst?.is_pay_all && !isAdhocMode) ? formData.term : undefined,
         invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
 
-        items: items.map((item, index) => ({
-          id: item.id.length > 36 ? undefined : item.id, // Only send if valid UUID from backend
+        items: isAdhocMode ? [{
+          id: crypto.randomUUID(),
+          sequence: 1,
+          description: adhocData.description || 'บริการเพิ่มเติม',
+          quantity: 1,
+          unit: 'รายการ',
+          unit_price: Number(adhocData.amount),
+          amount: Number(adhocData.amount),
+        }] : items.map((item, index) => ({
+          id: item.id.length > 36 ? undefined : item.id,
           sequence: index + 1,
           description: item.description,
           quantity: Number(item.quantity),
@@ -387,15 +402,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       setIsSaving(false);
     }
   };
-
-  const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
-    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-      <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
-        <Icon className="w-5 h-5" />
-      </div>
-      <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>
-    </div>
-  );
 
   return (
     <form onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
@@ -555,18 +561,33 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
             กำลังดึงข้อมูลตารางการวางบิล...
           </div>
-        ) : referenceSource && availableInstallments.length > 0 && !isAdhocMode ? (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-2 border-b border-slate-100">
-              <h3 className="font-semibold text-slate-800 text-lg">
-                รายการเรียกเก็บเงินตามงวด (อ้างอิงจากแผนการวางบิล)
-              </h3>
-              <Button type="button" variant="outline" onClick={handleEnableAdhocMode} className="text-orange-600 border-orange-200 hover:bg-orange-50 text-sm">
-                <PlusIcon className="w-4 h-4 mr-2" /> สร้างบิลพิเศษ (กำหนดรายการเอง)
+        ) : !isAdhocMode && referenceSource && availableInstallments.length > 0 ? (
+          
+          /* 🌟 NEW INSTALLMENT UI: ปรับหน้าตาให้เหมือน Ad-hoc แต่ไอคอนสีเขียว (ตรงกับรูป Screenshot 3) */
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+            
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                  <DocumentTextIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">รายการเรียกเก็บเงินตามงวด (อ้างอิงจากแผนการวางบิล)</h3>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">เลือกงวดชำระเงินที่ต้องการออกใบแจ้งหนี้จากตารางด้านล่าง</p>
+                </div>
+              </div>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleEnableAdhocMode} 
+                className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center"
+              >
+                <PlusIcon className="w-4 h-4 mr-1.5" /> สร้างบิลพิเศษ (กำหนดรายการเอง)
               </Button>
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+            <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm mt-2">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
@@ -615,47 +636,89 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               </table>
             </div>
           </div>
-        ) : (
+        ) : isAdhocMode ? (
+          
+          /* 🌟 AD-HOC UI: (ตรงกับรูป Screenshot 4) ไอคอนสีส้ม */
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
             
-            {/* 🌟 1. ย้ายปุ่มเพิ่มรายการมาไว้มุมขวาบนตรงบรรทัดเดียวกับหัวข้อ */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-orange-50 rounded-lg text-orange-600">
+                  <CurrencyDollarIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">สร้างบิลพิเศษ (Ad-hoc Invoice)</h3>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายละเอียดและยอดเงินที่ต้องการเรียกเก็บ (ไม่มีหน่วย/จำนวน)</p>
+                </div>
+              </div>
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsAdhocMode(false)} 
+                className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors"
+              >
+                สลับกลับไปโหมดปกติ
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start mt-2">
+              <div className="md:col-span-8">
+                <FormField label="รายละเอียดที่ต้องการแสดงในบิล *">
+                  <Input
+                    value={adhocData.description}
+                    onChange={(e) => setAdhocData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="เช่น ค่าบริการติดตั้งเพิ่มเติม, ค่าอุปกรณ์นอกเหนือสัญญา..."
+                    className="bg-white h-11 text-base border-slate-300 focus:ring-primary focus:border-primary"
+                    required
+                  />
+                </FormField>
+              </div>
+              
+              <div className="md:col-span-4">
+                <FormField label="จำนวนเงิน (รวมในบิล) *">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={adhocData.amount || ''}
+                      onChange={(e) => setAdhocData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                      className="bg-white h-11 text-right pr-12 text-lg font-bold text-slate-900 border-slate-300 focus:ring-primary focus:border-primary shadow-sm"
+                      placeholder="0.00"
+                      required
+                    />
+                    <div className="absolute right-4 top-2.5 text-slate-400 font-bold">฿</div>
+                  </div>
+                </FormField>
+              </div>
+            </div>
+          </div>
+
+        ) : (
+          
+          /* NORMAL ITEMS: รายการสินค้าและบริการ (ตรงกับรูป Screenshot 1) */
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
                 <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
                   <CurrencyDollarIcon className="w-5 h-5" />
                 </div>
-                <h3 className="font-semibold text-slate-800 text-lg">รายการสินค้าและบริการ</h3>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">รายการสินค้าและบริการ</h3>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายการสินค้า จำนวน และราคาต่อหน่วย</p>
+                </div>
               </div>
 
-              <div className="flex gap-2 w-full sm:w-auto items-center">
-                 <Button
-                    type="button"
-                    variant="outline"
-                    onClick={addItem}
-                    className="text-sm px-3 py-1.5 h-auto border-slate-300 text-slate-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50 shadow-sm"
-                  >
+              <div className="flex gap-3 w-full sm:w-auto items-center">
+                 <Button type="button" variant="outline" onClick={handleEnableAdhocMode} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
+                   สลับไปเปิดบิลพิเศษแบบรวบยอด
+                 </Button>
+                 <Button type="button" variant="outline" onClick={addItem} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
                     <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
                  </Button>
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <div className="flex items-center gap-3">
-                {isAdhocMode && (
-                   <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200">
-                     โหมดกำหนดรายการเอง (Ad-hoc)
-                   </span>
-                )}
-              </div>
-              <div className="flex gap-2 w-full sm:w-auto items-center">
-                 {isAdhocMode && availableInstallments.length > 0 && (
-                   <Button type="button" variant="ghost" onClick={() => setIsAdhocMode(false)} className="text-slate-500 text-sm">
-                     กลับไปเลือกงวด
-                   </Button>
-                 )}
-              </div>
-            </div>
-
             <div className="space-y-4">
               {items.map((item, index) => (
                 <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
@@ -724,7 +787,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   </div>
                 </div>
               ))}
-              {/* 🌟 2. ลบปุ่มด้านล่างออกไปแล้ว */}
             </div>
           </div>
         )}
