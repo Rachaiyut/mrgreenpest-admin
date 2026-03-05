@@ -89,6 +89,7 @@ export const AddContractModal: React.FC<AddContractModalProps> = ({
       end_date: endDate,
       address: address,
       status: status,
+      vat_amount: (quotation as any).vat_amount || 0,
       total_amount: quotation.total,
       servicePackage: servicePackage,
       customer_name: customer.first_name + ' ' + (customer.last_name || ''),

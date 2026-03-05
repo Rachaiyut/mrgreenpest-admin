@@ -1250,7 +1250,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                   <ClipboardDocumentListIcon className="w-5 h-5" />
                 </div>
                 <h3 className="font-semibold text-slate-800 text-lg">
-                  รายละเอียดการบริการ (Service Details)
+                  รายละเอียดการบริการ
                 </h3>
               </div>
               <Button
