@@ -37,7 +37,7 @@ export const CreateContractModal: React.FC<CreateContractModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="สร้างใบสัญญาใหม่ (New Contract)"
+      title="สร้างใบสัญญาใหม่"
       size="7xl"
       footer={null}
     >

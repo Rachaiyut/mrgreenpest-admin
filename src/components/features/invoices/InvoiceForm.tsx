@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { PlusIcon, TrashIcon, DocumentTextIcon } from '../../../assets/icons/Icons';
+import { PlusIcon, TrashIcon, DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
 import { CustomerApi } from '../../../api/customer';
 import { ContractApi } from '../../../api/contract';
@@ -60,7 +60,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const [invoiceSchedules, setInvoiceSchedules] = useState<any[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
 
-  // 💡 State ใหม่สำหรับรองรับการออกบิลอิสระ (Ad-hoc)
   const [isAdhocMode, setIsAdhocMode] = useState<boolean>(false);
 
   // -- Form States --
@@ -79,7 +78,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     contractId: (initialValues as any)?.contract_id || initialContractId || '',
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
-    selectedScheduleId: null as string | null, // 💡 เก็บ ID ของงวดที่เลือก (รองรับ ID จำลองตอนปิดยอด)
+    selectedScheduleId: null as string | null,
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
@@ -131,7 +130,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           const data = (res as any).data || res;
           setInvoiceSchedules(Array.isArray(data) ? data : []);
           
-          // รีเซ็ตโหมด Ad-hoc เมื่อเปลี่ยนสัญญา
           setIsAdhocMode(false);
           setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
         } catch (error) {
@@ -182,7 +180,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         const status = String(inst.status).toUpperCase();
         
         if (initialValues?.id && initialValues.term === term) return true;
-        // ปล่อยให้ตัวเลือก PAY_ALL ผ่านมาด้วย
         if (inst.is_pay_all) return true;
         
         return status === 'PENDING' || status === 'PARTIAL';
@@ -192,7 +189,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         description: inst.description || inst.notes || `งวดที่ ${inst.installment_no || inst.sequence}`,
         percentage: inst.percentage || 0,
         amount: Number(inst.amount || inst.expected_amount || 0),
-        is_pay_all: inst.is_pay_all || false, // 💡 แมพ Flag กลับมาให้ React รู้จัก
+        is_pay_all: inst.is_pay_all || false,
       }));
     }
 
@@ -220,6 +217,16 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       is_pay_all: false,
     }));
   }, [referenceSource, invoices, initialValues, formData.contractId, invoiceSchedules]);
+
+  const productOptions = useMemo(() => {
+    return products
+      .filter((p: any) => p.type !== 'PACKAGE')
+      .map((p) => ({
+        value: p.id,
+        label: `${p.code} - ${p.name}`,
+        description: (typeof p.unit === 'string' ? p.unit : p.unit?.name) || '',
+      }));
+  }, [products]);
 
   // -- Handlers --
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -258,9 +265,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     });
   };
 
-  // 💡 เมื่อแอดมินเลือกงวด (ปกติ หรือ ปิดยอด)
   const handleSelectInstallment = (inst: any) => {
-    setIsAdhocMode(false); // ปิดโหมดคีย์อิสระ
+    setIsAdhocMode(false);
     setFormData(prev => ({ 
       ...prev, 
       term: inst.term,
@@ -277,7 +283,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }]);
   };
 
-  // 💡 เมื่อแอดมินกดปุ่ม "สร้างใบแจ้งหนี้พิเศษ (คีย์รายการเอง)"
   const handleEnableAdhocMode = () => {
     setIsAdhocMode(true);
     setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
@@ -295,18 +300,25 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }));
   };
 
-  const handleProductSelect = (itemId: string, productName: string) => {
-    const product = products.find(p => p.name === productName);
+  const handleProductSelect = (itemId: string, productId: string) => {
+    const product = products.find((p) => p.id === productId);
     if (product) {
-      setItems(prev => prev.map(item => item.id === itemId ? {
-        ...item,
-        description: product.name,
-        unit: (typeof product.unit === 'string' ? product.unit : (product.unit as any)?.name) || 'รายการ',
-        unitPrice: Number(product.price),
-        amount: Number(product.price) * item.quantity,
-      } : item));
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                product_id: productId,
+                description: product.name,
+                unit: (typeof product.unit === 'string' ? product.unit : (product.unit as any)?.name) || 'รายการ',
+                unitPrice: Number(product.price) || 0,
+                amount: item.quantity * (Number(product.price) || 0),
+              }
+            : item
+        )
+      );
     } else {
-      updateItem(itemId, 'description', productName);
+      updateItem(itemId, 'product_id', productId);
     }
   };
 
@@ -321,9 +333,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       return;
     }
 
-    // 💡 Validation: ถ้าไม่ได้เปิดโหมด Ad-hoc และมีตารางงวดอยู่ ต้องบังคับเลือก
     if (!isAdhocMode && availableInstallments.length > 0 && !formData.selectedScheduleId) {
-      alert('กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "ออกบิลแบบกำหนดเอง"');
+      alert('กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "สร้างบิลพิเศษ"');
       return;
     }
 
@@ -345,20 +356,20 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         status: formData.status,
         notes: formData.notes,
         
-        // 💡 ส่ง Flag ให้ตรงกับ Backend
         is_pay_all: selectedInst?.is_pay_all || undefined,
         is_ad_hoc: isAdhocMode || undefined,
-        term: (!selectedInst?.is_pay_all && !isAdhocMode) ? formData.term : undefined, // ส่ง term เฉพาะงวดปกติ
+        term: (!selectedInst?.is_pay_all && !isAdhocMode) ? formData.term : undefined,
         invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
 
         items: items.map((item, index) => ({
-          id: item.id,
+          id: item.id.length > 36 ? undefined : item.id, // Only send if valid UUID from backend
           sequence: index + 1,
           description: item.description,
           quantity: Number(item.quantity),
           unit: item.unit,
           unit_price: Number(item.unitPrice),
           amount: Number(item.amount),
+          product_id: item.product_id || undefined
         })),
       };
 
@@ -377,9 +388,18 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   };
 
+  const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
+    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+      <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+        <Icon className="w-5 h-5" />
+      </div>
+      <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>
+    </div>
+  );
+
   return (
     <form onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
-      {/* ... ส่วน Top Section และ Customer Data (เหมือนเดิมเป๊ะ) ... */}
+      {/* Top Header Section */}
       <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-6 border-b border-slate-200 pb-6">
           <div>
@@ -430,6 +450,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         </div>
       </div>
 
+      {/* Customer & Reference Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6 h-full">
           <div className="bg-white p-6 rounded-xl border border-slate-200 h-full shadow-sm hover:shadow-md transition-shadow">
@@ -527,22 +548,19 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         </div>
       </div>
 
-      {/* Bottom Section: Items / Installments */}
+      {/* Bottom Section: Installments & Items */}
       <div className="pt-8 border-t border-slate-200">
-        
         {isLoadingSchedules ? (
           <div className="flex items-center justify-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 font-medium gap-3">
             <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
             กำลังดึงข้อมูลตารางการวางบิล...
           </div>
         ) : referenceSource && availableInstallments.length > 0 && !isAdhocMode ? (
-          // --- 1. แสดงตารางงวดชำระ (ถ้าไม่ได้อยู่ในโหมด Ad-hoc) ---
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-2 border-b border-slate-100">
               <h3 className="font-semibold text-slate-800 text-lg">
                 รายการเรียกเก็บเงินตามงวด (อ้างอิงจากแผนการวางบิล)
               </h3>
-              {/* 💡 ปุ่มสำหรับสลับไปออกบิลอิสระ (Ad-hoc) */}
               <Button type="button" variant="outline" onClick={handleEnableAdhocMode} className="text-orange-600 border-orange-200 hover:bg-orange-50 text-sm">
                 <PlusIcon className="w-4 h-4 mr-2" /> สร้างบิลพิเศษ (กำหนดรายการเอง)
               </Button>
@@ -598,15 +616,31 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             </div>
           </div>
         ) : (
-          // --- 2. แสดงตาราง Items & Services (โหมดปกติ หรือ โหมด Ad-hoc) ---
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+            
+            {/* 🌟 1. ย้ายปุ่มเพิ่มรายการมาไว้มุมขวาบนตรงบรรทัดเดียวกับหัวข้อ */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                  <CurrencyDollarIcon className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-slate-800 text-lg">รายการสินค้าและบริการ</h3>
+              </div>
+
+              <div className="flex gap-2 w-full sm:w-auto items-center">
+                 <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addItem}
+                    className="text-sm px-3 py-1.5 h-auto border-slate-300 text-slate-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50 shadow-sm"
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
+                 </Button>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
-                  รายการสินค้าและบริการ (Items & Services)
-                </h3>
-                {/* 💡 ป้ายบอกสถานะ Ad-hoc */}
                 {isAdhocMode && (
                    <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200">
                      โหมดกำหนดรายการเอง (Ad-hoc)
@@ -614,130 +648,144 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 )}
               </div>
               <div className="flex gap-2 w-full sm:w-auto items-center">
-                 {/* 💡 ปุ่มยกเลิกโหมด Ad-hoc เพื่อกลับไปเลือกตารางงวด */}
                  {isAdhocMode && availableInstallments.length > 0 && (
                    <Button type="button" variant="ghost" onClick={() => setIsAdhocMode(false)} className="text-slate-500 text-sm">
                      กลับไปเลือกงวด
                    </Button>
                  )}
-                <Button type="button" variant="outline" onClick={addItem} className="flex-1 sm:flex-none text-primary border-primary hover:bg-primary/5 shadow-sm">
-                  <PlusIcon className="w-4 h-4 mr-2" /> เพิ่มรายการ
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => window.confirm('ลบรายการทั้งหมด?') && setItems([{ id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }])}
-                  className="flex-1 sm:flex-none text-red-500 hover:text-red-600 hover:bg-red-50"
-                >
-                  ล้างรายการ
-                </Button>
               </div>
             </div>
 
-            <div className="overflow-hidden border border-slate-200 rounded-xl shadow-sm bg-white">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200">
-                    <tr>
-                      <th className="px-4 py-3 min-w-[300px]">รายการ (Description)</th>
-                      <th className="px-4 py-3 w-24 text-center">จำนวน</th>
-                      <th className="px-4 py-3 w-24 text-center">หน่วย</th>
-                      <th className="px-4 py-3 w-32 text-right">ราคา/หน่วย</th>
-                      <th className="px-4 py-3 w-32 text-right">รวม</th>
-                      <th className="px-4 py-3 w-12"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {items.map((item, index) => (
-                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                        <td className="px-4 py-2">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-slate-400 font-mono w-4">{index + 1}.</span>
-                            <Input
-                              list={`products-${item.id}`}
-                              value={item.description}
-                              onChange={(e) => handleProductSelect(item.id, e.target.value)}
-                              placeholder="รายละเอียดสินค้า/บริการ"
-                              className="h-10 text-sm w-full border-0 bg-transparent focus:ring-0 p-0 placeholder:text-slate-300 font-medium text-slate-700"
-                              autoComplete="off"
-                            />
-                          </div>
-                          <datalist id={`products-${item.id}`}>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.name}>
-                                {p.name} ({p.price} บาท/{typeof p.unit === 'string' ? p.unit : (p.unit as any)?.name})
-                              </option>
-                            ))}
-                          </datalist>
-                        </td>
-                        <td className="px-4 py-2">
-                          <Input type="number" value={item.quantity} onChange={(e) => updateItem(item.id, 'quantity', e.target.value)} className="h-9 text-sm text-center bg-slate-50 border-transparent hover:border-slate-200 focus:bg-white transition-all" min={1} step="any" />
-                        </td>
-                        <td className="px-4 py-2">
-                          <Input value={item.unit} onChange={(e) => updateItem(item.id, 'unit', e.target.value)} className="h-9 text-sm text-center bg-slate-50 border-transparent hover:border-slate-200 focus:bg-white transition-all" />
-                        </td>
-                        <td className="px-4 py-2">
-                          <Input type="number" value={item.unitPrice} onChange={(e) => updateItem(item.id, 'unitPrice', e.target.value)} className="h-9 text-sm text-right bg-slate-50 border-transparent hover:border-slate-200 focus:bg-white transition-all" min={0} />
-                        </td>
-                        <td className="px-4 py-2 text-right font-bold text-slate-700">{item.amount.toLocaleString()}</td>
-                        <td className="px-4 py-2 text-center">
-                          <button type="button" onClick={() => removeItem(item.id)} className="text-slate-300 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100" disabled={items.length <= 1} title="ลบรายการ">
-                            <TrashIcon className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            <div className="space-y-4">
+              {items.map((item, index) => (
+                <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
+                      {index + 1}
+                    </div>
+
+                    <div className="md:col-span-4">
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
+                      <SearchableSelect
+                        value={item.product_id || ''}
+                        onChange={(val) => handleProductSelect(item.id, val)}
+                        options={productOptions}
+                        placeholder="เลือกสินค้า..."
+                      />
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                        placeholder="รายละเอียด..."
+                      />
+                    </div>
+
+                    <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
+                        <Input
+                          type="number" min="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                          className="text-center"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
+                        <Input
+                          type="number" min="0"
+                          value={item.unitPrice}
+                          onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
+                          className="text-right"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2 text-right">
+                      <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
+                      <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
+                        {item.amount.toLocaleString()}
+                      </div>
+                    </div>
+
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
+                        title="ลบรายการ"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {/* 🌟 2. ลบปุ่มด้านล่างออกไปแล้ว */}
             </div>
           </div>
         )}
 
-        {/* ยอดรวม (Subtotal & Total) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-          <div className="space-y-4">
-            <FormField label="หมายเหตุ">
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                rows={5}
-                placeholder="ระบุเงื่อนไขการชำระเงิน หรือหมายเหตุเพิ่มเติม..."
-                className="resize-none bg-slate-50 border-slate-200 focus:bg-white transition-colors"
-              />
-            </FormField>
-          </div>
-
-          <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4 shadow-sm">
-            <div className="flex justify-between text-sm text-slate-600">
-              <span>มูลค่าสินค้า/บริการ (Subtotal)</span>
-              <span className="font-medium text-slate-900">
-                {totals.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
-              </span>
-            </div>
-            <div className="flex justify-between items-center text-sm text-slate-600">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="includeVat"
-                  checked={formData.includeVat}
-                  onChange={(e) => setFormData(prev => ({ ...prev, includeVat: e.target.checked }))}
-                  className="rounded border-gray-300 text-primary focus:ring-primary w-4 h-4 cursor-pointer"
+        {/* Totals Section */}
+        <div className="mt-8 border-t border-slate-200 pt-6">
+          <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
+            
+            {/* กล่องหมายเหตุ */}
+            <div className="flex-1 min-w-0 w-full flex flex-col">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                หมายเหตุ
+              </label>
+              <div className="w-full">
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={4}
+                  placeholder="หมายเหตุเพิ่มเติม..."
+                  className="!w-full !max-w-none resize-none" 
                 />
-                <label htmlFor="includeVat" className="cursor-pointer select-none">รวมภาษีมูลค่าเพิ่ม 7% (ถอด VAT)</label>
               </div>
-              <span className="font-medium text-slate-900">
-                {totals.vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
-              </span>
             </div>
-            <div className="flex justify-between text-xl font-bold border-t border-slate-200 pt-4 text-slate-800 items-end">
-              <span>ยอดรวมสุทธิ (Net Total)</span>
-              <span className="text-3xl text-primary">
-                {totals.netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm text-slate-500 font-normal">บาท</span>
-              </span>
+
+            {/* กล่องสรุปยอด */}
+            <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
+                <span className="font-medium text-slate-900">
+                  {totals.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                </span>
+              </div>
+
+              <div className="flex justify-between items-center text-sm">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={formData.includeVat}
+                    onChange={(e) => setFormData(prev => ({ ...prev, includeVat: e.target.checked }))}
+                    className="rounded border-slate-300 text-green-600 focus:ring-green-500 h-4 w-4"
+                  />
+                  ภาษีมูลค่าเพิ่ม 7% (VAT)
+                </label>
+                <span className="font-medium text-slate-900">
+                  {totals.vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                </span>
+              </div>
+
+              <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                <span className="text-base font-bold text-slate-800">
+                  จำนวนเงินรวมทั้งสิ้น
+                </span>
+                <span className="text-xl font-bold text-green-600">
+                  {totals.netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                </span>
+              </div>
             </div>
+            
           </div>
         </div>
+
       </div>
 
       {/* Actions */}

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../common/FormControls';
 import { Invoice, Customer, Quotation } from '@/src/types/entity/app.interface'; // ปรับ path ให้ตรงกับโปรเจกต์คุณ
 import { LeftArrowIcon } from '../../../assets/icons/Icons';
-import { InvoiceForm } from './AddInvoiceModal'; // ตรวจสอบชื่อไฟล์ที่ Import ให้ตรงกัน
+import { InvoiceForm } from './InvoiceForm'; // ตรวจสอบชื่อไฟล์ที่ Import ให้ตรงกัน
 import { InvoiceApi } from '../../../api/invoice'; // 💡 เพิ่มการ Import InvoiceApi
 import type { FC } from 'react';
 
