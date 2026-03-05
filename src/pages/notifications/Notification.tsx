@@ -221,7 +221,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   ชื่อเล่น
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
                   ที่อยู่/เบอร์โทร
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
@@ -299,11 +299,11 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                       {row.nickname}
                     </td>
-                    <td className="px-3 py-3 text-slate-600 min-w-[200px]">
-                      <div className="truncate w-48" title={row.address}>
+                    <td className="px-3 py-3 text-slate-600 min-w-[300px] md:min-w-[400px]">
+                      <div className="leading-relaxed">
                         {row.address}
                       </div>
-                      <div className="text-slate-400">{row.phone}</div>
+                      <div className="text-slate-400 mt-1">{row.phone}</div>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                       {row.contractDetails}

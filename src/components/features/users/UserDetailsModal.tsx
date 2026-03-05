@@ -67,7 +67,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           <div className="flex flex-row items-end -mt-12 mb-6 gap-4">
             <div className="relative p-1 bg-white rounded-full shadow-lg">
               <img
-                src={user.avatarUrl}
+                src={user.url}
                 alt={user.name}
                 className="h-24 w-24 rounded-full object-cover"
               />

@@ -253,7 +253,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   // --- เริ่มต้นตรวจสอบข้อมูล Package ที่บันทึกไว้ในตอนแรก เพื่อไม่ให้ข้อมูลหาย ---
   const initialPackageItem = useMemo(() => {
-    return initialValues?.items?.find((item: any) => 
+    return initialValues?.items?.find((item: any) =>
       item.unit === 'งาน/แพ็กเกจ' || item.description?.startsWith('แพ็กเกจ:')
     );
   }, [initialValues]);
@@ -551,7 +551,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   useEffect(() => {
     if (selectedAssessment) {
       // ตรวจสอบว่าเป็นการโหลดฟอร์มครั้งแรกเพื่อแก้ไข Quotation อันเดิมหรือไม่
-      const isEditingOriginalAssessment = 
+      const isEditingOriginalAssessment =
         mode !== 'create' && selectedAssessmentId === initialValues?.assessment_id;
 
       if (
@@ -1077,7 +1077,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         installment_no: i + 1,
         notes: inst.notes?.includes('งวดที่') ? `งวดที่ ${i + 1}` : inst.notes,
       }));
-      
+
       // Auto-balance งวดสุดท้ายใหม่หลังลบ
       if (mapped.length > 0 && netTotal > 0) {
         let sumPct = 0;
@@ -1194,7 +1194,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         let accumulatedAmt = 0;
         return prev.map((inst, index) => {
           const pct = inst.percentage || (netTotal > 0 ? (inst.amount / netTotal * 100) : 0);
-          
+
           if (index === prev.length - 1) {
             // แถวสุดท้าย เอายอดคงเหลือมาใส่เพื่อป้องกันทศนิยมขาดเกิน
             return {
@@ -2071,21 +2071,28 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 : 'mt-8 border-t border-slate-200 pt-6'
             }
           >
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-              <div className="w-full md:w-1/2">
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+            <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
+              
+              {/* 🌟 1. กล่องหมายเหตุ: ใช้ flex-1 และ min-w-0 เพื่อบังคับให้เต็มพื้นที่ */}
+              <div className="flex-1 min-w-0 w-full flex flex-col">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
                   หมายเหตุ
                 </label>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  disabled={isReadOnly}
-                  placeholder="หมายเหตุเพิ่มเติม..."
-                />
+                <div className="w-full">
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={4}
+                    disabled={isReadOnly}
+                    placeholder="หมายเหตุเพิ่มเติม..."
+                    // 🌟 เพิ่ม !max-w-none และ !w-full เพื่อบังคับทับ CSS เดิมของ Component
+                    className="!w-full !max-w-none resize-none" 
+                  />
+                </div>
               </div>
 
-              <div className="w-full md:w-1/3 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              {/* 🌟 2. กล่องสรุปยอด: w-80 และ shrink-0 ไม่ให้โดนบีบ */}
+              <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
                   <span className="font-medium text-slate-900">
@@ -2100,7 +2107,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                       checked={includeVat}
                       onChange={(e) => setIncludeVat(e.target.checked)}
                       disabled={isReadOnly}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 h-4 w-4"
                     />
                     ภาษีมูลค่าเพิ่ม 7% (VAT)
                   </label>
@@ -2118,6 +2125,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   </span>
                 </div>
               </div>
+              
             </div>
           </div>
         </div>
