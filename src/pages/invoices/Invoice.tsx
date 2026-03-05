@@ -597,28 +597,18 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         }}
       />
       
-      <Modal
+      <InvoiceModal
         isOpen={isInvoiceEditModalOpen}
         onClose={() => setIsInvoiceEditModalOpen(false)}
-        title="แก้ไขใบแจ้งหนี้"
-        size="7xl"
-        footer={null}
-      >
-        {selectedInvoice && (
-          <InvoiceForm
-            mode="edit"
-            initialValues={selectedInvoice}
-            embedded={true}
-            onSubmit={async (data) => {
-              if (onUpdateInvoice) {
-                await onUpdateInvoice({ ...selectedInvoice, ...data });
-                setIsInvoiceEditModalOpen(false);
-              }
-            }}
-            onCancel={() => setIsInvoiceEditModalOpen(false)}
-          />
-        )}
-      </Modal>
+        mode="edit"
+        initialValues={selectedInvoice}
+        onSubmit={async (data) => {
+          if (onUpdateInvoice) {
+            await onUpdateInvoice({ ...selectedInvoice, ...data });
+            setIsInvoiceEditModalOpen(false);
+          }
+        }}
+      />
 
       <ConfirmationModal
         isOpen={isInvoiceDeleteModalOpen}

@@ -98,6 +98,7 @@ export interface Invoice {
   issued_at: string;
   due_at: string;
   notes?: string;
+  is_ad_hoc?: boolean;
   created_by?: string;
   updated_by?: string;
   created_at?: string;

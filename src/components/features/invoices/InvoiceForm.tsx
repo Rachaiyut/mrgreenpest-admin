@@ -58,12 +58,23 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const [invoiceSchedules, setInvoiceSchedules] = useState<any[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
 
-  const [isAdhocMode, setIsAdhocMode] = useState<boolean>(false);
+  // 🌟 FIX: Initialize isAdhocMode based on initialValues if editing
+  const [isAdhocMode, setIsAdhocMode] = useState<boolean>(() => {
+    return initialValues?.is_ad_hoc || false;
+  });
 
-  // -- Ad-hoc State --
-  const [adhocData, setAdhocData] = useState({
-    description: 'บริการเพิ่มเติม (นอกเหนือสัญญา)',
-    amount: 0,
+  // 🌟 FIX: Initialize adhocData based on initialValues if editing an adhoc invoice
+  const [adhocData, setAdhocData] = useState(() => {
+    if (initialValues?.is_ad_hoc && initialValues.items && initialValues.items.length > 0) {
+      return {
+        description: initialValues.items[0].description,
+        amount: Number(initialValues.items[0].amount),
+      };
+    }
+    return {
+      description: 'บริการเพิ่มเติม (นอกเหนือสัญญา)',
+      amount: 0,
+    };
   });
 
   // -- Form States --
@@ -79,13 +90,18 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     notes: initialValues?.notes || '',
     includeVat: initialValues?.include_vat ?? true,
     customerId: initialValues?.customer_id || '',
-    contractId: undefined,
+    contractId: (initialValues as any)?.contract_id || undefined, // Make sure this matches your DB
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
-    selectedScheduleId: null as string | null,
+    selectedScheduleId: (initialValues as any)?.invoice_schedule_id || null as string | null,
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
+    // If it's an ad-hoc invoice, we don't populate normal items.
+    if (initialValues?.is_ad_hoc) {
+       return [{ id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }];
+    }
+    
     if (initialValues?.items && initialValues.items.length > 0) {
       return initialValues.items.map((i: any) => ({
         id: i.id || crypto.randomUUID(),
@@ -134,8 +150,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           const data = (res as any).data || res;
           setInvoiceSchedules(Array.isArray(data) ? data : []);
           
-          setIsAdhocMode(false);
-          setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
+          // Only reset these if we are CHANGING the contract, not on initial load of an edit
+          if(mode === 'create' || (mode === 'edit' && formData.contractId !== (initialValues as any)?.contract_id)) {
+              setIsAdhocMode(false);
+              setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
+          }
         } catch (error) {
           console.error('Error fetching invoice schedules:', error);
           setInvoiceSchedules([]);
@@ -148,7 +167,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     };
 
     fetchSchedules();
-  }, [formData.contractId]);
+  }, [formData.contractId, mode, initialValues]);
 
   // -- Derived Data & Calculations --
   const totals = useMemo(() => {
@@ -367,7 +386,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
 
         items: isAdhocMode ? [{
-          id: crypto.randomUUID(), // เพิ่ม id เพื่อแก้ปัญหา Type Error
+          id: crypto.randomUUID(),
           sequence: 1,
           description: adhocData.description || 'บริการเพิ่มเติม',
           quantity: 1,
@@ -411,7 +430,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               <span className="flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-600 rounded-lg">
                 <DocumentTextIcon className="w-5 h-5" />
               </span>
-              รายละเอียดเอกสาร (Document Details)
+              รายละเอียดเอกสาร
             </h3>
             <p className="text-sm text-slate-500 mt-1 ml-11">ข้อมูลสำคัญของใบแจ้งหนี้</p>
           </div>
@@ -708,7 +727,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               </div>
 
               <div className="flex gap-3 w-full sm:w-auto items-center">
-                 {/* 🌟 ลบปุ่ม "สลับไปเปิดบิลพิเศษแบบรวบยอด" ออกไปแล้วจากตรงนี้ */}
                  <Button type="button" variant="outline" onClick={addItem} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
                     <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
                  </Button>
@@ -845,16 +863,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         </div>
 
       </div>
-
-      {/* Actions */}
-      {/* <div className="flex justify-end gap-3 pt-6 border-t border-slate-200 sticky bottom-0 bg-white/80 backdrop-blur-sm p-4 -mx-6 -mb-6 rounded-b-xl z-10">
-        <Button type="button" variant="outline" onClick={onCancel} className="px-6 h-10 border-slate-300 text-slate-700 hover:bg-slate-50">
-          ยกเลิก
-        </Button>
-        <Button type="submit" disabled={isSaving || isLoadingSchedules} variant="primary" className="px-8 h-10 shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all transform hover:-translate-y-0.5">
-          {isSaving ? 'กำลังบันทึก...' : mode === 'create' ? 'สร้างใบแจ้งหนี้' : 'บันทึกการแก้ไข'}
-        </Button>
-      </div> */}
     </form>
   );
 };

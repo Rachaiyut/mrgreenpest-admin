@@ -19,7 +19,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({
 }) => {
   const getTitle = () => {
     if (mode === 'create')
-      return 'สร้างใบแจ้งหนี้ใหม่';
+      return 'สร้างใบแจ้งหนี้';
     if (mode === 'edit')
       return `แก้ไขใบแจ้งหนี้ ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     if (mode === 'detail')
