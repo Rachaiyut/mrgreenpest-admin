@@ -51,7 +51,7 @@ import {
 } from '../../../assets/icons/Icons';
 
 export interface ContractFormProps {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'detail';
   initialValues?: Partial<Contract>;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
@@ -802,7 +802,7 @@ export const ContractForm: FC<ContractFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form id="contract-form" onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column: General Information */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -1696,29 +1696,6 @@ export const ContractForm: FC<ContractFormProps> = ({
             </FormField>
           </div>
         </div>
-      </div>
-
-      <div className="flex justify-end gap-3 pt-6 border-t border-slate-200">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          className="px-6"
-        >
-          ยกเลิก
-        </Button>
-        <Button
-          type="submit"
-          disabled={isSaving}
-          variant="primary"
-          className="px-8"
-        >
-          {isSaving
-            ? 'กำลังบันทึก...'
-            : mode === 'create'
-              ? 'สร้างใบสัญญา'
-              : 'บันทึกการแก้ไข'}
-        </Button>
       </div>
     </form>
   );

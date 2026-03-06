@@ -21,9 +21,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { ContractApi } from '../../api';
-import { ContractDetailsModal } from '../../components/features/contracts/ContractDetailsModal';
-import { CreateContractModal } from '../../components/features/contracts/CreateContractModal';
-import { EditContractModal } from '../../components/features/contracts/EditContractModal';
+import { ContractModal } from '@/src/components/features/contracts/ContractModal';
 
 const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.DRAFT]: 'ร่าง',
@@ -33,7 +31,6 @@ const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.CANCELLED]: 'ยกเลิก',
   [ContractStatus.EXPIRED]: 'หมดอายุ',
 };
-
 interface ContractsPageProps {
   onUpdateContract?: (updated: Contract) => void;
   onDeleteContract?: (id: string) => void;
@@ -272,6 +269,30 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
     }
     setIsStatusModalOpen(false);
     setSelectedContract(null);
+  };
+
+  const handleSubmitContract = async (data: any) => {
+    try {
+      if (isEditModalOpen && selectedContract) {
+        if (onUpdateContract) {
+          await onUpdateContract({ ...selectedContract, ...data });
+        } else {
+          await ContractApi.update(selectedContract.id, data);
+        }
+      } else {
+        // Mode: Create
+        await ContractApi.create(data);
+      }
+      
+      // ปิด Modal เคลียร์ข้อมูล และดึงข้อมูลตารางใหม่
+      setIsCreateModalOpen(false);
+      setIsEditModalOpen(false);
+      setSelectedContract(null);
+      fetchContractsData();
+    } catch (error) {
+      console.error('Failed to save contract:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+    }
   };
 
   return (
@@ -674,35 +695,19 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         </div>
       )}
 
-      {/* Details Modal */}
-      {isDetailsModalOpen && selectedContract && (
-        <ContractDetailsModal
-          contract={selectedContract}
-          customers={customers}
-          quotations={quotations}
-          onClose={() => {
-            setIsDetailsModalOpen(false);
-            setSelectedContract(null);
-          }}
-        />
-      )}
-
-      <CreateContractModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchContractsData}
-      />
-
-      <EditContractModal
-        isOpen={isEditModalOpen}
+      <ContractModal
+        isOpen={isCreateModalOpen || isEditModalOpen}
         onClose={() => {
+          setIsCreateModalOpen(false);
           setIsEditModalOpen(false);
           setSelectedContract(null);
         }}
-        contract={selectedContract}
-        onSuccess={fetchContractsData}
+        mode={isEditModalOpen ? 'edit' : 'create'}
+        initialValues={selectedContract} 
+        onSubmit={handleSubmitContract}
       />
-
+    
+   
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

@@ -21,7 +21,6 @@ import { InvoiceStatus } from '../../types/enums/financial';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
-import { InvoiceForm } from '../../components/features/invoices/InvoiceForm';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';

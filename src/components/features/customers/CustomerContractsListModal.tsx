@@ -5,7 +5,6 @@ import { Contract, Quotation } from '@/src/types/entity/app.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { StatusBadge } from '../../common/StatusBadge';
 import { PlusIcon } from '../../../assets/icons/Icons';
-import { AddContractModal } from '../contracts/AddContractModal';
 import { formatThaiDate } from '../../../utils/date';
 
 interface CustomerContractsListModalProps {
@@ -197,14 +196,6 @@ export const CustomerContractsListModal: React.FC<
           </div>
         </div>
       </Modal>
-      {isAddContractModalOpen && (
-        <AddContractModal
-          isOpen={isAddContractModalOpen}
-          onClose={() => setIsAddContractModalOpen(false)}
-          customer={customer}
-          onCreateContract={handleCreateContractSuccess}
-        />
-      )}
     </>
   );
 };
