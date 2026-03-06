@@ -162,10 +162,9 @@ const Job: React.FC<JobProps> = ({
             const customer = job.customer || {};
             const customerName =
               customer.first_name || customer.last_name
-                ? `${customer.first_name || ''}${
-                    customer.last_name && customer.last_name !== '-'
-                      ? ` ${customer.last_name}`
-                      : ''
+                ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
+                    ? ` ${customer.last_name}`
+                    : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -357,7 +356,7 @@ const Job: React.FC<JobProps> = ({
     left: number;
     isBottom: boolean;
   } | null>(null);
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const kanbanContainerRef = useRef<HTMLDivElement>(null);
 
@@ -588,7 +587,6 @@ const Job: React.FC<JobProps> = ({
     setJobForReport(null);
   };
 
-  // 🌟 คำนวณตำแหน่งให้เป็นแบบ Fixed Position สำหรับมือถือและ Desktop ป้องกันเมนูโดนตัด
   const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, jobId: string) => {
     event.stopPropagation();
     if (openDropdownId === jobId) {
@@ -598,9 +596,8 @@ const Job: React.FC<JobProps> = ({
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setSelectedJob(jobs.find((j) => j.id === jobId) || null);
       setOpenDropdownId(jobId);
-      
-      // ตรวจสอบพื้นที่ด้านล่างจอ ถ้าเหลือน้อยให้แสดงเมนูตีกลับขึ้นไปข้างบน
-      const threshold = 220; // ความสูงเมนูโดยประมาณ
+
+      const threshold = 220; 
       const isBottom = buttonRect.bottom > window.innerHeight - threshold;
 
       setDropdownPosition({
@@ -620,7 +617,6 @@ const Job: React.FC<JobProps> = ({
       setSelectedJob(null);
     };
 
-    // Close when scrolling to prevent floating dropdown off-target
     const handleScroll = () => {
       if (openDropdownId) {
         setOpenDropdownId(null);
@@ -629,7 +625,7 @@ const Job: React.FC<JobProps> = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    window.addEventListener('scroll', handleScroll, true); 
+    window.addEventListener('scroll', handleScroll, true);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -669,9 +665,8 @@ const Job: React.FC<JobProps> = ({
           e.preventDefault();
           action.onClick();
         }}
-        className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
-          action.isDanger ? 'text-red-600 hover:bg-red-50 hover:text-red-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-        }`}
+        className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${action.isDanger ? 'text-red-600 hover:bg-red-50 hover:text-red-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+          }`}
         role="menuitem"
       >
         <action.icon className={`mr-3 h-5 w-5 ${action.isDanger ? 'text-red-500' : 'text-slate-400'}`} aria-hidden="true" />
@@ -708,7 +703,6 @@ const Job: React.FC<JobProps> = ({
 
   return (
     <>
-      {/* 🌟 1. Global Transparent Spinner Loader */}
       {isLoading && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
           <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
@@ -718,7 +712,7 @@ const Job: React.FC<JobProps> = ({
         </div>
       )}
 
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full min-h-[calc(100vh-64px)] space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
@@ -762,7 +756,7 @@ const Job: React.FC<JobProps> = ({
               </div>
               <div>
                 <p className="text-sm text-purple-600 font-medium">รอดำเนินการ</p>
-                <p className="text-2xl font-bold text-purple-800">{jobStats.pending}</p>
+                <p className="text-2xl font-bold text-amber-800">{jobStats.pending}</p>
               </div>
             </div>
           </Card>
@@ -833,11 +827,9 @@ const Job: React.FC<JobProps> = ({
           </div>
         </Card>
 
-        <div className="flex-1 flex flex-col min-h-0 relative">
-          
-          {/* === KANBAN VIEW === */}
+        <div className="flex-1 min-h-0 relative">
           {activeTab === 'schedule' && view === 'kanban' && (
-            <div className="absolute inset-0 flex flex-col">
+            <div className="flex flex-col relative">
               {kanbanColumns.length > 0 && (
                 <>
                   <button onClick={() => scrollKanban('left')} className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105">
@@ -848,10 +840,10 @@ const Job: React.FC<JobProps> = ({
                   </button>
                 </>
               )}
-              <div ref={kanbanContainerRef} className="flex gap-4 overflow-x-auto overflow-y-hidden pb-4 px-2 scroll-smooth flex-1" style={{ scrollbarWidth: 'thin' }}>
+              <div ref={kanbanContainerRef} className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth" style={{ scrollbarWidth: 'thin' }}>
                 {kanbanColumns.length > 0 ? (
                   kanbanColumns.map((col) => (
-                    <div key={col.id} className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col h-full">
+                    <div key={col.id} className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col">
                       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60 shrink-0">
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
@@ -859,7 +851,7 @@ const Job: React.FC<JobProps> = ({
                         </div>
                         <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">{col.jobs.length}</span>
                       </div>
-                      <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{ scrollbarWidth: 'thin' }}>
+                      <div className="space-y-3">
                         {col.jobs.length > 0 ? (
                           col.jobs.map((job) => (
                             <JobCard
@@ -874,8 +866,7 @@ const Job: React.FC<JobProps> = ({
                             />
                           ))
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-slate-400">
-                            <CalendarDaysIcon className="h-10 w-10 mb-2 opacity-50" />
+                          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
                             <p className="text-sm">ไม่มีงาน</p>
                           </div>
                         )}
@@ -883,22 +874,19 @@ const Job: React.FC<JobProps> = ({
                     </div>
                   ))
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
-                    <ViewColumnsIcon className="h-12 w-12 mb-3 opacity-50" />
+                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 w-full">
                     <p className="text-lg font-medium">ไม่พบรถให้บริการ</p>
-                    <p className="text-sm mt-1">กรุณาเพิ่มรถในระบบก่อน</p>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* === LIST VIEW === */}
           {activeTab === 'schedule' && view === 'list' && (
-            <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm h-full">
-              <div className="overflow-auto flex-1">
+            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
+              <div className="overflow-x-auto">
                 <table className="min-w-full">
-                  <thead className="sticky top-0 z-10 bg-white shadow-sm">
+                  <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า/สถานที่</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วัน-เวลา</th>
@@ -960,11 +948,7 @@ const Job: React.FC<JobProps> = ({
                     ) : (
                       <tr>
                         <td colSpan={6} className="px-6 py-16 text-center">
-                          <div className="flex flex-col items-center text-slate-400">
-                            <ListBulletIcon className="h-12 w-12 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">ไม่พบข้อมูลงาน</p>
-                            <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือสร้างนัดหมายใหม่</p>
-                          </div>
+                          <p className="text-lg font-medium text-slate-400">ไม่พบข้อมูลงาน</p>
                         </td>
                       </tr>
                     )}
@@ -972,49 +956,31 @@ const Job: React.FC<JobProps> = ({
                 </table>
               </div>
               {paginatedJobs.length > 0 && (
-                <div className="border-t border-slate-100 bg-white sticky bottom-0 z-20">
+                <div className="border-t border-slate-100 bg-white">
                   <Pagination currentPage={currentPage} totalItems={scheduleJobs.length} itemsPerPage={itemsPerPage} onPageChange={setCurrentPage} onItemsPerPageChange={handleItemsPerPageChange} />
                 </div>
               )}
             </Card>
           )}
 
-          {/* === CALENDAR VIEW === */}
           {activeTab === 'schedule' && view === 'calendar' && (
-            <div className="flex-1 h-full bg-white rounded-xl shadow-sm border border-slate-100 p-4 relative">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
               <JobCalendar jobs={filteredJobs} onJobClick={handleViewDetails} />
             </div>
           )}
 
-          {/* === REPORTS VIEW === */}
-          {/* === REPORTS VIEW === */}
           {activeTab === 'reports' && (
-            // 🌟 1. เปลี่ยนคลาสตรงนี้ เพิ่ม absolute inset-0 เพื่อบังคับให้ Card มีความสูงพอดีกับพื้นที่ที่เหลือเป๊ะๆ
-            <Card className="!p-0 absolute inset-0 w-full flex flex-col overflow-hidden border border-slate-200 shadow-sm">
-              
-              {/* 🌟 2. ส่วนตารางให้ยืดเต็มพื้นที่และ Scroll ได้ */}
-              <div className="flex-1 overflow-auto">
+            <Card className="!p-0 w-full border border-slate-200 shadow-sm overflow-visible">
+              <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        ลูกค้า/สถานที่
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        วัน-เวลา
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        บริการ
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        ช่าง
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        สถานะ
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                        จัดการ
-                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า/สถานที่</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วัน-เวลา</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">บริการ</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ช่าง</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -1075,16 +1041,11 @@ const Job: React.FC<JobProps> = ({
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button
-                                  onClick={async () => { /* PDF Logic */ }}
+                                  onClick={async () => { }}
                                   className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
-                                  title="ดู PDF"
                                   disabled={loadingPdfId === report.id}
                                 >
-                                  {loadingPdfId === report.id ? (
-                                    <LoadingIcon className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <span className="flex items-center gap-1.5"><EyeIcon className="h-4 w-4" /> ดู PDF</span>
-                                  )}
+                                  {loadingPdfId === report.id ? <LoadingIcon className="h-4 w-4 animate-spin" /> : <span className="flex items-center gap-1.5"><EyeIcon className="h-4 w-4" /> ดู PDF</span>}
                                 </Button>
                                 <Button
                                   onClick={() => { if (job) handleWriteReport(job); }}
@@ -1101,36 +1062,23 @@ const Job: React.FC<JobProps> = ({
                     ) : (
                       <tr>
                         <td colSpan={6} className="px-6 py-16 text-center">
-                          <div className="flex flex-col items-center text-slate-400">
-                            <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
-                            <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
-                          </div>
+                          <p className="text-lg font-medium text-slate-400">ไม่พบรายงานบริการ</p>
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
-
-              {/* 🌟 3. Pagination เปลี่ยนมาใช้ shrink-0 เพื่อไม่ให้โดนตารางดันบีบจนหายไป */}
               {paginatedReports.length > 0 && (
-                <div className="shrink-0 border-t border-slate-100 bg-white z-20">
-                  <Pagination
-                    currentPage={reportCurrentPage}
-                    totalItems={serviceReports.length}
-                    itemsPerPage={reportItemsPerPage}
-                    onPageChange={setReportCurrentPage}
-                    onItemsPerPageChange={handleReportItemsPerPageChange}
-                  />
+                <div className="border-t border-slate-100 bg-white">
+                  <Pagination currentPage={reportCurrentPage} totalItems={serviceReports.length} itemsPerPage={reportItemsPerPage} onPageChange={setReportCurrentPage} onItemsPerPageChange={handleReportItemsPerPageChange} />
                 </div>
               )}
             </Card>
           )}
-          
 
-          {/* === WORK SCHEDULE VIEW === */}
           {activeTab === 'work-schedule' && (
-            <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm h-full">
+            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
               <div className="p-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 shrink-0">
                 <div className="flex flex-col md:flex-row gap-4 items-end">
                   <div className="flex-1 max-w-xs">
@@ -1146,18 +1094,13 @@ const Job: React.FC<JobProps> = ({
                       ))}
                     </Select>
                   </div>
-                  {scheduleVehicleId && scheduleDate && (
-                    <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
-                      <span className="text-sm font-semibold text-primary">{scheduledJobsForTable.length} งาน</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              <div className="overflow-auto flex-1">
+              <div className="overflow-x-auto">
                 {scheduleVehicleId && scheduleDate ? (
                   <table className="min-w-full">
-                    <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm border-b border-slate-100">
+                    <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-20">เวลา</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
@@ -1174,62 +1117,31 @@ const Job: React.FC<JobProps> = ({
                         scheduledJobsForTable.map((job, idx) => {
                           const customer = customerMap.get(job.customer_id);
                           const statusUpper = String(job.status || '').toUpperCase();
-                          const isCompleted = statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE';
-                          const isInProgress = statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS';
-
                           return (
                             <tr key={job.id} className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                              <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-sm font-semibold">
-                                  {new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3"><p className="text-sm font-semibold text-slate-800">{job.customerName || '-'} </p></td>
-                              <td className="px-4 py-3"><p className="text-sm text-slate-500 max-w-[200px] truncate" title={job.address}>{job.address || '-'}</p></td>
-                              <td className="px-4 py-3 whitespace-nowrap"><span className="text-sm text-slate-600">{customer?.phone || '-'}</span></td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
-                                {isCompleted || isInProgress ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">✓ เข้าได้</span>
-                                ) : statusUpper === 'CANCELLED' ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-600">✕ ไม่ได้</span>
-                                ) : (<span className="text-slate-400">-</span>)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center">
-                                {job.service_report?.signatures?.customer ? (
-                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">✓ เซ็นแล้ว</span>
-                                ) : (<span className="text-slate-400">-</span>)}
-                              </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center"><span className="text-slate-400">-</span></td>
-                              <td className="px-4 py-3"><p className="text-sm text-slate-500 max-w-[150px] truncate" title={job.remarks}>{job.remarks || '-'}</p></td>
+                              <td className="px-4 py-3 whitespace-nowrap"><span className="text-sm font-semibold">{new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}</span></td>
+                              <td className="px-4 py-3"><p className="text-sm font-semibold">{job.customerName || '-'}</p></td>
+                              <td className="px-4 py-3"><p className="text-sm text-slate-500 truncate max-w-[200px]">{job.address || '-'}</p></td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm">{customer?.primary_phone || '-'}</td>
+                              <td className="px-4 py-3 text-center">{statusUpper === 'COMPLETED' ? '✓' : '-'}</td>
+                              <td className="px-4 py-3 text-center">{job.service_report?.signatures?.customer ? '✓' : '-'}</td>
+                              <td className="px-4 py-3 text-center">-</td>
+                              <td className="px-4 py-3 text-sm text-slate-500">{job.remarks || '-'}</td>
                             </tr>
                           );
                         })
                       ) : (
-                        <tr>
-                          <td colSpan={8} className="px-6 py-16 text-center">
-                            <div className="flex flex-col items-center text-slate-400">
-                              <CalendarDaysIcon className="h-12 w-12 mb-3 opacity-50" />
-                              <p className="text-lg font-medium">ไม่มีงานในวันนี้</p>
-                            </div>
-                          </td>
-                        </tr>
+                        <tr><td colSpan={8} className="px-6 py-16 text-center text-slate-400">ไม่มีงานในวันนี้</td></tr>
                       )}
                     </tbody>
                   </table>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-32 text-slate-400 h-full">
-                    <div className="w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                      <CalendarDaysIcon className="h-10 w-10 text-slate-300" />
-                    </div>
-                    <p className="text-lg font-medium text-slate-500">เลือกตารางงาน</p>
-                    <p className="text-sm mt-1">กรุณาเลือกวันที่และทะเบียนรถเพื่อดูตารางงาน</p>
-                  </div>
+                  <div className="py-32 text-center text-slate-400">กรุณาเลือกตารางงาน</div>
                 )}
               </div>
             </Card>
           )}
 
-          {/* 🌟 2. Responsive Fixed Position Dropdown Menu */}
           {selectedJob && openDropdownId && dropdownPosition && (
             <div
               ref={dropdownRef}
@@ -1239,13 +1151,9 @@ const Job: React.FC<JobProps> = ({
                 bottom: dropdownPosition.isBottom ? window.innerHeight - dropdownPosition.top + 36 : 'auto',
                 left: dropdownPosition.left,
               }}
-              className="z-[100] w-48 sm:w-52 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] bg-white ring-1 ring-black/5 focus:outline-none transform -translate-x-full overflow-hidden"
+              className="z-[100] w-48 sm:w-52 rounded-2xl shadow-xl bg-white ring-1 ring-black/5 transform -translate-x-full overflow-hidden"
             >
-              <div className="py-2" role="menu" aria-orientation="vertical">
-                {/* Header Dropdown (เฉพาะมือถือ ช่วยให้ดูง่ายขึ้นว่ากดอะไรอยู่) */}
-                <div className="px-4 py-2 bg-slate-50/50 sm:hidden border-b border-slate-100 mb-1">
-                   <p className="text-[10px] font-bold text-slate-400 uppercase">ตัวเลือกจัดการงาน</p>
-                </div>
+              <div className="py-2" role="menu">
                 {renderActions()}
               </div>
             </div>
@@ -1253,12 +1161,11 @@ const Job: React.FC<JobProps> = ({
         </div>
       </div>
 
-      {/* Modals */}
       <AddJobModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} contracts={contracts} onCreateJob={onCreateJob} jobs={jobs} users={users} warehouses={warehouses} />
       <JobDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} job={selectedJob} assessment={selectedAssessmentForJob} warehouses={warehouses} />
       <EditJobModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setJobToEdit(null); }} job={jobToEdit} onUpdateJob={onUpdateJob} jobs={jobs} users={users} warehouses={warehouses} currentUser={currentUser} />
       <CancelJobModal isOpen={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} job={jobToCancel} onConfirm={handleConfirmCancel} />
-      <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title="ยืนยันการลบงาน" message={jobToDelete ? <div className="text-slate-600">คุณแน่ใจหรือไม่ที่จะลบงาน <span className="font-semibold text-slate-800">{jobToDelete.customer_name}</span> ? การกระทำนี้ไม่สามารถย้อนกลับได้</div> : 'คุณแน่ใจหรือไม่ที่จะลบงานนี้?'} confirmButtonText="ลบงาน" confirmButtonClass="bg-red-600 hover:bg-red-700" />
+      <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title="ยืนยันการลบงาน" message={jobToDelete ? `ลบงาน ${jobToDelete.customer_name}?` : 'ยืนยันการลบ?'} confirmButtonText="ลบงาน" confirmButtonClass="bg-red-600" />
       <ServiceReportModal isOpen={isReportModalOpen} onClose={() => { setIsReportModalOpen(false); setJobForReport(null); }} job={jobForReport} finalStatus={reportFinalStatus} onSubmit={handleReportSubmit} contracts={contracts} currentUser={currentUser} products={initialProducts} jobs={jobs} />
       <EditAssessmentModal isOpen={isEditAssessmentModalOpen} onClose={() => setIsEditAssessmentModalOpen(false)} assessment={assessmentForCheckout} onUpdateAssessment={handleAssessmentUpdateOnCheckout} products={initialProducts} packages={packages} customers={initialCustomers} categories={categories} />
     </>
