@@ -490,7 +490,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   options={[...customers, ...searchedCustomers].map((c) => ({
                     value: c.id,
                     label: `${c.first_name} ${c.last_name}`,
-                    description: c.phone,
+                    description: c.primary_phone,
                   }))}
                   placeholder="ค้นหาและเลือกลูกค้า..."
                   required
@@ -506,7 +506,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       <div className="space-y-3">
                         <div className="flex justify-between items-center py-1">
                           <span className="font-medium text-slate-500 flex items-center gap-2"><span className="w-8">โทร</span></span>
-                          <span className="text-slate-800 font-medium bg-white px-2 py-0.5 rounded border border-slate-200">{c.phone || '-'}</span>
+                          <span className="text-slate-800 font-medium bg-white px-2 py-0.5 rounded border border-slate-200">{c.primary_phone || '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="font-medium text-slate-500 flex items-center gap-2"><span className="w-8">อีเมล</span></span>

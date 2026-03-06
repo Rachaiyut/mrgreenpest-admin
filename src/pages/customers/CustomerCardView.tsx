@@ -53,7 +53,7 @@ const CustomerCardView: React.FC<{
           <div className="space-y-3 text-sm text-slate-600">
             <div className="flex items-center">
               <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-              <span>{customer.phone}</span>
+              <span>{customer.primary_phone}</span>
             </div>
             <div className="flex items-center">
               <EnvelopeIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
@@ -66,8 +66,8 @@ const CustomerCardView: React.FC<{
             </div>
             <div className="flex items-center">
               <PhoneIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-              <a href={`tel:${customer.phone}`} className="hover:text-primary">
-                {customer.phone}
+              <a href={`tel:${customer.primary_phone}`} className="hover:text-primary">
+                {customer.primary_phone}
               </a>
             </div>
           </div>

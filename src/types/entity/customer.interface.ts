@@ -3,6 +3,7 @@ import { IBase, IBaseQuery } from './base.interface';
 import { Status } from '@/src/types/enums/base';
 import { CustomerType, Gender } from '@/src/types/enums/customer';
 import { Assessment } from './assessment.interface';
+import { Contract } from './financial.interface';
 
 export interface Customer extends IBase {
   code: string;
@@ -14,7 +15,11 @@ export interface Customer extends IBase {
   last_name: string;
   nickname: string;
   tax_id?: string;
-  phone: string;
+  primary_phone: string;
+  mobile_phone: string;
+  phone_3?: string;
+  phone_4?: string;
+  phone_5?: string;
   email: string;
   address_house_no: string;
   sub_district: string;
@@ -26,9 +31,8 @@ export interface Customer extends IBase {
   service_area: string;
   service_group: string;
   google_map_link?: string;
-
   assessments: Assessment[];
-  contracts: any[];
+  contracts: Contract[];
 }
 
 export interface CustomerService extends IBase {

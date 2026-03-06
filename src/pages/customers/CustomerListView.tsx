@@ -113,7 +113,7 @@ const CustomerListView: React.FC<{
               {customer.nickname || '-'}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-              {formatPhoneNumber(customer.phone)}
+              {formatPhoneNumber(customer.primary_phone)}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
               {customer.type === CustomerType.CORPORATE

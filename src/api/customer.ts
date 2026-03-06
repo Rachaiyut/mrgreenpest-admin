@@ -37,7 +37,7 @@ class CustomerService extends AuthService {
     return res.data;
   }
 
-  async createCustomer(customerData: Omit<Customer, 'id'>): Promise<Customer> {
+  async createCustomer(customerData: Omit<Customer, 'id' | 'code'>): Promise<Customer> {
     const res = await this.http.post<Customer>(`${this.path}`, customerData);
     return res.data;
   }

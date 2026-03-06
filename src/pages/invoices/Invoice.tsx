@@ -106,7 +106,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     if (end) end.setHours(23, 59, 59, 999);
 
     const custPhoneMap = new Map(
-      (customers || []).map((c) => [c.id, [c.phone].filter(Boolean).join('')])
+      (customers || []).map((c) => [c.id, [c.primary_phone].filter(Boolean).join('')])
     );
 
     let result = invoiceData;
@@ -480,7 +480,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">
-                        {formatPhoneNumber(customer?.phone)}
+                        {formatPhoneNumber(customer?.primary_phone)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">
                         {formatThaiDate(i.due_at)}
@@ -644,8 +644,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                     const customer = customers?.find(
                       (c) => c.id === selectedInvoice.customer_id
                     );
-                    return customer?.phone
-                      ? formatPhoneNumber(customer.phone)
+                    return customer?.primary_phone
+                      ? formatPhoneNumber(customer.primary_phone)
                       : '-';
                   })()}
                 </div>

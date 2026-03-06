@@ -109,7 +109,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
   // Customer phone map
   const custPhoneMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, c.phone || ''])),
+    () => new Map((customers || []).map((c) => [c.id, c.primary_phone || ''])),
     [customers]
   );
 

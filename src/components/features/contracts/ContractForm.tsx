@@ -845,7 +845,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 options={searchedCustomers.map((c) => ({
                   value: c.id,
                   label: `${c.code} - ${c.first_name} ${c.last_name}`,
-                  description: c.phone,
+                  description: c.primary_phone,
                 }))}
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}

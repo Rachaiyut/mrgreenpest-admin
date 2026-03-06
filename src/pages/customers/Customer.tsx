@@ -2,7 +2,6 @@ import React, {
   useState,
   useRef,
   useEffect,
-  useMemo,
   useCallback,
 } from 'react';
 import { Customer } from '@/src/types/entity/customer.interface';
@@ -18,16 +17,18 @@ import {
   TrashIcon,
   ViewColumnsIcon,
   ListBulletIcon,
-  LoadingIcon, // Assumed available based on previous requests
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 
 import CustomerCardView from './CustomerCardView';
 import CustomerListView from './CustomerListView';
 import { Card } from '../../components/common/Card';
-import { AddCustomerModal } from '../../components/features/customers/AddCustomerModal';
+
+// 🟢 1. เปลี่ยน Import ตรงนี้ ใช้ CustomerModal ตัวใหม่
+import { CustomerModal } from '../../components/features/customers/CustomerModal';
+
 import { Pagination } from '../../components/common/Pagination';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
-import { EditCustomerModal } from '../../components/features/customers/EditCustomerModal';
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
 import { Input, Button, Select } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
@@ -41,10 +42,12 @@ const Customers: React.FC = () => {
 
   const [sortBy, setSortBy] = useState<string>('code');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // 🟢 2. รวบ State ของ Modal สร้าง/แก้ไข ไว้ด้วยกัน
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  
   const [isContractsModalOpen, setIsContractsModalOpen] = useState(false);
-  const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -102,10 +105,19 @@ const Customers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (customer: Customer) => {
-    setCustomerToEdit(customer);
-    setIsEditModalOpen(true);
+  // 🟢 3. ฟังก์ชันตอนกด "แก้ไข"
+  const handleEditClick = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setModalMode('edit');
+    setIsCustomerModalOpen(true);
     setOpenDropdownId(null);
+  };
+
+  // 🟢 4. ฟังก์ชันตอนกด "สร้างใหม่"
+  const handleCreateClick = () => {
+    setSelectedCustomer(null);
+    setModalMode('create');
+    setIsCustomerModalOpen(true);
   };
 
   const handleDelete = (customer: Customer) => {
@@ -114,23 +126,20 @@ const Customers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleCreateCustomer = async (customerData: Omit<Customer, 'id'>) => {
+  // 🟢 5. ฟังก์ชันสำหรับ Submit ข้อมูล (รวบ Create กับ Update ไว้ที่เดียวกัน)
+  const handleSubmitCustomer = async (data: Omit<Customer, 'id' | 'code'> | Customer) => {
     try {
-      await CustomerApi.createCustomer(customerData);
-      setIsModalOpen(false);
-      fetchCustomers();
+      if (modalMode === 'edit' && selectedCustomer) {
+        await CustomerApi.updateCustomer(selectedCustomer.id, data as Customer);
+      } else {
+        await CustomerApi.createCustomer(data);
+      }
+      setIsCustomerModalOpen(false);
+      setSelectedCustomer(null);
+      fetchCustomers(); // โหลดตารางใหม่
     } catch (error) {
-      console.error('Error creating customer:', error);
-    }
-  };
-
-  const handleUpdateCustomer = async (updatedCustomer: Customer) => {
-    try {
-      await CustomerApi.updateCustomer(updatedCustomer.id, updatedCustomer);
-      setIsEditModalOpen(false);
-      fetchCustomers();
-    } catch (error) {
-      console.error('Error updating customer:', error);
+      console.error(`Error ${modalMode} customer:`, error);
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
     }
   };
 
@@ -249,7 +258,7 @@ const Customers: React.FC = () => {
                   <ViewColumnsIcon className="h-5 w-5" />
                 </Button>
               </div>
-              <Button onClick={() => setIsModalOpen(true)} className="shrink-0 flex-1 sm:flex-none justify-center">
+              <Button onClick={handleCreateClick} className="shrink-0 flex-1 sm:flex-none justify-center">
                 <PlusIcon className="h-5 w-5 sm:mr-2" />
                  <span className="hidden sm:inline">สร้างลูกค้า</span>
                  <span className="sm:hidden">สร้าง</span>
@@ -338,7 +347,7 @@ const Customers: React.FC = () => {
                   if (action.label === 'ดูรายละเอียด') {
                     handleViewDetails(customer);
                   } else if (action.label === 'แก้ไข') {
-                    handleEdit(customer);
+                    handleEditClick(customer);
                   } else if (action.label === 'สัญญา') {
                     setSelectedCustomer(customer);
                     setIsContractsModalOpen(true);
@@ -360,22 +369,24 @@ const Customers: React.FC = () => {
         </div>
       )}
 
-      <AddCustomerModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreateCustomer={handleCreateCustomer}
+      {/* 🟢 6. เรียกใช้งาน CustomerModal แทน 2 ตัวเก่า */}
+      <CustomerModal
+        isOpen={isCustomerModalOpen}
+        mode={modalMode}
+        initialValues={selectedCustomer}
+        onClose={() => {
+          setIsCustomerModalOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onSubmit={handleSubmitCustomer}
       />
+
       <CustomerDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         customer={selectedCustomer}
       />
-      <EditCustomerModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        customer={customerToEdit}
-        onUpdateCustomer={handleUpdateCustomer}
-      />
+      
       <CustomerContractsListModal
         isOpen={isContractsModalOpen}
         onClose={() => setIsContractsModalOpen(false)}
