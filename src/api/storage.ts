@@ -11,7 +11,6 @@ class StorageService extends AuthService {
 
   async upload(data: UploadStorageDto): Promise<StorageModel> {
     const formData = new FormData();
-    formData.append('file', data.file);
     formData.append('path', data.path);
     if (data.visibility) formData.append('visibility', data.visibility);
     if (data.provider) formData.append('provider', data.provider);
@@ -19,6 +18,8 @@ class StorageService extends AuthService {
     if (data.note) formData.append('note', data.note);
     if (data.entity_type) formData.append('entity_type', data.entity_type);
     if (data.entity_id) formData.append('entity_id', data.entity_id);
+    
+    formData.append('file', data.file);
 
     const res = await this.http.post<StorageModel>(
       `${this.path}/upload`,
