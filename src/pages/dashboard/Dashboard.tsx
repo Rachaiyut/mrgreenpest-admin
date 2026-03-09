@@ -811,7 +811,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         onClose={() => setIsJobModalOpen(false)}
         mode="add"
         onSubmitJob={onCreateJob}
-        jobs={[]}
+        jobs={fieldJobs}
         users={users}
         warehouses={warehouses}
         contracts={contracts}
