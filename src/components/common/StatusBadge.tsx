@@ -1,11 +1,11 @@
 import React from 'react';
 import { Status } from '@/src/types/entity/app.interface';
-import { JobStatus } from '@/src/types/enums/job';
+import { JobMainStatus } from '@/src/types/enums/job';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { InvoiceStatus } from '@/src/types/enums/financial';
 
 interface StatusBadgeProps {
-  status: Status | JobStatus | AsessmentStatus | InvoiceStatus | string;
+  status: Status | JobMainStatus | AsessmentStatus | InvoiceStatus | string;
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
@@ -84,31 +84,27 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
 
   const displayLabel =
     statusLabels[upper] ||
-    (s === JobStatus.Pending
+    (s === JobMainStatus.PENDING
       ? Status.Pending
-      : s === JobStatus.InProgress
+      : s === JobMainStatus.IN_PROGRESS
         ? Status.InProgress
-        : s === JobStatus.Completed
+        : s === JobMainStatus.COMPLETE
           ? Status.Completed
-          : s === JobStatus.Cancelled
+          : s === JobMainStatus.CANCELLED
             ? Status.Cancelled
-            : s === JobStatus.Scheduled
-              ? Status.Scheduled
-              : s);
+            : s);
 
   const colorKey =
     statusLabels[upper] ||
-    (s === JobStatus.Pending
-      ? JobStatus.Pending
-      : s === JobStatus.InProgress
-        ? JobStatus.InProgress
-        : s === JobStatus.Completed
-          ? JobStatus.Completed
-          : s === JobStatus.Cancelled
-            ? JobStatus.Cancelled
-            : s === JobStatus.Scheduled
-              ? JobStatus.Scheduled
-              : displayLabel);
+    (s === JobMainStatus.PENDING
+      ? JobMainStatus.PENDING
+      : s === JobMainStatus.IN_PROGRESS
+        ? JobMainStatus.IN_PROGRESS
+        : s === JobMainStatus.COMPLETE
+          ? JobMainStatus.COMPLETE
+          : s === JobMainStatus.CANCELLED
+            ? JobMainStatus.CANCELLED
+            : displayLabel);
 
   return (
     <span
