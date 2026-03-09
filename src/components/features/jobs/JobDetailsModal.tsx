@@ -97,7 +97,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
       title={`รายละเอียดงาน: ${job.customerName || 'ลูกค้าไม่ระบุ'}`}
       size="5xl"
       footer={
-        <div className="flex w-full items-center justify-end bg-slate-50 -m-6 p-6 border-t border-slate-200 rounded-b-xl">
+        <div className="flex w-full items-center justify-end pt-4">
           <Button onClick={onClose} variant="primary" className="px-8">
             ปิด
           </Button>
@@ -284,47 +284,47 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         {/* Operation Details / Work Areas */}
         {((job.work_areas && job.work_areas.length > 0) ||
           job.operation_details) && (
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <SectionHeader
-              icon={<DocumentTextIcon />}
-              title="รายละเอียดการปฏิบัติงาน"
-            />
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <SectionHeader
+                icon={<DocumentTextIcon />}
+                title="รายละเอียดการปฏิบัติงาน"
+              />
 
-            {job.operation_details && (
-              <div className="mb-6">
-                <h5 className="text-sm font-medium text-slate-700 mb-2">
-                  หมายเหตุ / รายละเอียดเพิ่มเติม
-                </h5>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap">
-                  {job.operation_details}
+              {job.operation_details && (
+                <div className="mb-6">
+                  <h5 className="text-sm font-medium text-slate-700 mb-2">
+                    หมายเหตุ / รายละเอียดเพิ่มเติม
+                  </h5>
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap">
+                    {job.operation_details}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {job.work_areas && job.work_areas.length > 0 && (
-              <div>
-                <h5 className="text-sm font-medium text-slate-700 mb-3">
-                  พื้นที่และบริการที่มอบหมาย
-                </h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {job.work_areas.map((area, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
-                    >
-                      <span className="font-medium text-slate-800">
-                        {area.name}
-                      </span>
-                      <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
-                        {area.service_package}
-                      </span>
-                    </div>
-                  ))}
+              {job.work_areas && job.work_areas.length > 0 && (
+                <div>
+                  <h5 className="text-sm font-medium text-slate-700 mb-3">
+                    พื้นที่และบริการที่มอบหมาย
+                  </h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {job.work_areas.map((area, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+                      >
+                        <span className="font-medium text-slate-800">
+                          {area.name}
+                        </span>
+                        <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
+                          {area.service_package}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
       </div>
     </Modal>
   );

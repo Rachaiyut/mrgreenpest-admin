@@ -26,7 +26,7 @@ export const QuotationModal: React.FC<QuotationModalProps> = ({
     if (mode === 'edit')
       return `แก้ไขใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     if (mode === 'revise')
-      return `xiy[xi6'ใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+      return `ใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     if (mode === 'detail')
       return `รายละเอียดใบเสนอราคา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     return 'ใบเสนอราคา';

@@ -48,6 +48,8 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { QuotationApi } from '../../api/quotation';
+import { PrintApi } from '@/src/api/print';
+import Swal from 'sweetalert2';
 
 interface QuotationsPageProps {
   onCreateQuotation?: (
@@ -147,7 +149,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
   // Customer phone map
   const custPhoneMap = useMemo(
-    () => new Map((customers || []).map((c) => [c.id, c.phone || ''])),
+    () => new Map((customers || []).map((c) => [c.id, c.primary_phone || ''])),
     [customers]
   );
 
@@ -165,7 +167,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       result = result.filter((item) => {
         const phone =
           item.contact_phone ||
-          item.customer?.phone ||
+          item.customer?.primary_phone ||
           custPhoneMap.get(item.customer_id) ||
           '';
         return (
@@ -309,6 +311,43 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const handleDelete = () => {
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
+  };
+
+
+  const handleCopyPdfLink = async () => {
+    if (!selectedQuotation) return;
+
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
+      const shareLink = `${apiUrl}/print/${selectedQuotation.id}/view`;
+
+      await navigator.clipboard.writeText(shareLink);
+
+      // 2. ใช้ SweetAlert2 แทน alert แบบเดิม
+      Swal.fire({
+        title: 'คัดลอกสำเร็จ!',
+        text: 'คัดลอกลิงก์สำหรับส่งให้ลูกค้าเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#3085d6', // สีน้ำเงินตามสไตล์ปุ่มหลักของคุณ
+        timer: 2000, // ปิดอัตโนมัติใน 2 วินาที
+        timerProgressBar: true,
+      });
+
+    } catch (err) {
+      console.error('Failed to copy PDF link:', err);
+
+      // Alert กรณีเกิดข้อผิดพลาด
+      Swal.fire({
+        title: 'เกิดข้อผิดพลาด',
+        text: 'ไม่สามารถคัดลอกลิงก์ได้ กรุณาลองใหม่อีกครั้ง',
+        icon: 'error',
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#d33',
+      });
+    } finally {
+      setOpenDropdownId(null);
+    }
   };
 
   const handleStatusClick = () => {
@@ -551,7 +590,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                       (c) => c.id === q.customer_id
                     );
                     const phoneNumber =
-                      q.contact_phone || q.customer?.phone || customer?.phone;
+                      q.contact_phone || q.customer?.primary_phone || customer?.primary_phone;
                     return (
                       <tr
                         key={q.id}
@@ -604,11 +643,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
                             <Button
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                                loadingPdfId === q.id
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === q.id
                                   ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
                                   : 'bg-green-600 hover:bg-green-700 text-white'
-                              }`}
+                                }`}
                               disabled={loadingPdfId === q.id}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -618,9 +656,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 setLoadingPdfId(q.id);
                                 (async () => {
                                   try {
-                                    const blob = await QuotationApi.getPDF(
-                                      q.id
-                                    );
+                                    const blob = await PrintApi.getById(q.id);
                                     const url =
                                       window.URL.createObjectURL(blob);
                                     window.open(url, '_blank');
@@ -690,6 +726,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               ดูรายละเอียด
             </button>
             <button
+              onClick={handleCopyPdfLink}
+              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <DocumentTextIcon className="mr-3 h-5 w-5 text-slate-400" />
+              คัดลอกลิงก์ PDF
+            </button>
+            <button
               onClick={handleEdit}
               className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
             >
@@ -701,7 +744,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <DocumentTextIcon className="mr-3 h-5 w-5 text-slate-400" />
-              Revise (สร้างฉบับใหม่)
+              สร้างฉบับใหม่
             </button>
             <button
               onClick={handleStatusClick}
@@ -731,7 +774,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         assessmentId={selectedAssessmentId}
         onSubmit={handleModalSubmit}
       />
- 
+
       <ConfirmationModal
         isOpen={isStatusModalOpen}
         onClose={() => setIsStatusModalOpen(false)}
