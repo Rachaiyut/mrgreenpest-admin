@@ -832,7 +832,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                   options={filteredCustomers.map((c) => ({
                     value: c.id,
                     label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`,
-                    description: c.phone || '',
+                    description: c.primary_phone || '',
                   }))}
                   value={selectedCustomerId}
                   onChange={handleCustomerChange}
@@ -863,11 +863,11 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
                     </div>
 
                     <div className="mt-5 space-y-3">
-                      {selectedCustomerData.phone && (
+                      {selectedCustomerData.primary_phone && (
                         <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
                           <PhoneIcon className="w-4 h-4 text-slate-400" />
                           <span className="font-medium">
-                            {selectedCustomerData.phone}
+                            {selectedCustomerData.primary_phone}
                           </span>
                         </div>
                       )}

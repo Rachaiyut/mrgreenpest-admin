@@ -10,14 +10,11 @@ import React, {
 
 // ===== Types / Enums =====
 import { CategoryType } from '../../../types';
-
 import { Customer } from '../../../types/entity/customer.interface';
 import {
-  Contract,
   InstallmentPlan,
   Quotation,
 } from '../../../types/entity/financial.interface';
-
 import { ContractStatus } from '../../../types/enums/financial';
 
 // ===== Context =====
@@ -49,6 +46,64 @@ import {
   PlusIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
+
+// ===== Interfaces =====
+export interface Contract {
+  id: string;
+  code?: string;
+  quotation_id?: string;
+  customer_id: string;
+  customer_name: string;
+  service_location?: string;
+  building_type?: string;
+  service_type?: string;
+  system_used?: string;
+  contract_duration?: string;
+  service_count?: number;
+  total_amount: number;
+  vat_amount: number;
+  status: ContractStatus | any;
+  start_date: string;
+  end_date: string;
+  notes?: string;
+  created_by?: string;
+  updated_by?: string;
+  created_at?: string;
+  updated_at?: string;
+  customerId?: string;
+  quotationId?: string;
+  customerName?: string;
+  startDate?: string;
+  endDate?: string;
+  address?: string;
+  servicePackage?: string;
+
+  customer?: Customer;
+  jobs?: any[];
+  area?: ContractArea[];
+  installments?: InstallmentPlan[];
+}
+
+export interface ContractArea {
+  id?: string;
+  package_price_id?: string;
+  area_name: string;
+  building_type?: string;
+  building_type_other?: string;
+  service_system?: string;
+  service_system_other?: string;
+  area_size: number;
+  total_price: number;
+  package_price?: number | null;
+
+  category_service?: ContractAreaCategory[];
+}
+
+export interface ContractAreaCategory {
+  id?: string;
+  contract_area_id: string;
+  category_id: string;
+}
 
 export interface ContractFormProps {
   mode: 'create' | 'edit' | 'detail';
@@ -99,6 +154,9 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [fullQuotation, setFullQuotation] = useState<any>(null);
 
+  // 🟢 State สำหรับตัวเลือกการออกสัญญา (รวม/แยก)
+  const [isSeparateContract, setIsSeparateContract] = useState<boolean>(false);
+
   // Service info
   const [serviceLocation, setServiceLocation] = useState(
     initialValues?.service_location || ''
@@ -108,9 +166,9 @@ export const ContractForm: FC<ContractFormProps> = ({
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(
     initialValues?.service_type
       ? initialValues.service_type
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       : []
   );
   const [serviceType, setServiceType] = useState(
@@ -367,7 +425,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       try {
         const response = await QuotationApi.getById(selectedQuotationId);
         const fullQuotationData = (response as any).data || response;
-        
+
         setFullQuotation(fullQuotationData);
 
         if (fullQuotationData) {
@@ -421,12 +479,12 @@ export const ContractForm: FC<ContractFormProps> = ({
               setServiceCount(7);
             }
 
-           // 4. 💡 ดึงยอดรวม (Total) และ VAT จากใบเสนอราคาโดยตรง (ไม่ต้อง Loop บวกใหม่)
+            // 4. ดึงยอดรวม (Total) และ VAT จากใบเสนอราคาโดยตรง (ไม่ต้อง Loop บวกใหม่)
             const isQuotationIncludeVat = fullQuotationData.include_vat !== false;
             setIncludeVat(isQuotationIncludeVat);
 
             // ใช้ property 'total' ของ Quotation เป็นยอดสุทธิตั้งต้นเลย
-            const netTotal = Number(fullQuotationData.total) || 0; 
+            const netTotal = Number(fullQuotationData.total) || 0;
             setTotalAmount(netTotal);
 
             // 5. Installments (กระจายยอดเงินลงงวด)
@@ -440,7 +498,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
               // หาผลรวมยอดเดิมเพื่อใช้เทียบสัดส่วน (Scale)
               const oldTotalInstallment = backendInstallments.reduce((sum, i) => sum + Number(i.amount || 0), 0);
-              
+
               let accumulatedAmount = 0;
 
               const newInstallments = backendInstallments.map((inst, idx) => {
@@ -452,7 +510,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                   currentMonthOffset += monthStep;
                 }
 
-                // 💡 คำนวณ Amount ใหม่ โดยเทียบบัญญัติไตรยางศ์จากยอด netTotal
+                // คำนวณ Amount ใหม่ โดยเทียบบัญญัติไตรยางศ์จากยอด netTotal
                 let newAmount = 0;
                 if (idx === backendInstallments.length - 1) {
                   // งวดสุดท้าย เอายอดสุทธิหักลบด้วยยอดที่สะสมมา (เพื่อป้องกันเศษสตางค์ตกหล่น)
@@ -515,6 +573,30 @@ export const ContractForm: FC<ContractFormProps> = ({
     }
   }, [selectedCustomer]);
 
+  // Initialize Custom Areas for Edit Mode
+  useEffect(() => {
+    if (mode === 'edit' && initialValues?.area && initialValues.area.length > 0) {
+      const mappedAreas = initialValues.area.map((a: any, index: number) => {
+        // ดึง Service Types เดิมออกมาเป็น Array ของชื่อ (String) เพื่อให้ตรงกับ State
+        const mappedServices = a.category_service?.map((cs: any) => {
+          // รองรับทั้งกรณีที่ populate category มา หรือมีแค่ id
+          return cs.category?.name || cs.category_id;
+        }).filter(Boolean) || [];
+
+        return {
+          id: a.id || crypto.randomUUID(),
+          title: a.area_name || `พื้นที่ ${index + 1}`,
+          buildingType: a.building_type || '',
+          contractDuration: initialValues.contract_duration || '1 ปี',
+          systemUsed: a.service_system || '',
+          serviceCount: initialValues.service_count || 7,
+          selectedServiceTypes: mappedServices,
+        };
+      });
+      setCustomAreas(mappedAreas);
+    }
+  }, [mode, initialValues]);
+
   // Recalculate Installments when Total Amount changes
   useEffect(() => {
     setInstallments((prev) => {
@@ -542,7 +624,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
       const updatedList = [...prev];
       const currentInst = { ...updatedList[currentIndex] };
-      
+
       if (field === 'percentage') {
         currentInst.percentage = Number(value) || 0;
         currentInst.amount = Math.round(totalAmount * (currentInst.percentage / 100));
@@ -557,12 +639,12 @@ export const ContractForm: FC<ContractFormProps> = ({
       updatedList[currentIndex] = currentInst;
 
       const remainingInsts = updatedList.slice(currentIndex + 1);
-      
+
       if (remainingInsts.length > 0) {
         const percentUsedBefore = updatedList
           .slice(0, currentIndex + 1)
           .reduce((sum, inst) => sum + inst.percentage, 0);
-        
+
         const percentLeftToDistribute = 100 - percentUsedBefore;
         const avgPercent = percentLeftToDistribute / remainingInsts.length;
 
@@ -692,7 +774,51 @@ export const ContractForm: FC<ContractFormProps> = ({
       }
     }
 
-    // สร้าง Payload สำหรับส่งไปยัง Backend
+    // 🟢 สร้างตัวแปร finalAreas เพื่อรวมข้อมูลพื้นที่ให้พร้อมส่งเสมอ
+    let finalAreas: any[] = [];
+
+    if (selectedQuotationId && fullQuotation?.quotation_areas?.length > 0) {
+      // 1. กรณีอ้างอิงใบเสนอราคา ให้ดึงข้อมูล Area จากใบเสนอราคามาส่ง
+      finalAreas = fullQuotation.quotation_areas.map((area: any) => {
+        const categoryServices = area.category_services?.map((cs: any) => ({
+          category_id: cs.category_id || cs.category?.id,
+        })) || [];
+
+        return {
+          id: mode !== 'create' && area.id ? area.id : undefined,
+          area_name: area.area_name || '',
+          building_type: area.building_type || '',
+          service_system: area.service_system || '',
+          // ถ้าในใบเสนอราคาไม่มี service_count (อาจจะมาเป็น null) ให้ดึงค่าจาก State หลักไปใส่แทน
+          service_count: area.service_count ? String(area.service_count) : String(serviceCount),
+          area_size: Number(area.area_size) || 0,
+          total_price: Number(area.total_price) || 0,
+          category_services: categoryServices,
+        };
+      });
+    } else {
+      // 2. กรณีไม่อ้างอิงใบเสนอราคา ให้ดึงข้อมูลจาก customAreas ที่ผู้ใช้สร้างเองในฟอร์ม
+      finalAreas = customAreas.map((area) => {
+        const categoryServices = area.selectedServiceTypes.map((typeName) => {
+          const foundCat = fetchedCategories.find((c: any) => c.name === typeName);
+          return {
+            category_id: foundCat ? foundCat.id : typeName,
+          };
+        });
+
+        return {
+          id: area.id && mode !== 'create' ? area.id : undefined,
+          area_name: area.title,
+          building_type: area.buildingType,
+          service_system: area.systemUsed,
+          service_count: String(area.serviceCount),
+          area_size: 0,
+          total_price: 0,
+          category_services: categoryServices,
+        };
+      });
+    }
+
     const payload = {
       ...initialValues,
       code: contractCode,
@@ -701,7 +827,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       customer_name: selectedCustomerObj
         ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name || ''}`.trim()
         : initialValues?.customer_name &&
-            initialValues.customer_name !== 'Unknown'
+          initialValues.customer_name !== 'Unknown'
           ? initialValues.customer_name
           : 'Unknown',
       service_location: serviceLocation,
@@ -711,11 +837,16 @@ export const ContractForm: FC<ContractFormProps> = ({
       contract_duration: contractDuration,
       service_count: serviceCount,
       total_amount: totalAmount,
-      vat_amount: vatAmount, // 🟢 ส่งค่า VAT ไปด้วยเสมอ
+      vat_amount: vatAmount,
       status: status,
       start_date: startDate,
       end_date: endDate,
       notes: notes,
+
+      is_separate_contract: isSeparateContract,
+
+      areas: finalAreas,
+
       installments: installments.map((inst) => ({
         id: inst.id.length < 36 ? undefined : inst.id,
         installment_no: inst.term,
@@ -863,6 +994,44 @@ export const ContractForm: FC<ContractFormProps> = ({
               />
             </FormField>
 
+            {/* 🟢 UI สำหรับเลือกประเภทการออกสัญญา (แสดงเมื่อมีหลายพื้นที่) */}
+            {/* 🟢 UI สำหรับเลือกประเภทการออกสัญญา (แสดงเมื่อมีหลายพื้นที่ ทั้งแบบมีและไม่มีใบเสนอราคา) */}
+            {((selectedQuotationId && fullQuotation?.quotation_areas?.length > 1) ||
+              (!selectedQuotationId && customAreas.length > 1)) && (
+                <div className="col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-100 flex flex-col gap-2 mt-2">
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-800">รูปแบบการออกสัญญา</h4>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {selectedQuotationId ? 'ใบเสนอราคานี้' : 'การสร้างสัญญานี้'}มี{' '}
+                      {selectedQuotationId ? fullQuotation.quotation_areas.length : customAreas.length}{' '}
+                      พื้นที่ ต้องการออกสัญญาแบบใด?
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-6 mt-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+                      <input
+                        type="radio"
+                        name="contract_type"
+                        checked={!isSeparateContract}
+                        onChange={() => setIsSeparateContract(false)}
+                        className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                      />
+                      รวมเป็น 1 สัญญา
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
+                      <input
+                        type="radio"
+                        name="contract_type"
+                        checked={isSeparateContract}
+                        onChange={() => setIsSeparateContract(true)}
+                        className="text-blue-600 focus:ring-blue-500 w-4 h-4"
+                      />
+                      แยกสัญญาตามพื้นที่
+                    </label>
+                  </div>
+                </div>
+              )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormField label="วันที่เริ่มสัญญา" htmlFor="startDate">
                 <Input
@@ -988,12 +1157,15 @@ export const ContractForm: FC<ContractFormProps> = ({
                             <div className="text-xs text-slate-500 mb-1">
                               ระบบที่ใช้
                             </div>
+                            {/* 🟢 แก้ไข: เปลี่ยนกลับมาเป็น Badge แสดงข้อความธรรมดา */}
                             <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
                               {area.service_system === 'PREY'
                                 ? 'เหยื่อ'
                                 : area.service_system === 'CHEMICAL'
                                   ? 'สารเคมี'
-                                  : area.service_system || '-'}
+                                  : area.service_system === 'OTHER'
+                                    ? 'อื่นๆ'
+                                    : area.service_system || '-'}
                             </div>
                           </div>
                           <div>
@@ -1242,7 +1414,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         {/* Service Details - Dynamic Areas */}
         {!selectedQuotationId && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-            
+
             {/* Header + ปุ่มเพิ่มพื้นที่ */}
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1267,7 +1439,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             <div className="space-y-6">
               {customAreas.map((area) => (
                 <div key={area.id} className="border border-slate-200 rounded-lg overflow-hidden relative">
-                  
+
                   {/* Card Header ของแต่ละพื้นที่ */}
                   <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                     <div className="flex items-center gap-2">
@@ -1324,12 +1496,17 @@ export const ContractForm: FC<ContractFormProps> = ({
                         <div className="text-xs text-slate-500 mb-1">
                           ระบบที่ใช้
                         </div>
-                        <Input
+                        {/* 🟢 เปลี่ยนจาก Input เป็น Select เพื่อให้ตรงกับ Enum */}
+                        <Select
                           value={area.systemUsed}
                           onChange={(e) => handleAreaChange(area.id, 'systemUsed', e.target.value)}
-                          placeholder="เช่น เหยื่อ, เคมี"
                           className="w-full text-sm"
-                        />
+                        >
+                          <option value="">เลือกระบบ...</option>
+                          <option value="PREY">เหยื่อ (Prey)</option>
+                          <option value="CHEMICAL">สารเคมี (Chemical)</option>
+                          <option value="OTHER">อื่นๆ (Other)</option>
+                        </Select>
                       </div>
                       <div>
                         <div className="text-xs text-slate-500 mb-1">
@@ -1413,7 +1590,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                   className="text-right font-bold text-lg text-primary"
                 />
               </FormField>
-              
+
               <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
                 <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
                   <input
@@ -1470,14 +1647,14 @@ export const ContractForm: FC<ContractFormProps> = ({
               <span>
                 {startDate
                   ? new Date(startDate).toLocaleDateString('th-TH', {
-                      dateStyle: 'medium',
-                    })
+                    dateStyle: 'medium',
+                  })
                   : '-'}
                 <span className="mx-2 text-slate-400">ถึง</span>
                 {endDate
                   ? new Date(endDate).toLocaleDateString('th-TH', {
-                      dateStyle: 'medium',
-                    })
+                    dateStyle: 'medium',
+                  })
                   : '-'}
               </span>
             </div>
@@ -1561,8 +1738,8 @@ export const ContractForm: FC<ContractFormProps> = ({
                         value={
                           inst.due_date
                             ? new Date(inst.due_date)
-                                .toISOString()
-                                .substring(0, 10)
+                              .toISOString()
+                              .substring(0, 10)
                             : ''
                         }
                         onChange={(e) =>

@@ -7,6 +7,8 @@ import {
   InstallmentStatus,
 } from '../enums/financial';
 import { IBase } from './base.interface';
+import { Job } from './job.interface';
+import { ContractArea } from './contract.interface';
 
 export interface InstallmentPlan {
   id: string;
@@ -57,7 +59,7 @@ export interface Quotation {
   total: number;
   revision: number;
   original_id?: string;
-  status: QuotationStatus | Status; // Support both for backwards compatibility
+  status: QuotationStatus | Status; 
   expires_at: string;
   is_installment?: boolean;
   created_at?: string;
@@ -133,12 +135,6 @@ export interface Contract {
   quotation_id?: string;
   customer_id: string;
   customer_name: string;
-  service_location?: string;
-  building_type?: string;
-  service_type?: string;
-  system_used?: string;
-  contract_duration?: string;
-  service_count?: number;
   total_amount: number;
   vat_amount: number;
   status: ContractStatus | Status;
@@ -156,9 +152,11 @@ export interface Contract {
   endDate?: string;
   address?: string;
   servicePackage?: string;
-  installments?: InstallmentPlan[];
+
   customer?: Customer;
-  jobs?: any[];
+  jobs?: Job[];
+  area?: ContractArea[] 
+  installments?: InstallmentPlan[];
 }
 
 export interface WalletTransaction {
