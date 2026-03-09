@@ -24,9 +24,7 @@ import { Role } from '../../types/enums/role';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 // ===== Components (Features) =====
-import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
-import { EditJobModal } from '../../components/features/jobs/EditJobModal';
 import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { EditAssessmentModal } from '../../components/features/assessments/EditAssessmentModal';
@@ -77,6 +75,7 @@ import {
   ViewColumnsIcon,
   XCircleIcon,
 } from '../../assets/icons/Icons';
+import { JobModal } from '@/src/components/features/jobs/JobModal';
 
 interface JobProps {
   users: User[];
@@ -163,8 +162,8 @@ const Job: React.FC<JobProps> = ({
             const customerName =
               customer.first_name || customer.last_name
                 ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
-                    ? ` ${customer.last_name}`
-                    : ''
+                  ? ` ${customer.last_name}`
+                  : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -597,7 +596,7 @@ const Job: React.FC<JobProps> = ({
       setSelectedJob(jobs.find((j) => j.id === jobId) || null);
       setOpenDropdownId(jobId);
 
-      const threshold = 220; 
+      const threshold = 220;
       const isBottom = buttonRect.bottom > window.innerHeight - threshold;
 
       setDropdownPosition({
@@ -652,11 +651,7 @@ const Job: React.FC<JobProps> = ({
     if (status === JobStatus.Planned || status === JobStatus.Pending || status === JobStatus.InProgress) {
       actions.push({ label: 'ยกเลิกงาน', icon: XCircleIcon, onClick: () => handleCancel(selectedJob), isDanger: true });
     }
-
-    if (authUser?.role && [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role)) {
-      actions.push({ label: 'ลบงาน', icon: TrashIcon, onClick: () => handleDelete(selectedJob), isDanger: true });
-    }
-
+    
     return actions.map((action, index) => (
       <a
         key={action.label}
@@ -1161,13 +1156,65 @@ const Job: React.FC<JobProps> = ({
         </div>
       </div>
 
-      <AddJobModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} contracts={contracts} onCreateJob={onCreateJob} jobs={jobs} users={users} warehouses={warehouses} />
-      <JobDetailsModal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} job={selectedJob} assessment={selectedAssessmentForJob} warehouses={warehouses} />
-      <EditJobModal isOpen={isEditModalOpen} onClose={() => { setIsEditModalOpen(false); setJobToEdit(null); }} job={jobToEdit} onUpdateJob={onUpdateJob} jobs={jobs} users={users} warehouses={warehouses} currentUser={currentUser} />
-      <CancelJobModal isOpen={isCancelModalOpen} onClose={() => setIsCancelModalOpen(false)} job={jobToCancel} onConfirm={handleConfirmCancel} />
-      <ConfirmationModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleConfirmDelete} title="ยืนยันการลบงาน" message={jobToDelete ? `ลบงาน ${jobToDelete.customer_name}?` : 'ยืนยันการลบ?'} confirmButtonText="ลบงาน" confirmButtonClass="bg-red-600" />
-      <ServiceReportModal isOpen={isReportModalOpen} onClose={() => { setIsReportModalOpen(false); setJobForReport(null); }} job={jobForReport} finalStatus={reportFinalStatus} onSubmit={handleReportSubmit} contracts={contracts} currentUser={currentUser} products={initialProducts} jobs={jobs} />
-      <EditAssessmentModal isOpen={isEditAssessmentModalOpen} onClose={() => setIsEditAssessmentModalOpen(false)} assessment={assessmentForCheckout} onUpdateAssessment={handleAssessmentUpdateOnCheckout} products={initialProducts} packages={packages} customers={initialCustomers} categories={categories} />
+      <JobModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        mode="add"
+        onSubmitJob={onCreateJob}
+        jobs={jobs}
+        users={users}
+        warehouses={warehouses}
+        contracts={contracts}
+      />
+
+      <JobModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setJobToEdit(null); }}
+        mode="edit"
+        jobToEdit={jobToEdit}
+        onSubmitJob={onUpdateJob}
+        jobs={jobs}
+        users={users}
+        warehouses={warehouses}
+      />
+
+      <JobDetailsModal
+        isOpen={isDetailsModalOpen} 
+        onClose={() => setIsDetailsModalOpen(false)} 
+        job={selectedJob}
+        assessment={selectedAssessmentForJob} 
+        warehouses={warehouses} 
+      /
+      >
+
+      <CancelJobModal
+        isOpen={isCancelModalOpen} 
+        onClose={() => setIsCancelModalOpen(false)} 
+        job={jobToCancel}
+        onConfirm={handleConfirmCancel}
+      />
+
+      <ServiceReportModal 
+        isOpen={isReportModalOpen} 
+        onClose={() => { setIsReportModalOpen(false); setJobForReport(null); }} 
+        job={jobForReport} finalStatus={reportFinalStatus} 
+        onSubmit={handleReportSubmit} 
+        contracts={contracts} 
+        currentUser={currentUser} 
+        products={initialProducts} 
+        jobs={jobs} 
+      />
+
+      <EditAssessmentModal 
+        isOpen={isEditAssessmentModalOpen} 
+        onClose={() => setIsEditAssessmentModalOpen(false)} 
+        assessment={assessmentForCheckout}
+        onUpdateAssessment={handleAssessmentUpdateOnCheckout} 
+        products={initialProducts} 
+        packages={packages}
+        customers={initialCustomers} 
+        categories={categories} 
+      />
     </>
   );
 };

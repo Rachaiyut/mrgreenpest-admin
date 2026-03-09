@@ -221,7 +221,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                     <div key={tech.id} className="flex items-center gap-3">
                       <img
                         src={
-                          tech.avatarUrl ||
+                          tech.url ||
                           `https://ui-avatars.com/api/?name=${tech.name || 'L'}&background=0ea5e9&color=fff`
                         }
                         alt={tech.name}
@@ -257,7 +257,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                     <div key={tech.id} className="flex items-center gap-3">
                       <img
                         src={
-                          tech.avatarUrl ||
+                          tech.url ||
                           `https://ui-avatars.com/api/?name=${tech.name || 'T'}&background=random`
                         }
                         alt={tech.name}

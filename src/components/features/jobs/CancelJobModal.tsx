@@ -3,7 +3,7 @@ import { Modal } from '../../common/Modal';
 import { FormField, Textarea, Button } from '../../common/FormControls';
 import { FieldJob } from '@/src/types/entity/app.interface';
 import { JobApi } from '@/src/api';
-import { JobStatus } from '@/src/types';
+import { JobMainStatus } from '@/src/types';
 
 interface CancelJobModalProps {
   isOpen: boolean;
@@ -33,7 +33,7 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
     if (job && reason) {
       try {
         await JobApi.update(job.id, {
-          status: JobStatus.Cancelled,
+          status: JobMainStatus.CANCELLED,
           remarks: reason,
         } as any);
         onConfirm(job.id, reason);

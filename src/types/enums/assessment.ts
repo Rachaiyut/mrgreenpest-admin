@@ -4,6 +4,7 @@ export enum AsessmentStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   APPOINTMENT = 'APPOINTMENT',
   COMPLETE = 'COMPLETE',
+  CANCELLED = 'CANCELLED'
 }
 
 export enum ServiceSystem {
