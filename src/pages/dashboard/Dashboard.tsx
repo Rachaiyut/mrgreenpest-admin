@@ -12,7 +12,6 @@ import {
   ArchiveBoxIcon,
 } from '../../assets/icons/Icons';
 import { AddAssessmentModal } from '../../components/features/assessments/AddAssessmentModal';
-import { AddJobModal } from '../../components/features/jobs/AddJobModal';
 
 // Interfaces
 import { Status } from '@/src/types/entity/core.interface';
@@ -23,12 +22,14 @@ import { InvoiceStatus } from '@/src/types/enums/financial';
 import { formatThaiDateTime } from '../../utils/date';
 import { Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
+import { JobModal } from '@/src/components/features/jobs/JobModal';
 
 const SimpleAreaChart = ({
   data,
 }: {
   data: { name: string; total: number }[];
 }) => {
+  
   // Handle empty data
   if (!data || data.length === 0) {
     return (
@@ -66,9 +67,9 @@ const SimpleAreaChart = ({
   const areaPath = `
         M ${padding},${height - padding} 
         ${points
-          .split(' ')
-          .map((p) => `L ${p}`)
-          .join(' ')} 
+      .split(' ')
+      .map((p) => `L ${p}`)
+      .join(' ')} 
         L ${width - padding},${height - padding} 
         Z
     `;
@@ -162,7 +163,7 @@ const SimpleAreaChart = ({
   );
 };
 
-interface DashboardProps {}
+interface DashboardProps { }
 
 const Dashboard: React.FC<DashboardProps> = () => {
   const {
@@ -805,14 +806,15 @@ const Dashboard: React.FC<DashboardProps> = () => {
         onClose={() => setIsAssessmentModalOpen(false)}
         onCreateAssessment={onCreateAssessment}
       />
-      <AddJobModal
+      <JobModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
-        onCreateJob={onCreateJob}
+        mode="add"
+        onSubmitJob={onCreateJob}
+        jobs={[]}
+        users={users}
         warehouses={warehouses}
         contracts={contracts}
-        jobs={fieldJobs}
-        users={users}
       />
     </>
   );
