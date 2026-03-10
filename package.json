@@ -20,6 +20,7 @@
     "react-datepicker": "^9.1.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.10.1",
+    "react-signature-canvas": "1.1.0-alpha.2",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.22",
     "sweetalert2-react-content": "^5.1.1"
@@ -28,6 +29,7 @@
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@types/react-signature-canvas": "^1.0.7",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",

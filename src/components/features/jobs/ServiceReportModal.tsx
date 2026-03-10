@@ -13,7 +13,7 @@ import { QuotationStatus } from '@/src/types/enums/financial';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
-import { AssessmentApi, QuotationApi } from '@/src/api';
+import { QuotationApi } from '@/src/api';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import {
   CalendarIcon,
@@ -61,15 +61,12 @@ const ALL_SERVICE_ACTIONS = [
 
 type PestType = 'termite' | 'ant' | 'cockroach' | 'rat' | 'lizard';
 
-// 👇 เพิ่มฟังก์ชันสำหรับแปลง Path ให้เป็น Full URL
 const getFileUrl = (path: string | null | undefined): string => {
   if (!path) return '';
   if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
     return path;
   }
   
-  // ⚠️ ปรับ Base URL ตรงนี้ให้ตรงกับ URL Backend ของคุณ (ตัวอย่างใช้ 3000)
-  // ถ้าใช้ Vite สามารถใช้ import.meta.env.VITE_API_URL แทนได้
   const backendBaseUrl = (import.meta as any).env?.VITE_API_URL 
     ? (import.meta as any).env.VITE_API_URL.replace(/\/api\/?$/, '') 
     : 'http://localhost:3000';
@@ -110,10 +107,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       setSelectedFiles(Array.from(e.target.files));
     }
   };
-
-  const selectedAssessment = useMemo(() => {
-    return assessments?.find((a) => a.id === selectedAssessmentId);
-  }, [assessments, selectedAssessmentId]);
 
   const packageMapByName = useMemo(
     () =>
@@ -278,8 +271,13 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             reasons: nextReasons,
             scheduled_at: r.next_service_schedule,
           },
+          // 👇 แก้ไขการโยนค่าให้ตรงกับ Model
           ant: {
             apply_gel: d.ant_bait,
+            sprayBio: d.ant_spray_bio,
+            aroundBuilding: d.ant_around_building,
+            inShaft: d.ant_in_shaft,
+            insideBuilding: d.ant_inside_building,
             other: d.pest_other,
           },
           cockroach: {
@@ -328,10 +326,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               changeLid: { enabled: d.termite_change_lid },
               addFocusBait: { enabled: d.termite_add_focus_bait },
               injectShaft: { enabled: d.termite_inject_shaft },
-              sprayBio: { enabled: d.termite_spray_bio },
-              aroundBuilding: { enabled: d.termite_around_building },
-              inShaft: { enabled: d.termite_in_shaft },
-              insideBuilding: { enabled: d.termite_inside_building },
               other: d.termite_other,
             },
           },
@@ -353,7 +347,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           service_types: [],
           service_actions: [],
           termite: { status: 'absent' },
-          ant: { apply_gel: false },
+          ant: { apply_gel: false, sprayBio: false, aroundBuilding: false, inShaft: false, insideBuilding: false }, // ตั้งค่าเริ่มต้น
           cockroach: { apply_gel: false },
           rat: {
             glue_traps: false,
@@ -428,20 +422,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       is_op_renew: reportState.service_actions?.includes('ต่อสัญญา'),
 
-      is_op_spray:
-        reportState.termite?.actions?.sprayGarden?.enabled ||
-        reportState.termite?.actions?.sprayBio?.enabled ||
-        reportState.termite?.actions?.aroundBuilding?.enabled ||
-        reportState.termite?.actions?.insideBuilding?.enabled,
-
+      is_op_spray: reportState.service_actions?.includes('สเปรย์') || reportState.termite?.actions?.sprayGarden?.enabled,
       is_op_fogging: reportState.service_actions?.includes('พ่นหมอกควัน'),
-
       is_op_gel: reportState.ant?.apply_gel || reportState.cockroach?.apply_gel,
-
       is_op_powder: reportState.service_actions?.includes('โรยผง'),
-
       is_op_bait: reportState.rat?.bait_stations,
-
       is_op_trap:
         reportState.lizard?.place_traps ||
         reportState.rat?.glue_traps ||
@@ -459,13 +444,18 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         reportState.next_appointment?.reasons?.includes('ฉีดปลวก'),
       is_next_check:
         reportState.next_appointment?.reasons?.includes('ตรวจเช็ค'),
-      is_next_underground:
-        reportState.next_appointment?.reasons?.includes('อัดลงดิน'),
+      is_next_station: reportState.next_appointment?.reasons?.includes('ฝังสถานี'), // 👇 แก้ไขให้ส่งเป็น is_next_station
       is_next_renew:
         reportState.next_appointment?.reasons?.includes('ครบรอบบริการ'),
 
       pest_detail: {
         ant_bait: reportState.ant?.apply_gel || false,
+        // 👇 ย้ายข้อมูลจาก Termite มาไว้ Ant ให้ตรงกับ DTO
+        ant_spray_bio: reportState.ant?.sprayBio || false,
+        ant_around_building: reportState.ant?.aroundBuilding || false,
+        ant_in_shaft: reportState.ant?.inShaft || false,
+        ant_inside_building: reportState.ant?.insideBuilding || false,
+
         roach_bait: reportState.cockroach?.apply_gel || false,
         rat_glue_trap: reportState.rat?.glue_traps || false,
         rat_mechanical_trap: reportState.rat?.mechanical_traps || false,
@@ -497,10 +487,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         termite_change_lid: reportState.termite?.actions?.changeLid,
         termite_add_focus_bait: reportState.termite?.actions?.addFocusBait,
         termite_inject_shaft: reportState.termite?.actions?.injectShaft,
-        termite_spray_bio: reportState.termite?.actions?.sprayBio,
-        termite_around_building: reportState.termite?.actions?.aroundBuilding,
-        termite_in_shaft: reportState.termite?.actions?.inShaft,
-        termite_inside_building: reportState.termite?.actions?.insideBuilding,
         termite_other: reportState.termite?.actions?.other,
       },
     } as ServiceReport;
@@ -971,51 +957,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 />
                 <span>สเปรย์สวน</span>
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!reportState.termite?.actions?.sprayBio}
-                  onChange={(e) =>
-                    handleTermiteActionChange(
-                      'sprayBio',
-                      'enabled',
-                      e.target.checked
-                    )
-                  }
-                  className="rounded text-primary focus:ring-primary"
-                />
-                <span>สเปรย์น้ำยาชีวภาพ</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!reportState.termite?.actions?.aroundBuilding}
-                  onChange={(e) =>
-                    handleTermiteActionChange(
-                      'aroundBuilding',
-                      'enabled',
-                      e.target.checked
-                    )
-                  }
-                  className="rounded text-primary focus:ring-primary"
-                />
-                <span>รอบอาคาร</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!reportState.termite?.actions?.insideBuilding}
-                  onChange={(e) =>
-                    handleTermiteActionChange(
-                      'insideBuilding',
-                      'enabled',
-                      e.target.checked
-                    )
-                  }
-                  className="rounded text-primary focus:ring-primary"
-                />
-                <span>ภายในอาคาร</span>
-              </label>
             </div>
           </div>
 
@@ -1089,19 +1030,71 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     </div>
   );
 
+  // 👇 ย้าย Checkbox มด มาอยู่ที่ฟังก์ชันนี้แล้ว
   const renderAntForm = (): React.ReactElement => (
     <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-      <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
-        <input
-          type="checkbox"
-          className="w-5 h-5 text-primary rounded"
-          checked={reportState.ant?.apply_gel ?? false}
-          onChange={(e) =>
-            handlePestDataChange('ant', 'apply_gel', e.target.checked)
-          }
-        />
-        <span className="font-medium">หยอดเหยื่อ (Gel Bait)</span>
-      </label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.ant?.apply_gel ?? false}
+            onChange={(e) =>
+              handlePestDataChange('ant', 'apply_gel', e.target.checked)
+            }
+          />
+          <span className="font-medium">หยอดเหยื่อ (Gel Bait)</span>
+        </label>
+        
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.ant?.sprayBio ?? false}
+            onChange={(e) =>
+              handlePestDataChange('ant', 'sprayBio', e.target.checked)
+            }
+          />
+          <span className="font-medium">สเปรย์น้ำยาชีวภาพ</span>
+        </label>
+
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.ant?.aroundBuilding ?? false}
+            onChange={(e) =>
+              handlePestDataChange('ant', 'aroundBuilding', e.target.checked)
+            }
+          />
+          <span className="font-medium">รอบอาคาร</span>
+        </label>
+
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.ant?.inShaft ?? false}
+            onChange={(e) =>
+              handlePestDataChange('ant', 'inShaft', e.target.checked)
+            }
+          />
+          <span className="font-medium">ช่องชาร์ป</span>
+        </label>
+
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.ant?.insideBuilding ?? false}
+            onChange={(e) =>
+              handlePestDataChange('ant', 'insideBuilding', e.target.checked)
+            }
+          />
+          <span className="font-medium">ภายในอาคาร</span>
+        </label>
+      </div>
+
       <div className="pt-2">
         <label className="block text-sm font-medium text-slate-700 mb-1">
           รายละเอียดอื่นๆ
@@ -1702,7 +1695,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">เหตุผลการนัด</label>
               <div className="flex flex-wrap gap-2">
-                {['ติดตามผล', 'ครบรอบบริการ', 'ฉีดปลวก', 'วางเหยื่อ', 'ตรวจเช็ค'].map((reason) => (
+                {['ติดตามผล', 'ครบรอบบริการ', 'ฉีดปลวก', 'วางเหยื่อ', 'ตรวจเช็ค', 'ฝังสถานี'].map((reason) => (
                   <button
                     key={reason}
                     type="button"

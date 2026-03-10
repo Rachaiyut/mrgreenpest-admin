@@ -513,6 +513,25 @@ const Job: React.FC<JobProps> = ({
     setOpenDropdownId(null);
   };
 
+  const handleViewPdf = async (reportId: string) => {
+  setLoadingPdfId(reportId);
+  try {
+    // เรียก API เพื่อขอ Blob ของ PDF หรือ URL
+    const response = await ServiceReportApi.getServiceReportPdfById(reportId); 
+    
+    // ตรวจสอบว่า API ส่งมาเป็น Blob หรือ URL
+    // กรณีเป็น Blob ให้สร้าง ObjectURL เพื่อเปิดใน Tab ใหม่
+    const file = new Blob([await response.arrayBuffer()], { type: 'application/pdf' });
+    const fileURL = URL.createObjectURL(file);
+    window.open(fileURL, '_blank');
+  } catch (error) {
+    console.error('Error viewing PDF:', error);
+    alert('ไม่สามารถเปิด PDF ได้ในขณะนี้');
+  } finally {
+    setLoadingPdfId(null);
+  }
+};
+
   const handleWriteReport = async (job: FieldJob) => {
     // ซ่อน Dropdown ก่อน
     setOpenDropdownId(null);
@@ -1098,11 +1117,21 @@ const Job: React.FC<JobProps> = ({
                             <td className="px-6 py-4 whitespace-nowrap text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button
-                                  onClick={async () => { }}
+                                  onClick={() => handleViewPdf(report.id)}
                                   className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
                                   disabled={loadingPdfId === report.id}
                                 >
-                                  {loadingPdfId === report.id ? <LoadingIcon className="h-4 w-4 animate-spin" /> : <span className="flex items-center gap-1.5"><EyeIcon className="h-4 w-4" /> ดู PDF</span>}
+                                  {loadingPdfId === report.id ? (
+                                    <span className="flex items-center gap-2">
+                                      <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
+                                      <span>กำลังโหลด...</span>
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-2">
+                                      <EyeIcon className="w-3.5 h-3.5 shrink-0" />
+                                      <span>ดู PDF</span>
+                                    </span>
+                                  )}
                                 </Button>
                                 <Button
                                   onClick={() => { if (job) handleWriteReport(job); }}
