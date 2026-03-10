@@ -36,7 +36,7 @@ export const JobModal: React.FC<JobModalProps> = ({
       onClose={onClose}
       title={getTitle()}
       size="5xl"
-      footer={null} // 🌟 สำคัญ: เอา Footer ออกเพราะปุ่ม ถัดไป/ย้อนกลับ ไปอยู่ใน JobForm แล้ว
+      footer={null}
     >
       {isOpen && (
         <JobForm

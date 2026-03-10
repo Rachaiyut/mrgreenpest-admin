@@ -8,7 +8,7 @@ import {
 } from '@/src/types/entity/field-job.interface';
 
 import { Category } from '@/src/types/entity/category.interface';
-import { JobMainStatus, JobStatus, WarehouseType } from '@/src/types';
+import { JobMainStatus, JobStatus, QuotationStatus, WarehouseType } from '@/src/types';
 
 // ===== Relative Types =====
 import { Status, User, UserRole } from '../../types/entity/core.interface';
@@ -513,11 +513,36 @@ const Job: React.FC<JobProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleWriteReport = (job: FieldJob) => {
-    setJobForReport(job);
+  const handleWriteReport = async (job: FieldJob) => {
+    // ซ่อน Dropdown ก่อน
+    setOpenDropdownId(null);
+    
+    // หากงานนี้เคยมี Service Report แล้ว (เช็คจาก job.service_report.id)
+    if (job.service_report && job.service_report.id) {
+      setIsLoading(true); // เปิด Loading เผื่อ API ช้า
+      try {
+        // ไปดึงข้อมูล Service Report ฉบับเต็มจาก API
+        const fullReport = await ServiceReportApi.getById(job.service_report.id);
+        
+        // อัปเดตข้อมูล job ให้มี Service Report ฉบับเต็ม
+        const updatedJob = { ...job, service_report: fullReport };
+        
+        setJobForReport(updatedJob);
+      } catch (error) {
+        console.error('Error fetching full service report details:', error);
+        // Fallback: ถ้า API พัง ให้ใช้ข้อมูลเดิมที่มีอยู่ไปก่อน
+        setJobForReport(job); 
+      } finally {
+        setIsLoading(false); // ปิด Loading
+      }
+    } else {
+      // ถ้างาานี้ยังไม่มี Report เลย ก็ใช้ job ปกติ (ระบบจะสร้างร่างใหม่ให้)
+      setJobForReport(job);
+    }
+
+    // กำหนดสถานะและเปิด Modal
     setReportFinalStatus(job.status === JobMainStatus.COMPLETE ? JobStatus.Completed : JobStatus.Draft);
     setIsReportModalOpen(true);
-    setOpenDropdownId(null);
   };
 
   const handleCancel = (job: FieldJob) => {
@@ -526,64 +551,101 @@ const Job: React.FC<JobProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (job: FieldJob) => {
-    setJobToDelete(job);
-    setIsDeleteModalOpen(true);
-    setOpenDropdownId(null);
-  };
-
   const handleReportSubmit = async (
     jobId: string,
     reportData: ServiceReport,
     finalStatus: JobStatus,
     quotationId?: string,
-    files?: File[]
+    files?: File[],
+    paymentSlip?: File | null,
+    quotationFile?: File | null
   ) => {
     try {
       const job = jobs.find((j) => j.id === jobId);
       if (!job) return;
 
-      const payload = { ...reportData, job_id: jobId, customer_id: job.customer_id };
-      const { id, ...dataToSave } = payload;
-      let reportId: string | undefined;
+      // ตัวแปรสำหรับเก็บ ID ของไฟล์ที่อัปโหลดเสร็จแล้ว
+      let paymentSlipFileId: string | undefined;
+      let blueprintFileId: string | undefined;
+      let quotationFileId: string | undefined;
 
-      if (job.service_report && job.service_report.id) {
-        reportId = job.service_report.id;
-        await ServiceReportApi.update(job.service_report.id, dataToSave);
-      } else {
-        const newReport = await ServiceReportApi.create(dataToSave);
-        reportId = newReport.id;
-      }
-
-      if (files && files.length > 0 && reportId) {
-        await StorageApi.uploadMultiple({
-          files: files,
-          path: `service-reports/${reportId}/blueprints`,
-          entity_type: 'service_report',
-          entity_id: reportId,
+      // --- 1. อัปโหลดสลิปโอนเงิน (ถ้ามี) ---
+      if (paymentSlip) {
+        const uploadedSlip = await StorageApi.upload({
+          file: paymentSlip,
+          path: `jobs/${jobId}/payment-slips`, // ใช้ jobId เพราะยังไม่ได้สร้าง report
           provider: 'local',
           type: 'image',
           visibility: 'private',
         });
+        paymentSlipFileId = uploadedSlip.id;
       }
 
+      // --- 2. อัปโหลดรูป Blueprint (ถ้ามี) ---
+      if (files && files.length > 0) {
+        const uploadedBlueprints = await StorageApi.uploadMultiple({
+          files: files,
+          path: `jobs/${jobId}/blueprints`,
+          provider: 'local',
+          type: 'image',
+          visibility: 'private',
+        });
+        
+        // หมายเหตุ: ใน DTO ของคุณ blueprint_file_id เป็น string (ไฟล์เดียว)
+        // ถ้าอัปโหลดหลายไฟล์ อาจจะเก็บเป็น string ต่อกันด้วยลูกน้ำ หรือเก็บแค่ไฟล์แรก
+        blueprintFileId = uploadedBlueprints.map(f => f.id).join(','); 
+      }
+
+      // --- 3. อัปโหลดหลักฐานการเซ็นใบเสนอราคา (ถ้ามี) 👈 เพิ่มบล็อกนี้ ---
+      if (quotationFile) {
+        const uploadedQuotation = await StorageApi.upload({
+          file: quotationFile,
+          path: `jobs/${jobId}/quotations`,
+          provider: 'local',
+          type: 'image',
+          visibility: 'private',
+        });
+        quotationFileId = uploadedQuotation.id;
+      }
+
+      // --- 3. เตรียม Payload โดยแนบ ID ของไฟล์เข้าไปด้วย ---
+      const payload = { 
+        ...reportData, 
+        job_id: jobId, 
+        customer_id: job.customer_id,
+        payment_slip_file_id: paymentSlipFileId, // 👈 แนบสลิปเข้า DTO
+        blueprint_file_id: blueprintFileId,     // 👈 แนบ Blueprint เข้า DTO
+        quotation_file_id: quotationFileId
+      };
+
+      const { id, ...dataToSave } = payload;
+
+      // --- 4. สร้างหรืออัปเดต Service Report ---
+      if (job.service_report && job.service_report.id) {
+        await ServiceReportApi.update(job.service_report.id, dataToSave);
+      } else {
+        await ServiceReportApi.create(dataToSave as any);
+      }
+
+      // --- 5. จัดการ Quotation ---
       if (quotationId && quotationId !== job.quotation_id) {
         await JobApi.update(jobId, { quotation_id: quotationId } as any);
       }
 
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
-        if (quote && quote.status === Status.Draft) {
-          onUpdateQuotation({ ...quote, status: Status.Sent });
+        if (quote && quote.status === QuotationStatus.DRAFT) {
+          onUpdateQuotation({ ...quote, status: QuotationStatus.SENT } as any);
         }
       }
 
       fetchData();
     } catch (error) {
       console.error('Error submitting service report:', error);
+    } finally {
+      setIsReportModalOpen(false);
+      setJobForReport(null);
     }
-    setIsReportModalOpen(false);
-    setJobForReport(null);
   };
 
   const handleDropdownToggle = (event: React.MouseEvent<HTMLButtonElement>, jobId: string) => {

@@ -9,7 +9,7 @@ import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { Quotation } from '@/src/types/entity/financial.interface';
 import { JobStatus } from '@/src/types/enums/job';
-import { PaymentMethod, QuotationStatus } from '@/src/types/enums/financial';
+import { QuotationStatus } from '@/src/types/enums/financial';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
 import { Assessment } from '@/src/types';
@@ -31,7 +31,9 @@ interface ServiceReportModalProps {
     reportData: ServiceReport,
     finalStatus: JobStatus,
     quotationId?: string,
-    files?: File[]
+    files?: File[],
+    paymentSlip?: File | null,
+    quotationFile?: File | null,
   ) => void;
   finalStatus: JobStatus;
   currentUser: User;
@@ -59,6 +61,23 @@ const ALL_SERVICE_ACTIONS = [
 
 type PestType = 'termite' | 'ant' | 'cockroach' | 'rat' | 'lizard';
 
+// 👇 เพิ่มฟังก์ชันสำหรับแปลง Path ให้เป็น Full URL
+const getFileUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:')) {
+    return path;
+  }
+  
+  // ⚠️ ปรับ Base URL ตรงนี้ให้ตรงกับ URL Backend ของคุณ (ตัวอย่างใช้ 3000)
+  // ถ้าใช้ Vite สามารถใช้ import.meta.env.VITE_API_URL แทนได้
+  const backendBaseUrl = (import.meta as any).env?.VITE_API_URL 
+    ? (import.meta as any).env.VITE_API_URL.replace(/\/api\/?$/, '') 
+    : 'http://localhost:3000';
+    
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${backendBaseUrl}/${cleanPath}`;
+};
+
 export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   isOpen,
   onClose,
@@ -70,14 +89,21 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   products = [],
   jobs = [],
 }) => {
-  // เพิ่ม Type ให้รองรับ payment_amount ชั่วคราวใน Partial State
-  const [reportState, setReportState] = useState<Partial<ServiceReport & { payment_amount?: string | number }>>({});
+  const [reportState, setReportState] = useState<Partial<ServiceReport & { 
+    payment_amount?: string | number;
+    payment_slip_url?: string | null;
+    quotation_url?: string | null;
+    blueprint_url?: string | null;
+  }>>({});
+  
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
 
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
+  const [quotationFile, setQuotationFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -148,11 +174,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       nextDueTs =
         startTs +
         (nextIndex + (completedVisits >= visitsRequired ? 0 : 1)) *
-          intervalDays *
-          24 *
-          60 *
-          60 *
-          1000;
+        intervalDays *
+        24 *
+        60 *
+        60 *
+        1000;
       const endTs = new Date(c.end_date).getTime();
       if (nextDueTs > endTs) nextDueTs = null;
     }
@@ -192,10 +218,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   useEffect(() => {
     if (isOpen && job) {
-      let initialReport: Partial<ServiceReport & { payment_amount?: string | number }>;
+      let initialReport: Partial<ServiceReport & { payment_amount?: string | number, payment_slip_url?: string, quotation_url?: string, blueprint_url?: string }>;
 
       if (job.service_report) {
-        const r = job.service_report as any;
+        const r = (job.service_report as any).data || (job.service_report as any);
         const d = r.service_report_pest_detail || {};
 
         const types: string[] = [];
@@ -238,8 +264,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         initialReport = {
           ...r,
-          payment_amount: r.payment_amount || job?.invoice?.total || '', // ดึงยอดมาเป็นค่าตั้งต้น
+          payment_amount: r.payment_amount || job?.invoice?.total || '', 
           quotation_id: r.quotation_id,
+          payment_slip_url: r.payment_slip_url || null,
+          quotation_url: r.quotation_url || null,
+          blueprint_url: r.blueprint_url || null,
           service_types: types,
           service_actions: actions,
           check_in_time: r.time_in,
@@ -310,12 +339,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       } else {
         initialReport = {
           created_at: new Date().toISOString().substring(0, 10),
-          payment_amount: job?.invoice?.total || '', // ดึงยอดจาก invoice กรณีสร้างใหม่
+          payment_amount: job?.invoice?.total || '', 
           check_in_time: job.actual_start_time
             ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              hour: '2-digit',
+              minute: '2-digit',
+            })
             : '',
           check_out_time: new Date().toLocaleTimeString('th-TH', {
             hour: '2-digit',
@@ -362,7 +391,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       status: nextStatus,
       job_id: job.id,
       customer_id: job.customer_id,
-      payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0, // แนบข้อมูล payment_amount ลง payload
+      payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0, 
       report_date: new Date().toISOString(),
       customer_name: (job as any).customerName || (job as any).customer_name,
 
@@ -480,7 +509,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       finalReportData,
       finalStatus,
       reportState.quotation_id,
-      selectedFiles
+      selectedFiles,
+      paymentSlip || null,
+      quotationFile || null
     );
   };
 
@@ -494,7 +525,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       finalReportData,
       finalStatus,
       reportState.quotation_id,
-      selectedFiles
+      selectedFiles,
+      paymentSlip,
     );
   };
 
@@ -1303,12 +1335,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               <dd className="font-semibold text-slate-900">
                 {job.technicians.length > 0
                   ? job.technicians
-                      .map(
-                        (t) =>
-                          t.name ||
-                          (t as any).first_name + ' ' + (t as any).last_name
-                      )
-                      .join(', ')
+                    .map(
+                      (t) =>
+                        t.name ||
+                        (t as any).first_name + ' ' + (t as any).last_name
+                    )
+                    .join(', ')
                   : 'ไม่มีช่างเทคนิค'}
               </dd>
             </div>
@@ -1316,180 +1348,254 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </div>
 
         {/* Reference Document Section */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1.5 bg-white rounded-lg shadow-sm text-blue-600">
-                <DocumentIcon className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
+              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-blue-600 shadow-sm">
+                <DocumentIcon className="w-4 h-4" />
               </div>
               เอกสารอ้างอิง
             </h3>
           </div>
-          <div className="p-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              ใบเสนอราคา (Quotation)
-            </label>
-            <SearchableSelect
-              value={reportState.quotation_id || ''}
-              onChange={(value) =>
-                setReportState((prev) => ({ ...prev, quotation_id: value }))
-              }
-              onSearchChange={handleQuotationSearch}
-              options={quotations.map((q) => ({
-                value: q.id,
-                label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`,
-              }))}
-              placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
-              className="w-full"
-            />
+          <div className="p-6 flex flex-col gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                ใบเสนอราคา
+              </label>
+              <SearchableSelect
+                value={reportState.quotation_id || ''}
+                onChange={(value) =>
+                  setReportState((prev) => ({ ...prev, quotation_id: value }))
+                }
+                onSearchChange={handleQuotationSearch}
+                options={quotations.map((q) => ({
+                  value: q.id,
+                  label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`,
+                }))}
+                placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                แนบหลักฐานการเซ็นใบเสนอราคา
+              </label>
+              {!quotationFile && !reportState.quotation_url ? (
+                <label
+                  htmlFor="quotation-file-upload"
+                  className="flex flex-col items-center justify-center w-full px-4 py-8 border-2 border-slate-200 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-blue-50/30 hover:border-blue-400 transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-blue-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <div className="text-center">
+                      <span className="text-sm font-medium">คลิกเพื่ออัปโหลดไฟล์/รูปภาพ</span>
+                      <p className="text-xs text-slate-400 mt-1">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
+                    </div>
+                  </div>
+                  <input
+                    id="quotation-file-upload"
+                    type="file"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setQuotationFile(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+              ) : (
+                <div className="flex items-center justify-between p-3.5 bg-white border border-slate-200 shadow-sm rounded-lg">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-md shrink-0">
+                      <DocumentIcon className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col truncate">
+                      {quotationFile ? (
+                        <>
+                          <span className="text-sm font-medium text-slate-700 truncate">{quotationFile.name}</span>
+                          <span className="text-xs text-slate-500">
+                            {(quotationFile.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </>
+                      ) : (
+                        <a href={getFileUrl(reportState.quotation_url)} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline truncate">
+                          ดูไฟล์หลักฐานเดิมที่แนบไว้
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuotationFile(null);
+                      setReportState(prev => ({ ...prev, quotation_url: null, quotation_file_id: null }));
+                    }}
+                    className="shrink-0 ml-3 text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors focus:outline-none"
+                    title="ลบไฟล์"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Payment Info Section */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden ring-1 ring-slate-100">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1.5 bg-white rounded-lg shadow-sm text-green-600">
-                <CreditCardIcon className="w-5 h-5" />
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
+              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-green-600 shadow-sm">
+                <CreditCardIcon className="w-4 h-4" />
               </div>
               ข้อมูลการชำระเงิน
             </h3>
           </div>
-
           <div className="p-6">
-            <div className="flex flex-col md:flex-row gap-8 items-stretch">
-              {/* Invoice Details */}
-              {job.invoice ? (
-                <div className="flex-1 w-full relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-white rounded-2xl transform transition-transform group-hover:scale-[1.01] duration-300 border border-green-100 shadow-sm"></div>
-                  <div className="relative p-5 space-y-5">
-                    <div className="flex items-center justify-between border-b border-green-100 pb-3">
-                      <span className="text-green-700 font-medium">
-                        เลขที่ใบแจ้งหนี้
-                      </span>
-                      <span className="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-bold shadow-sm tracking-wide">
-                        {job.invoice.code}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="text-green-600 text-sm mb-1">
-                        ยอดชำระสุทธิ
-                      </div>
-                      <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-primary tracking-tight leading-none">
-                          {job.invoice.total?.toLocaleString()}
-                        </span>
-                        <span className="text-base font-medium text-green-700 pb-0.5">
-                          บาท
-                        </span>
-                      </div>
-                    </div>
-
-                    {job.invoice.term && (
-                      <div className="pt-2 flex items-center justify-between bg-green-50/50 rounded-lg p-2 border border-green-100">
-                        <span className="text-sm font-medium text-green-700">
-                          งวดการชำระ
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-white text-green-700 text-sm font-bold border border-green-200 shadow-sm">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                          งวดที่ {job.invoice.term}{' '}
-                          {job.invoice.installment_id ? '(ผ่อนชำระ)' : ''}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="flex-1 bg-green-50/50 rounded-2xl p-8 border-2 border-dashed border-green-200 flex flex-col items-center justify-center text-green-400 w-full min-h-[160px] gap-2">
-                  <CreditCardIcon className="w-8 h-8 opacity-20" />
-                  <span className="text-sm font-medium">
-                    ไม่มีข้อมูลใบแจ้งหนี้
-                  </span>
-                </div>
-              )}
-
-              {/* Payment Action */}
-              <div className="flex-1 w-full flex flex-col justify-center">
-                <label className="block text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  ช่องทางการชำระเงิน{' '}
-                  <span className="text-slate-400 font-normal text-sm">
-                    (รับเงินหน้างาน)
-                  </span>
-                </label>
-
-                <div className="space-y-4">
-                  {/* 1. เลือกช่องทางการชำระเงิน */}
-                  <div className="relative">
-                    <Select
-                      value={reportState.payment_condition || ''}
-                      onChange={(e) => {
-                        const condition = e.target.value;
-                        setReportState((prev) => ({
-                          ...prev,
-                          payment_condition: condition as any,
-                          // เติมยอดเงินให้อัตโนมัติถ้าเลือกช่องทางชำระเงินแล้วช่องเงินยังว่างอยู่
-                          payment_amount: condition && !prev.payment_amount && job.invoice 
-                            ? job.invoice.total 
-                            : (condition ? prev.payment_amount : ''),
-                          payment_installment_count:
-                            job.invoice?.term || prev.payment_installment_count,
-                        }));
-                      }}
-                      className="h-12 text-base w-full pl-4 pr-10 bg-white border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium text-slate-900"
-                    >
-                      <option value="">ยังไม่ได้รับชำระ / วางบิล</option>
-                      <option value="CASH">เงินสด</option>
-                      <option value="TRANSFER">โอนเงิน</option>
-                      <option value="CREDIT_CARD">บัตรเครดิต</option>
-                      <option value="CHEQUE">เช็ค</option>
-                    </Select>
-                  </div>
-
-                  {/* 2. ช่องกรอกจำนวนเงิน (แสดงเมื่อมีการเลือกช่องทางชำระเงิน) */}
-                  <div
-                    className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                      reportState.payment_condition ? 'max-h-24 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'
-                    }`}
-                  >
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      จำนวนเงินที่รับ (บาท)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="ระบุจำนวนเงิน..."
-                      value={reportState.payment_amount || ''}
-                      onChange={(e) =>
-                        setReportState((prev) => ({
-                          ...prev,
-                          payment_amount: e.target.value,
-                        }))
-                      }
-                      className="h-12 text-base font-semibold text-green-700"
-                    />
-                  </div>
-
-                  {/* 3. กล่องข้อความยืนยัน */}
-                  <div
-                    className={`transition-all duration-500 ease-in-out overflow-hidden ${
-                      reportState.payment_condition && reportState.payment_amount ? 'max-h-20 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-2'
-                    }`}
-                  >
-                    <div className="bg-green-50/80 border border-green-100 rounded-xl p-3 flex items-center gap-3 text-green-800">
-                      <div className="bg-white p-1.5 rounded-full shadow-sm">
-                        <CheckCircleIcon className="w-5 h-5 text-green-500" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex flex-col">
+                {job.invoice ? (
+                  <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm h-full flex flex-col justify-center">
+                    <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl"></div>
+                    <div className="relative z-10 flex flex-col gap-6">
+                      <div className="flex items-center justify-between border-b border-green-200/60 pb-4">
+                        <span className="text-green-800/80 font-medium text-sm">เลขที่ใบแจ้งหนี้</span>
+                        <span className="bg-white text-green-700 px-3 py-1 rounded-md text-sm font-semibold shadow-sm border border-green-100">{job.invoice.code}</span>
                       </div>
                       <div>
-                        <p className="text-sm font-bold">
-                          พร้อมบันทึกการรับชำระเงิน
-                        </p>
-                        <p className="text-xs text-green-600">
-                          ยอดเงินจะถูกอัปเดตเข้าระบบเมื่อบันทึกรายงาน
-                        </p>
+                        <p className="text-green-700/80 text-sm mb-1.5 font-medium">ยอดชำระสุทธิ</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-bold text-green-700 tracking-tight">{job.invoice.total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-green-700 font-medium">บาท</span>
+                        </div>
                       </div>
+                      {job.invoice.term && (
+                        <div className="mt-2 inline-flex items-center gap-2 bg-white/60 rounded-lg px-3 py-2 border border-green-100 w-fit">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          <span className="text-sm font-semibold text-green-800">งวดที่ {job.invoice.term} {job.invoice.installment_id ? '(ผ่อนชำระ)' : ''}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
+                ) : (
+                  <div className="bg-slate-50 rounded-2xl p-8 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 h-full min-h-[200px]">
+                    <CreditCardIcon className="w-8 h-8 mb-2 opacity-50" />
+                    <span className="text-sm font-medium">ไม่มีข้อมูลใบแจ้งหนี้</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-4">
+                  <label className="text-sm font-bold text-slate-800">ช่องทางการชำระเงิน</label>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">(รับเงินหน้างาน)</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Select
+                    value={reportState.payment_condition || ''}
+                    onChange={(e) => {
+                      const condition = e.target.value;
+                      setReportState((prev) => ({
+                        ...prev,
+                        payment_condition: condition as any,
+                        payment_amount: condition && !prev.payment_amount && job.invoice ? job.invoice.total : (condition ? prev.payment_amount : ''),
+                        payment_installment_count: job.invoice?.term || prev.payment_installment_count,
+                      }));
+                    }}
+                    className="w-full text-sm border-slate-200 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500/20"
+                  >
+                    <option value="">-- ยังไม่ได้รับชำระ / วางบิล --</option>
+                    <option value="CASH">เงินสด</option>
+                    <option value="TRANSFER">โอนเงิน</option>
+                    <option value="CREDIT_CARD">บัตรเครดิต</option>
+                    <option value="CHEQUE">เช็ค</option>
+                  </Select>
+
+                  {reportState.payment_condition && (
+                    <div className="flex flex-col gap-5 animate-in fade-in duration-300">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวนเงินที่รับ (บาท)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={reportState.payment_amount || ''}
+                          onChange={(e) => setReportState((prev) => ({ ...prev, payment_amount: e.target.value }))}
+                          className="w-full pl-4 pr-12 text-lg font-semibold text-green-700 border-slate-200 rounded-lg focus:border-green-500 focus:ring-green-500/20"
+                        />
+                      </div>
+
+                      {reportState.payment_condition === 'TRANSFER' && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">แนบสลิปโอนเงิน</label>
+                          {!paymentSlip && !reportState.payment_slip_url ? (
+                            <label
+                              htmlFor="payment-slip-upload"
+                              className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-green-200 border-dashed rounded-lg cursor-pointer bg-green-50/30 hover:bg-green-50/80 hover:border-green-400 transition-all duration-200 group"
+                            >
+                              <div className="flex flex-col items-center gap-2 text-green-600/60 group-hover:text-green-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                <div className="text-center">
+                                  <span className="text-sm font-medium">คลิกเพื่ออัปโหลดสลิป</span>
+                                  <p className="text-xs text-green-600/50 mt-1">รองรับไฟล์รูปภาพ JPG, PNG</p>
+                                </div>
+                              </div>
+                              <input
+                                id="payment-slip-upload"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    setPaymentSlip(e.target.files[0]);
+                                  }
+                                }}
+                              />
+                            </label>
+                          ) : (
+                            <div className="relative inline-block w-fit border border-slate-200 rounded-xl overflow-hidden shadow-sm group">
+                               <img 
+                                  src={paymentSlip ? URL.createObjectURL(paymentSlip) : getFileUrl(reportState.payment_slip_url)} 
+                                  alt="Payment Slip" 
+                                  className="max-h-64 w-auto object-contain bg-slate-50"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x600/f8fafc/94a3b8?text=Image+Not+Found';
+                                  }}
+                               />
+                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPaymentSlip(null);
+                                      setReportState(prev => ({ ...prev, payment_slip_url: null, payment_slip_file_id: null }));
+                                    }}
+                                    className="px-3 py-1.5 bg-white text-red-500 rounded-lg text-sm font-semibold hover:bg-red-50 shadow-sm flex items-center gap-2 transform scale-95 group-hover:scale-100 transition-transform"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    ลบสลิป
+                                  </button>
+                               </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {reportState.payment_amount && (
+                        <div className="flex items-center gap-2 text-xs font-medium text-green-600 bg-green-50/50 px-3 py-2 rounded-md border border-green-100">
+                          <CheckCircleIcon className="w-4 h-4" />
+                          <span>พร้อมบันทึกยอดเงินจำนวน {Number(reportState.payment_amount).toLocaleString()} บาท เข้าระบบ</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1504,26 +1610,21 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               ผลการสำรวจและดำเนินการ
             </h3>
           </div>
-
-          {/* Tabs Header */}
           <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
             {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
               <button
                 key={pest}
                 type="button"
                 onClick={() => setActivePestTab(pest)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                  activePestTab === pest
-                    ? 'bg-primary text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${activePestTab === pest
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
               >
                 {pestRenderConfig[pest].label}
               </button>
             ))}
           </div>
-
-          {/* Tab Content */}
           <div className="p-6 bg-slate-50/50 min-h-[300px]">
             {pestRenderConfig[activePestTab].render()}
           </div>
@@ -1532,15 +1633,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         {/* Global Service Checkboxes (Types & Actions) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-800 mb-3">
-              ประเภทบริการรวม
-            </h4>
+            <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการรวม</h4>
             <div className="grid grid-cols-2 gap-y-2">
               {ALL_SERVICE_TYPES.map((type) => (
-                <label
-                  key={type}
-                  className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors"
-                >
+                <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
                     type="checkbox"
                     className="rounded text-primary focus:ring-primary"
@@ -1553,22 +1649,15 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </div>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-800 mb-3">
-              การดำเนินการรวม
-            </h4>
+            <h4 className="font-semibold text-slate-800 mb-3">การดำเนินการรวม</h4>
             <div className="grid grid-cols-2 gap-y-2">
               {ALL_SERVICE_ACTIONS.map((action) => (
-                <label
-                  key={action}
-                  className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors"
-                >
+                <label key={action} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
                     type="checkbox"
                     className="rounded text-primary focus:ring-primary"
                     checked={reportState.service_actions?.includes(action)}
-                    onChange={() =>
-                      handleMultiSelect('service_actions', action)
-                    }
+                    onChange={() => handleMultiSelect('service_actions', action)}
                   />
                   <span>{action}</span>
                 </label>
@@ -1585,44 +1674,24 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                วันนัดหมาย
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">วันนัดหมาย</label>
               <div className="flex gap-2">
                 <Input
                   type="date"
                   className="flex-1"
-                  value={
-                    reportState.next_appointment?.scheduled_at
-                      ? reportState.next_appointment.scheduled_at.substring(
-                          0,
-                          10
-                        )
-                      : ''
-                  }
+                  value={reportState.next_appointment?.scheduled_at ? reportState.next_appointment.scheduled_at.substring(0, 10) : ''}
                   onChange={(e) =>
                     setReportState((prev) => ({
                       ...prev,
                       next_appointment: {
-                        ...(prev.next_appointment || {
-                          notes: '',
-                          reasons: [],
-                        }),
-                        scheduled_at: e.target.value
-                          ? new Date(e.target.value).toISOString()
-                          : undefined,
+                        ...(prev.next_appointment || { notes: '', reasons: [] }),
+                        scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : undefined,
                       },
                     }))
                   }
                 />
-                <Select
-                  onChange={handleDateCalculation}
-                  className="w-1/3 text-sm"
-                  defaultValue=""
-                >
-                  <option value="" disabled>
-                    + เพิ่มวัน
-                  </option>
+                <Select onChange={handleDateCalculation} className="w-1/3 text-sm" defaultValue="">
+                  <option value="" disabled>+ เพิ่มวัน</option>
                   <option value="30">30 วัน</option>
                   <option value="60">60 วัน</option>
                   <option value="90">90 วัน</option>
@@ -1631,28 +1700,17 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                เหตุผลการนัด
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">เหตุผลการนัด</label>
               <div className="flex flex-wrap gap-2">
-                {[
-                  'ติดตามผล',
-                  'ครบรอบบริการ',
-                  'ฉีดปลวก',
-                  'วางเหยื่อ',
-                  'ตรวจเช็ค',
-                ].map((reason) => (
+                {['ติดตามผล', 'ครบรอบบริการ', 'ฉีดปลวก', 'วางเหยื่อ', 'ตรวจเช็ค'].map((reason) => (
                   <button
                     key={reason}
                     type="button"
-                    onClick={() =>
-                      handleMultiSelect('next_appointment_reasons', reason)
-                    }
-                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
-                      reportState.next_appointment?.reasons?.includes(reason)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
-                    }`}
+                    onClick={() => handleMultiSelect('next_appointment_reasons', reason)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${reportState.next_appointment?.reasons?.includes(reason)
+                      ? 'bg-primary text-white border-primary'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary'
+                      }`}
                   >
                     {reason}
                   </button>
@@ -1660,9 +1718,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               </div>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                หมายเหตุการนัด
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">หมายเหตุการนัด</label>
               <Input
                 type="text"
                 value={reportState.next_appointment?.notes || ''}
@@ -1694,25 +1750,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors"
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <svg
-                    className="w-8 h-8 mb-4 text-slate-500"
-                    aria-hidden="true"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 20 16"
-                  >
-                    <path
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
-                    />
+                  <svg className="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
                   </svg>
-                  <p className="mb-2 text-sm text-slate-500">
-                    <span className="font-semibold">คลิกเพื่ออัพโหลด</span>{' '}
-                    หรือลากไฟล์มาวาง
-                  </p>
+                  <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">คลิกเพื่ออัพโหลด</span> หรือลากไฟล์มาวาง</p>
                   <p className="text-xs text-slate-500">PNG, JPG (MAX. 10MB)</p>
                 </div>
                 <input
@@ -1725,33 +1766,67 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 />
               </label>
             </div>
-            {selectedFiles.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-slate-700">
-                  ไฟล์ที่เลือก ({selectedFiles.length})
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedFiles.map((file, index) => (
-                    <div
-                      key={index}
-                      className="px-3 py-1 bg-slate-100 rounded-full text-xs text-slate-600 flex items-center gap-2"
-                    >
-                      <span className="truncate max-w-[150px]">
-                        {file.name}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedFiles((prev) =>
-                            prev.filter((_, i) => i !== index)
-                          )
-                        }
-                        className="text-slate-400 hover:text-red-500"
-                      >
-                        &times;
-                      </button>
+            
+            {/* 👇 5. แสดงรูปภาพ Blueprint เดิมที่มีในระบบ หรือที่อัปโหลดใหม่ */}
+            {(selectedFiles.length > 0 || reportState.blueprint_url) && (
+              <div className="space-y-3 pt-2">
+                <p className="text-sm font-medium text-slate-700">รูปภาพที่แนบ</p>
+                <div className="flex flex-wrap gap-4">
+                  
+                  {/* แสดงรูปภาพ Blueprint เดิม (ถ้ามี) โดยรองรับกรณีมีหลาย URL คั่นด้วยลูกน้ำ */}
+                  {reportState.blueprint_url && reportState.blueprint_url.split(',').filter(url => url.trim() !== '').map((url, idx) => (
+                    <div key={`old-img-${idx}`} className="relative w-28 h-28 rounded-xl border border-slate-200 overflow-hidden shadow-sm group bg-slate-50">
+                      <img 
+                         src={getFileUrl(url.trim())} 
+                         alt={`blueprint-old-${idx}`} 
+                         className="w-full h-full object-cover" 
+                         onError={(e) => {
+                           // กรณีรูปโหลดไม่ได้ จะโชว์รูป placeholder แทนไอคอนแตกๆ
+                           (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f8fafc/94a3b8?text=Not+Found';
+                         }}
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newUrls = reportState.blueprint_url!.split(',').filter((_, i) => i !== idx).join(',');
+                            setReportState(prev => ({ ...prev, blueprint_url: newUrls || null }));
+                          }}
+                          className="p-2 bg-white text-red-500 rounded-lg hover:bg-red-50 transform scale-95 group-hover:scale-100 transition-all"
+                          title="ลบรูปภาพนี้"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   ))}
+
+                  {/* แสดงรายการไฟล์ใหม่ที่กำลังจะอัปโหลด */}
+                  {selectedFiles.map((file, index) => {
+                    const objectUrl = URL.createObjectURL(file);
+                    return (
+                      <div key={`new-img-${index}`} className="relative w-28 h-28 rounded-xl border-2 border-blue-400 border-dashed overflow-hidden shadow-sm group bg-blue-50/30">
+                        <img src={objectUrl} alt={`blueprint-new-${index}`} className="w-full h-full object-cover" />
+                        <div className="absolute top-1 left-1 bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow-sm">
+                          ใหม่
+                        </div>
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFiles((prev) => prev.filter((_, i) => i !== index))}
+                            className="p-2 bg-white text-red-500 rounded-lg hover:bg-red-50 transform scale-95 group-hover:scale-100 transition-all"
+                            title="ยกเลิกรูปภาพนี้"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -1760,15 +1835,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Additional Notes */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-md font-bold text-slate-800 mb-4">
-            หมายเหตุเพิ่มเติม (Internal Note)
-          </h3>
+          <h3 className="text-md font-bold text-slate-800 mb-4">หมายเหตุเพิ่มเติม (Internal Note)</h3>
           <Textarea
             rows={3}
             value={reportState.notes || ''}
-            onChange={(e) =>
-              setReportState((prev) => ({ ...prev, notes: e.target.value }))
-            }
+            onChange={(e) => setReportState((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="บันทึกข้อความถึงทีมงาน..."
           />
         </div>
