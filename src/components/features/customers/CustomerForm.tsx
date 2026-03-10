@@ -124,7 +124,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement>,
     fieldName: string
   ) => {
-    const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+    const value = e.target.value.slice(0, 20);
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
@@ -141,7 +141,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   // 🟢 ฟังก์ชันกรองเฉพาะตัวเลข และจำกัด 10 หลัก (สำหรับเบอร์สำรอง)
   const handleAdditionalPhoneChange = (index: number, value: string) => {
     const newPhones = [...additionalPhones];
-    newPhones[index] = value.replace(/[^0-9]/g, '').slice(0, 10);
+    newPhones[index] = value.slice(0, 20);
     setAdditionalPhones(newPhones);
   };
 
@@ -353,12 +353,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           <FormField label="เบอร์โทรศัพท์ (หลัก)" htmlFor="primaryPhone">
             <Input 
               name="primaryPhone" 
-              type="tel" 
+              type="text" 
               value={formData.primaryPhone || ''} 
               onChange={(e) => handlePhoneChange(e, 'primaryPhone')} 
               required 
-              pattern="[0-9]{9,10}" 
-              maxLength={10} 
+              maxLength={20} 
               className="font-mono" 
               placeholder="08xxxxxxxx"
             />
@@ -366,11 +365,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           <FormField label="เบอร์มือถือ" htmlFor="mobilePhone">
             <Input 
               name="mobilePhone" 
-              type="tel" 
+              type="text" 
               value={formData.mobilePhone || ''} 
               onChange={(e) => handlePhoneChange(e, 'mobilePhone')} 
-              pattern="[0-9]{9,10}" 
-              maxLength={10} 
+              maxLength={20} 
               className="font-mono" 
               placeholder="08xxxxxxxx"
             />
@@ -420,12 +418,11 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 <div key={index} className="flex items-center gap-3">
                   <div className="flex-1 relative">
                     <Input
-                      type="tel"
+                      type="text"
                       value={phone}
                       onChange={(e) => handleAdditionalPhoneChange(index, e.target.value)}
                       placeholder="ระบุเบอร์โทรศัพท์สำรอง..."
-                      pattern="[0-9]{9,10}"
-                      maxLength={10}
+                      maxLength={20}
                       className="w-full pl-10 font-mono bg-white" 
                     />
                   </div>
@@ -522,22 +519,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         </div>
 
         <FormField label="ลิงก์แผนที่ (Google Map)" htmlFor="googleMapLink">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-            </div>
-            <Input
-              id="googleMapLink"
-              name="googleMapLink"
-              type="url"
-              value={formData.googleMapLink || ''}
-              onChange={handleChange}
-              placeholder="https://maps.app.goo.gl/..."
-              className="pl-10"
-            />
-          </div>
+          <Input
+            id="googleMapLink"
+            name="googleMapLink"
+            type="url"
+            value={formData.googleMapLink || ''}
+            onChange={handleChange}
+            placeholder="https://maps.app.goo.gl/..."
+            className="pl-10"
+            required
+          />
         </FormField>
       </div>
     </form>

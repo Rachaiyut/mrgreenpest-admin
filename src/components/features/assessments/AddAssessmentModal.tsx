@@ -654,7 +654,7 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                       label="ค้นหาลูกค้า *"
                       options={(customers || []).map((c) => ({
                         value: c.id,
-                        label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.phone}`,
+                        label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.primary_phone}`,
                         description: `${c.address_house_no} ${c.sub_district} ${c.district} ${c.province}`,
                       }))}
                       value={formData.customer_id || ''}
@@ -686,11 +686,11 @@ export const AddAssessmentModal: FC<AddAssessmentModalProps> = ({
                         </div>
                       </div>
                       <div className="mt-5 space-y-3">
-                        {selectedCustomerData.phone && (
+                        {selectedCustomerData.primary_phone && (
                           <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
                             <PhoneIcon className="w-4 h-4 text-slate-400" />
                             <span className="font-medium">
-                              {selectedCustomerData.phone}
+                              {selectedCustomerData.primary_phone}
                             </span>
                           </div>
                         )}

@@ -1,5 +1,3 @@
-// src/components/features/jobs/JobForm.tsx
-
 // ===== React =====
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -8,7 +6,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
 // ===== Types / Enums =====
-import { AsessmentStatus, Role, ServiceSystem, WarehouseType } from '@/src/types';
+import { AsessmentStatus, CategoryType, Role, ServiceSystem, WarehouseType } from '@/src/types';
 import { JobMainStatus } from '@/src/types/enums/job';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Job } from '@/src/types/entity/job.interface';
@@ -16,10 +14,14 @@ import { Contract, Invoice } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { Assessment } from '@/src/types/entity/app.interface';
+import { Category } from '@/src/types/entity/category.interface';
+import { Product } from '@/src/types/entity/product.interface';
+import { Package } from '@/src/types/entity/package.interface';
 
 // ===== Components =====
 import { FormField, Input, Select, Textarea, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { WorkAreaForm } from '../assessments/WorkAreaForm';
 
 // ===== API =====
 import {
@@ -29,6 +31,9 @@ import {
   InvoiceApi,
   UserApi,
   WarehouseApi,
+  CategoryApi,
+  ProductApi,
+  PackageApi
 } from '@/src/api';
 
 // ===== Assets =====
@@ -40,65 +45,9 @@ import {
   DocumentIcon,
   MapPinIcon,
   PhoneIcon,
-  RefreshIcon,
   TruckIcon,
   UserIcon,
 } from '../../../assets/icons/Icons';
-
-const JobWorkAreaForm: React.FC<{
-  area: any;
-  index: number;
-  onAreaChange: (index: number, updatedArea: Partial<Job>) => void;
-  onClearArea: (index: number) => void;
-  isReadOnly: boolean;
-}> = ({ area, index, onAreaChange, onClearArea, isReadOnly }) => {
-  const handleFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    onAreaChange(index, { ...area, [name]: value });
-  };
-
-  return (
-    <div className="border border-slate-200 p-4 rounded-lg space-y-4 bg-white shadow-sm relative transition-all hover:shadow-md">
-      <div className="absolute -top-3 left-3 bg-slate-100 px-2 text-xs font-semibold text-slate-500 rounded-full border border-slate-200">
-        พื้นที่ #{index + 1}
-      </div>
-      {!isReadOnly && (
-        <button
-          type="button"
-          onClick={() => onClearArea(index)}
-          className="absolute top-2 right-2 flex items-center gap-1 text-slate-400 hover:text-red-500 py-1 px-2 rounded-md hover:bg-red-50 text-xs transition-colors"
-          title="ล้างค่าในพื้นที่นี้"
-        >
-          <RefreshIcon className="h-3 w-3" />
-          <span>ล้างค่า</span>
-        </button>
-      )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-        <FormField label="ชื่อพื้นที่" htmlFor={`areaName-${index}`} className="mb-0">
-          <Input
-            name="name"
-            value={area.name || ''}
-            onChange={handleFieldChange}
-            placeholder="เช่น ชั้น 1, โซน A"
-            required
-            readOnly={isReadOnly}
-            className="bg-slate-50 focus:bg-white"
-          />
-        </FormField>
-        <FormField label="แพ็กเกจ/ประเภทบริการ" htmlFor={`servicePackage-${index}`} className="mb-0">
-          <Input
-            name="service_package"
-            value={area.service_package || ''}
-            onChange={handleFieldChange}
-            placeholder="ระบุประเภทบริการ"
-            readOnly={isReadOnly}
-            className="bg-slate-50 focus:bg-white"
-          />
-        </FormField>
-      </div>
-    </div>
-  );
-};
 
 export interface JobFormProps {
   mode: 'add' | 'edit';
@@ -137,6 +86,10 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [fetchedContracts, setFetchedContracts] = useState<Contract[]>([]);
   const [fetchedInvoices, setFetchedInvoices] = useState<Invoice[]>([]);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
   const [selectedTechnicianIds, setSelectedTechnicianIds] = useState<string[]>([]);
   const [workDate, setWorkDate] = useState('');
@@ -144,6 +97,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [endTime, setEndTime] = useState('');
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [timeConflictError, setTimeConflictError] = useState<string | null>(null);
+
   const [workAreas, setWorkAreas] = useState<Partial<any>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
   const [serviceSystem, setServiceSystem] = useState<string>('');
@@ -170,9 +124,24 @@ export const JobForm: React.FC<JobFormProps> = ({
     })
   );
 
-  // =========================================================================
-  // Logic การ Prefill ข้อมูลเมื่อเป็นการ "แก้ไข" (Edit)
-  // =========================================================================
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const [catRes, prodRes, pkgRes] = await Promise.all([
+          CategoryApi.getCategories({ type: CategoryType.SERVICE }),
+          ProductApi.getProducts({ limit: 100 }),
+          PackageApi.getPackages({ limit: 100 }),
+        ]);
+        setCategories(catRes.data || []);
+        setProducts(prodRes.data || []);
+        setPackages(pkgRes.data || []);
+      } catch (error) {
+        console.error('Error fetching master data:', error);
+      }
+    };
+    fetchMasterData();
+  }, []);
+
   useEffect(() => {
     if (mode === 'edit' && jobToEdit) {
       if (jobToEdit.customer_id) {
@@ -220,14 +189,37 @@ export const JobForm: React.FC<JobFormProps> = ({
       setLeadTechnicianId(leadId);
       setSelectedTechnicianIds(memberIds);
 
-      if (jobToEdit.work_areas && Array.isArray(jobToEdit.work_areas)) {
-        setWorkAreas(jobToEdit.work_areas);
+      // ✅ นำข้อมูล work_areas จาก Job มาปั้น (Map) ให้ตรงกับโครงสร้างที่ WorkAreaForm ต้องการ
+      const rawAreas = jobToEdit.work_areas || jobToEdit.areas || [];
+      
+      if (Array.isArray(rawAreas) && rawAreas.length > 0) {
+        const mappedAreas = rawAreas.map((area: any, index: number) => ({
+          ...area, 
+          id: area.id || `area-${Date.now()}-${index}`,
+          area_name: area.area_name || area.name || '',
+          area_size: area.area_size ? Number(area.area_size) : undefined, // บังคับเป็นตัวเลข
+          building_type: area.building_type || '',
+          service_system: area.service_system || '',
+          package_price: (area.package_price !== null && area.package_price !== undefined) ? Number(area.package_price) : undefined,
+          total_price: area.total_price ? Number(area.total_price) : 0,
+          items: Array.isArray(area.items) ? area.items : [],
+          
+          // จัดการ Category ให้เป็น Array ของ Object { category_id: ... } ตามที่ฟอร์มลูกรอรับ
+          category_services: Array.isArray(area.category_services) 
+            ? area.category_services 
+            : Array.isArray(area.categories) 
+              ? area.categories.map((c: any) => ({ category_id: c.id || c.category_id }))
+              : [],
+        }));
+        
+        setWorkAreas(mappedAreas);
+      } else {
+        setWorkAreas([]);
       }
 
       setVisitedSteps([0, 1, 2]);
     }
   }, [mode, jobToEdit]);
-  // =========================================================================
 
   const fetchCustomers = async (search: string) => {
     try {
@@ -446,10 +438,17 @@ export const JobForm: React.FC<JobFormProps> = ({
       if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
         const system = assessment.assessment_areas[0].service_system;
         if (system) setServiceSystem(system);
+
         const areas = assessment.assessment_areas.map((area, index) => ({
           id: `area-${Date.now()}-${index}`,
-          name: area.area_name,
-          service_package: area.service_system || '',
+          area_name: area.area_name,
+          area_size: area.area_size,
+          building_type: area.building_type,
+          service_system: area.service_system,
+          package_price: area.package_price,
+          total_price: area.total_price,
+          items: area.items || [],
+          category_services: area.category_services || [],
         }));
         setWorkAreas(areas);
       }
@@ -465,7 +464,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         if (invoice && invoice.items && invoice.items.length > 0) {
           const areas = invoice.items.map((item: any, index: number) => ({
             id: `area-${Date.now()}-${index}`,
-            name: item.description,
+            area_name: item.description,
             service_package: item.product?.name || '',
           }));
           setWorkAreas(areas);
@@ -485,6 +484,12 @@ export const JobForm: React.FC<JobFormProps> = ({
     let assessmentId = '';
     let contractId = '';
 
+    if (selectedReference.startsWith('asm-')) {
+      assessmentId = selectedReference.replace('asm-', '');
+    } else if (selectedReference.startsWith('cnt-')) {
+      contractId = selectedReference.replace('cnt-', '');
+    }
+
     return {
       ...(jobToEdit ? { id: jobToEdit.id } : {}),
       assessment_id: assessmentId || undefined,
@@ -498,6 +503,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       remark: operationDetails,
       vehicle_id: selectedVehicleId,
       status: finalStatus,
+      work_areas: workAreas,
       team_member: uniqueTechnicianIds.map((uid) => ({
         user_id: uid,
         check_in: null as any,
@@ -542,8 +548,9 @@ export const JobForm: React.FC<JobFormProps> = ({
       if (count > currentCount) {
         const newAreas = Array.from({ length: count - currentCount }, (_, i) => ({
           id: `area-${Date.now()}-${i}`,
-          name: `พื้นที่ ${currentCount + i + 1}`,
-          service_package: '',
+          area_name: `พื้นที่ ${currentCount + i + 1}`,
+          area_size: undefined,
+          items: []
         }));
         return [...currentAreas, ...newAreas];
       } else if (count < currentCount) {
@@ -553,8 +560,13 @@ export const JobForm: React.FC<JobFormProps> = ({
     });
   };
 
-  const handleAreaChange = (index: number, updatedArea: Partial<Job>) => {
-    setWorkAreas((prev) => prev.map((area, i) => (i === index ? updatedArea : area)));
+  const handleAreaChange = (index: number, updatedArea: Partial<any>) => {
+    setWorkAreas((prev) => {
+      const newAreas = [...prev];
+      // นำข้อมูลพื้นที่เดิม มาผสมกับข้อมูลใหม่ที่ถูกแก้ไข
+      newAreas[index] = { ...newAreas[index], ...updatedArea };
+      return newAreas;
+    });
   };
 
   const handleClearArea = (index: number) => {
@@ -562,10 +574,14 @@ export const JobForm: React.FC<JobFormProps> = ({
       const newAreas = [...prev];
       const areaToClear = newAreas[index];
       if (areaToClear) {
-        newAreas[index] = { id: areaToClear.id, name: areaToClear.name, service_package: '' };
+        newAreas[index] = { id: areaToClear.id, area_name: areaToClear.area_name };
       }
       return newAreas;
     });
+  };
+
+  const handleRemoveArea = (index: number) => {
+    setWorkAreas(prev => prev.filter((_, i) => i !== index));
   };
 
   const getTechnicianName = (tech: User | any) => {
@@ -585,10 +601,9 @@ export const JobForm: React.FC<JobFormProps> = ({
     { id: 2, label: 'ทีมช่าง & ยานพาหนะ', icon: <TruckIcon className="w-5 h-5" />, isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError },
   ];
 
-
   const handleNextStep = (e: React.MouseEvent) => {
-    e.preventDefault(); // เพิ่มบรรทัดนี้เพื่อป้องกันการ Submit ฟอร์มโดยไม่ตั้งใจ
-    e.stopPropagation(); // ป้องกัน Event ไหลไปที่อื่น
+    e.preventDefault();
+    e.stopPropagation();
 
     if (steps[currentStep].isValid) {
       setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
@@ -626,7 +641,6 @@ export const JobForm: React.FC<JobFormProps> = ({
         {/* STEP 0: Customer & Schedule */}
         <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Customer Section */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
               <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
@@ -664,7 +678,6 @@ export const JobForm: React.FC<JobFormProps> = ({
               </div>
             </div>
 
-            {/* Schedule Section */}
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
               <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
                 <div className="p-2 bg-slate-100 rounded-lg text-slate-600"><CalendarIcon className="w-5 h-5" /></div>กำหนดการปฏิบัติงาน
@@ -723,124 +736,60 @@ export const JobForm: React.FC<JobFormProps> = ({
                 )}
               </div>
 
-              {selectedReference ? (
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center gap-3">
-                    <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><DocumentIcon className="w-5 h-5" /></div>
-                    <div>
-                      <p className="font-bold text-slate-800">ข้อมูลอ้างอิง</p>
-                      <p className="text-xs text-slate-500">{isAssessment ? `ใบประเมิน: ${availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code}` : `สัญญา: ${availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code}`}</p>
-                    </div>
-                  </div>
-
-                  {isAssessment && availableAssessments.length > 0 && (
-                    <div className="p-6">
-                      {(() => {
-                        const asmId = selectedReference.replace('asm-', '');
-                        const asm = availableAssessments.find(a => a.id === asmId);
-                        if (!asm) return null;
-                        return (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                            <div className="space-y-3 text-sm">
-                              <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
-                              <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">ที่อยู่:</span><span className="text-slate-800">{[asm.address, asm.sub_district, asm.district, asm.province, asm.zipcode].filter(Boolean).join(' ')}</span></div>
-                              <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">โซน/สาย:</span><span className="text-slate-800">{asm.zone} {asm.road_line ? ` / ${asm.road_line}` : '-'}</span></div>
-                              <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">วันนัดหมาย:</span><span className="text-slate-800">{asm.appointment_date ? new Date(asm.appointment_date).toLocaleDateString('th-TH') : '-'}</span></div>
-                            </div>
-                            <div className="space-y-3 text-sm">
-                              <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
-                              <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">การชำระเงิน:</span><span className="text-slate-800">{asm.payment_condition === 'CASH' ? 'ชำระเต็มจำนวน' : asm.payment_condition === 'INSTALLMENT' ? `แบ่งชำระ (${asm.payment_installment_count || '-'} งวด)` : asm.payment_condition}</span></div>
-                              <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">ราคารวม:</span><span className="font-bold text-primary">฿{(asm.total_price || 0).toLocaleString()}</span></div>
-                            </div>
-                          </div>
-                        );
-                      })()}
-                      <h4 className="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wider flex items-center justify-between">
-                        <span>พื้นที่บริการในเอกสาร</span>
-                        <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500">{availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.assessment_areas?.length || 0} พื้นที่</span>
-                      </h4>
-                      <div className="space-y-4">
-                        {availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.assessment_areas?.map((area, idx) => (
-                          <div key={idx} className="border border-slate-200 rounded-lg bg-slate-50 overflow-hidden">
-                            <div className="p-3 bg-slate-100 border-b border-slate-200 flex justify-between items-center">
-                              <div className="flex items-center gap-2"><span className="bg-white border border-slate-300 w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold text-slate-600">{idx + 1}</span><h5 className="font-semibold text-slate-800">{area.area_name}</h5></div>
-                              <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">{area.building_type}</span>
-                            </div>
-                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                              <div className="space-y-2">
-                                <div className="flex justify-between border-b border-slate-200 pb-1 mb-2"><span className="font-semibold text-slate-600">ข้อมูลพื้นที่</span></div>
-                                <div className="flex justify-between"><span className="text-slate-500">ขนาด:</span><span className="font-medium">{area.area_size || '-'} ตร.ม.</span></div>
-                                <div className="flex justify-between"><span className="text-slate-500">ระบบ:</span><span className="font-medium">{area.service_system === ServiceSystem.CHEMICAL ? 'สารเคมี' : 'เหยื่อ'}</span></div>
-                                <div className="flex justify-between"><span className="text-slate-500">ราคาบริการ:</span><span className="font-medium">฿{(area.package_price || 0).toLocaleString()}</span></div>
-                              </div>
-                              <div className="space-y-2">
-                                <div className="flex justify-between border-b border-slate-200 pb-1 mb-2"><span className="font-semibold text-slate-600">รายละเอียดเพิ่มเติม</span></div>
-                                <div className="mb-2">
-                                  <span className="text-slate-500 block mb-1 text-xs">สินค้า/อุปกรณ์ที่ใช้:</span>
-                                  {area.items && area.items.length > 0 ? (
-                                    <ul className="list-disc list-inside text-xs">{area.items.map((item, i) => <li key={i}>{item.product_name} x {item.quantity}</li>)}</ul>
-                                  ) : <span className="text-slate-400 text-xs">- ไม่ระบุ -</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+              <div className="space-y-4">
+                {/* เปลี่ยนเงื่อนไขตรงนี้: ให้แสดง dropdown ถ้าไม่มีอ้างอิง หรือ อยู่ในโหมดแก้ไข */}
+                {selectedCustomerId && (!selectedReference || mode === 'edit') ? (
+                  <div className="flex items-end gap-4 mb-4">
+                    <FormField label="จำนวนพื้นที่ที่ต้องการเข้าบริการ" htmlFor="numberOfAreas" className="mb-0 flex-1">
+                      <Select
+                        id="numberOfAreas"
+                        value={workAreas.length}
+                        onChange={(e) => handleNumberOfAreasChange(parseInt(e.target.value, 10))}
+                      >
+                        <option value="0">ยังไม่ระบุพื้นที่</option>
+                        {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
+                          <option key={num} value={num}>{num} พื้นที่</option>
                         ))}
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-4 bg-blue-50/50 text-blue-800 text-xs border-t border-blue-100 flex items-start gap-2">
-                    <span className="text-base">ℹ️</span>
-                    <p>ข้อมูลพื้นที่และสินค้าจะถูกบันทึกโดยอัตโนมัติตามเอกสารอ้างอิงที่เลือก คุณไม่จำเป็นต้องกรอกข้อมูลซ้ำในส่วนนี้</p>
+                      </Select>
+                    </FormField>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {selectedCustomerId ? (
-                    <div className="flex items-end gap-4">
-                      <FormField label="จำนวนพื้นที่ที่ต้องการเข้าบริการ" htmlFor="numberOfAreas" className="mb-0 flex-1">
-                        <Select id="numberOfAreas" value={workAreas.length} onChange={(e) => handleNumberOfAreasChange(parseInt(e.target.value, 10))}>
-                          <option value="0">ยังไม่ระบุพื้นที่</option>
-                          {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (<option key={num} value={num}>{num} พื้นที่</option>))}
-                        </Select>
-                      </FormField>
+                ) : (
+                  !selectedCustomerId && (
+                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
+                      กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
                     </div>
-                  ) : (
-                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่</div>
-                  )}
-                  <div className="grid grid-cols-1 gap-4">
-                    {workAreas.map((area, index) => (
-                      <JobWorkAreaForm key={area.id || index} area={area} index={index} onAreaChange={handleAreaChange} onClearArea={handleClearArea} isReadOnly={!!selectedReference} />
-                    ))}
-                  </div>
-                </div>
-              )}
+                  )
+                )}
 
-              {selectedInvoiceId && selectedInvoiceData && (
-                <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm animate-fadeIn mt-6">
-                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-blue-100 p-2 rounded-lg text-blue-600"><DocumentIcon className="w-5 h-5" /></div>
-                      <div><p className="font-bold text-slate-800">สรุปข้อมูลใบแจ้งหนี้</p><p className="text-xs text-slate-500">อ้างอิงจากระบบบัญชี</p></div>
+                <div className="grid grid-cols-1 gap-4">
+                  {workAreas.map((area, index) => (
+                    <div key={area.id || index} className="relative">
+                      {/* 👉 จุดที่ 1: เพิ่มเงื่อนไข mode !== 'edit' ไม่ให้บังตอนแก้ไข */}
+                      {!!selectedReference && mode !== 'edit' && (
+                        <div className="absolute inset-0 z-10 bg-slate-50/30 rounded-lg cursor-not-allowed" title="ข้อมูลจากเอกสารอ้างอิง ไม่สามารถแก้ไขได้"></div>
+                      )}
+                      <WorkAreaForm
+                        area={area}
+                        index={index}
+                        onAreaChange={handleAreaChange}
+                        onClearArea={handleClearArea}
+                        // 👉 จุดที่ 2: ปลดล็อกให้กดลบได้ถ้าอยู่ในโหมด edit
+                        onRemoveArea={(!selectedReference || mode === 'edit') ? handleRemoveArea : undefined}
+                        products={products}
+                        categories={categories}
+                        availablePackages={packages}
+                        selectedPackage={packages.find((p) => p.name === area.service_package || p.id === area.package_id) || null}
+                        isEditing={mode === 'edit'}
+                      />
                     </div>
-                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold shadow-sm ${selectedInvoiceData.status === 'PAID' ? 'bg-emerald-500 text-white' : 'bg-orange-500 text-white'}`}>{selectedInvoiceData.status}</span>
-                  </div>
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div className="space-y-3 text-sm">
-                        <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">ข้อมูลทั่วไป</h5>
-                        <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">เลขที่อ้างอิง:</span><span className="text-slate-800">{selectedInvoiceData.code}</span></div>
-                        <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">วันที่ออกเอกสาร:</span><span className="text-slate-800">{selectedInvoiceData.issued_at ? new Date(selectedInvoiceData.issued_at).toLocaleDateString('th-TH') : '-'}</span></div>
-                        <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">วันครบกำหนด:</span><span className="text-slate-800">{selectedInvoiceData.due_at ? new Date(selectedInvoiceData.due_at).toLocaleDateString('th-TH') : '-'}</span></div>
-                      </div>
-                      <div className="space-y-3 text-sm">
-                        <h5 className="font-semibold text-slate-700 border-b pb-1 mb-2">เงื่อนไขการเงิน</h5>
-                        <div className="grid grid-cols-[100px_1fr] gap-2"><span className="text-slate-500">ยอดสุทธิ:</span><span className="font-bold text-green-600 text-primary">฿{(selectedInvoiceData.total || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-blue-50/50 text-blue-800 text-xs border-t border-blue-100 flex items-start gap-2"><span className="text-base">ℹ️</span><p>ข้อมูลใบแจ้งหนี้อ้างอิงจากระบบบัญชีเพื่อประกอบการปฏิบัติงาน</p></div>
+                  ))}
+
+                  {/* แสดงข้อความโหลดถ้าอ้างอิงเอกสารแล้วยังไม่มีข้อมูล (Optional) */}
+                  {selectedReference && workAreas.length === 0 && (
+                    <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่ระบุไว้</div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -885,7 +834,7 @@ export const JobForm: React.FC<JobFormProps> = ({
           </div>
         </div>
 
-        {/* 🌟 Footer Controls อยู่ข้างใน Form นี้เลย */}
+        {/* Footer Controls */}
         <div className="flex justify-between items-center w-full pt-6 mt-6 border-t border-slate-200">
           <div className="text-slate-500 font-medium">ขั้นตอนที่ {currentStep + 1} จาก {steps.length}</div>
           <div className="flex gap-3">
