@@ -1,5 +1,5 @@
 // ===== React =====
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 
 // ===== External Libraries =====
 import DatePicker from 'react-datepicker';
@@ -13,10 +13,11 @@ import { Job } from '@/src/types/entity/job.interface';
 import { Contract, Invoice } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
-import { Assessment } from '@/src/types/entity/app.interface';
+import { Assessment, AssessmentWorkArea } from '@/src/types/entity/app.interface';
 import { Category } from '@/src/types/entity/category.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { Package } from '@/src/types/entity/package.interface';
+import { PackageType } from '@/src/types/enums/package';
 
 // ===== Components =====
 import { FormField, Input, Select, Textarea, Button } from '../../common/FormControls';
@@ -61,6 +62,13 @@ export interface JobFormProps {
   jobs: any[];
   users: User[];
 }
+
+// 🌟 ตัวช่วยดึง ID อัจฉริยะ ป้องกัน API ส่งค่ามาผิดรูปแบบ
+const getSafeId = (val: any) => {
+  if (!val) return null;
+  if (typeof val === 'object' && val.id) return String(val.id);
+  return String(val);
+};
 
 export const JobForm: React.FC<JobFormProps> = ({
   mode,
@@ -124,6 +132,8 @@ export const JobForm: React.FC<JobFormProps> = ({
     })
   );
 
+  const hasInitializedRef = useRef<string | null>(null);
+
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
@@ -143,83 +153,156 @@ export const JobForm: React.FC<JobFormProps> = ({
   }, []);
 
   useEffect(() => {
-    if (mode === 'edit' && jobToEdit) {
-      if (jobToEdit.customer_id) {
-        setSelectedCustomerId(jobToEdit.customer_id);
-        handleCustomerChange(jobToEdit.customer_id, true);
-      }
+    const loadEditData = async () => {
+      if (mode === 'edit' && jobToEdit && packages.length > 0) {
+        if (hasInitializedRef.current === jobToEdit.id) return;
+        hasInitializedRef.current = jobToEdit.id;
 
-      if (jobToEdit.assessment_id) setSelectedReference(`asm-${jobToEdit.assessment_id}`);
-      else if (jobToEdit.contract_id) setSelectedReference(`cnt-${jobToEdit.contract_id}`);
-
-      if (jobToEdit.invoice_id) setSelectedInvoiceId(jobToEdit.invoice_id);
-
-      if (jobToEdit.start_time || jobToEdit.start_date) {
-        const startObj = new Date(jobToEdit.start_time || jobToEdit.start_date);
-        if (!isNaN(startObj.getTime())) {
-          setWorkDate(startObj.toISOString().substring(0, 10));
-          setStartTime(startObj.toTimeString().substring(0, 5));
+        if (jobToEdit.customer_id) {
+          setSelectedCustomerId(jobToEdit.customer_id);
+          handleCustomerChange(jobToEdit.customer_id, true);
         }
-      }
-      if (jobToEdit.end_time || jobToEdit.end_date) {
-        const endObj = new Date(jobToEdit.end_time || jobToEdit.end_date);
-        if (!isNaN(endObj.getTime())) {
-          setEndTime(endObj.toTimeString().substring(0, 5));
+
+        // 🌟 ใช้ getSafeId ดึง ID ครอบคลุมทุกรูปแบบ (ไม่ว่าจะซ่อนอยู่ใน Object หรือไม่)
+        const actualAssessmentId = getSafeId(jobToEdit.assessment_id) || getSafeId(jobToEdit.assessmentId) || getSafeId(jobToEdit.assessment);
+        const actualContractId = getSafeId(jobToEdit.contract_id) || getSafeId(jobToEdit.contractId) || getSafeId(jobToEdit.contract);
+        const actualInvoiceId = getSafeId(jobToEdit.invoice_id) || getSafeId(jobToEdit.invoiceId) || getSafeId(jobToEdit.invoice);
+
+        if (actualAssessmentId) {
+          setSelectedReference(`asm-${actualAssessmentId}`);
+        } else if (actualContractId) {
+          setSelectedReference(`cnt-${actualContractId}`);
         }
-      }
 
-      setSelectedVehicleId(jobToEdit.vehicle_id || '');
-      setOperationDetails(jobToEdit.remark || jobToEdit.operation_details || '');
-      setServiceSystem(jobToEdit.service_system || '');
+        if (actualInvoiceId) {
+          setSelectedInvoiceId(String(actualInvoiceId));
+        }
 
-      let leadId = '';
-      let memberIds: string[] = [];
+        if (jobToEdit.start_time || jobToEdit.start_date) {
+          const startObj = new Date(jobToEdit.start_time || jobToEdit.start_date);
+          if (!isNaN(startObj.getTime())) {
+            setWorkDate(startObj.toISOString().substring(0, 10));
+            setStartTime(startObj.toTimeString().substring(0, 5));
+          }
+        }
+        if (jobToEdit.end_time || jobToEdit.end_date) {
+          const endObj = new Date(jobToEdit.end_time || jobToEdit.end_date);
+          if (!isNaN(endObj.getTime())) {
+            setEndTime(endObj.toTimeString().substring(0, 5));
+          }
+        }
 
-      if (jobToEdit.primary_tech_id) leadId = jobToEdit.primary_tech_id;
-      else if (jobToEdit.primary_technician?.id) leadId = jobToEdit.primary_technician.id;
+        setSelectedVehicleId(getSafeId(jobToEdit.vehicle_id) || getSafeId(jobToEdit.vehicle) || '');
+        setOperationDetails(jobToEdit.remark || jobToEdit.operation_details || '');
+        setServiceSystem(jobToEdit.service_system || '');
 
-      if (jobToEdit.team_member && Array.isArray(jobToEdit.team_member)) {
-        memberIds = jobToEdit.team_member.map((m: any) => m.user_id || m.id);
-      } else if (jobToEdit.technicians && Array.isArray(jobToEdit.technicians)) {
-        memberIds = jobToEdit.technicians.map((t: any) => t.id);
-      }
+        let leadId = '';
+        let memberIds: string[] = [];
+        if (jobToEdit.primary_tech_id) leadId = jobToEdit.primary_tech_id;
+        else if (jobToEdit.primary_technician?.id) leadId = jobToEdit.primary_technician.id;
 
-      memberIds = memberIds.filter(id => id !== leadId);
+        if (jobToEdit.team_member && Array.isArray(jobToEdit.team_member)) {
+          memberIds = jobToEdit.team_member.map((m: any) => m.user_id || m.id);
+        } else if (jobToEdit.technicians && Array.isArray(jobToEdit.technicians)) {
+          memberIds = jobToEdit.technicians.map((t: any) => t.id);
+        }
+        memberIds = memberIds.filter(id => id !== leadId);
+        setLeadTechnicianId(leadId);
+        setSelectedTechnicianIds(memberIds);
 
-      setLeadTechnicianId(leadId);
-      setSelectedTechnicianIds(memberIds);
+        const targetAssessmentId = actualAssessmentId;
+        // 🌟 ดึงข้อมูลพื้นที่ ครอบคลุมทุกการใช้ชื่อ Key ของ Backend
+        let rawAreas = jobToEdit.work_areas || jobToEdit.areas || jobToEdit.job_areas || jobToEdit.jobAreas || [];
+        let globalPackageId = jobToEdit.package_id || jobToEdit.assessment?.package_id;
 
-      // ✅ นำข้อมูล work_areas จาก Job มาปั้น (Map) ให้ตรงกับโครงสร้างที่ WorkAreaForm ต้องการ
-      const rawAreas = jobToEdit.work_areas || jobToEdit.areas || [];
-      
-      if (Array.isArray(rawAreas) && rawAreas.length > 0) {
-        const mappedAreas = rawAreas.map((area: any, index: number) => ({
-          ...area, 
-          id: area.id || `area-${Date.now()}-${index}`,
-          area_name: area.area_name || area.name || '',
-          area_size: area.area_size ? Number(area.area_size) : undefined, // บังคับเป็นตัวเลข
-          building_type: area.building_type || '',
-          service_system: area.service_system || '',
-          package_price: (area.package_price !== null && area.package_price !== undefined) ? Number(area.package_price) : undefined,
-          total_price: area.total_price ? Number(area.total_price) : 0,
-          items: Array.isArray(area.items) ? area.items : [],
+        if (targetAssessmentId) {
+          try {
+            const res: any = await AssessmentApi.getById(targetAssessmentId);
+            const realAssessment = res.data || res;
+            if (realAssessment) {
+               // นำพื้นที่จากใบประเมินมาใช้ ถ้างานนี้ยังไม่มีการเซฟพื้นที่แยกต่างหาก
+               if (realAssessment.assessment_areas && realAssessment.assessment_areas.length > 0 && rawAreas.length === 0) {
+                 rawAreas = realAssessment.assessment_areas;
+               }
+               if (realAssessment.package_id) {
+                 globalPackageId = realAssessment.package_id;
+               }
+            }
+          } catch (err) {
+            console.error('Error fetching full assessment data:', err);
+          }
+        }
+
+        const enrichArea = (wa: any, index: number) => {
+          const itemsTotal = (wa.items || []).reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
+          const derivedBasePrice = wa.base_service_price !== undefined ? Number(wa.base_service_price) : (Number(wa.total_price) || 0) - itemsTotal;
+          const pkgPrice = wa.package_price !== undefined && wa.package_price !== null ? Number(wa.package_price) : (derivedBasePrice > 0 ? derivedBasePrice : 0);
+
+          let recoveredPkg;
+
+          if (wa.package_price_id) {
+             recoveredPkg = packages.find(p => p.package_prices && p.package_prices.some(price => String(price.id) === String(wa.package_price_id)));
+          }
+          if (!recoveredPkg) {
+            recoveredPkg = packages.find(p => String(p.id) === String(wa.package_id) || String(p.id) === String(globalPackageId));
+          }
+          if (!recoveredPkg && wa.service_package) {
+             recoveredPkg = packages.find(p => p.name === wa.service_package);
+          }
+
+          let recoveredPriceId = wa.package_price_id;
+          let recoveredType = wa.package_type;
           
-          // จัดการ Category ให้เป็น Array ของ Object { category_id: ... } ตามที่ฟอร์มลูกรอรับ
-          category_services: Array.isArray(area.category_services) 
-            ? area.category_services 
-            : Array.isArray(area.categories) 
-              ? area.categories.map((c: any) => ({ category_id: c.id || c.category_id }))
-              : [],
-        }));
-        
-        setWorkAreas(mappedAreas);
-      } else {
-        setWorkAreas([]);
-      }
+          if (recoveredPkg && wa.area_size) {
+            const conditions = [...(recoveredPkg.package_prices || [])].sort((a, b) => a.area_range - b.area_range);
+            const fit = conditions.find(c => c.area_range >= Number(wa.area_size));
+            
+            if (fit) {
+              recoveredPriceId = wa.package_price_id || fit.id;
+              
+              const typeStr = String(recoveredType || '').toUpperCase();
+              if (typeStr === 'WITH_TERMITE' || (typeStr.includes('WITH_TERMITE') && !typeStr.includes('WITHOUT'))) {
+                 recoveredType = 'WITH_TERMITE';
+              } else if (typeStr === 'WITHOUT_TERMITE' || typeStr.includes('WITHOUT')) {
+                 recoveredType = 'WITHOUT_TERMITE';
+              } else {
+                 recoveredType = pkgPrice === Number(fit.price_without_termite) ? 'WITHOUT_TERMITE' : 'WITH_TERMITE';
+              }
+            }
+          }
 
-      setVisitedSteps([0, 1, 2]);
-    }
-  }, [mode, jobToEdit]);
+          return {
+            ...wa, 
+            id: wa.id || `area-${Date.now()}-${index}`,
+            area_name: wa.area_name || wa.name || '',
+            area_size: wa.area_size ? Number(wa.area_size) : undefined,
+            building_type: wa.building_type || '',
+            service_system: wa.service_system || '',
+            items: Array.isArray(wa.items) ? wa.items : [],
+            category_services: Array.isArray(wa.category_services) ? wa.category_services : Array.isArray(wa.categories) ? wa.categories.map((c: any) => ({ category_id: c.id || c.category_id })) : [],
+            base_service_price: derivedBasePrice > 0 ? derivedBasePrice : 0,
+            package_price: pkgPrice,
+            total_price: wa.total_price ? Number(wa.total_price) : (derivedBasePrice + itemsTotal),
+            
+            package_id: recoveredPkg?.id || undefined,
+            package_price_id: recoveredPriceId,
+            package_type: recoveredType as any,
+            service_package: recoveredPkg?.name || wa.service_package || ''
+          };
+        };
+
+        if (Array.isArray(rawAreas) && rawAreas.length > 0) {
+          setWorkAreas(rawAreas.map((area: any, idx: number) => enrichArea(area, idx)));
+        } else {
+          setWorkAreas([]);
+        }
+
+        setVisitedSteps([0, 1, 2]);
+      }
+    };
+
+    loadEditData();
+  }, [mode, jobToEdit, packages]);
 
   const fetchCustomers = async (search: string) => {
     try {
@@ -281,7 +364,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const vehicleWarehouses = useMemo(() => vehicleOptions, [vehicleOptions]);
 
   const selectedInvoiceData = useMemo(() => {
-    return fetchedInvoices.find((inv) => inv.id === selectedInvoiceId);
+    return fetchedInvoices.find((inv) => String(inv.id) === selectedInvoiceId);
   }, [fetchedInvoices, selectedInvoiceId]);
 
   const filteredCustomers = useMemo(() => {
@@ -332,21 +415,67 @@ export const JobForm: React.FC<JobFormProps> = ({
   }, [fetchedInvoices]);
 
   const filteredInvoices = useMemo(() => {
-    const refs = availableInvoices.map((inv) => ({ value: inv.id, label: `ใบแจ้งหนี้: ${inv.code}` }));
+    const refs = availableInvoices.map((inv) => ({ value: String(inv.id), label: `ใบแจ้งหนี้: ${inv.code}` }));
+    
+    // 🌟 ดึงข้อมูลใบแจ้งหนี้เก่ามาแสดงเสมอ โดยดึงให้ครอบคลุมการซ้อนทับ
+    if (mode === 'edit' && jobToEdit) {
+      const actualInvoiceId = getSafeId(jobToEdit.invoice_id) || getSafeId(jobToEdit.invoiceId) || getSafeId(jobToEdit.invoice);
+      if (actualInvoiceId) {
+        const idStr = String(actualInvoiceId);
+        if (!refs.find((r) => String(r.value) === idStr)) {
+          let code = 'อ้างอิงข้อมูลเดิม';
+          if (typeof jobToEdit.invoice === 'object' && jobToEdit.invoice.code) code = jobToEdit.invoice.code;
+          else if (jobToEdit.invoice_code) code = jobToEdit.invoice_code;
+          else if (jobToEdit.invoiceCode) code = jobToEdit.invoiceCode;
+          
+          refs.unshift({ value: idStr, label: `ใบแจ้งหนี้: ${code}` });
+        }
+      }
+    }
+
     if (!invoiceSearch) return refs;
     const lower = invoiceSearch.toLowerCase();
     return refs.filter((r) => r.label.toLowerCase().includes(lower));
-  }, [availableInvoices, invoiceSearch]);
+  }, [availableInvoices, invoiceSearch, mode, jobToEdit]);
 
   const filteredReferences = useMemo(() => {
     const refs = [
       ...availableAssessments.map((a) => ({ value: `asm-${a.id}`, label: `ใบประเมิน: ${a.code}` })),
       ...availableContracts.map((c) => ({ value: `cnt-${c.id}`, label: `สัญญา: ${c.code}` })),
     ];
+
+    if (mode === 'edit' && jobToEdit) {
+      const actualAssessmentId = getSafeId(jobToEdit.assessment_id) || getSafeId(jobToEdit.assessmentId) || getSafeId(jobToEdit.assessment);
+      const actualContractId = getSafeId(jobToEdit.contract_id) || getSafeId(jobToEdit.contractId) || getSafeId(jobToEdit.contract);
+
+      if (actualAssessmentId) {
+        const val = `asm-${actualAssessmentId}`;
+        if (!refs.find((r) => String(r.value) === val)) {
+          let code = 'อ้างอิงข้อมูลเดิม';
+          if (typeof jobToEdit.assessment === 'object' && jobToEdit.assessment.code) code = jobToEdit.assessment.code;
+          else if (jobToEdit.assessment_code) code = jobToEdit.assessment_code;
+          else if (jobToEdit.assessmentCode) code = jobToEdit.assessmentCode;
+          
+          refs.unshift({ value: val, label: `ใบประเมิน: ${code}` });
+        }
+      }
+      if (actualContractId) {
+        const val = `cnt-${actualContractId}`;
+        if (!refs.find((r) => String(r.value) === val)) {
+          let code = 'อ้างอิงข้อมูลเดิม';
+          if (typeof jobToEdit.contract === 'object' && jobToEdit.contract.code) code = jobToEdit.contract.code;
+          else if (jobToEdit.contract_code) code = jobToEdit.contract_code;
+          else if (jobToEdit.contractCode) code = jobToEdit.contractCode;
+          
+          refs.unshift({ value: val, label: `สัญญา: ${code}` });
+        }
+      }
+    }
+
     if (!referenceSearch) return refs;
     const lower = referenceSearch.toLowerCase();
     return refs.filter((r) => r.label.toLowerCase().includes(lower));
-  }, [availableAssessments, availableContracts, referenceSearch]);
+  }, [availableAssessments, availableContracts, referenceSearch, mode, jobToEdit]);
 
   const bookedSlots = useMemo(() => {
     if (!selectedVehicleId || !workDate) return [];
@@ -389,6 +518,8 @@ export const JobForm: React.FC<JobFormProps> = ({
   }, [mode, initialWorkDateIso]);
 
   const handleCustomerChange = async (customerId: string, skipReset = false) => {
+    if (customerId === selectedCustomerId) return;
+    
     setSelectedCustomerId(customerId);
     const customer = customers.find((c) => c.id === customerId);
     if (customer) setSelectedCustomerData(customer);
@@ -434,22 +565,33 @@ export const JobForm: React.FC<JobFormProps> = ({
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
-      const assessment = availableAssessments.find((a) => a.id === assessmentId);
+      const assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId));
       if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
         const system = assessment.assessment_areas[0].service_system;
         if (system) setServiceSystem(system);
 
-        const areas = assessment.assessment_areas.map((area, index) => ({
-          id: `area-${Date.now()}-${index}`,
-          area_name: area.area_name,
-          area_size: area.area_size,
-          building_type: area.building_type,
-          service_system: area.service_system,
-          package_price: area.package_price,
-          total_price: area.total_price,
-          items: area.items || [],
-          category_services: area.category_services || [],
-        }));
+        const areas = assessment.assessment_areas.map((area, index) => {
+          let exactPackageId = assessment.package_id;
+          if (area.package_price_id) {
+             const matchedPkg = packages.find(p => p.package_prices?.some(price => String(price.id) === String(area.package_price_id)));
+             if (matchedPkg) exactPackageId = matchedPkg.id;
+          }
+
+          return {
+            id: `area-${Date.now()}-${index}`,
+            area_name: area.area_name,
+            area_size: area.area_size ? Number(area.area_size) : undefined,
+            building_type: area.building_type,
+            service_system: area.service_system,
+            package_price: area.package_price ? Number(area.package_price) : undefined,
+            total_price: area.total_price ? Number(area.total_price) : undefined,
+            items: area.items || [],
+            category_services: area.category_services || [],
+            package_id: exactPackageId, 
+            package_price_id: area.package_price_id,
+            package_type: area.package_type as any,
+          };
+        });
         setWorkAreas(areas);
       }
     }
@@ -516,16 +658,57 @@ export const JobForm: React.FC<JobFormProps> = ({
     e.preventDefault();
     if (timeConflictError) return;
     if (!leadTechnicianId) {
-      alert('กรุณาเลือกหัวหน้าช่าง')
+      alert('กรุณาเลือกหัวหน้าช่าง');
       setCurrentStep(2);
       return;
     }
+    
     const jobData = createJobObject(JobMainStatus.PENDING);
+    
     if (jobData) {
       try {
+        if (jobData.assessment_id) {
+          const assessmentPayload = {
+            assessment_areas: workAreas.map((area: any) => ({
+              id: String(area.id).startsWith('area-') ? undefined : area.id,
+              assessment_id: jobData.assessment_id,
+
+              area_name: area.area_name,
+              building_type: area.building_type,
+              service_system: area.service_system,
+              area_size: area.area_size,
+              
+              package_price_id: area.package_price_id,
+              package_price: area.package_price,
+              package_type: area.package_type, 
+              base_service_price: area.base_service_price || area.package_price,
+              total_price: area.total_price,
+              
+              category_services: area.category_services,
+              
+              items: (area.items || []).map((it: any) => ({
+                product_id: it.product_id,
+                product_name: it.product_name,
+                product_price: it.product_price,
+                quantity: it.quantity,
+                total_price: it.total_price,
+                package_type: area.package_type,
+              })),
+            })) as any,
+            
+            total_price: workAreas.reduce((sum, a) => sum + (Number(a.total_price) || 0), 0)
+          };
+
+          await AssessmentApi.update(jobData.assessment_id, assessmentPayload);
+        }
+
         await onSubmitJob(jobData, jobData.assessment_id);
         onCancel();
-      } catch (error) { console.error('Error handling job submission:', error); }
+        
+      } catch (error) { 
+        console.error('Error handling job submission:', error);
+        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+      }
     }
   };
 
@@ -563,8 +746,13 @@ export const JobForm: React.FC<JobFormProps> = ({
   const handleAreaChange = (index: number, updatedArea: Partial<any>) => {
     setWorkAreas((prev) => {
       const newAreas = [...prev];
-      // นำข้อมูลพื้นที่เดิม มาผสมกับข้อมูลใหม่ที่ถูกแก้ไข
-      newAreas[index] = { ...newAreas[index], ...updatedArea };
+      let newArea = { ...newAreas[index], ...updatedArea };
+      
+      if (newArea.package_price !== undefined) {
+        newArea.base_service_price = newArea.package_price;
+      }
+      
+      newAreas[index] = newArea;
       return newAreas;
     });
   };
@@ -731,13 +919,12 @@ export const JobForm: React.FC<JobFormProps> = ({
                 {selectedReference && (
                   <div className="text-xs font-medium px-3 py-1 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
                     อ้างอิง: {isAssessment ? 'ใบประเมิน ' : 'สัญญา '}
-                    {isAssessment ? availableAssessments.find(a => a.id === selectedReference.replace('asm-', ''))?.code : availableContracts.find(c => c.id === selectedReference.replace('cnt-', ''))?.code}
+                    {isAssessment ? availableAssessments.find(a => String(a.id) === selectedReference.replace('asm-', ''))?.code : availableContracts.find(c => String(c.id) === selectedReference.replace('cnt-', ''))?.code}
                   </div>
                 )}
               </div>
 
               <div className="space-y-4">
-                {/* เปลี่ยนเงื่อนไขตรงนี้: ให้แสดง dropdown ถ้าไม่มีอ้างอิง หรือ อยู่ในโหมดแก้ไข */}
                 {selectedCustomerId && (!selectedReference || mode === 'edit') ? (
                   <div className="flex items-end gap-4 mb-4">
                     <FormField label="จำนวนพื้นที่ที่ต้องการเข้าบริการ" htmlFor="numberOfAreas" className="mb-0 flex-1">
@@ -764,7 +951,6 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="grid grid-cols-1 gap-4">
                   {workAreas.map((area, index) => (
                     <div key={area.id || index} className="relative">
-                      {/* 👉 จุดที่ 1: เพิ่มเงื่อนไข mode !== 'edit' ไม่ให้บังตอนแก้ไข */}
                       {!!selectedReference && mode !== 'edit' && (
                         <div className="absolute inset-0 z-10 bg-slate-50/30 rounded-lg cursor-not-allowed" title="ข้อมูลจากเอกสารอ้างอิง ไม่สามารถแก้ไขได้"></div>
                       )}
@@ -773,18 +959,19 @@ export const JobForm: React.FC<JobFormProps> = ({
                         index={index}
                         onAreaChange={handleAreaChange}
                         onClearArea={handleClearArea}
-                        // 👉 จุดที่ 2: ปลดล็อกให้กดลบได้ถ้าอยู่ในโหมด edit
                         onRemoveArea={(!selectedReference || mode === 'edit') ? handleRemoveArea : undefined}
                         products={products}
                         categories={categories}
                         availablePackages={packages}
-                        selectedPackage={packages.find((p) => p.name === area.service_package || p.id === area.package_id) || null}
-                        isEditing={mode === 'edit'}
+                        selectedPackage={packages.find((p) => String(p.id) === String(area.package_id)) || null}
+                        onSelectPackage={(pkgId) => {
+                          handleAreaChange(index, { package_id: pkgId });
+                        }}
+                        isEditing={mode === 'edit'}                        
                       />
                     </div>
                   ))}
 
-                  {/* แสดงข้อความโหลดถ้าอ้างอิงเอกสารแล้วยังไม่มีข้อมูล (Optional) */}
                   {selectedReference && workAreas.length === 0 && (
                     <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่ระบุไว้</div>
                   )}
@@ -855,7 +1042,6 @@ export const JobForm: React.FC<JobFormProps> = ({
             )}
           </div>
         </div>
-
       </form>
     </div>
   );
