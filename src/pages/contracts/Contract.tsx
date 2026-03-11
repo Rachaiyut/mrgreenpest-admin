@@ -296,7 +296,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col h-full min-h-[calc(100vh-64px)]">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -388,12 +388,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         </Card>
       </div>
 
-      {/* Toolbar */}
+      {/* Toolbar & Table Area */}
       <Card
-        className="!p-0"
+        className="!p-0 flex flex-col flex-grow min-h-0"
         actions={
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
-            <div className="w-full sm:w-64">
+            <div className="w-full sm:w-64 relative">
               <Input
                 type="search"
                 placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
@@ -455,68 +455,27 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           </div>
         }
       >
-        {/* Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="bg-white flex flex-col flex-grow min-h-0 rounded-b-xl overflow-hidden border-t border-slate-100">
+          <div className="overflow-x-auto flex flex-col flex-grow relative">
             <table className="min-w-full">
-              <thead>
-                <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    ลำดับ
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    เลขที่สัญญา
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    ลูกค้า
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    ประเภทบริการ
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    ระยะเวลา
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    วันเริ่มต้น
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    วันสิ้นสุด
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    สถานะ
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    มูลค่า
-                  </th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
-                    จัดการ
-                  </th>
+              <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
+                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">มูลค่า</th>
+                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={10} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500">
-                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-                        <p className="text-base font-medium">กำลังโหลดข้อมูลสัญญา...</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : paginatedContracts.length === 0 ? (
-                  <tr>
-                    <td colSpan={10} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center text-slate-400">
-                        <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
-                        <p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
-                        <p className="text-sm mt-1">
-                          ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedContracts.map((c, index) => {
+              
+              {!isLoading && paginatedContracts.length > 0 && (
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedContracts.map((c, index) => {
                     const customerName = c.customer
                       ? `${c.customer.first_name} ${c.customer.last_name || ''}`.trim()
                       : c.customer_name;
@@ -553,10 +512,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {c.service_type || '-'}
+                          {'-'}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
-                          {c.contract_duration || '-'}
+                          {'-'}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {formatThaiDate(c.start_date)}
@@ -621,15 +580,32 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         </td>
                       </tr>
                     );
-                  })
-                )}
-              </tbody>
+                  })}
+                </tbody>
+              )}
             </table>
+
+            {/* Loading State Area (Outside the Table) */}
+            {isLoading && (
+              <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
+                <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                <p className="text-base font-medium">กำลังโหลดข้อมูลสัญญา...</p>
+              </div>
+            )}
+
+            {/* Empty State Area (Outside the Table) */}
+            {!isLoading && paginatedContracts.length === 0 && (
+              <div className="flex flex-col flex-grow items-center justify-center text-slate-400 py-16 min-h-[40vh]">
+                <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg font-medium">ไม่พบข้อมูลใบสัญญา</p>
+                <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบสัญญาใหม่</p>
+              </div>
+            )}
           </div>
 
           {/* Pagination */}
           {totalItems > 0 && (
-            <div className="border-t border-slate-100">
+            <div className="border-t border-slate-100 mt-auto bg-white">
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
@@ -707,7 +683,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         onSubmit={handleSubmitContract}
       />
     
-   
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

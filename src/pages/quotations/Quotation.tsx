@@ -391,7 +391,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col h-full min-h-[calc(100vh-64px)]">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -473,7 +473,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
         {/* Filters & Table */}
         <Card
-          className="!p-0"
+          className="!p-0 flex flex-col flex-grow min-h-0"
           actions={
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
               <div className="w-full sm:w-64">
@@ -523,7 +523,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             </div>
           }
         >
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-grow relative">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -562,26 +562,22 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500">
+                    {/* ใช้ h-full เพื่อให้ยืดตามพื้นที่ flex-grow ของ Card */}
+                    <td colSpan={10} className="p-0 border-b-0">
+                      <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-                        <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสนอราคา...</p>
+                        <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูลใบเบิก...</p>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedQuotations.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={10}
-                      className="px-6 py-12 text-center text-slate-500"
-                    >
-                      <DocumentTextIcon className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-                      <p className="text-lg font-medium">
-                        ไม่พบข้อมูลใบเสนอราคา
-                      </p>
-                      <p className="text-sm">
-                        ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่
-                      </p>
+                    <td colSpan={10} className="p-0 border-b-0 text-slate-500">
+                      <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
+                        <DocumentTextIcon className="h-12 w-12 text-slate-300 mb-3" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิก</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
+                      </div>
                     </td>
                   </tr>
                 ) : (
@@ -644,8 +640,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           <div className="flex items-center justify-end gap-2">
                             <Button
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === q.id
-                                  ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
-                                  : 'bg-green-600 hover:bg-green-700 text-white'
+                                ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
                                 }`}
                               disabled={loadingPdfId === q.id}
                               onClick={(e) => {
