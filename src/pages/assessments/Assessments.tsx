@@ -34,9 +34,8 @@ import {
 } from '@/src/assets/icons/Icons';
 import { Pagination } from '@/src/components/common/Pagination';
 import { formatThaiDate } from '@/src/utils/date';
-import { AddAssessmentModal } from '@/src/components/features/assessments/AddAssessmentModal';
-import { EditAssessmentModal } from '@/src/components/features/assessments/EditAssessmentModal';
 import { AssessmentDetailsModal } from '@/src/components/features/assessments/AssessmentDetailsModal';
+import { AssessmentModal } from '@/src/components/features/assessments/AssessmentModal'; // 🔴 นำเข้า AssessmentModal ที่รวมแล้ว
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
 import { ConfirmationModal } from '@/src/components/common';
@@ -58,11 +57,11 @@ const Assessments: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(
-    null
-  );
+  
+  // 🔴 ใช้ isModalOpen แค่ตัวเดียวสำหรับควบคุมการเปิด/ปิด
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -246,24 +245,19 @@ const Assessments: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const handleCreateAssessment = async (
-    assessmentData: Omit<Assessment, 'id'>
-  ) => {
+  // 🔴 ยุบรวมฟังก์ชัน Create และ Update ไว้ด้วยกัน
+  const handleSaveAssessment = async (assessmentData: any) => {
     try {
-      await AssessmentApi.create(assessmentData);
+      if (assessmentToEdit || assessmentData.id) {
+        await AssessmentApi.update(assessmentToEdit?.id || assessmentData.id, assessmentData);
+      } else {
+        await AssessmentApi.create(assessmentData);
+      }
       fetchData();
+      setIsModalOpen(false);
+      setAssessmentToEdit(null);
     } catch (error) {
-      console.error('Error creating assessment:', error);
-    }
-  };
-
-  const handleUpdateAssessment = async (assessment: Assessment) => {
-    try {
-      await AssessmentApi.update(assessment.id, assessment);
-      fetchData();
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error('Error updating assessment:', error);
+      console.error('Error saving assessment:', error);
     }
   };
 
@@ -282,9 +276,10 @@ const Assessments: React.FC = () => {
     setOpenDropdownId(null);
   };
 
+  // 🔴 แก้ไขการตั้งค่าเปิดโหมดแก้ไขให้ไปเรียกเปิดตัว isModalOpen แทน
   const handleEdit = (assessment: Assessment) => {
     setAssessmentToEdit(assessment);
-    setIsEditModalOpen(true);
+    setIsModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -398,8 +393,12 @@ const Assessments: React.FC = () => {
               จัดการและติดตามใบประเมินทั้งหมด
             </p>
           </div>
+          {/* 🔴 ปุ่มสร้างใบประเมิน ปรับให้เคลียร์ข้อมูลแล้วเปิด Modal */}
           <Button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              setAssessmentToEdit(null);
+              setIsModalOpen(true);
+            }}
             variant="primary"
             className="shadow-md shadow-primary/20"
           >
@@ -653,7 +652,7 @@ const Assessments: React.FC = () => {
                                 </p>
                                 <p className="text-xs text-slate-500 truncate">
                                   {assessment.customer?.code ||
-                                    assessment.customer?.phone ||
+                                    assessment.customer?.primary_phone ||
                                     '-'}
                                 </p>
                               </div>
@@ -784,11 +783,17 @@ const Assessments: React.FC = () => {
         </div>
       )}
 
-      <AddAssessmentModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreateAssessment={handleCreateAssessment}
+      {/* 🔴 เรียกใช้ AssessmentModal เพียงตัวเดียวสำหรับทั้งสร้างและแก้ไข */}
+      <AssessmentModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setAssessmentToEdit(null);
+        }}
+        assessment={assessmentToEdit}
+        onSubmit={handleSaveAssessment}
       />
+
       {isDetailsModalOpen && (
         <AssessmentDetailsModal
           isOpen={isDetailsModalOpen}
@@ -798,19 +803,6 @@ const Assessments: React.FC = () => {
           customers={customers}
         />
       )}
-      <EditAssessmentModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setAssessmentToEdit(null);
-        }}
-        assessment={assessmentToEdit}
-        onUpdateAssessment={handleUpdateAssessment}
-        products={products}
-        packages={packages}
-        customers={customers}
-        categories={categories}
-      />
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
