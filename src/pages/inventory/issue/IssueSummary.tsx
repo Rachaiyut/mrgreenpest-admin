@@ -34,6 +34,8 @@ import {
   TrashIcon,
   TruckIcon,
   UserIcon,
+  DocumentCheckIcon, 
+  LoadingIcon,       
 } from '../../../assets/icons/Icons';
 
 // Helper function สำหรับแสดงสถานะเป็นภาษาไทยและสี
@@ -65,9 +67,22 @@ const IssueSummaryPage: React.FC = () => {
     fetchData,
   } = useData();
 
+  // --- State สำหรับ Loading ---
+  const [isLoading, setIsLoading] = useState(true);
+
   // Fetch stock issue summaries on mount
   useEffect(() => {
-    fetchData(['stockIssueSummaries']);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await fetchData(['stockIssueSummaries']);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
   }, []);
 
   const onCreateStockIssueSummary = async (data: Omit<StockIssueSummaryType, 'id'>) => {
@@ -152,7 +167,9 @@ const IssueSummaryPage: React.FC = () => {
   );
 
   const filteredSummaries = useMemo(() => {
-    let filtered = [...stockIssueSummaries].reverse();
+    let filtered = [...stockIssueSummaries].sort((a, b) => {
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
 
     // Filter by creator
     if (creatorFilter !== 'all') {
@@ -163,11 +180,16 @@ const IssueSummaryPage: React.FC = () => {
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       filtered = filtered.filter((summary) => {
-        const totalAmount =
+        const totalGoodsAmount =
           summary.items?.reduce((sum, item) => {
             const product = productMap.get(item.product_id);
             return sum + (product ? product.price * item.quantity : 0);
           }, 0) || 0;
+        
+        const totalExpenseAmount = 
+          (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
+        
+        const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
         const productNames = (summary.items || [])
           .map((item) => item.product_name || productMap.get(item.product_id)?.name || '')
@@ -341,98 +363,121 @@ const IssueSummaryPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile View: Cards */}
+        {/* --- Mobile View: Cards --- */}
         <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
-          {paginatedSummaries.map((summary) => {
-            const warehouse = warehouseMap.get(summary.warehouse_id);
-            const totalAmount =
-              summary.items?.reduce((sum, item) => {
-                const product = productMap.get(item.product_id);
-                return sum + (product ? product.price * item.quantity : 0);
-              }, 0) || 0;
-            const requesterName = summary.requester_id
-              ? userMap.get(summary.requester_id)
-              : '-';
-            const statusBadge = getStatusBadge(summary.status);
+          {isLoading ? (
+            <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
+              <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+              <p className="text-base font-medium">กำลังโหลดข้อมูลสรุปการเบิก...</p>
+            </div>
+          ) : paginatedSummaries.length === 0 ? (
+            <div className="flex flex-col flex-grow items-center justify-center text-slate-400 py-16 min-h-[40vh]">
+              <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
+              <p className="text-lg font-medium">ไม่พบข้อมูลสรุปการเบิก</p>
+            </div>
+          ) : (
+            <>
+              {paginatedSummaries.map((summary) => {
+                const warehouse = warehouseMap.get(summary.warehouse_id);
 
-            return (
-              <Card key={summary.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p
-                      className="font-bold text-primary hover:underline cursor-pointer"
-                      onClick={() => handleViewDetails(summary)}
-                    >
-                      {summary.id}
-                    </p>
-                    <div className="mt-1">
-                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
-                        {statusBadge.text}
-                      </span>
+                const totalGoodsAmount =
+                  summary.items?.reduce((sum, item) => {
+                    const product = productMap.get(item.product_id);
+                    return sum + (product ? product.price * item.quantity : 0);
+                  }, 0) || 0;
+                
+                const totalExpenseAmount = 
+                  (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
+                
+                const totalAmount = totalGoodsAmount + totalExpenseAmount;
+
+                const requesterName = summary.requester_id
+                  ? userMap.get(summary.requester_id)
+                  : '-';
+                const statusBadge = getStatusBadge(summary.status);
+
+                return (
+                  <Card key={summary.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p
+                          className="font-bold text-primary hover:underline cursor-pointer"
+                          onClick={() => handleViewDetails(summary)}
+                        >
+                          {summary.id}
+                        </p>
+                        <div className="mt-1">
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
+                            {statusBadge.text}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Button
+                          variant="icon"
+                          data-summary-id={summary.id}
+                          onClick={(e) => handleDropdownToggle(e, summary.id)}
+                          className="-mr-2 -mt-2"
+                        >
+                          <ManageIcon className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="relative">
-                    <Button
-                      variant="icon"
-                      data-summary-id={summary.id}
-                      onClick={(e) => handleDropdownToggle(e, summary.id)}
-                      className="-mr-2 -mt-2"
-                    >
-                      <ManageIcon className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-4 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center">
-                    <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>
-                      {summary.created_at
-                        ? formatThaiDate(summary.created_at)
-                        : '-'}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span className="font-semibold text-slate-800">
-                      ฿
-                      {totalAmount.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span className="truncate">
-                      {warehouse?.name || '-'}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้สร้าง: {summary.created_by || '-'}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้เบิก: {requesterName}</span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                      <div className="flex items-center">
+                        <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>
+                          {summary.created_at
+                            ? formatThaiDate(summary.created_at)
+                            : '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span className="font-semibold text-slate-800">
+                          ฿
+                          {totalAmount.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {warehouse?.name || '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>ผู้สร้าง: {summary.created_by || '-'}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>ผู้เบิก: {requesterName}</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {totalItems > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              )}
+            </>
+          )}
         </div>
 
-        {/* Desktop View: Table */}
-        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex">
-          <div className="overflow-auto flex-grow">
+        {/* --- Desktop View: Table --- */}
+        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex relative">
+          <div className="overflow-auto flex-grow flex flex-col">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50 sticky top-0 z-10">
+              <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
                   <th
                     scope="col"
@@ -490,90 +535,123 @@ const IssueSummaryPage: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedSummaries.map((summary, index) => {
-                  const warehouse = warehouseMap.get(summary.warehouse_id);
-                  const totalItemsCount = summary.items?.length || 0;
+              
+              {!isLoading && paginatedSummaries.length > 0 && (
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {paginatedSummaries.map((summary, index) => {
+                    const warehouse = warehouseMap.get(summary.warehouse_id);
+                    
+                    const totalItemsCount = (summary.items?.length || 0) + ((summary as any).expense_items?.length || 0);
 
-                  const totalAmount =
-                    summary.items?.reduce((sum, item) => {
-                      const product = productMap.get(item.product_id);
-                      return (
-                        sum + (product ? product.price * item.quantity : 0)
-                      );
-                    }, 0) || 0;
-                  const requesterName = summary.requester_id
-                    ? userMap.get(summary.requester_id) || '-'
-                    : '-';
-                  
-                  const statusBadge = getStatusBadge(summary.status);
+                    // --- คำนวณมูลค่าสินค้ารวม ---
+                    const totalGoodsAmount =
+                      summary.items?.reduce((sum, item) => {
+                        const product = productMap.get(item.product_id);
+                        return (
+                          sum + (product ? product.price * item.quantity : 0)
+                        );
+                      }, 0) || 0;
+                    
+                    // --- คำนวณมูลค่าค่าใช้จ่ายรวม ---
+                    const totalExpenseAmount = 
+                      (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
 
-                  return (
-                    <tr key={summary.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {summary.created_at
-                          ? formatThaiDate(summary.created_at)
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
-                        {totalItemsCount}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
-                        ฿
-                        {totalAmount.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {warehouse?.name || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {summary.created_by || '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {requesterName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
-                          {statusBadge.text}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="inline-block text-left">
-                          <Button
-                            variant="icon"
-                            data-summary-id={summary.id}
-                            onClick={(e) =>
-                              handleDropdownToggle(e, summary.id)
-                            }
-                          >
-                            <span className="sr-only">จัดการ</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
+                    // --- รวมมูลค่าทั้งหมด ---
+                    const totalAmount = totalGoodsAmount + totalExpenseAmount;
+
+                    const requesterName = summary.requester_id
+                      ? userMap.get(summary.requester_id) || '-'
+                      : '-';
+                    
+                    const statusBadge = getStatusBadge(summary.status);
+
+                    return (
+                      <tr key={summary.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {summary.created_at
+                            ? formatThaiDate(summary.created_at)
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
+                          {totalItemsCount}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
+                          ฿
+                          {totalAmount.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {warehouse?.name || '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {summary.created_by || '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {requesterName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
+                            {statusBadge.text}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="inline-block text-left">
+                            <Button
+                              variant="icon"
+                              data-summary-id={summary.id}
+                              onClick={(e) =>
+                                handleDropdownToggle(e, summary.id)
+                              }
+                            >
+                              <span className="sr-only">จัดการ</span>
+                              <ManageIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              )}
             </table>
+
+            {/* --- Loading State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
+            {isLoading && (
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-500 min-h-[40vh]">
+                <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                <p className="text-base font-medium">กำลังโหลดข้อมูลสรุปการเบิก...</p>
+              </div>
+            )}
+
+            {/* --- Empty State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
+            {!isLoading && paginatedSummaries.length === 0 && (
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-400 min-h-[40vh]">
+                <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg font-medium">ไม่พบข้อมูลสรุปการเบิก</p>
+                <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
+              </div>
+            )}
           </div>
-          <div className="flex-shrink-0">
-            <Pagination
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </div>
+
+          {!isLoading && totalItems > 0 && (
+            <div className="flex-shrink-0 border-t border-slate-100 mt-auto bg-white">
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          )}
         </Card>
       </div>
 

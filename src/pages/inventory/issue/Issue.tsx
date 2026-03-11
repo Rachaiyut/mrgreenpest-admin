@@ -59,10 +59,14 @@ import {
   TruckIcon,
   UserIcon,
   XCircleIcon,
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 
 const Issue: React.FC = () => {
   const { handlers } = useData();
+
+  // --- เพิ่ม State สำหรับ Loading ---
+  const [isLoading, setIsLoading] = useState(true);
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
@@ -72,6 +76,7 @@ const Issue: React.FC = () => {
 
   // 1. แยก fetchAllData ออกมาไว้ข้างนอก และใช้ useCallback เพื่อให้เรียกซ้ำได้
   const fetchAllData = useCallback(async () => {
+    setIsLoading(true); // เริ่มหมุน
     try {
       const [
         withdrawalsRes,
@@ -95,6 +100,8 @@ const Issue: React.FC = () => {
 
     } catch (error) {
       console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false); // หยุดหมุน
     }
   }, []);
 
@@ -127,7 +134,7 @@ const Issue: React.FC = () => {
   const onUpdateWithdrawal = async (updatedItem: WithdrawalType) => {
     try {
       await handlers.withdrawals.update(updatedItem);
-      setIsEditModalOpen(false);  // ปิด Modal (เผื่อว่า Modal ลูกยังไม่ได้ปิด)
+      setIsEditModalOpen(false);  // ปิด Modal
       setSelectedWithdrawal(null);
       await fetchAllData();       // รีเฟรชข้อมูลใหม่จาก API
     } catch (error) {
@@ -202,8 +209,10 @@ const Issue: React.FC = () => {
     [withdrawals]
   );
 
-  const filteredWithdrawals = useMemo(() => {
-    let filtered = [...withdrawals].reverse();
+  const filteredIssues = useMemo(() => {
+    let filtered = [...withdrawals].sort((a, b) => {
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+    });
 
     if (creatorFilter !== 'all') {
       filtered = filtered.filter((w) => w.created_by === creatorFilter);
@@ -249,8 +258,8 @@ const Issue: React.FC = () => {
     return filtered;
   }, [withdrawals, searchQuery, creatorFilter, productMap]);
 
-  const totalItems = filteredWithdrawals.length;
-  const paginatedWithdrawals = filteredWithdrawals.slice(
+  const totalItems = filteredIssues.length;
+  const paginatedWithdrawals = filteredIssues.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -298,7 +307,6 @@ const Issue: React.FC = () => {
     }
   };
 
-  // เพิ่ม await fetchAllData ในสถานะ Approval / Cancel ด้วย
   const handleConfirmApproval = async (withdrawalId: string, remarks: string) => {
     const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
     if (withdrawalToUpdate) {
@@ -471,106 +479,123 @@ const Issue: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile View: Cards */}
+        {/* --- Mobile View: Cards --- */}
         <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
-          {paginatedWithdrawals.map((withdrawal) => {
-            const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
-            const toWarehouse = withdrawal.to_warehouse_id
-              ? warehouseMap.get(withdrawal.to_warehouse_id)
-              : null;
-            const totalGoodsAmount =
-              withdrawal.items?.reduce((sum, item) => {
-                const product = productMap.get(item.product_id);
-                return sum + (product ? product.price * item.quantity : 0);
-              }, 0) || 0;
-            const totalExpenseAmount =
-              withdrawal.expenses?.reduce(
-                (sum, exp) => sum + Number(exp.amount),
-                0
-              ) || 0;
-            const totalAmount = totalGoodsAmount + totalExpenseAmount;
-            const recipientName = withdrawal.recipient_id
-              ? userMap.get(withdrawal.recipient_id)
-              : '-';
+          {isLoading ? (
+            <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
+              <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+              <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
+            </div>
+          ) : paginatedWithdrawals.length === 0 ? (
+            <div className="flex flex-col flex-grow items-center justify-center text-slate-400 py-16 min-h-[40vh]">
+              <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
+              <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
+            </div>
+          ) : (
+            <>
+              {paginatedWithdrawals.map((withdrawal) => {
+                const fromWarehouse = warehouseMap.get(withdrawal.warehouse_id);
+                const toWarehouse = withdrawal.to_warehouse_id
+                  ? warehouseMap.get(withdrawal.to_warehouse_id)
+                  : null;
+                const totalGoodsAmount =
+                  withdrawal.items?.reduce((sum, item) => {
+                    const product = productMap.get(item.product_id);
+                    return sum + (product ? product.price * item.quantity : 0);
+                  }, 0) || 0;
+                const totalExpenseAmount =
+                  withdrawal.expenses?.reduce(
+                    (sum, exp) => sum + Number(exp.amount),
+                    0
+                  ) || 0;
+                const totalAmount = totalGoodsAmount + totalExpenseAmount;
+                const recipientName = withdrawal.recipient_id
+                  ? userMap.get(withdrawal.recipient_id)
+                  : '-';
 
-            return (
-              <Card key={withdrawal.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p
-                      className="font-bold text-primary hover:underline cursor-pointer"
-                      onClick={() => handleViewDetails(withdrawal)}
-                    >
-                      {withdrawal.id}
-                    </p>
-                    <div className="mt-2">
-                      <StatusBadge status={withdrawal.status} />
+                return (
+                  <Card key={withdrawal.id} className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p
+                          className="font-bold text-primary hover:underline cursor-pointer"
+                          onClick={() => handleViewDetails(withdrawal)}
+                        >
+                          {withdrawal.id}
+                        </p>
+                        <div className="mt-2">
+                          <StatusBadge status={withdrawal.status} />
+                        </div>
+                      </div>
+                      <div className="relative">
+                        <Button
+                          variant="icon"
+                          data-withdrawal-id={withdrawal.id}
+                          onClick={(e) => handleDropdownToggle(e, withdrawal.id)}
+                          className="-mr-2 -mt-2"
+                        >
+                          <ManageIcon className="h-5 w-5" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="relative">
-                    <Button
-                      variant="icon"
-                      data-withdrawal-id={withdrawal.id}
-                      onClick={(e) => handleDropdownToggle(e, withdrawal.id)}
-                      className="-mr-2 -mt-2"
-                    >
-                      <ManageIcon className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="mt-4 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center">
-                    <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>
-                      {withdrawal.created_at
-                        ? formatThaiDate(withdrawal.created_at)
-                        : '-'}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span className="font-semibold text-slate-800">
-                      ฿
-                      {totalAmount.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span className="truncate">
-                      {fromWarehouse?.name} &rarr; {toWarehouse?.name}{' '}
-                      {toWarehouse?.type === 'VEHICLE' && // Assuming string check if enum not available easily or map
-                        `(${toWarehouse.vehicle?.vehicle_registration || '-'})`}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้สร้าง: {withdrawal.created_by}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                    <span>ผู้เบิก/ผู้รับเงิน: {recipientName}</span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                      <div className="flex items-center">
+                        <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>
+                          {withdrawal.created_at
+                            ? formatThaiDate(withdrawal.created_at)
+                            : '-'}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span className="font-semibold text-slate-800">
+                          ฿
+                          {totalAmount.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {fromWarehouse?.name} &rarr; {toWarehouse?.name}{' '}
+                          {toWarehouse?.type === 'VEHICLE' &&
+                            `(${toWarehouse.vehicle?.vehicle_registration || '-'})`}
+                        </span>
+                      </div>
+                      <div className="flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>ผู้สร้าง: {withdrawal.created_by}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
+                        <span>ผู้เบิก/ผู้รับเงิน: {recipientName}</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {totalItems > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
+              )}
+            </>
+          )}
         </div>
 
-        {/* Desktop View: Table */}
-        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex">
-          <div className="overflow-auto flex-grow">
+        {/* --- Desktop View: Table --- */}
+        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex relative">
+          <div className="overflow-auto flex-grow flex flex-col">
             <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50 sticky top-0 z-10">
+              {/* เปลี่ยนให้เหมือนเดิม และเพิ่ม border-b เพื่อกันเส้นหาย */}
+              <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
                   <th
                     scope="col"
@@ -634,117 +659,140 @@ const Issue: React.FC = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedWithdrawals.map((withdrawal, index) => {
-                  const fromWarehouse = warehouseMap.get(
-                    withdrawal.warehouse_id
-                  );
-                  const toWarehouse = withdrawal.to_warehouse_id
-                    ? warehouseMap.get(withdrawal.to_warehouse_id)
-                    : null;
-                  const totalItemsCount =
-                    (withdrawal.items?.length || 0) +
-                    (withdrawal.expenses?.length || 0);
+              
+              {!isLoading && paginatedWithdrawals.length > 0 && (
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {paginatedWithdrawals.map((withdrawal, index) => {
+                    const fromWarehouse = warehouseMap.get(
+                      withdrawal.warehouse_id
+                    );
+                    const toWarehouse = withdrawal.to_warehouse_id
+                      ? warehouseMap.get(withdrawal.to_warehouse_id)
+                      : null;
+                    const totalItemsCount =
+                      (withdrawal.items?.length || 0) +
+                      (withdrawal.expenses?.length || 0);
 
-                  const totalGoodsAmount =
-                    withdrawal.items?.reduce((sum, item) => {
-                      const product = productMap.get(item.product_id);
-                      return (
-                        sum + (product ? product.price * item.quantity : 0)
-                      );
-                    }, 0) || 0;
-                  const totalExpenseAmount =
-                    withdrawal.expenses?.reduce(
-                      (sum, exp) => sum + Number(exp.amount),
-                      0
-                    ) || 0;
-                  const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                  const recipientName = withdrawal.recipient_id
-                    ? userMap.get(withdrawal.recipient_id) || '-'
-                    : '-';
+                    const totalGoodsAmount =
+                      withdrawal.items?.reduce((sum, item) => {
+                        const product = productMap.get(item.product_id);
+                        return (
+                          sum + (product ? product.price * item.quantity : 0)
+                        );
+                      }, 0) || 0;
+                    const totalExpenseAmount =
+                      withdrawal.expenses?.reduce(
+                        (sum, exp) => sum + Number(exp.amount),
+                        0
+                      ) || 0;
+                    const totalAmount = totalGoodsAmount + totalExpenseAmount;
+                    const recipientName = withdrawal.recipient_id
+                      ? userMap.get(withdrawal.recipient_id) || '-'
+                      : '-';
 
-                  return (
-                    <tr key={withdrawal.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
-                      </td>
-                      <td
-                        className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
-                        onClick={() => handleViewDetails(withdrawal)}
-                      >
-                        {withdrawal.code}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {withdrawal.created_at
-                          ? formatThaiDate(withdrawal.created_at)
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
-                        {totalItemsCount}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
-                        ฿
-                        {totalAmount.toLocaleString('th-TH', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
-                        {Array.isArray(withdrawal.reference_ids)
-                          ? withdrawal.reference_ids.length
-                          : 0}{' '}
-                        รายการ
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {(() => {
-                          const creatorName =
-                            userMap.get(withdrawal.created_by) ||
-                            withdrawal.created_by;
-                          return creatorName === '[object Object]'
+                    return (
+                      <tr key={withdrawal.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
+                          {(currentPage - 1) * itemsPerPage + index + 1}
+                        </td>
+                        <td
+                          className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
+                          onClick={() => handleViewDetails(withdrawal)}
+                        >
+                          {withdrawal.code}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {withdrawal.created_at
+                            ? formatThaiDate(withdrawal.created_at)
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
+                          {totalItemsCount}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
+                          ฿
+                          {totalAmount.toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
+                          {Array.isArray(withdrawal.reference_ids)
+                            ? withdrawal.reference_ids.length
+                            : 0}{' '}
+                          รายการ
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {(() => {
+                            const creatorName =
+                              userMap.get(withdrawal.created_by) ||
+                              withdrawal.created_by;
+                            return creatorName === '[object Object]'
+                              ? 'Unknown'
+                              : creatorName;
+                          })()}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                          {recipientName === '[object Object]'
                             ? 'Unknown'
-                            : creatorName;
-                        })()}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                        {recipientName === '[object Object]'
-                          ? 'Unknown'
-                          : recipientName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <StatusBadge status={withdrawal.status} />
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="inline-block text-left">
-                          <Button
-                            variant="icon"
-                            data-withdrawal-id={withdrawal.id}
-                            onClick={(e) =>
-                              handleDropdownToggle(e, withdrawal.id)
-                            }
-                          >
-                            <span className="sr-only">จัดการ</span>
-                            <ManageIcon
-                              className="h-5 w-5"
-                              aria-hidden="true"
-                            />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
+                            : recipientName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <StatusBadge status={withdrawal.status} />
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="inline-block text-left">
+                            <Button
+                              variant="icon"
+                              data-withdrawal-id={withdrawal.id}
+                              onClick={(e) =>
+                                handleDropdownToggle(e, withdrawal.id)
+                              }
+                            >
+                              <span className="sr-only">จัดการ</span>
+                              <ManageIcon
+                                className="h-5 w-5"
+                                aria-hidden="true"
+                              />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              )}
             </table>
+
+            {/* --- Loading State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
+            {isLoading && (
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-500 min-h-[40vh]">
+                <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
+              </div>
+            )}
+
+            {/* --- Empty State ย้ายออกมาเพื่อจัดกึ่งกลางเช่นกัน --- */}
+            {!isLoading && paginatedWithdrawals.length === 0 && (
+              <div className="flex-grow flex flex-col items-center justify-center text-slate-400 min-h-[40vh]">
+                <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
+                <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
+              </div>
+            )}
           </div>
-          <div className="flex-shrink-0">
-            <Pagination
-              currentPage={currentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
-          </div>
+
+          {!isLoading && totalItems > 0 && (
+            <div className="flex-shrink-0">
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+              />
+            </div>
+          )}
         </Card>
       </div>
 
