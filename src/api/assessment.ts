@@ -2,7 +2,7 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { Assessment } from '@/src/types/entity/assessment.interface';
+import { Assessment, AssessmentAction } from '@/src/types/entity/assessment.interface';
 import { AuthService } from './auth';
 
 class AssessmentService extends AuthService {
@@ -39,6 +39,16 @@ class AssessmentService extends AuthService {
 
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
+  }
+
+  async verifyById(id: string, data: AssessmentAction): Promise<Assessment> {
+    const res = await this.http.patch<Assessment>(`${this.path}/${id}/verify`, data);
+    return res.data;
+  }
+
+  async approveById(id: string, data: AssessmentAction): Promise<Assessment> {
+    const res = await this.http.patch<Assessment>(`${this.path}/${id}/approve`, data);
+    return res.data;
   }
 }
 

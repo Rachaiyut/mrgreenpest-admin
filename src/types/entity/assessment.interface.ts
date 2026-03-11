@@ -74,3 +74,8 @@ export interface AssessmentInstallment extends IBase {
   note?: string;
   due_date?: string | Date;
 }
+
+
+export interface AssessmentAction extends IBase {
+  remark?: string;
+}
