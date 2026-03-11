@@ -131,7 +131,7 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
     >
       <div className="space-y-6">
         <div className="p-4 bg-primary/10 rounded-lg text-center relative">
-          <p className="text-sm font-medium text-primary/80">ยอดเงินคงเหลือ</p>
+          <p className="text-sm font-medium text-primary/80">วงเงินการเบิก</p>
           <p className="text-4xl font-bold text-primary">
             ฿
             {balance.toLocaleString('th-TH', {
