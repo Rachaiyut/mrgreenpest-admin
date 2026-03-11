@@ -61,6 +61,7 @@ export interface JobFormProps {
   contracts?: Contract[];
   jobs: any[];
   users: User[];
+  currentUserRole: Role
 }
 
 // 🌟 ตัวช่วยดึง ID อัจฉริยะ ป้องกัน API ส่งค่ามาผิดรูปแบบ
@@ -80,6 +81,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   warehouses: initialWarehouses,
   initialContractId,
   initialWorkDateIso,
+  currentUserRole
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [visitedSteps, setVisitedSteps] = useState<number[]>([0]);
@@ -133,6 +135,10 @@ export const JobForm: React.FC<JobFormProps> = ({
   );
 
   const hasInitializedRef = useRef<string | null>(null);
+
+
+  const isTechRole = currentUserRole === Role.TECH || currentUserRole === Role.LEAD_TECH;
+  const isDisableTeamEdit = mode === 'edit' && isTechRole;
 
   useEffect(() => {
     const fetchMasterData = async () => {
@@ -988,7 +994,16 @@ export const JobForm: React.FC<JobFormProps> = ({
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><TruckIcon className="w-5 h-5" /></div>ยานพาหนะ</h3>
                 <div className="space-y-4">
-                  <SearchableSelect label="เลือกรถที่ปฏิบัติงาน" options={filteredVehicles} value={selectedVehicleId} onChange={setSelectedVehicleId} onSearchChange={setVehicleSearch} placeholder="ค้นหารถบริการ..." required />
+                  <SearchableSelect 
+                    label="เลือกรถที่ปฏิบัติงาน"
+                    options={filteredVehicles} 
+                    value={selectedVehicleId} 
+                    onChange={setSelectedVehicleId} 
+                    onSearchChange={setVehicleSearch} 
+                    placeholder="ค้นหารถบริการ..."
+                    disabled={isDisableTeamEdit}
+                    required 
+                  />
                   {timeConflictError && (<div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-600 flex items-start gap-2"><span className="text-lg">⚠️</span><p>{timeConflictError}</p></div>)}
                   {bookedSlots.length > 0 && (
                     <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm">
@@ -1001,17 +1016,43 @@ export const JobForm: React.FC<JobFormProps> = ({
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>หัวหน้าทีม (Leader)</h3>
                 <div className="mb-4">
-                  <SearchableSelect label="หัวหน้าช่าง *" name="primary_tech_id" options={leadTechnicianOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))} value={leadTechnicianId} onChange={handleLeadTechnicianChange} onSearchChange={setLeadTechSearch} placeholder="ค้นหาหัวหน้าช่าง..." required />
+                  <SearchableSelect 
+                  label="หัวหน้าช่าง *" 
+                  name="primary_tech_id" 
+                  options={leadTechnicianOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))} 
+                  value={leadTechnicianId} 
+                  onChange={handleLeadTechnicianChange} 
+                  onSearchChange={setLeadTechSearch} 
+                  placeholder="ค้นหาหัวหน้าช่าง..." 
+                  disabled={isDisableTeamEdit}
+                  required 
+                />
                 </div>
               </div>
             </div>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><UserIcon className="w-5 h-5" /></div>ลูกทีม (Members)</h3>
-              <div className="mb-6"><Input placeholder="ค้นหาช่างเพิ่มเติม..." value={additionalTechSearch} onChange={(e) => setAdditionalTechSearch(e.target.value)} className="bg-slate-50 border-slate-200 focus:bg-white transition-all" /></div>
+              <div className="mb-6">
+                <Input 
+                  placeholder="ค้นหาช่างเพิ่มเติม..." 
+                  value={additionalTechSearch} 
+                  onChange={(e) => setAdditionalTechSearch(e.target.value)} 
+                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all" 
+                  disabled={isDisableTeamEdit}
+                />
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {additionalTechnicians.map((tech) => (
                   <label key={tech.id} className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group ${selectedTechnicianIds.includes(tech.id) ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}`}>
-                    <div className="pt-1"><input type="checkbox" checked={selectedTechnicianIds.includes(tech.id)} onChange={() => handleTechnicianToggle(tech.id)} className="w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary transition-colors cursor-pointer" /></div>
+                    <div className="pt-1">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedTechnicianIds.includes(tech.id)} 
+                        onChange={() => handleTechnicianToggle(tech.id)} 
+                        className="w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary transition-colors cursor-pointer" 
+                        disabled={isDisableTeamEdit}
+                      />
+                    </div>
                     <div className="flex flex-col"><span className={`font-semibold transition-colors ${selectedTechnicianIds.includes(tech.id) ? 'text-primary' : 'text-slate-700'}`}>{getTechnicianName(tech)}</span>{tech.nick_name && (<span className="text-xs text-slate-500 font-medium">({tech.nick_name})</span>)}{tech.phone && (<span className="text-xs text-slate-400 mt-1">{tech.phone}</span>)}</div>
                   </label>
                 ))}

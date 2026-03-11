@@ -3,11 +3,13 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
 import { JobForm, JobFormProps } from './JobForm';
+import { Role } from '@/src/types';
 
 // สร้าง Props โดยรับ properties เดียวกับ JobForm แต่เอา mode มาจัดการ Title
 interface JobModalProps extends Omit<JobFormProps, 'onCancel'> {
   isOpen: boolean;
   onClose: () => void;
+  currentUserRole: Role
 }
 
 export const JobModal: React.FC<JobModalProps> = ({
@@ -22,6 +24,7 @@ export const JobModal: React.FC<JobModalProps> = ({
   contracts,
   jobs,
   users,
+  currentUserRole,
 }) => {
   // สร้าง Title อัตโนมัติแบบเดียวกับ Contract
   const getTitle = () => {
@@ -50,6 +53,7 @@ export const JobModal: React.FC<JobModalProps> = ({
           contracts={contracts}
           jobs={jobs}
           users={users}
+          currentUserRole={currentUserRole}
         />
       )}
     </Modal>

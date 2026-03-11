@@ -109,6 +109,7 @@ const Job: React.FC<JobProps> = ({
   const authUser = useCurrentUser();
   const currentUser = authUser as unknown as User;
 
+
   // Local state
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
   const [reports, setReports] = useState<ServiceReport[]>([]);
@@ -1256,6 +1257,7 @@ const Job: React.FC<JobProps> = ({
         users={users}
         warehouses={warehouses}
         contracts={contracts}
+        currentUserRole={currentUser.role}
       />
 
       <JobModal
@@ -1267,6 +1269,8 @@ const Job: React.FC<JobProps> = ({
         jobs={jobs}
         users={users}
         warehouses={warehouses}
+        contracts={contracts}
+        currentUserRole={currentUser.role}
       />
 
       <JobDetailsModal
