@@ -9,8 +9,10 @@ import { QuotationApi } from '../../../api/quotation';
 import { InvoiceApi } from '../../../api/invoice';
 import { Customer } from '../../../types/entity/customer.interface';
 import { Status } from '../../../types/entity/core.interface';
-import { Invoice, Contract, Quotation } from '../../../types/entity/financial.interface';
-import { InvoiceStatus } from '../../../types/enums/financial';
+import { Invoice, Contract } from '../../../types/entity/financial.interface';
+import { ContractStatus, InvoiceStatus } from '../../../types/enums/financial';
+import { Quotation } from '@/src/types';
+import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'ร่าง',
@@ -127,10 +129,16 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   useEffect(() => {
     const loadMasterData = async () => {
+      if (!formData.customerId) {
+        setContracts([]);
+        setQuotations([]);
+        return;
+      }
+
       try {
         const [contractsRes, quotationsRes] = await Promise.all([
-          ContractApi.getAll({ status: 'ACTIVE', limit: 50 }),
-          QuotationApi.getAll({ status: 'APPROVED', limit: 50 })
+          ContractApi.getAll({ status: ContractStatus.ACTIVE, customer_id: formData.customerId }),
+          QuotationApi.getAll({ status: QuotationStatus.SIGNED, customer_id: formData.customerId })
         ]);
         if (contractsRes?.data) setContracts(contractsRes.data);
         if (quotationsRes?.data) setQuotations(quotationsRes.data);
@@ -138,8 +146,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         console.error('Error fetching master data:', error);
       }
     };
+
     loadMasterData();
-  }, []);
+  }, [formData.customerId]);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -147,7 +156,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         setIsLoadingSchedules(true);
         try {
           const res = await InvoiceApi.getAllInvoiceSchedule(formData.contractId);
-          const data = (res as any).data || res;
+          const data = res.data || res;
           setInvoiceSchedules(Array.isArray(data) ? data : []);
           
           // Only reset these if we are CHANGING the contract, not on initial load of an edit
@@ -255,14 +264,25 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   // -- Handlers --
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const handleCustomerSearch = useCallback((query: string) => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    
     searchTimeoutRef.current = setTimeout(async () => {
-      if (!query.trim()) return setSearchedCustomers([]);
+      if (!query.trim()) return; 
+
       try {
         const res = await CustomerApi.getCustomers({ search: query, limit: 20 });
-        if (res?.data) setSearchedCustomers(res.data);
-      } catch (err) { console.error(err); }
+        if (res?.data) {
+          setSearchedCustomers(prev => {
+            const newCustomers = res.data;
+            const combined = [...newCustomers, ...prev];
+            return Array.from(new Map(combined.map(item => [item.id, item])).values());
+          });
+        }
+      } catch (err) { 
+        console.error(err); 
+      }
     }, 500);
   }, []);
 

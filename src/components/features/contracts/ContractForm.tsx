@@ -9,13 +9,11 @@ import React, {
 } from 'react';
 
 // ===== Types / Enums =====
-import { CategoryType } from '../../../types';
+import { CategoryType, Quotation } from '../../../types';
 import { Customer } from '../../../types/entity/customer.interface';
-import {
-  InstallmentPlan,
-  Quotation,
-} from '../../../types/entity/financial.interface';
+import { InstallmentPlan } from '../../../types/entity/financial.interface';
 import { ContractStatus } from '../../../types/enums/financial';
+import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
@@ -128,15 +126,13 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Contract info
   const [contractCode, setContractCode] = useState(initialValues?.code || '');
-  const [status, setStatus] = useState<ContractStatus>(
-    (initialValues?.status as ContractStatus) || ContractStatus.DRAFT
-  );
+  const [status, setStatus] = useState<ContractStatus>((initialValues?.status) || ContractStatus.DRAFT);
   const [startDate, setStartDate] = useState(
     initialValues?.start_date
       ? new Date(initialValues.start_date).toISOString().substring(0, 10)
       : ''
   );
-  const [endDate, setEndDate] = useState(
+  const [endDate, setEndDate] = useState( 
     initialValues?.end_date
       ? new Date(initialValues.end_date).toISOString().substring(0, 10)
       : ''
@@ -154,7 +150,6 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [fullQuotation, setFullQuotation] = useState<any>(null);
 
-  // 🟢 State สำหรับตัวเลือกการออกสัญญา (รวม/แยก)
   const [isSeparateContract, setIsSeparateContract] = useState<boolean>(false);
 
   // Service info
@@ -261,7 +256,8 @@ export const ContractForm: FC<ContractFormProps> = ({
     const fetchQuotations = async () => {
       try {
         const res = await QuotationApi.getAll({
-          status: 'APPROVED',
+          customer_id: selectedCustomerId,
+          status: QuotationStatus.SIGNED,
           limit: 10,
         });
         if (res && res.data) {
@@ -333,6 +329,49 @@ export const ContractForm: FC<ContractFormProps> = ({
       );
     }
   }, [mode, initialValues]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await CategoryApi.getCategories({
+          type: CategoryType.SERVICE,
+        });
+        if (res && res.data) {
+          setFetchedCategories(res.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedCustomerId) {
+      setQuotations([]);
+      return; 
+    }
+
+    const fetchQuotations = async () => {
+      try {
+        const res = await QuotationApi.getAll({
+          customer_id: selectedCustomerId,
+          status: QuotationStatus.SIGNED,
+        });
+        if (res && res.data) {
+          setQuotations(res.data);
+        } else {
+          setQuotations([]);
+        }
+      } catch (error) {
+        console.error('Error fetching quotations:', error);
+        setQuotations([]);
+      }
+    };
+    
+    fetchQuotations();
+
+  }, [selectedCustomerId]);
 
   // Initialize searched customers
   useEffect(() => {

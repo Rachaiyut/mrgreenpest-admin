@@ -2,8 +2,8 @@ import {
   IBaseQuery,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { Quotation } from '@/src/types/entity/financial.interface';
 import { AuthService } from './auth';
+import { Quotation } from '../types';
 
 class QuotationService extends AuthService {
   protected path = '/quotations';
