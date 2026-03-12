@@ -26,7 +26,7 @@ import { WorkAreaForm } from './WorkAreaForm';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { AssessmentApi, CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
 import { PaymentMethod } from '@/src/types/enums/financial';
-import { CategoryType } from '@/src/types';
+import { CategoryType, Role } from '@/src/types';
 import {
   UserIcon,
   DocumentIcon,
@@ -38,6 +38,7 @@ import {
   CalendarIcon,
   MapPinIcon,
   PhoneIcon,
+  LoadingIcon, // ตรวจสอบให้แน่ใจว่าได้มีการ export LoadingIcon ในไฟล์นี้ครับ
 } from '../../../assets/icons/Icons';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -45,6 +46,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 interface AssessmentFormProps {
   isOpen: boolean;
   initialData?: Assessment | null;
+  currentUserRole: Role;
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
@@ -58,6 +60,7 @@ const STEPS = [
 export const AssessmentForm: FC<AssessmentFormProps> = ({
   isOpen,
   initialData,
+  currentUserRole,
   onSubmit,
   onCancel,
 }) => {
@@ -75,47 +78,60 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // 🌟 เพิ่ม State สำหรับ Loading
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch Master Data & Initialize Form
+  // 🌟 Fetch Master Data & Initialize Form
   useEffect(() => {
     if (!isOpen) return;
 
     const initializeData = async () => {
+      setIsLoading(true); // เริ่ม Loading
       try {
-        // 1. Fetch Master Data
-        const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
-          CustomerApi.getCustomers({ limit: 100 }),
-          PackageApi.getPackages({ limit: 50 }),
-          ProductApi.getProducts({ limit: 100 }),
-          CategoryApi.getCategories({ type: CategoryType.SERVICE }),
-        ]);
-
-        const fetchedCustomers = customersRes.data;
-        const fetchedPackages = packagesRes.data;
-        const fetchedProducts = productsRes.data;
-        const fetchedCategories = categoriesRes.data;
-
-        setCustomers(fetchedCustomers);
-        setPackages(fetchedPackages);
-        setProducts(fetchedProducts);
-        setCategories(fetchedCategories);
-
         // Reset Errors & Steps
         setCurrentStep(0);
         setVisitedSteps([0]);
         setErrors({});
 
-        // 2. Mode Checking
-        if (isEdit && initialData) {
-          // --- โหมดแก้ไข (ดึง Logic จาก EditAssessmentModal มาจัดการตรงนี้) ---
-          let loadedAssessment = initialData;
-          try {
-            const res = await AssessmentApi.getById(initialData.id!);
-            loadedAssessment = (res as any).data || res;
-          } catch (e) {
-            console.error('Failed to fetch full assessment details', e);
-          }
+        if (isEdit && initialData?.id) {
+          // ----------------------------------------------------
+          // 🌟 โหมด "แก้ไข" (Edit Mode) - Fetch By ID ไปเลย
+          // ----------------------------------------------------
+          const res = await AssessmentApi.getById(initialData.id);
+          const loadedAssessment = (res as any).data || res;
 
+          // รวบรวม ID สินค้าทั้งหมดที่ใช้
+          const productIds = new Set<string>();
+          (loadedAssessment.assessment_areas || []).forEach((area: any) => {
+            (area.items || []).forEach((item: any) => {
+              if (item.product_id) productIds.add(item.product_id);
+            });
+          });
+
+          // ยิง API Fetch By ID ตรงๆ พร้อมกันทั้งหมด
+          const [categoriesRes, customerRes, packageRes, ...productResults] = await Promise.all([
+            CategoryApi.getCategories({ type: CategoryType.SERVICE }),
+            loadedAssessment.customer_id ? CustomerApi.getCustomerById(loadedAssessment.customer_id).catch(() => null) : Promise.resolve(null),
+            loadedAssessment.package_id ? PackageApi.getPackages() : Promise.resolve(null),
+            ...Array.from(productIds).map(pid => ProductApi.getProductById(pid).catch(() => null))
+          ]);
+
+          const fetchedCategories = categoriesRes?.data || [];
+          
+          // จับยัดลง Array เพื่อให้ Dropdown ใช้งานได้ 
+          const fetchedCustomers = customerRes ? [(customerRes as any).data || customerRes] : [];
+          // แก้ไขตรงนี้ให้ใช้ packageRes แบบปลอดภัย
+          const fetchedPackages = packageRes ? ((packageRes as any).data || packageRes) : [];
+          const fetchedProducts = productResults.map(pr => (pr as any)?.data || pr).filter(Boolean);
+
+          setCustomers(fetchedCustomers);
+          setPackages(Array.isArray(fetchedPackages) ? fetchedPackages : []);
+          setProducts(fetchedProducts);
+          setCategories(fetchedCategories);
+
+          // เซ็ตข้อมูลลงฟอร์ม
           const { assessment_areas, ...rest } = loadedAssessment;
           setFormData({
             ...rest,
@@ -125,7 +141,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           
           setSelectedPackageId(loadedAssessment.package_id || null);
           
-          const foundCustomer = fetchedCustomers.find(c => c.id === loadedAssessment.customer_id) || loadedAssessment.customer;
+          const foundCustomer = fetchedCustomers[0] || loadedAssessment.customer;
           setSelectedCustomerData((foundCustomer as Customer) || null);
 
           let loadedPaymentCondition = loadedAssessment.payment_condition || PaymentMethod.TRANSFER;
@@ -135,12 +151,12 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           setPaymentCondition(loadedPaymentCondition);
           setInstallments(loadedAssessment.installments || []);
 
-          // Enrich Work Areas logic จาก Edit Modal เดิม เพื่อให้รองรับการแสดงผล
+          // Enrich Work Areas logic
           const rawAreas = assessment_areas || [];
           const enrichedAreas = rawAreas.map((wa: any) => {
             const enrichedItems = (wa.items || []).map((item: any) => {
               if (item.product_id && (!item.product_name || !item.product_price)) {
-                const product = fetchedProducts.find((p) => p.id === item.product_id);
+                const product = fetchedProducts.find((p: any) => p.id === item.product_id);
                 if (product) return { ...item, product_name: product.name, product_price: Number(product.cost_price || 0) };
               }
               return item;
@@ -161,7 +177,22 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           setWorkAreas(enrichedAreas);
 
         } else {
-          // --- โหมดสร้างใหม่ (Logic ปกติของ AddAssessmentModal) ---
+          // ----------------------------------------------------
+          // 🌟 โหมด "สร้างใหม่" (Add Mode) - โหลด List ตั้งต้น
+          // ----------------------------------------------------
+          const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
+            CustomerApi.getCustomers({ limit: 50 }),
+            PackageApi.getPackages(),
+            ProductApi.getProducts({ limit: 50 }),
+            CategoryApi.getCategories({ type: CategoryType.SERVICE }),
+          ]);
+
+          setCustomers(customersRes.data || []);
+          setPackages(packagesRes.data || []);
+          setProducts(productsRes.data || []);
+          setCategories(categoriesRes.data || []);
+
+          // เซ็ตค่าตั้งต้น
           setFormData({
             status: AsessmentStatus.DRAFT,
             created_at: new Date().toISOString(),
@@ -181,13 +212,14 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         }
       } catch (error) {
         console.error('Error initializing form data', error);
+      } finally {
+        setIsLoading(false); // ปิด Loading เสมอ
       }
     };
 
     initializeData();
   }, [isOpen, initialData, isEdit]);
 
-  // --- Logic ทั้งหมดใช้ของเดิม 100% ---
   const totalEstimatedCost = useMemo(
     () => workAreas.reduce((sum, area) => sum + (Number(area.total_price) || 0), 0),
     [workAreas]
@@ -419,56 +451,97 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     if (currentStep > 0) setCurrentStep((prev) => prev - 1);
   };
 
-  const handleSubmitData = (e?: FormEvent) => {
-    if (e) e.preventDefault();
-    if (!validateStep()) return;
-
-    const sanitizedWorkAreas = workAreas.map((area) => {
-      const newArea: any = { ...area };
-      if (newArea.id && newArea.id.startsWith('area-')) newArea.id = crypto.randomUUID();
-      if (newArea.package_price !== undefined && newArea.package_price !== null) newArea.package_price = Number(newArea.package_price);
+  const getSubmitButtonText = () => {
+    if (isEdit && formData.status === AsessmentStatus.PENDING) {
+      const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as any)?.name : String(currentUserRole);
+      const formattedRole = String(roleStr || '').toUpperCase();
       
-      // Clean up items format for submit (Both Add & Edit)
-      newArea.items = (newArea.items || []).map((item: any) => {
-        const sanitizedItem: any = {
-          product_id: item.product_id,
-          product_name: item.product_name || '',
-          product_price: Number(item.product_price) || 0,
-          quantity: Number(item.quantity) || 1,
-          total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
-        };
-        if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) sanitizedItem.id = item.id;
-        return sanitizedItem;
-      });
-
-      newArea.category_services = (newArea.category_services || []).map((cat: any) => ({
-        category_id: cat.category_id,
-        ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
-      }));
-
-      return newArea;
-    });
-
-    const payload: any = {
-      ...formData,
-      status: formData.status || AsessmentStatus.DRAFT,
-      updated_by: 'ผู้ดูแลระบบ',
-      assessment_areas: sanitizedWorkAreas,
-      total_price: totalEstimatedCost,
-      payment_condition: paymentCondition,
-      installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments : [],
-      customer_id: formData.customer_id || '',
-      created_at: formData.created_at ? new Date(formData.created_at).toISOString() : new Date().toISOString(),
-    };
-
-    if (!isEdit) payload.created_by = 'ผู้ดูแลระบบ';
-    
-    // Execute Parent Callback
-    onSubmit(payload);
+      if (formattedRole === 'SUPERADMIN' || formattedRole === 'ADMIN') {
+        return 'บันทึกและตรวจสอบ';
+      }
+      if (formattedRole === 'COO') {
+        return 'อนุมัติและตรวจสอบ';
+      }
+    }
+    if (!isEdit || formData.status === AsessmentStatus.DRAFT) {
+      return 'ยืนยันและส่งประเมิน';
+    }
+    return 'บันทึกการแก้ไข';
   };
 
+  const handleSubmitData = async (e?: FormEvent | React.MouseEvent, targetStatus?: AsessmentStatus) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!validateStep()) return;
+
+    setIsSubmitting(true); // เริ่มสถานะ Loading ตอนกด Submit
+    try {
+      const sanitizedWorkAreas = workAreas.map((area) => {
+        const newArea: any = { ...area };
+        if (newArea.id && newArea.id.startsWith('area-')) newArea.id = crypto.randomUUID();
+        if (newArea.package_price !== undefined && newArea.package_price !== null) newArea.package_price = Number(newArea.package_price);
+        
+        newArea.items = (newArea.items || []).map((item: any) => {
+          const sanitizedItem: any = {
+            product_id: item.product_id,
+            product_name: item.product_name || '',
+            product_price: Number(item.product_price) || 0,
+            quantity: Number(item.quantity) || 1,
+            total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
+          };
+          if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) sanitizedItem.id = item.id;
+          return sanitizedItem;
+        });
+
+        newArea.category_services = (newArea.category_services || []).map((cat: any) => ({
+          category_id: cat.category_id,
+          ...(cat.id && !cat.id.startsWith('cat-') ? { id: cat.id } : {}),
+        }));
+
+        return newArea;
+      });
+
+      const payload: any = {
+        ...formData,
+        status: targetStatus || formData.status || AsessmentStatus.DRAFT,
+        updated_by: 'ผู้ดูแลระบบ',
+        assessment_areas: sanitizedWorkAreas,
+        total_price: totalEstimatedCost,
+        payment_condition: paymentCondition,
+        installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments : [],
+        customer_id: formData.customer_id || '',
+        created_at: formData.created_at ? new Date(formData.created_at).toISOString() : new Date().toISOString(),
+      };
+
+      if (!isEdit) payload.created_by = 'ผู้ดูแลระบบ';
+      
+      // ส่งข้อมูลและรอให้ Promise เสร็จสมบูรณ์
+      await onSubmit(payload);
+    } catch (error) {
+      console.error('Submit Error:', error);
+    } finally {
+      setIsSubmitting(false); // ปิด Loading เมื่อเสร็จ
+    }
+  };
+
+  // 🌟 ส่วนแสดง Loading แบบเต็มจอทับข้อมูลฟอร์ม
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500">
+        <LoadingIcon className="h-10 w-10 animate-spin mb-4 text-primary" />
+        <p className="text-base font-medium">กำลังโหลดข้อมูลใบประเมิน...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
+      {/* 🌟 แสดง Overlay Loading บางๆ ตอนกำลังกดบันทึก */}
+      {isSubmitting && (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+        </div>
+      )}
+
       {/* HEADER: STEPPER */}
       <div className="mb-8">
         <div className="relative after:absolute after:inset-x-0 after:top-1/2 after:block after:h-0.5 after:-translate-y-1/2 after:rounded-lg after:bg-slate-100">
@@ -712,24 +785,49 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         )}
       </div>
 
-      {/* FOOTER: BUTTONS (จำลอง UI Footer เดิมของ Modal) */}
+      {/* FOOTER: BUTTONS */}
       <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center w-full px-2">
         <div className="text-slate-500 font-medium">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
         <div className="flex items-center gap-3">
           {currentStep > 0 && (
-            <Button type="button" onClick={handleBack} variant="outline" className="px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 text-base font-bold rounded-lg">
+            <Button type="button" onClick={handleBack} variant="outline" className="px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 text-base font-bold rounded-lg" disabled={isSubmitting}>
               <ArrowLeftIcon className="w-4 h-4" />ย้อนกลับ
             </Button>
           )}
 
           {currentStep < STEPS.length - 1 ? (
-            <Button type="button" onClick={handleNext} variant="primary" className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
+            <Button type="button" onClick={handleNext} variant="primary" className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl" disabled={isSubmitting}>
               ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
             </Button>
           ) : (
-            <Button type="button" onClick={handleSubmitData} variant="primary" className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
-              {isEdit ? 'บันทึกการแก้ไข' : 'บันทึกใบประเมิน'}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
-            </Button>
+            <>
+              {(!isEdit || formData.status === AsessmentStatus.DRAFT) && (
+                <Button 
+                  type="button" 
+                  onClick={(e) => handleSubmitData(e, AsessmentStatus.DRAFT)} 
+                  variant="secondary" 
+                  className="px-6 !h-10 bg-slate-100 hover:bg-slate-200 text-slate-800 border-transparent flex items-center justify-center gap-2 text-base font-bold rounded-lg"
+                  disabled={isSubmitting}
+                >
+                  บันทึกฉบับร่าง
+                </Button>
+              )}
+              
+              <Button 
+                type="button" 
+                onClick={(e) => {
+                  const targetStatus = (!isEdit || formData.status === AsessmentStatus.DRAFT) 
+                    ? AsessmentStatus.PENDING 
+                    : (formData.status as AsessmentStatus);
+                  handleSubmitData(e, targetStatus);
+                }} 
+                variant="primary" 
+                className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
+                disabled={isSubmitting}
+              >
+                {getSubmitButtonText()}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+              </Button>
+            </>
           )}
         </div>
       </div>

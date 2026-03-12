@@ -2,12 +2,13 @@ import { FC } from 'react';
 import { Modal } from '../../common/Modal';
 import { AssessmentForm } from './AssessmentForm';
 import { Assessment } from '@/src/types/entity/app.interface';
+import { Role } from '@/src/types';
 
 interface AssessmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  // หากมี assessment แสดงว่าเป็นโหมด Edit, หากเป็น null/undefined คือโหมด Add
   assessment?: Assessment | null;
+  currentUserRole: Role;
   onSubmit: (data: any) => void;
 }
 
@@ -15,6 +16,7 @@ export const AssessmentModal: FC<AssessmentModalProps> = ({
   isOpen,
   onClose,
   assessment,
+  currentUserRole,
   onSubmit,
 }) => {
   return (
@@ -28,6 +30,7 @@ export const AssessmentModal: FC<AssessmentModalProps> = ({
       <AssessmentForm 
         isOpen={isOpen}
         initialData={assessment}
+        currentUserRole={currentUserRole}
         onSubmit={onSubmit}
         onCancel={onClose}
       />

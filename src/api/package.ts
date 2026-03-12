@@ -14,7 +14,7 @@ class PackageService extends AuthService {
   protected path = '/packages';
 
   // Your Public API Methods
-  async getPackages(query: IBaseQuery): Promise<IBaseResponseArray<Package>> {
+  async getPackages(query?: IBaseQuery): Promise<IBaseResponseArray<Package>> {
     const res = await this.http.get<IBaseResponseArray<Package>>(
       `${this.path}`,
       {

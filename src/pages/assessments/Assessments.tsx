@@ -46,10 +46,12 @@ import {
   ProductApi,
   CategoryApi,
 } from '@/src/api';
-import { CategoryType } from '@/src/types';
+import { CategoryType, Role } from '@/src/types';
+import { useCurrentUser } from '@/src/hooks';
 
 const Assessments: React.FC = () => {
   const location = useLocation();
+  const currentUser = useCurrentUser()
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -58,7 +60,6 @@ const Assessments: React.FC = () => {
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
   
-  // 🔴 ใช้ isModalOpen แค่ตัวเดียวสำหรับควบคุมการเปิด/ปิด
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
   
@@ -245,19 +246,35 @@ const Assessments: React.FC = () => {
     setCurrentPage(1);
   };
 
-  // 🔴 ยุบรวมฟังก์ชัน Create และ Update ไว้ด้วยกัน
   const handleSaveAssessment = async (assessmentData: any) => {
     try {
-      if (assessmentToEdit || assessmentData.id) {
-        await AssessmentApi.update(assessmentToEdit?.id || assessmentData.id, assessmentData);
+      const id = assessmentToEdit?.id || assessmentData.id;
+      const currentStatus = String(assessmentToEdit?.status || assessmentData.status).toUpperCase();
+
+      if (id) {
+        await AssessmentApi.update(id, assessmentData);
+
+        if (currentStatus === 'PENDING') {
+          if (['SUPERADMIN', 'ADMIN'].includes(currentUser.role)) {
+            console.log('กำลังยิง verifyById...');
+            await AssessmentApi.verifyById(id, { status: 'VERIFIED' } as any); 
+          } 
+          else if (currentUser.role === 'COO') {
+            console.log('กำลังยิง approveById...');
+            await AssessmentApi.approveById(id, { status: 'APPROVED' } as any);
+          }
+        }
       } else {
+        // โหมดสร้างใหม่
         await AssessmentApi.create(assessmentData);
       }
+      
       fetchData();
       setIsModalOpen(false);
       setAssessmentToEdit(null);
     } catch (error) {
       console.error('Error saving assessment:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกหรือตรวจสอบใบประเมิน');
     }
   };
 
@@ -789,6 +806,7 @@ const Assessments: React.FC = () => {
           setIsModalOpen(false);
           setAssessmentToEdit(null);
         }}
+        currentUserRole={currentUser.role as Role}
         assessment={assessmentToEdit}
         onSubmit={handleSaveAssessment}
       />
