@@ -38,7 +38,7 @@ import {
   CalendarIcon,
   MapPinIcon,
   PhoneIcon,
-  LoadingIcon, // ตรวจสอบให้แน่ใจว่าได้มีการ export LoadingIcon ในไฟล์นี้ครับ
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -65,6 +65,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   onCancel,
 }) => {
   const isEdit = !!initialData?.id;
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [visitedSteps, setVisitedSteps] = useState<number[]>([0]);
   const [formData, setFormData] = useState<Partial<Assessment>>({});
@@ -78,31 +80,21 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
-  // 🌟 เพิ่ม State สำหรับ Loading
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 🌟 Fetch Master Data & Initialize Form
   useEffect(() => {
     if (!isOpen) return;
 
     const initializeData = async () => {
-      setIsLoading(true); // เริ่ม Loading
+      setIsLoading(true);
       try {
-        // Reset Errors & Steps
         setCurrentStep(0);
         setVisitedSteps([0]);
         setErrors({});
 
         if (isEdit && initialData?.id) {
-          // ----------------------------------------------------
-          // 🌟 โหมด "แก้ไข" (Edit Mode) - Fetch By ID ไปเลย
-          // ----------------------------------------------------
           const res = await AssessmentApi.getById(initialData.id);
           const loadedAssessment = (res as any).data || res;
 
-          // รวบรวม ID สินค้าทั้งหมดที่ใช้
           const productIds = new Set<string>();
           (loadedAssessment.assessment_areas || []).forEach((area: any) => {
             (area.items || []).forEach((item: any) => {
@@ -110,7 +102,6 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             });
           });
 
-          // ยิง API Fetch By ID ตรงๆ พร้อมกันทั้งหมด
           const [categoriesRes, customerRes, packageRes, ...productResults] = await Promise.all([
             CategoryApi.getCategories({ type: CategoryType.SERVICE }),
             loadedAssessment.customer_id ? CustomerApi.getCustomerById(loadedAssessment.customer_id).catch(() => null) : Promise.resolve(null),
@@ -120,9 +111,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
           const fetchedCategories = categoriesRes?.data || [];
           
-          // จับยัดลง Array เพื่อให้ Dropdown ใช้งานได้ 
           const fetchedCustomers = customerRes ? [(customerRes as any).data || customerRes] : [];
-          // แก้ไขตรงนี้ให้ใช้ packageRes แบบปลอดภัย
           const fetchedPackages = packageRes ? ((packageRes as any).data || packageRes) : [];
           const fetchedProducts = productResults.map(pr => (pr as any)?.data || pr).filter(Boolean);
 
@@ -151,7 +140,6 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           setPaymentCondition(loadedPaymentCondition);
           setInstallments(loadedAssessment.installments || []);
 
-          // Enrich Work Areas logic
           const rawAreas = assessment_areas || [];
           const enrichedAreas = rawAreas.map((wa: any) => {
             const enrichedItems = (wa.items || []).map((item: any) => {
@@ -177,9 +165,6 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           setWorkAreas(enrichedAreas);
 
         } else {
-          // ----------------------------------------------------
-          // 🌟 โหมด "สร้างใหม่" (Add Mode) - โหลด List ตั้งต้น
-          // ----------------------------------------------------
           const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
             CustomerApi.getCustomers({ limit: 50 }),
             PackageApi.getPackages(),
@@ -473,7 +458,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     if (e && e.preventDefault) e.preventDefault();
     if (!validateStep()) return;
 
-    setIsSubmitting(true); // เริ่มสถานะ Loading ตอนกด Submit
+    setIsSubmitting(true);
     try {
       const sanitizedWorkAreas = workAreas.map((area) => {
         const newArea: any = { ...area };
@@ -513,30 +498,18 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       };
 
       if (!isEdit) payload.created_by = 'ผู้ดูแลระบบ';
-      
-      // ส่งข้อมูลและรอให้ Promise เสร็จสมบูรณ์
+    
       await onSubmit(payload);
     } catch (error) {
       console.error('Submit Error:', error);
     } finally {
-      setIsSubmitting(false); // ปิด Loading เมื่อเสร็จ
+      setIsSubmitting(false);
     }
   };
 
-  // 🌟 ส่วนแสดง Loading แบบเต็มจอทับข้อมูลฟอร์ม
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500">
-        <LoadingIcon className="h-10 w-10 animate-spin mb-4 text-primary" />
-        <p className="text-base font-medium">กำลังโหลดข้อมูลใบประเมิน...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col relative">
-      {/* 🌟 แสดง Overlay Loading บางๆ ตอนกำลังกดบันทึก */}
-      {isSubmitting && (
+      {(isLoading || isSubmitting) && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
            <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
         </div>
