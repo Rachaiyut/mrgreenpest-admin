@@ -25,9 +25,6 @@ const AssessmentCard: React.FC<{
 
   const allServiceTypes = useMemo(() => {
     const areas = assessment?.assessment_areas || [];
-    // Assuming you want to display something meaningful, you might need to fetch category names
-    // For now, we'll just use the IDs or an empty array if categories are missing from the interface for now
-    // based on previous errors, let's check what's actually on AssessmentWorkArea
     return [];
   }, [assessment?.assessment_areas]);
 
@@ -48,9 +45,24 @@ const AssessmentCard: React.FC<{
       <div className="px-4 pt-4 pb-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h4 className="font-bold text-slate-800 text-base leading-tight truncate">
-              {customerName || assessment.customer_id}
-            </h4>
+            <div className="flex flex-col gap-1.5 mb-2">
+              <div className="flex flex-col gap-1.5 w-full">
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <span className="text-sm font-medium text-slate-500 shrink-0">ชื่อลูกค้า:</span>
+                  <h3 className="font-bold text-slate-800 text-base leading-tight truncate">
+                    {customerName || assessment.customer_id}
+                  </h3>
+                </div>
+
+                <div className="flex items-baseline gap-2 min-w-0">
+                  <span className="text-sm font-medium text-slate-500 shrink-0">รหัสใบประเมิน:</span>
+                  <p className="font-semibold text-primary text-sm leading-tight truncate">
+                    {assessment.code}
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {allServiceTypes.length > 0 && (
               <p className="text-xs text-slate-500 mt-1 truncate">
                 {allServiceTypes.join(', ')}

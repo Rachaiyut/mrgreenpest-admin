@@ -293,7 +293,6 @@ const Assessments: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  // 🔴 แก้ไขการตั้งค่าเปิดโหมดแก้ไขให้ไปเรียกเปิดตัว isModalOpen แทน
   const handleEdit = (assessment: Assessment) => {
     setAssessmentToEdit(assessment);
     setIsModalOpen(true);
@@ -400,7 +399,14 @@ const Assessments: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="relative min-h-screen">
+      {isLoading && (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+           <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดใบประเมิน...</p>
+        </div>
+      )}
+      
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Section */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -410,7 +416,6 @@ const Assessments: React.FC = () => {
               จัดการและติดตามใบประเมินทั้งหมด
             </p>
           </div>
-          {/* 🔴 ปุ่มสร้างใบประเมิน ปรับให้เคลียร์ข้อมูลแล้วเปิด Modal */}
           <Button
             onClick={() => {
               setAssessmentToEdit(null);
@@ -842,7 +847,7 @@ const Assessments: React.FC = () => {
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
-    </>
+    </div>
   );
 };
 

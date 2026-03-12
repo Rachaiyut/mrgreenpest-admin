@@ -758,15 +758,6 @@ const Job: React.FC<JobProps> = ({
 
   return (
     <>
-      {isLoading && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white/40 backdrop-blur-[2px]">
-          <div className="flex flex-col items-center bg-white p-6 rounded-2xl shadow-xl border border-slate-100">
-            <LoadingIcon className="h-12 w-12 text-primary animate-spin mb-3" />
-            <p className="text-slate-600 font-medium">กำลังโหลดข้อมูล...</p>
-          </div>
-        </div>
-      )}
-
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -953,6 +944,13 @@ const Job: React.FC<JobProps> = ({
         </Card>
 
         <div className="flex-1 min-h-0 relative">
+          {isLoading && (
+            <div className="absolute inset-0 z-[200] bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+              <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+              <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดข้อมูลภาคสนาม...</p>
+            </div>
+          )}
+
           {activeTab === 'schedule' && view === 'kanban' && (
             <div className="flex flex-col relative">
               {kanbanColumns.length > 0 && (

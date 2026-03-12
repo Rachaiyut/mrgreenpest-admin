@@ -758,7 +758,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         )}
       </div>
 
-      {/* FOOTER: BUTTONS */}
+     {/* FOOTER: BUTTONS */}
       <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center w-full px-2">
         <div className="text-slate-500 font-medium">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
         <div className="flex items-center gap-3">
@@ -773,37 +773,31 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
             </Button>
           ) : (
-            <>
-              {(!isEdit || formData.status === AsessmentStatus.DRAFT) && (
-                <Button 
-                  type="button" 
-                  onClick={(e) => handleSubmitData(e, AsessmentStatus.DRAFT)} 
-                  variant="secondary" 
-                  className="px-6 !h-10 bg-slate-100 hover:bg-slate-200 text-slate-800 border-transparent flex items-center justify-center gap-2 text-base font-bold rounded-lg"
-                  disabled={isSubmitting}
-                >
-                  บันทึกฉบับร่าง
-                </Button>
-              )}
-              
-              <Button 
-                type="button" 
-                onClick={(e) => {
-                  const targetStatus = (!isEdit || formData.status === AsessmentStatus.DRAFT) 
-                    ? AsessmentStatus.PENDING 
-                    : (formData.status as AsessmentStatus);
-                  handleSubmitData(e, targetStatus);
-                }} 
-                variant="primary" 
-                className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
-                disabled={isSubmitting}
-              >
-                {getSubmitButtonText()}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
-              </Button>
-            </>
+            <Button 
+              type="button" 
+              onClick={(e) => {
+                // 🌟 แก้ไข: 
+                // 1. ถ้าสร้างใหม่ (!isEdit) -> ให้ส่งเป็น DRAFT
+                // 2. ถ้าแก้ไขและสถานะเป็น DRAFT อยู่ -> ให้ดันเป็น PENDING (ส่งประเมิน)
+                // 3. สถานะอื่นๆ ให้คงเดิม
+                const targetStatus = !isEdit 
+                  ? AsessmentStatus.DRAFT 
+                  : (formData.status === AsessmentStatus.DRAFT 
+                      ? AsessmentStatus.PENDING 
+                      : (formData.status as AsessmentStatus));
+
+                handleSubmitData(e, targetStatus);
+              }} 
+              variant="primary" 
+              className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
+              disabled={isSubmitting}
+            >
+              {getSubmitButtonText()}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+            </Button>
           )}
         </div>
       </div>
+  
     </div>
   );
 };
