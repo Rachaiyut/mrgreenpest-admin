@@ -11,7 +11,7 @@ import {
   ExclamationTriangleIcon,
   ArchiveBoxIcon,
 } from '../../assets/icons/Icons';
-import { AddAssessmentModal } from '../../components/features/assessments/AddAssessmentModal';
+
 
 // Interfaces
 import { Status } from '@/src/types/entity/core.interface';
@@ -23,6 +23,10 @@ import { formatThaiDateTime } from '../../utils/date';
 import { Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { JobModal } from '@/src/components/features/jobs/JobModal';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { Role } from '@/src/types';
+import { AssessmentModal } from '@/src/components/features/assessments/AssessmentModal';
+
 
 const SimpleAreaChart = ({
   data,
@@ -184,6 +188,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     handlers,
   } = useData();
 
+  const currentUserRole = useCurrentUser()?.role;
   const onCreateAssessment = handlers.assessments.create;
   const onCreateJob = handlers.jobs.create;
 
@@ -801,11 +806,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
           </div>
         </div>
       </div>
-      <AddAssessmentModal
+
+      <AssessmentModal
         isOpen={isAssessmentModalOpen}
         onClose={() => setIsAssessmentModalOpen(false)}
-        onCreateAssessment={onCreateAssessment}
+        onSubmit={onCreateAssessment}
       />
+      
       <JobModal
         isOpen={isJobModalOpen}
         onClose={() => setIsJobModalOpen(false)}
@@ -814,7 +821,8 @@ const Dashboard: React.FC<DashboardProps> = () => {
         jobs={fieldJobs}
         users={users}
         warehouses={warehouses}
-        contracts={contracts}
+        contracts={contracts} 
+        currentUserRole={currentUserRole as Role}      
       />
     </>
   );

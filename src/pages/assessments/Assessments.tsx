@@ -783,7 +783,6 @@ const Assessments: React.FC = () => {
         </div>
       )}
 
-      {/* 🔴 เรียกใช้ AssessmentModal เพียงตัวเดียวสำหรับทั้งสร้างและแก้ไข */}
       <AssessmentModal
         isOpen={isModalOpen}
         onClose={() => {
