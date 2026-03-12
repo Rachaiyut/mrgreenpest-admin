@@ -133,10 +133,9 @@ const Job: React.FC<JobProps> = ({
             const customer = job.customer || {};
             const customerName =
               customer.first_name || customer.last_name
-                ? `${customer.first_name || ''}${
-                    customer.last_name && customer.last_name !== '-'
-                      ? ` ${customer.last_name}`
-                      : ''
+                ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
+                    ? ` ${customer.last_name}`
+                    : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -158,12 +157,12 @@ const Job: React.FC<JobProps> = ({
               statusUpper === 'PENDING'
                 ? JobStatus.Pending
                 : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
-                ? JobStatus.InProgress
-                : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
-                ? JobStatus.Completed
-                : statusUpper === 'CANCELLED'
-                ? JobStatus.Cancelled
-                : JobStatus.Planned;
+                  ? JobStatus.InProgress
+                  : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
+                    ? JobStatus.Completed
+                    : statusUpper === 'CANCELLED'
+                      ? JobStatus.Cancelled
+                      : JobStatus.Planned;
 
             const techniciansList = [];
             if (job.primary_technician) {
@@ -171,8 +170,7 @@ const Job: React.FC<JobProps> = ({
                 ...job.primary_technician,
                 role: 'LEAD_TECH',
                 name: job.primary_technician.first_name
-                  ? `${job.primary_technician.first_name} ${
-                      job.primary_technician.last_name || ''
+                  ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''
                     }`.trim()
                   : job.primary_technician.name,
               });
@@ -664,8 +662,8 @@ const Job: React.FC<JobProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-      { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(selectedJob) },
-    ];
+        { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(selectedJob) },
+      ];
 
     if (
       status === JobStatus.Planned ||
@@ -710,11 +708,10 @@ const Job: React.FC<JobProps> = ({
           e.preventDefault();
           action.onClick();
         }}
-        className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
-          action.isDanger
+        className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${action.isDanger
             ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
             : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
-        }`}
+          }`}
         role="menuitem"
       >
         <action.icon
@@ -876,9 +873,8 @@ const Job: React.FC<JobProps> = ({
                     <Button
                       onClick={() => setView('kanban')}
                       variant="ghost"
-                      className={`p-2 rounded-md h-auto ${
-                        view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
-                      }`}
+                      className={`p-2 rounded-md h-auto ${view === 'kanban' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
+                        }`}
                       title="มุมมอง Kanban"
                     >
                       <ViewColumnsIcon className="h-4 w-4" />
@@ -886,9 +882,8 @@ const Job: React.FC<JobProps> = ({
                     <Button
                       onClick={() => setView('list')}
                       variant="ghost"
-                      className={`p-2 rounded-md h-auto ${
-                        view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
-                      }`}
+                      className={`p-2 rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
+                        }`}
                       title="มุมมองรายการ"
                     >
                       <ListBulletIcon className="h-4 w-4" />
@@ -896,9 +891,8 @@ const Job: React.FC<JobProps> = ({
                     <Button
                       onClick={() => setView('calendar')}
                       variant="ghost"
-                      className={`p-2 rounded-md h-auto ${
-                        view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
-                      }`}
+                      className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
+                        }`}
                       title="มุมมองปฏิทิน"
                     >
                       <CalendarDaysIcon className="h-4 w-4" />
@@ -909,31 +903,28 @@ const Job: React.FC<JobProps> = ({
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-lg order-1 lg:order-2 overflow-x-auto max-w-full">
                   <button
                     onClick={() => setActiveTab('schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
-                      activeTab === 'schedule'
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
                         ? 'bg-white text-primary shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     นัดหมาย
                   </button>
                   <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
-                      activeTab === 'reports'
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
                         ? 'bg-white text-primary shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     รายงาน
                   </button>
                   <button
                     onClick={() => setActiveTab('work-schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
-                      activeTab === 'work-schedule'
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
                         ? 'bg-white text-primary shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     ตารางงาน
                   </button>
@@ -1056,9 +1047,8 @@ const Job: React.FC<JobProps> = ({
                       paginatedJobs.map((job, idx) => (
                         <tr
                           key={job.id}
-                          className={`hover:bg-slate-50/50 transition-colors ${
-                            idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                          }`}
+                          className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                            }`}
                         >
                           <td className="px-6 py-4">
                             <div className="flex items-start gap-3">
@@ -1197,9 +1187,8 @@ const Job: React.FC<JobProps> = ({
                         return (
                           <tr
                             key={report.id}
-                            className={`hover:bg-slate-50/50 transition-colors ${
-                              idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                            }`}
+                            className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                              }`}
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-start gap-3">
@@ -1232,9 +1221,9 @@ const Job: React.FC<JobProps> = ({
                                     {report.time_in && report.time_out
                                       ? `${report.time_in} - ${report.time_out}`
                                       : new Date(reportDate).toLocaleTimeString('th-TH', {
-                                          hour: '2-digit',
-                                          minute: '2-digit',
-                                        })}
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
                                   </p>
                                 </div>
                               </div>
@@ -1411,9 +1400,8 @@ const Job: React.FC<JobProps> = ({
                           return (
                             <tr
                               key={job.id}
-                              className={`hover:bg-slate-50/50 transition-colors ${
-                                idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                              }`}
+                              className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                                }`}
                             >
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <span className="text-sm font-semibold">

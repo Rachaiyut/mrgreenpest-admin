@@ -69,6 +69,7 @@ const Assessments: React.FC = () => {
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
     left: number;
+    isBottom?: boolean;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedAssessment, setSelectedAssessment] =
@@ -327,13 +328,18 @@ const Assessments: React.FC = () => {
         assessments.find((a) => a.id === assessmentId) || null
       );
       setOpenDropdownId(assessmentId);
+      
+      // 🌟 เพิ่ม 2 บรรทัดนี้
+      const isBottom = buttonRect.bottom > window.innerHeight - 220;
+      
       setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
+        top: buttonRect.bottom, 
+        left: buttonRect.right,
+        isBottom: isBottom, // 🌟 ส่งค่า isBottom ไปด้วย
       });
     }
   };
-
+    
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!openDropdownId) return;
@@ -786,16 +792,18 @@ const Assessments: React.FC = () => {
           )}
         </div>
       </div>
+
       {openDropdownId && dropdownPosition && (
         <div
           ref={dropdownRef}
           style={{
-            position: 'absolute',
-            top: `${dropdownPosition.top}px`,
+            position: 'fixed', // 🌟 เปลี่ยนตรงนี้เป็น fixed
+            top: dropdownPosition.isBottom ? 'auto' : `${dropdownPosition.top + 4}px`, // 🌟 อัปเดตตรงนี้
+            bottom: dropdownPosition.isBottom ? `${window.innerHeight - dropdownPosition.top + 36}px` : 'auto', // 🌟 อัปเดตตรงนี้
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-56 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
+          className="z-[100] w-56 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none border border-slate-100 overflow-hidden" // 🌟 ลบ origin-top-right ออก และแก้ z เป็น 100
           role="menu"
           aria-orientation="vertical"
         >
@@ -804,7 +812,7 @@ const Assessments: React.FC = () => {
           </div>
         </div>
       )}
-
+     
       <AssessmentModal
         isOpen={isModalOpen}
         onClose={() => {
