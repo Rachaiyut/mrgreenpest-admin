@@ -7,12 +7,10 @@ import {
 } from '@/src/types/entity/field-job.interface';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
-import { Quotation } from '@/src/types/entity/financial.interface';
 import { JobStatus } from '@/src/types/enums/job';
-import { QuotationStatus } from '@/src/types/enums/financial';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
-import { Assessment } from '@/src/types';
+import { Assessment, Quotation } from '@/src/types';
 import { QuotationApi } from '@/src/api';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import {
@@ -21,6 +19,7 @@ import {
   CheckCircleIcon,
   CreditCardIcon,
 } from '../../../assets/icons/Icons';
+import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 interface ServiceReportModalProps {
   isOpen: boolean;

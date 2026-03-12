@@ -7,12 +7,12 @@ import {
   ServiceReport,
 } from '@/src/types/entity/field-job.interface';
 
-import { JobMainStatus, JobStatus, QuotationStatus, WarehouseType } from '@/src/types';
+import { JobMainStatus, JobStatus, Quotation, WarehouseType } from '@/src/types';
 
 // ===== Relative Types =====
 import { User, UserRole } from '../../types/entity/core.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
-import { Contract, Quotation } from '../../types/entity/financial.interface';
+import { Contract } from '../../types/entity/financial.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
@@ -67,6 +67,7 @@ import {
   ViewColumnsIcon,
   XCircleIcon,
 } from '../../assets/icons/Icons';
+import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 interface JobProps {
   users: User[];
@@ -590,7 +591,7 @@ const Job: React.FC<JobProps> = ({
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
         if (quote && quote.status === QuotationStatus.DRAFT) {
-          onUpdateQuotation({ ...quote, status: QuotationStatus.SENT } as any);
+          onUpdateQuotation({ ...quote  });
         }
       }
 

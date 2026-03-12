@@ -25,18 +25,6 @@ export enum PaymentMethod {
   INSTALLMENT = 'INSTALLMENT',
 }
 
-export enum QuotationStatus {
-  DRAFT = 'DRAFT',
-  SENT = 'SENT',
-  PENDING = 'PENDING',
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  CONVERTED = 'CONVERTED',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
-}
-
 export enum ContractStatus {
   DRAFT = 'DRAFT',
   PENDING = 'PENDING',

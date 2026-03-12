@@ -16,33 +16,20 @@ import {
   CheckCircleIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
-import { Pagination } from '../../components/common/Pagination';
-import { Quotation } from '../../types';
-
-// Quotation Status from API
-enum QuotationStatus {
-  DRAFT = 'DRAFT',
-  SENT = 'SENT',
-  PENDING = 'PENDING',
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  CONVERTED = 'CONVERTED',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
-}
+import { Pagination } from '../../components/common/Pagination'; 
+import { QuotationStatus } from '../../types/enums/quotaton';
 
 const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.DRAFT]: 'จัดทำ',
-  [QuotationStatus.SENT]: 'ส่งแล้ว',
+  [QuotationStatus.SIGNED]: 'เซ็นต์',
   [QuotationStatus.PENDING]: 'รอดำเนินการ',
   [QuotationStatus.PENDING_APPROVAL]: 'รออนุมัติ',
   [QuotationStatus.APPROVED]: 'อนุมัติ',
   [QuotationStatus.REJECTED]: 'ปฏิเสธ',
-  [QuotationStatus.CONVERTED]: 'แปลงแล้ว',
   [QuotationStatus.CANCELLED]: 'ยกเลิก',
   [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
+
 import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
@@ -50,6 +37,7 @@ import { useData } from '../../contexts/DataContext';
 import { QuotationApi } from '../../api/quotation';
 import { PrintApi } from '@/src/api/print';
 import Swal from 'sweetalert2';
+import { Quotation } from '@/src/types/entity/quotation.interface';
 
 interface QuotationsPageProps {
   onCreateQuotation?: (
@@ -132,12 +120,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       (q) =>
         q.status === QuotationStatus.PENDING ||
         q.status === QuotationStatus.PENDING_APPROVAL ||
-        q.status === QuotationStatus.SENT
+        q.status === QuotationStatus.APPROVED 
     ).length;
     const approved = quotations.filter(
       (q) =>
-        q.status === QuotationStatus.APPROVED ||
-        q.status === QuotationStatus.CONVERTED
+        q.status === QuotationStatus.SIGNED
     ).length;
     const totalValue = quotations.reduce(
       (sum, q) => sum + (Number(q.total) || 0),
@@ -352,7 +339,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
   const handleStatusClick = () => {
     if (selectedQuotation) {
-      setTargetStatus(selectedQuotation.status as QuotationStatus);
+      setTargetStatus(selectedQuotation.status);
       setIsStatusModalOpen(true);
     }
     setOpenDropdownId(null);
@@ -624,7 +611,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-6 py-4">
                           <StatusBadge
                             status={
-                              statusLabels[q.status as QuotationStatus] ||
+                              statusLabels[q.status] ||
                               q.status
                             }
                           />

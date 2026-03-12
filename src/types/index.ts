@@ -15,7 +15,6 @@ export * from './entity/product.interface';
 export * from './entity/quotation.interface';
 export * from './entity/supplier.interface';
 export * from './entity/unit.interface';
-
 export * from './enums/assessment';
 export * from './enums/category';
 export * from './enums/customer';
@@ -24,5 +23,4 @@ export * from './enums/job';
 export * from './enums/product';
 export * from './enums/role';
 export * from './enums/inventory';
-
 export * from './nav';

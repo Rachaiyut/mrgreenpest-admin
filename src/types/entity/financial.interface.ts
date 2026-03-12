@@ -2,7 +2,6 @@ import { Status } from './core.interface';
 import { Customer } from './customer.interface';
 import {
   InvoiceStatus,
-  QuotationStatus,
   ContractStatus,
   InstallmentStatus,
 } from '../enums/financial';
@@ -20,57 +19,6 @@ export interface InstallmentPlan {
   status?: Status;
 }
 
-export interface QuotationItem {
-  id: string;
-  quotation_id: string;
-  product_id?: string;
-  sequence: number;
-  description: string;
-  quantity: number;
-  unit: string;
-  unit_price: number;
-  amount: number;
-  created_at?: string;
-  updated_at?: string;
-  customer?: Customer;
-}
-
-export interface Quotation {
-  id: string;
-  code?: string;
-  assessment_id?: string;
-  customer_id: string;
-  customer_name: string;
-  contact_phone?: string;
-  service_location?: string;
-  building_type?: string;
-  service_area?: string;
-  service_type?: string;
-  service_system?: string;
-  system_used?: string;
-  contract_duration?: string;
-  service_count?: string;
-  payment_terms?: string;
-  notes?: string;
-  google_map_link?: string;
-  subtotal?: number;
-  vat_amount?: number;
-  include_vat?: boolean;
-  total: number;
-  revision: number;
-  original_id?: string;
-  status: QuotationStatus | Status; 
-  expires_at: string;
-  is_installment?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  created_by?: string;
-  updated_by?: string;
-  items?: QuotationItem[];
-  installments?: InstallmentPlan[];
-  quotation_areas?: any[];
-  customer?: Customer;
-}
 
 export interface InvoiceItem {
   id: string;
@@ -234,3 +182,4 @@ export interface InvoiceSchedule extends IBase {
   paid_at?: Date
   notes?: string
 }
+
