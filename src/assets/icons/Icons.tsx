@@ -1134,3 +1134,20 @@ export const BanknotesIcon: FC<IconProps> = (props) => (
     />
   </svg>
 );
+
+export const JobRemarkIcon: FC<IconProps> = (props) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    {...props}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M7.5 8.25h9m-9 3h9m-9 3h3m-6.75 4.125l-.048-.048a2.25 2.25 0 010-3.182L5.25 10.5V6a2.25 2.25 0 012.25-2.25h9A2.25 2.25 0 0118.75 6v9a2.25 2.25 0 01-2.25 2.25H7.5a2.25 2.25 0 01-1.125-.3z"
+    />
+  </svg>
+);

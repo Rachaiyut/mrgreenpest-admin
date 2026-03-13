@@ -36,6 +36,7 @@ import { Select, Input, Button } from '../../components/common/FormControls';
 // ===== Local Components =====
 import JobCard from './JobCard';
 import JobCalendar from './JobCalendar';
+import { DatePicker } from 'antd';
 
 // ===== API =====
 import {
@@ -108,11 +109,19 @@ const Job: React.FC<JobProps> = ({
   );
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchData = async () => {
+  // Filter States
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
     setIsLoading(true);
     try {
+      const params: any = {};
+      if (targetDate) params.appointment_date = targetDate;
+      if (targetTech !== 'all') params.technician_id = targetTech;
+
       const [warehousesRes, reportsRes] = await Promise.all([
-        VehicleApi.getVehiclesWithUserJobs(),
+        VehicleApi.getVehiclesWithUserJobs(params),
         ServiceReportApi.getAll({ limit: 10 }),
       ]);
 
@@ -135,8 +144,8 @@ const Job: React.FC<JobProps> = ({
             const customerName =
               customer.first_name || customer.last_name
                 ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-'
-                    ? ` ${customer.last_name}`
-                    : ''
+                  ? ` ${customer.last_name}`
+                  : ''
                   }`.trim()
                 : customer.code || '';
 
@@ -236,9 +245,6 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
 
   const handleCreateJob = async (newJob: Omit<FieldJob, 'id'>) => {
     try {
@@ -324,7 +330,6 @@ const Job: React.FC<JobProps> = ({
   const [selectedAssessmentForJob, setSelectedAssessmentForJob] = useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().substring(0, 10));
@@ -345,17 +350,12 @@ const Job: React.FC<JobProps> = ({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedTechnicianId, searchQuery]);
+  }, [selectedTechnicianId, filterDate, searchQuery]);
 
   const reversedJobs = useMemo(() => [...jobs].reverse(), [jobs]);
 
   const filteredJobs = useMemo(() => {
     let tempJobs = reversedJobs;
-    if (selectedTechnicianId !== 'all') {
-      tempJobs = tempJobs.filter((job) =>
-        job.technicians.some((tech) => tech.id === selectedTechnicianId)
-      );
-    }
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       tempJobs = tempJobs.filter((job) => {
@@ -369,7 +369,7 @@ const Job: React.FC<JobProps> = ({
       });
     }
     return tempJobs;
-  }, [reversedJobs, selectedTechnicianId, searchQuery, warehouses]);
+  }, [reversedJobs, searchQuery, warehouses]);
 
   const isAnyJobInProgressForCurrentUser = useMemo(() => {
     if (!currentUser || !jobs) return false;
@@ -592,7 +592,7 @@ const Job: React.FC<JobProps> = ({
       if (quotationId) {
         const quote = quotations.find((q) => q.id === quotationId);
         if (quote && quote.status === QuotationStatus.DRAFT) {
-          onUpdateQuotation({ ...quote  });
+          onUpdateQuotation({ ...quote });
         }
       }
 
@@ -628,6 +628,10 @@ const Job: React.FC<JobProps> = ({
       });
     }
   };
+
+  useEffect(() => {
+    fetchData(filterDate, selectedTechnicianId);
+  }, [filterDate, selectedTechnicianId]); 
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -711,8 +715,8 @@ const Job: React.FC<JobProps> = ({
           action.onClick();
         }}
         className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${action.isDanger
-            ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
-            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+          ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+          : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
           }`}
         role="menuitem"
       >
@@ -851,11 +855,39 @@ const Job: React.FC<JobProps> = ({
                 </div>
                 {activeTab === 'schedule' && (
                   <div className="flex items-center gap-2">
-                    <TechnicianIcon className="h-4 w-4 text-slate-400 hidden sm:block" />
+                    <DatePicker
+                      value={filterDate ? (window as any).moment?.(filterDate) : null}
+                      onChange={(date, dateString) => {
+                        if (dateString) {
+                          const selectedDate = date ? (date as any).toDate() : null;
+
+                          if (selectedDate) {
+                            const yyyy = selectedDate.getFullYear();
+                            const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                            const dd = String(selectedDate.getDate()).padStart(2, '0');
+                            const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+                            setFilterDate(formattedDate);
+                            fetchData(formattedDate, selectedTechnicianId);
+                          }
+                        } else {
+                          setFilterDate('');
+                          fetchData('', selectedTechnicianId);
+                        }
+                      }}
+                      placeholder="เลือกวันที่"
+                      format="DD/MM/YYYY"
+                      className="h-10 text-sm rounded-md w-full sm:min-w-[160px] border-slate-300 shadow-sm flex items-center"
+                      allowClear
+                    />
                     <Select
                       id="technician-filter"
                       value={selectedTechnicianId}
-                      onChange={(e) => setSelectedTechnicianId(e.target.value)}
+                      onChange={(e) => {
+                        const newTech = e.target.value;
+                        setSelectedTechnicianId(newTech);
+                        fetchData(filterDate, newTech);
+                      }}
                       className="w-full sm:w-48 text-sm"
                     >
                       <option value="all">ช่างทั้งหมด</option>
@@ -906,8 +938,8 @@ const Job: React.FC<JobProps> = ({
                   <button
                     onClick={() => setActiveTab('schedule')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
-                        ? 'bg-white text-primary shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     นัดหมาย
@@ -915,8 +947,8 @@ const Job: React.FC<JobProps> = ({
                   <button
                     onClick={() => setActiveTab('reports')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
-                        ? 'bg-white text-primary shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     รายงาน
@@ -924,8 +956,8 @@ const Job: React.FC<JobProps> = ({
                   <button
                     onClick={() => setActiveTab('work-schedule')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
-                        ? 'bg-white text-primary shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                       }`}
                   >
                     ตารางงาน

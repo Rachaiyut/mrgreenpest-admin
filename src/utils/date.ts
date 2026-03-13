@@ -1,6 +1,4 @@
 export const formatThaiDate = (isoString: string | Date | undefined): string => {
-  console.log("test", isoString)
-
   if (!isoString) return '-';
 
   const date = new Date(isoString);

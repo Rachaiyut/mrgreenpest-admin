@@ -17,7 +17,6 @@ export interface WarehouseQuery extends IBaseQuery {
   code?: string;
   name?: string;
   type?: WarehouseType;
-  search?: string;
 }
 export interface WithdrawalLimit {
   product_id: string;

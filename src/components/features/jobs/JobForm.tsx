@@ -198,7 +198,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         }
 
         setSelectedVehicleId(getSafeId(jobToEdit.vehicle_id) || getSafeId(jobToEdit.vehicle) || '');
-        setOperationDetails(jobToEdit.remark || jobToEdit.operation_details || '');
+        setOperationDetails(jobToEdit.remarks || jobToEdit.operation_details || '');
         setServiceSystem(jobToEdit.service_system || '');
 
         let leadId = '';

@@ -6,13 +6,12 @@ import {
   WarehouseStats,
 } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
+import { VehicleJobQuery } from '../types/entity/vehicle.interface';
 
 class VehicleService extends AuthService {
   protected path = '/vehicles';
 
-  async getVehicles(
-    query?: WarehouseQuery
-  ): Promise<IBaseResponseArray<Warehouse>> {
+  async getVehicles(query?: WarehouseQuery): Promise<IBaseResponseArray<Warehouse>> {
     const res = await this.http.get<IBaseResponseArray<Warehouse>>(
       `${this.path}`,
       {
@@ -23,9 +22,12 @@ class VehicleService extends AuthService {
     return res.data;
   }
 
-  async getVehiclesWithUserJobs(): Promise<IBaseResponseArray<Warehouse>> {
+  async getVehiclesWithUserJobs(query?: VehicleJobQuery): Promise<IBaseResponseArray<Warehouse>> {
     const res = await this.http.get<IBaseResponseArray<Warehouse>>(
-      `${this.path}/jobs`
+      `${this.path}/jobs`,
+      {
+        params: query,
+      }
     );
 
     return res.data;
