@@ -26,6 +26,7 @@ const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.PENDING_SIGNATURE]: 'รอเซ็นต์', 
   [QuotationStatus.SIGNED]: 'เซ็นต์',
   [QuotationStatus.FOLLOW_UP]: 'ติดตามครั้งที่',
+  [QuotationStatus.REVISE]: 'ปรับปรุง',
   [QuotationStatus.CANCELLED]: 'ยกเลิก',
   [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
