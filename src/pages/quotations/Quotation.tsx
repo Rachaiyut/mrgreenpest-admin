@@ -21,11 +21,11 @@ import { QuotationStatus } from '../../types/enums/quotaton';
 
 const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.DRAFT]: 'จัดทำ',
-  [QuotationStatus.SIGNED]: 'เซ็นต์',
-  [QuotationStatus.PENDING]: 'รอดำเนินการ',
   [QuotationStatus.PENDING_APPROVAL]: 'รออนุมัติ',
   [QuotationStatus.APPROVED]: 'อนุมัติ',
-  [QuotationStatus.REJECTED]: 'ปฏิเสธ',
+  [QuotationStatus.PENDING_SIGNATURE]: 'รอเซ็นต์', 
+  [QuotationStatus.SIGNED]: 'เซ็นต์',
+  [QuotationStatus.FOLLOW_UP]: 'ติดตามครั้งที่',
   [QuotationStatus.CANCELLED]: 'ยกเลิก',
   [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
@@ -118,7 +118,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     ).length;
     const pending = quotations.filter(
       (q) =>
-        q.status === QuotationStatus.PENDING ||
+        q.status === QuotationStatus.PENDING_SIGNATURE ||
         q.status === QuotationStatus.PENDING_APPROVAL ||
         q.status === QuotationStatus.APPROVED 
     ).length;
