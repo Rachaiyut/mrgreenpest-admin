@@ -169,7 +169,6 @@ export const JobForm: React.FC<JobFormProps> = ({
           handleCustomerChange(jobToEdit.customer_id, true);
         }
 
-        // 🌟 ใช้ getSafeId ดึง ID ครอบคลุมทุกรูปแบบ (ไม่ว่าจะซ่อนอยู่ใน Object หรือไม่)
         const actualAssessmentId = getSafeId(jobToEdit.assessment_id) || getSafeId(jobToEdit.assessmentId) || getSafeId(jobToEdit.assessment);
         const actualContractId = getSafeId(jobToEdit.contract_id) || getSafeId(jobToEdit.contractId) || getSafeId(jobToEdit.contract);
         const actualInvoiceId = getSafeId(jobToEdit.invoice_id) || getSafeId(jobToEdit.invoiceId) || getSafeId(jobToEdit.invoice);
@@ -423,7 +422,6 @@ export const JobForm: React.FC<JobFormProps> = ({
   const filteredInvoices = useMemo(() => {
     const refs = availableInvoices.map((inv) => ({ value: String(inv.id), label: `ใบแจ้งหนี้: ${inv.code}` }));
     
-    // 🌟 ดึงข้อมูลใบแจ้งหนี้เก่ามาแสดงเสมอ โดยดึงให้ครอบคลุมการซ้อนทับ
     if (mode === 'edit' && jobToEdit) {
       const actualInvoiceId = getSafeId(jobToEdit.invoice_id) || getSafeId(jobToEdit.invoiceId) || getSafeId(jobToEdit.invoice);
       if (actualInvoiceId) {
@@ -645,6 +643,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       invoice_id: selectedInvoiceId || undefined,
       customer_id: selectedCustomerId,
       primary_tech_id: leadTechnicianId,
+      appointment_date: new Date(workDate),
       start_date: new Date(startDateTime),
       end_date: new Date(endDateTime),
       service_system: serviceSystem,
@@ -683,7 +682,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               building_type: area.building_type,
               service_system: area.service_system,
               area_size: area.area_size,
-              
+
               package_price_id: area.package_price_id,
               package_price: area.package_price,
               package_type: area.package_type, 

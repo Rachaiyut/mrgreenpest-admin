@@ -73,7 +73,7 @@ const JobCard: React.FC<{
     }
   }
 
-  const jobDate = formatThaiDate(job.start_time);
+  const jobDate = formatThaiDate(job.appointment_date);
   const jobStartTime = new Date(job.start_time).toLocaleTimeString('th-TH', {
     hour: '2-digit',
     minute: '2-digit',

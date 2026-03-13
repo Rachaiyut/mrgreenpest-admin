@@ -48,7 +48,7 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`ยืนยันการยกเลิกงาน: ${job.id}`}
+      title={`ยืนยันการยกเลิกงาน: ${job.customerName}`}
       size="lg"
       footer={
         <div className="flex gap-2">

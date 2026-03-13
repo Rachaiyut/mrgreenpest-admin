@@ -1,5 +1,8 @@
-export const formatThaiDate = (isoString: string | undefined): string => {
+export const formatThaiDate = (isoString: string | Date | undefined): string => {
+  console.log("test", isoString)
+
   if (!isoString) return '-';
+
   const date = new Date(isoString);
   return date.toLocaleDateString('th-TH', {
     year: 'numeric',

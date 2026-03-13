@@ -91,6 +91,7 @@ export interface FieldJob {
   assessment_id?: string;
   contract_id?: string;
   customer_id: string;
+  appointment_date: Date;
   code: string;
   address: string;
   google_map_link?: string;

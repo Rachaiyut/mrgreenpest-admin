@@ -310,14 +310,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
       await navigator.clipboard.writeText(shareLink);
 
-      // 2. ใช้ SweetAlert2 แทน alert แบบเดิม
       Swal.fire({
         title: 'คัดลอกสำเร็จ!',
         text: 'คัดลอกลิงก์สำหรับส่งให้ลูกค้าเรียบร้อยแล้ว',
         icon: 'success',
         confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#3085d6', // สีน้ำเงินตามสไตล์ปุ่มหลักของคุณ
-        timer: 2000, // ปิดอัตโนมัติใน 2 วินาที
+        confirmButtonColor: '#3085d6',
+        timer: 2000,
         timerProgressBar: true,
       });
 

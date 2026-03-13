@@ -211,6 +211,7 @@ const Job: React.FC<JobProps> = ({
               customer_id: job.customer_id || customer.id,
               customerName: customerName,
               address,
+              appointment_date: job.appointment_date,
               start_time: job.start_date,
               end_time: job.end_date,
               actual_start_time: job.actual_start_time,
@@ -282,7 +283,7 @@ const Job: React.FC<JobProps> = ({
 
   const handleConfirmCancel = async (jobId: string, reason: string) => {
     try {
-      await JobApi.update(jobId, { status: JobStatus.Cancelled } as any);
+      await JobApi.update(jobId, { status: JobMainStatus.CANCELLED });
       fetchData();
       setIsCancelModalOpen(false);
       setJobToCancel(null);

@@ -2,6 +2,8 @@ import { IBase } from './base.interface';
 import { JobMainStatus } from '../enums/job';
 import { Customer } from './customer.interface';
 import { ServiceSystem } from '../enums/assessment';
+import { ServiceReport } from './field-job.interface';
+import { Vehicle } from './app.interface';
 
 export interface TeamMember {
   id?: string;
@@ -20,17 +22,19 @@ export interface Job extends IBase {
   invoice_id?: string;
   primary_tech_id: string;
   vehicle_id: string;
-  start_date: Date | string;
-  end_date: Date | string;
-  status: JobMainStatus | string;
-  service_system?: ServiceSystem | string;
+
+  appointment_date: Date,
+  start_date: Date;
+  end_date: Date;
+  status: JobMainStatus;
+  service_system?: ServiceSystem;
   remark?: string;
 
   // Relations
   customer?: Customer;
   primary_technician?: any;
   job_team_members?: TeamMember[];
-  team_member?: TeamMember[]; // Legacy support
-  vehicle?: any;
-  service_report?: any; // Added for notifications page
+  team_member?: TeamMember[];
+  vehicle?: Vehicle;
+  service_report?: ServiceReport;
 }
