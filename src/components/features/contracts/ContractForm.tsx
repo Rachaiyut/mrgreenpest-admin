@@ -104,7 +104,7 @@ export interface ContractAreaCategory {
 }
 
 export interface ContractFormProps {
-  mode: 'create' | 'edit' | 'detail';
+  mode: 'create' | 'edit' | 'detail' | 'renew';
   initialValues?: Partial<Contract>;
   onSubmit: (data: any) => Promise<void>;
   onCancel: () => void;
@@ -126,7 +126,9 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Contract info
   const [contractCode, setContractCode] = useState(initialValues?.code || '');
-  const [status, setStatus] = useState<ContractStatus>((initialValues?.status) || ContractStatus.DRAFT);
+  const [status, setStatus] = useState<ContractStatus>(
+    (mode === 'renew' ? ContractStatus.DRAFT : initialValues?.status) || ContractStatus.DRAFT
+  );
   const [startDate, setStartDate] = useState(
     initialValues?.start_date
       ? new Date(initialValues.start_date).toISOString().substring(0, 10)
@@ -307,6 +309,45 @@ export const ContractForm: FC<ContractFormProps> = ({
           status: 'PENDING' as any,
         },
       ]);
+    } else if (mode === 'renew' && initialValues) {
+      // 🌟 เพิ่ม LOGIC สำหรับ RENEW โดยเฉพาะ
+      const now = new Date();
+      // Gen รหัสสัญญาใหม่ (เปลี่ยน Suffix ให้รู้ว่าเป็น Renew)
+      const code = `CT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-R${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+      setContractCode(code);
+
+      // คำนวณวันเริ่มต้นใหม่ (อิงจากวันสิ้นสุดสัญญาเดิม + 1 วัน)
+      const oldEnd = new Date(initialValues.end_date || now);
+      const newStart = new Date(oldEnd);
+      newStart.setDate(newStart.getDate() + 1);
+      
+      // วันสิ้นสุดบวก 1 ปี
+      const newEnd = new Date(newStart);
+      newEnd.setFullYear(newEnd.getFullYear() + 1);
+
+      const startStr = newStart.toISOString().substring(0, 10);
+      setStartDate(startStr);
+      setEndDate(newEnd.toISOString().substring(0, 10));
+      setStatus(ContractStatus.DRAFT);
+
+      // จัดการงวดงาน: รีเซ็ต ID, ล้าง Due Date (ยกเว้นงวดแรก), เปลี่ยนสถานะเป็น PENDING
+      if (initialValues.installments) {
+        const sortedInstallments = [...initialValues.installments].sort((a: any, b: any) => {
+          return (a.term || a.installment_no || 0) - (b.term || b.installment_no || 0);
+        });
+
+        setInstallments(
+          sortedInstallments.map((inst: any, idx: number) => ({
+            id: crypto.randomUUID(), // ล้าง ID เดิมทิ้ง!
+            term: inst.term || inst.installment_no,
+            description: inst.description,
+            percentage: Number(inst.percentage),
+            amount: Number(inst.amount),
+            due_date: idx === 0 ? startStr : '', // 🟢 กำหนดแค่งวดแรกเท่านั้น
+            status: 'PENDING' as any,
+          }))
+        );
+      }
     } else if (initialValues?.installments) {
       const sortedInstallments = [...initialValues.installments].sort((a: any, b: any) => {
         const termA = a.term || a.installment_no || 0;
@@ -614,7 +655,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Initialize Custom Areas for Edit Mode
   useEffect(() => {
-    if (mode === 'edit' && initialValues?.area && initialValues.area.length > 0) {
+    if ((mode === 'edit' || mode === 'renew') && initialValues?.area && initialValues.area.length > 0) {
       const mappedAreas = initialValues.area.map((a: any, index: number) => {
         // ดึง Service Types เดิมออกมาเป็น Array ของชื่อ (String) เพื่อให้ตรงกับ State
         const mappedServices = a.category_service?.map((cs: any) => {
@@ -824,7 +865,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         })) || [];
 
         return {
-          id: mode !== 'create' && area.id ? area.id : undefined,
+          id: mode === 'edit' && area.id ? area.id : undefined,
           area_name: area.area_name || '',
           building_type: area.building_type || '',
           service_system: area.service_system || '',
@@ -846,7 +887,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         });
 
         return {
-          id: area.id && mode !== 'create' ? area.id : undefined,
+          id: mode === 'edit' && area.id ? area.id : undefined,
           area_name: area.title,
           building_type: area.buildingType,
           service_system: area.systemUsed,
@@ -860,6 +901,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     const payload = {
       ...initialValues,
+      id: mode === 'renew' ? undefined : initialValues?.id,
       code: contractCode,
       quotation_id: selectedQuotationId || undefined,
       customer_id: selectedCustomerId,
@@ -973,6 +1015,22 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   return (
     <form id="contract-form" onSubmit={handleSubmit} className="space-y-6">
+      {mode === 'renew' && initialValues && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg text-blue-700 mt-1">
+              <DocumentTextIcon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-base text-blue-900 font-bold">โหมดต่ออายุสัญญา (อ้างอิงรหัสเดิม: {initialValues.code})</p>
+              <p className="text-sm text-blue-700 mt-1">
+                วันที่, ข้อมูลพื้นที่ และงวดงานถูกคัดลอกมาให้แล้ว คุณสามารถปรับแก้ข้อมูลและกดบันทึกเพื่อสร้างสัญญาฉบับใหม่ได้ทันที
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left Column: General Information */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">

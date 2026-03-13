@@ -47,6 +47,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -219,6 +220,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
     setOpenDropdownId(null);
   };
 
+  const handleRenewClick = (contract: Contract) => {
+    setSelectedContract(contract);
+    setIsRenewModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
   const handleConfirmDelete = async () => {
     if (selectedContract) {
       try {
@@ -273,7 +280,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
   const handleSubmitContract = async (data: any) => {
     try {
-      if (isEditModalOpen && selectedContract) {
+      if (isRenewModalOpen && selectedContract) {
+        // 🟢 ถ้าเป็นโหมด Renew ให้เรียก API ต่ออายุ
+        // await ContractApi.renew(selectedContract.id, data);
+      } else if (isEditModalOpen && selectedContract) {
         if (onUpdateContract) {
           await onUpdateContract({ ...selectedContract, ...data });
         } else {
@@ -287,6 +297,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       // ปิด Modal เคลียร์ข้อมูล และดึงข้อมูลตารางใหม่
       setIsCreateModalOpen(false);
       setIsEditModalOpen(false);
+      setIsRenewModalOpen(false);
       setSelectedContract(null);
       fetchContractsData();
     } catch (error) {
@@ -646,6 +657,13 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               แก้ไข
             </button>
             <button
+              onClick={() => handleRenewClick(selectedContract)}
+              className="w-full px-4 py-2.5 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors"
+            >
+              <ClockIcon className="w-4 h-4 text-amber-500" />
+              ต่ออายุสัญญา
+            </button>
+            <button
               onClick={() => handleCreateInvoice(selectedContract)}
               className="w-full px-4 py-2.5 text-left text-sm text-primary hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
@@ -672,13 +690,14 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       )}
 
       <ContractModal
-        isOpen={isCreateModalOpen || isEditModalOpen}
+        isOpen={isCreateModalOpen || isEditModalOpen || isRenewModalOpen}
         onClose={() => {
           setIsCreateModalOpen(false);
           setIsEditModalOpen(false);
+          setIsRenewModalOpen(false)
           setSelectedContract(null);
         }}
-        mode={isEditModalOpen ? 'edit' : 'create'}
+        mode={isRenewModalOpen ? 'renew' : isEditModalOpen ? 'edit' : 'create'}
         initialValues={selectedContract} 
         onSubmit={handleSubmitContract}
       />

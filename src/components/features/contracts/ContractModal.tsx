@@ -5,7 +5,7 @@ import { ContractForm } from "./ContractForm";
 interface ContractModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mode: 'create' | 'edit' | 'detail';
+  mode: 'create' | 'edit' | 'detail' | 'renew';
   initialValues?: Partial<Contract> | null;
   onSubmit: (data: any) => Promise<void>;
 }
@@ -18,12 +18,10 @@ export const ContractModal: React.FC<ContractModalProps> = ({
   onSubmit,
 }) => {
   const getTitle = () => {
-    if (mode === 'create')
-      return 'สร้างใบสัญญา';
-    if (mode === 'edit')
-      return `แก้ไขใบสัญญา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
-    if (mode === 'detail')
-      return `รายละเอียดใบสัญญา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+    if (mode === 'create') return 'สร้างใบสัญญา';
+    if (mode === 'edit') return `แก้ไขใบสัญญา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+    if (mode === 'detail') return `รายละเอียดใบสัญญา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
+    if (mode === 'renew') return `เพิ่มใบสัญญา ${initialValues?.code ? `- ${initialValues.code}` : ''}`;
     return 'ใบสัญญา';
   };
 
