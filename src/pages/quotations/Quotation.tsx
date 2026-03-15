@@ -285,9 +285,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         if (onUpdateQuotation)
           await onUpdateQuotation({ ...selectedQuotation, ...data });
         else await QuotationApi.update(selectedQuotation.id, data);
-      } else if (modalMode === 'revise') {
-        if (onCreateQuotation) await onCreateQuotation(data);
-        else await QuotationApi.create(data); // Revise is technically creating a new one
+      } else if (modalMode === 'revise' && selectedQuotation) {
+        await QuotationApi.revise(selectedQuotation.id, data);
       }
       setIsModalOpen(false);
       fetchQuotations(); // Refresh data after mutation

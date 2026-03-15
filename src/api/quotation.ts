@@ -25,6 +25,11 @@ class QuotationService extends AuthService {
     return res.data;
   }
 
+  async revise(id: string, data: Omit<Quotation, 'id'>): Promise<Quotation> {
+    const res = await this.http.post<Quotation>(`${this.path}/${id}/revise`, data);
+    return res.data;
+  }
+
   async update(id: string, data: Partial<Quotation>): Promise<Quotation> {
     const res = await this.http.patch<Quotation>(`${this.path}/${id}`, data);
     return res.data;

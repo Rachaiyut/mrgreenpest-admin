@@ -469,19 +469,32 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   );
 
   // --- อัปเดต state installments ให้รองรับ percentage ---
-  const [installments, setInstallments] = useState<any[]>(
-    initialValues?.installments && initialValues.installments.length > 0
-      ? [...initialValues.installments]
+  const [installments, setInstallments] = useState<any[]>(() => {
+    if (initialValues?.installments && initialValues.installments.length > 0) {
+      // หาผลรวมยอดเงินของงวดทั้งหมดที่มาจาก DB เพื่อใช้คำนวณสัดส่วน (%)
+      const sumInitialAmt = initialValues.installments.reduce((sum: number, curr: any) => sum + Number(curr.amount || 0), 0);
+
+      return [...initialValues.installments]
         .sort((a: any, b: any) => a.installment_no - b.installment_no)
-        .map((inst: any) => ({
-          id: inst.id || crypto.randomUUID(),
-          installment_no: inst.installment_no,
-          amount: inst.amount,
-          percentage: inst.percentage || 0,
-          notes: inst.notes || '',
-        }))
-      : []
-  );
+        .map((inst: any) => {
+          // ถ้า API ไม่ได้ส่ง percentage มา ให้คำนวณใหม่จาก amount แทน
+          const pct = inst.percentage
+            ? Number(inst.percentage)
+            : sumInitialAmt > 0
+              ? Number(((Number(inst.amount) / sumInitialAmt) * 100).toFixed(2))
+              : 0;
+
+          return {
+            id: inst.id || crypto.randomUUID(),
+            installment_no: inst.installment_no,
+            amount: Number(inst.amount) || 0,
+            percentage: pct,
+            notes: inst.notes || '',
+          };
+        });
+    }
+    return [];
+  });
 
   useEffect(() => {
     if (initialValues?.installments && initialValues.installments.length > 0) {
@@ -1105,56 +1118,65 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       const newInst = [...prev];
       const current = { ...newInst[index] };
 
+      let pct = current.percentage;
+      let amt = current.amount;
+
       if (field === 'percentage') {
-        const pct = Number(value);
-        current.percentage = pct;
-        current.amount = netTotal > 0 ? Number(((pct / 100) * netTotal).toFixed(2)) : 0;
-        newInst[index] = current;
-
-        // Auto-adjust งวดสุดท้ายให้ครบ 100% เสมอ
-        if (newInst.length > 1 && index !== newInst.length - 1) {
-          let sumPct = 0;
-          let sumAmt = 0;
-          for (let i = 0; i < newInst.length - 1; i++) {
-            sumPct += Number(newInst[i].percentage) || 0;
-            sumAmt += Number(newInst[i].amount) || 0;
-          }
-          const lastIdx = newInst.length - 1;
-          newInst[lastIdx] = {
-            ...newInst[lastIdx],
-            percentage: Number(Math.max(0, 100 - sumPct).toFixed(2)),
-            amount: Number(Math.max(0, netTotal - sumAmt).toFixed(2)),
-          };
-        }
+        let inputPct = value === '' ? 0 : Math.round(Number(value));
+        inputPct = Math.min(100, Math.max(0, inputPct)); 
+        
+        pct = inputPct;
+        amt = netTotal > 0 ? Number(((pct / 100) * netTotal).toFixed(2)) : 0;
       } else if (field === 'amount') {
-        const amt = Number(value);
-        current.amount = amt;
-        current.percentage = netTotal > 0 ? Number(((amt / netTotal) * 100).toFixed(2)) : 0;
-        newInst[index] = current;
-
-        // Auto-adjust งวดสุดท้ายให้ครบจำนวนเงินรวม
-        if (newInst.length > 1 && index !== newInst.length - 1) {
-          let sumAmt = 0;
-          let sumPct = 0;
-          for (let i = 0; i < newInst.length - 1; i++) {
-            sumAmt += Number(newInst[i].amount) || 0;
-            sumPct += Number(newInst[i].percentage) || 0;
-          }
-          const lastIdx = newInst.length - 1;
-          newInst[lastIdx] = {
-            ...newInst[lastIdx],
-            amount: Number(Math.max(0, netTotal - sumAmt).toFixed(2)),
-            percentage: Number(Math.max(0, 100 - sumPct).toFixed(2)),
-          };
-        }
+        let inputAmt = value === '' ? 0 : Number(value);
+        inputAmt = Math.min(netTotal, Math.max(0, inputAmt));
+        
+        amt = inputAmt;
+        pct = netTotal > 0 ? Math.round((amt / netTotal) * 100) : 0;
       } else {
         current[field] = value;
         newInst[index] = current;
+        return newInst; 
+      }
+
+      current.percentage = pct;
+      current.amount = amt;
+      newInst[index] = current;
+
+      if (newInst.length > 1) {
+        const remainingPct = Math.max(0, 100 - pct);
+        const remainingAmt = Math.max(0, netTotal - amt);
+
+        const otherCount = newInst.length - 1;
+
+        const splitPct = Math.floor(remainingPct / otherCount);
+        
+        const splitAmt = Number(((splitPct / 100) * netTotal).toFixed(2));
+
+        let accumulatedPct = pct;
+        let accumulatedAmt = amt;
+
+        const lastUpdateIndex = index === newInst.length - 1 ? newInst.length - 2 : newInst.length - 1;
+
+        for (let i = 0; i < newInst.length; i++) {
+          if (i === index) continue;
+
+          if (i === lastUpdateIndex) {
+            newInst[i].percentage = Math.max(0, 100 - accumulatedPct);
+            newInst[i].amount = Number(Math.max(0, netTotal - accumulatedAmt).toFixed(2));
+          } else {
+            newInst[i].percentage = splitPct;
+            newInst[i].amount = splitAmt;
+            accumulatedPct += splitPct;
+            accumulatedAmt += splitAmt;
+          }
+        }
       }
 
       return newInst;
     });
   };
+
 
   // 1. กำหนดค่าเริ่มต้น 2 งวดให้เป็น 50%
   useEffect(() => {
@@ -1834,7 +1856,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">
                           รายละเอียด
                         </th>
-                        {/* --- เพิ่ม Column สัดส่วน (%) ตรงนี้ --- */}
                         <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-28">
                           สัดส่วน (%)
                         </th>
@@ -1865,11 +1886,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                               disabled={isReadOnly}
                             />
                           </td>
-                          {/* --- เพิ่ม Input สำหรับกรอกเปอร์เซ็นต์ ตรงนี้ --- */}
                           <td className="px-4 py-2">
                             <Input
                               type="number"
-                              value={inst.percentage || ''}
+                              value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''}
                               onChange={(e) =>
                                 handleInstallmentChange(
                                   idx,
@@ -1881,7 +1901,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                               disabled={isReadOnly}
                               min={0}
                               max={100}
-                              step="0.01"
+                              step="1"
                             />
                           </td>
                           <td className="px-4 py-2">
@@ -2073,7 +2093,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             }
           >
             <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
-              
+
               {/* 🌟 1. กล่องหมายเหตุ: ใช้ flex-1 และ min-w-0 เพื่อบังคับให้เต็มพื้นที่ */}
               <div className="flex-1 min-w-0 w-full flex flex-col">
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -2087,7 +2107,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                     disabled={isReadOnly}
                     placeholder="หมายเหตุเพิ่มเติม..."
                     // 🌟 เพิ่ม !max-w-none และ !w-full เพื่อบังคับทับ CSS เดิมของ Component
-                    className="!w-full !max-w-none resize-none" 
+                    className="!w-full !max-w-none resize-none"
                   />
                 </div>
               </div>
@@ -2126,7 +2146,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   </span>
                 </div>
               </div>
-              
+
             </div>
           </div>
         </div>

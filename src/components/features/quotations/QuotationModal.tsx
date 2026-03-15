@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { QuotationForm } from './QuotationForm';
-import { Quotation } from '@/src/types/entity/financial.interface';
+import { Quotation } from '@/src/types';
 
 interface QuotationModalProps {
   isOpen: boolean;
