@@ -49,7 +49,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
         phone: item.phone || '-',
         contractDetails: item.contract_details,
         durationYears: item.duration_years,
-        visitsRequired: item.visits_required || 12,
+        total_visits: item.total_visits,
         startDate: item.start_date,
         endDate: item.end_date,
         buildingType: item.building_type || 'บ้านเดี่ยว',
@@ -367,7 +367,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
                       {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
                       <span className="text-slate-400 mx-1">/</span>{' '}
-                      {row.visitsRequired || '-'}
+                      {row.total_visits || '-'}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
                       {row.lastServiceDate !== '-'
