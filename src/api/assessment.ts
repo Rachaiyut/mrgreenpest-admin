@@ -4,11 +4,12 @@ import {
 } from '@/src/types/entity/base.interface';
 import { Assessment, AssessmentAction } from '@/src/types/entity/assessment.interface';
 import { AuthService } from './auth';
+import { AssessmentQuery } from '../types/query/assessment.interface';
 
 class AssessmentService extends AuthService {
   protected path = '/assessments';
 
-  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<Assessment>> {
+  async getAll(query?: AssessmentQuery): Promise<IBaseResponseArray<Assessment>> {
     const res = await this.http.get<IBaseResponseArray<Assessment>>(this.path, {
       params: query,
     });

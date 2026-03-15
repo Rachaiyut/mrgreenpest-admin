@@ -48,6 +48,8 @@ import {
 } from '@/src/api';
 import { CategoryType, Role } from '@/src/types';
 import { useCurrentUser } from '@/src/hooks';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
 
 const Assessments: React.FC = () => {
   const location = useLocation();
@@ -59,10 +61,10 @@ const Assessments: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   const [view, setView] = useState<'list' | 'kanban'>('kanban');
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -79,8 +81,10 @@ const Assessments: React.FC = () => {
   const [assessmentToDelete, setAssessmentToDelete] =
     useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -91,9 +95,16 @@ const Assessments: React.FC = () => {
       const filter: any = { limit: 10 };
       if (statusParam) {
         filter.status = statusParam;
-        // If filtering by status, ensure we get enough items
         filter.limit = 100;
-        // Also ensure current page is reset if needed, but here we just fetch
+      }
+
+      if (filterDate) {
+        filter.appointment_date = filterDate;
+      }
+
+      // 🌟 ส่งคำค้นหาไปที่ API (ใช้ค่าที่ผ่านการหน่วงเวลาแล้ว)
+      if (debouncedSearch) {
+        filter.search = debouncedSearch;
       }
 
       const [
@@ -119,11 +130,18 @@ const Assessments: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [location.search]);
+  }, [location.search, filterDate, debouncedSearch]); // 🌟 เพิ่ม debouncedSearch ใน array นี้
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const customerMap = useMemo(() => {
     return new Map(
@@ -177,64 +195,38 @@ const Assessments: React.FC = () => {
   );
 
   const filteredAssessments = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (!lowercasedQuery) {
-      return reversedAssessments;
-    }
-
-    return reversedAssessments.filter((assessment) => {
-      const customerName = getCustomerName(assessment);
-
-      const matchesCustomer =
-        assessment.customer_id.toLowerCase().includes(lowercasedQuery) ||
-        customerName.toLowerCase().includes(lowercasedQuery);
-
-      const matchesWorkArea = assessment.assessment_areas.some(
-        (area) =>
-          (area.building_type &&
-            area.building_type.toLowerCase().includes(lowercasedQuery)) ||
-          (area.category_services || []).some((service) =>
-            service.name.toLowerCase().includes(lowercasedQuery)
-          )
-      );
-
-      const matchesDate = formatThaiDate(
-        new Date(assessment.appointment_date).toDateString()
-      ).includes(lowercasedQuery);
-
-      return matchesCustomer || matchesWorkArea || matchesDate;
-    });
-  }, [reversedAssessments, searchQuery, getCustomerName]);
+    return [...assessments].reverse(); 
+  }, [assessments]);
 
   const kanbanColumns: {
     title: AsessmentStatus;
     assessments: Assessment[];
   }[] = [
-    {
-      title: AsessmentStatus.DRAFT,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.DRAFT
-      ),
-    },
-    {
-      title: AsessmentStatus.APPOINTMENT,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.APPOINTMENT
-      ),
-    },
-    {
-      title: AsessmentStatus.PENDING,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.PENDING
-      ),
-    },
-    {
-      title: AsessmentStatus.COMPLETE,
-      assessments: filteredAssessments.filter(
-        (a) => a.status === AsessmentStatus.COMPLETE
-      ),
-    },
-  ];
+      {
+        title: AsessmentStatus.DRAFT,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.DRAFT
+        ),
+      },
+      {
+        title: AsessmentStatus.APPOINTMENT,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.APPOINTMENT
+        ),
+      },
+      {
+        title: AsessmentStatus.PENDING,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.PENDING
+        ),
+      },
+      {
+        title: AsessmentStatus.COMPLETE,
+        assessments: filteredAssessments.filter(
+          (a) => a.status === AsessmentStatus.COMPLETE
+        ),
+      },
+    ];
 
   const totalItems = filteredAssessments.length;
   const paginatedAssessments = filteredAssessments.slice(
@@ -258,8 +250,8 @@ const Assessments: React.FC = () => {
         if (currentStatus === 'PENDING') {
           if (['SUPERADMIN', 'ADMIN'].includes(currentUser.role)) {
             console.log('กำลังยิง verifyById...');
-            await AssessmentApi.verifyById(id, { status: 'VERIFIED' } as any); 
-          } 
+            await AssessmentApi.verifyById(id, { status: 'VERIFIED' } as any);
+          }
           else if (currentUser.role === 'COO') {
             console.log('กำลังยิง approveById...');
             await AssessmentApi.approveById(id, { status: 'APPROVED' } as any);
@@ -269,7 +261,7 @@ const Assessments: React.FC = () => {
         // โหมดสร้างใหม่
         await AssessmentApi.create(assessmentData);
       }
-      
+
       fetchData();
       setIsModalOpen(false);
       setAssessmentToEdit(null);
@@ -328,18 +320,18 @@ const Assessments: React.FC = () => {
         assessments.find((a) => a.id === assessmentId) || null
       );
       setOpenDropdownId(assessmentId);
-      
+
       // 🌟 เพิ่ม 2 บรรทัดนี้
       const isBottom = buttonRect.bottom > window.innerHeight - 220;
-      
+
       setDropdownPosition({
-        top: buttonRect.bottom, 
+        top: buttonRect.bottom,
         left: buttonRect.right,
         isBottom: isBottom, // 🌟 ส่งค่า isBottom ไปด้วย
       });
     }
   };
-    
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!openDropdownId) return;
@@ -367,17 +359,17 @@ const Assessments: React.FC = () => {
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-      {
-        label: 'ดูรายละเอียด',
-        icon: EyeIcon,
-        onClick: () => handleViewDetails(selectedAssessment),
-      },
-      {
-        label: 'แก้ไข',
-        icon: PencilIcon,
-        onClick: () => handleEdit(selectedAssessment),
-      },
-    ];
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => handleViewDetails(selectedAssessment),
+        },
+        {
+          label: 'แก้ไข',
+          icon: PencilIcon,
+          onClick: () => handleEdit(selectedAssessment),
+        },
+      ];
 
     actions.push({
       label: 'ลบ',
@@ -408,11 +400,11 @@ const Assessments: React.FC = () => {
     <div className="relative min-h-screen">
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
-           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
-           <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดใบประเมิน...</p>
+          <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+          <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดใบประเมิน...</p>
         </div>
       )}
-      
+
       <div className="p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Header Section */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -496,11 +488,13 @@ const Assessments: React.FC = () => {
         {/* Toolbar */}
         <Card className="!p-4">
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto flex-1">
-              <div className="relative flex-1 sm:max-w-xs">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 items-center">
+              
+              {/* ช่องค้นหา */}
+              <div className="relative w-full sm:w-64 flex-shrink-0">
                 <Input
                   type="search"
-                  placeholder="ค้นหา (ลูกค้า, ประเภท, บริการ, วันที่)..."
+                  placeholder="ค้นหา (ลูกค้า, ประเภท, บริการ)..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -521,6 +515,33 @@ const Assessments: React.FC = () => {
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
+              </div>
+
+              {/* DatePicker กรองวันที่ */}
+              <div className="w-full sm:w-48 flex-shrink-0">
+                 <DatePicker
+                    value={filterDate ? dayjs(filterDate, 'YYYY-MM-DD') : null}
+                    onChange={(date, dateString) => {
+                      if (dateString) {
+                        const selectedDate = date ? (date as any).toDate() : null;
+                        if (selectedDate) {
+                          const yyyy = selectedDate.getFullYear();
+                          const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                          const dd = String(selectedDate.getDate()).padStart(2, '0');
+                          const formattedDate = `${yyyy}-${mm}-${dd}`;
+                          setFilterDate(formattedDate);
+                          setCurrentPage(1);
+                        }
+                      } else {
+                        setFilterDate('');
+                        setCurrentPage(1);
+                      }
+                    }}
+                    placeholder="เลือกวันที่นัดหมาย"
+                    format="DD/MM/YYYY"
+                    className="h-10 text-sm rounded-md w-full border-slate-300 shadow-sm flex items-center"
+                    allowClear={false}
+                  />
               </div>
             </div>
 
@@ -558,15 +579,14 @@ const Assessments: React.FC = () => {
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                          col.title === AsessmentStatus.DRAFT
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${col.title === AsessmentStatus.DRAFT
                             ? 'bg-slate-400'
                             : col.title === AsessmentStatus.APPOINTMENT
                               ? 'bg-blue-500'
                               : col.title === AsessmentStatus.PENDING
                                 ? 'bg-amber-500'
                                 : 'bg-green-500'
-                        }`}
+                          }`}
                       />
                       <h3 className="font-bold text-slate-700 text-sm truncate">
                         {col.title === AsessmentStatus.DRAFT
@@ -812,7 +832,7 @@ const Assessments: React.FC = () => {
           </div>
         </div>
       )}
-     
+
       <AssessmentModal
         isOpen={isModalOpen}
         onClose={() => {

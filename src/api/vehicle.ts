@@ -6,7 +6,7 @@ import {
   WarehouseStats,
 } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
-import { VehicleJobQuery } from '../types/entity/vehicle.interface';
+import { VehicleJobQuery } from '../types/query/vehicle.interface';
 
 class VehicleService extends AuthService {
   protected path = '/vehicles';

@@ -1,5 +1,5 @@
 import { Role } from "../enums/role";
-import { IBaseQuery } from "./base.interface";
+import { IBaseQuery } from "../entity/base.interface";
 
 export interface VehicleJobQuery extends IBaseQuery {
 	techinician_id?: string,

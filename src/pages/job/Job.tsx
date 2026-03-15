@@ -69,6 +69,7 @@ import {
   XCircleIcon,
 } from '../../assets/icons/Icons';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
+import dayjs from 'dayjs';
 
 interface JobProps {
   users: User[];
@@ -111,7 +112,8 @@ const Job: React.FC<JobProps> = ({
 
   // Filter States
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
-  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+    const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  
 
   const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
     setIsLoading(true);
@@ -856,7 +858,7 @@ const Job: React.FC<JobProps> = ({
                 {activeTab === 'schedule' && (
                   <div className="flex items-center gap-2">
                     <DatePicker
-                      value={filterDate ? (window as any).moment?.(filterDate) : null}
+                      value={filterDate ? dayjs(filterDate, 'YYYY-MM-DD') : null}
                       onChange={(date, dateString) => {
                         if (dateString) {
                           const selectedDate = date ? (date as any).toDate() : null;
@@ -878,7 +880,7 @@ const Job: React.FC<JobProps> = ({
                       placeholder="เลือกวันที่"
                       format="DD/MM/YYYY"
                       className="h-10 text-sm rounded-md w-full sm:min-w-[160px] border-slate-300 shadow-sm flex items-center"
-                      allowClear
+                      allowClear={false}
                     />
                     <Select
                       id="technician-filter"
