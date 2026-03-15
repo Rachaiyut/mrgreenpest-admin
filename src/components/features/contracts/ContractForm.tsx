@@ -32,6 +32,7 @@ import { SearchableSelect } from '../../common/SearchableSelect';
 import { CategoryApi } from '../../../api/category';
 import { CustomerApi } from '../../../api/customer';
 import { QuotationApi } from '../../../api/quotation';
+import { ContractApi } from '../../../api/contract';
 
 // ===== Assets =====
 import {
@@ -39,48 +40,14 @@ import {
   CurrencyDollarIcon,
   DocumentTextIcon,
   HomeIcon,
-  MapIcon,
   MapPinIcon,
   PlusIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
 
-// ===== Interfaces =====
-export interface Contract {
-  id: string;
-  code?: string;
-  quotation_id?: string;
-  customer_id: string;
-  customer_name: string;
-  service_location?: string;
-  building_type?: string;
-  service_type?: string;
-  system_used?: string;
-  contract_duration?: string;
-  service_count?: number;
-  total_amount: number;
-  vat_amount: number;
-  status: ContractStatus | any;
-  start_date: string;
-  end_date: string;
-  notes?: string;
-  created_by?: string;
-  updated_by?: string;
-  created_at?: string;
-  updated_at?: string;
-  customerId?: string;
-  quotationId?: string;
-  customerName?: string;
-  startDate?: string;
-  endDate?: string;
-  address?: string;
-  servicePackage?: string;
+// Interface
+import { Contract } from '@/src/types/entity/contract.interface';
 
-  customer?: Customer;
-  jobs?: any[];
-  area?: ContractArea[];
-  installments?: InstallmentPlan[];
-}
 
 export interface ContractArea {
   id?: string;
@@ -312,9 +279,6 @@ export const ContractForm: FC<ContractFormProps> = ({
     } else if (mode === 'renew' && initialValues) {
       // 🌟 เพิ่ม LOGIC สำหรับ RENEW โดยเฉพาะ
       const now = new Date();
-      // Gen รหัสสัญญาใหม่ (เปลี่ยน Suffix ให้รู้ว่าเป็น Renew)
-      const code = `CT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-R${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
-      setContractCode(code);
 
       // คำนวณวันเริ่มต้นใหม่ (อิงจากวันสิ้นสุดสัญญาเดิม + 1 วัน)
       const oldEnd = new Date(initialValues.end_date || now);
@@ -343,7 +307,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             description: inst.description,
             percentage: Number(inst.percentage),
             amount: Number(inst.amount),
-            due_date: idx === 0 ? startStr : '', // 🟢 กำหนดแค่งวดแรกเท่านั้น
+            due_date: idx === 0 ? startStr : '', 
             status: 'PENDING' as any,
           }))
         );
@@ -655,21 +619,22 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Initialize Custom Areas for Edit Mode
   useEffect(() => {
-    if ((mode === 'edit' || mode === 'renew') && initialValues?.area && initialValues.area.length > 0) {
-      const mappedAreas = initialValues.area.map((a: any, index: number) => {
-        // ดึง Service Types เดิมออกมาเป็น Array ของชื่อ (String) เพื่อให้ตรงกับ State
-        const mappedServices = a.category_service?.map((cs: any) => {
-          // รองรับทั้งกรณีที่ populate category มา หรือมีแค่ id
-          return cs.category?.name || cs.category_id;
-        }).filter(Boolean) || [];
+    const existingAreas = initialValues?.area;
+
+    if ((mode === 'edit' || mode === 'renew') && existingAreas && existingAreas.length > 0) {
+      const mappedAreas = existingAreas.map((a: any, index: number) => {
+        const servicesArray = a.category_services || a.category_service || [];
+        const mappedServices = servicesArray.map((cs: any) => {
+          return cs.category?.name || cs.category_id || cs.category;
+        }).filter(Boolean);
 
         return {
           id: a.id || crypto.randomUUID(),
           title: a.area_name || `พื้นที่ ${index + 1}`,
-          buildingType: a.building_type || '',
+          buildingType: a.building_type || '',       // 🟢 ดึง Building Type มาใส่
           contractDuration: initialValues.contract_duration || '1 ปี',
-          systemUsed: a.service_system || '',
-          serviceCount: initialValues.service_count || 7,
+          systemUsed: a.service_system || '',        // 🟢 ดึง System Used มาใส่
+          serviceCount: a.service_count || initialValues.service_count || 7,
           selectedServiceTypes: mappedServices,
         };
       });

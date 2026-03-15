@@ -12,7 +12,7 @@ import {
 import { TransferStatus } from '@/src/types/enums/inventory';
 
 // ===== API =====
-import { TransferApi } from '@/src/api/inventory/transfer';
+import { TransferApi } from '@/src/api/transfer';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';

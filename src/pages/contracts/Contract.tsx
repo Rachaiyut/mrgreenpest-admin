@@ -281,8 +281,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const handleSubmitContract = async (data: any) => {
     try {
       if (isRenewModalOpen && selectedContract) {
-        // 🟢 ถ้าเป็นโหมด Renew ให้เรียก API ต่ออายุ
-        // await ContractApi.renew(selectedContract.id, data);
+        await ContractApi.renew(selectedContract.id, data);
       } else if (isEditModalOpen && selectedContract) {
         if (onUpdateContract) {
           await onUpdateContract({ ...selectedContract, ...data });

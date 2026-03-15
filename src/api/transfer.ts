@@ -1,27 +1,16 @@
+import { AuthService } from './auth';
+import { Transfer } from '@/src/types/entity/app.interface';
 import {
   IBaseQuery,
+  IBaseResponse,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
-import { Transfer } from '@/src/types/entity/inventory.interface';
-import { AuthService } from './auth';
 
 class TransferService extends AuthService {
   protected path = '/transfers';
 
-  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<Transfer>> {
-    const res = await this.http.get<IBaseResponseArray<Transfer>>(this.path, {
-      params: query,
-    });
-    return res.data;
-  }
-
   async getById(id: string): Promise<Transfer> {
     const res = await this.http.get<Transfer>(`${this.path}/${id}`);
-    return res.data;
-  }
-
-  async create(data: Omit<Transfer, 'id'>): Promise<Transfer> {
-    const res = await this.http.post<Transfer>(this.path, data);
     return res.data;
   }
 
@@ -32,6 +21,28 @@ class TransferService extends AuthService {
 
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
+  }
+
+  async getAll(query?: IBaseQuery): Promise<IBaseResponseArray<Transfer>> {
+    const res = await this.http.get<IBaseResponseArray<Transfer>>(this.path, {
+      params: query,
+    });
+    return res.data;
+  }
+
+  async create(
+    data: Omit<Transfer, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Transfer> {
+    const res = await this.http.post<IBaseResponse<Transfer>>(this.path, data);
+    return res.data.data;
+  }
+
+  async updateStatus(id: string, status: string): Promise<Transfer> {
+    const res = await this.http.patch<IBaseResponse<Transfer>>(
+      `${this.path}/${id}/status`,
+      { status }
+    );
+    return res.data.data;
   }
 }
 

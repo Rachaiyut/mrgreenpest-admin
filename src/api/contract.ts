@@ -34,6 +34,11 @@ class ContractService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
+  async renew(id: string, data: Omit<Contract, 'id'>): Promise<Contract> {
+    const res = await this.http.post<Contract>(`${this.path}/${id}/renew`, data);
+    return res.data;
+  }
+
   async getPdf(id: string): Promise<Blob> {
     const res = await this.http.get(`${this.path}/${id}/pdf`, {
       responseType: 'blob',

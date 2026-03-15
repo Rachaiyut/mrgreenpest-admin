@@ -34,15 +34,15 @@ import {
 import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
 import { Assessment } from '../../../types/entity/assessment.interface';
-import { Quotation } from '../../../types/entity/financial.interface';
 import { AssessmentApi } from '../../../api/assessment';
 import { CategoryApi } from '../../../api/category';
 import { CustomerApi } from '../../../api/customer';
 import { Customer } from '../../../types/entity/customer.interface';
-import { CategoryType } from '@/src/types';
+import { CategoryType, Quotation } from '@/src/types';
 
 import { PackageApi } from '../../../api/package';
 import { Package } from '../../../types/entity/package.interface';
+import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 interface QuotationItem {
   id: string;
@@ -886,7 +886,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
 
       if (!contactPhone) {
-        setContactPhone(selectedCustomer.phone || '');
+        setContactPhone(selectedCustomer.primary_phone || '');
       }
     }
   }, [selectedCustomer]);
@@ -1095,6 +1095,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     });
   };
 
+
   const handleInstallmentChange = (
     index: number,
     field: string,
@@ -1302,7 +1303,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       customer_name: `${selectedCustomer.first_name} ${selectedCustomer.last_name}`,
       created_at: quotationDate,
       expires_at: expiresAt,
-      status: initialValues?.status || Status.Draft,
+      status: initialValues?.status || QuotationStatus.DRAFT,
       total: netTotal,
       revision:
         mode === 'revise'
@@ -1383,7 +1384,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 options={fetchedCustomers.map((c) => ({
                   value: c.id,
                   label: `${c.first_name} ${c.last_name}`,
-                  description: c.phone,
+                  description: c.primary_phone,
                 }))}
                 placeholder="ค้นหาลูกค้า..."
                 disabled={isReadOnly}
