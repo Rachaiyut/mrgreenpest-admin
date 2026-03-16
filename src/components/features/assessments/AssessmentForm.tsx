@@ -110,7 +110,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           ]);
 
           const fetchedCategories = categoriesRes?.data || [];
-          
+
           const fetchedCustomers = customerRes ? [(customerRes as any).data || customerRes] : [];
           const fetchedPackages = packageRes ? ((packageRes as any).data || packageRes) : [];
           const fetchedProducts = productResults.map(pr => (pr as any)?.data || pr).filter(Boolean);
@@ -127,9 +127,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             created_at: loadedAssessment.created_at ? new Date(loadedAssessment.created_at).toISOString() : '',
             appointment_date: loadedAssessment.appointment_date ? new Date(loadedAssessment.appointment_date).toISOString() : undefined,
           });
-          
+
           setSelectedPackageId(loadedAssessment.package_id || null);
-          
+
           const foundCustomer = fetchedCustomers[0] || loadedAssessment.customer;
           setSelectedCustomerData((foundCustomer as Customer) || null);
 
@@ -239,6 +239,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         district: customer.district || '',
         province: customer.province || '',
         zipcode: customer.postal_code || '',
+        google_map_link: customer.google_map_link || '',
       }));
       setErrors((prev) => ({ ...prev, customer_id: '', address: '' }));
     }
@@ -304,15 +305,15 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     setWorkAreas((prevAreas) =>
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) return { ...area };
-        
+
         const sortedConditions = [...((selectedPkg as any).package_price || (selectedPkg as any).package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
         const bestFit = sortedConditions.find((c: any) => c.area_range >= area.area_size!);
-        
+
         if (bestFit) {
           const termiteCategory = categories.find((c) => c.name.includes('กำจัดปลวก'));
           const hasTermites = (area.category_services || []).some((s) => s.category_id === termiteCategory?.id);
           const priceToUse = hasTermites ? bestFit.price_with_termite : bestFit.price_without_termite;
-          
+
           return {
             ...area,
             base_service_price: priceToUse,
@@ -440,7 +441,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     if (isEdit && formData.status === AsessmentStatus.PENDING) {
       const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as any)?.name : String(currentUserRole);
       const formattedRole = String(roleStr || '').toUpperCase();
-      
+
       if (formattedRole === 'SUPERADMIN' || formattedRole === 'ADMIN') {
         return 'บันทึกและตรวจสอบ';
       }
@@ -464,7 +465,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         const newArea: any = { ...area };
         if (newArea.id && newArea.id.startsWith('area-')) newArea.id = crypto.randomUUID();
         if (newArea.package_price !== undefined && newArea.package_price !== null) newArea.package_price = Number(newArea.package_price);
-        
+
         newArea.items = (newArea.items || []).map((item: any) => {
           const sanitizedItem: any = {
             product_id: item.product_id,
@@ -498,7 +499,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       };
 
       if (!isEdit) payload.created_by = 'ผู้ดูแลระบบ';
-    
+
       await onSubmit(payload);
     } catch (error) {
       console.error('Submit Error:', error);
@@ -511,7 +512,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     <div className="flex flex-col relative">
       {(isLoading || isSubmitting) && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
-           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+          <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
         </div>
       )}
 
@@ -524,8 +525,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               const isCurrent = currentStep === index;
               return (
                 <li key={step.id} className="flex items-center gap-2 bg-white p-2">
-                  <span className={`h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isCurrent ? 'border-primary bg-primary text-white' : isCompleted ? 'border-green-500 bg-green-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-500'
+                  <span className={`h-10 w-10 rounded-full flex items-center justify-center border-2 transition-all ${isCurrent ? 'border-primary bg-primary text-white' : isCompleted ? 'border-green-500 bg-green-500 text-white' : 'border-slate-200 bg-slate-50 text-slate-500'
                     }`}>
                     {isCompleted ? <CheckCircleIcon className="w-6 h-6" /> : <step.icon className="w-5 h-5" />}
                   </span>
@@ -624,9 +624,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mt-4">
               <h3 className="text-base font-semibold text-slate-800 flex items-center gap-2 mb-4"><span className="w-1.5 h-1.5 rounded-full bg-primary"></span>ที่อยู่สำหรับเข้าประเมิน (สามารถแก้ไขได้)</h3>
               <div className="mb-4">
-                 <label className="block text-sm font-medium text-slate-700 mb-1">ที่อยู่ (บ้านเลขที่, ถนน) <span className="text-red-500">*</span></label>
-                 <Textarea name="address" value={formData.address || ''} onChange={handleFieldChange} className={`transition-colors ${errors.address ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`} rows={2} />
-                 {errors.address && <p className="text-red-500 text-xs mt-1 font-medium">{errors.address}</p>}
+                <label className="block text-sm font-medium text-slate-700 mb-1">ที่อยู่ (บ้านเลขที่, ถนน) <span className="text-red-500">*</span></label>
+                <Textarea name="address" value={formData.address || ''} onChange={handleFieldChange} className={`transition-colors ${errors.address ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`} rows={2} />
+                {errors.address && <p className="text-red-500 text-xs mt-1 font-medium">{errors.address}</p>}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField label="แขวง/ตำบล" htmlFor="sub_district"><Input name="sub_district" value={formData.sub_district || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" /></FormField>
@@ -641,9 +641,16 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 <FormField label="ลำดับ" htmlFor="sequence"><Input name="sequence" value={formData.sequence || ''} onChange={handleFieldChange} className="bg-slate-50 focus:bg-white" /></FormField>
               </div>
               <div className="mt-4">
-                 <label className="block text-sm font-medium text-slate-700 mb-1">Link Google Map <span className="text-red-500">*</span></label>
-                 <Input name="google_map_link" type="url" placeholder="https://maps.app.goo.gl/..." value={formData.google_map_link || ''} onChange={handleFieldChange} className={`transition-colors ${errors.google_map_link ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`} />
-                 {errors.google_map_link && <p className="text-red-500 text-xs mt-1 font-medium">{errors.google_map_link}</p>}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Link Google Map <span className="text-red-500">*</span></label>
+                <Input
+                  name="google_map_link"
+                  type="url"
+                  placeholder="https://maps.app.goo.gl/..."
+                  value={formData.google_map_link || ''}
+                  onChange={handleFieldChange}
+                  className={`transition-colors ${errors.google_map_link ? 'border-red-500 focus:ring-red-500 bg-red-50/30' : 'bg-slate-50 focus:bg-white'}`}
+                />
+                {errors.google_map_link && <p className="text-red-500 text-xs mt-1 font-medium">{errors.google_map_link}</p>}
               </div>
             </div>
           </div>
@@ -665,7 +672,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   area={area}
                   index={index}
                   // @ts-ignore
-                  errors={errors} 
+                  errors={errors}
                   onAreaChange={handleAreaChange}
                   onClearArea={handleClearArea}
                   onRemoveArea={handleRemoveArea}
@@ -758,7 +765,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         )}
       </div>
 
-     {/* FOOTER: BUTTONS */}
+      {/* FOOTER: BUTTONS */}
       <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center w-full px-2">
         <div className="text-slate-500 font-medium">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
         <div className="flex items-center gap-3">
@@ -773,22 +780,22 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
             </Button>
           ) : (
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={(e) => {
                 // 🌟 แก้ไข: 
                 // 1. ถ้าสร้างใหม่ (!isEdit) -> ให้ส่งเป็น DRAFT
                 // 2. ถ้าแก้ไขและสถานะเป็น DRAFT อยู่ -> ให้ดันเป็น PENDING (ส่งประเมิน)
                 // 3. สถานะอื่นๆ ให้คงเดิม
-                const targetStatus = !isEdit 
-                  ? AsessmentStatus.DRAFT 
-                  : (formData.status === AsessmentStatus.DRAFT 
-                      ? AsessmentStatus.PENDING 
-                      : (formData.status as AsessmentStatus));
+                const targetStatus = !isEdit
+                  ? AsessmentStatus.DRAFT
+                  : (formData.status === AsessmentStatus.DRAFT
+                    ? AsessmentStatus.PENDING
+                    : (formData.status as AsessmentStatus));
 
                 handleSubmitData(e, targetStatus);
-              }} 
-              variant="primary" 
+              }}
+              variant="primary"
               className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
               disabled={isSubmitting}
             >
@@ -797,7 +804,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           )}
         </div>
       </div>
-  
+
     </div>
   );
 };
