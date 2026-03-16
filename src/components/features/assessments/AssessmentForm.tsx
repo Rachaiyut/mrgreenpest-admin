@@ -126,6 +126,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             ...rest,
             created_at: loadedAssessment.created_at ? new Date(loadedAssessment.created_at).toISOString() : '',
             appointment_date: loadedAssessment.appointment_date ? new Date(loadedAssessment.appointment_date).toISOString() : undefined,
+            google_map_link: loadedAssessment.google_map_link || (loadedAssessment.customer && loadedAssessment.customer.google_map_link) || '',
           });
 
           setSelectedPackageId(loadedAssessment.package_id || null);
@@ -457,6 +458,14 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
   const handleSubmitData = async (e?: FormEvent | React.MouseEvent, targetStatus?: AsessmentStatus) => {
     if (e && e.preventDefault) e.preventDefault();
+
+    // 🟢 1. ดูว่าผ่าน validateStep ไหม
+    const isValid = validateStep();
+    console.log('--- Is Form Valid? ---', isValid);
+    console.log('--- Current Errors ---', errors); // 🟢 2. พิมพ์ Error ออกมาดู
+
+    if (!isValid) return; // 👈 ถ้ามี Error มันจะจบการทำงานบรรทัดนี้ทันที!
+    
     if (!validateStep()) return;
 
     setIsSubmitting(true);

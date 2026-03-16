@@ -1,12 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { FC } from 'react';
 import { Modal } from '../../common/Modal';
-import {
-  Quotation,
-  InstallmentPlan,
-  Status,
-  QuotationItem as IQuotationItem,
-} from '@/src/types/entity/app.interface';
+import { InstallmentPlan } from '@/src/types/entity/app.interface';
+import { Quotation, QuotationItem } from '@/src/types';
 import { StatusBadge } from '../../common/StatusBadge';
 import { formatThaiDate } from '../../../utils/date';
 import {
@@ -223,7 +219,7 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {quotation.items && quotation.items.length > 0 ? (
-                  quotation.items.map((item: IQuotationItem, index: number) => (
+                  quotation.items.map((item: QuotationItem, index: number) => (
                     <tr key={item.id || index} className="hover:bg-slate-50/50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center">
                         {index + 1}
