@@ -82,6 +82,8 @@ export const NotificationMenu: React.FC = () => {
       navigate(`/inventory/withdrawals`);
     } else if (notification.related_entity_type === 'ASSESSMENT') {
       navigate(`/assessments`);
+    } else if (notification.related_entity_type === 'QUOTATION') {
+      navigate(`/quotations`);
     }
   };
 
@@ -143,8 +145,12 @@ export const NotificationMenu: React.FC = () => {
                       }`}
                     >
                       <div className="flex-shrink-0 mt-1">
-                        {notification.type.includes('OVER_LIMIT') ? (
+                        {notification.type.includes('OVER_LIMIT') || notification.type.includes('STOCK_LIMIT') ? (
                           <ExclamationTriangleIcon className="w-5 h-5 text-amber-500" />
+                        ) : notification.type.includes('PRICE_ALERT') || notification.type.includes('QUOTATION_PRICE') ? (
+                          <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
+                        ) : notification.type.includes('PENDING_APPROVAL') || notification.type.includes('VERIFIED') ? (
+                          <CheckCircleIcon className="w-5 h-5 text-green-500" />
                         ) : (
                           <BellIcon className="w-5 h-5 text-blue-500" />
                         )}

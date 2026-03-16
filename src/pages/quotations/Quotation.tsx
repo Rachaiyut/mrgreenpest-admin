@@ -68,14 +68,37 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 }) => {
   const { customers } = useData();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [totalFromServer, setTotalFromServer] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const fetchQuotations = async () => {
+  // These are declared below but needed in fetchQuotations
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ทั้งหมด' | QuotationStatus>(
+    'ทั้งหมด'
+  );
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const fetchQuotations = async (page = currentPage, limit = itemsPerPage) => {
     setIsLoading(true);
     try {
-      const res = await QuotationApi.getAll({ limit: 10 });
+      const query: any = {
+        page,
+        limit,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      };
+      if (searchQuery.trim()) query.search = searchQuery.trim();
+      if (statusFilter !== 'ทั้งหมด') query.status = statusFilter;
+      if (startDate) query.start_date = startDate;
+      if (endDate) query.end_date = endDate;
+
+      const res = await QuotationApi.getAll(query);
       setQuotations(res.data || []);
+      setTotalFromServer(res.meta?.total || res.data?.length || 0);
     } catch (error) {
       console.error('Failed to fetch quotations:', error);
     } finally {
@@ -84,8 +107,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   };
 
   useEffect(() => {
-    fetchQuotations();
-  }, []);
+    fetchQuotations(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter, startDate, endDate]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -110,15 +133,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ทั้งหมด' | QuotationStatus>(
-    'ทั้งหมด'
-  );
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
 
   // Cancellation reason state
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -158,66 +172,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     [customers]
   );
 
-  // Filtered quotations
-  const filteredQuotations = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? new Date(endDate) : null;
-    if (end) end.setHours(23, 59, 59, 999);
-
-    let result = quotations;
-
-    // Search filter
-    if (q) {
-      result = result.filter((item) => {
-        const phone =
-          item.contact_phone ||
-          item.customer?.primary_phone ||
-          custPhoneMap.get(item.customer_id) ||
-          '';
-        return (
-          item.id.toLowerCase().includes(q) ||
-          item.customer_name.toLowerCase().includes(q) ||
-          phone.includes(q)
-        );
-      });
-    }
-
-    // Status filter
-    if (statusFilter !== 'ทั้งหมด') {
-      result = result.filter((item) => item.status === statusFilter);
-    }
-
-    // Date filter
-    if (start || end) {
-      result = result.filter((item) => {
-        const d = new Date(item.created_at);
-        return (!start || d >= start) && (!end || d <= end);
-      });
-    }
-
-    // Get latest revision only
-    const latestMap = new Map<string, Quotation>();
-    for (const item of result) {
-      const baseId = item.id.split('-')[0];
-      const existing = latestMap.get(baseId);
-      if (!existing || item.revision > existing.revision) {
-        latestMap.set(baseId, item);
-      }
-    }
-
-    return Array.from(latestMap.values()).reverse();
-  }, [quotations, searchQuery, statusFilter, startDate, endDate, custPhoneMap]);
-
-  const totalItems = filteredQuotations.length;
-  const paginatedQuotations = useMemo(
-    () =>
-      filteredQuotations.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-      ),
-    [filteredQuotations, currentPage, itemsPerPage]
-  );
+  // Server-side pagination: quotations already filtered/sorted by API
+  const totalItems = totalFromServer;
+  const paginatedQuotations = quotations;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);

@@ -254,6 +254,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [packageName, setPackageName] = useState(initialPackageItem ? initialPackageItem.description?.replace('แพ็กเกจ: ', '') || '' : '');
   const [usePackagePricing, setUsePackagePricing] = useState(!!initialPackageItem);
   const [items, setItems] = useState<QuotationItem[]>([]);
+  // Editable area prices - track per-area price overrides by index
+  const [editableAreaPrices, setEditableAreaPrices] = useState<Record<number, number>>({});
   const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
   const vatRate = 0.07;
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
@@ -488,6 +490,30 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
   }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
+
+  // Fetch full assessment (with packagePriceRelation) when assessment is selected
+  useEffect(() => {
+    if (!selectedAssessmentId) return;
+    // Only fetch if we don't already have full data (packagePriceRelation)
+    const currentAssessment = fetchedAssessments.find(a => a.id === selectedAssessmentId);
+    const hasFullData = currentAssessment?.assessment_areas?.some((a: any) => a.packagePriceRelation);
+    if (hasFullData) return;
+
+    (async () => {
+      try {
+        const res = await AssessmentApi.getById(selectedAssessmentId);
+        const fullData = (res as any).data || res;
+        if (fullData?.id) {
+          setFetchedAssessments(prev => {
+            const others = prev.filter(a => a.id !== fullData.id);
+            return [fullData, ...others];
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch full assessment:', err);
+      }
+    })();
+  }, [selectedAssessmentId]);
 
   // --- Logic แก้การโหลดข้อมูลใบประเมินทับโหมด Edit ---
   useEffect(() => {
@@ -724,12 +750,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         : selectedAssessment?.assessment_areas;
 
       if (areas && areas.length > 0) {
-        areaTotal = areas.reduce((sum: number, area: any) => sum + (Number(area.total_price) || 0), 0);
+        areaTotal = areas.reduce((sum: number, area: any, idx: number) => {
+          const price = editableAreaPrices[idx] !== undefined ? editableAreaPrices[idx] : (Number(area.total_price) || 0);
+          return sum + price;
+        }, 0);
       }
     }
     const extraItemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     return areaTotal + extraItemsTotal;
-  }, [items, usePackagePricing, packagePrice, selectedAssessmentId, selectedAssessment, activeData]);
+  }, [items, usePackagePricing, packagePrice, selectedAssessmentId, selectedAssessment, activeData, editableAreaPrices]);
 
   const vatAmount = useMemo(() => includeVat ? subtotal * vatRate : 0, [subtotal, includeVat]);
   const netTotal = useMemo(() => subtotal + vatAmount, [subtotal, vatAmount]);
@@ -896,12 +925,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       revision: mode === 'revise' ? (initialValues?.revision || 0) + 1 : initialValues?.revision || 1,
       google_map_link: selectedCustomer.google_map_link || '',
       payment_terms: paymentTerms,
-      service_location: serviceLocation,
-      building_type: buildingType,
-      service_area: serviceArea,
-      service_system: serviceSystem,
-      system_used: systemUsed,
-      service_type: serviceType,
+      service_location: serviceLocation || undefined,
+      building_type: buildingType || undefined,
+      service_area: serviceArea || undefined,
+      service_system: serviceSystem || undefined,
+      system_used: systemUsed || undefined,
+      service_type: serviceType || undefined,
       notes: notes,
       contract_duration: contractDuration,
       service_count: serviceCount,
@@ -1017,6 +1046,48 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
           if (!areasToDisplay || areasToDisplay.length === 0) return null;
 
+          // Helper: get min price from package for an area (uses min_price fields, same as assessment)
+          const getMinPriceForArea = (area: any): number | null => {
+            // Case 1: quotation_area or assessment_area with packagePriceRelation
+            const pkgRelation = area.packagePriceRelation;
+            if (pkgRelation) {
+              // Prefer min_price fields (actual minimum threshold), fallback to regular price
+              const minWith = Number(pkgRelation.min_price_with_termite) || 0;
+              const minWithout = Number(pkgRelation.min_price_without_termite) || 0;
+              if (minWith > 0 || minWithout > 0) {
+                return Math.min(minWith > 0 ? minWith : Infinity, minWithout > 0 ? minWithout : Infinity);
+              }
+              // Fallback to regular price
+              const pWith = Number(pkgRelation.price_with_termite) || 0;
+              const pWithout = Number(pkgRelation.price_without_termite) || 0;
+              if (pWith > 0 || pWithout > 0) {
+                return Math.min(pWith > 0 ? pWith : Infinity, pWithout > 0 ? pWithout : Infinity);
+              }
+            }
+
+            // Case 2: assessment_area - calc from selectedAssessment.package.package_prices
+            const pkg = selectedAssessment?.package || fetchedPackage;
+            if (!pkg?.package_prices || !Array.isArray(pkg.package_prices)) return null;
+
+            const areaSize = Number(area.area_size) || 0;
+            if (areaSize <= 0) return null;
+
+            const sorted = [...pkg.package_prices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
+            const condition = sorted.find((p: any) => Number(p.area_range) >= areaSize);
+            if (!condition) return null;
+
+            // Prefer min_price fields
+            const minWith = Number(condition.min_price_with_termite) || 0;
+            const minWithout = Number(condition.min_price_without_termite) || 0;
+            if (minWith > 0 || minWithout > 0) {
+              return Math.min(minWith > 0 ? minWith : Infinity, minWithout > 0 ? minWithout : Infinity);
+            }
+            const pWith = Number(condition.price_with_termite) || 0;
+            const pWithout = Number(condition.price_without_termite) || 0;
+            if (pWith === 0 && pWithout === 0) return null;
+            return Math.min(pWith > 0 ? pWith : Infinity, pWithout > 0 ? pWithout : Infinity);
+          };
+
           return (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
               <SectionHeader icon={ClipboardDocumentListIcon} title={sectionTitle} />
@@ -1035,7 +1106,55 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                           <div><div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div><div className="font-medium text-slate-800">{getBuildingTypeName(area.building_type)}</div></div>
                           <div><div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div><div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div></div>
                           <div><div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div><div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}</div></div>
-                          <div><div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div><div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div></div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
+                            {isReadOnly ? (
+                              <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
+                            ) : (
+                              <div>
+                                <div className="flex items-center gap-1">
+                                  <span className="font-semibold text-slate-700 text-sm">฿</span>
+                                  <Input
+                                    type="number"
+                                    className={`w-28 text-right font-bold text-sm h-9 !py-1 ${
+                                      (() => {
+                                        const minP = getMinPriceForArea(area);
+                                        const curP = editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.package_price || area.total_price || 0);
+                                        return minP && curP < minP
+                                          ? 'text-red-600 border-red-500 bg-red-50'
+                                          : 'text-primary border-slate-300 bg-white';
+                                      })()
+                                    }`}
+                                    value={editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : (area.package_price ?? basePrice ?? '')}
+                                    onChange={(e) => {
+                                      const newPrice = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                      setEditableAreaPrices(prev => ({ ...prev, [index]: newPrice }));
+                                      if (usePackagePricing) setPackagePrice(newPrice);
+                                    }}
+                                    step="0.01"
+                                    placeholder="0.00"
+                                  />
+                                </div>
+                                {(() => {
+                                  const minP = getMinPriceForArea(area);
+                                  const currentP = editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.package_price || area.total_price || 0);
+                                  if (minP && currentP < minP) {
+                                    return (
+                                      <div className="flex items-center mt-1 text-xs text-red-600 font-medium">
+                                        <span>⚠️ ต่ำกว่าเกณฑ์แพ็กเกจ (ส่วนต่าง ฿{(minP - currentP).toLocaleString('th-TH')})</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (minP) {
+                                    return (
+                                      <div className="text-xs text-slate-400 mt-1">ขั้นต่ำ ฿{minP.toLocaleString('th-TH')}</div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {area.packagePriceRelation && (
                           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1173,7 +1292,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
                 <div className="flex justify-between items-center text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่าเ��ิ่ม 7% (VAT)</label>
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
                   <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
                 </div>
                 <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
