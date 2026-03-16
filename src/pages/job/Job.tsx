@@ -70,6 +70,7 @@ import {
 } from '../../assets/icons/Icons';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import dayjs from 'dayjs';
+import { formatPhoneNumber } from '@/src/utils/format';
 
 interface JobProps {
   users: User[];
@@ -112,19 +113,21 @@ const Job: React.FC<JobProps> = ({
 
   // Filter States
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
-    const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
-  
+  const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+
 
   const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
     setIsLoading(true);
     try {
       const params: any = {};
+
       if (targetDate) params.appointment_date = targetDate;
       if (targetTech !== 'all') params.technician_id = targetTech;
 
-      const [warehousesRes, reportsRes] = await Promise.all([
+      const [warehousesRes, reportsRes, unassignedJobsRes] = await Promise.all([
         VehicleApi.getVehiclesWithUserJobs(params),
         ServiceReportApi.getAll({ limit: 10 }),
+        JobApi.getAllUnassigned({ limit: 10 }),
       ]);
 
       let warehousesData: any[] = [];
@@ -134,7 +137,17 @@ const Job: React.FC<JobProps> = ({
         warehousesData = warehousesRes as any[];
       }
 
-      const reportsData = (reportsRes as any).data || [];
+      const unassignedJobsData = unassignedJobsRes.data || [];
+      const reportsData = reportsRes.data || [];
+
+      const unassignedJobs = unassignedJobsData
+        .filter((job: any) => !job.vehicle_id)
+        .map((job: any) => {
+          return {
+            ...job,
+            vehicle_id: null,
+          };
+        });
 
       setWarehouses(warehousesData);
       setReports(reportsData);
@@ -239,7 +252,8 @@ const Job: React.FC<JobProps> = ({
             } as any;
           })
       );
-      setJobs(jobsFromWarehouses);
+
+      setJobs([...jobsFromWarehouses, ...unassignedJobs]);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -300,7 +314,7 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'work-schedule' | 'reports'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'work-schedule' | 'unassigned' | 'reports'>('schedule');
   const [view, setView] = useState<'list' | 'kanban' | 'calendar'>('kanban');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -633,7 +647,7 @@ const Job: React.FC<JobProps> = ({
 
   useEffect(() => {
     fetchData(filterDate, selectedTechnicianId);
-  }, [filterDate, selectedTechnicianId]); 
+  }, [filterDate, selectedTechnicianId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -946,6 +960,19 @@ const Job: React.FC<JobProps> = ({
                   >
                     นัดหมาย
                   </button>
+
+                  <button
+                    onClick={() => setActiveTab('unassigned')}
+                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                  >
+                    รอจัดคิว
+                    {/* ใส่ Badge โชว์ตัวเลขงานที่ค้างอยู่ */}
+                    <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
+                      {jobs.filter(j => !j.vehicle_id).length}
+                    </span>
+                  </button>
+
                   <button
                     onClick={() => setActiveTab('reports')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
@@ -955,6 +982,7 @@ const Job: React.FC<JobProps> = ({
                   >
                     รายงาน
                   </button>
+
                   <button
                     onClick={() => setActiveTab('work-schedule')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
@@ -1050,6 +1078,61 @@ const Job: React.FC<JobProps> = ({
                 )}
               </div>
             </div>
+          )}
+
+          {activeTab === 'unassigned' && (
+            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-white">
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {jobs.filter(j => !j.vehicle_id).length > 0 ? (
+                      jobs.filter(j => !j.vehicle_id).map((job, idx) => (
+                        <tr key={job.id} className={`hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                          <td className="px-6 py-4">
+                            <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
+                          </td>
+                           <td className="px-6 py-4">
+                            <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer.primary_phone || '-')}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-sm text-slate-700">{formatThaiDate(job.appointment_date)}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button
+                              variant="primary"
+                              className="text-xs py-1.5 px-3"
+                              onClick={() => handleEdit(job)}
+                            >
+                              จัดคิวงาน
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-16 text-center">
+                          <div className="flex flex-col items-center justify-center text-slate-400">
+                            <p className="text-lg font-medium">ไม่มีงานค้างรอจัดคิว</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
 
           {activeTab === 'schedule' && view === 'list' && (

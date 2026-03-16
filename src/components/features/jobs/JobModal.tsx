@@ -40,6 +40,7 @@ export const JobModal: React.FC<JobModalProps> = ({
       title={getTitle()}
       size="5xl"
       footer={null}
+      closeOnOutsideClick={false}
     >
       {isOpen && (
         <JobForm

@@ -2,6 +2,7 @@ import { User } from './core.interface';
 import { JobMainStatus, JobStatus } from '../enums/job';
 import { PaymentMethod } from '../enums/financial';
 import { Invoice } from './financial.interface';
+import { Customer, TeamMember, Vehicle } from './app.interface';
 
 export interface FieldJobWorkArea {
   id: string;
@@ -100,11 +101,8 @@ export interface FieldJob {
   actual_start_time?: string;
   actual_end_time?: string;
   technicians: User[];
-  work_areas: FieldJobWorkArea[];
-  status: JobMainStatus;
   api_status?: string;
   vehicle_id: string;
-  service_report?: ServiceReport;
   remarks?: string;
   quotation_id?: string;
   invoice_id?: string;
@@ -114,8 +112,16 @@ export interface FieldJob {
   group?: string;
   road_line?: string;
   sequence?: string;
-  // Legacy camelCase aliases
   customerName?: string;
   startTime?: string;
   endTime?: string;
+  work_areas: FieldJobWorkArea[];
+  status: JobMainStatus;
+
+  customer?: Customer;
+  primary_technician?: any;
+  job_team_members?: TeamMember[];
+  team_member?: TeamMember[];
+  vehicle?: Vehicle;
+  service_report?: ServiceReport;
 }

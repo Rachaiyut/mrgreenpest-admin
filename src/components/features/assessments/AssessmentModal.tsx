@@ -26,6 +26,7 @@ export const AssessmentModal: FC<AssessmentModalProps> = ({
       title={assessment?.id ? `แก้ไขใบประเมิน: ${assessment.code || ''}` : 'สร้างใบประเมินใหม่'}
       size="5xl"
       footer={null} 
+      closeOnOutsideClick={false}
     >
       <AssessmentForm 
         isOpen={isOpen}

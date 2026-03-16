@@ -16,6 +16,7 @@ export enum JobStatus {
 
 // Backend compatible status
 export enum JobMainStatus {
+  UNASSIGNED = 'UNASSIGNED',
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETE = 'COMPLETE',

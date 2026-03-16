@@ -15,6 +15,16 @@ class JobService extends AuthService {
     return res.data;
   }
 
+  async getAllUnassigned(query?: IBaseQuery): Promise<IBaseResponseArray<Job>> {
+    const res = await this.http.get<IBaseResponseArray<Job>>(
+      `${this.path}/unassigned`,
+      {
+        params: query,
+      },
+    );
+    return res.data;
+  }
+
   async getById(id: string): Promise<Job> {
     const res = await this.http.get<Job>(`${this.path}/${id}`);
     return res.data;
