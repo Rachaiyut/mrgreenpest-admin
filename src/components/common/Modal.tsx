@@ -10,6 +10,7 @@ interface ModalProps {
   footer?: React.ReactNode;
   size?: 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl' | '7xl';
   headerAction?: React.ReactNode;
+  closeOnOutsideClick?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -20,6 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = '2xl',
   headerAction,
+  closeOnOutsideClick = true,
 }) => {
   if (!isOpen) return null;
 
@@ -51,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
       className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center transition-opacity duration-300 p-4"
       aria-modal="true"
       role="dialog"
-      onClick={onClose}
+      onClick={closeOnOutsideClick ? onClose : undefined}
     >
       <div
         className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale`}

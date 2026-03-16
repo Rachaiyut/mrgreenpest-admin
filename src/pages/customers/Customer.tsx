@@ -24,7 +24,6 @@ import CustomerCardView from './CustomerCardView';
 import CustomerListView from './CustomerListView';
 import { Card } from '../../components/common/Card';
 
-// 🟢 1. เปลี่ยน Import ตรงนี้ ใช้ CustomerModal ตัวใหม่
 import { CustomerModal } from '../../components/features/customers/CustomerModal';
 
 import { Pagination } from '../../components/common/Pagination';
@@ -215,7 +214,7 @@ const Customers: React.FC = () => {
             <div className="w-full sm:flex-1 xl:w-72">
               <Input
                 type="search"
-                placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร, ที่อยู่)..."
+                placeholder="ค้นหารหัส, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์, ที่อยู่"
                 value={searchQuery || ''}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);

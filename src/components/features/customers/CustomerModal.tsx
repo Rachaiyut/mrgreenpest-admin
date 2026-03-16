@@ -54,6 +54,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       title={getTitle()}
       size="4xl"
       footer={footer}
+      closeOnOutsideClick={false}
     >
       <CustomerForm
         mode={mode}

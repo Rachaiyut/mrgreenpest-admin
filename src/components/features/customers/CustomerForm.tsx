@@ -300,7 +300,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   </Select>
                 </FormField>
                 <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
-                  <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} required className="font-mono" />
+                  <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} className="font-mono" />
                 </FormField>
               </div>
             </>
@@ -311,7 +311,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   <Input id="name" name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
                 </FormField>
                 <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
-                  <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} required className="font-mono" />
+                  <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} className="font-mono" />
                 </FormField>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -374,7 +374,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             />
           </FormField>
           <FormField label="อีเมล (บังคับ)" htmlFor="email">
-            <Input name="email" type="email" value={formData.email || ''} onChange={handleChange} required />
+            <Input name="email" type="email" value={formData.email || ''} onChange={handleChange} />
           </FormField>
         </div>
 
