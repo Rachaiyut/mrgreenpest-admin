@@ -117,6 +117,8 @@ export interface FieldJob {
   endTime?: string;
   work_areas: FieldJobWorkArea[];
   status: JobMainStatus;
+  start_date?: Date;
+  end_dare?: Date
 
   customer?: Customer;
   primary_technician?: any;

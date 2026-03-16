@@ -1104,10 +1104,10 @@ const Job: React.FC<JobProps> = ({
                             <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer.primary_phone || '-')}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm text-slate-700">{formatThaiDate(job.appointment_date)}</span>
+                            <span className="text-sm text-slate-700">{formatThaiDate(job.start_date)}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="px-2 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
+                            <span className="px-2 py-1 bg-amber-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <Button

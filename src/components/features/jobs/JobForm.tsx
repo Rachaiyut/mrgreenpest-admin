@@ -877,23 +877,33 @@ export const JobForm: React.FC<JobFormProps> = ({
               </h3>
               <div className="space-y-6">
                 <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                  <FormField label="วันที่ปฏิบัติงาน" htmlFor="work-date" className="mb-0">
+                  <FormField label="วันที่ปฏิบัติงาน *" htmlFor="work-date" className="mb-0">
                     <div className="relative w-full">
-                      <DatePicker id="work-date" selected={workDate ? new Date(workDate) : null} onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }} required wrapperClassName="w-full" placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" className="w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm" />
+                      <DatePicker 
+                        id="work-date" 
+                        selected={workDate ? new Date(workDate) : null} 
+                        onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }} 
+                        required 
+                        wrapperClassName="w-full" 
+                        placeholderText="dd/mm/yyyy" 
+                        dateFormat="dd/MM/yyyy" 
+                        locale="th" 
+                        className="w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm" 
+                      />
                       <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
                     </div>
                   </FormField>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                    <FormField label="เวลาเริ่มต้น" htmlFor="start-time" className="mb-0">
+                    <FormField label="เวลาเริ่มต้น *" htmlFor="start-time" className="mb-0">
                       <div className="relative">
                         <Input id="start-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
                       </div>
                     </FormField>
                   </div>
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
-                    <FormField label="เวลาสิ้นสุด" htmlFor="end-time" className="mb-0">
+                    <FormField label="เวลาสิ้นสุด *" htmlFor="end-time" className="mb-0">
                       <div className="relative">
                         <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
                       </div>
