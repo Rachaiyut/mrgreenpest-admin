@@ -29,6 +29,7 @@ export enum ContractStatus {
   DRAFT = 'DRAFT',
   PENDING = 'PENDING',
   ACTIVE = 'ACTIVE',
+  REVISED = 'REVISED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED',
