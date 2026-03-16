@@ -254,6 +254,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [packageName, setPackageName] = useState(initialPackageItem ? initialPackageItem.description?.replace('แพ็กเกจ: ', '') || '' : '');
   const [usePackagePricing, setUsePackagePricing] = useState(!!initialPackageItem);
   const [items, setItems] = useState<QuotationItem[]>([]);
+  // Editable areas - local state for adding/editing/removing areas
+  const [editableAreas, setEditableAreas] = useState<any[]>([]);
+  const [hasInitializedAreas, setHasInitializedAreas] = useState(false);
   // Editable area prices - track per-area price overrides by index
   const [editableAreaPrices, setEditableAreaPrices] = useState<Record<number, number>>({});
   const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
@@ -433,6 +436,72 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const selectedCustomer = useMemo(() => {
     return fetchedCustomers.find((c) => c.id === selectedCustomerId);
   }, [fetchedCustomers, selectedCustomerId]);
+
+  // Initialize editable areas from assessment or quotation data
+  useEffect(() => {
+    if (hasInitializedAreas) return;
+    const source = (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
+      ? activeData.quotation_areas
+      : selectedAssessment?.assessment_areas;
+    if (source && source.length > 0) {
+      setEditableAreas(source.map((a: any) => ({
+        id: a.id || crypto.randomUUID(),
+        area_name: a.area_name || '',
+        building_type: a.building_type || '',
+        service_system: a.service_system || '',
+        area_size: Number(a.area_size) || 0,
+        package_price: Number(a.package_price) || Number(a.total_price) || 0,
+        total_price: Number(a.total_price) || 0,
+        package_price_id: a.package_price_id || null,
+        packagePriceRelation: a.packagePriceRelation || null,
+        category_services: a.category_services || [],
+        items: a.items || [],
+      })));
+      setHasInitializedAreas(true);
+    }
+  }, [activeData, selectedAssessment, hasInitializedAreas]);
+
+  const addNewArea = () => {
+    setEditableAreas(prev => [...prev, {
+      id: crypto.randomUUID(),
+      area_name: `พื้นที่ ${prev.length + 1}`,
+      building_type: '',
+      service_system: '',
+      area_size: 0,
+      package_price: 0,
+      total_price: 0,
+      package_price_id: null,
+      packagePriceRelation: null,
+      category_services: [],
+      items: [],
+    }]);
+  };
+
+  const removeArea = (index: number) => {
+    if (editableAreas.length <= 1) return;
+    setEditableAreas(prev => prev.filter((_, i) => i !== index));
+    setEditableAreaPrices(prev => {
+      const next: Record<number, number> = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const ki = Number(k);
+        if (ki < index) next[ki] = v;
+        else if (ki > index) next[ki - 1] = v;
+      });
+      return next;
+    });
+  };
+
+  const updateArea = (index: number, field: string, value: any) => {
+    setEditableAreas(prev => prev.map((a, i) => {
+      if (i !== index) return a;
+      const updated = { ...a, [field]: value };
+      if (field === 'package_price') {
+        updated.total_price = Number(value);
+        setEditableAreaPrices(p => ({ ...p, [index]: Number(value) }));
+      }
+      return updated;
+    }));
+  };
 
   useEffect(() => {
     if (mode === 'create' && !initialValues) {
@@ -1041,10 +1110,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         </div>
 
         {(() => {
-          const areasToDisplay = (activeData?.quotation_areas && activeData.quotation_areas.length > 0) ? activeData.quotation_areas : selectedAssessment?.assessment_areas;
-          const sectionTitle = (activeData?.quotation_areas && activeData.quotation_areas.length > 0) ? 'รายละเอียดพื้นที่ในใบเสนอราคา' : 'รายละเอียดพื้นที่ที่ประเมิน';
+          const areasToDisplay = editableAreas.length > 0
+            ? editableAreas
+            : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
+              ? activeData.quotation_areas
+              : selectedAssessment?.assessment_areas;
+          const sectionTitle = 'รายละเอียดพื้นที่';
 
-          if (!areasToDisplay || areasToDisplay.length === 0) return null;
+          if ((!areasToDisplay || areasToDisplay.length === 0) && isReadOnly) return null;
 
           // Helper: get min price from package for an area (uses min_price fields, same as assessment)
           const getMinPriceForArea = (area: any): number | null => {
@@ -1090,22 +1163,92 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
           return (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
-              <SectionHeader icon={ClipboardDocumentListIcon} title={sectionTitle} />
+              <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-green-50 rounded-lg text-green-600"><ClipboardDocumentListIcon className="w-5 h-5" /></div>
+                  <h3 className="font-semibold text-slate-800 text-lg">{sectionTitle}</h3>
+                </div>
+                {!isReadOnly && (
+                  <Button type="button" variant="outline" onClick={addNewArea} className="text-sm">
+                    <PlusIcon className="w-4 h-4 mr-1" /> เพิ่มพื้นที่
+                  </Button>
+                )}
+              </div>
+              {(!areasToDisplay || areasToDisplay.length === 0) ? (
+                <div className="text-center py-8 text-slate-400">
+                  <ClipboardDocumentListIcon className="w-10 h-10 mx-auto mb-2" />
+                  <p>ยังไม่มีพื้นที่ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 {areasToDisplay.map((area: any, index: number) => {
                   const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
                   const basePrice = (Number(area.total_price) || 0) - itemsTotal;
                   return (
-                    <div key={index} className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div key={area.id || index} className="border border-slate-200 rounded-lg overflow-hidden">
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                        <div className="flex items-center gap-2"><div className="w-1 h-6 bg-green-500 rounded-full"></div><h4 className="font-semibold text-slate-800">{area.area_name}</h4></div>
-                        <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">฿{Number(area.total_price || 0).toLocaleString()}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1 h-6 bg-green-500 rounded-full"></div>
+                          {isReadOnly ? (
+                            <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
+                          ) : (
+                            <Input
+                              type="text"
+                              value={area.area_name}
+                              onChange={(e) => updateArea(index, 'area_name', e.target.value)}
+                              className="font-semibold text-slate-800 !py-1 !px-2 w-40"
+                              placeholder="ชื่อพื้นที่"
+                            />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">฿{(editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.total_price || 0)).toLocaleString()}</div>
+                          {!isReadOnly && areasToDisplay.length > 1 && (
+                            <button type="button" onClick={() => removeArea(index)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" title="ลบพื้นที่">
+                              <TrashIcon className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div className="p-4">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <div><div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div><div className="font-medium text-slate-800">{getBuildingTypeName(area.building_type)}</div></div>
-                          <div><div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div><div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div></div>
-                          <div><div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div><div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}</div></div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
+                            {isReadOnly ? (
+                              <div className="font-medium text-slate-800">{getBuildingTypeName(area.building_type)}</div>
+                            ) : (
+                              <select value={area.building_type} onChange={(e) => updateArea(index, 'building_type', e.target.value)} className="w-full rounded-lg border border-slate-300 text-sm py-1.5 px-2">
+                                <option value="">เลือก...</option>
+                                <option value="HOUSE">บ้าน</option>
+                                <option value="OFFICE">ออฟฟิศ</option>
+                                <option value="CONDO">คอนโด</option>
+                                <option value="TOWNHOUSE">ทาวน์โฮม</option>
+                                <option value="FACTORY">โรงงาน</option>
+                                <option value="OTHER">อื่นๆ</option>
+                              </select>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
+                            {isReadOnly ? (
+                              <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
+                            ) : (
+                              <Input type="number" value={area.area_size || ''} onChange={(e) => updateArea(index, 'area_size', parseFloat(e.target.value) || 0)} className="!py-1.5" step="0.01" placeholder="0.00" />
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
+                            {isReadOnly ? (
+                              <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}</div>
+                            ) : (
+                              <select value={area.service_system} onChange={(e) => updateArea(index, 'service_system', e.target.value)} className="w-full rounded-lg border border-slate-300 text-sm py-1.5 px-2">
+                                <option value="">เลือก...</option>
+                                <option value="PREY">ระบบเหยื่อ</option>
+                                <option value="CHEMICAL">ระบบเคมี</option>
+                                <option value="OTHER">อื่นๆ</option>
+                              </select>
+                            )}
+                          </div>
                           <div>
                             <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
                             {isReadOnly ? (
@@ -1211,6 +1354,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   );
                 })}
               </div>
+              )}
             </div>
           );
         })()}
