@@ -38,9 +38,9 @@ type FlatCustomerFormData = Partial<Customer> & {
   'address-sequence'?: string;
   googleMapLink?: string;
   taxId?: string;
+  emaรl?: string;
 };
 
-// 🌟 Component สำหรับสร้าง Header ของแต่ละ Section ให้ดู Pro
 const SectionHeader = ({
   icon,
   title,
@@ -149,8 +149,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     e.preventDefault();
 
     const requiredFields = [
-      'primaryPhone', // เปลี่ยนจาก 'phone' เป็น 'primaryPhone' ตาม State
-      'email',
+      'primaryPhone',
       'address-street',
       'address-subdistrict',
       'address-district',
@@ -162,11 +161,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       requiredFields.push('first_name', 'last_name');
     } else if (formData.type === CustomerType.CORPORATE) {
       requiredFields.push('name');
-    }
-
-    if (!formData.taxId) {
-      alert('กรุณากรอกเลขประจำตัวผู้เสียภาษี');
-      return;
     }
 
     for (const field of requiredFields) {
@@ -192,8 +186,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       last_name: lastName,
       type: formData.type,
       nickname: formData.nickname || '',
-      email: formData.email || '',
-      phone: formData.primaryPhone || '', // ส่งเบอร์หลักเข้าไปที่ฟิลด์ phone ด้วยเผื่อ API ต้องการ
+      email: formData.email || undefined,
+      phone: formData.primaryPhone || '',
       primary_phone: formData.primaryPhone || '',
       mobile_phone: formData.mobilePhone || '',
       phone_3: additionalPhones[0] || undefined,
@@ -373,7 +367,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               placeholder="08xxxxxxxx"
             />
           </FormField>
-          <FormField label="อีเมล (บังคับ)" htmlFor="email">
+          <FormField label="อีเมล" htmlFor="email">
             <Input name="email" type="email" value={formData.email || ''} onChange={handleChange} />
           </FormField>
         </div>
