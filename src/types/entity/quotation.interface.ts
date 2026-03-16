@@ -32,6 +32,12 @@ export interface Quotation extends IBase {
   status: QuotationStatus; 
   expires_at: string;
   is_installment?: boolean;
+  is_signed?: boolean;
+  signed_at?: string;
+  not_signed_reason?: string;
+  signature?: string;
+  follow_up_count?: number;
+  cancellation_reason?: string;
   created_by?: string;
   updated_by?: string;
 

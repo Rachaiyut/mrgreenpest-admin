@@ -30,6 +30,7 @@ import {
   MapPinIcon,
   NewFieldOpsIcon,
   CreditCardIcon,
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 import { useData } from '../../../contexts/DataContext';
 import { Status } from '../../../types/entity/core.interface';
@@ -74,6 +75,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   const isReadOnly = mode === 'detail';
 
+  // Loading state
+  const [isLoading, setIsLoading] = useState(mode !== 'create');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Local state for fetched data
   const [fetchedCustomers, setFetchedCustomers] = useState<Customer[]>([]);
   const [fetchedAssessments, setFetchedAssessments] = useState<Assessment[]>([]);
@@ -86,15 +91,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const initData = async () => {
       try {
         const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
-          CustomerApi.getCustomers({ limit: 50 }), // ดึงมาเผื่อไว้ 50 คนเลยครับ
-          AssessmentApi.getAll({ limit: 50 }),
+          CustomerApi.getCustomers({ limit: 10 }), // ดึงมาเผื่อไว้ 50 คนเลยครับ
+          AssessmentApi.getAll({ limit: 10 }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 50 }),
-          PackageApi.getPackages({ limit: 50 }),
+          PackageApi.getPackages({ limit: 10 }),
         ]);
 
         // 🟢 ใช้เทคนิค Merge ข้อมูล ป้องกันการเตะลูกค้าของบิลนี้ทิ้ง
         if (custRes) {
-          const newCusts = custRes.data?.data || custRes.data || [];
+          const newCusts = custRes.data || [];
           setFetchedCustomers((prev) => {
             const existingIds = new Set(newCusts.map((c: any) => c.id));
             const missing = prev.filter((c) => !existingIds.has(c.id));
@@ -103,7 +108,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
         
         if (assessRes) {
-          const newAssess = assessRes.data?.data || assessRes.data || [];
+          const newAssess = assessRes.data || [];
           setFetchedAssessments((prev) => {
             const existingIds = new Set(newAssess.map((a: any) => a.id));
             const missing = prev.filter((a) => !existingIds.has(a.id));
@@ -111,8 +116,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           });
         }
 
-        if (catRes) setFetchedCategories(catRes.data?.data || catRes.data || []);
-        if (pkgRes) setFetchedPackages(pkgRes.data?.data || pkgRes.data || []);
+        if (catRes) setFetchedCategories(catRes.data || []);
+        if (pkgRes) setFetchedPackages(pkgRes.data || []);
       } catch (err) {
         console.error('Error fetching initial data:', err);
       }
@@ -124,13 +129,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   useEffect(() => {
     const fetchFullQuotation = async () => {
       if (mode !== 'create' && initialValues?.id) {
+        setIsLoading(true);
         try {
           const res = await QuotationApi.getById(initialValues.id);
-          // 🟢 แก้ไขตรงนี้: ต้องทะลุชั้น data เข้าไปดึงไส้ในมันออกมาครับ (res.data.data)
-          const actualData = res
+          // แกะ wrapper: API returns { status, success, data: QuotationObject }
+          const actualData = (res as any).data || res;
           setFetchedQuotation(actualData);
         } catch (error) {
           console.error('Failed to fetch full quotation details:', error);
+        } finally {
+          setIsLoading(false);
         }
       }
     };
@@ -905,7 +913,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
     };
 
-    await onSubmit(quotationData);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(quotationData);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string; }) => (
@@ -927,6 +940,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   };
 
   return (
+    <div className="flex flex-col relative">
+      {(isLoading || isSubmitting) && (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+          <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+          <p className="mt-3 text-sm font-medium text-slate-500">
+            {isSubmitting ? 'กำลังบันทึกข้อมูล...' : 'กำลังดึงข้อมูลใบเสนอราคา...'}
+          </p>
+        </div>
+      )}
     <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -1151,7 +1173,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
                 <div className="flex justify-between items-center text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่าเพิ่ม 7% (VAT)</label>
+                  <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่าเ��ิ่ม 7% (VAT)</label>
                   <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
                 </div>
                 <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
@@ -1161,5 +1183,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         </div>
       </div>
     </form>
+    </div>
   );
 };

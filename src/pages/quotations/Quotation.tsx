@@ -16,14 +16,15 @@ import {
   CheckCircleIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
-import { Pagination } from '../../components/common/Pagination'; 
+import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
+import SignatureCanvas from 'react-signature-canvas';
 
 const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.DRAFT]: 'จัดทำ',
   [QuotationStatus.PENDING_APPROVAL]: 'รออนุมัติ',
   [QuotationStatus.APPROVED]: 'อนุมัติ',
-  [QuotationStatus.PENDING_SIGNATURE]: 'รอเซ็นต์', 
+  [QuotationStatus.PENDING_SIGNATURE]: 'ยังไม่เซ็นต์',
   [QuotationStatus.SIGNED]: 'เซ็นต์',
   [QuotationStatus.FOLLOW_UP]: 'ติดตามครั้งที่',
   [QuotationStatus.REVISED]: 'ปรับปรุง',
@@ -31,8 +32,17 @@ const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.EXPIRED]: 'หมดอายุ',
 };
 
+// Helper: get display label for status (includes follow_up_count)
+const getStatusLabel = (q: Quotation): string => {
+  if (q.status === QuotationStatus.FOLLOW_UP) {
+    return `ติดตามครั้งที่ ${q.follow_up_count || 1}`;
+  }
+  return statusLabels[q.status] || q.status;
+};
+
 import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { Modal } from '../../components/common/Modal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { QuotationApi } from '../../api/quotation';
@@ -77,7 +87,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     fetchQuotations();
   }, []);
 
-  // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState<QuotationStatus>(
@@ -111,6 +120,14 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // Cancellation reason state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
+
+  // Signature modal state
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const signatureRef = useRef<SignatureCanvas>(null);
+
   // Stats calculations
   const stats = useMemo(() => {
     const total = quotations.length;
@@ -121,7 +138,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       (q) =>
         q.status === QuotationStatus.PENDING_SIGNATURE ||
         q.status === QuotationStatus.PENDING_APPROVAL ||
-        q.status === QuotationStatus.APPROVED 
+        q.status === QuotationStatus.APPROVED
     ).length;
     const approved = quotations.filter(
       (q) =>
@@ -289,7 +306,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         await QuotationApi.revise(selectedQuotation.id, data);
       }
       setIsModalOpen(false);
-      fetchQuotations(); // Refresh data after mutation
+      fetchQuotations();
     } catch (err) {
       console.error(err);
     }
@@ -299,7 +316,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setIsDeleteModalOpen(true);
     setOpenDropdownId(null);
   };
-
 
   const handleCopyPdfLink = async () => {
     if (!selectedQuotation) return;
@@ -323,7 +339,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     } catch (err) {
       console.error('Failed to copy PDF link:', err);
 
-      // Alert กรณีเกิดข้อผิดพลาด
       Swal.fire({
         title: 'เกิดข้อผิดพลาด',
         text: 'ไม่สามารถคัดลอกลิงก์ได้ กรุณาลองใหม่อีกครั้ง',
@@ -345,31 +360,131 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   };
 
   const handleStatusConfirm = async () => {
-    if (selectedQuotation) {
-      try {
-        if (onUpdateQuotation) {
-          await onUpdateQuotation({
-            ...selectedQuotation,
-            status: targetStatus,
-          });
-        } else {
-          await QuotationApi.update(selectedQuotation.id, {
-            status: targetStatus,
-          });
-        }
-        fetchQuotations();
-      } catch (error) {
-        console.error('Failed to update status:', error);
+    if (!selectedQuotation) return;
+
+    // If target is CANCELLED, open cancellation reason modal instead
+    if (targetStatus === QuotationStatus.CANCELLED) {
+      setIsStatusModalOpen(false);
+      setCancellationReason('');
+      setIsCancelModalOpen(true);
+      return;
+    }
+
+    // If target is SIGNED, open signature modal instead
+    if (targetStatus === QuotationStatus.SIGNED) {
+      setIsStatusModalOpen(false);
+      setIsSignatureModalOpen(true);
+      return;
+    }
+
+    try {
+      const updatePayload: any = { status: targetStatus };
+
+      if (onUpdateQuotation) {
+        await onUpdateQuotation({
+          ...selectedQuotation,
+          ...updatePayload,
+        });
+      } else {
+        await QuotationApi.update(selectedQuotation.id, updatePayload);
       }
+      fetchQuotations();
+    } catch (error) {
+      console.error('Failed to update status:', error);
     }
     setIsStatusModalOpen(false);
+  };
+
+  // Handle cancellation with reason
+  const handleCancelConfirm = async () => {
+    if (!selectedQuotation) return;
+
+    if (!cancellationReason.trim()) {
+      Swal.fire({
+        title: 'กรุณากรอกเหตุผล',
+        text: 'กรุณาระบุเหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
+        icon: 'warning',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
+
+    try {
+      const updatePayload = {
+        status: QuotationStatus.CANCELLED,
+        cancellation_reason: cancellationReason.trim(),
+      };
+
+      if (onUpdateQuotation) {
+        await onUpdateQuotation({
+          ...selectedQuotation,
+          ...updatePayload,
+        });
+      } else {
+        await QuotationApi.update(selectedQuotation.id, updatePayload);
+      }
+      fetchQuotations();
+    } catch (error) {
+      console.error('Failed to cancel quotation:', error);
+    }
+    setIsCancelModalOpen(false);
+    setCancellationReason('');
+  };
+
+  // Handle signature submit
+  const handleSignatureConfirm = async () => {
+    if (!selectedQuotation || !signatureRef.current) return;
+
+    if (signatureRef.current.isEmpty()) {
+      Swal.fire({
+        title: 'กรุณาเซ็นลายเซ็น',
+        text: 'กรุณาให้ลูกค้าเซ็นลายเซ็นก่อนบันทึก',
+        icon: 'warning',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
+
+    try {
+      const signatureData = signatureRef.current.toDataURL('image/png');
+      const updatePayload = {
+        status: QuotationStatus.SIGNED,
+        signature: signatureData,
+      };
+
+      if (onUpdateQuotation) {
+        await onUpdateQuotation({
+          ...selectedQuotation,
+          ...updatePayload,
+        });
+      } else {
+        await QuotationApi.update(selectedQuotation.id, updatePayload);
+      }
+
+      Swal.fire({
+        title: 'บันทึกสำเร็จ!',
+        text: 'ลูกค้าเซ็นรับใบเสนอราคาเรียบร้อยแล้ว',
+        icon: 'success',
+        confirmButtonText: 'ตกลง',
+        confirmButtonColor: '#3085d6',
+        timer: 2000,
+        timerProgressBar: true,
+      });
+
+      fetchQuotations();
+    } catch (error) {
+      console.error('Failed to save signature:', error);
+    }
+    setIsSignatureModalOpen(false);
   };
 
   const handleConfirmDelete = async () => {
     if (selectedQuotation) {
       if (onDeleteQuotation) await onDeleteQuotation(selectedQuotation.id);
       else await QuotationApi.delete(selectedQuotation.id);
-      fetchQuotations(); // Refresh data after delete
+      fetchQuotations();
     }
     setIsDeleteModalOpen(false);
     setSelectedQuotation(null);
@@ -548,11 +663,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    {/* ใช้ h-full เพื่อให้ยืดตามพื้นที่ flex-grow ของ Card */}
                     <td colSpan={10} className="p-0 border-b-0">
                       <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-                        <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูลใบเบิก...</p>
+                        <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูลใบเสนอราคา...</p>
                       </div>
                     </td>
                   </tr>
@@ -561,8 +675,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     <td colSpan={10} className="p-0 border-b-0 text-slate-500">
                       <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
                         <DocumentTextIcon className="h-12 w-12 text-slate-300 mb-3" />
-                        <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิก</p>
-                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบเสนอราคา</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</p>
                       </div>
                     </td>
                   </tr>
@@ -609,10 +723,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         </td>
                         <td className="px-6 py-4">
                           <StatusBadge
-                            status={
-                              statusLabels[q.status] ||
-                              q.status
-                            }
+                            status={getStatusLabel(q)}
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
@@ -757,6 +868,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         onSubmit={handleModalSubmit}
       />
 
+      {/* Status Change Modal */}
       <ConfirmationModal
         isOpen={isStatusModalOpen}
         onClose={() => setIsStatusModalOpen(false)}
@@ -786,12 +898,123 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 ))}
               </Select>
             </div>
+            {/* Show existing signature if already signed */}
+            {selectedQuotation?.signature && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  ลายเซ็นลูกค้า
+                </label>
+                <img
+                  src={selectedQuotation.signature}
+                  alt="ลายเซ็นลูกค้า"
+                  className="border rounded-lg bg-white max-h-24"
+                />
+              </div>
+            )}
+            {/* Show cancellation reason if cancelled */}
+            {selectedQuotation?.cancellation_reason && (
+              <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                <label className="block text-sm font-medium text-red-700 mb-1">
+                  เหตุผลที่ยกเลิก
+                </label>
+                <p className="text-sm text-red-600">
+                  {selectedQuotation.cancellation_reason}
+                </p>
+              </div>
+            )}
           </div>
         }
         confirmButtonText="บันทึก"
         confirmButtonClass="bg-primary hover:bg-primary/90"
       />
 
+      {/* Cancellation Reason Modal */}
+      <ConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancellationReason('');
+        }}
+        onConfirm={handleCancelConfirm}
+        title="ยกเลิกใบเสนอราคา"
+        message={
+          <div className="space-y-4 text-left">
+            <p>
+              ยืนยันการยกเลิกใบเสนอราคา{' '}
+              <strong>{selectedQuotation?.code}</strong>
+            </p>
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น..."
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                rows={4}
+              />
+            </div>
+          </div>
+        }
+        confirmButtonText="ยืนยันยกเลิก"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
+      />
+
+      {/* Signature Modal */}
+      <Modal
+        isOpen={isSignatureModalOpen}
+        onClose={() => setIsSignatureModalOpen(false)}
+        title={`เซ็นรับใบเสนอราคา - ${selectedQuotation?.code || ''}`}
+        size="lg"
+        footer={
+          <div className="flex gap-3 w-full justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => signatureRef.current?.clear()}
+              type="button"
+            >
+              ล้างลายเซ็น
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setIsSignatureModalOpen(false)}
+              type="button"
+            >
+              ยกเลิก
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSignatureConfirm}
+              type="button"
+            >
+              บันทึกลายเซ็น
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            กรุณาให้ลูกค้าเซ็นลายเซ็นในกรอบด้านล่าง เพื่อยืนยันการรับใบเสนอราคา
+          </p>
+          <div className="border-2 border-dashed border-slate-300 rounded-lg bg-white">
+            <SignatureCanvas
+              ref={signatureRef}
+              canvasProps={{
+                width: 560,
+                height: 200,
+                className: 'w-full rounded-lg',
+              }}
+              penColor="black"
+            />
+          </div>
+          <p className="text-xs text-slate-400 text-center">
+            ใช้เมาส์หรือนิ้วสัมผัสเพื่อเซ็นลายเซ็น
+          </p>
+        </div>
+      </Modal>
+
+      {/* Delete Modal */}
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -800,7 +1023,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         message={
           <p>
             คุณแน่ใจหรือไม่ว่าต้องการลบใบเสนอราคา{' '}
-            <strong>{selectedQuotation?.id}</strong>?
+            <strong>{selectedQuotation?.code}</strong>?
             การกระทำนี้ไม่สามารถย้อนกลับได้
           </p>
         }
