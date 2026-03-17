@@ -33,6 +33,11 @@ import { CategoryApi } from '../../../api/category';
 import { CustomerApi } from '../../../api/customer';
 import { QuotationApi } from '../../../api/quotation';
 import { ContractApi } from '../../../api/contract';
+import { PackageApi } from '../../../api/package';
+
+// ===== WorkAreaForm =====
+import { WorkAreaForm } from '../assessments/WorkAreaForm';
+import { Package } from '../../../types/entity/package.interface';
 
 // ===== Assets =====
 import {
@@ -43,6 +48,7 @@ import {
   MapPinIcon,
   PlusIcon,
   TrashIcon,
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 
 // Interface
@@ -85,11 +91,15 @@ export const ContractForm: FC<ContractFormProps> = ({
   onCancel,
   isSaving = false,
 }) => {
-  const { customers } = useData();
+  const { customers, products } = useData();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [isLoading, setIsLoading] = useState(mode !== 'create');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Local state for fetched data
   const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
+  const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
+  const [workAreaAreas, setWorkAreaAreas] = useState<any[]>([]);
 
   // Contract info
   const [contractCode, setContractCode] = useState(initialValues?.code || '');
@@ -336,19 +346,19 @@ export const ContractForm: FC<ContractFormProps> = ({
   }, [mode, initialValues]);
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchInitData = async () => {
       try {
-        const res = await CategoryApi.getCategories({
-          type: CategoryType.SERVICE,
-        });
-        if (res && res.data) {
-          setFetchedCategories(res.data);
-        }
+        const [catRes, pkgRes] = await Promise.all([
+          CategoryApi.getCategories({ type: CategoryType.SERVICE }),
+          PackageApi.getPackages({ limit: 50 }),
+        ]);
+        if (catRes?.data) setFetchedCategories(catRes.data);
+        if (pkgRes?.data) setFetchedPackages(pkgRes.data);
       } catch (error) {
-        console.error('Error fetching categories:', error);
+        console.error('Error fetching init data:', error);
       }
     };
-    fetchCategories();
+    fetchInitData();
   }, []);
 
   useEffect(() => {
@@ -523,6 +533,40 @@ export const ContractForm: FC<ContractFormProps> = ({
               setServiceCount(7);
             }
 
+            // Init WorkAreaForm areas from quotation_areas
+            const areasSource = fullQuotationData.quotation_areas || fullQuotationData.assessment?.assessment_areas || [];
+            if (areasSource.length > 0) {
+              setWorkAreaAreas(areasSource.map((a: any) => ({
+                id: a.id || crypto.randomUUID(),
+                area_name: a.area_name || '',
+                building_type: a.building_type || '',
+                service_system: a.service_system || '',
+                area_size: Number(a.area_size) || undefined,
+                package_price: Number(a.package_price) || Number(a.total_price) || undefined,
+                total_price: Number(a.total_price) || 0,
+                package_price_id: a.package_price_id || null,
+                package_type: a.package_type || (a.service_system === 'PREY' ? 'WITH_TERMITE' : undefined),
+                packagePriceRelation: a.packagePriceRelation || null,
+                category_services: (a.category_services || []).map((cs: any) => ({
+                  category_id: cs.category_id || cs.category?.id,
+                  name: cs.category?.name || cs.name || '',
+                })),
+                items: a.items || [],
+              })));
+
+              // Fetch full packages for WorkAreaForm price conditions
+              const areaWithPkg = areasSource.find((a: any) => a.packagePriceRelation?.package);
+              if (areaWithPkg?.packagePriceRelation?.package) {
+                const pkgId = areaWithPkg.packagePriceRelation.package.id;
+                if (!fetchedPackages.find((p) => p.id === pkgId)) {
+                  try {
+                    const pkgRes = await PackageApi.getPackages({ limit: 50 });
+                    if (pkgRes?.data) setFetchedPackages(pkgRes.data);
+                  } catch {}
+                }
+              }
+            }
+
             // 4. ดึงยอดรวม (Total) และ VAT จากใบเสนอราคาโดยตรง (ไม่ต้อง Loop บวกใหม่)
             const isQuotationIncludeVat = fullQuotationData.include_vat !== false;
             setIncludeVat(isQuotationIncludeVat);
@@ -617,30 +661,69 @@ export const ContractForm: FC<ContractFormProps> = ({
     }
   }, [selectedCustomer]);
 
-  // Initialize Custom Areas for Edit Mode
+  // Fetch full contract data (with areas) for Edit/Renew/Detail mode
   useEffect(() => {
-    const existingAreas = initialValues?.area;
+    if (mode === 'create' || !initialValues?.id) return;
 
-    if ((mode === 'edit' || mode === 'renew') && existingAreas && existingAreas.length > 0) {
-      const mappedAreas = existingAreas.map((a: any, index: number) => {
-        const servicesArray = a.category_services || a.category_service || [];
-        const mappedServices = servicesArray.map((cs: any) => {
-          return cs.category?.name || cs.category_id || cs.category;
-        }).filter(Boolean);
+    const fetchFullContract = async () => {
+      setIsLoading(true);
+      try {
+        const res = await ContractApi.getById(initialValues.id!);
+        const fullData = (res as any).data || res;
+        const existingAreas = fullData?.contract_areas || fullData?.areas || fullData?.area || [];
 
-        return {
-          id: a.id || crypto.randomUUID(),
-          title: a.area_name || `พื้นที่ ${index + 1}`,
-          buildingType: a.building_type || '',       // 🟢 ดึง Building Type มาใส่
-          contractDuration: initialValues.contract_duration || '1 ปี',
-          systemUsed: a.service_system || '',        // 🟢 ดึง System Used มาใส่
-          serviceCount: a.service_count || initialValues.service_count || 7,
-          selectedServiceTypes: mappedServices,
-        };
-      });
-      setCustomAreas(mappedAreas);
-    }
-  }, [mode, initialValues]);
+        if (existingAreas.length > 0) {
+          // Fetch packages first so WorkAreaForm has data for price checkbox
+          const areaWithPkg = existingAreas.find((a: any) => a.packagePriceRelation?.package);
+          if (areaWithPkg?.packagePriceRelation?.package) {
+            try {
+              const pkgRes = await PackageApi.getPackages({ limit: 50 });
+              if (pkgRes?.data) setFetchedPackages(pkgRes.data);
+            } catch {}
+          }
+
+          // Init customAreas (legacy)
+          setCustomAreas(existingAreas.map((a: any, index: number) => {
+            const servicesArray = a.category_services || a.category_service || [];
+            return {
+              id: a.id || crypto.randomUUID(),
+              title: a.area_name || `พื้นที่ ${index + 1}`,
+              buildingType: a.building_type || '',
+              contractDuration: fullData.contract_duration || '1 ปี',
+              systemUsed: a.service_system || '',
+              serviceCount: a.service_count || fullData.service_count || 7,
+              selectedServiceTypes: servicesArray.map((cs: any) => cs.category?.name || cs.name || '').filter(Boolean),
+            };
+          }));
+
+          // Init WorkAreaForm areas
+          setWorkAreaAreas(existingAreas.map((a: any) => ({
+            id: a.id || crypto.randomUUID(),
+            area_name: a.area_name || '',
+            building_type: a.building_type || '',
+            service_system: a.service_system || '',
+            area_size: Number(a.area_size) || undefined,
+            package_price: Number(a.package_price) || Number(a.total_price) || undefined,
+            total_price: Number(a.total_price) || 0,
+            package_price_id: a.package_price_id || null,
+            package_type: a.package_type || (a.service_system === 'PREY' ? 'WITH_TERMITE' : undefined),
+            packagePriceRelation: a.packagePriceRelation || null,
+            category_services: (a.category_services || a.category_service || []).map((cs: any) => ({
+              category_id: cs.category_id || cs.category?.id,
+              name: cs.category?.name || cs.name || '',
+            })),
+            items: a.items || [],
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch full contract:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFullContract();
+  }, [mode, initialValues?.id]);
 
   // Recalculate Installments when Total Amount changes
   useEffect(() => {
@@ -822,43 +905,43 @@ export const ContractForm: FC<ContractFormProps> = ({
     // 🟢 สร้างตัวแปร finalAreas เพื่อรวมข้อมูลพื้นที่ให้พร้อมส่งเสมอ
     let finalAreas: any[] = [];
 
-    if (selectedQuotationId && fullQuotation?.quotation_areas?.length > 0) {
-      // 1. กรณีอ้างอิงใบเสนอราคา ให้ดึงข้อมูล Area จากใบเสนอราคามาส่ง
-      finalAreas = fullQuotation.quotation_areas.map((area: any) => {
-        const categoryServices = area.category_services?.map((cs: any) => ({
+    if (workAreaAreas.length > 0) {
+      // ใช้ workAreaAreas ทั้งกรณีมีและไม่มี quotation (user อาจปรับราคาแล้ว)
+      finalAreas = workAreaAreas.map((area: any) => {
+        const categoryServices = (area.category_services || []).map((cs: any) => ({
           category_id: cs.category_id || cs.category?.id,
-        })) || [];
+        })).filter((cs: any) => cs.category_id);
 
         return {
-          id: mode === 'edit' && area.id ? area.id : undefined,
           area_name: area.area_name || '',
-          building_type: area.building_type || '',
-          service_system: area.service_system || '',
-          // ถ้าในใบเสนอราคาไม่มี service_count (อาจจะมาเป็น null) ให้ดึงค่าจาก State หลักไปใส่แทน
-          service_count: area.service_count ? String(area.service_count) : String(serviceCount),
+          building_type: area.building_type || undefined,
+          service_system: area.service_system || undefined,
+          service_count: String(area.service_count || serviceCount || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
-          total_price: Number(area.total_price) || 0,
+          total_price: Number(area.total_price) || Number(area.package_price) || 0,
+          package_price: Number(area.package_price) || Number(area.total_price) || 0,
+          package_price_id: area.package_price_id || undefined,
+          package_type: area.package_type || undefined,
           category_services: categoryServices,
         };
       });
     } else {
-      // 2. กรณีไม่อ้างอิงใบเสนอราคา ให้ดึงข้อมูลจาก customAreas ที่ผู้ใช้สร้างเองในฟอร์ม
-      finalAreas = customAreas.map((area) => {
-        const categoryServices = area.selectedServiceTypes.map((typeName) => {
-          const foundCat = fetchedCategories.find((c: any) => c.name === typeName);
-          return {
-            category_id: foundCat ? foundCat.id : typeName,
-          };
-        });
+      // 2. กรณีไม่อ้างอิงใบเสนอราคา ให้ดึงข้อมูลจาก workAreaAreas (WorkAreaForm)
+      finalAreas = workAreaAreas.map((area: any) => {
+        const categoryServices = (area.category_services || []).map((cs: any) => ({
+          category_id: cs.category_id || cs.category?.id,
+        })).filter((cs: any) => cs.category_id);
 
         return {
-          id: mode === 'edit' && area.id ? area.id : undefined,
-          area_name: area.title,
-          building_type: area.buildingType,
-          service_system: area.systemUsed,
-          service_count: String(area.serviceCount),
-          area_size: 0,
-          total_price: 0,
+          area_name: area.area_name || '',
+          building_type: area.building_type || undefined,
+          service_system: area.service_system || undefined,
+          service_count: String(area.service_count || '7 ครั้ง'),
+          area_size: Number(area.area_size) || 0,
+          total_price: Number(area.total_price) || Number(area.package_price) || 0,
+          package_price: Number(area.package_price) || Number(area.total_price) || 0,
+          package_price_id: area.package_price_id || undefined,
+          package_type: area.package_type || undefined,
           category_services: categoryServices,
         };
       });
@@ -904,7 +987,12 @@ export const ContractForm: FC<ContractFormProps> = ({
       })),
     };
 
-    await onSubmit(payload);
+    setIsSubmitting(true);
+    try {
+      await onSubmit(payload);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const SectionHeader = ({
@@ -979,6 +1067,15 @@ export const ContractForm: FC<ContractFormProps> = ({
   };
 
   return (
+    <div className="flex flex-col relative">
+      {(isLoading || isSubmitting) && (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+          <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+          <p className="mt-3 text-sm font-medium text-slate-500">
+            {isSubmitting ? 'กำลังบันทึกข้อมูล...' : 'กำลังดึงข้อมูลสัญญา...'}
+          </p>
+        </div>
+      )}
     <form id="contract-form" onSubmit={handleSubmit} className="space-y-6">
       {mode === 'renew' && initialValues && (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -1156,12 +1253,6 @@ export const ContractForm: FC<ContractFormProps> = ({
         </div>
 
         {(() => {
-          const areasToDisplay =
-            fullQuotation?.quotation_areas?.length > 0
-              ? fullQuotation.quotation_areas
-              : fullQuotation?.assessment?.assessment_areas;
-
-          if (!areasToDisplay || areasToDisplay.length === 0) return null;
 
           return (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
@@ -1169,469 +1260,52 @@ export const ContractForm: FC<ContractFormProps> = ({
                 icon={ClipboardDocumentListIcon}
                 title="รายละเอียดพื้นที่ (Area Breakdown)"
               />
-
               <div className="space-y-4">
-                {areasToDisplay.map((area: any, index: number) => {
-                  const itemsTotal =
-                    area.items?.reduce(
-                      (sum: number, item: any) =>
-                        sum + (Number(item.total_price || item.amount) || 0),
-                      0
-                    ) || 0;
-                  const basePrice =
-                    (Number(area.total_price) || 0) - itemsTotal;
-                  return (
-                    <div
-                      key={index}
-                      className="border border-slate-200 rounded-lg overflow-hidden"
-                    >
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                          <h4 className="font-semibold text-slate-800">
-                            {area.area_name}
-                          </h4>
-                        </div>
-                        <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">
-                          ฿{Number(area.total_price || 0).toLocaleString()}
-                        </div>
-                      </div>
-
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              ประเภทสิ่งปลูกสร้าง
-                            </div>
-                            <div className="font-medium text-slate-800">
-                              {area.building_type || '-'}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              พื้นที่ (ตร.ม.)
-                            </div>
-                            <div className="font-medium text-slate-800">
-                              {Number(area.area_size || 0).toLocaleString()}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              ระบบที่ใช้
-                            </div>
-                            {/* 🟢 แก้ไข: เปลี่ยนกลับมาเป็น Badge แสดงข้อความธรรมดา */}
-                            <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-                              {area.service_system === 'PREY'
-                                ? 'เหยื่อ'
-                                : area.service_system === 'CHEMICAL'
-                                  ? 'สารเคมี'
-                                  : area.service_system === 'OTHER'
-                                    ? 'อื่นๆ'
-                                    : area.service_system || '-'}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">
-                              ราคาบริการหลัก
-                            </div>
-                            <div className="font-medium text-slate-800">
-                              ฿{Number(basePrice).toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Package Information */}
-                        {area.packagePriceRelation && (
-                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <div className="text-sm font-semibold text-blue-900">
-                                แพ็กเกจที่เลือก
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                              <div>
-                                <div className="text-xs text-blue-600 mb-1">
-                                  ชื่อแพ็กเกจ
-                                </div>
-                                <div className="font-medium text-blue-900">
-                                  {area.packagePriceRelation.package?.name ||
-                                    area.packagePriceRelation.name ||
-                                    '-'}
-                                </div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-blue-600 mb-1">
-                                  จำนวนครั้งบริการ
-                                </div>
-                                <div className="font-medium text-blue-900">
-                                  {area.packagePriceRelation.package
-                                    ?.visit_limit || '-'}{' '}
-                                  ครั้ง
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="mb-4">
-                          <label className="block text-xs text-slate-500 mb-2">
-                            ประเภทบริการ
-                          </label>
-                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                              {serviceTypeOptions.map((option) => {
-                                const isChecked = area.category_services?.some(
-                                  (cat: any) => {
-                                    try {
-                                      // Safety checks & Normalization
-                                      const normalize = (str: any) =>
-                                        String(str || '')
-                                          .trim()
-                                          .toLowerCase();
-
-                                      const catId =
-                                        cat.category_id ||
-                                        cat.category?.id ||
-                                        cat.id;
-                                      const optionId = option.id;
-
-                                      // Compare IDs
-                                      if (
-                                        catId &&
-                                        optionId &&
-                                        String(catId) === String(optionId)
-                                      )
-                                        return true;
-
-                                      // Compare Names
-                                      const catName = normalize(
-                                        cat.name || cat.category?.name
-                                      );
-                                      const optionName = normalize(
-                                        option.value || option.label
-                                      );
-
-                                      if (
-                                        catName &&
-                                        optionName &&
-                                        catName === optionName
-                                      )
-                                        return true;
-
-                                      return false;
-                                    } catch (e) {
-                                      return false;
-                                    }
-                                  }
-                                );
-
-                                return (
-                                  <label
-                                    key={option.id}
-                                    className="flex items-center gap-2 cursor-default"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      disabled={true}
-                                      className="rounded border-slate-300 text-green-600 focus:ring-green-500 disabled:opacity-100 bg-white"
-                                      readOnly
-                                    />
-                                    <span
-                                      className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}
-                                    >
-                                      {option.label}
-                                    </span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        {area.items && area.items.length > 0 && (
-                          <div className="mt-4 border rounded-lg overflow-hidden">
-                            <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">
-                              สินค้า/บริการเพิ่มเติม
-                            </div>
-                            <table className="w-full text-sm text-left">
-                              <thead className="text-xs text-slate-500 bg-white border-b">
-                                <tr>
-                                  <th className="px-4 py-2 font-medium">
-                                    รายการ
-                                  </th>
-                                  <th className="px-4 py-2 font-medium text-center w-20">
-                                    จำนวน
-                                  </th>
-                                  <th className="px-4 py-2 font-medium text-right w-32">
-                                    ราคา/หน่วย
-                                  </th>
-                                  <th className="px-4 py-2 font-medium text-right w-32">
-                                    รวม
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {area.items.map((item: any, i: number) => (
-                                  <tr key={i} className="hover:bg-slate-50">
-                                    <td className="px-4 py-2 text-slate-800">
-                                      {item.product_name || item.description}
-                                    </td>
-                                    <td className="px-4 py-2 text-center text-slate-600">
-                                      {item.quantity}
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-slate-600">
-                                      {Number(
-                                        item.product_price || item.unit_price
-                                      ).toLocaleString()}
-                                    </td>
-                                    <td className="px-4 py-2 text-right font-medium text-slate-800">
-                                      {Number(
-                                        item.total_price || item.amount
-                                      ).toLocaleString()}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {fullQuotation.items && fullQuotation.items.length > 0 && (
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2 mt-4">
-                    <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
-                      <div className="p-1.5 bg-orange-50 rounded-lg text-orange-600">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="w-5 h-5"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"
-                          />
-                        </svg>
-                      </div>
-                      <h3 className="font-semibold text-slate-800 text-lg">
-                        รายการอื่นๆ เพิ่มเติม (Additional Items)
-                      </h3>
-                    </div>
-
-                    <div className="overflow-x-auto border rounded-lg border-slate-200">
-                      <table className="min-w-full divide-y divide-slate-200">
-                        <thead className="bg-slate-50">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">
-                              รายการ
-                            </th>
-                            <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-24">
-                              จำนวน
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">
-                              ราคา/หน่วย
-                            </th>
-                            <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">
-                              รวม
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-slate-200">
-                          {fullQuotation.items.map(
-                            (item: any, index: number) => (
-                              <tr key={index} className="hover:bg-slate-50">
-                                <td className="px-4 py-2 text-slate-800 text-sm">
-                                  {item.description || item.product_name || '-'}
-                                </td>
-                                <td className="px-4 py-2 text-center text-slate-600 text-sm">
-                                  {item.quantity} {item.unit}
-                                </td>
-                                <td className="px-4 py-2 text-right text-slate-600 text-sm">
-                                  {Number(item.unit_price).toLocaleString()}
-                                </td>
-                                <td className="px-4 py-2 text-right font-medium text-slate-800 text-sm">
-                                  {Number(item.amount).toLocaleString()}
-                                </td>
-                              </tr>
-                            )
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
+                {workAreaAreas.map((area, index) => (
+                  <WorkAreaForm
+                    key={area.id || index}
+                    area={area}
+                    index={index}
+                    // @ts-ignore
+                    errors={{}}
+                    onAreaChange={(i, updated) => setWorkAreaAreas(prev => prev.map((a, idx) => idx === i ? updated : a))}
+                    onClearArea={(i) => setWorkAreaAreas(prev => prev.map((a, idx) => idx === i ? { ...a, building_type: '', area_size: undefined, category_services: [], service_system: undefined, total_price: 0, package_price: undefined } : a))}
+                    onRemoveArea={workAreaAreas.length > 1 ? (i) => setWorkAreaAreas(prev => prev.filter((_, idx) => idx !== i)) : undefined}
+                    products={products}
+                    categories={fetchedCategories}
+                    selectedPackage={
+                      area.packagePriceRelation?.package
+                        ? fetchedPackages.find((p) => p.id === area.packagePriceRelation.package.id) || area.packagePriceRelation.package
+                        : null
+                    }
+                    availablePackages={fetchedPackages}
+                    onSelectPackage={() => {}}
+                    isEditing={mode === 'edit'}
+                  />
+                ))}
+                <div className="flex justify-center mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setWorkAreaAreas(prev => [...prev, {
+                      id: crypto.randomUUID(),
+                      area_name: `พื้นที่ ${prev.length + 1}`,
+                      building_type: '',
+                      service_system: '',
+                      area_size: undefined,
+                      package_price: undefined,
+                      total_price: 0,
+                      category_services: [],
+                      items: [],
+                    }])}
+                    className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                  >
+                    <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
+                  </button>
+                </div>
               </div>
             </div>
           );
         })()}
-
-        {/* Service Details - Dynamic Areas */}
-        {!selectedQuotationId && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-
-            {/* Header + ปุ่มเพิ่มพื้นที่ */}
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
-                  <ClipboardDocumentListIcon className="w-5 h-5" />
-                </div>
-                <h3 className="font-semibold text-slate-800 text-lg">
-                  รายละเอียดการบริการ
-                </h3>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddArea}
-                className="text-sm py-1.5 px-3 flex items-center gap-1 text-green-600 border-green-200 hover:bg-green-50 transition-colors"
-              >
-                <PlusIcon className="w-4 h-4" /> เพิ่มพื้นที่
-              </Button>
-            </div>
-
-            {/* วนลูปแสดงผลการ์ดแต่ละพื้นที่ */}
-            <div className="space-y-6">
-              {customAreas.map((area) => (
-                <div key={area.id} className="border border-slate-200 rounded-lg overflow-hidden relative">
-
-                  {/* Card Header ของแต่ละพื้นที่ */}
-                  <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                      <h4 className="font-semibold text-slate-800">
-                        {area.title}
-                      </h4>
-                    </div>
-                    {/* ซ่อนปุ่มลบหากเหลือแค่ 1 พื้นที่ */}
-                    {customAreas.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveArea(area.id)}
-                        className="text-slate-400 hover:text-red-500 text-sm flex items-center gap-1 transition-colors"
-                      >
-                        <TrashIcon className="w-4 h-4" /> ลบพื้นที่
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="p-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          ประเภทสิ่งปลูกสร้าง
-                        </div>
-                        <Select
-                          value={area.buildingType}
-                          onChange={(e) => handleAreaChange(area.id, 'buildingType', e.target.value)}
-                          className="w-full text-sm"
-                        >
-                          <option value="">เลือกประเภท...</option>
-                          <option value="HOUSE">บ้าน</option>
-                          <option value="OFFICE">ออฟฟิศ</option>
-                        </Select>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          ระยะเวลาสัญญา
-                        </div>
-                        <Select
-                          value={area.contractDuration}
-                          onChange={(e) => handleAreaChange(area.id, 'contractDuration', e.target.value)}
-                          className="w-full text-sm"
-                        >
-                          <option value="1 ปี">1 ปี</option>
-                          <option value="6 เดือน">6 เดือน</option>
-                          <option value="3 เดือน">3 เดือน</option>
-                          <option value="ครั้งเดียว">ครั้งเดียว</option>
-                        </Select>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          ระบบที่ใช้
-                        </div>
-                        {/* 🟢 เปลี่ยนจาก Input เป็น Select เพื่อให้ตรงกับ Enum */}
-                        <Select
-                          value={area.systemUsed}
-                          onChange={(e) => handleAreaChange(area.id, 'systemUsed', e.target.value)}
-                          className="w-full text-sm"
-                        >
-                          <option value="">เลือกระบบ...</option>
-                          <option value="PREY">เหยื่อ (Prey)</option>
-                          <option value="CHEMICAL">สารเคมี (Chemical)</option>
-                          <option value="OTHER">อื่นๆ (Other)</option>
-                        </Select>
-                      </div>
-                      <div>
-                        <div className="text-xs text-slate-500 mb-1">
-                          จำนวนครั้งบริการ
-                        </div>
-                        <Input
-                          type="number"
-                          value={area.serviceCount}
-                          onChange={(e) => handleAreaChange(area.id, 'serviceCount', Number(e.target.value))}
-                          className="w-full text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mb-2">
-                      <label className="block text-xs text-slate-500 mb-2">
-                        ประเภทบริการ<span className="text-red-500">*</span>
-                      </label>
-                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                          {serviceTypeOptions.map((option) => {
-                            const isChecked = area.selectedServiceTypes.includes(option.value);
-                            return (
-                              <label
-                                key={option.id}
-                                className="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-1.5 -m-1.5 rounded transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  onChange={(e) => {
-                                    let newTypes = [...area.selectedServiceTypes];
-                                    if (e.target.checked) {
-                                      newTypes.push(option.value);
-                                    } else {
-                                      newTypes = newTypes.filter((t) => t !== option.value);
-                                    }
-                                    handleAreaChange(area.id, 'selectedServiceTypes', newTypes);
-                                  }}
-                                  className="rounded border-slate-300 text-green-600 focus:ring-green-500 bg-white"
-                                />
-                                <span
-                                  className={`text-sm ${isChecked ? 'text-slate-800 font-medium' : 'text-slate-500'}`}
-                                >
-                                  {option.label}
-                                </span>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </div>
-                      {area.selectedServiceTypes.length === 0 && (
-                        <p className="text-xs text-red-500 mt-2">
-                          กรุณาเลือกอย่างน้อย 1 รายการ
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Payment & Installments - Full Width */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
@@ -1937,5 +1611,6 @@ export const ContractForm: FC<ContractFormProps> = ({
         </div>
       </div>
     </form>
+    </div>
   );
 };

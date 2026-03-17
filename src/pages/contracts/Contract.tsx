@@ -46,6 +46,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalFromServer, setTotalFromServer] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
@@ -71,23 +72,35 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const fetchContractsData = async () => {
-    setIsLoading(true); // เริ่มหมุน
+  const fetchContractsData = async (page = currentPage, limit = itemsPerPage) => {
+    setIsLoading(true);
     try {
-      const response = await ContractApi.getAll();
+      const query: any = {
+        page,
+        limit,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+      };
+      if (searchQuery.trim()) query.search = searchQuery.trim();
+      if (statusFilter !== 'ทั้งหมด') query.status = statusFilter;
+      if (startDate) query.start_date = startDate;
+      if (endDate) query.end_date = endDate;
+
+      const response = await ContractApi.getAll(query);
       if (response && response.data) {
         setContracts(response.data);
+        setTotalFromServer(response.meta?.total || response.data.length || 0);
       }
     } catch (error) {
       console.error('Failed to fetch contracts:', error);
     } finally {
-      setIsLoading(false); // หยุดหมุน
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchContractsData();
-  }, []);
+    fetchContractsData(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter, startDate, endDate]);
 
   // Stats calculations
   const stats = useMemo(() => {
@@ -116,52 +129,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   );
 
   // Filtered contracts
-  const filteredContracts = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? new Date(endDate) : null;
-    if (end) end.setHours(23, 59, 59, 999);
-
-    let result = contracts;
-
-    // Search filter
-    if (q) {
-      result = result.filter((item) => {
-        const phone = custPhoneMap.get(item.customer_id) || '';
-        return (
-          item.id.toLowerCase().includes(q) ||
-          (item.code || '').toLowerCase().includes(q) ||
-          item.customer_name.toLowerCase().includes(q) ||
-          phone.includes(q)
-        );
-      });
-    }
-
-    // Status filter
-    if (statusFilter !== 'ทั้งหมด') {
-      result = result.filter((item) => item.status === statusFilter);
-    }
-
-    // Date filter
-    if (start || end) {
-      result = result.filter((item) => {
-        const d = new Date(item.created_at || item.start_date);
-        return (!start || d >= start) && (!end || d <= end);
-      });
-    }
-
-    return result.slice().reverse();
-  }, [contracts, searchQuery, statusFilter, startDate, endDate, custPhoneMap]);
-
-  const totalItems = filteredContracts.length;
-  const paginatedContracts = useMemo(
-    () =>
-      filteredContracts.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-      ),
-    [filteredContracts, currentPage, itemsPerPage]
-  );
+  // Server-side pagination: contracts already filtered/sorted by API
+  const totalItems = totalFromServer;
+  const paginatedContracts = contracts;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
