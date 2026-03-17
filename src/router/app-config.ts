@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { DataContextType } from '../contexts/DataContext';
 import { NavigationItem } from '@/src/types/nav';
+import { Role } from '../types/enums/role';
 import {
   NewDashboardIcon,
   NewCustomerIcon,
@@ -416,10 +417,23 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
 export const createRoutes = (data: DataContextType): RouteConfig[] => {
   const routes: RouteConfig[] = [];
 
-  // Root redirect
+  // Root redirect (role-aware)
+  const RoleRedirect = () => {
+    try {
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        if (user.role === Role.LEAD_TECH || user.role === Role.TECH) {
+          return React.createElement(Navigate, { to: '/field-operations', replace: true });
+        }
+      }
+    } catch {}
+    return React.createElement(Navigate, { to: '/dashboard', replace: true });
+  };
+
   routes.push({
     path: '/',
-    element: React.createElement(Navigate, { to: '/dashboard', replace: true }),
+    element: React.createElement(RoleRedirect),
   });
 
   UNIFIED_CONFIG.forEach((config) => {

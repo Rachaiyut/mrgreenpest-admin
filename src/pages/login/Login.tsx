@@ -77,7 +77,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         // Wait for state updates to propagate before redirect
         setTimeout(() => {
           if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
-            window.location.href = '/field-jobs';
+            navigate('/field-operations');
           } else {
             navigate('/');
           }
