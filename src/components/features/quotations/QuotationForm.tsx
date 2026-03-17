@@ -94,8 +94,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const initData = async () => {
       try {
         const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
-          CustomerApi.getCustomers({ limit: 10 }), // ดึงมาเผื่อไว้ 50 คนเลยครับ
-          AssessmentApi.getAll({ limit: 10 }),
+          CustomerApi.getCustomers({ limit: 10 }),
+          AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 50 }),
           PackageApi.getPackages({ limit: 10 }),
         ]);
@@ -214,7 +214,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
       assessmentSearchTimeoutRef.current = setTimeout(async () => {
         try {
-          const res = await AssessmentApi.getAll({ search: query, limit: 10 });
+          const params: any = { search: query, limit: 10, status: 'COMPLETE' };
+          if (selectedCustomerId) params.customer_id = selectedCustomerId;
+          const res = await AssessmentApi.getAll(params);
           if (res && res.data) {
             setFetchedAssessments((prev) => {
               const selected = prev.find((a) => a.id === selectedAssessmentId);
@@ -229,8 +231,38 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
       }, 500);
     },
-    [selectedAssessmentId]
+    [selectedAssessmentId, selectedCustomerId]
   );
+
+  // Reload assessments when customer changes
+  useEffect(() => {
+    if (!selectedCustomerId) return;
+    const loadAssessments = async () => {
+      try {
+        const params: any = { limit: 10, status: 'COMPLETE', customer_id: selectedCustomerId };
+        const res = await AssessmentApi.getAll(params);
+        if (res && res.data) {
+          setFetchedAssessments((prev) => {
+            const selected = prev.find((a) => a.id === selectedAssessmentId);
+            if (selected && !res.data.find((a: any) => a.id === selected.id)) {
+              return [selected, ...res.data];
+            }
+            return res.data;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading assessments for customer:', error);
+      }
+    };
+    loadAssessments();
+    // Clear assessment if the selected one doesn't belong to new customer
+    if (selectedAssessmentId) {
+      const currentAssessment = fetchedAssessments.find((a) => a.id === selectedAssessmentId);
+      if (currentAssessment && currentAssessment.customer_id !== selectedCustomerId) {
+        setSelectedAssessmentId('');
+      }
+    }
+  }, [selectedCustomerId]);
 
   // Quotation info
   const [quotationDate, setQuotationDate] = useState(initialValues?.created_at ? new Date(initialValues.created_at).toISOString().substring(0, 10) : '');
@@ -645,6 +677,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
       if (selectedAssessment.customer_id && (mode === 'create' || (!selectedCustomerId && !isEditingOriginalAssessment))) {
         setSelectedCustomerId(selectedAssessment.customer_id);
+
+        // ถ้าลูกค้าไม่อยู่ใน list ให้เพิ่มจาก assessment.customer
+        const customerExists = fetchedCustomers.some(c => c.id === selectedAssessment.customer_id);
+        if (!customerExists && (selectedAssessment as any).customer) {
+          setFetchedCustomers(prev => [(selectedAssessment as any).customer, ...prev]);
+        }
       }
 
       if (!isEditingOriginalAssessment) {
