@@ -143,10 +143,39 @@ const Job: React.FC<JobProps> = ({
       const unassignedJobs = unassignedJobsData
         .filter((job: any) => !job.vehicle_id)
         .map((job: any) => {
+          const customer = job.customer || {};
+          const customerName =
+            customer.first_name || customer.last_name
+              ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
+              : customer.code || '-';
+          const address = [
+            customer.address_house_no, customer.address_soi, customer.address_road,
+            customer.sub_district, customer.district, customer.province, customer.postal_code,
+          ].filter(Boolean).join(' ') || '-';
+
           return {
-            ...job,
+            api_status: job.status,
+            id: job.id,
+            assessment_id: job.assessment_id || undefined,
+            contract_id: job.contract_id || undefined,
+            customer_id: job.customer_id || customer.id,
+            customer,
+            customerName,
+            address,
+            appointment_date: job.appointment_date,
+            start_time: job.start_date,
+            end_time: job.end_date,
+            actual_start_time: job.actual_start_time,
+            actual_end_time: job.actual_end_time,
+            primary_technician: job.primary_technician || null,
+            technicians: [],
+            work_areas: [],
+            status: JobStatus.Planned,
             vehicle_id: null,
-          };
+            remarks: job.remark,
+            invoice_id: job.invoice_id,
+            invoice: job.invoice,
+          } as any;
         });
 
       setWarehouses(warehousesData);
@@ -1102,7 +1131,7 @@ const Job: React.FC<JobProps> = ({
                             <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
                           </td>
                            <td className="px-6 py-4">
-                            <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer.primary_phone || '-')}</span>
+                            <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer?.primary_phone || '-')}</span>
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm text-slate-700">{formatThaiDate(job.start_date)}</span>
@@ -1215,19 +1244,29 @@ const Job: React.FC<JobProps> = ({
                           </td>
                           <td className="px-6 py-4">
                             <span className="text-sm text-slate-600">
-                              {job.work_areas.map((wa) => wa.service_package).join(', ') || '-'}
+                              {(job.work_areas || []).map((wa) => wa.service_package).join(', ') || '-'}
                             </span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <TechnicianIcon className="h-4 w-4 text-slate-400" />
                               <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                {job.technicians.map((t) => t.nick_name || t.name).join(', ') || '-'}
+                                {(job.technicians || []).map((t) => t.nick_name || t.name).join(', ') || '-'}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <StatusBadge status={job.api_status || job.status} />
+                            <StatusBadge status={
+                              (() => {
+                                const s = (job.api_status || job.status || '').toString().toUpperCase();
+                                if (s === 'UNASSIGNED') return 'รอจัดคิว';
+                                if (s === 'PENDING') return 'รอดำเนินการ';
+                                if (s === 'IN_PROGRESS' || s === 'INPROGRESS') return 'กำลังดำเนินการ';
+                                if (s === 'COMPLETED' || s === 'COMPLETE') return 'เสร็จสิ้น';
+                                if (s === 'CANCELLED') return 'ยกเลิก';
+                                return s;
+                              })()
+                            } />
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <Button
