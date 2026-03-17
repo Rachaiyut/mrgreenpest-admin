@@ -36,6 +36,12 @@ export interface ServiceReport extends IBase {
 
   work_note?: string;
 
+  // ลายเซ็น
+  customer_signature?: string;
+  customer_sign_name?: string;
+  technician_signature?: string;
+  technician_sign_name?: string;
+
   // ส่วนนัดหมาย
   next_service_schedule?: string;
   next_service_purpose?: string;

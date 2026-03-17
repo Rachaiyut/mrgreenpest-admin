@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import SignatureCanvas from 'react-signature-canvas';
 import { Modal } from '../../common/Modal';
 import { Textarea, Input, Select } from '../../common/FormControls';
 import {
@@ -32,7 +33,6 @@ interface ServiceReportModalProps {
     quotationId?: string,
     files?: File[],
     paymentSlip?: File | null,
-    quotationFile?: File | null,
   ) => void;
   finalStatus: JobStatus;
   currentUser: User;
@@ -99,7 +99,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
-  const [quotationFile, setQuotationFile] = useState<File | null>(null);
+
+  const customerSigRef = useRef<SignatureCanvas>(null);
+  const technicianSigRef = useRef<SignatureCanvas>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -488,6 +490,15 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         termite_inject_shaft: reportState.termite?.actions?.injectShaft,
         termite_other: reportState.termite?.actions?.other,
       },
+      // ลายเซ็น
+      customer_signature: customerSigRef.current && !customerSigRef.current.isEmpty()
+        ? customerSigRef.current.toDataURL('image/png')
+        : reportState.customer_signature || undefined,
+      customer_sign_name: reportState.customer_sign_name,
+      technician_signature: technicianSigRef.current && !technicianSigRef.current.isEmpty()
+        ? technicianSigRef.current.toDataURL('image/png')
+        : reportState.technician_signature || undefined,
+      technician_sign_name: reportState.technician_sign_name,
     } as ServiceReport;
     onSubmit(
       job.id,
@@ -496,7 +507,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       reportState.quotation_id,
       selectedFiles,
       paymentSlip || null,
-      quotationFile || null
     );
   };
 
@@ -1346,7 +1356,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               <div className="p-1.5 bg-white border border-slate-200 rounded-md text-blue-600 shadow-sm">
                 <DocumentIcon className="w-4 h-4" />
               </div>
-              เอกสารอ้างอิง
+              เอกสารอ้างอิง & ลายเซ็น
             </h3>
           </div>
           <div className="p-6 flex flex-col gap-6">
@@ -1369,71 +1379,78 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               />
             </div>
 
+            {/* ลายเซ็นลูกค้า */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                แนบหลักฐานการเซ็นใบเสนอราคา
+                ลายเซ็นลูกค้า
               </label>
-              {!quotationFile && !reportState.quotation_url ? (
-                <label
-                  htmlFor="quotation-file-upload"
-                  className="flex flex-col items-center justify-center w-full px-4 py-8 border-2 border-slate-200 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-blue-50/30 hover:border-blue-400 transition-all duration-200 group"
-                >
-                  <div className="flex flex-col items-center gap-2 text-slate-500 group-hover:text-blue-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    <div className="text-center">
-                      <span className="text-sm font-medium">คลิกเพื่ออัปโหลดไฟล์/รูปภาพ</span>
-                      <p className="text-xs text-slate-400 mt-1">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
-                    </div>
-                  </div>
-                  <input
-                    id="quotation-file-upload"
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        setQuotationFile(e.target.files[0]);
-                      }
-                    }}
+              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
+                {reportState.customer_signature && !customerSigRef.current ? (
+                  <img src={reportState.customer_signature} alt="ลายเซ็นลูกค้า" className="w-full h-[160px] object-contain bg-slate-50" />
+                ) : (
+                  <SignatureCanvas
+                    ref={customerSigRef}
+                    canvasProps={{ className: 'w-full h-[160px]' }}
+                    penColor="black"
+                    backgroundColor="rgb(248, 250, 252)"
                   />
-                </label>
-              ) : (
-                <div className="flex items-center justify-between p-3.5 bg-white border border-slate-200 shadow-sm rounded-lg">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="p-2 bg-blue-50 text-blue-600 rounded-md shrink-0">
-                      <DocumentIcon className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col truncate">
-                      {quotationFile ? (
-                        <>
-                          <span className="text-sm font-medium text-slate-700 truncate">{quotationFile.name}</span>
-                          <span className="text-xs text-slate-500">
-                            {(quotationFile.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </>
-                      ) : (
-                        <a href={getFileUrl(reportState.quotation_url)} target="_blank" rel="noreferrer" className="text-sm font-medium text-blue-600 hover:underline truncate">
-                          ดูไฟล์หลักฐานเดิมที่แนบไว้
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuotationFile(null);
-                      setReportState(prev => ({ ...prev, quotation_url: null, quotation_file_id: null }));
-                    }}
-                    className="shrink-0 ml-3 text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-md transition-colors focus:outline-none"
-                    title="ลบไฟล์"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <Input
+                  value={reportState.customer_sign_name || ''}
+                  onChange={(e) => setReportState(prev => ({ ...prev, customer_sign_name: e.target.value }))}
+                  placeholder="ชื่อผู้เซ็น (ลูกค้า)"
+                  className="flex-1 mr-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    customerSigRef.current?.clear();
+                    setReportState(prev => ({ ...prev, customer_signature: undefined }));
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+                >
+                  ล้างลายเซ็น
+                </button>
+              </div>
+            </div>
+
+            {/* ลายเซ็นช่างเทคนิค */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                ลายเซ็นช่างเทคนิค
+              </label>
+              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
+                {reportState.technician_signature && !technicianSigRef.current ? (
+                  <img src={reportState.technician_signature} alt="ลายเซ็นช่างเทคนิค" className="w-full h-[160px] object-contain bg-slate-50" />
+                ) : (
+                  <SignatureCanvas
+                    ref={technicianSigRef}
+                    canvasProps={{ className: 'w-full h-[160px]' }}
+                    penColor="black"
+                    backgroundColor="rgb(248, 250, 252)"
+                  />
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <Input
+                  value={reportState.technician_sign_name || ''}
+                  onChange={(e) => setReportState(prev => ({ ...prev, technician_sign_name: e.target.value }))}
+                  placeholder="ชื่อผู้เซ็น (ช่างเทคนิค)"
+                  className="flex-1 mr-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    technicianSigRef.current?.clear();
+                    setReportState(prev => ({ ...prev, technician_signature: undefined }));
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+                >
+                  ล้างลายเซ็น
+                </button>
+              </div>
             </div>
           </div>
         </div>

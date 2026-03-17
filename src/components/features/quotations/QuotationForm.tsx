@@ -17,6 +17,7 @@ import {
   Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import InstallmentSection, { InstallmentItem } from '../../common/InstallmentSection';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import {
   PlusIcon,
@@ -1260,48 +1261,27 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
-          <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${paymentCondition === PaymentMethod.TRANSFER ? 'border-green-500 bg-green-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                <input type="radio" name="paymentCondition" value={PaymentMethod.TRANSFER} checked={paymentCondition === PaymentMethod.TRANSFER} onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)} className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500" disabled={isReadOnly} />
-                <div className="ml-3"><span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span><span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span></div>
-              </label>
-              <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${paymentCondition === PaymentMethod.INSTALLMENT ? 'border-green-500 bg-green-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                <input type="radio" name="paymentCondition" value={PaymentMethod.INSTALLMENT} checked={paymentCondition === PaymentMethod.INSTALLMENT} onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)} className="w-5 h-5 text-green-600 border-slate-300 focus:ring-green-500" disabled={isReadOnly} />
-                <div className="ml-3"><span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span><span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span></div>
-              </label>
-            </div>
-            {paymentCondition === PaymentMethod.INSTALLMENT && (
-              <div className="space-y-4 animate-fadeIn">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="text-sm font-semibold text-slate-700">รายละเอียดงวดงาน</h4>
-                  {!isReadOnly && (<button type="button" onClick={handleAddInstallment} className="text-sm text-green-600 hover:text-green-700 flex items-center gap-1 font-medium"><PlusIcon className="w-4 h-4" />เพิ่มงวด</button>)}
-                </div>
-                <div className="overflow-hidden border border-slate-200 rounded-lg">
-                  <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                      <tr><th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th><th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th><th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-28">สัดส่วน (%)</th><th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-36">จำนวนเงิน</th>{!isReadOnly && <th className="px-2 py-3 w-10"></th>}</tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-slate-200">
-                      {installments.map((inst, idx) => (
-                        <tr key={inst.id || idx}>
-                          <td className="px-4 py-2 text-center text-sm font-medium text-slate-700">{inst.installment_no}</td>
-                          <td className="px-4 py-2"><Input value={inst.notes || ''} onChange={(e) => handleInstallmentChange(idx, 'notes', e.target.value)} placeholder="รายละเอียด..." className="h-9 text-sm" disabled={isReadOnly} /></td>
-                          <td className="px-4 py-2"><Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleInstallmentChange(idx, 'percentage', e.target.value)} className="h-9 text-right text-sm font-mono" disabled={isReadOnly} min={0} max={100} step="1" /></td>
-                          <td className="px-4 py-2"><Input type="number" value={inst.amount || ''} onChange={(e) => handleInstallmentChange(idx, 'amount', e.target.value)} className="h-9 text-right text-sm font-mono" disabled={isReadOnly} /></td>
-                          {!isReadOnly && (<td className="px-2 py-2 text-center"><button type="button" onClick={() => handleRemoveInstallment(idx)} className="text-slate-400 hover:text-red-500" disabled={installments.length <= 1}><TrashIcon className="w-4 h-4" /></button></td>)}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - netTotal) >= 1 && (<p className="text-xs text-red-500 text-right">* ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({netTotal.toLocaleString()} บาท)</p>)}
-              </div>
-            )}
-          </div>
-        </div>
+        <InstallmentSection
+          installments={installments.map(i => ({
+            id: i.id,
+            no: i.installment_no,
+            description: i.notes || '',
+            percentage: i.percentage,
+            amount: i.amount,
+          }))}
+          onChange={(items) => {
+            setInstallments(items.map(i => ({
+              ...i,
+              installment_no: i.no,
+              notes: i.description,
+            } as any)));
+          }}
+          totalAmount={netTotal}
+          isReadOnly={isReadOnly}
+          showPaymentMethodToggle
+          paymentMethod={paymentCondition === PaymentMethod.INSTALLMENT ? 'INSTALLMENT' : 'TRANSFER'}
+          onPaymentMethodChange={(m) => setPaymentCondition(m === 'INSTALLMENT' ? PaymentMethod.INSTALLMENT : PaymentMethod.TRANSFER)}
+        />
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
           {!selectedAssessmentId && (

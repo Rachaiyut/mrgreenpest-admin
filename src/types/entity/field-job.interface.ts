@@ -39,6 +39,10 @@ export interface ServiceReport {
   is_op_trap?: boolean;
   op_other?: string;
   work_note?: string;
+  customer_signature?: string;
+  customer_sign_name?: string;
+  technician_signature?: string;
+  technician_sign_name?: string;
   next_service_schedule?: string;
   next_service_purpose?: string;
   is_next_refill?: boolean;

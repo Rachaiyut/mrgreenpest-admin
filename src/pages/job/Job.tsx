@@ -570,7 +570,6 @@ const Job: React.FC<JobProps> = ({
     quotationId?: string,
     files?: File[],
     paymentSlip?: File | null,
-    quotationFile?: File | null
   ) => {
     try {
       const job = jobs.find((j) => j.id === jobId);
@@ -578,7 +577,6 @@ const Job: React.FC<JobProps> = ({
 
       let paymentSlipFileId: string | undefined;
       let blueprintFileId: string | undefined;
-      let quotationFileId: string | undefined;
 
       if (paymentSlip) {
         const uploadedSlip = await StorageApi.upload({
@@ -602,24 +600,12 @@ const Job: React.FC<JobProps> = ({
         blueprintFileId = uploadedBlueprints.map((f) => f.id).join(',');
       }
 
-      if (quotationFile) {
-        const uploadedQuotation = await StorageApi.upload({
-          file: quotationFile,
-          path: `jobs/${jobId}/quotations`,
-          provider: 'local',
-          type: 'image',
-          visibility: 'private',
-        });
-        quotationFileId = uploadedQuotation.id;
-      }
-
       const payload = {
         ...reportData,
         job_id: jobId,
         customer_id: job.customer_id,
         payment_slip_file_id: paymentSlipFileId,
         blueprint_file_id: blueprintFileId,
-        quotation_file_id: quotationFileId,
       };
 
       const { id, ...dataToSave } = payload;

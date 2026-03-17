@@ -12,6 +12,7 @@ import React, {
 import { CategoryType, Quotation } from '../../../types';
 import { Customer } from '../../../types/entity/customer.interface';
 import { InstallmentPlan } from '../../../types/entity/financial.interface';
+import InstallmentSection from '../../common/InstallmentSection';
 import { ContractStatus } from '../../../types/enums/financial';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 
@@ -178,6 +179,18 @@ export const ContractForm: FC<ContractFormProps> = ({
   const vatAmount = useMemo(() => {
     return includeVat ? Number(((totalAmount * 7) / 107).toFixed(2)) : 0;
   }, [totalAmount, includeVat]);
+
+  // Auto-recalculate totalAmount from workAreaAreas
+  useEffect(() => {
+    if (workAreaAreas.length === 0) return;
+    const areaTotal = workAreaAreas.reduce((sum, a) => {
+      return sum + (Number(a.total_price) || Number(a.package_price) || 0);
+    }, 0);
+    if (areaTotal > 0) {
+      const newTotal = includeVat ? Number((areaTotal * 1.07).toFixed(2)) : areaTotal;
+      setTotalAmount(newTotal);
+    }
+  }, [workAreaAreas, includeVat]);
 
   // Installment Plan
   const [installments, setInstallments] = useState<InstallmentPlan[]>([]);
@@ -1302,296 +1315,50 @@ export const ContractForm: FC<ContractFormProps> = ({
         })()}
 
         {/* Payment & Installments - Full Width */}
+        <InstallmentSection
+          installments={installments.map(i => ({
+            id: i.id,
+            no: i.term,
+            description: i.description,
+            percentage: i.percentage,
+            amount: i.amount,
+            due_date: i.due_date,
+            status: i.status as string,
+          }))}
+          onChange={(items) => {
+            setInstallments(items.map(i => ({
+              id: i.id,
+              term: i.no,
+              description: i.description,
+              percentage: i.percentage,
+              amount: i.amount,
+              due_date: i.due_date,
+              status: (i.status || 'PENDING') as any,
+            })));
+          }}
+          totalAmount={totalAmount}
+          isReadOnly={false}
+          showDueDate
+          showStatus
+          showTotalAmountInput
+          onTotalAmountChange={setTotalAmount}
+          includeVat={includeVat}
+          onIncludeVatChange={setIncludeVat}
+          vatAmount={vatAmount}
+          contractInfo={{
+            duration: contractDuration,
+            startDate: startDate,
+            endDate: endDate,
+          }}
+        />
+
+        {/* Notes Section */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
           <SectionHeader
             icon={CurrencyDollarIcon}
-            title="การชำระเงินและงวดงาน (Payment & Installments)"
+            title="หมายเหตุ"
           />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-            {/* กล่องแสดงผลราคาและ VAT */}
-            <div className="space-y-3">
-              <FormField label="มูลค่าสัญญารวมสุทธิ (บาท)" htmlFor="totalAmount">
-                <Input
-                  id="totalAmount"
-                  type="number"
-                  value={totalAmount}
-                  onChange={(e) => setTotalAmount(Number(e.target.value))}
-                  className="text-right font-bold text-lg text-primary"
-                />
-              </FormField>
-
-              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={includeVat}
-                    onChange={(e) => setIncludeVat(e.target.checked)}
-                    className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                  />
-                  รวมภาษีมูลค่าเพิ่ม 7% (VAT)
-                </label>
-                {includeVat && (
-                  <div className="text-sm text-slate-600 text-right">
-                    VAT: <span className="font-medium text-slate-800">{vatAmount.toLocaleString()}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <div
-                className={`flex-1 p-4 rounded-lg border ${Math.abs(totalPercentage - 100) < 0.5 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-slate-600">
-                    สัดส่วนการแบ่งงวดรวม
-                  </span>
-                  <span
-                    className={`text-xl font-bold ${Math.abs(totalPercentage - 100) < 0.5 ? 'text-green-700' : 'text-red-700'}`}
-                  >
-                    {totalPercentage.toFixed(0)}%
-                  </span>
-                </div>
-                {Math.abs(totalPercentage - 100) >= 0.5 && (
-                  <p className="text-xs text-red-600 mt-1 text-right">
-                    ต้องเท่ากับ 100%
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Contract Duration Summary for Payment Context */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-slate-700">
-                ระยะเวลาสัญญา:
-              </span>
-              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-medium">
-                {contractDuration}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-600">
-              <span className="font-semibold text-slate-700">ช่วงเวลา:</span>
-              <span>
-                {startDate
-                  ? new Date(startDate).toLocaleDateString('th-TH', {
-                    dateStyle: 'medium',
-                  })
-                  : '-'}
-                <span className="mx-2 text-slate-400">ถึง</span>
-                {endDate
-                  ? new Date(endDate).toLocaleDateString('th-TH', {
-                    dateStyle: 'medium',
-                  })
-                  : '-'}
-              </span>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto border rounded-lg border-slate-200 mb-6">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-16">
-                    งวด
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">
-                    รายละเอียด (Description)
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-24">
-                    %
-                  </th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-slate-700 uppercase w-32">
-                    จำนวนเงิน
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-36">
-                    วันที่ครบกำหนด
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase w-32">
-                    สถานะ
-                  </th>
-                  <th className="px-2 py-3 w-10"></th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                {installments.map((inst, index) => (
-                  <tr key={inst.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 text-center text-sm font-medium text-slate-500 bg-slate-50/50">
-                      {inst.term}
-                    </td>
-                    <td className="px-4 py-2">
-                      <Input
-                        value={inst.description}
-                        onChange={(e) =>
-                          handleInstallmentChange(
-                            inst.id,
-                            'description',
-                            e.target.value
-                          )
-                        }
-                        className="!py-1 h-9"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <Input
-                        type="number"
-                        value={inst.percentage}
-                        onChange={(e) =>
-                          handleInstallmentChange(
-                            inst.id,
-                            'percentage',
-                            e.target.value
-                          )
-                        }
-                        className="!py-1 text-center h-9"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <Input
-                        type="number"
-                        value={inst.amount}
-                        onChange={(e) =>
-                          handleInstallmentChange(
-                            inst.id,
-                            'amount',
-                            e.target.value
-                          )
-                        }
-                        className="!py-1 text-right h-9 font-mono"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <Input
-                        type="date"
-                        value={
-                          inst.due_date
-                            ? new Date(inst.due_date)
-                              .toISOString()
-                              .substring(0, 10)
-                            : ''
-                        }
-                        onChange={(e) =>
-                          handleInstallmentChange(
-                            inst.id,
-                            'due_date',
-                            e.target.value
-                          )
-                        }
-                        className="!py-1 h-9 text-xs text-center"
-                      />
-                    </td>
-                    <td className="px-4 py-2">
-                      <Select
-                        value={inst.status as any}
-                        onChange={(e) =>
-                          handleInstallmentChange(
-                            inst.id,
-                            'status',
-                            e.target.value
-                          )
-                        }
-                        className="!py-1 h-9 text-xs"
-                      >
-                        <option value="PENDING">รอชำระ</option>
-                        <option value="PAID">ชำระแล้ว</option>
-                        <option value="OVERDUE">เกินกำหนด</option>
-                      </Select>
-                    </td>
-                    <td className="px-2 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => removeInstallment(inst.id)}
-                        className="text-slate-400 hover:text-red-500 transition-colors"
-                        disabled={installments.length <= 1}
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex justify-between mb-6">
-            <div className="flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addInstallment}
-                className="w-auto border-dashed border-2 border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 py-2 px-6 flex items-center gap-2 transition-all font-medium"
-              >
-                <PlusIcon className="w-5 h-5" />
-                เพิ่มงวดชำระ (Add Installment)
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={distributeInstallments}
-                className="w-auto border border-slate-200 text-slate-600 hover:border-green-500 hover:text-green-600 hover:bg-green-50 py-2 px-4 flex items-center gap-2 transition-all"
-                title="เฉลี่ย % และยอดเงินให้เท่ากันทุกงวด"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"
-                  />
-                </svg>
-                เฉลี่ยยอด (Distribute)
-              </Button>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (!startDate) {
-                  alert('กรุณาระบุวันที่เริ่มสัญญา');
-                  return;
-                }
-
-                let durationMonths = 12; // Default 1 year
-                if (contractDuration.includes('ปี')) {
-                  durationMonths = parseFloat(contractDuration) * 12;
-                } else if (contractDuration.includes('เดือน')) {
-                  durationMonths = parseFloat(contractDuration);
-                }
-
-                const interval = durationMonths / installments.length;
-                const start = new Date(startDate);
-
-                setInstallments((prev) =>
-                  prev.map((inst, index) => {
-                    const monthsToAdd = Math.floor(index * interval);
-                    const newDate = new Date(start);
-                    newDate.setMonth(newDate.getMonth() + monthsToAdd);
-
-                    return {
-                      ...inst,
-                      due_date: newDate.toISOString(),
-                    };
-                  })
-                );
-              }}
-              className="bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100"
-            >
-              <ClipboardDocumentListIcon className="w-4 h-4 mr-2" />
-              คำนวณวันครบกำหนดอัตโนมัติ
-            </Button>
-          </div>
-
-          <div className="border-t pt-4 mt-4">
+          <div>
             <FormField label="หมายเหตุ" htmlFor="notes">
               <Textarea
                 id="notes"
