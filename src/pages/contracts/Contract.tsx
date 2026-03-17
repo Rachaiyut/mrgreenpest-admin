@@ -22,6 +22,7 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { ContractApi } from '../../api';
 import { ContractModal } from '@/src/components/features/contracts/ContractModal';
+import Swal from 'sweetalert2';
 
 const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.DRAFT]: 'ร่าง',
@@ -618,6 +619,23 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             >
               <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
+            </button>
+            <button
+              onClick={() => {
+                if (!selectedContract) return;
+                const apiUrl = import.meta.env.VITE_API_BASE_URL;
+                const shareLink = `${apiUrl}/print/${selectedContract.id}/view`;
+                navigator.clipboard.writeText(shareLink).then(() => {
+                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ PDF เรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                }).catch(() => {
+                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถคัดลอกลิงก์ได้', icon: 'error', confirmButtonColor: '#d33' });
+                });
+                setOpenDropdownId(null);
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
+            >
+              <DocumentTextIcon className="w-4 h-4 text-blue-500" />
+              คัดลอกลิงก์ PDF
             </button>
             <button
               onClick={() => handleEdit(selectedContract)}

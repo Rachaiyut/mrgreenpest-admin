@@ -20,6 +20,7 @@ import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useData } from '../../contexts/DataContext';
 import { ReceiptApi } from '../../api/receipt';
+import Swal from 'sweetalert2';
 
 const statusLabels: Record<ReceiptStatus, string> = {
   [ReceiptStatus.DRAFT]: 'ร่าง',
@@ -123,7 +124,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     if (end) end.setHours(23, 59, 59, 999);
 
     const custPhoneMap = new Map(
-      (customers || []).map((c) => [c.id, [c.phone].filter(Boolean).join('')])
+      (customers || []).map((c) => [c.id, [c.primary_phone].filter(Boolean).join('')])
     );
 
     let result = receiptData;
@@ -465,7 +466,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">
-                        {formatPhoneNumber(customer?.phone || '-')}
+                        {formatPhoneNumber(customer?.primary_phone || '-')}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">
                         {formatThaiDate(r.received_at || r.paid_at)}
@@ -566,7 +567,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             left: `${receiptDropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
         >
@@ -576,18 +577,35 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 setIsReceiptModalOpen(true);
                 setOpenReceiptDropdownId(null);
               }}
-              className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
-              <EyeIcon className="h-5 w-5 text-slate-400" />
+              <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
+            </button>
+            <button
+              onClick={() => {
+                if (!selectedReceipt) return;
+                const apiUrl = import.meta.env.VITE_API_BASE_URL;
+                const shareLink = `${apiUrl}/print/${selectedReceipt.id}/view`;
+                navigator.clipboard.writeText(shareLink).then(() => {
+                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ PDF เรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                }).catch(() => {
+                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถคัดลอกลิงก์ได้', icon: 'error', confirmButtonColor: '#d33' });
+                });
+                setOpenReceiptDropdownId(null);
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
+            >
+              <DocumentTextIcon className="w-4 h-4 text-blue-500" />
+              คัดลอกลิงก์ PDF
             </button>
 
             {onUpdateReceipt && selectedReceipt && (
               <button
                 onClick={() => handleStatusClick(selectedReceipt)}
-                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
               >
-                <CheckCircleIcon className="h-5 w-5 text-slate-400" />
+                <CheckCircleIcon className="w-4 h-4 text-slate-400" />
                 เปลี่ยนสถานะ
               </button>
             )}
@@ -597,9 +615,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <hr className="my-1 border-slate-100" />
                 <button
                   onClick={() => handleDeleteClick(selectedReceipt)}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                 >
-                  <TrashIcon className="h-5 w-5 text-red-500" />
+                  <TrashIcon className="w-4 h-4 text-red-500" />
                   ลบ
                 </button>
               </>

@@ -99,6 +99,7 @@ export const ContractForm: FC<ContractFormProps> = ({
   // Local state for fetched data
   const [fetchedCategories, setFetchedCategories] = useState<any[]>([]);
   const [fetchedPackages, setFetchedPackages] = useState<Package[]>([]);
+  const [initDataReady, setInitDataReady] = useState(false);
   const [workAreaAreas, setWorkAreaAreas] = useState<any[]>([]);
 
   // Contract info
@@ -356,6 +357,8 @@ export const ContractForm: FC<ContractFormProps> = ({
         if (pkgRes?.data) setFetchedPackages(pkgRes.data);
       } catch (error) {
         console.error('Error fetching init data:', error);
+      } finally {
+        setInitDataReady(true);
       }
     };
     fetchInitData();
@@ -554,17 +557,6 @@ export const ContractForm: FC<ContractFormProps> = ({
                 items: a.items || [],
               })));
 
-              // Fetch full packages for WorkAreaForm price conditions
-              const areaWithPkg = areasSource.find((a: any) => a.packagePriceRelation?.package);
-              if (areaWithPkg?.packagePriceRelation?.package) {
-                const pkgId = areaWithPkg.packagePriceRelation.package.id;
-                if (!fetchedPackages.find((p) => p.id === pkgId)) {
-                  try {
-                    const pkgRes = await PackageApi.getPackages({ limit: 50 });
-                    if (pkgRes?.data) setFetchedPackages(pkgRes.data);
-                  } catch {}
-                }
-              }
             }
 
             // 4. ดึงยอดรวม (Total) และ VAT จากใบเสนอราคาโดยตรง (ไม่ต้อง Loop บวกใหม่)
@@ -663,7 +655,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Fetch full contract data (with areas) for Edit/Renew/Detail mode
   useEffect(() => {
-    if (mode === 'create' || !initialValues?.id) return;
+    if (mode === 'create' || !initialValues?.id || !initDataReady) return;
 
     const fetchFullContract = async () => {
       setIsLoading(true);
@@ -673,15 +665,6 @@ export const ContractForm: FC<ContractFormProps> = ({
         const existingAreas = fullData?.contract_areas || fullData?.areas || fullData?.area || [];
 
         if (existingAreas.length > 0) {
-          // Fetch packages first so WorkAreaForm has data for price checkbox
-          const areaWithPkg = existingAreas.find((a: any) => a.packagePriceRelation?.package);
-          if (areaWithPkg?.packagePriceRelation?.package) {
-            try {
-              const pkgRes = await PackageApi.getPackages({ limit: 50 });
-              if (pkgRes?.data) setFetchedPackages(pkgRes.data);
-            } catch {}
-          }
-
           // Init customAreas (legacy)
           setCustomAreas(existingAreas.map((a: any, index: number) => {
             const servicesArray = a.category_services || a.category_service || [];
@@ -723,7 +706,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     };
 
     fetchFullContract();
-  }, [mode, initialValues?.id]);
+  }, [mode, initialValues?.id, initDataReady]);
 
   // Recalculate Installments when Total Amount changes
   useEffect(() => {
@@ -1273,11 +1256,22 @@ export const ContractForm: FC<ContractFormProps> = ({
                     onRemoveArea={workAreaAreas.length > 1 ? (i) => setWorkAreaAreas(prev => prev.filter((_, idx) => idx !== i)) : undefined}
                     products={products}
                     categories={fetchedCategories}
-                    selectedPackage={
-                      area.packagePriceRelation?.package
-                        ? fetchedPackages.find((p) => p.id === area.packagePriceRelation.package.id) || area.packagePriceRelation.package
-                        : null
-                    }
+                    selectedPackage={(() => {
+                      // Find package from fetchedPackages (has package_prices)
+                      const pkgId = area.packagePriceRelation?.package?.id || area.packagePriceRelation?.package_id;
+                      if (pkgId) {
+                        const fullPkg = fetchedPackages.find((p) => p.id === pkgId);
+                        if (fullPkg) return fullPkg;
+                      }
+                      // Fallback: find by package_price_id matching
+                      if (area.package_price_id) {
+                        const pkg = fetchedPackages.find((p: any) =>
+                          (p.package_prices || []).some((pp: any) => pp.id === area.package_price_id)
+                        );
+                        if (pkg) return pkg;
+                      }
+                      return null;
+                    })()}
                     availablePackages={fetchedPackages}
                     onSelectPackage={() => {}}
                     isEditing={mode === 'edit'}

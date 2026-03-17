@@ -23,6 +23,7 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
+import Swal from 'sweetalert2';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
 
 interface InvoicesPageProps {
@@ -557,26 +558,43 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             left: `${invoiceDropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
         >
           <div className="py-1">
             <button
-              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
               onClick={() => handleViewInvoice(selectedInvoice!)}
             >
-              <EyeIcon className="mr-3 h-5 w-5" /> ดูรายละเอียด
+              <EyeIcon className="w-4 h-4 text-slate-400" /> ดูรายละเอียด
             </button>
             <button
-              className="flex items-center w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
+              onClick={() => {
+                if (!selectedInvoice) return;
+                const apiUrl = import.meta.env.VITE_API_BASE_URL;
+                const shareLink = `${apiUrl}/print/${selectedInvoice.id}/view`;
+                navigator.clipboard.writeText(shareLink).then(() => {
+                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ PDF เรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                }).catch(() => {
+                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถคัดลอกลิงก์ได้', icon: 'error', confirmButtonColor: '#d33' });
+                });
+                setOpenInvoiceDropdownId(null);
+              }}
+            >
+              <DocumentTextIcon className="w-4 h-4 text-blue-500" /> คัดลอกลิงก์ PDF
+            </button>
+            <button
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
               onClick={() => handleEditInvoice(selectedInvoice!)}
             >
-              <PencilIcon className="mr-3 h-5 w-5" /> แก้ไข
+              <PencilIcon className="w-4 h-4 text-slate-400" /> แก้ไข
             </button>
+            <hr className="my-1 border-slate-100" />
             <button
-              className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
               onClick={() => handleDeleteInvoice(selectedInvoice!)}
             >
-              <TrashIcon className="mr-3 h-5 w-5" /> ลบ
+              <TrashIcon className="w-4 h-4 text-red-500" /> ลบ
             </button>
           </div>
         </div>

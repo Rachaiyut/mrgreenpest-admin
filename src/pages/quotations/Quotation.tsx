@@ -765,50 +765,50 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-52 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 overflow-hidden"
+          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
         >
           <div className="py-1">
             <button
               onClick={handleViewDetails}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
-              <EyeIcon className="mr-3 h-5 w-5 text-slate-400" />
+              <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
             </button>
             <button
               onClick={handleCopyPdfLink}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
             >
-              <DocumentTextIcon className="mr-3 h-5 w-5 text-slate-400" />
+              <DocumentTextIcon className="w-4 h-4 text-blue-500" />
               คัดลอกลิงก์ PDF
             </button>
             <button
               onClick={handleEdit}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
-              <PencilIcon className="mr-3 h-5 w-5 text-slate-400" />
+              <PencilIcon className="w-4 h-4 text-slate-400" />
               แก้ไข
             </button>
             <button
               onClick={handleRevise}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-amber-600 hover:bg-amber-50 flex items-center gap-3 transition-colors"
             >
-              <DocumentTextIcon className="mr-3 h-5 w-5 text-slate-400" />
+              <DocumentTextIcon className="w-4 h-4 text-amber-500" />
               สร้างฉบับใหม่
             </button>
             <button
               onClick={handleStatusClick}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >
-              <CheckCircleIcon className="mr-3 h-5 w-5 text-slate-400" />
+              <CheckCircleIcon className="w-4 h-4 text-slate-400" />
               เปลี่ยนสถานะ
             </button>
-            <div className="border-t border-slate-100 my-1"></div>
+            <hr className="my-1 border-slate-100" />
             <button
               onClick={handleDelete}
-              className="flex items-center w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+              className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
-              <TrashIcon className="mr-3 h-5 w-5" />
+              <TrashIcon className="w-4 h-4 text-red-500" />
               ลบ
             </button>
           </div>
