@@ -191,13 +191,13 @@ const DailyCashPage: React.FC = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50/80">
               <tr>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50/80 z-10">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50/80 z-10">
                   วันที่
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   รายการ
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หมวดหมู่
                 </th>
                 <th className="px-5 py-3.5 text-right text-xs font-semibold text-emerald-600 uppercase tracking-wider">
@@ -209,7 +209,7 @@ const DailyCashPage: React.FC = () => {
                 <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   คงเหลือ
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   กระเป๋าเงิน
                 </th>
               </tr>

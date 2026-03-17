@@ -570,7 +570,7 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-3 mt-2">
-                    <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50/80 rounded-lg text-xs font-bold text-slate-500 uppercase tracking-wider border border-slate-100 items-center">
+                    <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50/80 rounded-lg text-sm font-semibold text-slate-600 uppercase tracking-wider border border-slate-100 items-center">
                       <div className="col-span-4">รายละเอียดสินค้า</div>
                       <div className="col-span-2 text-center">สต๊อกคงเหลือ</div>
                       <div className="col-span-2 text-center text-blue-600">Limit รถ</div>

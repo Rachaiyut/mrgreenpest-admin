@@ -628,13 +628,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-4 py-3 text-center w-16 text-xs font-semibold text-slate-600 uppercase">เลือก</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">งวดที่</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">รายละเอียด</th>
+                    <th className="px-4 py-3 text-center w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
                     {availableInstallments.some(i => i.percentage > 0) && (
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
                     )}
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">

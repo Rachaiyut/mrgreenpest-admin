@@ -157,34 +157,34 @@ const DirectExpensesPage: React.FC = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50/80">
               <tr>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50/80 z-10 whitespace-nowrap">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50/80 z-10 whitespace-nowrap">
                   วันที่
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   Invoice No.
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   รายละเอียด
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จำนวน
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   หน่วย
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ราคา/หน่วย
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   รวม (ไม่รวม VAT)
                 </th>
-                <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม (Inc VAT)
                 </th>
                 <th className="px-5 py-3.5 text-right text-xs font-semibold text-emerald-700 uppercase tracking-wider bg-emerald-50/50 whitespace-nowrap">
                   ยอดจ่ายจริง
                 </th>
-                <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-5 py-3.5 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   กระเป๋าเงิน
                 </th>
               </tr>

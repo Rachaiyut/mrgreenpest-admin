@@ -141,7 +141,7 @@ const JobCalendar: React.FC<{
           {daysOfWeek.map((day, i) => (
             <div
               key={day}
-              className={`text-center py-3 text-xs font-semibold uppercase tracking-wider ${i === 0 ? 'bg-red-50/50 text-red-400' : i === 6 ? 'bg-blue-50/50 text-blue-400' : 'bg-slate-50 text-slate-500'}`}
+              className={`text-center py-3 text-sm font-semibold uppercase tracking-wider ${i === 0 ? 'bg-red-50/50 text-red-400' : i === 6 ? 'bg-blue-50/50 text-blue-400' : 'bg-slate-50 text-slate-500'}`}
             >
               {day}
             </div>

@@ -174,22 +174,22 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-slate-600 uppercase">
                     #
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-slate-600 uppercase">
                     Product
                   </th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-right text-sm font-semibold text-slate-600 uppercase">
                     Quantity
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-left text-sm font-semibold text-slate-600 uppercase">
                     Unit
                   </th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-right text-sm font-semibold text-slate-600 uppercase">
                     Price
                   </th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-3 py-2 text-right text-sm font-semibold text-slate-600 uppercase">
                     Total
                   </th>
                 </tr>

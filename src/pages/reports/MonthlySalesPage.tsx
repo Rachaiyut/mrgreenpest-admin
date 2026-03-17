@@ -252,54 +252,54 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 shadow-sm">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-10 shadow-sm">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider sticky left-10 bg-slate-50 z-10 shadow-sm">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider sticky left-10 bg-slate-50 z-10 shadow-sm">
                   เลขที่
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   รายชื่อ
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ความยาว
                   <br />
                   (ม./ตร.ม.)
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ราคารวม VAT
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ราคาไม่รวม VAT
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   สถานะ
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   Package
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ฐานคำนวณ %
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หลังหัก 10%
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   วันที่ทำ
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   จำนวน SALE
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   %com
                 </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   จำนวนเงิน
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   Sale1
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   หมายเหตุ
                 </th>
               </tr>

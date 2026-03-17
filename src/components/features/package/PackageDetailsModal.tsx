@@ -68,31 +68,31 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     พื้นที่ฯ (ตร.ม.)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาเสนอ (ไม่มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาเสนอ (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาต่ำสุด (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาต่ำสุด (ไม่มีปลวก)
                   </th>

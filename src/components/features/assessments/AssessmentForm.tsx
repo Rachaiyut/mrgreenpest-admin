@@ -726,7 +726,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                       <div className="overflow-hidden border border-slate-200 rounded-lg">
                         <table className="min-w-full divide-y divide-slate-200">
                           <thead className="bg-slate-50">
-                            <tr><th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16">งวดที่</th><th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">รายละเอียด</th><th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase w-32">จำนวนเงิน</th><th className="px-2 py-3 w-10"></th></tr>
+                            <tr><th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16">งวดที่</th><th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th><th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase w-32">จำนวนเงิน</th><th className="px-2 py-3 w-10"></th></tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-slate-200">
                             {installments.map((inst, idx) => (

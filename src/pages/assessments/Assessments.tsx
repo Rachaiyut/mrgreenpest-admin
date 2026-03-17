@@ -630,28 +630,28 @@ const Assessments: React.FC = () => {
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลำดับ
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         รหัสใบประเมิน
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วันที่นัดหมาย
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ประเภท
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ค่าใช้จ่าย
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>

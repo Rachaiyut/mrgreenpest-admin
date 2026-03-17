@@ -128,22 +128,22 @@ export const CustomerContractsListModal: React.FC<
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     เลขที่สัญญา
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     ที่อยู่
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     วันเริ่มต้น
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     วันสิ้นสุด
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     สถานะ
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
                     จัดการ
                   </th>
                 </tr>

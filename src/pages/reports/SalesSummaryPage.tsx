@@ -251,13 +251,13 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   ประเภท
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   จำนวน (งาน)
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                   มูลค่า (บาท)
                 </th>
               </tr>
@@ -303,13 +303,13 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รายชื่อ
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     % ขาย
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     % ปฏิบัติงาน
                   </th>
                 </tr>

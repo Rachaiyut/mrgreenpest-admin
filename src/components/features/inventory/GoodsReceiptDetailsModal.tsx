@@ -145,31 +145,31 @@ export const GoodsReceiptDetailsModal: React.FC<
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-center text-xs font-semibold text-slate-600 uppercase w-16"
+                    className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16"
                   >
                     #
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase"
+                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                   >
                     รหัสสินค้า
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase"
+                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                   >
                     ชื่อสินค้า
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase w-32"
+                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase w-32"
                   >
                     จำนวน
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase w-24"
+                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase w-24"
                   >
                     หน่วย
                   </th>

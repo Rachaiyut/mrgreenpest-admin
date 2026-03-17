@@ -116,7 +116,7 @@ const WorkAreaDetails: FC<{
 
         {area.items && area.items.length > 0 && (
           <div className="mt-4">
-            <h6 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            <h6 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-2">
               สินค้า/บริการเพิ่มเติม
             </h6>
             {/* เพิ่ม overflow-x-auto ให้ตารางเลื่อนซ้ายขวาได้ในจอมือถือ */}
@@ -362,13 +362,13 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase w-16 whitespace-nowrap">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16 whitespace-nowrap">
                         งวดที่
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase whitespace-nowrap min-w-[150px]">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap min-w-[150px]">
                         รายละเอียด
                       </th>
-                      <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase whitespace-nowrap w-32">
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase whitespace-nowrap w-32">
                         จำนวนเงิน
                       </th>
                     </tr>

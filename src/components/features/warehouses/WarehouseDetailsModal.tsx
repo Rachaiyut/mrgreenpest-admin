@@ -155,13 +155,13 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50 sticky top-0">
                   <tr>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase w-36">วันที่</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase w-24">ประเภท</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase">สินค้า</th>
-                    <th className="px-3 py-2.5 text-right text-xs font-medium text-slate-600 uppercase w-20">จำนวน</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase w-28">เลขที่อ้างอิง</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase">จาก/ไป</th>
-                    <th className="px-3 py-2.5 text-left text-xs font-medium text-slate-600 uppercase">หมายเหตุ</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase w-36">วันที่</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase w-24">ประเภท</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase">สินค้า</th>
+                    <th className="px-3 py-2.5 text-right text-sm font-semibold text-slate-600 uppercase w-20">จำนวน</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase w-28">เลขที่อ้างอิง</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase">จาก/ไป</th>
+                    <th className="px-3 py-2.5 text-left text-sm font-semibold text-slate-600 uppercase">หมายเหตุ</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">

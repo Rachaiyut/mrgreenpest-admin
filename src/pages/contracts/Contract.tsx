@@ -442,16 +442,16 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลำดับ</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
-                  <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">มูลค่า</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">มูลค่า</th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
               </thead>
               

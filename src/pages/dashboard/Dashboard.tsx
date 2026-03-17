@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardApi, DashboardData } from '../../api/dashboard';
 
 type Range = 'today' | 'week' | 'month' | 'quarter';
@@ -36,6 +37,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = () => {
+  const navigate = useNavigate();
   const [range, setRange] = useState<Range>('month');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,7 +58,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
     );
   }
 
-  const { kpi, pipeline, todayJobs, upcomingJobs, overdueInvoices, lowStockItems, expiringContracts, revenueByMonth, jobsByStatus, recentActivities } = data;
+  const { kpi, pipeline, todayJobs, upcomingJobs, overdueInvoices, lowStockItems, expiringContracts, revenueByMonth, jobsByStatus, recentActivities, pendingActions, comparison } = data;
 
   // Revenue chart calculation
   const maxRevenue = Math.max(...revenueByMonth.map(r => Number(r.revenue)), 1);
@@ -84,6 +86,26 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="flex gap-3 flex-wrap">
+        <button onClick={() => navigate('/assessments')} className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shadow-sm">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+          สร้างใบประเมิน
+        </button>
+        <button onClick={() => navigate('/jobs')} className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          สร้างงาน
+        </button>
+        <button onClick={() => navigate('/invoices')} className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors shadow-sm">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" /></svg>
+          สร้างใบแจ้งหนี้
+        </button>
+        <button onClick={() => navigate('/quotations')} className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors shadow-sm">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+          สร้างใบเสนอราคา
+        </button>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
         <KPICard title="รายได้" value={`${fmt(kpi.revenue)} บาท`} color="green" subtitle={RANGE_LABELS[range]} />
@@ -92,26 +114,83 @@ const Dashboard: React.FC<DashboardProps> = () => {
         <KPICard title="อัตราปิดงาน" value={`${kpi.job_completion_rate}%`} color="amber" subtitle={`${fmtInt(kpi.completed_jobs)}/${fmtInt(kpi.total_jobs)} งาน`} />
       </div>
 
+      {/* Pending Actions + Month Comparison */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Pending Actions */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-slate-800">รอดำเนินการ</h3>
+            {pendingActions.total > 0 && (
+              <span className="bg-red-100 text-red-700 text-sm font-bold px-3 py-1 rounded-full">{pendingActions.total}</span>
+            )}
+          </div>
+          {pendingActions.items.length > 0 ? (
+            <div className="space-y-2.5">
+              {pendingActions.items.map((item) => {
+                const colorMap: Record<string, string> = {
+                  amber: 'bg-amber-50 border-amber-200 text-amber-700',
+                  blue: 'bg-blue-50 border-blue-200 text-blue-700',
+                  purple: 'bg-purple-50 border-purple-200 text-purple-700',
+                  green: 'bg-green-50 border-green-200 text-green-700',
+                  red: 'bg-red-50 border-red-200 text-red-700',
+                };
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all hover:shadow-sm ${colorMap[item.color] || colorMap.blue}`}
+                  >
+                    <span className="text-sm font-medium">{item.label}</span>
+                    <span className="text-lg font-bold">{item.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="h-32 flex items-center justify-center text-green-500 text-sm font-medium">ไม่มีรายการค้าง</div>
+          )}
+        </div>
+
+        {/* Month-over-Month Comparison */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-slate-800 mb-4">เปรียบเทียบเดือนนี้ vs เดือนก่อน</h3>
+          <div className="space-y-3">
+            {comparison && [
+              { label: 'รายได้', data: comparison.revenue, prefix: '฿' },
+              { label: 'งานทั้งหมด', data: comparison.jobs },
+              { label: 'งานเสร็จสิ้น', data: comparison.completed_jobs },
+              { label: 'ลูกค้าใหม่', data: comparison.new_customers },
+              { label: 'สัญญาใหม่', data: comparison.new_contracts },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
+                <span className="text-sm text-slate-600">{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold text-slate-800">
+                    {item.prefix === '฿' ? fmt(item.data.current) : fmtInt(item.data.current)}
+                  </span>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                    item.data.change > 0 ? 'bg-green-50 text-green-600' :
+                    item.data.change < 0 ? 'bg-red-50 text-red-600' :
+                    'bg-slate-50 text-slate-500'
+                  }`}>
+                    {item.data.change > 0 ? '▲' : item.data.change < 0 ? '▼' : '—'} {item.data.percent}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Row 2: Revenue Chart + Sales Pipeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">รายได้รายเดือน (6 เดือนล่าสุด)</h3>
           {revenueByMonth.length > 0 ? (
-            <div className="flex items-end gap-4 h-52">
-              {revenueByMonth.map((r, i) => {
-                const height = Math.max((Number(r.revenue) / maxRevenue) * 100, 4);
-                return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="text-xs text-slate-500 font-medium">{fmtInt(Number(r.revenue))}</span>
-                    <div className="w-full bg-blue-500 rounded-t-md transition-all" style={{ height: `${height}%` }}></div>
-                    <span className="text-xs text-slate-400">{r.month.slice(5)}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <RevenueChart data={revenueByMonth} />
           ) : (
-            <div className="h-40 flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลรายได้</div>
+            <div className="h-52 flex items-center justify-center text-slate-400 text-sm">ไม่มีข้อมูลรายได้</div>
           )}
         </div>
 
@@ -373,6 +452,143 @@ const ActivityDot: React.FC<{ type: string }> = ({ type }) => {
     quotation: 'bg-amber-400',
   };
   return <div className={`w-2 h-2 rounded-full shrink-0 ${colors[type] || 'bg-slate-400'}`} />;
+};
+
+// ── Revenue Stock-Style Chart ──
+const RevenueChart: React.FC<{ data: { month: string; revenue: number }[] }> = ({ data }) => {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const W = 640, H = 260, PX = 55, PY = 24, PB = 36;
+  const chartW = W - PX - 20;
+  const chartH = H - PY - PB;
+
+  const values = data.map(d => Number(d.revenue));
+  const minVal = Math.min(...values) * 0.8;
+  const maxVal = Math.max(...values) * 1.1 || 1;
+  const range = maxVal - minVal || 1;
+
+  const points = data.map((d, i) => {
+    const x = PX + (i / Math.max(data.length - 1, 1)) * chartW;
+    const y = PY + chartH - ((Number(d.revenue) - minVal) / range) * chartH;
+    return { x, y, val: Number(d.revenue), month: d.month };
+  });
+
+  // Smooth cubic bezier curve
+  const smoothLine = (pts: typeof points) => {
+    if (pts.length < 2) return `M${pts[0]?.x},${pts[0]?.y}`;
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const cp1x = pts[i].x + (pts[i + 1].x - pts[i].x) / 3;
+      const cp2x = pts[i].x + 2 * (pts[i + 1].x - pts[i].x) / 3;
+      d += ` C${cp1x},${pts[i].y} ${cp2x},${pts[i + 1].y} ${pts[i + 1].x},${pts[i + 1].y}`;
+    }
+    return d;
+  };
+
+  const linePath = smoothLine(points);
+  const areaPath = `${linePath} L${points[points.length - 1].x},${PY + chartH} L${points[0].x},${PY + chartH} Z`;
+
+  // Overall trend: green if last > first, red if down
+  const trend = values.length >= 2 ? values[values.length - 1] - values[0] : 0;
+  const lineColor = trend >= 0 ? '#10b981' : '#ef4444';
+  const gradId = trend >= 0 ? 'gradUp' : 'gradDown';
+  const gradColor = trend >= 0 ? '#10b981' : '#ef4444';
+
+  const MONTH_TH: Record<string, string> = { '01': 'ม.ค.', '02': 'ก.พ.', '03': 'มี.ค.', '04': 'เม.ย.', '05': 'พ.ค.', '06': 'มิ.ย.', '07': 'ก.ค.', '08': 'ส.ค.', '09': 'ก.ย.', '10': 'ต.ค.', '11': 'พ.ย.', '12': 'ธ.ค.' };
+
+  const stepCount = 4;
+
+  return (
+    <div className="w-full">
+      {/* Summary line */}
+      <div className="flex items-baseline gap-3 mb-3">
+        <span className="text-2xl font-bold text-slate-800">{fmt(values[values.length - 1] || 0)}</span>
+        <span className="text-sm text-slate-500">บาท (เดือนล่าสุด)</span>
+        {values.length >= 2 && (
+          <span className={`text-sm font-semibold ${trend >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {trend >= 0 ? '▲' : '▼'} {fmt(Math.abs(trend))} ({values[0] > 0 ? Math.round((trend / values[0]) * 100) : 0}%)
+          </span>
+        )}
+      </div>
+
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ minHeight: 220 }}
+          onMouseLeave={() => setHoverIdx(null)}>
+
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={gradColor} stopOpacity="0.20" />
+              <stop offset="80%" stopColor={gradColor} stopOpacity="0.03" />
+              <stop offset="100%" stopColor={gradColor} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Grid lines */}
+          {Array.from({ length: stepCount + 1 }).map((_, i) => {
+            const val = minVal + (range / stepCount) * (stepCount - i);
+            const y = PY + (i / stepCount) * chartH;
+            return (
+              <g key={i}>
+                <line x1={PX} y1={y} x2={W - 20} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                <text x={PX - 8} y={y + 4} textAnchor="end" fill="#94a3b8" fontSize="10">{fmtInt(Math.round(val))}</text>
+              </g>
+            );
+          })}
+
+          {/* Area */}
+          <path d={areaPath} fill={`url(#${gradId})`} />
+
+          {/* Line */}
+          <path d={linePath} fill="none" stroke={lineColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+          {/* Hover zones + crosshair + points */}
+          {points.map((p, i) => {
+            const isHover = hoverIdx === i;
+            const prevVal = i > 0 ? points[i - 1].val : null;
+            const change = prevVal !== null ? p.val - prevVal : null;
+            return (
+              <g key={i}>
+                {/* Invisible hover zone */}
+                <rect
+                  x={p.x - chartW / data.length / 2}
+                  y={PY}
+                  width={chartW / data.length}
+                  height={chartH}
+                  fill="transparent"
+                  onMouseEnter={() => setHoverIdx(i)}
+                />
+
+                {/* Crosshair line */}
+                {isHover && (
+                  <line x1={p.x} y1={PY} x2={p.x} y2={PY + chartH} stroke={lineColor} strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+                )}
+
+                {/* Point */}
+                <circle cx={p.x} cy={p.y} r={isHover ? 6 : 3.5} fill={isHover ? lineColor : '#fff'} stroke={lineColor} strokeWidth="2" className="transition-all duration-150" />
+
+                {/* Tooltip */}
+                {isHover && (
+                  <g>
+                    <rect x={p.x - 60} y={p.y - 52} width="120" height="40" rx="6" fill="#1e293b" opacity="0.92" />
+                    <text x={p.x} y={p.y - 35} textAnchor="middle" fill="#fff" fontSize="12" fontWeight="700">{fmt(p.val)} บ.</text>
+                    {change !== null && (
+                      <text x={p.x} y={p.y - 20} textAnchor="middle" fill={change >= 0 ? '#6ee7b7' : '#fca5a5'} fontSize="10">
+                        {change >= 0 ? '▲' : '▼'} {fmt(Math.abs(change))}
+                      </text>
+                    )}
+                  </g>
+                )}
+
+                {/* X Label */}
+                <text x={p.x} y={H - 8} textAnchor="middle" fill="#64748b" fontSize="11" fontWeight={isHover ? '700' : '400'}>
+                  {MONTH_TH[p.month.slice(5)] || p.month.slice(5)}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

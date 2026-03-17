@@ -182,19 +182,19 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     ลำดับ
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     สินค้า
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     จำนวน
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                     หน่วย
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase">
                     มูลค่า (บาท)
                   </th>
                 </tr>
@@ -270,13 +270,13 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50 sticky top-0">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       ลำดับ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       รายการ
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase">
                       จำนวนเงิน (บาท)
                     </th>
                   </tr>

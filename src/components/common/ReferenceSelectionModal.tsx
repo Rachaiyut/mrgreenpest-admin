@@ -105,19 +105,19 @@ export const ReferenceSelectionModal: React.FC<
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   รหัสงาน
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   ลูกค้า
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   วันที่
                 </th>

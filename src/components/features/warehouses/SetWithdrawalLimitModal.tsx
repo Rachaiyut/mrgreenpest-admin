@@ -153,10 +153,10 @@ export const SetWithdrawalLimitModal: React.FC<
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50 sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                   สินค้า
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                   จำกัดการเบิก (หน่วย)
                 </th>
               </tr>

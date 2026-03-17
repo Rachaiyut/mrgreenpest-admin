@@ -187,31 +187,31 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-12"
+                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-12"
                   >
                     #
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รายการ (Description)
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider w-24"
+                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-24"
                   >
                     จำนวน
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider w-32"
+                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32"
                   >
                     ราคา/หน่วย
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider w-32"
+                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32"
                   >
                     รวม
                   </th>
@@ -348,16 +348,16 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                           งวดที่
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                           รายละเอียด
                         </th>
-                        <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">
                           %
                         </th>
-                        <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">
+                        <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">
                           ยอดชำระ
                         </th>
                       </tr>

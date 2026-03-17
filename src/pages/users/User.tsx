@@ -447,31 +447,31 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ลำดับ
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อ
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         อีเมล
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         โทรศัพท์
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         บทบาท
                       </th>
@@ -571,19 +571,19 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อบทบาท
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         รายละเอียด
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         จำนวนผู้ใช้งาน
                       </th>

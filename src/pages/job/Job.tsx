@@ -1102,11 +1102,11 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -1157,22 +1157,22 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า/สถานที่
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -1302,22 +1302,22 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า/สถานที่
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -1511,28 +1511,28 @@ const Job: React.FC<JobProps> = ({
                   <table className="min-w-full">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-20">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-20">
                           เวลา
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                           ลูกค้า
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                           สถานที่
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-28">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">
                           เบอร์โทร
                         </th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
                           เข้าบริการ
                         </th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
                           ลายเซ็น
                         </th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-wider w-24">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
                           เก็บเงิน
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                           หมายเหตุ
                         </th>
                       </tr>

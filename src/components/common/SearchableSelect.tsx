@@ -132,7 +132,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       )}
       <div ref={triggerRef} className="relative" onClick={handleToggle}>
         <div
-          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6 min-h-[38px] transition-colors
+          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm leading-6 min-h-[38px] transition-colors
             ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white cursor-pointer'} 
             ${!selectedOption && !value && !disabled ? 'text-slate-400' : ''}`}
         >
@@ -160,7 +160,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           <div
             ref={wrapperRef}
             style={dropdownStyle}
-            className="max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+            className="max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none text-sm"
           >
             <div className="sticky top-0 bg-white px-2 py-1.5 border-b border-gray-100">
               <div className="relative">
@@ -169,7 +169,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 </div>
                 <input
                   type="text"
-                  className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm leading-6"
                   placeholder="ค้นหา..."
                   value={search}
                   onChange={(e) => {

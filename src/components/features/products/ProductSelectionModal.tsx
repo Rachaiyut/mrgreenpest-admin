@@ -146,39 +146,39 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   รหัสสินค้า
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   Code
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   ชื่อสินค้า
                 </th>
                 {stockMap && (
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase"
                   >
                     คงเหลือ
                   </th>
                 )}
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   หน่วย
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase"
                 >
                   ราคา
                 </th>

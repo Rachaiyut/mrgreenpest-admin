@@ -102,31 +102,31 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   รหัสลูกค้า
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   ชื่อลูกค้า
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   ผู้ติดต่อ
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   เบอร์โทรศัพท์
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase"
+                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
                   ประเภท
                 </th>

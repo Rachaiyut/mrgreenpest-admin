@@ -145,16 +145,16 @@ export const RequisitionDetailsModal: React.FC<
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       ลำดับ
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       สินค้า
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       จำนวน
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                    <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                       หมายเหตุ
                     </th>
                   </tr>
@@ -197,13 +197,13 @@ export const RequisitionDetailsModal: React.FC<
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                         ลำดับ
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
                         รายละเอียด
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">
+                      <th className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase">
                         จำนวนเงิน
                       </th>
                     </tr>

@@ -28,6 +28,17 @@ export interface DashboardData {
   revenueByMonth: { month: string; revenue: number }[];
   jobsByStatus: { status: string; count: number }[];
   recentActivities: any[];
+  pendingActions: {
+    total: number;
+    items: { key: string; label: string; count: number; color: string; path: string }[];
+  };
+  comparison: {
+    revenue: { current: number; previous: number; change: number; percent: number };
+    jobs: { current: number; previous: number; change: number; percent: number };
+    completed_jobs: { current: number; previous: number; change: number; percent: number };
+    new_customers: { current: number; previous: number; change: number; percent: number };
+    new_contracts: { current: number; previous: number; change: number; percent: number };
+  };
 }
 
 class DashboardApiService extends AuthService {
