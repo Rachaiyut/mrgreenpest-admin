@@ -147,18 +147,14 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     customers,
   ]);
 
-  const reversedInvoices = useMemo(
-    () => [...filteredInvoices].reverse(),
-    [filteredInvoices]
-  );
-  const totalInvoiceItems = reversedInvoices.length;
+  const totalInvoiceItems = filteredInvoices.length;
   const paginatedInvoices = useMemo(
     () =>
-      reversedInvoices.slice(
+      filteredInvoices.slice(
         (invoicePage - 1) * invoiceItemsPerPage,
         invoicePage * invoiceItemsPerPage
       ),
-    [reversedInvoices, invoicePage, invoiceItemsPerPage]
+    [filteredInvoices, invoicePage, invoiceItemsPerPage]
   );
 
   const invoiceStats = useMemo(() => {

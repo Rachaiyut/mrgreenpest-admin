@@ -19,6 +19,7 @@ import {
 import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
 import SignatureCanvas from 'react-signature-canvas';
+import { StorageApi } from '../../api/storage';
 
 const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.DRAFT]: 'จัดทำ',
@@ -141,6 +142,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   // Signature modal state
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const signatureRef = useRef<SignatureCanvas>(null);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
 
   // Stats calculations
   const stats = useMemo(() => {
@@ -389,14 +393,17 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setCancellationReason('');
   };
 
-  // Handle signature submit
+  // Handle signature submit (support both draw + upload image)
   const handleSignatureConfirm = async () => {
-    if (!selectedQuotation || !signatureRef.current) return;
+    if (!selectedQuotation) return;
 
-    if (signatureRef.current.isEmpty()) {
+    const hasDrawnSignature = signatureRef.current && !signatureRef.current.isEmpty();
+    const hasUploadedFile = !!signatureFile;
+
+    if (!hasDrawnSignature && !hasUploadedFile) {
       Swal.fire({
-        title: 'กรุณาเซ็นลายเซ็น',
-        text: 'กรุณาให้ลูกค้าเซ็นลายเซ็นก่อนบันทึก',
+        title: 'กรุณาเซ็นลายเซ็นหรืออัปโหลดรูปภาพ',
+        text: 'กรุณาเซ็นลายเซ็นในกรอบ หรืออัปโหลดรูปภาพลายเซ็น',
         icon: 'warning',
         confirmButtonText: 'ตกลง',
         confirmButtonColor: '#3085d6',
@@ -404,18 +411,36 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       return;
     }
 
+    setIsUploadingSignature(true);
     try {
-      const signatureData = signatureRef.current.toDataURL('image/png');
-      const updatePayload = {
+      const updatePayload: any = {
         status: QuotationStatus.SIGNED,
-        signature: signatureData,
       };
 
-      if (onUpdateQuotation) {
-        await onUpdateQuotation({
-          ...selectedQuotation,
-          ...updatePayload,
+      // If uploaded file, upload to storage first (priority over drawn)
+      if (hasUploadedFile) {
+        const uploaded = await StorageApi.upload({
+          file: signatureFile!,
+          path: `quotations/${selectedQuotation.id}/signature`,
+          provider: 'local',
+          type: 'image',
+          visibility: 'private',
+          entity_type: 'quotation',
+          entity_id: selectedQuotation.id,
         });
+        updatePayload.signature_file_id = uploaded.id;
+
+        // ใช้รูปที่ upload เป็น signature base64 สำหรับแสดงใน PDF
+        if (signaturePreview) {
+          updatePayload.signature = signaturePreview;
+        }
+      } else if (hasDrawnSignature) {
+        // Fallback: ใช้ลายเซ็นจาก canvas ถ้าไม่ได้ upload รูป
+        updatePayload.signature = signatureRef.current!.toDataURL('image/png');
+      }
+
+      if (onUpdateQuotation) {
+        await onUpdateQuotation({ ...selectedQuotation, ...updatePayload });
       } else {
         await QuotationApi.update(selectedQuotation.id, updatePayload);
       }
@@ -433,7 +458,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       fetchQuotations();
     } catch (error) {
       console.error('Failed to save signature:', error);
+    } finally {
+      setIsUploadingSignature(false);
     }
+    setSignatureFile(null);
+    setSignaturePreview(null);
     setIsSignatureModalOpen(false);
   };
 
@@ -921,21 +950,21 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       {/* Signature Modal */}
       <Modal
         isOpen={isSignatureModalOpen}
-        onClose={() => setIsSignatureModalOpen(false)}
+        onClose={() => { setIsSignatureModalOpen(false); setSignatureFile(null); setSignaturePreview(null); }}
         title={`เซ็นรับใบเสนอราคา - ${selectedQuotation?.code || ''}`}
         size="lg"
         footer={
           <div className="flex gap-3 w-full justify-end">
             <Button
               variant="secondary"
-              onClick={() => signatureRef.current?.clear()}
+              onClick={() => { signatureRef.current?.clear(); setSignatureFile(null); setSignaturePreview(null); }}
               type="button"
             >
-              ล้างลายเซ็น
+              ล้างทั้งหมด
             </Button>
             <Button
               variant="secondary"
-              onClick={() => setIsSignatureModalOpen(false)}
+              onClick={() => { setIsSignatureModalOpen(false); setSignatureFile(null); setSignaturePreview(null); }}
               type="button"
             >
               ยกเลิก
@@ -944,30 +973,84 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               variant="primary"
               onClick={handleSignatureConfirm}
               type="button"
+              disabled={isUploadingSignature}
             >
-              บันทึกลายเซ็น
+              {isUploadingSignature ? 'กำลังบันทึก...' : 'บันทึกและเปลี่ยนสถานะเป็นเซ็น'}
             </Button>
           </div>
         }
       >
-        <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            กรุณาให้ลูกค้าเซ็นลายเซ็นในกรอบด้านล่าง เพื่อยืนยันการรับใบเสนอราคา
-          </p>
-          <div className="border-2 border-dashed border-slate-300 rounded-lg bg-white">
-            <SignatureCanvas
-              ref={signatureRef}
-              canvasProps={{
-                width: 560,
-                height: 200,
-                className: 'w-full rounded-lg',
-              }}
-              penColor="black"
-            />
+        <div className="space-y-5">
+          {/* Option 1: Upload image */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">อัปโหลดรูปภาพลายเซ็น</p>
+            {signaturePreview ? (
+              <div className="flex items-center gap-4 p-3 bg-white border border-slate-200 rounded-lg">
+                <img src={signaturePreview} alt="ลายเซ็น" className="max-h-20 rounded border" />
+                <div className="flex-1">
+                  <p className="text-sm text-slate-700 font-medium truncate">{signatureFile?.name}</p>
+                  <p className="text-xs text-slate-400">{signatureFile ? (signatureFile.size / 1024).toFixed(1) + ' KB' : ''}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSignatureFile(null); setSignaturePreview(null); }}
+                  className="text-red-400 hover:text-red-600 p-1"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-slate-200 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-blue-50/30 hover:border-blue-400 transition-all group">
+                <div className="flex flex-col items-center gap-1 text-slate-500 group-hover:text-blue-500">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span className="text-sm font-medium">คลิกเพื่ออัปโหลดรูปภาพลายเซ็น</span>
+                  <span className="text-xs text-slate-400">JPG, PNG ขนาดไม่เกิน 5MB</span>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept="image/jpeg,image/png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSignatureFile(file);
+                      const reader = new FileReader();
+                      reader.onload = (ev) => setSignaturePreview(ev.target?.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            )}
           </div>
-          <p className="text-xs text-slate-400 text-center">
-            ใช้เมาส์หรือนิ้วสัมผัสเพื่อเซ็นลายเซ็น
-          </p>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 border-t border-slate-200"></div>
+            <span className="text-xs text-slate-400">หรือ</span>
+            <div className="flex-1 border-t border-slate-200"></div>
+          </div>
+
+          {/* Option 2: Draw signature */}
+          <div>
+            <p className="text-sm font-medium text-slate-700 mb-2">เซ็นลายเซ็นด้วยตัวเอง</p>
+            <div className="border-2 border-dashed border-slate-300 rounded-lg bg-white">
+              <SignatureCanvas
+                ref={signatureRef}
+                canvasProps={{
+                  width: 560,
+                  height: 200,
+                  className: 'w-full rounded-lg',
+                }}
+                penColor="black"
+              />
+            </div>
+            <p className="text-xs text-slate-400 text-center mt-1">
+              ใช้เมาส์หรือนิ้วสัมผัสเพื่อเซ็นลายเซ็น
+            </p>
+          </div>
         </div>
       </Modal>
 

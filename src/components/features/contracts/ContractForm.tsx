@@ -967,6 +967,9 @@ export const ContractForm: FC<ContractFormProps> = ({
       start_date: startDate,
       end_date: endDate,
       notes: notes,
+      signature: status === ContractStatus.ACTIVE
+        ? (fullQuotation?.signature || initialValues?.signature || undefined)
+        : undefined,
 
       is_separate_contract: isSeparateContract,
 
@@ -1125,6 +1128,30 @@ export const ContractForm: FC<ContractFormProps> = ({
                 </Select>
               </FormField>
             </div>
+
+            {/* ลายเซ็นจากใบเสนอราคา — แสดงเมื่อสถานะเป็น ACTIVE */}
+            {status === ContractStatus.ACTIVE && (
+              <div className="col-span-2 border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <label className="block text-sm font-medium text-slate-700 mb-2">ลายเซ็นลูกค้า (จากใบเสนอราคา)</label>
+                {fullQuotation?.signature ? (
+                  <div className="flex items-center gap-4">
+                    <div className="border-2 border-slate-200 rounded-lg bg-white p-2">
+                      <img src={fullQuotation.signature} alt="ลายเซ็นลูกค้า" className="max-h-24 object-contain" />
+                    </div>
+                    <div className="text-sm text-green-600 font-medium">ลายเซ็นจากใบเสนอราคา {fullQuotation.code}</div>
+                  </div>
+                ) : initialValues?.signature ? (
+                  <div className="flex items-center gap-4">
+                    <div className="border-2 border-slate-200 rounded-lg bg-white p-2">
+                      <img src={initialValues.signature as string} alt="ลายเซ็นลูกค้า" className="max-h-24 object-contain" />
+                    </div>
+                    <div className="text-sm text-green-600 font-medium">ลายเซ็นที่บันทึกไว้</div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-amber-600">ไม่พบลายเซ็นจากใบเสนอราคา กรุณาเลือกใบเสนอราคาที่เซ็นแล้ว</p>
+                )}
+              </div>
+            )}
 
             <FormField label="ลูกค้า" htmlFor="customer">
               <SearchableSelect
