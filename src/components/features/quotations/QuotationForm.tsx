@@ -239,7 +239,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     if (!selectedCustomerId) return;
     const loadAssessments = async () => {
       try {
-        const params: any = { limit: 10, status: 'COMPLETE', customer_id: selectedCustomerId };
+        const params: any = { limit: 10, customer_id: selectedCustomerId };
         const res = await AssessmentApi.getAll(params);
         if (res && res.data) {
           setFetchedAssessments((prev) => {
