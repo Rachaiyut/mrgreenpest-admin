@@ -45,6 +45,8 @@ import { PackageApi } from '../../../api/package';
 import { Package } from '../../../types/entity/package.interface';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { QuotationApi } from '@/src/api';
+import { WorkAreaForm } from '../assessments/WorkAreaForm';
+import { AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
 
 interface QuotationItem {
   id: string;
@@ -334,9 +336,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         setItems([{ id: crypto.randomUUID(), productId: '', description: '', quantity: 1, unit: 'ครั้ง', unitPrice: 0, amount: 0 }]);
       }
 
-      if (activeData.installments && activeData.installments.length > 0) {
+      // Set payment condition from installments or is_installment flag
+      if (activeData.is_installment || (activeData.installments && activeData.installments.length > 0)) {
         setPaymentCondition(PaymentMethod.INSTALLMENT);
-        
+      }
+
+      if (activeData.installments && activeData.installments.length > 0) {
         const sumInitialAmt = activeData.installments.reduce((sum: number, curr: any) => sum + Number(curr.amount || 0), 0);
         const mappedInst = [...activeData.installments]
           .sort((a: any, b: any) => a.installment_no - b.installment_no)
@@ -437,27 +442,67 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return fetchedCustomers.find((c) => c.id === selectedCustomerId);
   }, [fetchedCustomers, selectedCustomerId]);
 
-  // Initialize editable areas from assessment or quotation data
+  // Initialize editable areas from quotation data (edit/revise) or assessment (create)
   useEffect(() => {
     if (hasInitializedAreas) return;
-    const source = (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
-      ? activeData.quotation_areas
-      : selectedAssessment?.assessment_areas;
+
+    // For edit/revise: wait for fetchedQuotation (full data with quotation_areas)
+    if (mode !== 'create' && !fetchedQuotation) return;
+
+    // Priority: fetchedQuotation.quotation_areas > activeData.quotation_areas > assessment_areas
+    const source = (fetchedQuotation?.quotation_areas && fetchedQuotation.quotation_areas.length > 0)
+      ? fetchedQuotation.quotation_areas
+      : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
+        ? activeData.quotation_areas
+        : selectedAssessment?.assessment_areas;
     if (source && source.length > 0) {
-      setEditableAreas(source.map((a: any) => ({
-        id: a.id || crypto.randomUUID(),
-        area_name: a.area_name || '',
-        building_type: a.building_type || '',
-        service_system: a.service_system || '',
-        area_size: Number(a.area_size) || 0,
-        package_price: Number(a.package_price) || Number(a.total_price) || 0,
-        total_price: Number(a.total_price) || 0,
-        package_price_id: a.package_price_id || null,
-        packagePriceRelation: a.packagePriceRelation || null,
-        category_services: a.category_services || [],
-        items: a.items || [],
-      })));
+      setEditableAreas(source.map((a: any) => {
+        // Auto-detect package_type from service_system or price match
+        let packageType = a.package_type;
+        if (!packageType && a.packagePriceRelation) {
+          const pkgPrice = Number(a.package_price) || 0;
+          const priceWith = Number(a.packagePriceRelation.price_with_termite) || 0;
+          const priceWithout = Number(a.packagePriceRelation.price_without_termite) || 0;
+          if (pkgPrice === priceWith) packageType = 'WITH_TERMITE';
+          else if (pkgPrice === priceWithout) packageType = 'WITHOUT_TERMITE';
+          else if (a.service_system === 'PREY') packageType = 'WITH_TERMITE';
+          else packageType = 'WITHOUT_TERMITE';
+        } else if (!packageType && a.service_system === 'PREY') {
+          packageType = 'WITH_TERMITE';
+        }
+
+        return {
+          id: a.id || crypto.randomUUID(),
+          area_name: a.area_name || '',
+          building_type: a.building_type || '',
+          service_system: a.service_system || '',
+          area_size: Number(a.area_size) || 0,
+          package_price: Number(a.package_price) || Number(a.total_price) || 0,
+          total_price: Number(a.total_price) || 0,
+          package_price_id: a.package_price_id || null,
+          package_type: packageType,
+          packagePriceRelation: a.packagePriceRelation || null,
+          category_services: (a.category_services || []).map((cs: any) => {
+            const catId = cs.category_id || cs.category?.id || cs.id;
+            return { category_id: catId, name: cs.category?.name || cs.name || '' };
+          }),
+          items: a.items || [],
+        };
+      }));
       setHasInitializedAreas(true);
+
+      // Extract package from packagePriceRelation for WorkAreaForm
+      const areaWithPkg = source.find((a: any) => (a as any).packagePriceRelation?.package);
+      if ((areaWithPkg as any)?.packagePriceRelation?.package) {
+        const pkg = (areaWithPkg as any).packagePriceRelation.package;
+        // Fetch full package with package_prices
+        PackageApi.getPackages({ limit: 50 }).then(res => {
+          const fullPkg = (res.data || []).find((p: any) => p.id === pkg.id);
+          if (fullPkg) {
+            setFetchedPackage(fullPkg);
+          }
+        }).catch(() => {});
+      }
     }
   }, [activeData, selectedAssessment, hasInitializedAreas]);
 
@@ -809,28 +854,42 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   };
 
   // 🌟 ยอด Subtotal 
+  // Track area prices for subtotal recalculation
+  const areaPricesKey = editableAreas.map(a => `${Number(a.total_price)||0}`).join(',');
+
   const subtotal = useMemo(() => {
     let areaTotal = 0;
-    if (usePackagePricing) {
+    if (editableAreas.length > 0) {
+      areaTotal = editableAreas.reduce((sum, area) => sum + (Number(area.total_price) || Number(area.package_price) || 0), 0);
+    } else if (usePackagePricing) {
       areaTotal = packagePrice;
-    } else {
-      const areas = (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
-        ? activeData.quotation_areas
-        : selectedAssessment?.assessment_areas;
-
-      if (areas && areas.length > 0) {
-        areaTotal = areas.reduce((sum: number, area: any, idx: number) => {
-          const price = editableAreaPrices[idx] !== undefined ? editableAreaPrices[idx] : (Number(area.total_price) || 0);
-          return sum + price;
-        }, 0);
-      }
     }
     const extraItemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
     return areaTotal + extraItemsTotal;
-  }, [items, usePackagePricing, packagePrice, selectedAssessmentId, selectedAssessment, activeData, editableAreaPrices]);
+  }, [items, usePackagePricing, packagePrice, editableAreas, areaPricesKey]);
 
   const vatAmount = useMemo(() => includeVat ? subtotal * vatRate : 0, [subtotal, includeVat]);
   const netTotal = useMemo(() => subtotal + vatAmount, [subtotal, vatAmount]);
+
+  // Auto-recalculate installment amounts when netTotal changes
+  useEffect(() => {
+    if (paymentCondition !== PaymentMethod.INSTALLMENT || installments.length === 0 || netTotal <= 0) return;
+
+    setInstallments(prev => {
+      let accumulated = 0;
+      return prev.map((inst, i) => {
+        const pct = inst.percentage || (100 / prev.length);
+        let amount: number;
+        if (i === prev.length - 1) {
+          amount = Math.round((netTotal - accumulated) * 100) / 100;
+        } else {
+          amount = Math.round((netTotal * pct / 100) * 100) / 100;
+          accumulated += amount;
+        }
+        return { ...inst, percentage: Math.round(pct), amount };
+      });
+    });
+  }, [netTotal]);
 
   const handleAddInstallment = () => {
     setInstallments((prev) => [...prev, { id: crypto.randomUUID(), installment_no: prev.length + 1, percentage: 0, amount: 0, notes: `งวดที่ ${prev.length + 1}` }]);
@@ -947,16 +1006,25 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     e.preventDefault();
 
     if (!selectedCustomerId || !selectedCustomer) { alert('กรุณาเลือกลูกค้า'); return; }
-    if (!selectedAssessmentId) {
+
+    // Validate areas
+    if (editableAreas.length > 0) {
+      for (let i = 0; i < editableAreas.length; i++) {
+        const area = editableAreas[i];
+        if (!area.area_name?.trim()) { alert(`กรุณาระบุชื่อพื้นที่ ${i + 1}`); return; }
+        if (!area.building_type) { alert(`กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"`); return; }
+      }
+    } else if (!selectedAssessmentId) {
       if (!buildingType) { alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)'); return; }
       if (!serviceType) { alert('กรุณาระบุประเภทบริการ (Service Type is required)'); return; }
     }
 
     const hasValidItems = items.some((item) => item.description && item.amount > 0);
+    const hasAreas = editableAreas.length > 0 && editableAreas.some((a: any) => (Number(a.total_price) || Number(a.package_price) || 0) > 0);
     const isAssessmentLinked = !!selectedAssessmentId;
 
-    if (!hasValidItems && !usePackagePricing && !isAssessmentLinked) {
-      alert('กรุณาเพิ่มรายการสินค้าหรือเลือกแพ็กเกจ');
+    if (!hasValidItems && !hasAreas && !usePackagePricing && !isAssessmentLinked) {
+      alert('กรุณาเพิ่มพื้นที่หรือรายการสินค้า');
       return;
     }
 
@@ -973,7 +1041,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       description: item.description, quantity: item.quantity, unit: item.unit, unit_price: item.unitPrice, amount: item.amount,
     }));
 
-    if (usePackagePricing) {
+    // Build items from editableAreas package prices (each area = 1 package item)
+    if (editableAreas.length > 0) {
+      const areaItems = editableAreas
+        .filter((a: any) => Number(a.package_price) > 0 || Number(a.total_price) > 0)
+        .map((a: any) => ({
+          id: '', quotation_id: '', sequence: 1, product_id: null,
+          description: `แพ็กเกจ: ${a.area_name}`,
+          quantity: 1, unit: 'งาน/แพ็กเกจ',
+          unit_price: Number(a.package_price) || Number(a.total_price) || 0,
+          amount: Number(a.package_price) || Number(a.total_price) || 0,
+        }));
+      finalItems = [...areaItems, ...finalItems];
+    } else if (usePackagePricing) {
       const packageItem = { id: '', quotation_id: '', sequence: 1, product_id: null, description: `แพ็กเกจ: ${packageName || 'บริการหลัก'}`, quantity: 1, unit: 'งาน/แพ็กเกจ', unit_price: packagePrice, amount: packagePrice };
       finalItems = [packageItem, ...finalItems];
     } else {
@@ -981,6 +1061,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
 
     finalItems = finalItems.map((item, idx) => ({ ...item, id: '', quotation_id: '', sequence: idx + 1 }));
+
+    // Build quotation_areas from editableAreas
+    const quotationAreas = editableAreas.map((a: any) => ({
+      area_name: a.area_name,
+      building_type: a.building_type || undefined,
+      service_system: a.service_system || undefined,
+      area_size: Number(a.area_size) || 0,
+      total_price: Number(a.total_price) || Number(a.package_price) || 0,
+      package_price: Number(a.package_price) || Number(a.total_price) || 0,
+      package_price_id: a.package_price_id || undefined,
+      package_type: a.package_type || undefined,
+      category_ids: (a.category_services || []).map((cs: any) => cs.category_id).filter(Boolean),
+    }));
 
     const quotationData: Partial<Quotation> = {
       ...initialValues,
@@ -1007,6 +1100,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       vat_amount: vatAmount,
       include_vat: includeVat,
       items: finalItems,
+      quotation_areas: quotationAreas as any,
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
     };
@@ -1109,255 +1203,55 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </div>
         </div>
 
-        {(() => {
-          const areasToDisplay = editableAreas.length > 0
-            ? editableAreas
-            : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
-              ? activeData.quotation_areas
-              : selectedAssessment?.assessment_areas;
-          const sectionTitle = 'รายละเอียดพื้นที่';
-
-          if ((!areasToDisplay || areasToDisplay.length === 0) && isReadOnly) return null;
-
-          // Helper: get min price from package for an area (uses min_price fields, same as assessment)
-          const getMinPriceForArea = (area: any): number | null => {
-            // Case 1: quotation_area or assessment_area with packagePriceRelation
-            const pkgRelation = area.packagePriceRelation;
-            if (pkgRelation) {
-              // Prefer min_price fields (actual minimum threshold), fallback to regular price
-              const minWith = Number(pkgRelation.min_price_with_termite) || 0;
-              const minWithout = Number(pkgRelation.min_price_without_termite) || 0;
-              if (minWith > 0 || minWithout > 0) {
-                return Math.min(minWith > 0 ? minWith : Infinity, minWithout > 0 ? minWithout : Infinity);
-              }
-              // Fallback to regular price
-              const pWith = Number(pkgRelation.price_with_termite) || 0;
-              const pWithout = Number(pkgRelation.price_without_termite) || 0;
-              if (pWith > 0 || pWithout > 0) {
-                return Math.min(pWith > 0 ? pWith : Infinity, pWithout > 0 ? pWithout : Infinity);
-              }
-            }
-
-            // Case 2: assessment_area - calc from selectedAssessment.package.package_prices
-            const pkg = selectedAssessment?.package || fetchedPackage;
-            if (!pkg?.package_prices || !Array.isArray(pkg.package_prices)) return null;
-
-            const areaSize = Number(area.area_size) || 0;
-            if (areaSize <= 0) return null;
-
-            const sorted = [...pkg.package_prices].sort((a: any, b: any) => Number(a.area_range) - Number(b.area_range));
-            const condition = sorted.find((p: any) => Number(p.area_range) >= areaSize);
-            if (!condition) return null;
-
-            // Prefer min_price fields
-            const minWith = Number(condition.min_price_with_termite) || 0;
-            const minWithout = Number(condition.min_price_without_termite) || 0;
-            if (minWith > 0 || minWithout > 0) {
-              return Math.min(minWith > 0 ? minWith : Infinity, minWithout > 0 ? minWithout : Infinity);
-            }
-            const pWith = Number(condition.price_with_termite) || 0;
-            const pWithout = Number(condition.price_without_termite) || 0;
-            if (pWith === 0 && pWithout === 0) return null;
-            return Math.min(pWith > 0 ? pWith : Infinity, pWithout > 0 ? pWithout : Infinity);
-          };
-
-          return (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
-              <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-green-50 rounded-lg text-green-600"><ClipboardDocumentListIcon className="w-5 h-5" /></div>
-                  <h3 className="font-semibold text-slate-800 text-lg">{sectionTitle}</h3>
-                </div>
-                {!isReadOnly && (
-                  <Button type="button" variant="outline" onClick={addNewArea} className="text-sm">
-                    <PlusIcon className="w-4 h-4 mr-1" /> เพิ่มพื้นที่
-                  </Button>
-                )}
-              </div>
-              {(!areasToDisplay || areasToDisplay.length === 0) ? (
-                <div className="text-center py-8 text-slate-400">
-                  <ClipboardDocumentListIcon className="w-10 h-10 mx-auto mb-2" />
-                  <p>ยังไม่มีพื้นที่ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</p>
-                </div>
-              ) : (
-              <div className="space-y-4">
-                {areasToDisplay.map((area: any, index: number) => {
-                  const itemsTotal = area.items?.reduce((sum: number, item: any) => sum + (Number(item.total_price || item.amount) || 0), 0) || 0;
-                  const basePrice = (Number(area.total_price) || 0) - itemsTotal;
-                  return (
-                    <div key={area.id || index} className="border border-slate-200 rounded-lg overflow-hidden">
-                      <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1 h-6 bg-green-500 rounded-full"></div>
-                          {isReadOnly ? (
-                            <h4 className="font-semibold text-slate-800">{area.area_name}</h4>
-                          ) : (
-                            <Input
-                              type="text"
-                              value={area.area_name}
-                              onChange={(e) => updateArea(index, 'area_name', e.target.value)}
-                              className="font-semibold text-slate-800 !py-1 !px-2 w-40"
-                              placeholder="ชื่อพื้นที่"
-                            />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full text-sm">฿{(editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.total_price || 0)).toLocaleString()}</div>
-                          {!isReadOnly && areasToDisplay.length > 1 && (
-                            <button type="button" onClick={() => removeArea(index)} className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" title="ลบพื้นที่">
-                              <TrashIcon className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">ประเภทสิ่งปลูกสร้าง</div>
-                            {isReadOnly ? (
-                              <div className="font-medium text-slate-800">{getBuildingTypeName(area.building_type)}</div>
-                            ) : (
-                              <select value={area.building_type} onChange={(e) => updateArea(index, 'building_type', e.target.value)} className="w-full rounded-lg border border-slate-300 text-sm py-1.5 px-2">
-                                <option value="">เลือก...</option>
-                                <option value="HOUSE">บ้าน</option>
-                                <option value="OFFICE">ออฟฟิศ</option>
-                                <option value="CONDO">คอนโด</option>
-                                <option value="TOWNHOUSE">ทาวน์โฮม</option>
-                                <option value="FACTORY">โรงงาน</option>
-                                <option value="OTHER">อื่นๆ</option>
-                              </select>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">พื้นที่ (ตร.ม.)</div>
-                            {isReadOnly ? (
-                              <div className="font-medium text-slate-800">{Number(area.area_size || 0).toLocaleString()}</div>
-                            ) : (
-                              <Input type="number" value={area.area_size || ''} onChange={(e) => updateArea(index, 'area_size', parseFloat(e.target.value) || 0)} className="!py-1.5" step="0.01" placeholder="0.00" />
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">ระบบที่ใช้</div>
-                            {isReadOnly ? (
-                              <div className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">{area.service_system === 'PREY' ? 'เหยื่อ' : area.service_system === 'CHEMICAL' ? 'สารเคมี' : area.service_system || '-'}</div>
-                            ) : (
-                              <select value={area.service_system} onChange={(e) => updateArea(index, 'service_system', e.target.value)} className="w-full rounded-lg border border-slate-300 text-sm py-1.5 px-2">
-                                <option value="">เลือก...</option>
-                                <option value="PREY">ระบบเหยื่อ</option>
-                                <option value="CHEMICAL">ระบบเคมี</option>
-                                <option value="OTHER">อื่นๆ</option>
-                              </select>
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs text-slate-500 mb-1">ราคาบริการหลัก</div>
-                            {isReadOnly ? (
-                              <div className="font-medium text-slate-800">฿{Number(basePrice).toLocaleString()}</div>
-                            ) : (
-                              <div>
-                                <div className="flex items-center gap-1">
-                                  <span className="font-semibold text-slate-700 text-sm">฿</span>
-                                  <Input
-                                    type="number"
-                                    className={`w-28 text-right font-bold text-sm h-9 !py-1 ${
-                                      (() => {
-                                        const minP = getMinPriceForArea(area);
-                                        const curP = editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.package_price || area.total_price || 0);
-                                        return minP && curP < minP
-                                          ? 'text-red-600 border-red-500 bg-red-50'
-                                          : 'text-primary border-slate-300 bg-white';
-                                      })()
-                                    }`}
-                                    value={editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : (area.package_price ?? basePrice ?? '')}
-                                    onChange={(e) => {
-                                      const newPrice = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                      setEditableAreaPrices(prev => ({ ...prev, [index]: newPrice }));
-                                      if (usePackagePricing) setPackagePrice(newPrice);
-                                    }}
-                                    step="0.01"
-                                    placeholder="0.00"
-                                  />
-                                </div>
-                                {(() => {
-                                  const minP = getMinPriceForArea(area);
-                                  const currentP = editableAreaPrices[index] !== undefined ? editableAreaPrices[index] : Number(area.package_price || area.total_price || 0);
-                                  if (minP && currentP < minP) {
-                                    return (
-                                      <div className="flex items-center mt-1 text-xs text-red-600 font-medium">
-                                        <span>⚠️ ต่ำกว่าเกณฑ์แพ็กเกจ (ส่วนต่าง ฿{(minP - currentP).toLocaleString('th-TH')})</span>
-                                      </div>
-                                    );
-                                  }
-                                  if (minP) {
-                                    return (
-                                      <div className="text-xs text-slate-400 mt-1">ขั้นต่ำ ฿{minP.toLocaleString('th-TH')}</div>
-                                    );
-                                  }
-                                  return null;
-                                })()}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {area.packagePriceRelation && (
-                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2"><div className="w-2 h-2 rounded-full bg-blue-500"></div><div className="text-sm font-semibold text-blue-900">แพ็กเกจที่เลือก</div></div>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                              <div><div className="text-xs text-blue-600 mb-1">ชื่อแพ็กเกจ</div><div className="font-medium text-blue-900">{area.packagePriceRelation.package?.name || area.packagePriceRelation.name || '-'}</div></div>
-                              <div><div className="text-xs text-blue-600 mb-1">จำนวนครั้งบริการ</div><div className="font-medium text-blue-900">{area.packagePriceRelation.package?.visit_limit || '-'} ครั้ง</div></div>
-                            </div>
-                          </div>
-                        )}
-                        <div className="mb-4">
-                          <label className="block text-xs text-slate-500 mb-2">ประเภทบริการ</label>
-                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                              {serviceTypeOptions.map((option) => {
-                                const serviceList = area.category_services || area.categories || [];
-                                const isChecked = serviceList.some((cat: any) => {
-                                  if (!cat) return false;
-                                  const catString = typeof cat === 'string' ? cat : JSON.stringify(cat);
-                                  return (option.id && catString.includes(String(option.id))) || (option.value && catString.includes(String(option.value)));
-                                });
-                                return (
-                                  <label key={option.id} className="flex items-center gap-2 cursor-pointer">
-                                    <input type="checkbox" checked={!!isChecked} readOnly className="rounded border-slate-300 text-green-600 focus:ring-green-500 h-4 w-4" />
-                                    <span className={`text-sm ${isChecked ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}>{option.label}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                        {area.items && area.items.length > 0 && (
-                          <div className="mt-4 border rounded-lg overflow-hidden">
-                            <div className="bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600 border-b">สินค้า/บริการเพิ่มเติม</div>
-                            <table className="w-full text-sm text-left">
-                              <thead className="text-xs text-slate-500 bg-white border-b">
-                                <tr><th className="px-4 py-2 font-medium">รายการ</th><th className="px-4 py-2 font-medium text-center w-20">จำนวน</th><th className="px-4 py-2 font-medium text-right w-32">ราคา/หน่วย</th><th className="px-4 py-2 font-medium text-right w-32">รวม</th></tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100">
-                                {area.items.map((item: any, i: number) => (
-                                  <tr key={i} className="hover:bg-slate-50">
-                                    <td className="px-4 py-2 text-slate-800">{item.product_name || item.description}</td>
-                                    <td className="px-4 py-2 text-center text-slate-600">{item.quantity}</td>
-                                    <td className="px-4 py-2 text-right text-slate-600">{Number(item.product_price || item.unit_price).toLocaleString()}</td>
-                                    <td className="px-4 py-2 text-right font-medium text-slate-800">{Number(item.total_price || item.amount).toLocaleString()}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              )}
+        {/* Work Areas Section - ใช้ WorkAreaForm เดียวกับใบประเมิน */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-green-50 rounded-lg text-green-600"><ClipboardDocumentListIcon className="w-5 h-5" /></div>
+              <h3 className="font-semibold text-slate-800 text-lg">รายละเอียดพื้นที่</h3>
             </div>
-          );
-        })()}
+          </div>
+          <div className="space-y-4">
+            {editableAreas.map((area, index) => (
+              <WorkAreaForm
+                key={area.id || index}
+                area={area}
+                index={index}
+                // @ts-ignore
+                errors={{}}
+                onAreaChange={(i, updated) => setEditableAreas(prev => prev.map((a, idx) => idx === i ? updated : a))}
+                onClearArea={(i) => setEditableAreas(prev => prev.map((a, idx) => idx === i ? { ...a, building_type: '', area_size: undefined, category_services: [], service_system: undefined, total_price: 0, package_price: undefined } : a))}
+                onRemoveArea={editableAreas.length > 1 ? (i) => setEditableAreas(prev => prev.filter((_, idx) => idx !== i)) : undefined}
+                products={products}
+                categories={fetchedCategories}
+                selectedPackage={selectedAssessment?.package || fetchedPackage || null}
+                availablePackages={fetchedPackages}
+                onSelectPackage={(pkgId) => {
+                  if (pkgId) {
+                    const pkg = fetchedPackages.find(p => p.id === pkgId);
+                    if (pkg) {
+                      setUsePackagePricing(true);
+                      setPackageName(pkg.name);
+                    }
+                  }
+                }}
+                isEditing={mode === 'edit' || mode === 'revise'}
+              />
+            ))}
+            {editableAreas.length === 0 && (
+              <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
+                ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น
+              </div>
+            )}
+            {!isReadOnly && (
+              <div className="flex justify-center mt-6">
+                <button type="button" onClick={addNewArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
+                  <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2">
           <SectionHeader icon={CreditCardIcon} title="เงื่อนไขการชำระเงิน" />
