@@ -668,7 +668,8 @@ export const JobForm: React.FC<JobFormProps> = ({
       return;
     }
     
-    const jobData = createJobObject(JobMainStatus.PENDING);
+    const currentStatus = jobToEdit?.api_status || jobToEdit?.status || JobMainStatus.PENDING;
+    const jobData = createJobObject(currentStatus as JobMainStatus);
     
     if (jobData) {
       try {
