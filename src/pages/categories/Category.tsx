@@ -214,25 +214,25 @@ const Categories: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รหัสหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รายละเอียด
                   </th>
@@ -244,7 +244,7 @@ const Categories: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {categories.map((category, index) => (
                   <tr key={category.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -253,7 +253,7 @@ const Categories: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
                       {category.name}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500 truncate max-w-sm">
+                    <td className="px-4 py-3 text-sm text-slate-700 truncate max-w-sm">
                       {category.description || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">

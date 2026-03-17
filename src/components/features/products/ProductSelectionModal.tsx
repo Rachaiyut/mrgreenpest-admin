@@ -220,10 +220,10 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                         {stockMap.get(product.id) || 0}
                       </td>
                     )}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {product.unit?.name || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                       ฿{product.cost_price}
                     </td>
                   </tr>

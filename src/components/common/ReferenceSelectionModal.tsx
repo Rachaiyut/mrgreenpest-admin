@@ -142,7 +142,7 @@ export const ReferenceSelectionModal: React.FC<
                   <td className="px-4 py-3 text-sm text-slate-600">
                     {job.customer?.first_name} {job.customer.last_name}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     {formatThaiDate(job.created_at)}
                   </td>
                 </tr>

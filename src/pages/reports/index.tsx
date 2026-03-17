@@ -607,25 +607,25 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     คลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สินค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     หน่วย
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     คงเหลือ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เกณฑ์ต่ำสุด
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                 </tr>
@@ -633,7 +633,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={`${r.warehouse}-${r.product}`}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">
@@ -642,7 +642,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.product}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.unit}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-900 text-right">
@@ -681,28 +681,28 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่รับเข้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     คลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้จัดจำหน่าย
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -710,7 +710,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -720,7 +720,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.supplier}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -755,34 +755,34 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่เบิก
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จากคลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ไปยัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้รับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมค่าใช้จ่าย
                   </th>
                 </tr>
@@ -790,7 +790,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -801,7 +801,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.recipient}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -839,28 +839,28 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่โอนย้าย
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จากคลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ไปยัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -868,7 +868,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -876,7 +876,7 @@ const Reports: React.FC<ReportsProps> = () => {
                       {r.from}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.to}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -911,25 +911,25 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ปรับปรุง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     คลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผลรวมปรับปรุง
                   </th>
                 </tr>
@@ -937,14 +937,14 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.warehouse}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -979,28 +979,28 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่คืน
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จากคลัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ไปยัง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนรายการ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รวมจำนวน
                   </th>
                 </tr>
@@ -1008,7 +1008,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1016,7 +1016,7 @@ const Reports: React.FC<ReportsProps> = () => {
                       {r.from}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.to}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.date}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -1051,19 +1051,19 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รหัสงาน
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่รายงาน
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                 </tr>
@@ -1071,14 +1071,14 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.customer}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.reportDate}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -1107,25 +1107,25 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบแจ้งหนี้
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่ออก
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     กำหนดชำระ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
                   </th>
                 </tr>
@@ -1133,17 +1133,17 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.customer}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.issuedAt}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.dueAt}
                     </td>
                     <td className="px-4 py-3 text-sm">
@@ -1175,25 +1175,25 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบเสร็จ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบแจ้งหนี้
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่ชำระ
                   </th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จำนวนเงิน
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วิธีชำระ
                   </th>
                 </tr>
@@ -1201,7 +1201,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1211,7 +1211,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.customer}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.paidAt}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-900 text-right">
@@ -1243,22 +1243,22 @@ const Reports: React.FC<ReportsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     รหัสลูกค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ชื่อลูกค้า
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ประเภท
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่สร้าง
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -1266,7 +1266,7 @@ const Reports: React.FC<ReportsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRows.map((r, index) => (
                   <tr key={r.id}>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-700">{r.id}</td>
@@ -1276,7 +1276,7 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {r.type}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {r.createdAt}
                     </td>
                     <td className="px-4 py-3 text-sm">

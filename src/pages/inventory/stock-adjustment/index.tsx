@@ -208,25 +208,25 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     เลขที่เอกสาร
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     วันที่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     คลัง
                   </th>
@@ -238,13 +238,13 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ผู้คืนสินค้า
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     เหตุผลหลัก
                   </th>
@@ -256,7 +256,7 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedAdjustments.map((adj, index) => (
                   <tr key={adj.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
@@ -265,19 +265,19 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                     >
                       {adj.id}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {formatThaiDate(adj.created_at)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {warehouseMap.get(adj.warehouse_id) || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {adj.items.length}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {adj.created_by}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 truncate max-w-sm">
                       {adj.reason}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">

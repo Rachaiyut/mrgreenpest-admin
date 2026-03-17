@@ -442,16 +442,16 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">มูลค่า</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">มูลค่า</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
               </thead>
               
@@ -467,10 +467,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         key={c.id}
                         className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                       >
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           <span
                             className="text-sm font-semibold text-primary hover:text-primary-dark cursor-pointer transition-colors"
                             onClick={() => handleViewDetails(c)}
@@ -479,15 +479,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                             {c.code || `CT-${c.id.slice(0, 8).toUpperCase()}`}
                           </span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-primary font-bold text-xs">
-                                {(customerName || '?').charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 truncate">
+                            <div className="min-w-0 max-w-[120px]">
+                              <p className="text-sm font-semibold text-slate-800 truncate" title={customerName || '-'}>
                                 {customerName || '-'}
                               </p>
                             </div>
@@ -505,7 +500,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {formatThaiDate(c.end_date)}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
                             status={
                               statusLabels[c.status as ContractStatus] || c.status

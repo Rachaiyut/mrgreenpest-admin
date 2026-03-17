@@ -630,28 +630,28 @@ const Assessments: React.FC = () => {
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลำดับ
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         รหัสใบประเมิน
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วันที่นัดหมาย
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ประเภท
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ค่าใช้จ่าย
                       </th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -677,15 +677,15 @@ const Assessments: React.FC = () => {
                           key={assessment.id}
                           className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                         >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <span className="text-sm font-semibold text-primary">
                               {assessment.code || assessment.id}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-xs">
@@ -706,7 +706,7 @@ const Assessments: React.FC = () => {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <div className="flex items-center gap-2">
                               <div className="p-1 bg-blue-50 rounded">
                                 <JobDateIcon className="h-3.5 w-3.5 text-blue-500" />
@@ -720,7 +720,7 @@ const Assessments: React.FC = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <div className="flex flex-col gap-1">
                               <span className="text-xs font-medium text-slate-700">
                                 {allBuildingTypes.join(', ') || '-'}
@@ -730,17 +730,17 @@ const Assessments: React.FC = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={assessment.status as any} />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-slate-900">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
                             ฿
                             {assessment.total_price.toLocaleString('th-TH', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button
                                 onClick={async () => {

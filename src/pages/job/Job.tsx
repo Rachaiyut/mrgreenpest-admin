@@ -1102,27 +1102,27 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {jobs.filter(j => !j.vehicle_id).length > 0 ? (
                       jobs.filter(j => !j.vehicle_id).map((job, idx) => (
                         <tr key={job.id} className={`hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
                           </td>
-                           <td className="px-6 py-4">
+                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer?.primary_phone || '-')}</span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatThaiDate(job.start_date)}</span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="px-2 py-1 bg-amber-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
                           </td>
                           <td className="px-6 py-4 text-right">
@@ -1157,22 +1157,22 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า/สถานที่
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -1185,7 +1185,7 @@ const Job: React.FC<JobProps> = ({
                           className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                             }`}
                         >
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <div className="flex items-start gap-3">
                               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                 <span className="text-primary font-bold text-sm">
@@ -1205,7 +1205,7 @@ const Job: React.FC<JobProps> = ({
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <div className="flex items-center gap-2">
                               <div className="p-1.5 bg-blue-50 rounded-md">
                                 <JobDateIcon className="h-4 w-4 text-blue-500" />
@@ -1228,12 +1228,12 @@ const Job: React.FC<JobProps> = ({
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-600">
                               {(job.work_areas || []).map((wa) => wa.service_package).join(', ') || '-'}
                             </span>
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <div className="flex items-center gap-2">
                               <TechnicianIcon className="h-4 w-4 text-slate-400" />
                               <span className="text-sm text-slate-600 truncate max-w-[120px]">
@@ -1241,7 +1241,7 @@ const Job: React.FC<JobProps> = ({
                               </span>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={
                               (() => {
                                 const s = (job.api_status || job.status || '').toString().toUpperCase();
@@ -1254,7 +1254,7 @@ const Job: React.FC<JobProps> = ({
                               })()
                             } />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <Button
                               data-job-id={job.id}
                               onClick={(e) => handleDropdownToggle(e, job.id)}
@@ -1302,22 +1302,22 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า/สถานที่
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -1335,7 +1335,7 @@ const Job: React.FC<JobProps> = ({
                             className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                               }`}
                           >
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex items-start gap-3">
                                 <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
                                   <DocumentCheckIcon className="h-5 w-5 text-green-500" />
@@ -1353,7 +1353,7 @@ const Job: React.FC<JobProps> = ({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                               <div className="flex items-center gap-2">
                                 <div className="p-1.5 bg-blue-50 rounded-md">
                                   <JobDateIcon className="h-4 w-4 text-blue-500" />
@@ -1373,7 +1373,7 @@ const Job: React.FC<JobProps> = ({
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap gap-1">
                                 {report.service_types?.length ? (
                                   report.service_types.slice(0, 2).map((type, i) => (
@@ -1389,7 +1389,7 @@ const Job: React.FC<JobProps> = ({
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex items-center gap-2">
                                 <TechnicianIcon className="h-4 w-4 text-slate-400" />
                                 <span className="text-sm text-slate-600 truncate max-w-[120px]">
@@ -1401,10 +1401,10 @@ const Job: React.FC<JobProps> = ({
                                 </span>
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                               <StatusBadge status={report.status || JobStatus.Draft} />
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                               <div className="flex items-center justify-end gap-1">
                                 <Button
                                   onClick={() => handleViewPdf(report.id)}
@@ -1576,7 +1576,7 @@ const Job: React.FC<JobProps> = ({
                                 {job.service_report?.signatures?.customer ? '✓' : '-'}
                               </td>
                               <td className="px-4 py-3 text-center">-</td>
-                              <td className="px-4 py-3 text-sm text-slate-500">
+                              <td className="px-4 py-3 text-sm text-slate-700">
                                 {job.remarks || '-'}
                               </td>
                             </tr>

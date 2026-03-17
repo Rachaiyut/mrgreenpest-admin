@@ -556,31 +556,31 @@ const Warehouse: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัส
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ชื่อคลัง/รถ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ประเภท
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ที่ตั้ง/ทะเบียน
                   </th>
@@ -592,7 +592,7 @@ const Warehouse: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จัดการ
                   </th>
@@ -614,7 +614,7 @@ const Warehouse: React.FC = () => {
                       key={warehouse.id}
                       className="hover:bg-slate-50 transition-colors"
                     >
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-700">
@@ -634,7 +634,7 @@ const Warehouse: React.FC = () => {
                           {warehouse.name}
                         </div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}
                         >

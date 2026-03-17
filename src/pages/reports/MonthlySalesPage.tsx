@@ -380,7 +380,7 @@ const MonthlySalesPage: React.FC<MonthlySalesPageProps> = () => {
                     <td className="px-4 py-3 text-sm text-slate-700">
                       {row.saleName}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-500">
+                    <td className="px-4 py-3 text-sm text-slate-700">
                       {row.remark}
                     </td>
                   </tr>

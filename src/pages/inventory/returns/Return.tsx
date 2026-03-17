@@ -328,31 +328,31 @@ const Returns: React.FC<ReturnsProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     เลขที่เอกสาร
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     วันที่คืน
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     คืนจาก (รถ)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     คืนเข้าคลัง
                   </th>
@@ -364,19 +364,19 @@ const Returns: React.FC<ReturnsProps> = ({
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ผู้คืนสินค้า
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     สถานะ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     จัดการ
                   </th>
@@ -392,7 +392,7 @@ const Returns: React.FC<ReturnsProps> = ({
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
@@ -401,28 +401,28 @@ const Returns: React.FC<ReturnsProps> = ({
                       >
                         {item.code || item.id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {formatThaiDate(
                           item.created_at || (item as any).createdAt
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {fromWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {toWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {item.items?.length || 0}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {userMap.get(
                           item.created_by || (item as any).createdBy
                         ) ||
                           item.created_by ||
                           (item as any).createdBy}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {getStatusBadge(item.status)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">

@@ -116,12 +116,12 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
             <table className="min-w-full divide-y divide-slate-200 table-fixed">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase w-32">รหัสสินค้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase w-40">รหัสบาร์โค้ด</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">ชื่อสินค้า/บริการ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase w-28">จำนวนคงเหลือ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase w-28">สต็อกขั้นต่ำ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase w-24">หน่วย</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">รหัสสินค้า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">รหัสบาร์โค้ด</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อสินค้า/บริการ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนคงเหลือ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">สต็อกขั้นต่ำ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">หน่วย</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -129,11 +129,11 @@ export const WarehouseDetailsModal: React.FC<WarehouseDetailsModalProps> = ({
                   productsInWarehouse.map((product) => (
                     <tr key={product.id}>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">{product.code}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{product.barcode || '-'}</td>
-                      <td className="px-4 py-3 text-sm text-slate-500">{product.name}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{stockMap[warehouse.id]?.[product.id] ?? 0}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{product.min_stock}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{product.unit?.name || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{product.barcode || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-slate-700">{product.name}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{stockMap[warehouse.id]?.[product.id] ?? 0}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{product.min_stock}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{product.unit?.name || '-'}</td>
                     </tr>
                   ))
                 ) : (

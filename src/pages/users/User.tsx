@@ -483,10 +483,10 @@ const Users: React.FC<UsersProps> = ({
                   <tbody className="bg-white divide-y divide-slate-200">
                     {paginatedUsers.map((user, index) => (
                       <tr key={user.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
                               <img
@@ -502,16 +502,16 @@ const Users: React.FC<UsersProps> = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {user.email || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {user.phone}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           <RoleBadge role={user.role} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
                           <div className="inline-block text-left">
                             <Button
                               variant="icon"
@@ -605,7 +605,7 @@ const Users: React.FC<UsersProps> = ({
                     )}
                     {roles.map((role) => (
                       <tr key={role.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           <div className="text-sm font-medium text-slate-900">
                             {(() => {
                               const rName = role.name;
@@ -618,13 +618,13 @@ const Users: React.FC<UsersProps> = ({
                             })()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {role.description || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {roleCounts[role.name] || 0}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
                           <div className="inline-block text-left">
                             <Button
                               data-role-id={role.id}

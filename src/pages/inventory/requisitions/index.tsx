@@ -300,19 +300,19 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่เอกสาร
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ประเภท
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่เบิก
                   </th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้เบิก
                   </th>
                   <th className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase">
@@ -326,7 +326,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedRequisitions.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
@@ -335,15 +335,15 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                     >
                       {item.doc_no}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {item.type}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {item.request_date
                         ? formatThaiDate(item.request_date)
                         : '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {item.requester?.name || item.requester_id}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-center text-sm">

@@ -374,14 +374,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">เลขที่ใบรับเข้า</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">เลขที่อ้างอิง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">วันที่</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">คลัง</th>
-                  <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">ผู้จัดจำหน่าย</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่ใบรับเข้า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่อ้างอิง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จัดจำหน่าย</th>
                   <th className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap">สถานะ</th>
-                  <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">จัดการ</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -398,7 +398,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                 ) : paginatedReceipts.length > 0 ? (
                   paginatedReceipts.map((receipt, index) => (
                     <tr key={receipt.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
@@ -408,11 +408,11 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                         {receipt.code || receipt.id.substring(0, 8)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{receipt.receipt_no || '-'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatThaiDate(receipt.created_at)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatThaiDate(receipt.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">

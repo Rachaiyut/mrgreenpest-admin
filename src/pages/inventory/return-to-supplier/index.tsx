@@ -317,43 +317,43 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขที่เอกสาร
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     อ้างอิง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     วันที่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     คืนจากคลัง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้จำหน่าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     สถานะ
                   </th>
@@ -365,7 +365,7 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedReturns.map((r, index) => (
                   <tr key={r.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
@@ -374,16 +374,16 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
                     >
                       {r.id}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {r.reference_id || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {formatThaiDate(r.created_at)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {warehouseMap[r.warehouse_id] || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {r.supplier_id ? supplierMap[r.supplier_id] : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm">

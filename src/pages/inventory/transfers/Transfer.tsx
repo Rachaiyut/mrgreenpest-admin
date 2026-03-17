@@ -308,31 +308,31 @@ const Transfers: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขที่เอกสารโอนย้าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     วันที่โอนย้าย
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     คลังต้นทาง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     คลังปลายทาง
                   </th>
@@ -344,7 +344,7 @@ const Transfers: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เหตุผล
                   </th>
@@ -356,7 +356,7 @@ const Transfers: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จัดการ
                   </th>
@@ -379,7 +379,7 @@ const Transfers: React.FC = () => {
 
                   return (
                     <tr key={transfer.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
                       <td
@@ -388,19 +388,19 @@ const Transfers: React.FC = () => {
                       >
                         {transfer.code || transfer.id}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {formatThaiDate(transfer.created_at)}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {fromWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {toWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                         {totalQuantity}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 truncate max-w-sm">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 truncate max-w-sm">
                         {transfer.remark}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-center">

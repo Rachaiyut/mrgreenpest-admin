@@ -614,34 +614,34 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบเสนอราคา
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เบอร์โทร
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงใบประเมิน
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่สร้าง
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     หมดอายุ
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
                   </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -678,7 +678,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         key={q.id}
                         className="hover:bg-slate-50 transition-colors"
                       >
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
@@ -695,19 +695,19 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-6 py-4 text-sm text-slate-700 font-medium">
                           {q.customer_name}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {formatPhoneNumber(phoneNumber)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {q['assessment']?.code || '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {formatThaiDate(q.created_at)}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-500">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           {formatThaiDate(q.expires_at)}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
                             status={getStatusLabel(q)}
                           />

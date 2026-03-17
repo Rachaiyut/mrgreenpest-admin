@@ -599,19 +599,19 @@ const Issue: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขที่เอกสารเบิก
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     วันที่เบิก
                   </th>
@@ -623,37 +623,37 @@ const Issue: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จำนวนเงินที่เบิก
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
                   >
                     อ้างอิง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้สร้าง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้เบิก/ผู้รับเงิน
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     สถานะ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จัดการ
                   </th>
@@ -692,7 +692,7 @@ const Issue: React.FC = () => {
 
                     return (
                       <tr key={withdrawal.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
@@ -701,28 +701,28 @@ const Issue: React.FC = () => {
                         >
                           {withdrawal.code}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {withdrawal.created_at
                             ? formatThaiDate(withdrawal.created_at)
                             : '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-center lg:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
                           {totalItemsCount}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 text-right">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                           ฿
                           {totalAmount.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500 xl:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
                           {Array.isArray(withdrawal.reference_ids)
                             ? withdrawal.reference_ids.length
                             : 0}{' '}
                           รายการ
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(() => {
                             const creatorName =
                               userMap.get(withdrawal.created_by) ||
@@ -732,7 +732,7 @@ const Issue: React.FC = () => {
                               : creatorName;
                           })()}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {recipientName === '[object Object]'
                             ? 'Unknown'
                             : recipientName}

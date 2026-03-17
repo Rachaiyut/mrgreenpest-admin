@@ -47,43 +47,43 @@ const CustomerListView: React.FC<{
         <tr>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             ลำดับ
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             รหัสลูกค้า
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             ชื่อ-นามสกุล
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             ชื่อเล่น
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             เบอร์โทรศัพท์
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             ประเภทลูกค้า
           </th>
           <th
             scope="col"
-            className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase tracking-wide whitespace-nowrap"
+            className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider tracking-wide whitespace-nowrap"
           >
             ระยะเวลา
           </th>
@@ -98,7 +98,7 @@ const CustomerListView: React.FC<{
       <tbody className="bg-white divide-y divide-slate-200">
         {customers.map((customer, index) => (
           <tr key={customer.id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
               {(currentPage - 1) * itemsPerPage + index + 1}
             </td>
             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
@@ -109,18 +109,18 @@ const CustomerListView: React.FC<{
                 {customer.first_name} {customer.last_name}
               </div>
             </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
               {customer.nickname || '-'}
             </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
               {formatPhoneNumber(customer.primary_phone)}
             </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
               {customer.type === CustomerType.CORPORATE
                 ? 'นิติบุคคล'
                 : 'บุคคลธรรมดา'}
             </td>
-            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
               <span
                 className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700"
                 title={`สร้างเมื่อ: ${formatThaiDate(customer.created_at)}`}

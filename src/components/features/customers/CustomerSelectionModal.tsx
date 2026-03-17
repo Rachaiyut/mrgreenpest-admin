@@ -156,10 +156,10 @@ export const CustomerSelectionModal: React.FC<CustomerSelectionModalProps> = ({
                   <td className="px-4 py-3 text-sm text-slate-600">
                     {/* Contact Person not available */}-
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     {customer.phone}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     {customer.type}
                   </td>
                 </tr>

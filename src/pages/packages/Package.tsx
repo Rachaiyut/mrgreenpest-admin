@@ -230,25 +230,25 @@ const Packages: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รหัสแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     หมวดหมู่
                   </th>
@@ -260,13 +260,13 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase"
+                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (ไม่มีปลวก)
                   </th>
@@ -281,7 +281,7 @@ const Packages: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {packages.map((pkg, index) => (
                   <tr key={pkg.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
@@ -293,7 +293,7 @@ const Packages: React.FC = () => {
                     <td className="px-4 py-3 text-sm text-slate-600">
                       {pkg.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {pkg.category?.name ||
                         categoryMap.get(pkg.category_id) ||
                         '-'}

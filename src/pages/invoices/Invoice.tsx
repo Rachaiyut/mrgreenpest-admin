@@ -399,28 +399,28 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบแจ้งหนี้
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลูกค้า
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทร
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วันครบกำหนด
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   สถานะ
                 </th>
-                <th className="px-4 py-2.5 text-left text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม
                 </th>
-                <th className="px-4 py-2.5 text-right text-sm font-medium text-slate-600 uppercase whitespace-nowrap">
+                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
                 </th>
               </tr>
@@ -454,7 +454,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                     i.customer || customers?.find((c) => c.id === i.customer_id);
                   return (
                     <tr key={i.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                       </td>
                       <td
@@ -466,7 +466,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       >
                         {i.code || i.id}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3 text-sm font-semibold text-slate-800">
                         {customer
                           ? `${customer.first_name} ${customer.last_name || ''}`.trim()
                           : i.customer_name || 'Unknown'}
@@ -476,16 +476,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(i.due_at)}
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <StatusBadge status={getInvoiceStatusLabel(i.status)} />
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">
+                      <td className="px-4 py-3 text-sm text-slate-700">
                         ฿
                         {Number(i.total).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
