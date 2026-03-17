@@ -127,6 +127,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     initData();
   }, []);
 
+  // Reset state when switching quotation or mode
+  useEffect(() => {
+    setHasInitializedAreas(false);
+    setEditableAreas([]);
+    setFetchedQuotation(null);
+  }, [initialValues?.id, mode]);
+
   // 🌟 2. ดึงข้อมูลใบเสนอราคาฉบับเต็ม ทันทีที่เปิด Form
   useEffect(() => {
     const fetchFullQuotation = async () => {
