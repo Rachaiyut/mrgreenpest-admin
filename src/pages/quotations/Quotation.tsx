@@ -20,6 +20,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
 import SignatureCanvas from 'react-signature-canvas';
 import { StorageApi } from '../../api/storage';
+import { CustomerApi } from '../../api/customer';
 
 const statusLabels: Record<QuotationStatus, string> = {
   [QuotationStatus.DRAFT]: 'จัดทำ',
@@ -831,6 +832,24 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             >
               <CheckCircleIcon className="w-4 h-4 text-slate-400" />
               เปลี่ยนสถานะ
+            </button>
+            <button
+              onClick={async () => {
+                if (!selectedQuotation?.customer_id) return;
+                try {
+                  const response = await CustomerApi.generatePortalToken(selectedQuotation.customer_id);
+                  const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                  await navigator.clipboard.writeText(portalUrl);
+                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                } catch {
+                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                }
+                setOpenDropdownId(null);
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+            >
+              <DocumentTextIcon className="w-4 h-4 text-green-500" />
+              ส่ง Link Portal ลูกค้า
             </button>
             <hr className="my-1 border-slate-100" />
             <button

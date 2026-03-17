@@ -20,6 +20,7 @@ import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useData } from '../../contexts/DataContext';
 import { ReceiptApi } from '../../api/receipt';
+import { CustomerApi } from '../../api/customer';
 import Swal from 'sweetalert2';
 
 const statusLabels: Record<ReceiptStatus, string> = {
@@ -607,6 +608,27 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               >
                 <CheckCircleIcon className="w-4 h-4 text-slate-400" />
                 เปลี่ยนสถานะ
+              </button>
+            )}
+
+            {selectedReceipt?.customer_id && (
+              <button
+                onClick={async () => {
+                  if (!selectedReceipt?.customer_id) return;
+                  try {
+                    const response = await CustomerApi.generatePortalToken(selectedReceipt.customer_id);
+                    const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                    await navigator.clipboard.writeText(portalUrl);
+                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                  } catch {
+                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                  }
+                  setOpenReceiptDropdownId(null);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+              >
+                <DocumentTextIcon className="w-4 h-4 text-green-500" />
+                ส่ง Link Portal ลูกค้า
               </button>
             )}
 

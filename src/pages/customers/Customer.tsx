@@ -18,6 +18,7 @@ import {
   ViewColumnsIcon,
   ListBulletIcon,
   LoadingIcon,
+  DocumentCheckIcon,
 } from '../../assets/icons/Icons';
 
 import CustomerCardView from './CustomerCardView';
@@ -155,9 +156,23 @@ const Customers: React.FC = () => {
     }
   };
 
+  const handleCopyPortalLink = async (customer: Customer) => {
+    try {
+      const response = await CustomerApi.generatePortalToken(customer.id);
+      const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+      await navigator.clipboard.writeText(portalUrl);
+      alert('คัดลอกลิงก์ Portal สำเร็จ!');
+    } catch (error) {
+      console.error('Error generating portal token:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างลิงก์');
+    }
+    setOpenDropdownId(null);
+  };
+
   const actions = [
     { label: 'ดูรายละเอียด', icon: EyeIcon },
     { label: 'แก้ไข', icon: PencilIcon },
+    { label: 'คัดลอก Link Portal', icon: DocumentCheckIcon },
     { label: 'สัญญา', icon: DocumentTextIcon },
     { label: 'ต่อสัญญา', icon: RenewIcon },
     { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
@@ -347,6 +362,8 @@ const Customers: React.FC = () => {
                     handleViewDetails(customer);
                   } else if (action.label === 'แก้ไข') {
                     handleEditClick(customer);
+                  } else if (action.label === 'คัดลอก Link Portal') {
+                    handleCopyPortalLink(customer);
                   } else if (action.label === 'สัญญา') {
                     setSelectedCustomer(customer);
                     setIsContractsModalOpen(true);

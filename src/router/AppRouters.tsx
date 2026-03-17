@@ -19,11 +19,21 @@ import { Header } from '../components/layout/Header';
 
 // Context
 import { useData } from '../contexts/DataContext';
+import { PortalProvider } from '../contexts/PortalContext';
 
 // Lazy Imports for Login only (since it's outside the main routes)
 const Login = lazy(() => import('../pages/login/Login'));
 
+// Portal Lazy Imports
+const PortalLogin = lazy(() => import('../pages/portal/PortalLogin'));
+const PortalDashboard = lazy(() => import('../pages/portal/PortalDashboard'));
+const PortalQuotations = lazy(() => import('../pages/portal/PortalQuotations'));
+const PortalContracts = lazy(() => import('../pages/portal/PortalContracts'));
+const PortalReceipts = lazy(() => import('../pages/portal/PortalReceipts'));
+const PortalLayoutLazy = lazy(() => import('../components/layout/PortalLayout').then(m => ({ default: m.PortalLayout })));
+
 import ProtectedRoute from './ProtectedRoute';
+import { PortalRoute } from './PortalRoute';
 
 interface AppRouterProps {
   isAuthenticated: boolean;
@@ -69,6 +79,25 @@ export const AppRouter = (props: AppRouterProps) => {
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
+
+  // Portal routes - accessible without admin authentication
+  if (location.pathname.startsWith('/portal')) {
+    return (
+      <PortalProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Routes>
+            <Route path="/portal" element={<PortalLogin />} />
+            <Route path="/portal" element={<PortalRoute><PortalLayoutLazy /></PortalRoute>}>
+              <Route path="dashboard" element={<PortalDashboard />} />
+              <Route path="quotations" element={<PortalQuotations />} />
+              <Route path="contracts" element={<PortalContracts />} />
+              <Route path="receipts" element={<PortalReceipts />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </PortalProvider>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

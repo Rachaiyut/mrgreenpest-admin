@@ -56,6 +56,11 @@ class CustomerService extends AuthService {
   async deleteCustomer(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async generatePortalToken(customerId: string): Promise<any> {
+    const res = await this.http.post<any>(`${this.path}/${customerId}/portal-token`);
+    return res.data;
+  }
 }
 
 export const CustomerApi = new CustomerService();
