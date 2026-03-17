@@ -961,17 +961,18 @@ const Job: React.FC<JobProps> = ({
                     นัดหมาย
                   </button>
 
-                  <button
-                    onClick={() => setActiveTab('unassigned')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                  >
-                    รอจัดคิว
-                    {/* ใส่ Badge โชว์ตัวเลขงานที่ค้างอยู่ */}
-                    <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
-                      {jobs.filter(j => !j.vehicle_id).length}
-                    </span>
-                  </button>
+                  {currentUser?.role && ![UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
+                    <button
+                      onClick={() => setActiveTab('unassigned')}
+                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                      รอจัดคิว
+                      <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
+                        {jobs.filter(j => !j.vehicle_id).length}
+                      </span>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => setActiveTab('reports')}
