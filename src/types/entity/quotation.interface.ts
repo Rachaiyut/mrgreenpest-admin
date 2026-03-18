@@ -36,6 +36,10 @@ export interface Quotation extends IBase {
   signed_at?: string;
   not_signed_reason?: string;
   signature?: string;
+  signer_name?: string;
+  signed_ip?: string;
+  signed_user_agent?: string;
+  signed_via?: 'ON_SITE' | 'PORTAL';
   follow_up_count?: number;
   cancellation_reason?: string;
   created_by?: string;

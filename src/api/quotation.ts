@@ -49,6 +49,11 @@ class QuotationService extends AuthService {
     return res.data;
   }
 
+  async generateSigningLink(customerId: string, quotationId: string, expiresHours: number = 72) {
+    const res = await this.http.post(`/customer/${customerId}/quotation/${quotationId}/signing-link`, { expires_hours: expiresHours });
+    return res.data;
+  }
+
   async getPDF(id: string): Promise<Blob> {
     const res = await this.http.get(`${this.path}/${id}/pdf`, {
       responseType: 'blob',
