@@ -679,6 +679,26 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               <DocumentTextIcon className="w-4 h-4 text-green-500" />
               ส่ง Link Portal ลูกค้า
             </button>
+            {selectedContract?.status === ContractStatus.PENDING && (
+              <button
+                onClick={async () => {
+                  if (!selectedContract?.customer_id) return;
+                  try {
+                    const response = await ContractApi.generateSigningLink(selectedContract.customer_id, selectedContract.id);
+                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.data.token}`;
+                    await navigator.clipboard.writeText(signingUrl);
+                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นสัญญาสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                  } catch {
+                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์เซ็นได้', icon: 'error', confirmButtonColor: '#d33' });
+                  }
+                  setOpenDropdownId(null);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
+              >
+                <PencilIcon className="w-4 h-4 text-emerald-500" />
+                ส่ง Link เซ็นสัญญา
+              </button>
+            )}
             <hr className="my-1 border-slate-100" />
             <button
               onClick={() => handleDeleteClick(selectedContract)}

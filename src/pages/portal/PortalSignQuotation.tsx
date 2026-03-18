@@ -6,6 +6,7 @@ import { API_CONFIG } from '@/src/constants/config';
 
 type SigningState = 'loading' | 'ready' | 'signed' | 'error';
 type PdfState = 'loading' | 'loaded' | 'error';
+type DocumentType = 'QUOTATION' | 'CONTRACT';
 
 const PortalSignQuotation: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -13,11 +14,15 @@ const PortalSignQuotation: React.FC = () => {
 
   const [state, setState] = useState<SigningState>('loading');
   const [error, setError] = useState<string>('');
-  const [quotation, setQuotation] = useState<any>(null);
+  const [document, setDocument] = useState<any>(null);
+  const [documentType, setDocumentType] = useState<DocumentType>('QUOTATION');
   const [signerName, setSignerName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfState, setPdfState] = useState<PdfState>('loading');
   const signatureRef = useRef<SignatureCanvas>(null);
+
+  const isContract = documentType === 'CONTRACT';
+  const docLabel = isContract ? 'สัญญา' : 'ใบเสนอราคา';
 
   useEffect(() => {
     if (!token) {
@@ -29,8 +34,13 @@ const PortalSignQuotation: React.FC = () => {
     const verify = async () => {
       try {
         const res = await portalApi.getSigningData(token);
-        setQuotation(res.data.quotation);
-        setSignerName(res.data.quotation?.customer_name || '');
+        const data = res.data;
+        const docType: DocumentType = data.document_type || 'QUOTATION';
+        setDocumentType(docType);
+
+        const doc = docType === 'CONTRACT' ? data.contract : data.quotation;
+        setDocument(doc);
+        setSignerName(doc?.customer_name || '');
         setState('ready');
       } catch (err: any) {
         const msg = err?.response?.data?.message || 'ลิงก์ไม่ถูกต้องหรือหมดอายุ';
@@ -77,6 +87,11 @@ const PortalSignQuotation: React.FC = () => {
 
   const formatCurrency = (val: number) =>
     (val || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  // PDF preview URL
+  const pdfUrl = isContract
+    ? `${API_CONFIG.baseUrl}/print/contract/${document?.id}/view`
+    : `${API_CONFIG.baseUrl}/print/${document?.id}/view`;
 
   // Loading
   if (state === 'loading') {
@@ -141,7 +156,7 @@ const PortalSignQuotation: React.FC = () => {
               <span className="text-white font-bold text-sm">MG</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-800">ใบเสนอราคา</h1>
+              <h1 className="text-lg font-bold text-slate-800">{docLabel}</h1>
               <p className="text-xs text-slate-500">บริษัท มิสเตอร์กรีน เพสท์ คอนโทรล จำกัด</p>
             </div>
           </div>
@@ -149,19 +164,21 @@ const PortalSignQuotation: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <span className="text-slate-500">เลขที่:</span>
-                <span className="ml-2 font-semibold text-slate-800">{quotation?.code || '-'}</span>
+                <span className="ml-2 font-semibold text-slate-800">{document?.code || '-'}</span>
               </div>
               <div>
                 <span className="text-slate-500">ลูกค้า:</span>
-                <span className="ml-2 font-semibold text-slate-800">{quotation?.customer_name || '-'}</span>
+                <span className="ml-2 font-semibold text-slate-800">{document?.customer_name || '-'}</span>
               </div>
               <div>
                 <span className="text-slate-500">สถานที่:</span>
-                <span className="ml-2 text-slate-700">{quotation?.service_location || '-'}</span>
+                <span className="ml-2 text-slate-700">{document?.service_location || '-'}</span>
               </div>
               <div>
-                <span className="text-slate-500">ยอดรวม:</span>
-                <span className="ml-2 font-bold text-green-700">฿{formatCurrency(quotation?.total)}</span>
+                <span className="text-slate-500">{isContract ? 'มูลค่า:' : 'ยอดรวม:'}</span>
+                <span className="ml-2 font-bold text-green-700">
+                  ฿{formatCurrency(isContract ? document?.total_amount : document?.total)}
+                </span>
               </div>
             </div>
           </div>
@@ -169,34 +186,34 @@ const PortalSignQuotation: React.FC = () => {
 
         {/* PDF Preview */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-4">
-          <h3 className="font-semibold text-slate-800 mb-3">รายละเอียดใบเสนอราคา</h3>
-          <div className="border border-slate-200 rounded-lg overflow-hidden relative">
-            {pdfState === 'loading' && (
-              <div className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center" style={{ minHeight: '500px' }}>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-3" />
-                <p className="text-sm text-slate-500">กำลังโหลดเอกสาร...</p>
-              </div>
-            )}
-            {pdfState === 'error' && (
-              <div className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center" style={{ minHeight: '500px' }}>
-                <p className="text-sm text-red-500 mb-2">ไม่สามารถโหลดเอกสารได้</p>
-                <button
-                  onClick={() => { setPdfState('loading'); }}
-                  className="text-sm text-green-600 underline hover:text-green-700"
-                >
-                  ลองใหม่
-                </button>
-              </div>
-            )}
-            <iframe
-              src={`${API_CONFIG.baseUrl}/print/${quotation?.id}/view`}
-              className="w-full border-0"
-              style={{ height: '70vh', minHeight: '500px' }}
-              title="ใบเสนอราคา"
-              onLoad={() => setPdfState('loaded')}
-              onError={() => setPdfState('error')}
-            />
-          </div>
+          <h3 className="font-semibold text-slate-800 mb-3">รายละเอียด{docLabel}</h3>
+            <div className="border border-slate-200 rounded-lg overflow-hidden relative">
+              {pdfState === 'loading' && (
+                <div className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center" style={{ minHeight: '500px' }}>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-3" />
+                  <p className="text-sm text-slate-500">กำลังโหลดเอกสาร...</p>
+                </div>
+              )}
+              {pdfState === 'error' && (
+                <div className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center" style={{ minHeight: '500px' }}>
+                  <p className="text-sm text-red-500 mb-2">ไม่สามารถโหลดเอกสารได้</p>
+                  <button
+                    onClick={() => setPdfState('loading')}
+                    className="text-sm text-green-600 underline hover:text-green-700"
+                  >
+                    ลองใหม่
+                  </button>
+                </div>
+              )}
+              <iframe
+                src={pdfUrl}
+                className="w-full border-0"
+                style={{ height: '70vh', minHeight: '500px' }}
+                title={docLabel}
+                onLoad={() => setPdfState('loaded')}
+                onError={() => setPdfState('error')}
+              />
+            </div>
         </div>
 
         {/* Signature section */}
@@ -254,11 +271,11 @@ const PortalSignQuotation: React.FC = () => {
                 : 'bg-green-600 hover:bg-green-700 active:bg-green-800'
             }`}
           >
-            {isSubmitting ? 'กำลังบันทึก...' : 'ยอมรับและเซ็นเอกสาร'}
+            {isSubmitting ? 'กำลังบันทึก...' : `ยอมรับและเซ็น${docLabel}`}
           </button>
 
           <p className="text-xs text-slate-400 text-center mt-3">
-            การเซ็นเอกสารนี้ถือเป็นการยืนยันการอนุมัติใบเสนอราคา
+            การเซ็นเอกสารนี้ถือเป็นการยืนยันการอนุมัติ{docLabel}
           </p>
         </div>
       </div>

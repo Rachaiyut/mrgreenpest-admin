@@ -39,6 +39,11 @@ class ContractService extends AuthService {
     return res.data;
   }
 
+  async generateSigningLink(customerId: string, contractId: string, expiresHours: number = 72) {
+    const res = await this.http.post(`/customer/${customerId}/contract/${contractId}/signing-link`, { expires_hours: expiresHours });
+    return res.data;
+  }
+
   async getPdf(id: string): Promise<Blob> {
     const res = await this.http.get(`${this.path}/${id}/pdf`, {
       responseType: 'blob',
