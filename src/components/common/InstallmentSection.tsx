@@ -359,10 +359,12 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
 
             {/* Add button */}
             {!isReadOnly && (
-              <button type="button" onClick={handleAdd} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
-                <PlusIcon className="w-5 h-5" />
-                เพิ่มงวดชำระ
-              </button>
+              <div className="flex justify-center">
+                <button type="button" onClick={handleAdd} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
+                  <PlusIcon className="w-5 h-5" />
+                  เพิ่มงวดชำระ
+                </button>
+              </div>
             )}
 
             {/* Warning */}

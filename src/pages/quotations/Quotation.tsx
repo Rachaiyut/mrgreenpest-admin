@@ -693,7 +693,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         >
                           {q.code}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-700 font-medium">
+                        <td className="px-6 py-4 text-sm font-bold text-slate-800">
                           {q.customer_name}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">

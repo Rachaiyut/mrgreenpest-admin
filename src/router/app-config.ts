@@ -99,6 +99,14 @@ const WithDrawVehicle = React.lazy(
 );
 const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 
+// Report Pages
+const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
+const ContractExpirationPage = React.lazy(() => import('../pages/reports/ContractExpirationPage'));
+const TechnicianPerformancePage = React.lazy(() => import('../pages/reports/TechnicianPerformancePage'));
+const InventoryUsagePage = React.lazy(() => import('../pages/reports/InventoryUsagePage'));
+const SalesPipelinePage = React.lazy(() => import('../pages/reports/SalesPipelinePage'));
+const ProfitLossPage = React.lazy(() => import('../pages/reports/ProfitLossPage'));
+
 // Unified Configuration - All routes and navigation in one place
 const UNIFIED_CONFIG: UnifiedConfig[] = [
   // Main Dashboard
@@ -408,6 +416,42 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         name: 'สรุปยอดขาย(รายเดือน)',
         path: 'reports/sales-summary',
         access: 'ACCESS_REPORT_SALES',
+      },
+      {
+        name: 'ลูกหนี้ค้างชำระ',
+        path: 'reports/ar-aging',
+        access: 'ACCESS_REPORT_FINANCIAL',
+        component: ArAgingPage,
+      },
+      {
+        name: 'สัญญาใกล้หมดอายุ',
+        path: 'reports/contract-expiration',
+        access: 'ACCESS_REPORT_SALES',
+        component: ContractExpirationPage,
+      },
+      {
+        name: 'ผลงานช่าง',
+        path: 'reports/technician-performance',
+        access: 'ACCESS_REPORT_SALES',
+        component: TechnicianPerformancePage,
+      },
+      {
+        name: 'การใช้สินค้า/เคมีภัณฑ์',
+        path: 'reports/inventory-usage',
+        access: 'ACCESS_REPORT_PURCHASE',
+        component: InventoryUsagePage,
+      },
+      {
+        name: 'Sales Pipeline',
+        path: 'reports/sales-pipeline',
+        access: 'ACCESS_REPORT_SALES',
+        component: SalesPipelinePage,
+      },
+      {
+        name: 'กำไร-ขาดทุน',
+        path: 'reports/profit-loss',
+        access: 'ACCESS_REPORT_FINANCIAL',
+        component: ProfitLossPage,
       },
     ],
   },
