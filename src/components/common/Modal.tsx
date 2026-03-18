@@ -21,7 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = '2xl',
   headerAction,
-  closeOnOutsideClick = true,
+  closeOnOutsideClick = false,
 }) => {
   if (!isOpen) return null;
 

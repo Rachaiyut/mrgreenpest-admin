@@ -59,10 +59,22 @@ export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
   // If they provide 'defaultValue', it's uncontrolled, so we don't interfere
   const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (props.type === 'number' && props.onChange) {
+      const raw = e.target.value;
+      // ตัด leading zero ออก เช่น "0300" -> "300", แต่เก็บ "0" และ "0." ไว้
+      if (raw.length > 1 && raw.startsWith('0') && raw[1] !== '.') {
+        e.target.value = raw.replace(/^0+/, '') || '0';
+      }
+    }
+    props.onChange?.(e);
+  };
+
   return (
     <input
       {...props}
       {...controlledProps}
+      onChange={handleChange}
       className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${
         props.type === 'search' ? 'pl-10' : '' // Add padding for search icon
       }`}
