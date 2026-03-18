@@ -279,39 +279,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleCopyPdfLink = async () => {
-    if (!selectedQuotation) return;
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      const shareLink = `${apiUrl}/print/${selectedQuotation.id}/view`;
-
-      await navigator.clipboard.writeText(shareLink);
-
-      Swal.fire({
-        title: 'คัดลอกสำเร็จ!',
-        text: 'คัดลอกลิงก์สำหรับส่งให้ลูกค้าเรียบร้อยแล้ว',
-        icon: 'success',
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#3085d6',
-        timer: 2000,
-        timerProgressBar: true,
-      });
-
-    } catch (err) {
-      console.error('Failed to copy PDF link:', err);
-
-      Swal.fire({
-        title: 'เกิดข้อผิดพลาด',
-        text: 'ไม่สามารถคัดลอกลิงก์ได้ กรุณาลองใหม่อีกครั้ง',
-        icon: 'error',
-        confirmButtonText: 'รับทราบ',
-        confirmButtonColor: '#d33',
-      });
-    } finally {
-      setOpenDropdownId(null);
-    }
-  };
 
   const handleStatusClick = () => {
     if (selectedQuotation) {
@@ -804,13 +771,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             >
               <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
-            </button>
-            <button
-              onClick={handleCopyPdfLink}
-              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-              คัดลอกลิงก์ PDF
             </button>
             <button
               onClick={handleEdit}

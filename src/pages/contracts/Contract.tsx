@@ -617,23 +617,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               ดูรายละเอียด
             </button>
             <button
-              onClick={() => {
-                if (!selectedContract) return;
-                const apiUrl = import.meta.env.VITE_API_BASE_URL;
-                const shareLink = `${apiUrl}/print/${selectedContract.id}/view`;
-                navigator.clipboard.writeText(shareLink).then(() => {
-                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ PDF เรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                }).catch(() => {
-                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถคัดลอกลิงก์ได้', icon: 'error', confirmButtonColor: '#d33' });
-                });
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4 text-blue-500" />
-              คัดลอกลิงก์ PDF
-            </button>
-            <button
               onClick={() => handleEdit(selectedContract)}
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
             >

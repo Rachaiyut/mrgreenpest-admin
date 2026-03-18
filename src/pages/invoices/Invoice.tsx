@@ -564,22 +564,6 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               <EyeIcon className="w-4 h-4 text-slate-400" /> ดูรายละเอียด
             </button>
             <button
-              className="w-full px-4 py-2.5 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-3 transition-colors"
-              onClick={() => {
-                if (!selectedInvoice) return;
-                const apiUrl = import.meta.env.VITE_API_BASE_URL;
-                const shareLink = `${apiUrl}/print/${selectedInvoice.id}/view`;
-                navigator.clipboard.writeText(shareLink).then(() => {
-                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ PDF เรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                }).catch(() => {
-                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถคัดลอกลิงก์ได้', icon: 'error', confirmButtonColor: '#d33' });
-                });
-                setOpenInvoiceDropdownId(null);
-              }}
-            >
-              <DocumentTextIcon className="w-4 h-4 text-blue-500" /> คัดลอกลิงก์ PDF
-            </button>
-            <button
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
               onClick={() => handleEditInvoice(selectedInvoice!)}
             >
