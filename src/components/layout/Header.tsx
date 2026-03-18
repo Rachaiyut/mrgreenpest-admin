@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
         >
           <MenuIcon className="h-5 w-5" />
         </button>
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 ml-auto">
           <NotificationMenu />
 
           {currentUser && (
