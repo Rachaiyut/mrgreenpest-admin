@@ -38,7 +38,6 @@ import { Select, Input, Button } from '../../components/common/FormControls';
 // ===== Local Components =====
 import JobCard from './JobCard';
 import JobCalendar from './JobCalendar';
-import { DatePicker } from 'antd';
 
 // ===== API =====
 import {
@@ -889,29 +888,26 @@ const Job: React.FC<JobProps> = ({
                 {activeTab === 'schedule' && (
                   <div className="flex items-center gap-2">
                     <DatePicker
-                      value={filterDate ? dayjs(filterDate, 'YYYY-MM-DD') : null}
-                      onChange={(date, dateString) => {
-                        if (dateString) {
-                          const selectedDate = date ? (date as any).toDate() : null;
-
-                          if (selectedDate) {
-                            const yyyy = selectedDate.getFullYear();
-                            const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                            const dd = String(selectedDate.getDate()).padStart(2, '0');
-                            const formattedDate = `${yyyy}-${mm}-${dd}`;
-
-                            setFilterDate(formattedDate);
-                            fetchData(formattedDate, selectedTechnicianId);
-                          }
+                      selected={filterDate ? new Date(filterDate) : null}
+                      onChange={(date: Date | null) => {
+                        if (date) {
+                          const yyyy = date.getFullYear();
+                          const mm = String(date.getMonth() + 1).padStart(2, '0');
+                          const dd = String(date.getDate()).padStart(2, '0');
+                          const formattedDate = `${yyyy}-${mm}-${dd}`;
+                          setFilterDate(formattedDate);
+                          fetchData(formattedDate, selectedTechnicianId);
                         } else {
                           setFilterDate('');
                           fetchData('', selectedTechnicianId);
                         }
                       }}
-                      placeholder="เลือกวันที่"
-                      format="DD/MM/YYYY"
-                      className="h-10 text-sm rounded-md w-full sm:min-w-[160px] border-slate-300 shadow-sm flex items-center"
-                      allowClear={false}
+                      placeholderText="เลือกวันที่"
+                      dateFormat="dd/MM/yyyy"
+                      locale="th"
+                      isClearable
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 sm:min-w-[160px]"
+                      wrapperClassName="w-full sm:w-auto"
                     />
                     <Select
                       id="technician-filter"

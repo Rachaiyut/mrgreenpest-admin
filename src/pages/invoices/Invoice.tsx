@@ -177,10 +177,11 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     const pendingValue = invoiceData
       .filter(
         (i) =>
-          i.status === InvoiceStatus.PENDING ||
-          i.status === InvoiceStatus.OVERDUE
+          (i.status === InvoiceStatus.PENDING ||
+          i.status === InvoiceStatus.OVERDUE) &&
+          !(i as any).carried_over_to_id
       )
-      .reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+      .reduce((sum, i) => sum + ((Number(i.total) || 0) - (Number((i as any).paid_amount) || 0)), 0);
 
     return { total, pending, paid, overdue, totalValue, pendingValue };
   }, [invoiceData]);
