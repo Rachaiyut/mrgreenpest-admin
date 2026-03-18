@@ -8,6 +8,8 @@ import {
   FC,
   useCallback,
 } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Card } from '../../common/Card';
 import {
   FormField,
@@ -1230,9 +1232,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 />
               </FormField>
             </div>
-            <FormField label="วันที่เสนอราคา"><Input type="date" value={quotationDate} onChange={(e) => setQuotationDate(e.target.value)} disabled={isReadOnly} required /></FormField>
+            <FormField label="วันที่เสนอราคา"><DatePicker selected={quotationDate ? new Date(quotationDate) : null} onChange={(date: Date | null) => setQuotationDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" disabled={isReadOnly} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" /></FormField>
             <FormField label="ยืนราคา (วัน)"><Input type="number" value={validityDays} onChange={(e) => setValidityDays(Number(e.target.value))} disabled={isReadOnly} min={1} /></FormField>
-            <FormField label="ใช้ได้ถึงวันที่"><Input type="date" value={expiresAt} disabled={true} className="bg-slate-50" /></FormField>
+            <FormField label="ใช้ได้ถึงวันที่"><DatePicker selected={expiresAt ? new Date(expiresAt) : null} onChange={() => {}} dateFormat="dd/MM/yyyy" locale="th" disabled className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md shadow-sm text-sm h-10" wrapperClassName="w-full" /></FormField>
           </div>
         </div>
 

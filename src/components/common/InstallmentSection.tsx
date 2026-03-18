@@ -1,6 +1,8 @@
 import { FC, useMemo } from 'react';
 import { FormField, Input, Select } from './FormControls';
 import { PlusIcon, TrashIcon, CreditCardIcon } from '../../assets/icons/Icons';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ─── Types ───────────────────────────────────────────────────────────
 export interface InstallmentItem {
@@ -325,7 +327,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                       </td>
                       {showDueDate && (
                         <td className="px-4 py-3">
-                          <Input type="date" value={inst.due_date ? new Date(inst.due_date).toISOString().substring(0, 10) : ''} onChange={(e) => handleChange(idx, 'due_date', e.target.value)} className="h-10 text-base text-center" disabled={isReadOnly} />
+                          <DatePicker selected={inst.due_date ? new Date(inst.due_date) : null} onChange={(date: Date | null) => handleChange(idx, 'due_date', date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" disabled={isReadOnly} className="h-10 text-base text-center w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm" wrapperClassName="w-full" />
                         </td>
                       )}
                       {showStatus && (

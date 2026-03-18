@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Modal } from '../../common/Modal';
 import { Button, Input } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -333,11 +335,14 @@ export const ReturnToMainWarehouseModal: React.FC<
               <span className="text-xs text-slate-500 font-medium">
                 วันที่คืน:
               </span>
-              <input
-                type="date"
-                value={returnDate}
-                onChange={(e) => setReturnDate(e.target.value)}
+              <DatePicker
+                selected={returnDate ? new Date(returnDate) : null}
+                onChange={(date: Date | null) => setReturnDate(date ? date.toISOString().substring(0, 10) : '')}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="dd/mm/yyyy"
                 className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
+                wrapperClassName="w-full"
                 required
               />
             </div>

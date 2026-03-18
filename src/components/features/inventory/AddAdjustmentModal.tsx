@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Modal } from '../../common/Modal';
 import {
   FormField,
@@ -205,11 +207,14 @@ export const AddStockAdjustmentModal: React.FC<
               />
             </FormField>
             <FormField label="วันที่" htmlFor="adjustment-date">
-              <Input
-                id="adjustment-date"
-                name="createdAt"
-                type="date"
-                defaultValue={new Date().toISOString().substring(0, 10)}
+              <DatePicker
+                selected={new Date()}
+                onChange={() => {}}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="dd/mm/yyyy"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-full"
                 required
               />
             </FormField>

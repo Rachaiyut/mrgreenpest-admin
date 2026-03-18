@@ -2,6 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import {
   ManageIcon,
   CurrencyDollarIcon,
@@ -351,21 +353,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               />
             </div>
             <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={receiptStartDate}
-                onChange={(e) => setReceiptStartDate(e.target.value)}
-                className="w-40"
-                placeholder="เริ่มต้น"
-              />
+              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
               <span className="text-slate-400">-</span>
-              <Input
-                type="date"
-                value={receiptEndDate}
-                onChange={(e) => setReceiptEndDate(e.target.value)}
-                className="w-40"
-                placeholder="สิ้นสุด"
-              />
+              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
             </div>
             <div className="w-full sm:w-48">
               <Select
@@ -752,14 +742,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <label className="block text-sm font-medium text-slate-700 mb-1">
                         วันที่รับชำระ <span className="text-red-500">*</span>
                       </label>
-                      <Input
-                        type="date"
-                        value={receiptFormReceivedAt}
-                        onChange={(e) =>
-                          setReceiptFormReceivedAt(e.target.value)
-                        }
-                        className="w-full"
-                      />
+                      <DatePicker selected={receiptFormReceivedAt ? new Date(receiptFormReceivedAt) : null} onChange={(date: Date | null) => setReceiptFormReceivedAt(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 mb-1">

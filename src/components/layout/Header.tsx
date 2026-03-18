@@ -13,8 +13,15 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
   const currentUser = useCurrentUser();
 
   return (
-    <header className="bg-white shadow-sm z-10">
-      <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-end h-16">
+    <header className="bg-white shadow-sm z-10 sticky top-0">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
+        {/* Hamburger - mobile only */}
+        <button
+          onClick={toggleSidebar}
+          className="md:hidden p-2 -ml-2 rounded-md text-slate-600 hover:bg-slate-100"
+        >
+          <MenuIcon className="h-5 w-5" />
+        </button>
         <div className="flex items-center space-x-2 sm:space-x-4">
           <NotificationMenu />
 

@@ -3,6 +3,8 @@ import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { formatThaiDate, formatThaiDateTime } from '../../utils/date';
 import {
   Product,
@@ -1333,26 +1335,10 @@ const Reports: React.FC<ReportsProps> = () => {
             />
           </div>
           <div className="w-44">
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              title="ตั้งแต่วันที่"
-            />
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => { setStartDate(date ? date.toISOString().substring(0, 10) : ''); setCurrentPage(1); }} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ตั้งแต่วันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
           </div>
           <div className="w-44">
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              title="ถึงวันที่"
-            />
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => { setEndDate(date ? date.toISOString().substring(0, 10) : ''); setCurrentPage(1); }} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
           </div>
           <div className="w-56">
             <Select

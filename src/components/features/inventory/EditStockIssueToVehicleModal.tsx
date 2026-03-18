@@ -9,6 +9,8 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -398,7 +400,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
                 <div className="ml-auto flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
                   <CalendarDaysIcon className="w-4 h-4 text-slate-400" />
                   <span className="text-xs text-slate-500 font-medium">วันที่เบิก:</span>
-                  <input type="date" value={withdrawalDate} onChange={(e) => setWithdrawalDate(e.target.value)} className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer" required />
+                  <DatePicker selected={withdrawalDate ? new Date(withdrawalDate) : null} onChange={(date: Date | null) => setWithdrawalDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer" wrapperClassName="w-full" required />
                 </div>
               </div>
 

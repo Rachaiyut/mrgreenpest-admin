@@ -1,6 +1,8 @@
 // ===== React =====
 import type { FC, FormEvent, MouseEvent } from 'react';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ===== Types / Enums =====
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
@@ -165,13 +167,15 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <FormField label="วันที่รับสินค้าเข้า" htmlFor="receipt-date">
-                <Input
-                  name="receipt-date"
-                  id="receipt-date"
-                  type="date"
-                  defaultValue={new Date().toISOString().substring(0, 10)}
+                <DatePicker
+                  selected={new Date()}
+                  onChange={() => {}}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="dd/mm/yyyy"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  wrapperClassName="w-full"
                   required
-                  className="bg-white"
                 />
               </FormField>
               <FormField label="เลขที่อ้างอิงเอกสาร" htmlFor="reference-id">

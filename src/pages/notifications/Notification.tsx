@@ -4,6 +4,8 @@ import { Select, Input } from '../../components/common/FormControls';
 import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 interface NotificationsProps {}
 
@@ -169,23 +171,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
             </div>
 
             {/* Date Range */}
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 h-11 shadow-sm w-full sm:w-auto">
-              <CalendarIcon className="w-5 h-5 text-slate-400 flex-shrink-0" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
-                placeholder="dd/mm/yyyy"
-              />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
               <span className="text-slate-400">-</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent border-none p-0 text-base text-slate-600 focus:ring-0 w-28 sm:w-32 placeholder-slate-400 h-full"
-                placeholder="dd/mm/yyyy"
-              />
+              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
             </div>
 
             {/* Invoice Status */}

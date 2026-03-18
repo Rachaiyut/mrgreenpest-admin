@@ -24,6 +24,8 @@ import { ContractApi } from '../../api';
 import { CustomerApi } from '../../api/customer';
 import { ContractModal } from '@/src/components/features/contracts/ContractModal';
 import Swal from 'sweetalert2';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.DRAFT]: 'ร่าง',
@@ -403,19 +405,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full sm:w-40"
-              />
+              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
               <span className="text-slate-400">-</span>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full sm:w-40"
-              />
+              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             </div>
 
             <div className="w-full lg:w-48">

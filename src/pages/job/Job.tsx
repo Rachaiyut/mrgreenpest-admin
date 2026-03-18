@@ -1,5 +1,7 @@
 // ===== React =====
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ===== Absolute Types =====
 import {
@@ -1472,12 +1474,7 @@ const Job: React.FC<JobProps> = ({
                       <JobDateIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
                       วันที่
                     </label>
-                    <Input
-                      type="date"
-                      value={scheduleDate}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      className="bg-white border-slate-200 shadow-sm w-full"
-                    />
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
                   </div>
                   <div className="flex-1 max-w-sm">
                     <label className="block text-sm font-semibold text-slate-700 mb-2">

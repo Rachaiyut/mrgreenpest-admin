@@ -19,6 +19,8 @@ import {
 import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
 import SignatureCanvas from 'react-signature-canvas';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { StorageApi } from '../../api/storage';
 import { CustomerApi } from '../../api/customer';
 
@@ -543,19 +545,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-40"
-                />
+                <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
                 <span className="text-slate-400">-</span>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-40"
-                />
+                <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
               </div>
               <div className="w-full sm:w-48">
                 <Select

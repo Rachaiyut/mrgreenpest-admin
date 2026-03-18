@@ -3,6 +3,8 @@ import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import {
   ManageIcon,
   EyeIcon,
@@ -357,21 +359,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               />
             </div>
             <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={invoiceStartDate}
-                onChange={(e) => setInvoiceStartDate(e.target.value)}
-                className="w-40"
-                placeholder="เริ่มต้น"
-              />
+              <DatePicker selected={invoiceStartDate ? new Date(invoiceStartDate) : null} onChange={(date: Date | null) => setInvoiceStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
               <span className="text-slate-400">-</span>
-              <Input
-                type="date"
-                value={invoiceEndDate}
-                onChange={(e) => setInvoiceEndDate(e.target.value)}
-                className="w-40"
-                placeholder="สิ้นสุด"
-              />
+              <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
             </div>
             <div className="w-full sm:w-48">
               <Select

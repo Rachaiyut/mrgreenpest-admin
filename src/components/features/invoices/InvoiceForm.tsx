@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { PlusIcon, TrashIcon, DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
@@ -485,10 +487,10 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               />
           </FormField>
           <FormField label="วันที่ออกเอกสาร *">
-            <Input type="date" value={formData.issuedDate} onChange={(e) => setFormData(prev => ({ ...prev, issuedDate: e.target.value }))} required className="bg-white h-11" />
+            <DatePicker selected={formData.issuedDate ? new Date(formData.issuedDate) : null} onChange={(date: Date | null) => setFormData(prev => ({ ...prev, issuedDate: date ? date.toISOString().substring(0, 10) : '' }))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11" wrapperClassName="w-full" />
           </FormField>
           <FormField label="วันครบกำหนดชำระ *">
-            <Input type="date" value={formData.dueDate} onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))} required className="bg-white h-11" />
+            <DatePicker selected={formData.dueDate ? new Date(formData.dueDate) : null} onChange={(date: Date | null) => setFormData(prev => ({ ...prev, dueDate: date ? date.toISOString().substring(0, 10) : '' }))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11" wrapperClassName="w-full" />
           </FormField>
         </div>
       </div>
