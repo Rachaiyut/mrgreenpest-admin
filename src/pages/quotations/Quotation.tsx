@@ -22,6 +22,7 @@ import SignatureCanvas from 'react-signature-canvas';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { StorageApi } from '../../api/storage';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { CustomerApi } from '../../api/customer';
 
 const statusLabels: Record<QuotationStatus, string> = {
@@ -71,6 +72,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   onReviseQuotation,
 }) => {
   const { customers } = useData();
+  const currentUser = useCurrentUser();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [totalFromServer, setTotalFromServer] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -99,6 +101,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       if (statusFilter !== 'ทั้งหมด') query.status = statusFilter;
       if (startDate) query.start_date = startDate;
       if (endDate) query.end_date = endDate;
+
+      // LEAD_TECH/TECH: เห็นที่ตัวเองสร้าง + ที่ผูกกับ job ของตัวเอง
+      if (currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH') {
+        query.tech_id = currentUser.id;
+      }
 
       const res = await QuotationApi.getAll(query);
       setQuotations(res.data || []);
