@@ -596,6 +596,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     หมดอายุ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    ผู้สร้าง
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -609,7 +612,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0">
+                    <td colSpan={11} className="p-0 border-b-0">
                       <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูลใบเสนอราคา...</p>
@@ -618,7 +621,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   </tr>
                 ) : paginatedQuotations.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 text-slate-500">
+                    <td colSpan={11} className="p-0 border-b-0 text-slate-500">
                       <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
                         <DocumentTextIcon className="h-12 w-12 text-slate-300 mb-3" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบเสนอราคา</p>
@@ -666,6 +669,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           {formatThaiDate(q.expires_at)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {(q as any).creator_name || '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge

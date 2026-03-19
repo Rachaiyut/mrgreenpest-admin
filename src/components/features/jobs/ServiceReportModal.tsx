@@ -187,8 +187,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         try {
           const res = await QuotationApi.getAll({
             limit: 10,
-            status: QuotationStatus.DRAFT,
-          });
+            status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED}` as any,
+            ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
+          } as any);
           setQuotations(res.data);
         } catch (error) {
           console.error('Failed to fetch quotations:', error);
@@ -203,9 +204,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     try {
       const res = await QuotationApi.getAll({
         limit: 10,
-        status: QuotationStatus.DRAFT,
+        status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED}` as any,
         search: value,
-      });
+        ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
+      } as any);
       setQuotations(res.data);
     } catch (error) {
       console.error('Failed to search quotations:', error);

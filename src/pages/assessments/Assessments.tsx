@@ -646,6 +646,9 @@ const Assessments: React.FC = () => {
                         ประเภท
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ผู้สร้าง
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -729,6 +732,9 @@ const Assessments: React.FC = () => {
                                 {allServiceTypes.join(', ') || '-'}
                               </span>
                             </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {(assessment as any).creator_name || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={assessment.status as any} />
