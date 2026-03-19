@@ -913,7 +913,9 @@ export const ContractForm: FC<ContractFormProps> = ({
         return {
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
+          building_type_other: area.building_type_other || undefined,
           service_system: area.service_system || undefined,
+          service_system_other: area.service_system_other || undefined,
           service_count: String(area.service_count || serviceCount || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
           total_price: Number(area.total_price) || Number(area.package_price) || 0,
@@ -933,7 +935,9 @@ export const ContractForm: FC<ContractFormProps> = ({
         return {
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
+          building_type_other: area.building_type_other || undefined,
           service_system: area.service_system || undefined,
+          service_system_other: area.service_system_other || undefined,
           service_count: String(area.service_count || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
           total_price: Number(area.total_price) || Number(area.package_price) || 0,

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardApi, DashboardData } from '../../api/dashboard';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { LoadingIcon } from '../../assets/icons/Icons';
 
 type Range = 'today' | 'week' | 'month' | 'quarter';
 
@@ -53,8 +54,9 @@ const Dashboard: React.FC<DashboardProps> = () => {
 
   if (loading || !data) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
+        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+        <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูล...</p>
       </div>
     );
   }

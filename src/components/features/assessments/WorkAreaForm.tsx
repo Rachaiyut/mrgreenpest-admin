@@ -81,6 +81,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const serviceLabels: Record<ServiceSystem, string> = {
     [ServiceSystem.PREY]: 'เหยื่อ',
     [ServiceSystem.CHEMICAL]: 'สารเคมีชีวภาพ',
+    [ServiceSystem.OTHER]: 'อื่นๆ',
   };
 
   const sortedConditions = useMemo(() => {
@@ -526,6 +527,18 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   )}
                 </FormField>
 
+                {area.building_type === 'OTHER' && (
+                  <FormField label="ระบุประเภท" htmlFor={`buildingTypeOther-${index}`}>
+                    <Input
+                      name="building_type_other"
+                      value={area.building_type_other || ''}
+                      onChange={handleFieldChange}
+                      placeholder="ระบุประเภทสิ่งปลูกสร้าง"
+                      required
+                    />
+                  </FormField>
+                )}
+
                 <FormField
                   label="ระบบใช้บริการ"
                   htmlFor={`serviceSystem-${index}`}
@@ -548,6 +561,18 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_service_system`]}</p>
                   )}
                 </FormField>
+
+                {area.service_system === 'OTHER' && (
+                  <FormField label="ระบุระบบ" htmlFor={`serviceSystemOther-${index}`}>
+                    <Input
+                      name="service_system_other"
+                      value={(area as any).service_system_other || ''}
+                      onChange={handleFieldChange}
+                      placeholder="ระบุระบบที่ใช้บริการ"
+                      required
+                    />
+                  </FormField>
+                )}
               </div>
 
               <div className="bg-white p-3 rounded-lg border border-slate-200">

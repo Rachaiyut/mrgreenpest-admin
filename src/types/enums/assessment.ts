@@ -10,6 +10,7 @@ export enum AsessmentStatus {
 export enum ServiceSystem {
   PREY = 'PREY',
   CHEMICAL = 'CHEMICAL',
+  OTHER = 'OTHER',
 }
 
 export enum BuildingType {

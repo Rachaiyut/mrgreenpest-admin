@@ -28,8 +28,10 @@ export interface AssessmentWorkArea extends IBase {
   package_price?: number;
   package_type: PackageType;
   building_type: string;
+  building_type_other?: string;
   area_name: string;
   service_system?: ServiceSystem;
+  service_system_other?: string;
   area_size?: number;
   total_price: number;
 

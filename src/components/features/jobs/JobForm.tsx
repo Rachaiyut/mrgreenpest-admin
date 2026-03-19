@@ -48,6 +48,7 @@ import {
   PhoneIcon,
   TruckIcon,
   UserIcon,
+  LoadingIcon,
 } from '../../../assets/icons/Icons';
 
 export interface JobFormProps {
@@ -110,6 +111,8 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const [workAreas, setWorkAreas] = useState<Partial<any>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [serviceSystem, setServiceSystem] = useState<string>('');
 
   const [customerSearch, setCustomerSearch] = useState('');
@@ -163,6 +166,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       if (mode === 'edit' && jobToEdit && packages.length > 0) {
         if (hasInitializedRef.current === jobToEdit.id) return;
         hasInitializedRef.current = jobToEdit.id;
+        setIsLoadingData(true);
 
         if (jobToEdit.customer_id) {
           setSelectedCustomerId(jobToEdit.customer_id);
@@ -186,7 +190,10 @@ export const JobForm: React.FC<JobFormProps> = ({
         if (jobToEdit.start_time || jobToEdit.start_date) {
           const startObj = new Date(jobToEdit.start_time || jobToEdit.start_date);
           if (!isNaN(startObj.getTime())) {
-            setWorkDate(startObj.toISOString().substring(0, 10));
+            const yyyy = startObj.getFullYear();
+            const mm = String(startObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(startObj.getDate()).padStart(2, '0');
+            setWorkDate(`${yyyy}-${mm}-${dd}`);
             setStartTime(startObj.toTimeString().substring(0, 5));
           }
         }
@@ -303,6 +310,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         }
 
         setVisitedSteps([0, 1, 2]);
+        setIsLoadingData(false);
       }
     };
 
@@ -507,7 +515,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   useEffect(() => {
     if (mode === 'add' && initialWorkDateIso) {
       const d = new Date(initialWorkDateIso);
-      const ymd = d.toISOString().substring(0, 10);
+      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       setWorkDate(ymd);
       const hhmm = d.toTimeString().substring(0, 5);
       if (hhmm !== '00:00') {
@@ -586,12 +594,14 @@ export const JobForm: React.FC<JobFormProps> = ({
             area_name: area.area_name,
             area_size: area.area_size ? Number(area.area_size) : undefined,
             building_type: area.building_type,
+            building_type_other: area.building_type_other || '',
             service_system: area.service_system,
+            service_system_other: area.service_system_other || '',
             package_price: area.package_price ? Number(area.package_price) : undefined,
             total_price: area.total_price ? Number(area.total_price) : undefined,
             items: area.items || [],
             category_services: area.category_services || [],
-            package_id: exactPackageId, 
+            package_id: exactPackageId,
             package_price_id: area.package_price_id,
             package_type: area.package_type as any,
           };
@@ -672,6 +682,7 @@ export const JobForm: React.FC<JobFormProps> = ({
     const jobData = createJobObject(currentStatus as JobMainStatus);
     
     if (jobData) {
+      setIsSubmitting(true);
       try {
         if (jobData.assessment_id) {
           const assessmentPayload = {
@@ -681,7 +692,9 @@ export const JobForm: React.FC<JobFormProps> = ({
 
               area_name: area.area_name,
               building_type: area.building_type,
+              building_type_other: area.building_type_other || undefined,
               service_system: area.service_system,
+              service_system_other: area.service_system_other || undefined,
               area_size: area.area_size,
 
               package_price_id: area.package_price_id,
@@ -711,9 +724,11 @@ export const JobForm: React.FC<JobFormProps> = ({
         await onSubmitJob(jobData, jobData.assessment_id);
         onCancel();
         
-      } catch (error) { 
+      } catch (error) {
         console.error('Error handling job submission:', error);
         alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -831,7 +846,14 @@ export const JobForm: React.FC<JobFormProps> = ({
         </div>
       </div>
 
-      <form id="job-form" onSubmit={handleSubmit} className="space-y-6 flex-1">
+      {isLoadingData && (
+        <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
+          <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+          <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูล...</p>
+        </div>
+      )}
+
+      <form id="job-form" onSubmit={handleSubmit} className={`space-y-6 flex-1 ${isLoadingData ? 'hidden' : ''}`}>
         {/* STEP 0: Customer & Schedule */}
         <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1087,9 +1109,9 @@ export const JobForm: React.FC<JobFormProps> = ({
                 ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
               </Button>
             ) : (
-              <Button type="submit" variant="primary" disabled={!steps[currentStep].isValid || !!timeConflictError} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
-                {mode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึกงาน'}
-                <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />
+              <Button type="submit" variant="primary" disabled={!steps[currentStep].isValid || !!timeConflictError || isSubmitting} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
+                {isSubmitting ? 'กำลังบันทึก...' : mode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึกงาน'}
+                {!isSubmitting && <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />}
               </Button>
             )}
           </div>
