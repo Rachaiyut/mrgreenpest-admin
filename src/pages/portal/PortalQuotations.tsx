@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { portalApi } from '../../api/customer-portal';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import dayjs from 'dayjs';
 
 const PortalQuotations: React.FC = () => {
@@ -80,9 +81,7 @@ const PortalQuotations: React.FC = () => {
                         : '-'}
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
-                        {item.status}
-                      </span>
+                      <StatusBadge status={item.status} />
                     </td>
                     <td className="px-6 py-4 text-center">
                       <button

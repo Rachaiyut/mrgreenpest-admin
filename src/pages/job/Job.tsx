@@ -1240,17 +1240,7 @@ const Job: React.FC<JobProps> = ({
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <StatusBadge status={
-                              (() => {
-                                const s = (job.api_status || job.status || '').toString().toUpperCase();
-                                if (s === 'UNASSIGNED') return 'รอจัดคิว';
-                                if (s === 'PENDING') return 'รอดำเนินการ';
-                                if (s === 'IN_PROGRESS' || s === 'INPROGRESS') return 'กำลังดำเนินการ';
-                                if (s === 'COMPLETED' || s === 'COMPLETE') return 'เสร็จสิ้น';
-                                if (s === 'CANCELLED') return 'ยกเลิก';
-                                return s;
-                              })()
-                            } />
+                            <StatusBadge status={job.api_status || job.status} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <Button

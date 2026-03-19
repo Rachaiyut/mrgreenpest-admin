@@ -682,7 +682,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
-                            status={getStatusLabel(q)}
+                            status={q.status}
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">

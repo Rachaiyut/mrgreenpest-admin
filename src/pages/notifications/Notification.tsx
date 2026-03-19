@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
+import { StatusBadge } from '../../components/common/StatusBadge';
 import { Select, Input } from '../../components/common/FormControls';
 import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
@@ -321,27 +322,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center bg-red-50/50">
                       {row.invoiceStatus !== '-' ? (
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            row.invoiceStatus === 'PAID'
-                              ? 'bg-green-100 text-green-700'
-                              : row.invoiceStatus === 'OVERDUE'
-                                ? 'bg-red-100 text-red-700'
-                                : row.invoiceStatus === 'SENT'
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {row.invoiceStatus === 'PAID'
-                            ? 'ชำระแล้ว'
-                            : row.invoiceStatus === 'OVERDUE'
-                              ? 'เกินกำหนด'
-                              : row.invoiceStatus === 'SENT'
-                                ? 'ส่งแล้ว'
-                                : row.invoiceStatus === 'DRAFT'
-                                  ? 'ร่าง'
-                                  : row.invoiceStatus}
-                        </span>
+                        <StatusBadge status={row.invoiceStatus} />
                       ) : (
                         '-'
                       )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardApi, DashboardData } from '../../api/dashboard';
+import { StatusBadge } from '../../components/common/StatusBadge';
 
 type Range = 'today' | 'week' | 'month' | 'quarter';
 
@@ -233,7 +234,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                   </div>
                   <div className="text-right ml-3 shrink-0">
                     <p className="text-sm font-medium text-slate-700">{job.actual_start_time ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : '-'}</p>
-                    <StatusPill status={job.status} />
+                    <StatusBadge status={job.status} />
                   </div>
                 </div>
               ))}
@@ -376,7 +377,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                     </div>
                   </div>
                   <div className="text-right ml-2 shrink-0">
-                    <StatusPill status={act.status} />
+                    <StatusBadge status={act.status} />
                     <p className="text-xs text-slate-400 mt-0.5">{fmtDate(act.created_at)}</p>
                   </div>
                 </div>
@@ -421,26 +422,6 @@ const PipelineRow: React.FC<{ label: string; total: number; done: number; color:
         <div className={`${color} h-2.5 rounded-full transition-all`} style={{ width: `${pct}%` }}></div>
       </div>
     </div>
-  );
-};
-
-const StatusPill: React.FC<{ status: string }> = ({ status }) => {
-  const map: Record<string, string> = {
-    COMPLETE: 'bg-green-100 text-green-700',
-    PAID: 'bg-green-100 text-green-700',
-    ACTIVE: 'bg-blue-100 text-blue-700',
-    SIGNED: 'bg-blue-100 text-blue-700',
-    PENDING: 'bg-amber-100 text-amber-700',
-    IN_PROGRESS: 'bg-sky-100 text-sky-700',
-    CANCELLED: 'bg-red-100 text-red-700',
-    OVERDUE: 'bg-red-100 text-red-700',
-    DRAFT: 'bg-slate-100 text-slate-600',
-    UNASSIGNED: 'bg-slate-100 text-slate-600',
-  };
-  return (
-    <span className={`inline-flex text-xs px-2 py-0.5 rounded-md font-medium ${map[status] || 'bg-slate-100 text-slate-600'}`}>
-      {status}
-    </span>
   );
 };
 

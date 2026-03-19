@@ -1,116 +1,71 @@
 import React from 'react';
-import { Status } from '@/src/types/entity/app.interface';
-import { JobMainStatus } from '@/src/types/enums/job';
-import { AsessmentStatus } from '@/src/types/enums/assessment';
-import { InvoiceStatus } from '@/src/types/enums/financial';
 
 interface StatusBadgeProps {
-  status: Status | JobMainStatus | AsessmentStatus | InvoiceStatus | string;
+  status: string;
 }
 
+// Standard status config: label ภาษาไทย + สี
+// ใช้ backend status (UPPERCASE) เป็น key ตรงๆ
+const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  // ===== สถานะทั่วไป =====
+  DRAFT:              { label: 'จัดทำ',             color: 'bg-slate-100 text-slate-600' },
+  PENDING:            { label: 'รอดำเนินการ',       color: 'bg-yellow-100 text-yellow-700' },
+  PENDING_APPROVAL:   { label: 'รออนุมัติ',         color: 'bg-orange-100 text-orange-700' },
+  PENDING_SIGNATURE:  { label: 'รอเซ็น',           color: 'bg-amber-100 text-amber-700' },
+  APPROVED:           { label: 'อนุมัติ',           color: 'bg-emerald-100 text-emerald-700' },
+  SIGNED:             { label: 'เซ็นแล้ว',          color: 'bg-green-100 text-green-700' },
+  IN_PROGRESS:        { label: 'กำลังดำเนินการ',    color: 'bg-blue-100 text-blue-700' },
+  COMPLETED:          { label: 'เสร็จสิ้น',         color: 'bg-green-100 text-green-700' },
+  COMPLETE:           { label: 'เสร็จสิ้น',         color: 'bg-green-100 text-green-700' },
+  CANCELLED:          { label: 'ยกเลิก',           color: 'bg-red-100 text-red-700' },
+  REJECTED:           { label: 'ปฏิเสธ',           color: 'bg-red-100 text-red-700' },
+  EXPIRED:            { label: 'หมดอายุ',           color: 'bg-zinc-100 text-zinc-600' },
+  REVISED:            { label: 'ปรับปรุง',          color: 'bg-pink-100 text-pink-700' },
+
+  // ===== ใบเสนอราคา =====
+  FOLLOW_UP:          { label: 'ติดตาม',           color: 'bg-purple-100 text-purple-700' },
+
+  // ===== สัญญา =====
+  ACTIVE:             { label: 'ใช้งาน',           color: 'bg-green-100 text-green-700' },
+
+  // ===== ใบแจ้งหนี้ =====
+  SENT:               { label: 'ส่งแล้ว',           color: 'bg-indigo-100 text-indigo-700' },
+  PAID:               { label: 'ชำระแล้ว',          color: 'bg-green-100 text-green-700' },
+  PARTIAL:            { label: 'ชำระบางส่วน',       color: 'bg-amber-100 text-amber-700' },
+  OVERDUE:            { label: 'เกินกำหนด',         color: 'bg-rose-100 text-rose-700' },
+  CARRIED_OVER:       { label: 'ทบยอดแล้ว',        color: 'bg-zinc-100 text-zinc-600' },
+
+  // ===== ใบเสร็จ =====
+  ISSUED:             { label: 'ออกแล้ว',           color: 'bg-green-100 text-green-700' },
+  VOIDED:             { label: 'ยกเลิก (Void)',     color: 'bg-red-100 text-red-700' },
+
+  // ===== ใบประเมิน =====
+  APPOINTMENT:        { label: 'นัดหมายแล้ว',       color: 'bg-blue-100 text-blue-700' },
+
+  // ===== ภาคสนาม =====
+  UNASSIGNED:         { label: 'รอจัดคิว',          color: 'bg-amber-100 text-amber-700' },
+  PLANNED:            { label: 'วางแผนแล้ว',        color: 'bg-sky-100 text-sky-700' },
+  SCHEDULED:          { label: 'นัดหมายแล้ว',       color: 'bg-blue-100 text-blue-700' },
+
+  // ===== คลังสินค้า =====
+  IN_TRANSIT:         { label: 'กำลังขนส่ง',        color: 'bg-blue-100 text-blue-700' },
+  RECEIVED:           { label: 'รับเข้าแล้ว',       color: 'bg-green-100 text-green-700' },
+
+  // ===== ทั่วไป =====
+  INACTIVE:           { label: 'ไม่ใช้งาน',         color: 'bg-red-100 text-red-700' },
+  VERIFIED:           { label: 'ตรวจสอบแล้ว',       color: 'bg-teal-100 text-teal-700' },
+};
+
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const s = String(status || '').trim();
-  const upper = s.toUpperCase();
+  const key = String(status || '').trim().toUpperCase().replace(/\s+/g, '_');
+  const config = STATUS_CONFIG[key];
 
-  const statusLabels: Record<string, string> = {
-    PENDING: Status.Pending,
-    IN_TRANSIT: 'กำลังขนส่ง',
-    IN_PROGRESS: Status.InProgress,
-    INPROGRESS: Status.InProgress,
-    COMPLETED: Status.Completed,
-    COMPLETE: Status.Completed,
-    CANCELLED: Status.Cancelled,
-    DRAFT: Status.Draft,
-    PLANNED: Status.Planned,
-    SCHEDULED: Status.Scheduled,
-    PENDINGAPPROVAL: Status.PendingApproval,
-    APPROVED: Status.Approved,
-    RECEIVED: 'รับเข้าแล้ว',
-    REJECTED: Status.Rejected,
-    PAUSED: Status.Paused,
-    FAILED: Status.Failed,
-    PAID: Status.Paid,
-    OVERDUE: Status.Overdue,
-    SENT: Status.Sent,
-    UNDERREVIEW: Status.UnderReview,
-    REVISE: Status.Revise,
-    CLOSED: Status.Closed,
-    APPOINTMENT: 'นัดหมายแล้ว',
-    ACTIVE: 'ใช้งาน',
-    INACTIVE: 'ไม่ใช้งาน',
-  };
-
-  const statusColors: Record<string, string> = {
-    // Core Status (Thai)
-    [Status.Draft]: 'bg-slate-100 text-slate-600',
-    [Status.Scheduled]: 'bg-blue-100 text-blue-700',
-    [Status.Planned]: 'bg-sky-100 text-sky-700',
-    [Status.InProgress]: 'bg-amber-100 text-amber-700',
-    [Status.Paused]: 'bg-gray-100 text-gray-700',
-    [Status.Completed]: 'bg-green-100 text-green-700',
-    [Status.Converted]: 'bg-emerald-100 text-emerald-700',
-    [Status.Failed]: 'bg-red-100 text-red-700',
-    [Status.Cancelled]: 'bg-red-100 text-red-700',
-    [Status.Pending]: 'bg-yellow-100 text-yellow-700',
-    กำลังขนส่ง: 'bg-blue-100 text-blue-700',
-    IN_TRANSIT: 'bg-blue-100 text-blue-700',
-    [Status.PendingApproval]: 'bg-orange-100 text-orange-700',
-    [Status.Approved]: 'bg-green-100 text-green-700',
-    รับเข้าแล้ว: 'bg-green-100 text-green-700',
-    [Status.Rejected]: 'bg-red-100 text-red-700',
-    [Status.Paid]: 'bg-green-100 text-green-700',
-    [Status.Overdue]: 'bg-rose-100 text-rose-700',
-    [Status.Sent]: 'bg-indigo-100 text-indigo-700',
-    [Status.UnderReview]: 'bg-violet-100 text-violet-700',
-    [Status.Revise]: 'bg-pink-100 text-pink-700',
-    [Status.Closed]: 'bg-zinc-100 text-zinc-700',
-    ใช้งาน: 'bg-green-100 text-green-700',
-    ไม่ใช้งาน: 'bg-red-100 text-red-700',
-    // 'นัดหมายแล้ว': 'bg-blue-100 text-blue-700', // Duplicate of Status.Scheduled
-
-    // Assessment Status (English)
-    [AsessmentStatus.APPOINTMENT]: 'bg-blue-100 text-blue-700',
-    [AsessmentStatus.COMPLETE]: 'bg-green-100 text-green-700',
-
-    // Invoice Status (English) - Only unique values
-    PAID: 'bg-green-100 text-green-700',
-    OVERDUE: 'bg-rose-100 text-rose-700',
-    DRAFT: 'bg-slate-100 text-slate-600',
-    PENDING: 'bg-yellow-100 text-yellow-700',
-    CANCELLED: 'bg-red-100 text-red-700',
-    SENT: 'bg-indigo-100 text-indigo-700',
-    PARTIAL: 'bg-amber-100 text-amber-700',
-  };
-
-  const displayLabel =
-    statusLabels[upper] ||
-    (s === JobMainStatus.PENDING
-      ? Status.Pending
-      : s === JobMainStatus.IN_PROGRESS
-        ? Status.InProgress
-        : s === JobMainStatus.COMPLETE
-          ? Status.Completed
-          : s === JobMainStatus.CANCELLED
-            ? Status.Cancelled
-            : s);
-
-  const colorKey =
-    statusLabels[upper] ||
-    (s === JobMainStatus.PENDING
-      ? JobMainStatus.PENDING
-      : s === JobMainStatus.IN_PROGRESS
-        ? JobMainStatus.IN_PROGRESS
-        : s === JobMainStatus.COMPLETE
-          ? JobMainStatus.COMPLETE
-          : s === JobMainStatus.CANCELLED
-            ? JobMainStatus.CANCELLED
-            : displayLabel);
+  const label = config?.label || status || '-';
+  const color = config?.color || 'bg-slate-100 text-slate-600';
 
   return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[colorKey] || 'bg-slate-100 text-slate-600'}`}
-    >
-      {displayLabel}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>
+      {label}
     </span>
   );
 };

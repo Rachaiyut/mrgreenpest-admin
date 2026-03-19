@@ -499,9 +499,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
-                            status={
-                              statusLabels[c.status as ContractStatus] || c.status
-                            }
+                            status={c.status}
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
