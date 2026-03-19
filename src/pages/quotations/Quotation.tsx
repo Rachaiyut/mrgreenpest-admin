@@ -791,31 +791,35 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <DocumentTextIcon className="w-4 h-4 text-amber-500" />
               สร้างฉบับใหม่
             </button>
-            <button
-              onClick={handleStatusClick}
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-            >
-              <CheckCircleIcon className="w-4 h-4 text-slate-400" />
-              เปลี่ยนสถานะ
-            </button>
-            <button
-              onClick={async () => {
-                if (!selectedQuotation?.customer_id) return;
-                try {
-                  const response = await CustomerApi.generatePortalToken(selectedQuotation.customer_id);
-                  const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
-                  await navigator.clipboard.writeText(portalUrl);
-                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
-                } catch {
-                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
-                }
-                setOpenDropdownId(null);
-              }}
-              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
-            >
-              <DocumentTextIcon className="w-4 h-4 text-green-500" />
-              ส่ง Link Portal ลูกค้า
-            </button>
+            {currentUser?.role !== 'LEAD_TECH' && currentUser?.role !== 'TECH' && (
+              <button
+                onClick={handleStatusClick}
+                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+              >
+                <CheckCircleIcon className="w-4 h-4 text-slate-400" />
+                เปลี่ยนสถานะ
+              </button>
+            )}
+            {currentUser?.role !== 'LEAD_TECH' && currentUser?.role !== 'TECH' && (
+              <button
+                onClick={async () => {
+                  if (!selectedQuotation?.customer_id) return;
+                  try {
+                    const response = await CustomerApi.generatePortalToken(selectedQuotation.customer_id);
+                    const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                    await navigator.clipboard.writeText(portalUrl);
+                    Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                  } catch {
+                    Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                  }
+                  setOpenDropdownId(null);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+              >
+                <DocumentTextIcon className="w-4 h-4 text-green-500" />
+                ส่ง Link Portal ลูกค้า
+              </button>
+            )}
             {(selectedQuotation?.status === QuotationStatus.DRAFT || selectedQuotation?.status === QuotationStatus.APPROVED || selectedQuotation?.status === QuotationStatus.PENDING_SIGNATURE) && (
               <button
                 onClick={async () => {
