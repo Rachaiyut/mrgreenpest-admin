@@ -507,7 +507,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         created_at: formData.created_at ? new Date(formData.created_at).toISOString() : new Date().toISOString(),
       };
 
-      if (!isEdit) payload.created_by = 'ผู้ดูแลระบบ';
+      // created_by จะถูก set โดย @BodyWithUser ฝั่ง backend อัตโนมัติ
 
       await onSubmit(payload);
     } catch (error) {

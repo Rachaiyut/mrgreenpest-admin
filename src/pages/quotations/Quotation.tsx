@@ -671,7 +671,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {formatThaiDate(q.expires_at)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(q as any).creator_name || '-'}
+                          {(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge

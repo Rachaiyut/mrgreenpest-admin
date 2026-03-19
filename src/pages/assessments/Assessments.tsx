@@ -48,8 +48,8 @@ import {
 } from '@/src/api';
 import { CategoryType, Role } from '@/src/types';
 import { useCurrentUser } from '@/src/hooks';
-import { DatePicker } from 'antd';
-import dayjs from 'dayjs';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const Assessments: React.FC = () => {
   const location = useLocation();
@@ -81,7 +81,13 @@ const Assessments: React.FC = () => {
   const [assessmentToDelete, setAssessmentToDelete] =
     useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [filterDate, setFilterDate] = useState<string>(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -105,6 +111,11 @@ const Assessments: React.FC = () => {
       // 🌟 ส่งคำค้นหาไปที่ API (ใช้ค่าที่ผ่านการหน่วงเวลาแล้ว)
       if (debouncedSearch) {
         filter.search = debouncedSearch;
+      }
+
+      // LEAD_TECH/TECH เห็นเฉพาะที่ตัวเองสร้าง
+      if (currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH') {
+        filter.created_by = currentUser.id;
       }
 
       const [
@@ -520,27 +531,25 @@ const Assessments: React.FC = () => {
               {/* DatePicker กรองวันที่ */}
               <div className="w-full sm:w-48 flex-shrink-0">
                  <DatePicker
-                    value={filterDate ? dayjs(filterDate, 'YYYY-MM-DD') : null}
-                    onChange={(date, dateString) => {
-                      if (dateString) {
-                        const selectedDate = date ? (date as any).toDate() : null;
-                        if (selectedDate) {
-                          const yyyy = selectedDate.getFullYear();
-                          const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-                          const dd = String(selectedDate.getDate()).padStart(2, '0');
-                          const formattedDate = `${yyyy}-${mm}-${dd}`;
-                          setFilterDate(formattedDate);
-                          setCurrentPage(1);
-                        }
+                    selected={filterDate ? new Date(filterDate) : null}
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(date.getDate()).padStart(2, '0');
+                        setFilterDate(`${yyyy}-${mm}-${dd}`);
+                        setCurrentPage(1);
                       } else {
                         setFilterDate('');
                         setCurrentPage(1);
                       }
                     }}
-                    placeholder="เลือกวันที่นัดหมาย"
-                    format="DD/MM/YYYY"
-                    className="h-10 text-sm rounded-md w-full border-slate-300 shadow-sm flex items-center"
-                    allowClear={false}
+                    placeholderText="เลือกวันที่นัดหมาย"
+                    dateFormat="dd/MM/yyyy"
+                    locale="th"
+                    isClearable
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    wrapperClassName="w-full"
                   />
               </div>
             </div>
@@ -734,7 +743,7 @@ const Assessments: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            {(assessment as any).creator_name || '-'}
+                            {(assessment as any).creator ? `${(assessment as any).creator.first_name} ${(assessment as any).creator.last_name || ''}`.trim() : '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={assessment.status as any} />

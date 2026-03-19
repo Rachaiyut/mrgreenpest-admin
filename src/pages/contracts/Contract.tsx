@@ -495,7 +495,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           {formatThaiDate(c.end_date)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(c as any).creator_name || '-'}
+                          {(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
