@@ -655,13 +655,13 @@ const Assessments: React.FC = () => {
                         ประเภท
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ผู้สร้าง
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ค่าใช้จ่าย
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ผู้สร้าง
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
@@ -743,9 +743,6 @@ const Assessments: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            {(assessment as any).creator ? `${(assessment as any).creator.first_name} ${(assessment as any).creator.last_name || ''}`.trim() : '-'}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={assessment.status as any} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
@@ -754,6 +751,9 @@ const Assessments: React.FC = () => {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {(assessment as any).creator ? `${(assessment as any).creator.first_name} ${(assessment as any).creator.last_name || ''}`.trim() : '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <div className="flex items-center justify-end gap-1">

@@ -442,9 +442,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">มูลค่า</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
               </thead>
@@ -495,9 +495,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           {formatThaiDate(c.end_date)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
                             status={c.status}
                           />
@@ -508,6 +505,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">

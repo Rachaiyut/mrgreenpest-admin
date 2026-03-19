@@ -603,13 +603,13 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     หมดอายุ
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    ผู้สร้าง
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    ผู้สร้าง
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
@@ -678,9 +678,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {formatThaiDate(q.expires_at)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
                           <StatusBadge
                             status={q.status}
                           />
@@ -691,6 +688,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'}
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
