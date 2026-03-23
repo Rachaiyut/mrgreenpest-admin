@@ -21,6 +21,9 @@ RUN pnpm install
 # Copy source code and deps
 COPY . .
 
+# Run tests — if tests fail, build stops here
+RUN pnpm test
+
 # Build the app
 # Add NODE_OPTIONS fix out of memory pnpm build
 RUN pnpm build
