@@ -85,6 +85,11 @@ const App: FC = () => {
         token: {
           colorPrimary: '#08a93d',
           fontFamily: '"Noto Sans Thai", sans-serif',
+          fontSize: 14,           /* ข้อความทั่วไป: 14px */
+          fontSizeHeading1: 24,   /* หัวข้อหลัก: 24px */
+          fontSizeHeading2: 18,   /* หัวข้อรอง: 18px */
+          fontSizeHeading3: 16,   /* หัวข้อย่อย: 16px */
+          fontSizeLG: 16,         /* Large text: 16px */
         },
       }}
     >
