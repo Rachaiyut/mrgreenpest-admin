@@ -86,9 +86,33 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
   );
 
   // ─── Handlers ───────────────────────────────────────────────────
+  const isLastInstallment = (index: number) => index === installments.length - 1 && installments.length > 1;
+
+  const recalcLastInstallment = (items: InstallmentItem[]): InstallmentItem[] => {
+    if (items.length <= 1) return items;
+
+    const lastIdx = items.length - 1;
+    let sumPct = 0;
+    let sumAmt = 0;
+
+    for (let i = 0; i < lastIdx; i++) {
+      sumPct += Number(items[i].percentage) || 0;
+      sumAmt += Number(items[i].amount) || 0;
+    }
+
+    const remainPct = Math.max(0, 100 - sumPct);
+    const remainAmt = Number(Math.max(0, totalAmount - sumAmt).toFixed(2));
+
+    items[lastIdx] = { ...items[lastIdx], percentage: Math.round(remainPct), amount: remainAmt };
+    return items;
+  };
+
   const handleChange = (index: number, field: string, value: any) => {
     const updated = [...installments];
     const current = { ...updated[index] };
+
+    // งวดสุดท้ายแก้ % / จำนวนเงินไม่ได้ (ระบบคำนวณอัตโนมัติ)
+    if (isLastInstallment(index) && (field === 'percentage' || field === 'amount')) return;
 
     if (field === 'percentage') {
       const pct = Math.min(100, Math.max(0, value === '' ? 0 : Math.round(Number(value))));
@@ -107,31 +131,8 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
 
     updated[index] = current;
 
-    // Auto-distribute remaining to other installments
-    if (updated.length > 1) {
-      const remainingPct = Math.max(0, 100 - current.percentage);
-      const otherCount = updated.length - 1;
-      const splitPct = Math.floor(remainingPct / otherCount);
-
-      let accPct = current.percentage;
-      let accAmt = current.amount;
-      const lastIdx = index === updated.length - 1 ? updated.length - 2 : updated.length - 1;
-
-      for (let i = 0; i < updated.length; i++) {
-        if (i === index) continue;
-        if (i === lastIdx) {
-          updated[i] = { ...updated[i], percentage: Math.max(0, 100 - accPct), amount: Number(Math.max(0, totalAmount - accAmt).toFixed(2)) };
-        } else {
-          const p = splitPct;
-          const a = Number(((p / 100) * totalAmount).toFixed(2));
-          updated[i] = { ...updated[i], percentage: p, amount: a };
-          accPct += p;
-          accAmt += a;
-        }
-      }
-    }
-
-    onChange(updated);
+    // คำนวณงวดสุดท้ายจากยอดที่เหลือ (ไม่กระจายไปงวดอื่น)
+    onChange(recalcLastInstallment(updated));
   };
 
   const handleAdd = () => {
@@ -145,7 +146,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
         nextDueDate = d.toISOString().split('T')[0];
       }
     }
-    onChange([
+    const newItems = [
       ...installments,
       {
         id: crypto.randomUUID(),
@@ -156,7 +157,8 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
         due_date: nextDueDate,
         status: 'PENDING',
       },
-    ]);
+    ];
+    onChange(recalcLastInstallment(newItems));
   };
 
   const handleRemove = (index: number) => {
@@ -313,17 +315,22 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {installments.map((inst, idx) => (
-                    <tr key={inst.id || idx} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-4 py-3 text-center text-base font-semibold text-slate-700 bg-slate-50/50">{inst.no}</td>
+                  {installments.map((inst, idx) => {
+                    const isLast = isLastInstallment(idx);
+                    return (
+                    <tr key={inst.id || idx} className={`hover:bg-slate-50/50 transition-colors ${isLast ? 'bg-amber-50/30' : ''}`}>
+                      <td className="px-4 py-3 text-center text-base font-semibold text-slate-700 bg-slate-50/50">
+                        {inst.no}
+                        {isLast && <div className="text-[10px] text-amber-600 font-normal mt-0.5">คำนวณอัตโนมัติ</div>}
+                      </td>
                       <td className="px-4 py-3">
                         <Input value={inst.description || ''} onChange={(e) => handleChange(idx, 'description', e.target.value)} placeholder="รายละเอียด..." className="h-10 text-base" disabled={isReadOnly} />
                       </td>
                       <td className="px-4 py-3">
-                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className="h-10 text-right text-base font-mono" disabled={isReadOnly} min={0} max={100} step="1" />
+                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className={`h-10 text-right text-base font-mono ${isLast ? 'bg-slate-100 text-slate-500' : ''}`} disabled={isReadOnly || isLast} min={0} max={100} step="1" />
                       </td>
                       <td className="px-4 py-3">
-                        <Input type="number" value={inst.amount || ''} onChange={(e) => handleChange(idx, 'amount', e.target.value)} className="h-10 text-right text-base font-mono" disabled={isReadOnly} />
+                        <Input type="number" value={inst.amount || ''} onChange={(e) => handleChange(idx, 'amount', e.target.value)} className={`h-10 text-right text-base font-mono ${isLast ? 'bg-slate-100 text-slate-500' : ''}`} disabled={isReadOnly || isLast} />
                       </td>
                       {showDueDate && (
                         <td className="px-4 py-3">
@@ -347,7 +354,8 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                         </td>
                       )}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
