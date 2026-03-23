@@ -13,7 +13,6 @@ import { Job } from '@/src/types/entity/job.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import {
-  Quotation,
   Invoice,
   Receipt,
   ReturnToSupplier,
