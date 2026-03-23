@@ -1689,24 +1689,27 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">วันนัดหมาย</label>
               <div className="flex gap-2">
-                <DatePicker
-                  selected={reportState.next_appointment?.scheduled_at ? new Date(reportState.next_appointment.scheduled_at) : null}
-                  onChange={(date: Date | null) =>
-                    setReportState((prev) => ({
-                      ...prev,
-                      next_appointment: {
-                        ...(prev.next_appointment || { notes: '', reasons: [] }),
-                        scheduled_at: date ? date.toISOString() : undefined,
-                      },
-                    }))
-                  }
-                  minDate={new Date()}
-                  dateFormat="dd/MM/yyyy"
-                  locale="th"
-                  placeholderText="dd/mm/yyyy"
-                  className="flex-1 w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                  wrapperClassName="flex-1"
-                />
+                <div className="relative flex-1">
+                  <DatePicker
+                    selected={reportState.next_appointment?.scheduled_at ? new Date(reportState.next_appointment.scheduled_at) : null}
+                    onChange={(date: Date | null) =>
+                      setReportState((prev) => ({
+                        ...prev,
+                        next_appointment: {
+                          ...(prev.next_appointment || { notes: '', reasons: [] }),
+                          scheduled_at: date ? date.toISOString() : undefined,
+                        },
+                      }))
+                    }
+                    minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                    locale="th"
+                    placeholderText="dd/mm/yyyy"
+                    className="w-full pl-10 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    wrapperClassName="w-full"
+                  />
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                </div>
                 <Select onChange={handleDateCalculation} className="w-1/3 text-sm" defaultValue="">
                   <option value="" disabled>+ เพิ่มวัน</option>
                   <option value="30">30 วัน</option>
