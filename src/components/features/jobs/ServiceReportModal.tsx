@@ -1445,6 +1445,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     placeholderText="dd/mm/yyyy"
+                    portalId="root"
+                    popperClassName="!z-[9999]"
                     className="w-full pl-10 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                     wrapperClassName="w-full"
                   />
