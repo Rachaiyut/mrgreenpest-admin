@@ -1267,7 +1267,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           <div className="space-y-4">
             {editableAreas
               .map((area, originalIndex) => ({ area, originalIndex }))
-              .sort((a, b) => (a.area.area_name || '').localeCompare(b.area.area_name || '', 'th'))
+              .sort((a, b) => new Date(a.area.created_at || 0).getTime() - new Date(b.area.created_at || 0).getTime())
               .map(({ area, originalIndex }) => (
               <WorkAreaForm
                 key={area.id || originalIndex}
