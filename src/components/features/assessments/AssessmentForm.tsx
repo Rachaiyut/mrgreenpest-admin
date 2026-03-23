@@ -675,11 +675,14 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               </div>
             </div>
             <div className="space-y-4">
-              {workAreas.map((area, index) => (
+              {workAreas
+                .map((area, originalIndex) => ({ area, originalIndex }))
+                .sort((a, b) => (a.area.area_name || '').localeCompare(b.area.area_name || '', 'th'))
+                .map(({ area, originalIndex }) => (
                 <WorkAreaForm
-                  key={area.id || index}
+                  key={area.id || originalIndex}
                   area={area}
-                  index={index}
+                  index={originalIndex}
                   // @ts-ignore
                   errors={errors}
                   onAreaChange={handleAreaChange}

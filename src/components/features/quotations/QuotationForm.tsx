@@ -1265,11 +1265,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             </div>
           </div>
           <div className="space-y-4">
-            {editableAreas.map((area, index) => (
+            {editableAreas
+              .map((area, originalIndex) => ({ area, originalIndex }))
+              .sort((a, b) => (a.area.area_name || '').localeCompare(b.area.area_name || '', 'th'))
+              .map(({ area, originalIndex }) => (
               <WorkAreaForm
-                key={area.id || index}
+                key={area.id || originalIndex}
                 area={area}
-                index={index}
+                index={originalIndex}
                 // @ts-ignore
                 errors={{}}
                 onAreaChange={(i, updated) => setEditableAreas(prev => prev.map((a, idx) => idx === i ? updated : a))}
