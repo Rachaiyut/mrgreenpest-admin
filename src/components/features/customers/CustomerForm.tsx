@@ -204,7 +204,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       google_map_link: formData.googleMapLink,
       gendder: formData.gender || 'ไม่ระบุ',
       road_line: formData['address-roadLine'] || '',
-      sequence_no: formData['address-sequence'] || '',
+      sequence_no: formData['address-sequence'] ? Number(formData['address-sequence']) : null,
       service_area: formData['address-zone'] || '',
       service_group: formData['address-group'] || '',
     };
