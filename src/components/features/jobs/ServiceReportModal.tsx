@@ -1353,34 +1353,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
         </div>
 
-        {/* Service Result Tabs */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-            <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
-              <CheckCircleIcon className="w-5 h-5 text-primary" />
-              ผลการสำรวจและดำเนินการ
-            </h3>
-          </div>
-          <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
-            {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
-              <button
-                key={pest}
-                type="button"
-                onClick={() => setActivePestTab(pest)}
-                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${activePestTab === pest
-                  ? 'bg-primary text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-              >
-                {pestRenderConfig[pest].label}
-              </button>
-            ))}
-          </div>
-          <div className="p-6 bg-slate-50/50 min-h-[300px]">
-            {pestRenderConfig[activePestTab].render()}
-          </div>
-        </div>
-
         {/* Global Service Checkboxes (Types & Actions) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1414,6 +1386,34 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 </label>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Service Result Tabs */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
+            <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
+              <CheckCircleIcon className="w-5 h-5 text-primary" />
+              ผลการสำรวจและดำเนินการ
+            </h3>
+          </div>
+          <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
+            {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
+              <button
+                key={pest}
+                type="button"
+                onClick={() => setActivePestTab(pest)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all ${activePestTab === pest
+                  ? 'bg-primary text-white shadow-md'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+              >
+                {pestRenderConfig[pest].label}
+              </button>
+            ))}
+          </div>
+          <div className="p-6 bg-slate-50/50 min-h-[300px]">
+            {pestRenderConfig[activePestTab].render()}
           </div>
         </div>
 
@@ -1593,7 +1593,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Additional Notes */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-md font-bold text-slate-800 mb-4">หมายเหตุเพิ่มเติม (Internal Note)</h3>
+          <h3 className="text-md font-bold text-slate-800 mb-4">หมายเหตุเพิ่มเติม</h3>
           <Textarea
             rows={3}
             value={reportState.notes || ''}
