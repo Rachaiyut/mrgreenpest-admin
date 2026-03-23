@@ -1283,6 +1283,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   if (pkgId) {
                     const pkg = fetchedPackages.find(p => p.id === pkgId);
                     if (pkg) {
+                      setFetchedPackage(pkg);
                       setUsePackagePricing(true);
                       setPackageName(pkg.name);
                     }

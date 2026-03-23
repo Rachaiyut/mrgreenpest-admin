@@ -648,7 +648,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                             แพ็คเก็จ <span className="text-red-500">*</span>
                           </label>
                           <div className="mb-4 animate-fadeIn">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+                            {/* แสดงข้อความล็อกแพ็คเกจ เมื่อมีการเลือกแพ็คเกจจากพื้นที่อื่นแล้ว */}
+                          {selectedPackage && activePackageId === selectedPackage.id && (
+                            <div className="mb-2 flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
+                              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                              ใช้แพ็คเกจเดียวกันทุกพื้นที่: <span className="font-semibold">{selectedPackage.name}</span>
+                            </div>
+                          )}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
                               {availablePackages.map((pkg) => {
                                 const conditions = [
                                   ...(pkg.package_prices || []),
@@ -661,13 +668,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                                 const isSelected = activePackageId === pkg.id;
 
+                                // ล็อกแพ็คเกจ: ถ้ามีการเลือกแพ็คเกจจากพื้นที่อื่นแล้ว ไม่ให้เลือกแพ็คเกจอื่น
+                                const isLockedByOtherArea = !!selectedPackage && selectedPackage.id !== pkg.id;
+
                                 const isWithTermiteSelected = isSelected && area.package_price_id === fit?.id && (
-                                  area.package_type === PackageType.WITH_TERMITE || 
+                                  area.package_type === PackageType.WITH_TERMITE ||
                                   (!area.package_type && area.package_price === fit?.price_with_termite)
                                 );
-                                
+
                                 const isWithoutTermiteSelected = isSelected && area.package_price_id === fit?.id && (
-                                  area.package_type === PackageType.WITHOUT_TERMITE || 
+                                  area.package_type === PackageType.WITHOUT_TERMITE ||
                                   (!area.package_type && area.package_price === fit?.price_without_termite)
                                 );
 
@@ -675,16 +685,20 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   <div
                                     key={pkg.id}
                                     role="button"
-                                    tabIndex={0}
+                                    tabIndex={isLockedByOtherArea ? -1 : 0}
+                                    aria-disabled={isLockedByOtherArea}
                                     onClick={() => {
+                                      // ถ้าถูกล็อกจากพื้นที่อื่น ไม่ให้เปลี่ยน
+                                      if (isLockedByOtherArea) return;
+
                                       if (activePackageId !== pkg.id) {
                                         setOptimisticPackageId(pkg.id);
                                         onSelectPackage?.(pkg.id);
-                                        
-                                        // ✅ บังคับล้างเป็น undefined แทน 0 เพื่อไม่ให้เกิด Error ราคาต่ำกว่าเกณฑ์
+
+                                        // บังคับล้างเป็น undefined แทน 0 เพื่อไม่ให้เกิด Error ราคาต่ำกว่าเกณฑ์
                                         onAreaChange(index, {
                                           ...area,
-                                          package_price: undefined, 
+                                          package_price: undefined,
                                           package_price_id: undefined,
                                           package_type: undefined as any,
                                           total_price: (area.items || []).reduce(
@@ -694,10 +708,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                         });
                                       }
                                     }}
-                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full cursor-pointer ${isSelected
-                                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                                        : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
-                                      }`}
+                                    className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${
+                                      isLockedByOtherArea
+                                        ? 'border-slate-100 bg-slate-50 opacity-40 cursor-not-allowed'
+                                        : isSelected
+                                          ? 'border-primary bg-primary/5 ring-1 ring-primary cursor-pointer'
+                                          : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white cursor-pointer'
+                                    }`}
                                   >
                                     <div
                                       className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}
