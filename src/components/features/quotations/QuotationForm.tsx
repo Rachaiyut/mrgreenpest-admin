@@ -1286,6 +1286,24 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                       setFetchedPackage(pkg);
                       setUsePackagePricing(true);
                       setPackageName(pkg.name);
+
+                      // เปลี่ยนแพ็คเกจ → อัปเดตราคาทุกพื้นที่ตามแพ็คเกจใหม่
+                      const sortedPrices = [...(pkg.package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
+                      setEditableAreas(prev => prev.map(area => {
+                        if (!area.area_size || area.area_size <= 0) {
+                          return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
+                        }
+                        const bestFit = sortedPrices.find((c: any) => c.area_range >= area.area_size!);
+                        if (!bestFit) return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
+
+                        return {
+                          ...area,
+                          package_price: undefined,
+                          package_price_id: undefined,
+                          package_type: undefined as any,
+                          total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
+                        };
+                      }));
                     }
                   }
                 }}
