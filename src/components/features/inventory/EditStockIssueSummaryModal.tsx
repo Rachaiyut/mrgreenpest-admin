@@ -5,6 +5,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
@@ -356,16 +357,16 @@ export const EditStockIssueSummaryModal: React.FC<EditStockIssueSummaryModalProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!warehouseId) return alert('กรุณาเลือกรถบริการ');
-    if (items.length === 0) return alert('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ');
+    if (!warehouseId) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการ' });
+    if (items.length === 0) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ' });
 
     const invalidItems = items.filter((item) => !item.product_id || item.quantity <= 0);
-    if (invalidItems.length > 0) return alert('กรุณาระบุจำนวนสินค้าให้ถูกต้อง');
+    if (invalidItems.length > 0) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุจำนวนสินค้าให้ถูกต้อง' });
 
     // 🌟 Validate: หากมีการใช้เงินเกินวงเงิน หรือเบิกสินค้าเกินโควต้า ต้องบังคับเลือก Job และ Notes
     if (isOverLimit || isAnyItemOverLimit) {
       if (!jobId || !notes.trim()) {
-        return alert('กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า');
+        return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า' });
       }
     }
 
@@ -395,7 +396,7 @@ export const EditStockIssueSummaryModal: React.FC<EditStockIssueSummaryModalProp
   };
 
   const handleSaveDraft = async () => {
-    if (!warehouseId) return alert('กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง');
+    if (!warehouseId) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง' });
     setIsSubmitting(true);
     try {
       const payload: any = {

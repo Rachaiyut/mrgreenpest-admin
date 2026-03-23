@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -52,7 +53,6 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { QuotationApi } from '../../api/quotation';
 import { PrintApi } from '@/src/api/print';
-import Swal from 'sweetalert2';
 import { Quotation } from '@/src/types/entity/quotation.interface';
 
 interface QuotationsPageProps {
@@ -714,7 +714,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                     window.open(url, '_blank');
                                   } catch (error) {
                                     console.error('Error viewing PDF:', error);
-                                    alert('ไม่สามารถเปิด PDF ได้');
+                                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
                                   } finally {
                                     setLoadingPdfId(null);
                                   }

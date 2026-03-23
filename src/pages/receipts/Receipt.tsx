@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Card } from '../../components/common/Card';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
@@ -23,7 +24,6 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useData } from '../../contexts/DataContext';
 import { ReceiptApi } from '../../api/receipt';
 import { CustomerApi } from '../../api/customer';
-import Swal from 'sweetalert2';
 
 const statusLabels: Record<ReceiptStatus, string> = {
   [ReceiptStatus.DRAFT]: 'ร่าง',
@@ -492,7 +492,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                                 window.open(url, '_blank');
                               } catch (err) {
                                 console.error('Failed to view PDF', err);
-                                alert('ไม่สามารถดู PDF ได้');
+                                Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดู PDF ได้' });
                               } finally {
                                 setIsDownloading(null);
                               }

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
 import {
@@ -180,7 +181,7 @@ const Returns: React.FC<ReturnsProps> = ({
       }
     } catch (error) {
       console.error('Failed to approve return:', error);
-      alert('เกิดข้อผิดพลาดในการอนุมัติ');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการอนุมัติ' });
     }
   };
 
@@ -195,7 +196,7 @@ const Returns: React.FC<ReturnsProps> = ({
       }
     } catch (error) {
       console.error('Failed to reject return:', error);
-      alert('เกิดข้อผิดพลาดในการไม่อนุมัติ');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการไม่อนุมัติ' });
     }
   };
 

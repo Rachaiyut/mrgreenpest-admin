@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import {
   Modal,
   FormField,
@@ -105,7 +106,7 @@ export const AddPackageModal: React.FC<AddPackageModalProps> = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (invalidConditionIndices.length > 0) {
-      alert('กรุณาแก้ไขราคาให้ถูกต้อง: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาแก้ไขราคาให้ถูกต้อง: ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ' });
       return;
     }
     const formData = new FormData(e.currentTarget);

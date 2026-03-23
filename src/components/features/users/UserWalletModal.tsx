@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User, UserWallet } from '@/src/types/entity/app.interface';
 import { FormField, Input, Button } from '../../common/FormControls';
@@ -85,9 +86,9 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
           error.response.data &&
           error.response.data.message
         ) {
-          alert(error.response.data.message);
+          Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.response.data.message });
         } else {
-          alert('ไม่สามารถบันทึกรายการได้');
+          Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกรายการได้' });
         }
       }
     }

@@ -1,4 +1,5 @@
 // ===== React / External =====
+import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -95,9 +96,9 @@ const IssueSummaryPage: React.FC = () => {
         error.response.data &&
         error.response.data.message
       ) {
-        alert(error.response.data.message);
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.response.data.message });
       } else {
-        alert('ไม่สามารถสร้างใบเบิกได้');
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างใบเบิกได้' });
       }
     }
   };

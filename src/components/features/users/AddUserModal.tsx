@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User, UserRole } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
@@ -157,7 +158,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error creating user:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างผู้ใช้งาน');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการสร้างผู้ใช้งาน' });
     } finally {
       setIsUploading(false);
     }

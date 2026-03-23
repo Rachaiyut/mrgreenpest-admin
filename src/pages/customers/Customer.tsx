@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import Swal from 'sweetalert2';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { useData } from '../../contexts/DataContext';
 import { CustomerApi } from '@/src/api/customer';
@@ -139,7 +140,7 @@ const Customers: React.FC = () => {
       fetchCustomers(); // โหลดตารางใหม่
     } catch (error) {
       console.error(`Error ${modalMode} customer:`, error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
     }
   };
 
@@ -161,10 +162,10 @@ const Customers: React.FC = () => {
       const response = await CustomerApi.generatePortalToken(customer.id);
       const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
       await navigator.clipboard.writeText(portalUrl);
-      alert('คัดลอกลิงก์ Portal สำเร็จ!');
+      Swal.fire({ icon: 'success', title: 'คัดลอกลิงก์ Portal สำเร็จ!', timer: 1500, showConfirmButton: false });
     } catch (error) {
       console.error('Error generating portal token:', error);
-      alert('เกิดข้อผิดพลาดในการสร้างลิงก์');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการสร้างลิงก์' });
     }
     setOpenDropdownId(null);
   };

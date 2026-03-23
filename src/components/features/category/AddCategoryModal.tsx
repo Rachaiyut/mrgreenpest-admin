@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Category } from '@/src/types/entity/app.interface';
@@ -30,7 +31,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (error) {
-      alert(error);
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: error });
       return;
     }
     const formData = new FormData(e.currentTarget);

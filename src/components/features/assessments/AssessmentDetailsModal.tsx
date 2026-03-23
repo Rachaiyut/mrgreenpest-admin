@@ -1,4 +1,5 @@
 import { FC, ReactNode, ReactElement, cloneElement, useState } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import {
@@ -202,7 +203,7 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
       }
     } catch (error) {
       console.error('Error fetching PDF:', error);
-      alert('ไม่สามารถดาวน์โหลด PDF ได้');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลด PDF ได้' });
     } finally {
       setLoadingPdf(false);
     }

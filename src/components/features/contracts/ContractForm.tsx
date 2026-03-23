@@ -1,4 +1,5 @@
 // ===== React =====
+import Swal from 'sweetalert2';
 import React, {
   FC,
   useCallback,
@@ -871,7 +872,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     e.preventDefault();
 
     if (!selectedCustomerId) {
-      alert('กรุณาเลือกลูกค้า');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' });
       return;
     }
 
@@ -880,9 +881,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       0
     );
     if (Math.abs(totalPercentage - 100) > 0.5) {
-      alert(
-        `สัดส่วนการแบ่งงวดรวมกันต้องเท่ากับ 100% (ปัจจุบัน: ${totalPercentage}%)`
-      );
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `สัดส่วนการแบ่งงวดรวมกันต้องเท่ากับ 100% (ปัจจุบัน: ${totalPercentage}%)` });
       return;
     }
 

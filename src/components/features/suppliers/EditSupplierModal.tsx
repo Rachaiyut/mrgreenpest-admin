@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
 import { Supplier } from '@/src/types/entity/app.interface';
@@ -69,7 +70,7 @@ export const EditSupplierModal: React.FC<EditSupplierModalProps> = ({
         !phones[0].trim() ||
         (formData.type === SupplierType.CORPORATE && !formData.tax_id)
       ) {
-        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
         return;
       }
       const updatedSupplier = {

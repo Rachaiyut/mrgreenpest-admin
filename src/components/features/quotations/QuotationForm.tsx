@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import {
   useState,
   useEffect,
@@ -548,7 +549,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }).catch(() => {});
       }
     }
-  }, [activeData, selectedAssessment, hasInitializedAreas]);
+  }, [activeData, selectedAssessment, hasInitializedAreas, fetchedQuotation]);
 
   const addNewArea = () => {
     setEditableAreas(prev => [...prev, {
@@ -1055,18 +1056,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!selectedCustomerId || !selectedCustomer) { alert('กรุณาเลือกลูกค้า'); return; }
+    if (!selectedCustomerId || !selectedCustomer) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' }); return; }
 
     // Validate areas
     if (editableAreas.length > 0) {
       for (let i = 0; i < editableAreas.length; i++) {
         const area = editableAreas[i];
-        if (!area.area_name?.trim()) { alert(`กรุณาระบุชื่อพื้นที่ ${i + 1}`); return; }
-        if (!area.building_type) { alert(`กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"`); return; }
+        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุชื่อพื้นที่ ${i + 1}` }); return; }
+        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); return; }
       }
     } else if (!selectedAssessmentId) {
-      if (!buildingType) { alert('กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)'); return; }
-      if (!serviceType) { alert('กรุณาระบุประเภทบริการ (Service Type is required)'); return; }
+      if (!buildingType) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)' }); return; }
+      if (!serviceType) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุประเภทบริการ (Service Type is required)' }); return; }
     }
 
     const hasValidItems = items.some((item) => item.description && item.amount > 0);
@@ -1074,14 +1075,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     const isAssessmentLinked = !!selectedAssessmentId;
 
     if (!hasValidItems && !hasAreas && !usePackagePricing && !isAssessmentLinked) {
-      alert('กรุณาเพิ่มพื้นที่หรือรายการสินค้า');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเพิ่มพื้นที่หรือรายการสินค้า' });
       return;
     }
 
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
       const totalInstallment = installments.reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
       if (Math.abs(totalInstallment - netTotal) >= 1) {
-        alert(`ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})`);
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `ยอดรวมงวดงาน (${totalInstallment.toLocaleString()}) ไม่ตรงกับยอดรวมสุทธิ (${netTotal.toLocaleString()})` });
         return;
       }
     }

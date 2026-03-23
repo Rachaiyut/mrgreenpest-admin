@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
@@ -23,7 +24,6 @@ import { useData } from '../../contexts/DataContext';
 import { ContractApi } from '../../api';
 import { CustomerApi } from '../../api/customer';
 import { ContractModal } from '@/src/components/features/contracts/ContractModal';
-import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -276,7 +276,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       fetchContractsData();
     } catch (error) {
       console.error('Failed to save contract:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
     }
   };
 
@@ -526,7 +526,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                                     window.open(url, '_blank');
                                   } catch (error) {
                                     console.error('Error viewing PDF:', error);
-                                    alert('ไม่สามารถเปิด PDF ได้');
+                                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
                                   } finally {
                                     setLoadingPdfId(null);
                                   }

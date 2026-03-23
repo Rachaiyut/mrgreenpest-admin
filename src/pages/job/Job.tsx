@@ -1,4 +1,5 @@
 // ===== React =====
+import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -527,7 +528,7 @@ const Job: React.FC<JobProps> = ({
       window.open(fileURL, '_blank');
     } catch (error) {
       console.error('Error viewing PDF:', error);
-      alert('ไม่สามารถเปิด PDF ได้ในขณะนี้');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้ในขณะนี้' });
     } finally {
       setLoadingPdfId(null);
     }

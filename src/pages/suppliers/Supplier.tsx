@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
+import Swal from 'sweetalert2';
 
 // Components
 import { Card } from '../../components/common/Card';
@@ -65,7 +66,7 @@ const Suppliers: React.FC = () => {
       fetchSupplier();
     } catch (error) {
       console.error('Failed to delete product:', error);
-      alert('Failed to delete product');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete product' });
     }
   };
 
@@ -186,7 +187,7 @@ const Suppliers: React.FC = () => {
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update supplier:', error);
-      alert('Failed to update supplier');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update supplier' });
     }
   };
 

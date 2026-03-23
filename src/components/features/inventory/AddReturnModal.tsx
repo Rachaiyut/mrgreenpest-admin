@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Modal } from '../../common/Modal';
@@ -240,9 +241,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) {
-      alert(
-        'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องเลือกคลังต้นทาง, คลังปลายทาง, และมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมระบุจำนวนและเหตุผล'
-      );
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องเลือกคลังต้นทาง, คลังปลายทาง, และมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมระบุจำนวนและเหตุผล' });
       return;
     }
     const newReturn: any = {

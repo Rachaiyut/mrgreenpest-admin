@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import { useSearchParams } from 'react-router-dom';
 import SignatureCanvas from 'react-signature-canvas';
 import { portalApi } from '../../api/customer-portal';
@@ -81,12 +82,12 @@ const PortalSignQuotation: React.FC = () => {
     if (!token) return;
 
     if (!signerName.trim()) {
-      alert('กรุณากรอกชื่อผู้เซ็น');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกชื่อผู้เซ็น' });
       return;
     }
 
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
-      alert('กรุณาเซ็นลายมือในกรอบ');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเซ็นลายมือในกรอบ' });
       return;
     }
 
@@ -100,7 +101,7 @@ const PortalSignQuotation: React.FC = () => {
       setState('signed');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-      alert(msg);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg });
     } finally {
       setIsSubmitting(false);
     }

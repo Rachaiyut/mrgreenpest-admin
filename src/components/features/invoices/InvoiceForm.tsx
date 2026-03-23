@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
+import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
@@ -375,12 +376,12 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     e.preventDefault();
     if (isSaving) return;
     if (!formData.customerId) {
-      alert('กรุณาเลือกลูกค้า');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกลูกค้า' });
       return;
     }
 
     if (!isAdhocMode && availableInstallments.length > 0 && !formData.selectedScheduleId) {
-      alert('กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "สร้างบิลพิเศษ"');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "สร้างบิลพิเศษ"' });
       return;
     }
 
@@ -429,7 +430,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
       if (mode === 'create') {
         await InvoiceApi.create(payload);
-        alert('สร้างใบแจ้งหนี้สำเร็จ!');
+        Swal.fire({ icon: 'success', title: 'สร้างใบแจ้งหนี้สำเร็จ!', timer: 1500, showConfirmButton: false });
         fetchData(['invoices']);
         onCancel();
       } else {

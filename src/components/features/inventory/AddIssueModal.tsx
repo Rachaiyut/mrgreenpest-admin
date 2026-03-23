@@ -2,6 +2,7 @@
  * @file AddWithDrawModal.tsx
  * @description Modal component for creating a new goods withdrawal.
  */
+import Swal from 'sweetalert2';
 import React, {
   useState,
   useEffect,
@@ -233,7 +234,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     const hasValidExpenses = expenseItems.some(exp => Number(exp.amount) > 0);
     if (goodsItems.length === 0 && !hasValidExpenses) {
       newErrors.general = 'ต้องมีสินค้าอย่างน้อย 1 รายการ หรือมีการเบิกค่าใช้จ่าย';
-      alert('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ หรือเพิ่มรายการเบิกเงิน');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกสินค้าอย่างน้อย 1 รายการ หรือเพิ่มรายการเบิกเงิน' });
     }
 
     goodsItems.forEach((item, index) => {

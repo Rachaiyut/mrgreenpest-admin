@@ -1,7 +1,8 @@
 // ===== React / External =====
-import React, { 
-  useCallback, 
-  useEffect, 
+import Swal from 'sweetalert2';
+import React, {
+  useCallback,
+  useEffect,
   useMemo, 
   useRef, 
   useState 
@@ -123,9 +124,9 @@ const Issue: React.FC = () => {
         error.response.data &&
         error.response.data.message
       ) {
-        alert(error.response.data.message);
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: error.response.data.message });
       } else {
-        alert('ไม่สามารถสร้างใบเบิกได้');
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างใบเบิกได้' });
       }
     }
   };
@@ -139,7 +140,7 @@ const Issue: React.FC = () => {
       await fetchAllData();       // รีเฟรชข้อมูลใหม่จาก API
     } catch (error) {
       console.error('Failed to update withdrawal', error);
-      alert('ไม่สามารถอัปเดตข้อมูลได้');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถอัปเดตข้อมูลได้' });
     }
   };
 
@@ -150,7 +151,7 @@ const Issue: React.FC = () => {
       await fetchAllData();       // รีเฟรชข้อมูลใหม่จาก API
     } catch (error) {
       console.error('Failed to delete withdrawal', error);
-      alert('ไม่สามารถลบข้อมูลได้');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบข้อมูลได้' });
     }
   };
 

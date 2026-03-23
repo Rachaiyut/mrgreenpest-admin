@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import Swal from 'sweetalert2';
 import { portalApi } from '../../api/customer-portal';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import dayjs from 'dayjs';
@@ -32,7 +33,7 @@ const PortalContracts: React.FC = () => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading PDF:', error);
-      alert('ไม่สามารถดาวน์โหลดเอกสารได้');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลดเอกสารได้' });
     }
   };
 

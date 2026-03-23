@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { formatThaiDate } from '../../utils/date';
@@ -25,7 +26,6 @@ import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
-import Swal from 'sweetalert2';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
 
 interface InvoicesPageProps {
@@ -249,7 +249,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       window.open(url, '_blank');
     } catch (error) {
       console.error('Failed to view PDF', error);
-      alert('เกิดข้อผิดพลาดในการเปิด PDF');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการเปิด PDF' });
     } finally {
       setPdfLoadingId(null);
     }

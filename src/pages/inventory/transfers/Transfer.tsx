@@ -1,4 +1,5 @@
 // ===== React =====
+import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 // ===== Types =====
@@ -106,7 +107,7 @@ const Transfers: React.FC = () => {
       setIsAddModalOpen(false);
     } catch (error) {
       console.error('Failed to create transfer:', error);
-      alert('Failed to create transfer');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create transfer' });
     }
   };
 
@@ -121,20 +122,18 @@ const Transfers: React.FC = () => {
         }
       }
 
-      alert(
-        'Update transfer details not supported by API yet. Only Status update is supported.'
-      );
+      Swal.fire({ icon: 'info', title: 'แจ้งเตือน', text: 'Update transfer details not supported by API yet. Only Status update is supported.' });
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update transfer:', error);
-      alert('Failed to update transfer');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update transfer' });
     }
   };
 
   const handleDeleteTransfer = async (id: string) => {
     try {
       // API delete endpoint? TransferNoteController doesn't have delete.
-      alert('Delete transfer not supported by API yet.');
+      Swal.fire({ icon: 'info', title: 'แจ้งเตือน', text: 'Delete transfer not supported by API yet.' });
     } catch (error) {
       console.error(error);
     }

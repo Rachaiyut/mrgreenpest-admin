@@ -1,4 +1,5 @@
 // ===== React =====
+import Swal from 'sweetalert2';
 import React, {
   useCallback,
   useEffect,
@@ -343,20 +344,20 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!warehouseId) return alert('กรุณาเลือกรถบริการ');
-    
+    if (!warehouseId) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการ' });
+
     // Validate: ต้องมีอย่างน้อย 1 อย่าง (สินค้า หรือ ค่าใช้จ่าย)
     if (!hasValidEntries) {
-      return alert('กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือ ระบุค่าใช้จ่ายอย่างน้อย 1 รายการ');
+      return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ หรือ ระบุค่าใช้จ่ายอย่างน้อย 1 รายการ' });
     }
 
     const invalidItems = items.filter((item) => !item.product_id || item.quantity <= 0);
-    if (invalidItems.length > 0) return alert('กรุณาระบุจำนวนสินค้าให้ถูกต้อง');
+    if (invalidItems.length > 0) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุจำนวนสินค้าให้ถูกต้อง' });
 
     // 🌟 Validate: หากมีการใช้เงินเกินวงเงิน หรือเบิกสินค้าเกินโควต้า ต้องบังคับเลือก Job และ Notes
     if (isOverLimit || isAnyItemOverLimit) {
       if (!jobId || !notes.trim()) {
-        return alert('กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า');
+        return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุ "เอกสารอ้างอิง (ใบงาน)" และ "หมายเหตุ" เนื่องจากมีการเบิกสินค้าหรือใช้เงินเกินโควต้า' });
       }
     }
 
@@ -391,7 +392,7 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   };
 
   const handleSaveDraft = async () => {
-    if (!warehouseId) return alert('กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง');
+    if (!warehouseId) return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการก่อนบันทึกฉบับร่าง' });
     setIsSubmitting(true);
     try {
       const validExpenses = expenseItems.filter(item => item.description.trim() !== '' && Number(item.amount) > 0);

@@ -1,5 +1,6 @@
 // ===== React =====
 import React, { useEffect, useMemo, useState, useRef } from 'react';
+import Swal from 'sweetalert2';
 
 // ===== External Libraries =====
 import DatePicker from 'react-datepicker';
@@ -673,7 +674,7 @@ export const JobForm: React.FC<JobFormProps> = ({
     e.preventDefault();
     if (timeConflictError) return;
     if (!leadTechnicianId) {
-      alert('กรุณาเลือกหัวหน้าช่าง');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกหัวหน้าช่าง' });
       setCurrentStep(2);
       return;
     }
@@ -726,7 +727,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         
       } catch (error) {
         console.error('Error handling job submission:', error);
-        alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง');
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง' });
       } finally {
         setIsSubmitting(false);
       }

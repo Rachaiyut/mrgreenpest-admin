@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Input } from '../../common/FormControls';
 import { Warehouse, Product } from '@/src/types/entity/app.interface';
@@ -105,7 +106,7 @@ export const SetWithdrawalLimitModal: React.FC<
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (Object.keys(errors).length > 0) {
-      alert('กรุณาแก้ไขข้อมูลให้ถูกต้อง');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาแก้ไขข้อมูลให้ถูกต้อง' });
       return;
     }
     const finalLimits: { [productId: string]: number } = {};

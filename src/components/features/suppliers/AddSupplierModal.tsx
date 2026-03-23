@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { FormField, Input } from '../../common/FormControls';
 import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
@@ -63,7 +64,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
       !phones[0].trim() ||
       (supplierType === 'นิติบุคคล' && !data['tax-id'])
     ) {
-      alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
       return;
     }
 

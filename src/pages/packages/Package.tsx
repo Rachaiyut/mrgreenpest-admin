@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import React, {
   useState,
   useRef,
@@ -129,7 +130,7 @@ const Packages: React.FC = () => {
       fetchPackages();
     } catch (error) {
       console.error('Failed to create package:', error);
-      alert('Failed to create package');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create package' });
     }
   };
 
@@ -140,7 +141,7 @@ const Packages: React.FC = () => {
       setIsEditModalOpen(false);
     } catch (error) {
       console.error('Failed to update package:', error);
-      alert('Failed to update package');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update package' });
     }
   };
 
@@ -150,7 +151,7 @@ const Packages: React.FC = () => {
       fetchPackages();
     } catch (error) {
       console.error('Failed to delete package:', error);
-      alert('Failed to delete package');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete package' });
     }
   };
 

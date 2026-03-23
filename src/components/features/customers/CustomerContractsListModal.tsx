@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { Contract, Quotation } from '@/src/types/entity/app.interface';
@@ -88,7 +89,7 @@ export const CustomerContractsListModal: React.FC<
 
       current = nextMonth;
     }
-    alert('สร้างตารางงานอัตโนมัติเรียบร้อยแล้ว');
+    Swal.fire({ icon: 'success', title: 'สร้างตารางงานอัตโนมัติเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
   };
 
   return (

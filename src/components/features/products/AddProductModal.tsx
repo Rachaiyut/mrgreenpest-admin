@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 
@@ -78,7 +79,7 @@ export const AddProductModal: React.FC<IAddProductModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Failed to create product:', error);
-      alert('Failed to create product');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create product' });
     } finally {
       setIsSubmitting(false);
     }

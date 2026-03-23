@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import Swal from 'sweetalert2';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Modal } from '../../common/Modal';
@@ -142,9 +143,7 @@ export const AddStockAdjustmentModal: React.FC<
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isFormValid) {
-      alert(
-        'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลัง, เหตุผลหลัก, และมีสินค้าอย่างน้อย 1 รายการพร้อมจำนวนที่ปรับปรุง'
-      );
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลัง, เหตุผลหลัก, และมีสินค้าอย่างน้อย 1 รายการพร้อมจำนวนที่ปรับปรุง' });
       return;
     }
     const newAdjustment: Omit<StockAdjustmentType, 'id'> = {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import {
   FormField,
   Input,
@@ -165,7 +166,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
     for (const field of requiredFields) {
       if (!formData[field as keyof FlatCustomerFormData]) {
-        alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (รวมถึงเบอร์หลักและอีเมล)');
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (รวมถึงเบอร์หลักและอีเมล)' });
         return;
       }
     }

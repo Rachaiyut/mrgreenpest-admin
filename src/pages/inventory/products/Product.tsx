@@ -1,4 +1,5 @@
 // ===== React =====
+import Swal from 'sweetalert2';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // ===== Enums =====
@@ -110,7 +111,7 @@ const Product: React.FC = () => {
       setProductToEdit(null);
     } catch (error) {
       console.error('Failed to update product:', error);
-      alert('Failed to update product');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update product' });
     }
   };
 
@@ -120,7 +121,7 @@ const Product: React.FC = () => {
       fetchProducts();
     } catch (error) {
       console.error('Failed to delete product:', error);
-      alert('Failed to delete product');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete product' });
     }
   };
 

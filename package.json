@@ -23,7 +23,7 @@
     "react-router-dom": "^7.10.1",
     "react-signature-canvas": "1.1.0-alpha.2",
     "socket.io-client": "^4.8.3",
-    "sweetalert2": "^11.26.22",
+    "sweetalert2": "^11.26.24",
     "sweetalert2-react-content": "^5.1.1"
   },
   "devDependencies": {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
@@ -135,7 +136,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
         onClose();
       } catch (error) {
         console.error('Error updating user:', error);
-        alert('เกิดข้อผิดพลาดในการแก้ไขผู้ใช้งาน');
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการแก้ไขผู้ใช้งาน' });
       } finally {
         setIsUploading(false);
       }

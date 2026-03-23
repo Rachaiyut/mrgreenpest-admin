@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Swal from 'sweetalert2';
 import { useLocation } from 'react-router-dom';
 
 // Enum
@@ -278,7 +279,7 @@ const Assessments: React.FC = () => {
       setAssessmentToEdit(null);
     } catch (error) {
       console.error('Error saving assessment:', error);
-      alert('เกิดข้อผิดพลาดในการบันทึกหรือตรวจสอบใบประเมิน');
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกหรือตรวจสอบใบประเมิน' });
     }
   };
 
@@ -776,7 +777,7 @@ const Assessments: React.FC = () => {
                                     }
                                   } catch (error) {
                                     console.error('Error fetching PDF:', error);
-                                    alert('ไม่สามารถดาวน์โหลด PDF ได้');
+                                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลด PDF ได้' });
                                   } finally {
                                     setLoadingPdfId(null);
                                   }
