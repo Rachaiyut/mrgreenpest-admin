@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface ContractItem {
@@ -49,6 +50,8 @@ const ContractExpirationPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [data, setData] = useState<ContractExpirationData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -81,8 +84,11 @@ const ContractExpirationPage: React.FC = () => {
     window.print();
   };
 
+  useEffect(() => { setCurrentPage(1); }, [search, days]);
+
   const summary = data?.summary;
   const items = data?.items || [];
+  const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
@@ -335,8 +341,8 @@ const ContractExpirationPage: React.FC = () => {
                     ))}
                   </tr>
                 ))
-              ) : items.length > 0 ? (
-                items.map((item) => (
+              ) : paginatedItems.length > 0 ? (
+                paginatedItems.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 text-sm font-medium text-amber-700">
                       {item.code}
@@ -403,6 +409,15 @@ const ContractExpirationPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        {!loading && items.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={items.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          />
+        )}
       </div>
     </div>
   );

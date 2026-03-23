@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface TechnicianItem {
@@ -46,6 +47,8 @@ const TechnicianPerformancePage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<TechnicianPerformanceData | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -92,7 +95,10 @@ const TechnicianPerformancePage: React.FC = () => {
     return 'bg-red-100 text-red-800';
   };
 
+  useEffect(() => { setCurrentPage(1); }, [search, month, year]);
+
   const items = data?.items || [];
+  const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const summary = data?.summary || {
     total_techs: 0,
     total_jobs: 0,
@@ -405,14 +411,14 @@ const TechnicianPerformancePage: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ) : items.length > 0 ? (
-                items.map((item, index) => (
+              ) : paginatedItems.length > 0 ? (
+                paginatedItems.map((item, index) => (
                   <tr
                     key={item.tech_id}
                     className="hover:bg-slate-50 transition-colors"
                   >
                     <td className="px-4 py-3 text-sm text-slate-900 text-center">
-                      {index + 1}
+                      {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-4 py-3 text-sm text-blue-600 font-medium">
                       {item.tech_code}
@@ -492,6 +498,15 @@ const TechnicianPerformancePage: React.FC = () => {
             )}
           </table>
         </div>
+        {!loading && items.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={items.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          />
+        )}
       </div>
     </div>
   );

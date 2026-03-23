@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface ProfitLossData {
@@ -29,6 +30,10 @@ const ProfitLossPage: React.FC = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [data, setData] = useState<ProfitLossData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [incomeCurrentPage, setIncomeCurrentPage] = useState(1);
+  const [incomeItemsPerPage, setIncomeItemsPerPage] = useState(10);
+  const [expenseCurrentPage, setExpenseCurrentPage] = useState(1);
+  const [expenseItemsPerPage, setExpenseItemsPerPage] = useState(10);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -45,6 +50,13 @@ const ProfitLossPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => { setIncomeCurrentPage(1); setExpenseCurrentPage(1); }, [month, year]);
+
+  const incomeByMethod = data?.income.byMethod || [];
+  const paginatedIncome = incomeByMethod.slice((incomeCurrentPage - 1) * incomeItemsPerPage, incomeCurrentPage * incomeItemsPerPage);
+  const expenseByCategory = data?.expenses.byCategory || [];
+  const paginatedExpenses = expenseByCategory.slice((expenseCurrentPage - 1) * expenseItemsPerPage, expenseCurrentPage * expenseItemsPerPage);
 
   const handleExportExcel = () => {
     ReportApi.downloadExcel('profit-loss', { month, year });
@@ -171,8 +183,8 @@ const ProfitLossPage: React.FC = () => {
                       <div className="flex justify-center"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
                     </td>
                   </tr>
-                ) : data?.income.byMethod && data.income.byMethod.length > 0 ? (
-                  data.income.byMethod.map((item, idx) => (
+                ) : paginatedIncome.length > 0 ? (
+                  paginatedIncome.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 text-sm text-slate-900 font-medium">{item.method || 'อื่นๆ'}</td>
                       <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
@@ -183,12 +195,12 @@ const ProfitLossPage: React.FC = () => {
                   <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">ไม่พบข้อมูล</td></tr>
                 )}
               </tbody>
-              {data?.income.byMethod && data.income.byMethod.length > 0 && (
+              {incomeByMethod.length > 0 && (
                 <tfoot className="bg-green-50 font-semibold">
                   <tr>
                     <td className="px-4 py-3 text-sm text-slate-900">รวมรายได้</td>
                     <td className="px-4 py-3 text-sm text-center text-slate-600">
-                      {data.income.byMethod.reduce((s, i) => s + i.count, 0)}
+                      {incomeByMethod.reduce((s, i) => s + i.count, 0)}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-green-800">{fmt(data?.income.total || 0)}</td>
                   </tr>
@@ -196,6 +208,15 @@ const ProfitLossPage: React.FC = () => {
               )}
             </table>
           </div>
+          {incomeByMethod.length > 0 && (
+            <Pagination
+              currentPage={incomeCurrentPage}
+              itemsPerPage={incomeItemsPerPage}
+              totalItems={incomeByMethod.length}
+              onPageChange={setIncomeCurrentPage}
+              onItemsPerPageChange={(size) => { setIncomeItemsPerPage(size); setIncomeCurrentPage(1); }}
+            />
+          )}
         </div>
 
         {/* Expenses by Category */}
@@ -221,8 +242,8 @@ const ProfitLossPage: React.FC = () => {
                   </tr>
                 ) : (
                   <>
-                    {data?.expenses.byCategory && data.expenses.byCategory.length > 0 ? (
-                      data.expenses.byCategory.map((item, idx) => (
+                    {paginatedExpenses.length > 0 ? (
+                      paginatedExpenses.map((item, idx) => (
                         <tr key={idx} className="hover:bg-slate-50 transition-colors">
                           <td className="px-4 py-3 text-sm text-slate-900 font-medium">{item.category}</td>
                           <td className="px-4 py-3 text-sm text-center text-slate-600">{item.count}</td>
@@ -254,6 +275,15 @@ const ProfitLossPage: React.FC = () => {
               )}
             </table>
           </div>
+          {expenseByCategory.length > 0 && (
+            <Pagination
+              currentPage={expenseCurrentPage}
+              itemsPerPage={expenseItemsPerPage}
+              totalItems={expenseByCategory.length}
+              onPageChange={setExpenseCurrentPage}
+              onItemsPerPageChange={(size) => { setExpenseItemsPerPage(size); setExpenseCurrentPage(1); }}
+            />
+          )}
         </div>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface SalesPipelineData {
@@ -63,6 +64,8 @@ const SalesPipelinePage: React.FC = () => {
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [data, setData] = useState<SalesPipelineData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -79,6 +82,8 @@ const SalesPipelinePage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => { setCurrentPage(1); }, [month, year]);
 
   const handleExportExcel = async () => {
     try {
@@ -451,7 +456,7 @@ const SalesPipelinePage: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {data.salesByPerson.length > 0 ? (
-                    data.salesByPerson.map((person) => (
+                    data.salesByPerson.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((person) => (
                       <tr
                         key={person.id}
                         className="hover:bg-slate-50 transition-colors"
@@ -496,6 +501,15 @@ const SalesPipelinePage: React.FC = () => {
                 </tbody>
               </table>
             </div>
+            {data.salesByPerson.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={data.salesByPerson.length}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+              />
+            )}
           </div>
         </>
       ) : (

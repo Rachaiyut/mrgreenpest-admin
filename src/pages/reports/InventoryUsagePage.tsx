@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface InventoryUsageItem {
@@ -56,6 +57,8 @@ const InventoryUsagePage: React.FC = () => {
   const [month, setMonth] = useState<number>(new Date().getMonth() + 1);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -91,9 +94,13 @@ const InventoryUsagePage: React.FC = () => {
     fetchData();
   }, [month, year, search]);
 
+  useEffect(() => { setCurrentPage(1); }, [search, month, year]);
+
   const filteredItems = useMemo(() => {
     return items;
   }, [items]);
+
+  const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handleExportExcel = async () => {
     try {
@@ -285,6 +292,7 @@ const InventoryUsagePage: React.FC = () => {
               </div>
             </div>
           ) : (
+            <>
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50/80">
                 <tr>
@@ -318,8 +326,8 @@ const InventoryUsagePage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredItems.length > 0 ? (
-                  filteredItems.map((row) => {
+                {paginatedItems.length > 0 ? (
+                  paginatedItems.map((row) => {
                     const isLowStock = row.current_stock <= row.min_stock;
                     return (
                       <tr
@@ -428,6 +436,16 @@ const InventoryUsagePage: React.FC = () => {
                 </tfoot>
               )}
             </table>
+            {filteredItems.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={filteredItems.length}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+              />
+            )}
+            </>
           )}
         </div>
       </div>

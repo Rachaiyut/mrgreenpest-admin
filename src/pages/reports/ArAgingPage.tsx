@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Pagination } from '../../components/common/Pagination';
 import { ReportApi } from '../../api/report';
 
 interface ArAgingItem {
@@ -115,6 +116,8 @@ const ArAgingPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [data, setData] = useState<ArAgingData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -145,7 +148,10 @@ const ArAgingPage: React.FC = () => {
     window.print();
   };
 
+  useEffect(() => { setCurrentPage(1); }, [searchTerm]);
+
   const items = data?.items || [];
+  const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const summary = data?.summary || {
     total_count: 0,
     total_outstanding: 0,
@@ -305,6 +311,7 @@ const ArAgingPage: React.FC = () => {
             </div>
           </div>
         ) : (
+          <>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
@@ -348,8 +355,8 @@ const ArAgingPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {items.length > 0 ? (
-                  items.map((item) => (
+                {paginatedItems.length > 0 ? (
+                  paginatedItems.map((item) => (
                     <tr
                       key={item.id}
                       className="hover:bg-slate-50 transition-colors"
@@ -433,6 +440,14 @@ const ArAgingPage: React.FC = () => {
               )}
             </table>
           </div>
+          <Pagination
+            currentPage={currentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={items.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          />
+          </>
         )}
       </div>
     </div>
