@@ -1353,268 +1353,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
         </div>
 
-        {/* Reference Document Section */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-blue-600 shadow-sm">
-                <DocumentIcon className="w-4 h-4" />
-              </div>
-              เอกสารอ้างอิง & ลายเซ็น
-            </h3>
-          </div>
-          <div className="p-6 flex flex-col gap-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                ใบเสนอราคา
-              </label>
-              <SearchableSelect
-                value={reportState.quotation_id || ''}
-                onChange={(value) =>
-                  setReportState((prev) => ({ ...prev, quotation_id: value }))
-                }
-                onSearchChange={handleQuotationSearch}
-                options={quotations.map((q) => ({
-                  value: q.id,
-                  label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`,
-                }))}
-                placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
-                className="w-full"
-              />
-            </div>
-
-            {/* ลายเซ็นลูกค้า */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                ลายเซ็นลูกค้า
-              </label>
-              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
-                {reportState.customer_signature && !customerSigRef.current ? (
-                  <img src={reportState.customer_signature} alt="ลายเซ็นลูกค้า" className="w-full h-[160px] object-contain bg-slate-50" />
-                ) : (
-                  <SignatureCanvas
-                    ref={customerSigRef}
-                    canvasProps={{ className: 'w-full h-[160px]' }}
-                    penColor="black"
-                    backgroundColor="rgb(248, 250, 252)"
-                  />
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <Input
-                  value={reportState.customer_sign_name || ''}
-                  onChange={(e) => setReportState(prev => ({ ...prev, customer_sign_name: e.target.value }))}
-                  placeholder="ชื่อผู้เซ็น (ลูกค้า)"
-                  className="flex-1 mr-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    customerSigRef.current?.clear();
-                    setReportState(prev => ({ ...prev, customer_signature: undefined }));
-                  }}
-                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
-                >
-                  ล้างลายเซ็น
-                </button>
-              </div>
-            </div>
-
-            {/* ลายเซ็นช่างเทคนิค */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                ลายเซ็นช่างเทคนิค
-              </label>
-              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
-                {reportState.technician_signature && !technicianSigRef.current ? (
-                  <img src={reportState.technician_signature} alt="ลายเซ็นช่างเทคนิค" className="w-full h-[160px] object-contain bg-slate-50" />
-                ) : (
-                  <SignatureCanvas
-                    ref={technicianSigRef}
-                    canvasProps={{ className: 'w-full h-[160px]' }}
-                    penColor="black"
-                    backgroundColor="rgb(248, 250, 252)"
-                  />
-                )}
-              </div>
-              <div className="flex items-center justify-between mt-2">
-                <Input
-                  value={reportState.technician_sign_name || ''}
-                  onChange={(e) => setReportState(prev => ({ ...prev, technician_sign_name: e.target.value }))}
-                  placeholder="ชื่อผู้เซ็น (ช่างเทคนิค)"
-                  className="flex-1 mr-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    technicianSigRef.current?.clear();
-                    setReportState(prev => ({ ...prev, technician_signature: undefined }));
-                  }}
-                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
-                >
-                  ล้างลายเซ็น
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Payment Info Section */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
-              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-green-600 shadow-sm">
-                <CreditCardIcon className="w-4 h-4" />
-              </div>
-              ข้อมูลการชำระเงิน
-            </h3>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="flex flex-col">
-                {job.invoice ? (
-                  <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm h-full flex flex-col justify-center">
-                    <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl"></div>
-                    <div className="relative z-10 flex flex-col gap-6">
-                      <div className="flex items-center justify-between border-b border-green-200/60 pb-4">
-                        <span className="text-green-800/80 font-medium text-sm">เลขที่ใบแจ้งหนี้</span>
-                        <span className="bg-white text-green-700 px-3 py-1 rounded-md text-sm font-semibold shadow-sm border border-green-100">{job.invoice.code}</span>
-                      </div>
-                      <div>
-                        <p className="text-green-700/80 text-sm mb-1.5 font-medium">ยอดชำระสุทธิ</p>
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-4xl font-bold text-green-700 tracking-tight">{job.invoice.total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                          <span className="text-green-700 font-medium">บาท</span>
-                        </div>
-                      </div>
-                      {job.invoice.term && (
-                        <div className="mt-2 inline-flex items-center gap-2 bg-white/60 rounded-lg px-3 py-2 border border-green-100 w-fit">
-                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                          <span className="text-sm font-semibold text-green-800">งวดที่ {job.invoice.term} {job.invoice.installment_id ? '(ผ่อนชำระ)' : ''}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-slate-50 rounded-2xl p-8 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 h-full min-h-[200px]">
-                    <CreditCardIcon className="w-8 h-8 mb-2 opacity-50" />
-                    <span className="text-sm font-medium">ไม่มีข้อมูลใบแจ้งหนี้</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-col justify-center">
-                <div className="flex items-center gap-2 mb-4">
-                  <label className="text-sm font-bold text-slate-800">ช่องทางการชำระเงิน</label>
-                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">(รับเงินหน้างาน)</span>
-                </div>
-                <div className="flex flex-col gap-5">
-                  <Select
-                    value={reportState.payment_condition || ''}
-                    onChange={(e) => {
-                      const condition = e.target.value;
-                      setReportState((prev) => ({
-                        ...prev,
-                        payment_condition: condition as any,
-                        payment_amount: condition && !prev.payment_amount && job.invoice ? job.invoice.total : (condition ? prev.payment_amount : ''),
-                        payment_installment_count: job.invoice?.term || prev.payment_installment_count,
-                      }));
-                    }}
-                    className="w-full text-sm border-slate-200 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500/20"
-                  >
-                    <option value="">-- ยังไม่ได้รับชำระ / วางบิล --</option>
-                    <option value="CASH">เงินสด</option>
-                    <option value="TRANSFER">โอนเงิน</option>
-                    <option value="CREDIT_CARD">บัตรเครดิต</option>
-                    <option value="CHEQUE">เช็ค</option>
-                  </Select>
-
-                  {reportState.payment_condition && (
-                    <div className="flex flex-col gap-5 animate-in fade-in duration-300">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวนเงินที่รับ (บาท)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={reportState.payment_amount || ''}
-                          onChange={(e) => setReportState((prev) => ({ ...prev, payment_amount: e.target.value }))}
-                          className="w-full pl-4 pr-12 text-lg font-semibold text-green-700 border-slate-200 rounded-lg focus:border-green-500 focus:ring-green-500/20"
-                        />
-                      </div>
-
-                      {reportState.payment_condition === 'TRANSFER' && (
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">แนบสลิปโอนเงิน</label>
-                          {!paymentSlip && !reportState.payment_slip_url ? (
-                            <label
-                              htmlFor="payment-slip-upload"
-                              className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-green-200 border-dashed rounded-lg cursor-pointer bg-green-50/30 hover:bg-green-50/80 hover:border-green-400 transition-all duration-200 group"
-                            >
-                              <div className="flex flex-col items-center gap-2 text-green-600/60 group-hover:text-green-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                </svg>
-                                <div className="text-center">
-                                  <span className="text-sm font-medium">คลิกเพื่ออัปโหลดสลิป</span>
-                                  <p className="text-xs text-green-600/50 mt-1">รองรับไฟล์รูปภาพ JPG, PNG</p>
-                                </div>
-                              </div>
-                              <input
-                                id="payment-slip-upload"
-                                type="file"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={(e) => {
-                                  if (e.target.files && e.target.files[0]) {
-                                    setPaymentSlip(e.target.files[0]);
-                                  }
-                                }}
-                              />
-                            </label>
-                          ) : (
-                            <div className="relative inline-block w-fit border border-slate-200 rounded-xl overflow-hidden shadow-sm group">
-                               <img 
-                                  src={paymentSlip ? URL.createObjectURL(paymentSlip) : getFileUrl(reportState.payment_slip_url)} 
-                                  alt="Payment Slip" 
-                                  className="max-h-64 w-auto object-contain bg-slate-50"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x600/f8fafc/94a3b8?text=Image+Not+Found';
-                                  }}
-                               />
-                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setPaymentSlip(null);
-                                      setReportState(prev => ({ ...prev, payment_slip_url: null, payment_slip_file_id: null }));
-                                    }}
-                                    className="px-3 py-1.5 bg-white text-red-500 rounded-lg text-sm font-semibold hover:bg-red-50 shadow-sm flex items-center gap-2 transform scale-95 group-hover:scale-100 transition-transform"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    ลบสลิป
-                                  </button>
-                               </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {reportState.payment_amount && (
-                        <div className="flex items-center gap-2 text-xs font-medium text-green-600 bg-green-50/50 px-3 py-2 rounded-md border border-green-100">
-                          <CheckCircleIcon className="w-4 h-4" />
-                          <span>พร้อมบันทึกยอดเงินจำนวน {Number(reportState.payment_amount).toLocaleString()} บาท เข้าระบบ</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Service Result Tabs */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
@@ -1761,7 +1499,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
             <DocumentIcon className="w-5 h-5 text-primary" />
-            รูปภาพ Blueprint
+            รูปการปฎิบัติงาน เเละ Station
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-center w-full">
@@ -1862,6 +1600,268 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             onChange={(e) => setReportState((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="บันทึกข้อความถึงทีมงาน..."
           />
+        </div>
+
+        {/* Payment Info Section */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
+              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-green-600 shadow-sm">
+                <CreditCardIcon className="w-4 h-4" />
+              </div>
+              ข้อมูลการชำระเงิน
+            </h3>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="flex flex-col">
+                {job.invoice ? (
+                  <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm h-full flex flex-col justify-center">
+                    <div className="absolute -right-8 -top-8 w-32 h-32 bg-green-500/5 rounded-full blur-2xl"></div>
+                    <div className="relative z-10 flex flex-col gap-6">
+                      <div className="flex items-center justify-between border-b border-green-200/60 pb-4">
+                        <span className="text-green-800/80 font-medium text-sm">เลขที่ใบแจ้งหนี้</span>
+                        <span className="bg-white text-green-700 px-3 py-1 rounded-md text-sm font-semibold shadow-sm border border-green-100">{job.invoice.code}</span>
+                      </div>
+                      <div>
+                        <p className="text-green-700/80 text-sm mb-1.5 font-medium">ยอดชำระสุทธิ</p>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-4xl font-bold text-green-700 tracking-tight">{job.invoice.total?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                          <span className="text-green-700 font-medium">บาท</span>
+                        </div>
+                      </div>
+                      {job.invoice.term && (
+                        <div className="mt-2 inline-flex items-center gap-2 bg-white/60 rounded-lg px-3 py-2 border border-green-100 w-fit">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          <span className="text-sm font-semibold text-green-800">งวดที่ {job.invoice.term} {job.invoice.installment_id ? '(ผ่อนชำระ)' : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 rounded-2xl p-8 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 h-full min-h-[200px]">
+                    <CreditCardIcon className="w-8 h-8 mb-2 opacity-50" />
+                    <span className="text-sm font-medium">ไม่มีข้อมูลใบแจ้งหนี้</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-4">
+                  <label className="text-sm font-bold text-slate-800">ช่องทางการชำระเงิน</label>
+                  <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">(รับเงินหน้างาน)</span>
+                </div>
+                <div className="flex flex-col gap-5">
+                  <Select
+                    value={reportState.payment_condition || ''}
+                    onChange={(e) => {
+                      const condition = e.target.value;
+                      setReportState((prev) => ({
+                        ...prev,
+                        payment_condition: condition as any,
+                        payment_amount: condition && !prev.payment_amount && job.invoice ? job.invoice.total : (condition ? prev.payment_amount : ''),
+                        payment_installment_count: job.invoice?.term || prev.payment_installment_count,
+                      }));
+                    }}
+                    className="w-full text-sm border-slate-200 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500/20"
+                  >
+                    <option value="">-- ยังไม่ได้รับชำระ / วางบิล --</option>
+                    <option value="CASH">เงินสด</option>
+                    <option value="TRANSFER">โอนเงิน</option>
+                    <option value="CREDIT_CARD">บัตรเครดิต</option>
+                    <option value="CHEQUE">เช็ค</option>
+                  </Select>
+
+                  {reportState.payment_condition && (
+                    <div className="flex flex-col gap-5 animate-in fade-in duration-300">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1.5">จำนวนเงินที่รับ (บาท)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={reportState.payment_amount || ''}
+                          onChange={(e) => setReportState((prev) => ({ ...prev, payment_amount: e.target.value }))}
+                          className="w-full pl-4 pr-12 text-lg font-semibold text-green-700 border-slate-200 rounded-lg focus:border-green-500 focus:ring-green-500/20"
+                        />
+                      </div>
+
+                      {reportState.payment_condition === 'TRANSFER' && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1.5">แนบสลิปโอนเงิน</label>
+                          {!paymentSlip && !reportState.payment_slip_url ? (
+                            <label
+                              htmlFor="payment-slip-upload"
+                              className="flex flex-col items-center justify-center w-full px-4 py-6 border-2 border-green-200 border-dashed rounded-lg cursor-pointer bg-green-50/30 hover:bg-green-50/80 hover:border-green-400 transition-all duration-200 group"
+                            >
+                              <div className="flex flex-col items-center gap-2 text-green-600/60 group-hover:text-green-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                <div className="text-center">
+                                  <span className="text-sm font-medium">คลิกเพื่ออัปโหลดสลิป</span>
+                                  <p className="text-xs text-green-600/50 mt-1">รองรับไฟล์รูปภาพ JPG, PNG</p>
+                                </div>
+                              </div>
+                              <input
+                                id="payment-slip-upload"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  if (e.target.files && e.target.files[0]) {
+                                    setPaymentSlip(e.target.files[0]);
+                                  }
+                                }}
+                              />
+                            </label>
+                          ) : (
+                            <div className="relative inline-block w-fit border border-slate-200 rounded-xl overflow-hidden shadow-sm group">
+                               <img
+                                  src={paymentSlip ? URL.createObjectURL(paymentSlip) : getFileUrl(reportState.payment_slip_url)}
+                                  alt="Payment Slip"
+                                  className="max-h-64 w-auto object-contain bg-slate-50"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x600/f8fafc/94a3b8?text=Image+Not+Found';
+                                  }}
+                               />
+                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPaymentSlip(null);
+                                      setReportState(prev => ({ ...prev, payment_slip_url: null, payment_slip_file_id: null }));
+                                    }}
+                                    className="px-3 py-1.5 bg-white text-red-500 rounded-lg text-sm font-semibold hover:bg-red-50 shadow-sm flex items-center gap-2 transform scale-95 group-hover:scale-100 transition-transform"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    ลบสลิป
+                                  </button>
+                               </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {reportState.payment_amount && (
+                        <div className="flex items-center gap-2 text-xs font-medium text-green-600 bg-green-50/50 px-3 py-2 rounded-md border border-green-100">
+                          <CheckCircleIcon className="w-4 h-4" />
+                          <span>พร้อมบันทึกยอดเงินจำนวน {Number(reportState.payment_amount).toLocaleString()} บาท เข้าระบบ</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reference Document Section */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
+              <div className="p-1.5 bg-white border border-slate-200 rounded-md text-blue-600 shadow-sm">
+                <DocumentIcon className="w-4 h-4" />
+              </div>
+              เอกสารอ้างอิง & ลายเซ็น
+            </h3>
+          </div>
+          <div className="p-6 flex flex-col gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                ใบเสนอราคา
+              </label>
+              <SearchableSelect
+                value={reportState.quotation_id || ''}
+                onChange={(value) =>
+                  setReportState((prev) => ({ ...prev, quotation_id: value }))
+                }
+                onSearchChange={handleQuotationSearch}
+                options={quotations.map((q) => ({
+                  value: q.id,
+                  label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`,
+                }))}
+                placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
+                className="w-full"
+              />
+            </div>
+
+            {/* ลายเซ็นลูกค้า */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                ลายเซ็นลูกค้า
+              </label>
+              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
+                {reportState.customer_signature && !customerSigRef.current ? (
+                  <img src={reportState.customer_signature} alt="ลายเซ็นลูกค้า" className="w-full h-[160px] object-contain bg-slate-50" />
+                ) : (
+                  <SignatureCanvas
+                    ref={customerSigRef}
+                    canvasProps={{ className: 'w-full h-[160px]' }}
+                    penColor="black"
+                    backgroundColor="rgb(248, 250, 252)"
+                  />
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <Input
+                  value={reportState.customer_sign_name || ''}
+                  onChange={(e) => setReportState(prev => ({ ...prev, customer_sign_name: e.target.value }))}
+                  placeholder="ชื่อผู้เซ็น (ลูกค้า)"
+                  className="flex-1 mr-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    customerSigRef.current?.clear();
+                    setReportState(prev => ({ ...prev, customer_signature: undefined }));
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+                >
+                  ล้างลายเซ็น
+                </button>
+              </div>
+            </div>
+
+            {/* ลายเซ็นช่างเทคนิค */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                ลายเซ็นช่างเทคนิค
+              </label>
+              <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
+                {reportState.technician_signature && !technicianSigRef.current ? (
+                  <img src={reportState.technician_signature} alt="ลายเซ็นช่างเทคนิค" className="w-full h-[160px] object-contain bg-slate-50" />
+                ) : (
+                  <SignatureCanvas
+                    ref={technicianSigRef}
+                    canvasProps={{ className: 'w-full h-[160px]' }}
+                    penColor="black"
+                    backgroundColor="rgb(248, 250, 252)"
+                  />
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <Input
+                  value={reportState.technician_sign_name || ''}
+                  onChange={(e) => setReportState(prev => ({ ...prev, technician_sign_name: e.target.value }))}
+                  placeholder="ชื่อผู้เซ็น (ช่างเทคนิค)"
+                  className="flex-1 mr-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    technicianSigRef.current?.clear();
+                    setReportState(prev => ({ ...prev, technician_signature: undefined }));
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
+                >
+                  ล้างลายเซ็น
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </Modal>
