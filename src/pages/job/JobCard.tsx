@@ -125,9 +125,36 @@ const JobCard: React.FC<{
           }
         });
       } else {
-        // ไม่มีหมายเหตุ ให้เช็คอินเลย
-        onStatusChange(job.id, JobStatus.InProgress);
+        Swal.fire({
+          title: 'ยืนยันเช็คอิน?',
+          text: 'คุณต้องการเช็คอินเพื่อเริ่มงานนี้หรือไม่',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'ตกลง เริ่มงาน',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#10b981',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            onStatusChange(job.id, JobStatus.InProgress);
+          }
+        });
       }
+    };
+
+    const handleCheckOut = () => {
+      Swal.fire({
+        title: 'ยืนยันเช็คเอาท์?',
+        text: 'คุณต้องการเช็คเอาท์เพื่อจบงานนี้หรือไม่',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ตกลง จบงาน',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#f59e0b',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          onStatusChange(job.id, JobStatus.Completed);
+        }
+      });
     };
 
     return (
@@ -244,7 +271,7 @@ const JobCard: React.FC<{
             )}
             {showCheckOutButton && (
               <Button
-                onClick={() => onStatusChange(job.id, JobStatus.Completed)}
+                onClick={() => handleCheckOut()}
                 title="เช็คเอาท์เพื่อจบงาน"
                 variant="outline"
                 className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
