@@ -22,8 +22,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   const totalPages =
     itemsPerPage > 0 ? Math.ceil(totalItems / itemsPerPage) : 1;
 
-  if (totalItems <= itemsPerPage) {
-    // Hide if there's no need for pagination at all
+  if (totalItems === 0) {
     return null;
   }
 
