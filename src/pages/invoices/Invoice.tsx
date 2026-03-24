@@ -474,7 +474,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         {formatThaiDate(i.due_at)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <StatusBadge status={getInvoiceStatusLabel(i.status)} />
+                        <StatusBadge status={i.status} />
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         ฿

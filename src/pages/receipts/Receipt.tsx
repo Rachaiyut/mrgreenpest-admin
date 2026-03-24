@@ -43,6 +43,8 @@ const paymentMethodLabels: Record<string, string> = {
   CHEQUE: 'เช็ค',
   CREDIT_CARD: 'บัตรเครดิต',
   QR_PAYMENT: 'QR Payment',
+  INSTALLMENT: 'ผ่อนชำระ',
+  DIVIDED: 'แบ่งชำระ',
 };
 
 const getPaymentMethodLabel = (method: string): string => {

@@ -70,7 +70,7 @@ const PortalReceipts: React.FC = () => {
                   <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เลขที่</th>
                   <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วันที่</th>
                   <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">จำนวนเงิน</th>
-                  <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วิธีชำระ</th>
+                  <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">วิธีชำระเงิน</th>
                   <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">สถานะ</th>
                   <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
                 </tr>
@@ -87,7 +87,11 @@ const PortalReceipts: React.FC = () => {
                         ? Number(item.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })
                         : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{item.payment_method || '-'}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {item.payment_method
+                        ? ({ TRANSFER: 'โอนเงิน', CASH: 'เงินสด', CHEQUE: 'เช็ค', CREDIT_CARD: 'บัตรเครดิต', QR_PAYMENT: 'QR Payment', INSTALLMENT: 'ผ่อนชำระ' } as Record<string, string>)[item.payment_method] || item.payment_method
+                        : '-'}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <StatusBadge status={item.status} />
                     </td>
