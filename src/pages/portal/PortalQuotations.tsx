@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 const PortalQuotations: React.FC = () => {
   const [quotations, setQuotations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
@@ -23,6 +24,8 @@ const PortalQuotations: React.FC = () => {
   }, []);
 
   const handleDownloadPdf = async (id: string, code: string) => {
+    if (loadingPdfId) return;
+    setLoadingPdfId(id);
     try {
       const blob = await portalApi.downloadPdf('quotations', id);
       const url = window.URL.createObjectURL(blob);
@@ -34,6 +37,8 @@ const PortalQuotations: React.FC = () => {
     } catch (error) {
       console.error('Error downloading PDF:', error);
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลดเอกสารได้' });
+    } finally {
+      setLoadingPdfId(null);
     }
   };
 
@@ -87,9 +92,15 @@ const PortalQuotations: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleDownloadPdf(item.id, item.code)}
-                        className="text-green-600 hover:text-green-800 text-sm font-medium"
+                        disabled={loadingPdfId === item.id}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === item.id ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}
                       >
-                        PDF
+                        {loadingPdfId === item.id ? (
+                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        )}
+                        {loadingPdfId === item.id ? 'กำลังโหลด...' : 'ดู PDF'}
                       </button>
                     </td>
                   </tr>

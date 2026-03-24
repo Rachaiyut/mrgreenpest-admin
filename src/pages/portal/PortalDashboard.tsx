@@ -6,21 +6,23 @@ import { usePortal } from '../../contexts/PortalContext';
 const PortalDashboard: React.FC = () => {
   const { customer } = usePortal();
   const navigate = useNavigate();
-  const [counts, setCounts] = useState({ quotations: 0, contracts: 0, receipts: 0 });
+  const [counts, setCounts] = useState({ quotations: 0, contracts: 0, receipts: 0, serviceReports: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const [quotationsRes, contractsRes, receiptsRes] = await Promise.all([
+        const [quotationsRes, contractsRes, receiptsRes, reportsRes] = await Promise.all([
           portalApi.getQuotations(),
           portalApi.getContracts(),
           portalApi.getReceipts(),
+          portalApi.getServiceReports(),
         ]);
         setCounts({
           quotations: quotationsRes.data?.length || 0,
           contracts: contractsRes.data?.length || 0,
           receipts: receiptsRes.data?.length || 0,
+          serviceReports: reportsRes.data?.length || 0,
         });
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -53,6 +55,13 @@ const PortalDashboard: React.FC = () => {
       path: '/portal/receipts',
       color: 'bg-purple-50 border-purple-200 text-purple-700',
       iconBg: 'bg-purple-100',
+    },
+    {
+      title: 'รายงานบริการ',
+      count: counts.serviceReports,
+      path: '/portal/service-reports',
+      color: 'bg-orange-50 border-orange-200 text-orange-700',
+      iconBg: 'bg-orange-100',
     },
   ];
 

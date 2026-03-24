@@ -591,6 +591,17 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                           <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
                           <span className="leading-relaxed">{[selectedCustomerData.address_house_no, selectedCustomerData.sub_district, selectedCustomerData.district, selectedCustomerData.province, selectedCustomerData.postal_code].filter(Boolean).join(' ') || '-'}</span>
                         </div>
+                        {(formData.google_map_link || selectedCustomerData.google_map_link) && (
+                          <a
+                            href={formData.google_map_link || selectedCustomerData.google_map_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 shadow-sm hover:bg-primary/10 transition-colors"
+                          >
+                            <MapPinIcon className="w-4 h-4 text-primary" />
+                            <span className="font-medium underline truncate">{formData.google_map_link || selectedCustomerData.google_map_link}</span>
+                          </a>
+                        )}
                       </div>
                     </div>
                   ) : (

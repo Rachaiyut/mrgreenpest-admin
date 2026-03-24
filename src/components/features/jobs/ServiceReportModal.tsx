@@ -104,6 +104,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const customerSigRef = useRef<SignatureCanvas>(null);
   const technicianSigRef = useRef<SignatureCanvas>(null);
+  const [isCustomerSigning, setIsCustomerSigning] = useState(false);
+  const [isTechSigning, setIsTechSigning] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -269,8 +271,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           blueprint_url: r.blueprint_url || null,
           service_types: types,
           service_actions: actions,
-          check_in_time: r.time_in,
-          check_out_time: r.time_out,
+          check_in_time: r.time_in || (job.actual_start_time ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
+          check_out_time: r.time_out || (job.actual_end_time ? new Date(job.actual_end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
           next_appointment: {
             notes: r.work_note || '',
             reasons: nextReasons,
@@ -1838,8 +1840,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 ลายเซ็นลูกค้า
               </label>
               <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
-                {reportState.customer_signature && !customerSigRef.current ? (
-                  <img src={reportState.customer_signature} alt="ลายเซ็นลูกค้า" className="w-full h-[160px] object-contain bg-slate-50" />
+                {reportState.customer_signature && !isCustomerSigning ? (
+                  <img src={reportState.customer_signature} alt="ลายเซ็นลูกค้า" className="w-full h-[160px] object-contain bg-white cursor-pointer" onClick={() => setIsCustomerSigning(true)} title="คลิกเพื่อเซ็นใหม่" />
                 ) : (
                   <SignatureCanvas
                     ref={customerSigRef}
@@ -1860,6 +1862,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   type="button"
                   onClick={() => {
                     customerSigRef.current?.clear();
+                    setIsCustomerSigning(true);
                     setReportState(prev => ({ ...prev, customer_signature: undefined }));
                   }}
                   className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"
@@ -1875,8 +1878,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 ลายเซ็นช่างเทคนิค
               </label>
               <div className="border-2 border-slate-200 rounded-lg overflow-hidden bg-white">
-                {reportState.technician_signature && !technicianSigRef.current ? (
-                  <img src={reportState.technician_signature} alt="ลายเซ็นช่างเทคนิค" className="w-full h-[160px] object-contain bg-slate-50" />
+                {reportState.technician_signature && !isTechSigning ? (
+                  <img src={reportState.technician_signature} alt="ลายเซ็นช่างเทคนิค" className="w-full h-[160px] object-contain bg-white cursor-pointer" onClick={() => setIsTechSigning(true)} title="คลิกเพื่อเซ็นใหม่" />
                 ) : (
                   <SignatureCanvas
                     ref={technicianSigRef}
@@ -1897,6 +1900,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   type="button"
                   onClick={() => {
                     technicianSigRef.current?.clear();
+                    setIsTechSigning(true);
                     setReportState(prev => ({ ...prev, technician_signature: undefined }));
                   }}
                   className="text-xs text-red-500 hover:text-red-700 px-3 py-2 border border-red-200 rounded-md hover:bg-red-50 transition-colors whitespace-nowrap"

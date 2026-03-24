@@ -62,7 +62,12 @@ class CustomerPortalApi {
     return res.data;
   }
 
-  async downloadPdf(type: 'quotations' | 'contracts' | 'receipts', id: string): Promise<Blob> {
+  async getServiceReports() {
+    const res = await this.http.get('/customer-portal/service-reports');
+    return res.data;
+  }
+
+  async downloadPdf(type: 'quotations' | 'contracts' | 'receipts' | 'service-reports', id: string): Promise<Blob> {
     const res = await this.http.get(`/customer-portal/${type}/${id}/pdf`, {
       responseType: 'blob',
     });
