@@ -547,6 +547,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           const fullPkg = (res.data || []).find((p: any) => p.id === pkg.id);
           if (fullPkg) {
             setFetchedPackage(fullPkg);
+            setSelectedPackageId(fullPkg.id);
           }
         }).catch(() => {});
       }
@@ -731,6 +732,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         if (selectedAssessment.package) {
           setUsePackagePricing(true);
           setPackageName(selectedAssessment.package.name);
+          setSelectedPackageId(selectedAssessment.package.id);
           let masterPrice = 0;
           const pkg = fetchedPackage || selectedAssessment.package;
 
