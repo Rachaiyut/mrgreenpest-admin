@@ -658,6 +658,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
 
+  // Reset areas when assessment changes so they get re-initialized
+  useEffect(() => {
+    if (selectedAssessmentId) {
+      setHasInitializedAreas(false);
+    }
+  }, [selectedAssessmentId]);
+
   // Fetch full assessment (with packagePriceRelation) when assessment is selected
   useEffect(() => {
     if (!selectedAssessmentId) return;
