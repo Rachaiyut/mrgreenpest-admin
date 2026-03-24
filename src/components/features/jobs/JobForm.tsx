@@ -50,6 +50,7 @@ import {
   TruckIcon,
   UserIcon,
   LoadingIcon,
+  CreditCardIcon as CurrencyDollarIcon,
 } from '../../../assets/icons/Icons';
 
 export interface JobFormProps {
@@ -609,6 +610,69 @@ export const JobForm: React.FC<JobFormProps> = ({
         });
         setWorkAreas(areas);
       }
+    } else if (reference.startsWith('cnt-')) {
+      const contractId = reference.replace('cnt-', '');
+      try {
+        const contractRes = await ContractApi.getById(contractId);
+        const contract = (contractRes as any).data || contractRes;
+        const contractAreas = contract?.contract_areas || contract?.areas || [];
+
+        if (contractAreas.length > 0) {
+          const system = contractAreas[0].service_system;
+          if (system) setServiceSystem(system);
+
+          const areas = contractAreas.map((area: any, index: number) => {
+            // ดึง package_id จาก packagePriceRelation.package หรือ match จาก packages list
+            let exactPackageId = area.packagePriceRelation?.package?.id || contract.package_id;
+            if (!exactPackageId && area.package_price_id) {
+              const matchedPkg = packages.find(p => p.package_prices?.some((price: any) => String(price.id) === String(area.package_price_id)));
+              if (matchedPkg) exactPackageId = matchedPkg.id;
+            }
+
+            // ดึง package_type จาก area หรือ detect จาก packagePriceRelation
+            let pkgType = area.package_type;
+            if (!pkgType && area.packagePriceRelation) {
+              const rel = area.packagePriceRelation;
+              const price = Number(area.package_price) || 0;
+              if (price === Number(rel.price_with_termite)) pkgType = 'WITH_TERMITE';
+              else if (price === Number(rel.price_without_termite)) pkgType = 'WITHOUT_TERMITE';
+            }
+
+            return {
+              id: `area-${Date.now()}-${index}`,
+              area_name: area.area_name,
+              area_size: area.area_size ? Number(area.area_size) : undefined,
+              building_type: area.building_type,
+              building_type_other: area.building_type_other || '',
+              service_system: area.service_system,
+              service_system_other: area.service_system_other || '',
+              package_price: area.package_price ? Number(area.package_price) : undefined,
+              total_price: area.total_price ? Number(area.total_price) : undefined,
+              items: area.items || [],
+              category_services: area.category_services || [],
+              package_id: exactPackageId,
+              package_price_id: area.package_price_id,
+              package_type: pkgType as any,
+              service_count: area.service_count,
+            };
+          });
+          setWorkAreas(areas);
+
+          // ดึง package จาก contract areas → เพิ่มเข้า packages state ถ้ายังไม่มี
+          const newPackages: Package[] = [];
+          for (const area of contractAreas) {
+            const pkg = area.packagePriceRelation?.package;
+            if (pkg && !packages.find(p => String(p.id) === String(pkg.id)) && !newPackages.find(p => String(p.id) === String(pkg.id))) {
+              newPackages.push({ ...pkg, package_prices: [area.packagePriceRelation] });
+            }
+          }
+          if (newPackages.length > 0) {
+            setPackages(prev => [...prev, ...newPackages]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching contract details:', error);
+      }
     }
   };
 
@@ -952,6 +1016,89 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <Textarea id="operation-details" name="operationDetails" value={operationDetails} onChange={(e) => setOperationDetails(e.target.value)} placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้" rows={4} className="bg-slate-50 focus:bg-white transition-colors h-full" />
               </FormField>
             </div>
+
+            {/* Invoice Summary — แสดงเมื่อเลือก contract (card layout เหมือน WorkAreaForm) */}
+            {selectedReference.startsWith('cnt-') && (() => {
+              const contractId = selectedReference.replace('cnt-', '');
+              const contractInvoices = fetchedInvoices.filter((inv: any) => inv.contract_id === contractId);
+              const contractRef = availableContracts.find((c: any) => String(c.id) === contractId);
+              const installments = [...((contractRef as any)?.installments || (contractRef as any)?.contract_installments || [])]
+                .sort((a: any, b: any) => (a.installment_no || a.term || 0) - (b.installment_no || b.term || 0));
+
+              if (installments.length === 0 && contractInvoices.length === 0) return null;
+
+              const totalOutstanding = contractInvoices
+                .filter((inv: any) => ['PENDING', 'PARTIAL', 'OVERDUE', 'SENT'].includes(String(inv.status).toUpperCase()))
+                .reduce((sum: number, inv: any) => sum + (Number(inv.total) - Number((inv as any).paid_amount || 0)), 0);
+
+              const getStatusConfig = (status: string) => {
+                switch (status) {
+                  case 'PAID': return { label: 'จ่ายแล้ว', color: 'bg-green-100 text-green-700 border-green-200', border: 'border-l-green-500' };
+                  case 'PARTIAL': return { label: 'จ่ายบางส่วน', color: 'bg-yellow-100 text-yellow-700 border-yellow-200', border: 'border-l-yellow-500' };
+                  case 'OVERDUE': return { label: 'เกินกำหนด', color: 'bg-red-100 text-red-700 border-red-200', border: 'border-l-red-500' };
+                  case 'PENDING': case 'SENT': return { label: 'ค้างชำระ', color: 'bg-orange-100 text-orange-700 border-orange-200', border: 'border-l-orange-500' };
+                  case 'CARRIED_OVER': return { label: 'ทบยอดแล้ว', color: 'bg-slate-100 text-slate-600 border-slate-200', border: 'border-l-slate-400' };
+                  case 'CANCELLED': return { label: 'ยกเลิก', color: 'bg-slate-100 text-slate-400 border-slate-200', border: 'border-l-slate-300' };
+                  default: return { label: 'ยังไม่ออกบิล', color: 'bg-blue-50 text-blue-600 border-blue-200', border: 'border-l-blue-400' };
+                }
+              };
+
+              // สร้าง list: ใช้ installments ถ้ามี ไม่งั้นใช้ invoices
+              const items = installments.length > 0
+                ? installments.map((inst: any, idx: number) => {
+                    const term = inst.installment_no || inst.term || idx + 1;
+                    const invoice = contractInvoices.find((inv: any) => inv.term === term);
+                    const status = invoice ? String(invoice.status).toUpperCase() : 'NOT_ISSUED';
+                    return { term, invoice, status, amount: Number(inst.amount || invoice?.total || 0) };
+                  })
+                : [...contractInvoices]
+                    .sort((a: any, b: any) => (a.term || 0) - (b.term || 0))
+                    .map((inv: any) => ({
+                      term: inv.term || 0, invoice: inv, status: String(inv.status).toUpperCase(), amount: Number(inv.total || 0),
+                    }));
+
+              return (
+                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-4">
+                  <div className="flex justify-between items-center mb-4 border-b pb-2">
+                    <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                      <CurrencyDollarIcon className="w-5 h-5 text-green-600" />
+                      สถานะการชำระเงิน
+                    </h3>
+                    <div className="text-xs text-slate-500">{items.length} งวด</div>
+                  </div>
+                  <div className="overflow-hidden rounded-lg border border-slate-200">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="bg-slate-100/80 text-xs text-slate-500 uppercase tracking-wider">
+                          <th className="px-4 py-2.5 text-left font-semibold">งวด</th>
+                          <th className="px-4 py-2.5 text-left font-semibold">เลขที่ใบแจ้งหนี้</th>
+                          <th className="px-4 py-2.5 text-right font-semibold">ยอดเงิน</th>
+                          <th className="px-4 py-2.5 text-right font-semibold">สถานะ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-slate-100">
+                        {items.map((item: any, idx: number) => {
+                          const cfg = getStatusConfig(item.status);
+                          const isSelected = selectedInvoiceId && item.invoice?.id === selectedInvoiceId;
+
+                          return (
+                            <tr key={idx} className={`transition-colors ${isSelected ? 'bg-primary/10 ring-1 ring-inset ring-primary/30' : 'hover:bg-slate-50/50'}`}>
+                              <td className="px-4 py-3 text-sm font-medium text-slate-800">
+                                {isSelected && <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary mr-2"></span>}
+                                งวดที่ {item.term}
+                              </td>
+                              <td className={`px-4 py-3 text-sm font-semibold ${isSelected ? 'text-primary' : 'text-primary/70'}`}>{item.invoice?.code || <span className="text-slate-300">—</span>}</td>
+                              <td className="px-4 py-3 text-sm text-right font-semibold text-slate-800">฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                              <td className="px-4 py-3 text-right"><span className={`text-xs font-medium px-2.5 py-1 rounded-full border inline-block ${cfg.color}`}>{cfg.label}</span></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
               <div className="flex justify-between items-center mb-4 border-b pb-2">
