@@ -212,39 +212,47 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const availableInstallments = useMemo(() => {
     if (formData.contractId && invoiceSchedules.length > 0) {
+      // หา term สูงสุดที่มี invoice ค้างชำระ (INVOICED) เพื่อ disable งวดก่อนหน้า
+      const invoicedTerms = invoiceSchedules
+        .filter((inst: any) => String(inst.status).toUpperCase() === 'INVOICED')
+        .map((inst: any) => inst.installment_no || inst.sequence);
+      const maxInvoicedTerm = invoicedTerms.length > 0 ? Math.max(...invoicedTerms) : 0;
+
       return invoiceSchedules.filter((inst: any) => {
         const term = inst.installment_no || inst.sequence;
         const status = String(inst.status).toUpperCase();
-        
+
         if (initialValues?.id && initialValues.term === term) return true;
         if (inst.is_pay_all) return true;
-        
-        return status === 'PENDING' || status === 'PARTIAL';
-      }).map((inst: any) => ({
-        id: inst.id,
-        term: inst.installment_no || inst.sequence,
-        description: inst.description || inst.notes || `งวดที่ ${inst.installment_no || inst.sequence}`,
-        percentage: inst.percentage || 0,
-        amount: Number(inst.amount || inst.expected_amount || 0),
-        is_pay_all: inst.is_pay_all || false,
-      }));
+
+        return status === 'PENDING' || status === 'PARTIAL' || status === 'INVOICED';
+      }).map((inst: any) => {
+        const term = inst.installment_no || inst.sequence;
+        const status = String(inst.status).toUpperCase();
+        // disabled: งวดที่ค้าง (INVOICED) แต่มีงวดถัดไปที่พร้อมวางบิลแล้ว
+        const isOlderInvoiced = status === 'INVOICED' && term < maxInvoicedTerm;
+
+        return {
+          id: inst.id,
+          term,
+          description: inst.description || inst.notes || `งวดที่ ${term}`,
+          percentage: inst.percentage || 0,
+          amount: Number(inst.amount || inst.expected_amount || 0),
+          is_pay_all: inst.is_pay_all || false,
+          disabled: isOlderInvoiced,
+        };
+      });
     }
 
     if (!referenceSource?.installments || referenceSource.installments.length === 0) return [];
     
-    const sourceId = referenceSource.id;
-    const invoicedTerms = new Set(
-      invoices
-        .filter(inv => (inv.contract_id === sourceId || inv.quotation_id === sourceId) && inv.status !== InvoiceStatus.CANCELLED && inv.id !== initialValues?.id)
-        .map(inv => inv.term).filter(Boolean)
-    );
-
     return referenceSource.installments.filter((inst: any) => {
       const term = inst.term || inst.installment_no;
       const isPaid = inst.status === Status.Paid || (inst.status as string) === 'PAID';
-      
+
       if (initialValues?.id && initialValues.term === term) return true;
-      return !invoicedTerms.has(term) && !isPaid;
+      // แสดงงวดที่ยังไม่จ่ายครบ — ให้สร้าง invoice ซ้ำได้ (วางบิลหลายครั้ง)
+      return !isPaid;
     }).map((inst: any) => ({
       id: inst.id,
       term: inst.term || inst.installment_no,
@@ -404,14 +412,21 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         notes: formData.notes,
         
         is_pay_all: selectedInst?.is_pay_all || undefined,
-        is_ad_hoc: isAdhocMode || undefined,
-        term: (!selectedInst?.is_pay_all && !isAdhocMode) ? formData.term : undefined,
-        invoice_schedule_id: (!selectedInst?.is_pay_all && !isAdhocMode) ? selectedInst?.id : undefined,
+        // ส่ง term เสมอ (ทุก invoice ต้องมีงวด)
+        term: selectedInst?.is_pay_all ? undefined : formData.term,
+        invoice_schedule_id: selectedInst?.is_pay_all ? undefined : selectedInst?.id,
 
-        items: isAdhocMode ? [{
+        // ถ้ากำหนดยอดเอง → ใช้ custom amount + description
+        ...(isAdhocMode && adhocData.amount ? {
+          subtotal: Number(adhocData.amount),
+          total: formData.includeVat ? Number((Number(adhocData.amount) * 1.07).toFixed(2)) : Number(adhocData.amount),
+          vat_amount: formData.includeVat ? Number((Number(adhocData.amount) * 0.07).toFixed(2)) : 0,
+        } : {}),
+
+        items: (isAdhocMode && adhocData.amount) ? [{
           id: crypto.randomUUID(),
           sequence: 1,
-          description: adhocData.description || 'บริการเพิ่มเติม',
+          description: adhocData.description || `ชำระบางส่วน งวดที่ ${formData.term}`,
           quantity: 1,
           unit: 'รายการ',
           unit_price: Number(adhocData.amount),
@@ -617,14 +632,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </div>
               </div>
               
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleEnableAdhocMode} 
-                className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center"
-              >
-                <PlusIcon className="w-4 h-4 mr-1.5" /> สร้างบิลพิเศษ (กำหนดรายการเอง)
-              </Button>
+              {/* ลบปุ่มบิลพิเศษ — ทุก invoice ต้องเลือกงวด */}
             </div>
 
             <div className="overflow-hidden rounded-lg border border-slate-200 shadow-sm mt-2">
@@ -642,18 +650,19 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {availableInstallments.map((inst: any) => (
-                    <tr 
-                      key={inst.id} 
-                      onClick={() => handleSelectInstallment(inst)}
-                      className={`cursor-pointer transition-colors ${formData.selectedScheduleId === inst.id ? (inst.is_pay_all ? 'bg-amber-50' : 'bg-indigo-50/50') : 'hover:bg-slate-50'}`}
+                    <tr
+                      key={inst.id}
+                      onClick={() => !inst.disabled && handleSelectInstallment(inst)}
+                      className={`transition-colors ${inst.disabled ? 'opacity-40 cursor-not-allowed' : formData.selectedScheduleId === inst.id ? (inst.is_pay_all ? 'bg-amber-50 cursor-pointer' : 'bg-indigo-50/50 cursor-pointer') : 'hover:bg-slate-50 cursor-pointer'}`}
                     >
                       <td className="px-4 py-4 text-center">
                         <input
                           type="radio"
                           name="selected_installment"
                           checked={formData.selectedScheduleId === inst.id}
-                          onChange={() => handleSelectInstallment(inst)}
-                          className="w-4 h-4 text-primary focus:ring-primary cursor-pointer border-slate-300"
+                          onChange={() => !inst.disabled && handleSelectInstallment(inst)}
+                          disabled={inst.disabled}
+                          className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
                         />
                       </td>
                       <td className="px-4 py-4 text-sm font-medium text-slate-900">
@@ -675,6 +684,48 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </tbody>
               </table>
             </div>
+
+            {/* กำหนดยอดเอง — แสดงเมื่อเลือกงวดแล้ว */}
+            {formData.selectedScheduleId && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="custom-amount"
+                      checked={isAdhocMode}
+                      onChange={(e) => setIsAdhocMode(e.target.checked)}
+                      className="rounded text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="custom-amount" className="text-sm font-medium text-blue-800 cursor-pointer">
+                      กำหนดยอดเรียกเก็บเอง (ลูกค้าจ่ายบางส่วน / จ่ายก่อนงวด)
+                    </label>
+                  </div>
+                </div>
+                {isAdhocMode && (
+                  <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField label="รายละเอียด">
+                      <Input
+                        value={adhocData.description}
+                        onChange={(e) => setAdhocData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="เช่น ลูกค้าชำระบางส่วน, เก็บเงินหน้างาน..."
+                        className="bg-white"
+                      />
+                    </FormField>
+                    <FormField label="จำนวนเงินที่เรียกเก็บ (บาท)">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={adhocData.amount || ''}
+                        onChange={(e) => setAdhocData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                        className="bg-white text-right font-bold"
+                        placeholder="0.00"
+                      />
+                    </FormField>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : isAdhocMode ? (
           

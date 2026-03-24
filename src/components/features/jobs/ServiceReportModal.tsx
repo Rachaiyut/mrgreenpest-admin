@@ -345,12 +345,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               minute: '2-digit',
             })
             : '',
-          check_out_time: job.actual_end_time
-            ? new Date(job.actual_end_time).toLocaleTimeString('th-TH', {
+          check_out_time: new Date(job.actual_end_time || new Date()).toLocaleTimeString('th-TH', {
               hour: '2-digit',
               minute: '2-digit',
-            })
-            : '',
+            }),
           service_types: [],
           service_actions: [],
           termite: { status: 'absent' },
