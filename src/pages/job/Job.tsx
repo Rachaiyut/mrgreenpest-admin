@@ -407,12 +407,14 @@ const Job: React.FC<JobProps> = ({
     if (lowercasedQuery) {
       tempJobs = tempJobs.filter((job) => {
         const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
-        const vehicle = safeWarehouses.find((w) => w.id === job.vehicle_id);
-        const licensePlateMatch = (vehicle as any)?.license_plate
-          ?.toLowerCase()
-          .includes(lowercasedQuery);
-        const dateMatch = formatThaiDate(job.start_time).includes(lowercasedQuery);
-        return licensePlateMatch || dateMatch;
+        const vehicle = safeWarehouses.find((w: any) => w.id === job.vehicle_id);
+        const licensePlate = ((vehicle as any)?.license_plate || (vehicle as any)?.registration_no || (vehicle as any)?.name || '').toLowerCase();
+        const customerName = ((job as any).customerName || '').toLowerCase();
+        const appointmentDate = formatThaiDate((job as any).appointment_date || job.start_time);
+
+        return licensePlate.includes(lowercasedQuery) ||
+          customerName.includes(lowercasedQuery) ||
+          appointmentDate.includes(lowercasedQuery);
       });
     }
     return tempJobs;
@@ -456,13 +458,28 @@ const Job: React.FC<JobProps> = ({
     return new Map((initialCustomers || []).map((c) => [c.id, c]));
   }, [initialCustomers]);
 
-  const serviceReports = useMemo(
-    () =>
-      [...reports].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      ),
-    [reports]
-  );
+  const serviceReports = useMemo(() => {
+    let sorted = [...reports].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    // Filter ตาม searchQuery สำหรับ tab รายงาน
+    const q = searchQuery.toLowerCase().trim();
+    if (q) {
+      sorted = sorted.filter((r: any) => {
+        const job = jobs.find((j) => j.id === r.job_id);
+        const customerName = (r.customer_name || (job as any)?.customerName || '').toLowerCase();
+        const reportDate = formatThaiDate(r.report_date || r.created_at || '');
+        const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
+        const vehicle = safeWarehouses.find((w: any) => w.id === (job as any)?.vehicle_id);
+        const licensePlate = ((vehicle as any)?.license_plate || (vehicle as any)?.registration_no || (vehicle as any)?.name || '').toLowerCase();
+
+        return customerName.includes(q) || reportDate.includes(q) || licensePlate.includes(q);
+      });
+    }
+
+    return sorted;
+  }, [reports, searchQuery, jobs, warehouses]);
 
   const scheduleJobs = useMemo(
     () =>

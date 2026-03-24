@@ -224,7 +224,7 @@ const Reports: React.FC<ReportsProps> = () => {
         reportId: j.service_report?.id,
         customer: j.customer?.first_name + ' ' + j.customer?.last_name || '',
         reportDate: formatThaiDateTime(j.service_report?.created_at),
-        status: j.service_report?.status || Status.Draft,
+        status: j.status || 'COMPLETE',
         ts: new Date(j.service_report?.created_at || '').getTime(),
       }));
   }, [jobs, currentUser]);
