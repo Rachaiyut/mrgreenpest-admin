@@ -1261,14 +1261,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         </div>
 
         {/* Work Areas Section - ใช้ WorkAreaForm เดียวกับใบประเมิน */}
-        <div className={`bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2 ${mode === 'create' && selectedAssessmentId && !selectedPackageId ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className={`bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2 ${mode === 'create' && selectedAssessmentId ? 'opacity-50 pointer-events-none' : ''}`}>
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-green-50 rounded-lg text-green-600"><ClipboardDocumentListIcon className="w-5 h-5" /></div>
               <h3 className="font-semibold text-slate-800 text-lg">รายละเอียดพื้นที่</h3>
             </div>
-            {mode === 'create' && selectedAssessmentId && !selectedPackageId && (
-              <span className="text-sm text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg">กรุณาเลือกแพ็กเกจก่อน</span>
+            {mode === 'create' && selectedAssessmentId && (
+              <span className="text-sm text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg">ข้อมูลพื้นที่จากใบประเมิน (แก้ไขไม่ได้)</span>
             )}
           </div>
           <div className="space-y-4">
