@@ -60,7 +60,7 @@ const ALL_SERVICE_ACTIONS = [
   'ต่อสัญญา',
 ];
 
-type PestType = 'termite' | 'ant' | 'cockroach' | 'rat' | 'lizard';
+type PestType = 'termite' | 'ant' | 'cockroach' | 'rat' | 'lizard' | 'mosquito' | 'other';
 
 const getFileUrl = (path: string | null | undefined): string => {
   if (!path) return '';
@@ -1045,7 +1045,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     </div>
   );
 
-  // 👇 ย้าย Checkbox มด มาอยู่ที่ฟังก์ชันนี้แล้ว
+
   const renderAntForm = (): React.ReactElement => (
     <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1257,6 +1257,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     cockroach: { label: 'แมลงสาบ', render: renderCockroachForm },
     rat: { label: 'หนู', render: renderRatForm },
     lizard: { label: 'จิ้งจก', render: renderLizardForm },
+    mosquito: { label: 'ยุง', render: null  },
+    other: { label: 'อื่นๆ', render: null },
   };
 
   return (
@@ -1358,7 +1360,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         {/* Global Service Checkboxes (Types & Actions) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการรวม</h4>
+            <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการ</h4>
             <div className="grid grid-cols-2 gap-y-2">
               {ALL_SERVICE_TYPES.map((type) => (
                 <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
@@ -1374,7 +1376,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </div>
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <h4 className="font-semibold text-slate-800 mb-3">การดำเนินการรวม</h4>
+            <h4 className="font-semibold text-slate-800 mb-3">การบริการ</h4>
             <div className="grid grid-cols-2 gap-y-2">
               {ALL_SERVICE_ACTIONS.map((action) => (
                 <label key={action} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
@@ -1396,7 +1398,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
             <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
               <CheckCircleIcon className="w-5 h-5 text-primary" />
-              ผลการสำรวจและดำเนินการ
+              การปฎิบัติงาน การบริการ ปัญหาที่พบ และข้อเสนอแนะ
             </h3>
           </div>
           <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">

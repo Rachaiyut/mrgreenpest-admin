@@ -51,6 +51,7 @@ import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { QuotationApi } from '@/src/api';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
 import { AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
+import { formatThaiDate } from '@/src/utils/date';
 
 interface QuotationItem {
   id: string;
@@ -1216,10 +1217,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   value={selectedAssessmentId}
                   onChange={setSelectedAssessmentId}
                   onSearchChange={handleAssessmentSearch} /* 🌟 เติมบรรทัดนี้เข้าไปครับ */
-                  options={fetchedAssessments.map((a: any) => ({ 
-                    value: a.id, 
-                    label: `${a.code} - ${a.customer_name || a.customer?.first_name || 'N/A'}`, 
-                    description: a.service_location || 'N/A' 
+                  options={fetchedAssessments.map((a: Assessment) => ({
+                    value: a.id,
+                    label: `${a.code}${a.customer ? ` - ${a.customer.first_name || ''} ${a.customer.last_name || ''}` : ''}`,
+                    description: formatThaiDate(a.appointment_date)
                   }))}
                   placeholder="เลือกใบประเมิน (ถ้ามี)"
                   disabled={isReadOnly}
