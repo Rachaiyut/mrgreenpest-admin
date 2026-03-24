@@ -259,11 +259,16 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     };
     loadAssessments();
-    // Clear assessment if the selected one doesn't belong to new customer
+    // Clear assessment + work areas if the selected one doesn't belong to new customer
     if (selectedAssessmentId) {
       const currentAssessment = fetchedAssessments.find((a) => a.id === selectedAssessmentId);
       if (currentAssessment && currentAssessment.customer_id !== selectedCustomerId) {
         setSelectedAssessmentId('');
+        setEditableAreas([]);
+        setSelectedPackageId('');
+        setFetchedPackage(null);
+        setPackageName('');
+        setUsePackagePricing(false);
       }
     }
   }, [selectedCustomerId]);
