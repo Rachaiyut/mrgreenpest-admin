@@ -15,6 +15,9 @@ import { Customer } from '@/src/types/entity/customer.interface';
 import { CustomerType, Gender } from '@/src/types/enums/customer';
 import { Status as BaseStatus } from '@/src/types/enums/base';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
+import { ServiceReportApi } from '../../api/service-report';
+import { EyeIcon } from '../../assets/icons/Icons';
+import { useCurrentUser } from '../../hooks/useCurrentUser';
 
 import { useData } from '../../contexts/DataContext';
 
@@ -50,10 +53,13 @@ const Reports: React.FC<ReportsProps> = () => {
     jobs,
   } = useData();
 
+  const { user: currentUser } = useCurrentUser();
+
   const [activeTab, setActiveTab] = useState<ReportTab>('สต็อกคงเหลือ');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, _setItemsPerPage] = useState(10);
+  const handleItemsPerPageChange = (size: number) => { _setItemsPerPage(size); setCurrentPage(1); };
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [warehouseFilter, setWarehouseFilter] = useState<string>('');
@@ -204,16 +210,24 @@ const Reports: React.FC<ReportsProps> = () => {
   }, [productReturns, warehouseById]);
 
   const foRows = useMemo(() => {
+    const isTech = currentUser?.role === 'TECH' || currentUser?.role === 'LEAD_TECH';
+
     return jobs
-      .filter((j) => !!j.service_report)
+      .filter((j) => {
+        if (!j.service_report) return false;
+        // TECH / LEAD_TECH เห็นเฉพาะงานที่ตัวเองเป็น primary_tech
+        if (isTech && j.primary_tech_id !== currentUser?.id) return false;
+        return true;
+      })
       .map((j) => ({
         id: j.id,
+        reportId: j.service_report?.id,
         customer: j.customer?.first_name + ' ' + j.customer?.last_name || '',
         reportDate: formatThaiDateTime(j.service_report?.created_at),
         status: j.service_report?.status || Status.Draft,
         ts: new Date(j.service_report?.created_at || '').getTime(),
       }));
-  }, [jobs]);
+  }, [jobs, currentUser]);
 
   const invRows = useMemo(() => {
     return invoices.map((inv) => ({
@@ -670,7 +684,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -744,7 +758,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -828,7 +842,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -900,7 +914,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -968,7 +982,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -1040,7 +1054,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -1068,6 +1082,9 @@ const Reports: React.FC<ReportsProps> = () => {
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    จัดการ
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -1086,6 +1103,26 @@ const Reports: React.FC<ReportsProps> = () => {
                     <td className="px-4 py-3 text-sm">
                       <StatusBadge status={r.status} />
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      {r.reportId && (
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const blob = await ServiceReportApi.getServiceReportPdfById(r.reportId);
+                              const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                              window.open(url, '_blank');
+                              window.URL.revokeObjectURL(url);
+                            } catch (err) {
+                              console.error('Failed to open PDF:', err);
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-md bg-primary text-white text-xs font-semibold inline-flex items-center gap-1"
+                        >
+                          <EyeIcon className="w-4 h-4" />
+                          ดู PDF
+                        </Button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1096,7 +1133,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -1164,7 +1201,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -1232,7 +1269,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </Card>
       );
@@ -1299,7 +1336,7 @@ const Reports: React.FC<ReportsProps> = () => {
             itemsPerPage={itemsPerPage}
             totalItems={totalItems}
             onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
           <CustomerDetailsModal
             isOpen={isCustDetailsOpen}

@@ -325,12 +325,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 enabled: r.is_op_chemical,
                 count: d.termite_inject_pipes_count,
               },
-              injectSoil: { enabled: r.is_op_underground },
-              sprayGarden: { enabled: r.is_op_spray },
-              changeWood: { enabled: d.termite_change_wood },
-              changeLid: { enabled: d.termite_change_lid },
-              addFocusBait: { enabled: d.termite_add_focus_bait },
-              injectShaft: { enabled: d.termite_inject_shaft },
+              injectSoil: !!r.is_op_underground,
+              sprayGarden: !!r.is_op_spray,
+              changeWood: !!d.termite_change_wood,
+              changeLid: !!d.termite_change_lid,
+              addFocusBait: !!d.termite_add_focus_bait,
+              injectShaft: !!d.termite_inject_shaft,
               other: d.termite_other,
             },
           },
@@ -420,16 +420,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       is_op_chemical:
         reportState.service_actions?.includes('อัดน้ำยา') ||
-        reportState.termite?.actions?.injectPipes?.enabled ||
-        reportState.termite?.actions?.injectShaft?.enabled,
+        !!reportState.termite?.actions?.injectPipes?.enabled ||
+        !!reportState.termite?.actions?.injectShaft,
 
       is_op_check: reportState.service_actions?.includes('ตรวจเช็ค'),
 
-      is_op_underground: reportState.termite?.actions?.injectSoil?.enabled,
+      is_op_underground: !!reportState.termite?.actions?.injectSoil,
 
       is_op_renew: reportState.service_actions?.includes('ต่อสัญญา'),
 
-      is_op_spray: reportState.service_actions?.includes('สเปรย์') || reportState.termite?.actions?.sprayGarden?.enabled,
+      is_op_spray: reportState.service_actions?.includes('สเปรย์') || !!reportState.termite?.actions?.sprayGarden,
       is_op_fogging: reportState.service_actions?.includes('พ่นหมอกควัน'),
       is_op_gel: reportState.ant?.apply_gel || reportState.cockroach?.apply_gel,
       is_op_powder: reportState.service_actions?.includes('โรยผง'),
@@ -456,45 +456,62 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         reportState.next_appointment?.reasons?.includes('ครบรอบบริการ'),
 
       pest_detail: {
-        ant_bait: reportState.ant?.apply_gel || false,
-        // 👇 ย้ายข้อมูลจาก Termite มาไว้ Ant ให้ตรงกับ DTO
-        ant_spray_bio: reportState.ant?.sprayBio || false,
-        ant_around_building: reportState.ant?.aroundBuilding || false,
-        ant_in_shaft: reportState.ant?.inShaft || false,
-        ant_inside_building: reportState.ant?.insideBuilding || false,
+        // มด — ส่งเฉพาะเมื่อเลือกกำจัดมด
+        ...(reportState.service_types?.includes('กำจัดมด') || reportState.service_types?.some(t => ['กำจัดมด', 'กำจัดแมลงสาบ'].includes(t)) ? {
+          ant_bait: reportState.ant?.apply_gel || false,
+          ant_spray_bio: reportState.ant?.sprayBio || false,
+          ant_around_building: reportState.ant?.aroundBuilding || false,
+          ant_in_shaft: reportState.ant?.inShaft || false,
+          ant_inside_building: reportState.ant?.insideBuilding || false,
+        } : {}),
 
-        roach_bait: reportState.cockroach?.apply_gel || false,
-        rat_glue_trap: reportState.rat?.glue_traps || false,
-        rat_mechanical_trap: reportState.rat?.mechanical_traps || false,
-        rat_bait_station: reportState.rat?.bait_stations || false,
-        rat_refill_bait: reportState.rat?.refill_bait || false,
-        lizard_trap: reportState.lizard?.place_traps || false,
+        // แมลงสาบ
+        ...(reportState.service_types?.some(t => ['กำจัดมด', 'กำจัดแมลงสาบ'].includes(t)) ? {
+          roach_bait: reportState.cockroach?.apply_gel || false,
+        } : {}),
+
+        // หนู
+        ...(reportState.service_types?.includes('กำจัดหนู') ? {
+          rat_glue_trap: reportState.rat?.glue_traps || false,
+          rat_mechanical_trap: reportState.rat?.mechanical_traps || false,
+          rat_bait_station: reportState.rat?.bait_stations || false,
+          rat_refill_bait: reportState.rat?.refill_bait || false,
+        } : {}),
+
+        // จิ้งจก
+        ...(reportState.service_types?.includes('กำจัดจิ้งจก') ? {
+          lizard_trap: reportState.lizard?.place_traps || false,
+        } : {}),
+
         pest_other:
           reportState.ant?.other ||
           reportState.cockroach?.other ||
           reportState.rat?.other ||
-          reportState.lizard?.other,
+          reportState.lizard?.other || null,
 
-        termite_status: reportState.termite?.status,
-        termite_install_stations_count:
-          reportState.termite?.actions?.installStations?.count,
-        termite_add_bait_count: reportState.termite?.actions?.addBait?.count,
-        termite_found_enabled:
-          reportState.termite?.actions?.foundTermites?.enabled,
-        termite_found_count: reportState.termite?.actions?.foundTermites?.count,
-        termite_place_boxes_enabled:
-          reportState.termite?.actions?.placeBoxes?.enabled,
-        termite_place_boxes_count:
-          reportState.termite?.actions?.placeBoxes?.count,
-        termite_place_boxes_area:
-          reportState.termite?.actions?.placeBoxes?.area,
-        termite_inject_pipes_count:
-          reportState.termite?.actions?.injectPipes?.count,
-        termite_change_wood: reportState.termite?.actions?.changeWood,
-        termite_change_lid: reportState.termite?.actions?.changeLid,
-        termite_add_focus_bait: reportState.termite?.actions?.addFocusBait,
-        termite_inject_shaft: reportState.termite?.actions?.injectShaft,
-        termite_other: reportState.termite?.actions?.other,
+        // ปลวก — ส่งเฉพาะเมื่อเลือกกำจัดปลวก
+        ...(reportState.service_types?.includes('กำจัดปลวก') ? {
+          termite_status: reportState.termite?.status,
+          termite_install_stations_count:
+            reportState.termite?.actions?.installStations?.count || null,
+          termite_add_bait_count: reportState.termite?.actions?.addBait?.count || null,
+          termite_found_enabled:
+            reportState.termite?.actions?.foundTermites?.enabled || false,
+          termite_found_count: reportState.termite?.actions?.foundTermites?.count || null,
+          termite_place_boxes_enabled:
+            reportState.termite?.actions?.placeBoxes?.enabled || false,
+          termite_place_boxes_count:
+            reportState.termite?.actions?.placeBoxes?.count || null,
+          termite_place_boxes_area:
+            reportState.termite?.actions?.placeBoxes?.area || null,
+          termite_inject_pipes_count:
+            reportState.termite?.actions?.injectPipes?.count || null,
+          termite_change_wood: !!reportState.termite?.actions?.changeWood,
+          termite_change_lid: !!reportState.termite?.actions?.changeLid,
+          termite_add_focus_bait: !!reportState.termite?.actions?.addFocusBait,
+          termite_inject_shaft: !!reportState.termite?.actions?.injectShaft,
+          termite_other: reportState.termite?.actions?.other || null,
+        } : {}),
       },
       // ลายเซ็น
       customer_signature: customerSigRef.current && !customerSigRef.current.isEmpty()
@@ -1402,7 +1419,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </h3>
           </div>
           <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
-            {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
+            {(Object.keys(pestRenderConfig) as PestType[]).filter((pest) => {
+              // แสดง tab เฉพาะ pest ที่เลือกใน service_types
+              const types = reportState.service_types || [];
+              const mapping: Record<string, string[]> = {
+                termite: ['กำจัดปลวก'],
+                ant: ['กำจัดมด'],
+                cockroach: ['กำจัดแมลงสาบ'],
+                rat: ['กำจัดหนู'],
+                lizard: ['กำจัดจิ้งจก'],
+                mosquito: ['กำจัดยุง'],
+                other: ['กำจัดอื่นๆ'],
+              };
+              return (mapping[pest] || []).some(t => types.includes(t));
+            }).map((pest) => (
               <button
                 key={pest}
                 type="button"
@@ -1417,7 +1447,17 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             ))}
           </div>
           <div className="p-6 bg-slate-50/50 min-h-[300px]">
-            {pestRenderConfig[activePestTab].render()}
+            {(() => {
+              const types = reportState.service_types || [];
+              const mapping: Record<string, string[]> = {
+                termite: ['กำจัดปลวก'], ant: ['กำจัดมด'], cockroach: ['กำจัดแมลงสาบ'],
+                rat: ['กำจัดหนู'], lizard: ['กำจัดจิ้งจก'], mosquito: ['กำจัดยุง'], other: ['กำจัดอื่นๆ'],
+              };
+              const isTabVisible = (mapping[activePestTab] || []).some(t => types.includes(t));
+              if (types.length === 0) return <div className="text-slate-400 text-center py-8">กรุณาเลือกประเภทบริการก่อน</div>;
+              if (!isTabVisible) return <div className="text-slate-400 text-center py-8">เลือก tab ด้านบนเพื่อดูรายละเอียด</div>;
+              return pestRenderConfig[activePestTab]?.render?.() || null;
+            })()}
           </div>
         </div>
 
@@ -1807,7 +1847,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     ref={customerSigRef}
                     canvasProps={{ className: 'w-full h-[160px]' }}
                     penColor="black"
-                    backgroundColor="rgb(248, 250, 252)"
+                    backgroundColor="rgb(255, 255, 255)"
                   />
                 )}
               </div>
@@ -1844,7 +1884,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     ref={technicianSigRef}
                     canvasProps={{ className: 'w-full h-[160px]' }}
                     penColor="black"
-                    backgroundColor="rgb(248, 250, 252)"
+                    backgroundColor="rgb(255, 255, 255)"
                   />
                 )}
               </div>
