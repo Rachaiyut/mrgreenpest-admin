@@ -517,6 +517,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         return {
           id: a.id || crypto.randomUUID(),
+          created_at: a.created_at,
           area_name: a.area_name || '',
           building_type: a.building_type || '',
           building_type_other: a.building_type_other || '',
@@ -1228,7 +1229,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               </FormField>
             </div>
             <div className="col-span-1 md:col-span-2">
-              <FormField label="แพ็กเกจบริการ (Package)">
+              <FormField label="แพ็กเกจบริการ">
                 <SearchableSelect
                   value={selectedPackageId}
                   onChange={(val) => { setSelectedPackageId(val); if (val) setSelectedAssessmentId(''); }}
