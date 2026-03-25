@@ -6,6 +6,8 @@ export enum InvoiceStatus {
   PARTIAL = 'PARTIAL',
   OVERDUE = 'OVERDUE',
   CANCELLED = 'CANCELLED',
+  CARRIED_OVER = 'CARRIED_OVER',
+  PENDING_REVIEW = 'PENDING_REVIEW',
 }
 
 export enum ReceiptStatus {
