@@ -321,7 +321,6 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                     <tr key={inst.id || idx} className={`hover:bg-slate-50/50 transition-colors ${isLast ? 'bg-amber-50/30' : ''}`}>
                       <td className="px-4 py-3 text-center text-base font-semibold text-slate-700 bg-slate-50/50">
                         {inst.no}
-                        {isLast && <div className="text-[10px] text-amber-600 font-normal mt-0.5">คำนวณอัตโนมัติ</div>}
                       </td>
                       <td className="px-4 py-3">
                         <Input value={inst.description || ''} onChange={(e) => handleChange(idx, 'description', e.target.value)} placeholder="รายละเอียด..." className="h-10 text-base" disabled={isReadOnly} />

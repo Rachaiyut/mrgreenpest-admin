@@ -559,7 +559,9 @@ export const ContractForm: FC<ContractFormProps> = ({
                 id: a.id || crypto.randomUUID(),
                 area_name: a.area_name || '',
                 building_type: a.building_type || '',
+                building_type_other: a.building_type_other || '',
                 service_system: a.service_system || '',
+                service_system_other: a.service_system_other || '',
                 area_size: Number(a.area_size) || undefined,
                 package_price: Number(a.package_price) || Number(a.total_price) || undefined,
                 total_price: Number(a.total_price) || 0,
@@ -679,6 +681,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         const res = await ContractApi.getById(initialValues.id!);
         const fullData = (res as any).data || res;
         const existingAreas = fullData?.contract_areas || fullData?.areas || fullData?.area || [];
+        console.log('[ContractForm] existingAreas from API:', JSON.stringify(existingAreas.map((a: any) => ({ building_type: a.building_type, building_type_other: a.building_type_other, service_system: a.service_system, service_system_other: a.service_system_other }))));
 
         if (existingAreas.length > 0) {
           // Init customAreas (legacy)
@@ -700,7 +703,9 @@ export const ContractForm: FC<ContractFormProps> = ({
             id: a.id || crypto.randomUUID(),
             area_name: a.area_name || '',
             building_type: a.building_type || '',
+            building_type_other: a.building_type_other || '',
             service_system: a.service_system || '',
+            service_system_other: a.service_system_other || '',
             area_size: Number(a.area_size) || undefined,
             package_price: Number(a.package_price) || Number(a.total_price) || undefined,
             total_price: Number(a.total_price) || 0,
@@ -912,9 +917,9 @@ export const ContractForm: FC<ContractFormProps> = ({
         return {
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
-          building_type_other: area.building_type_other || undefined,
+          building_type_other: area.building_type === 'OTHER' ? (area.building_type_other || null) : null,
           service_system: area.service_system || undefined,
-          service_system_other: area.service_system_other || undefined,
+          service_system_other: area.service_system === 'OTHER' ? (area.service_system_other || null) : null,
           service_count: String(area.service_count || serviceCount || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
           total_price: Number(area.total_price) || Number(area.package_price) || 0,
@@ -934,9 +939,9 @@ export const ContractForm: FC<ContractFormProps> = ({
         return {
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
-          building_type_other: area.building_type_other || undefined,
+          building_type_other: area.building_type === 'OTHER' ? (area.building_type_other || null) : null,
           service_system: area.service_system || undefined,
-          service_system_other: area.service_system_other || undefined,
+          service_system_other: area.service_system === 'OTHER' ? (area.service_system_other || null) : null,
           service_count: String(area.service_count || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
           total_price: Number(area.total_price) || Number(area.package_price) || 0,
