@@ -1115,7 +1115,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader
             icon={DocumentTextIcon}
-            title="ข้อมูลทั่วไป (General Information)"
+            title="ข้อมูลทั่วไป"
           />
 
           <div className="space-y-4">
@@ -1217,7 +1217,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader
             icon={HomeIcon}
-            title="ข้อมูลที่อยู่ (Address Information)"
+            title="ข้อมูลที่อยู่"
           />
 
           <div className="space-y-4">

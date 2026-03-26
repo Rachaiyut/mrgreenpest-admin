@@ -92,14 +92,29 @@ const ItemsSection: FC<ItemsSectionProps> = ({
           </div>
         ) : (
           items.map((item, index) => (
-            <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50">
-              <div className="flex items-end gap-4">
-                <div className="flex-shrink-0 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
-                  {index + 1}
+            <div key={item.id} className="rounded-xl border border-slate-200 overflow-hidden">
+              {/* Header bar */}
+              <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                <div className="flex items-center gap-3">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">{index + 1}</span>
+                  <span className="text-sm font-semibold text-slate-600">รายการที่ {index + 1}</span>
                 </div>
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-11 gap-4 items-end">
-                  <div className="md:col-span-4">
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
+                {!isReadOnly && (
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.id)}
+                    className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                    title="ลบรายการ"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {/* Fields */}
+              <div className="bg-white px-5 py-4">
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12 sm:col-span-4">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">สินค้า/บริการ</label>
                     <SearchableSelect
                       value={item.product_id || ''}
                       onChange={(val) => onProductSelect(item.id, val)}
@@ -108,56 +123,46 @@ const ItemsSection: FC<ItemsSectionProps> = ({
                       disabled={isReadOnly || disableProductSelect}
                     />
                   </div>
-                  <div className="md:col-span-3">
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
+                  <div className="col-span-12 sm:col-span-3">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">รายละเอียด</label>
                     <Input
                       value={item.description}
                       onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                       placeholder="รายละเอียด..."
                       disabled={isReadOnly}
+                      className="h-10"
                     />
                   </div>
-                  <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
-                        disabled={isReadOnly}
-                        className="text-center"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={item.unitPrice}
-                        onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
-                        disabled={isReadOnly}
-                        className="text-right"
-                      />
-                    </div>
+                  <div className="col-span-6 sm:col-span-1">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">จำนวน</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
+                      disabled={isReadOnly}
+                      className="text-center h-10"
+                    />
                   </div>
-                  <div className="md:col-span-2 text-right">
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
-                    <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
+                  <div className="col-span-6 sm:col-span-2">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">ราคา/หน่วย</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={item.unitPrice}
+                      onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
+                      disabled={isReadOnly}
+                      className="h-10"
+                      style={{ textAlign: 'right' }}
+                    />
+                  </div>
+                  <div className="col-span-12 sm:col-span-2">
+                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">รวม</label>
+                    <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-slate-50 rounded border border-slate-200">
                       {item.amount.toLocaleString()}
                     </div>
                   </div>
                 </div>
-                {!isReadOnly && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    className="flex-shrink-0 p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors mb-0.5"
-                    title="ลบรายการ"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                )}
               </div>
             </div>
           ))
