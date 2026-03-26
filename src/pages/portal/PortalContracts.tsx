@@ -42,6 +42,21 @@ const PortalContracts: React.FC = () => {
     }
   };
 
+  const PdfButton = ({ id, code }: { id: string; code: string }) => (
+    <button
+      onClick={() => handleDownloadPdf(id, code)}
+      disabled={loadingPdfId === id}
+      className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${loadingPdfId === id ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+    >
+      {loadingPdfId === id ? (
+        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+      ) : (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+      )}
+      {loadingPdfId === id ? 'กำลังโหลด...' : 'ดู PDF'}
+    </button>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -53,66 +68,79 @@ const PortalContracts: React.FC = () => {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">สัญญา</h2>
-        <p className="text-slate-500 mt-1">รายการสัญญาทั้งหมดของคุณ</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">สัญญา</h2>
+        <p className="text-slate-500 mt-1 text-sm sm:text-base">รายการสัญญาทั้งหมดของคุณ</p>
       </div>
 
       {contracts.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 sm:p-12 text-center">
           <p className="text-slate-500">ยังไม่มีสัญญา</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เลขที่สัญญา</th>
-                  <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เริ่มต้น</th>
-                  <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">สิ้นสุด</th>
-                  <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">มูลค่า</th>
-                  <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">สถานะ</th>
-                  <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contracts.map((item) => (
-                  <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm font-medium text-slate-800">{item.code || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {item.start_date ? dayjs(item.start_date).format('DD/MM/YYYY') : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">
-                      {item.end_date ? dayjs(item.end_date).format('DD/MM/YYYY') : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-right text-slate-800 font-medium">
-                      {item.total_amount != null
-                        ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })
-                        : '-'}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleDownloadPdf(item.id, item.code)}
-                        disabled={loadingPdfId === item.id}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === item.id ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 text-white'}`}
-                      >
-                        {loadingPdfId === item.id ? (
-                          <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
-                        )}
-                        {loadingPdfId === item.id ? 'กำลังโหลด...' : 'ดู PDF'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {contracts.map((item) => (
+              <div key={item.id} className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold text-slate-800">{item.code || '-'}</span>
+                  <StatusBadge status={item.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-slate-400">เริ่มต้น</span>
+                    <p className="text-slate-700 font-medium">{item.start_date ? dayjs(item.start_date).format('DD/MM/YYYY') : '-'}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-400">สิ้นสุด</span>
+                    <p className="text-slate-700 font-medium">{item.end_date ? dayjs(item.end_date).format('DD/MM/YYYY') : '-'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                  <div>
+                    <span className="text-slate-400 text-sm">มูลค่า</span>
+                    <p className="text-lg font-semibold text-slate-800">
+                      {item.total_amount != null ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
+                    </p>
+                  </div>
+                  <PdfButton id={item.id} code={item.code} />
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เลขที่สัญญา</th>
+                    <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">เริ่มต้น</th>
+                    <th className="text-left px-6 py-3 text-sm font-semibold text-slate-600">สิ้นสุด</th>
+                    <th className="text-right px-6 py-3 text-sm font-semibold text-slate-600">มูลค่า</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">สถานะ</th>
+                    <th className="text-center px-6 py-3 text-sm font-semibold text-slate-600">ดาวน์โหลด</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contracts.map((item) => (
+                    <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">{item.code || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{item.start_date ? dayjs(item.start_date).format('DD/MM/YYYY') : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-slate-600">{item.end_date ? dayjs(item.end_date).format('DD/MM/YYYY') : '-'}</td>
+                      <td className="px-6 py-4 text-sm text-right text-slate-800 font-medium">
+                        {item.total_amount != null ? Number(item.total_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 }) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-center"><StatusBadge status={item.status} /></td>
+                      <td className="px-6 py-4 text-center"><PdfButton id={item.id} code={item.code} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

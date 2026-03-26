@@ -68,10 +68,10 @@ const PortalDashboard: React.FC = () => {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
           สวัสดี, {customer?.first_name} {customer?.last_name}
         </h2>
-        <p className="text-slate-500 mt-1">ภาพรวมเอกสารของคุณ</p>
+        <p className="text-slate-500 mt-1 text-sm sm:text-base">ภาพรวมเอกสารของคุณ</p>
       </div>
 
       {loading ? (
@@ -79,7 +79,7 @@ const PortalDashboard: React.FC = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {cards.map((card) => (
             <button
               key={card.path}

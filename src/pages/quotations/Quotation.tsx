@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import {
@@ -663,7 +664,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {q.code}
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-800">
-                          {q.customer_name}
+                          <TruncateText text={q.customer_name || '-'} maxWidth={160} />
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           {formatPhoneNumber(phoneNumber)}
@@ -690,7 +691,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'}
+                          <TruncateText text={(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">

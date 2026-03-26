@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
+import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import {
   PlusIcon,
@@ -474,13 +475,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          <div className="flex items-center gap-3">
-                            <div className="min-w-0 max-w-[120px]">
-                              <p className="text-sm font-semibold text-slate-800 truncate" title={customerName || '-'}>
-                                {customerName || '-'}
-                              </p>
-                            </div>
-                          </div>
+                          <TruncateText text={customerName || '-'} maxWidth={160} className="font-semibold text-slate-800" />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">
                           {'-'}
@@ -507,7 +502,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          {(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'}
+                          <TruncateText text={(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">

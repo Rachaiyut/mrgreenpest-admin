@@ -131,19 +131,18 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-800">
-            การแจ้งเตือนและนัดหมาย
-          </h1>
-          <p className="text-slate-600 mt-1">
-            ติดตามสถานะสัญญา การชำระเงิน และรอบบริการ
-          </p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold text-slate-800">
+          การแจ้งเตือนและนัดหมาย
+        </h1>
+        <p className="text-slate-600 mt-1">
+          ติดตามสถานะสัญญา การชำระเงิน และรอบบริการ
+        </p>
+      </div>
 
-        <div className="flex flex-col 2xl:flex-row gap-3 items-center w-full xl:w-auto">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center w-full">
           {/* Search Bar */}
-          <div className="relative w-full xl:w-96">
+          <div className="relative w-full lg:w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
             </div>
@@ -156,7 +155,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full xl:w-auto">
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             {/* Type Filter */}
             <div className="w-full sm:w-40">
               <Select
@@ -194,7 +193,6 @@ const Notifications: React.FC<NotificationsProps> = () => {
               </Select>
             </div>
           </div>
-        </div>
       </div>
 
       <Card className="!p-0 overflow-hidden">

@@ -830,7 +830,7 @@ const Job: React.FC<JobProps> = ({
             )}
         </div>
 
-        <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500 rounded-lg">
@@ -1115,7 +1115,7 @@ const Job: React.FC<JobProps> = ({
           {activeTab === 'unassigned' && (
             <Card className="!p-0 w-full border border-slate-200 shadow-sm">
               <div className="overflow-x-auto">
-                <table className="min-w-full">
+                <table className="min-w-[800px] w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
@@ -1170,7 +1170,7 @@ const Job: React.FC<JobProps> = ({
           {activeTab === 'schedule' && view === 'list' && (
             <Card className="!p-0 w-full border border-slate-200 shadow-sm">
               <div className="overflow-x-auto">
-                <table className="min-w-full">
+                <table className="min-w-[800px] w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1305,7 +1305,7 @@ const Job: React.FC<JobProps> = ({
           {activeTab === 'reports' && (
             <Card className="!p-0 w-full border border-slate-200 shadow-sm overflow-visible">
               <div className="overflow-x-auto">
-                <table className="min-w-full">
+                <table className="min-w-[800px] w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1509,7 +1509,7 @@ const Job: React.FC<JobProps> = ({
 
               <div className="overflow-x-auto">
                 {scheduleVehicleId && scheduleDate ? (
-                  <table className="min-w-full">
+                  <table className="min-w-[800px] w-full">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-20">

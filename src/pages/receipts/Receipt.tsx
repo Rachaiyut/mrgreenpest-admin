@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Card } from '../../components/common/Card';
+import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from 'react-datepicker';
@@ -274,7 +275,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
       </div>
 
       {/* Receipt Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500 rounded-lg">
@@ -351,9 +352,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               />
             </div>
             <div className="flex items-center gap-2">
-              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
+              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
               <span className="text-slate-400">-</span>
-              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
+              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             </div>
             <div className="w-full sm:w-48">
               <Select
@@ -377,7 +378,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         }
       >
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200">
+          <table className="min-w-[900px] w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -453,7 +454,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         {invoices?.find((i) => i.id === r.invoice_id)?.code || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                        {r.customer_name}
+                        <TruncateText text={r.customer_name || '-'} maxWidth={160} />
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone || '-')}
