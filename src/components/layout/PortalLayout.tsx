@@ -51,7 +51,7 @@ export const PortalLayout: React.FC = () => {
               ) : (
                 <>
                   <h1 className="text-lg font-extrabold text-white tracking-wider leading-tight">MR. GREEN</h1>
-                  <p className="text-[10px] text-green-200 tracking-widest">PEST CONTROL CO.,LTD</p>
+                  <p className="text-xs text-green-200 tracking-widest">PEST CONTROL CO.,LTD</p>
                 </>
               )}
             </div>

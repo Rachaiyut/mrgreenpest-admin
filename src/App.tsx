@@ -85,11 +85,11 @@ const App: FC = () => {
         token: {
           colorPrimary: '#08a93d',
           fontFamily: '"Noto Sans Thai", sans-serif',
-          fontSize: 14,           /* ข้อความทั่วไป: 14px */
-          fontSizeHeading1: 24,   /* หัวข้อหลัก: 24px */
-          fontSizeHeading2: 18,   /* หัวข้อรอง: 18px */
-          fontSizeHeading3: 16,   /* หัวข้อย่อย: 16px */
-          fontSizeLG: 16,         /* Large text: 16px */
+          fontSize: 16,           /* ข้อความทั่วไป: 16px */
+          fontSizeHeading1: 28,   /* หัวข้อหลัก: 28px */
+          fontSizeHeading2: 22,   /* หัวข้อรอง: 22px */
+          fontSizeHeading3: 18,   /* หัวข้อย่อย: 18px */
+          fontSizeLG: 18,         /* Large text: 18px */
         },
       }}
     >

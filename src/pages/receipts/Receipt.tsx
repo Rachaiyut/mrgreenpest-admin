@@ -171,18 +171,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
     customers,
   ]);
 
-  const reversedReceipts = useMemo(
-    () => [...filteredReceipts].reverse(),
-    [filteredReceipts]
-  );
-  const totalReceiptItems = reversedReceipts.length;
+  const totalReceiptItems = filteredReceipts.length;
   const paginatedReceipts = useMemo(
     () =>
-      reversedReceipts.slice(
+      filteredReceipts.slice(
         (receiptPage - 1) * receiptItemsPerPage,
         receiptPage * receiptItemsPerPage
       ),
-    [reversedReceipts, receiptPage, receiptItemsPerPage]
+    [filteredReceipts, receiptPage, receiptItemsPerPage]
   );
 
   const receiptStats = useMemo(() => {
@@ -391,6 +387,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   เลขที่เอกสาร
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  อ้างอิงใบแจ้งหนี้
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลูกค้า
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -413,7 +412,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={9} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                       <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสร็จรับเงิน...</p>
@@ -422,7 +421,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 </tr>
               ) : paginatedReceipts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={9} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบเสร็จรับเงิน</p>
@@ -450,13 +449,11 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       >
                         {r.code || r.id}
                       </td>
+                      <td className="px-4 py-3 text-sm font-medium text-slate-700">
+                        {invoices?.find((i) => i.id === r.invoice_id)?.code || '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-800">
                         {r.customer_name}
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          Ref:{' '}
-                          {invoices?.find((i) => i.id === r.invoice_id)?.code ||
-                            r.invoice_id}
-                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone || '-')}

@@ -282,7 +282,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     }
     if (shouldFetch('receipts')) {
       promises.push(
-        safeFetch(() => ReceiptApi.getAll({ limit: 10 })).then((data: any) =>
+        safeFetch(() => ReceiptApi.getAll({ limit: 1000, sort_by: 'created_at', sort_order: 'DESC' })).then((data: any) =>
           setReceipts(data)
         )
       );
