@@ -443,12 +443,10 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as any)?.name : String(currentUserRole);
       const formattedRole = String(roleStr || '').toUpperCase();
 
-      if (formattedRole === 'SUPERADMIN' || formattedRole === 'ADMIN') {
-        return 'บันทึกและตรวจสอบ';
+      if (formattedRole === 'SUPERADMIN') {
+        return 'ตรวจสอบและอนุมัติ';
       }
-      if (formattedRole === 'COO') {
-        return 'อนุมัติและตรวจสอบ';
-      }
+      return 'บันทึกและแก้ไข';
     }
     if (!isEdit || formData.status === AsessmentStatus.DRAFT) {
       return 'ยืนยันและส่งประเมิน';

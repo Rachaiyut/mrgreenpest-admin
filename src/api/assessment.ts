@@ -42,11 +42,6 @@ class AssessmentService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async verifyById(id: string, data: AssessmentAction): Promise<Assessment> {
-    const res = await this.http.patch<Assessment>(`${this.path}/${id}/verify`, data);
-    return res.data;
-  }
-
   async approveById(id: string, data: AssessmentAction): Promise<Assessment> {
     const res = await this.http.patch<Assessment>(`${this.path}/${id}/approve`, data);
     return res.data;

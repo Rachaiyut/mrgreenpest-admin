@@ -260,12 +260,7 @@ const Assessments: React.FC = () => {
         await AssessmentApi.update(id, assessmentData);
 
         if (currentStatus === 'PENDING') {
-          if (['SUPERADMIN', 'ADMIN'].includes(currentUser.role)) {
-            console.log('กำลังยิง verifyById...');
-            await AssessmentApi.verifyById(id, { status: 'VERIFIED' } as any);
-          }
-          else if (currentUser.role === 'COO') {
-            console.log('กำลังยิง approveById...');
+          if (currentUser.role === 'SUPERADMIN') {
             await AssessmentApi.approveById(id, { status: 'APPROVED' } as any);
           }
         }
@@ -365,6 +360,9 @@ const Assessments: React.FC = () => {
   const renderActions = () => {
     if (!selectedAssessment) return null;
 
+    const isPending = String(selectedAssessment.status).toUpperCase() === 'PENDING';
+    const isSuperAdmin = currentUser.role === 'SUPERADMIN';
+
     const actions: {
       label: string;
       icon: React.FC<any>;
@@ -376,12 +374,15 @@ const Assessments: React.FC = () => {
           icon: EyeIcon,
           onClick: () => handleViewDetails(selectedAssessment),
         },
-        {
-          label: 'แก้ไข',
-          icon: PencilIcon,
-          onClick: () => handleEdit(selectedAssessment),
-        },
       ];
+
+    if (!isPending || isSuperAdmin) {
+      actions.push({
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(selectedAssessment),
+      });
+    }
 
     actions.push({
       label: 'ลบ',
