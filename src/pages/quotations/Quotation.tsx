@@ -588,6 +588,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบเสนอราคา
                   </th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    เวอร์ชั่น
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
@@ -662,6 +665,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           title={q.id}
                         >
                           {q.code}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-slate-600">
+                          {(q as any).revision || 1}
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-800">
                           <TruncateText text={q.customer_name || '-'} maxWidth={160} />

@@ -60,9 +60,18 @@ class NotificationService extends AuthService {
     return res.data;
   }
 
-  async getDashboardData(): Promise<IBaseResponse<any[]>> {
-    const res = await this.http.get<IBaseResponse<any[]>>(
-      `${this.path}/dashboard`
+  async getDashboardData(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    filter_type?: string;
+    start_date?: string;
+    end_date?: string;
+    invoice_status?: string;
+  }): Promise<any> {
+    const res = await this.http.get<any>(
+      `${this.path}/dashboard`,
+      { params }
     );
     return res.data;
   }

@@ -1,10 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Select, Input } from '../../components/common/FormControls';
 import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
+import { Pagination } from '../../components/common/Pagination';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -21,17 +22,46 @@ const Notifications: React.FC<NotificationsProps> = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [invoiceStatus, setInvoiceStatus] = useState('ทั้งหมด');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Debounce search
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+    return () => { if (searchTimerRef.current) clearTimeout(searchTimerRef.current); };
+  }, [searchTerm]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterType, startDate, endDate, invoiceStatus]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const res = await NotificationApi.getDashboardData();
-        if (res && Array.isArray(res.data)) {
-          setData(res.data);
-        } else if (Array.isArray(res)) {
-          setData(res);
-        }
+        const res = await NotificationApi.getDashboardData({
+          page: currentPage,
+          limit: itemsPerPage,
+          search: debouncedSearch || undefined,
+          filter_type: filterType !== 'ทั้งหมด' ? filterType : undefined,
+          start_date: startDate || undefined,
+          end_date: endDate || undefined,
+          invoice_status: invoiceStatus !== 'ทั้งหมด' ? invoiceStatus : undefined,
+        });
+
+        const payload = res?.data || res;
+        const items = payload?.items || payload?.data || (Array.isArray(payload) ? payload : []);
+        setData(items);
+        setTotalItems(payload?.meta?.total || items.length);
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -40,94 +70,38 @@ const Notifications: React.FC<NotificationsProps> = () => {
     };
 
     fetchData();
-  }, []);
+  }, [currentPage, itemsPerPage, debouncedSearch, filterType, startDate, endDate, invoiceStatus]);
 
   const filteredData = useMemo(() => {
-    return data
-      .map((item) => ({
-        contractId: item.contract_code || item.contract_id,
-        customerName: item.customer_name,
-        nickname: item.nickname || '-',
-        address: item.address,
-        phone: item.phone || '-',
-        contractDetails: item.contract_details,
-        durationYears: item.duration_years,
-        total_visits: item.total_visits,
-        startDate: item.start_date,
-        endDate: item.end_date,
-        buildingType: item.building_type || 'บ้านเดี่ยว',
-        price: Number(item.price) || 0,
-        installment: item.installment,
-        invoiceAmount: Number(item.invoice_amount) || 0,
-        invoiceStatus: item.invoice_status,
-        invoiceDueDate: item.invoice_due_date,
-        paymentMethod: item.payment_method || '-',
-        amountPaid: Number(item.amount_paid) || 0,
-        paidDate: item.paid_date || '-',
-        visitNumber: Number(item.visit_number) || 0,
-        lastServiceDate: item.last_service_date || '-',
-        nextServiceDate: item.next_service_date
-          ? new Date(item.next_service_date)
-          : new Date(),
-        nextServiceDisplay: item.next_service_date,
-        daysRemaining: Number(item.days_remaining) || 0,
-      }))
-      .filter((item) => {
-        // 1. Search Logic
-        const term = searchTerm.toLowerCase();
-        const matchName =
-          item.customerName && item.customerName.toLowerCase().includes(term);
-        const matchId =
-          item.contractId && item.contractId.toLowerCase().includes(term);
-        const matchNickname =
-          item.nickname && item.nickname.toLowerCase().includes(term);
-        const matchAddress =
-          item.address && item.address.toLowerCase().includes(term);
-        const matchPhone =
-          item.phone && item.phone.toLowerCase().includes(term);
-
-        const matchesSearch =
-          !term ||
-          matchName ||
-          matchId ||
-          matchNickname ||
-          matchAddress ||
-          matchPhone;
-
-        if (!matchesSearch) return false;
-
-        // 2. Filter Logic (filterType)
-        if (filterType === 'ใกล้หมดสัญญา') {
-          const daysToEnd =
-            (new Date(item.endDate).getTime() - new Date().getTime()) /
-            (1000 * 60 * 60 * 24);
-          if (!(daysToEnd <= 60 && daysToEnd > 0)) return false;
-        } else if (filterType === 'ใกล้กำหนดตรวจ') {
-          if (item.daysRemaining > 7) return false;
-        } else if (filterType === 'ค้างชำระ') {
-          if (item.installment === '-') return false;
-        }
-
-        // 3. Date Range Logic (Start/End Date of Contract)
-        if (startDate) {
-          const itemStart = new Date(item.startDate).getTime();
-          const filterStart = new Date(startDate).getTime();
-          if (itemStart < filterStart) return false;
-        }
-        if (endDate) {
-          const itemEnd = new Date(item.endDate).getTime();
-          const filterEnd = new Date(endDate).getTime();
-          if (itemEnd > filterEnd) return false;
-        }
-
-        // 4. Invoice Status Logic
-        if (invoiceStatus !== 'ทั้งหมด') {
-          if (item.invoiceStatus !== invoiceStatus) return false;
-        }
-
-        return true;
-      });
-  }, [data, searchTerm, filterType, startDate, endDate, invoiceStatus]);
+    return data.map((item) => ({
+      contractId: item.contract_code || item.contract_id,
+      customerName: item.customer_name,
+      nickname: item.nickname || '-',
+      address: item.address,
+      phone: item.phone || item.primary_phone || '-',
+      contractDetails: item.contract_details,
+      durationYears: item.duration_years,
+      total_visits: item.total_visits,
+      startDate: item.start_date,
+      endDate: item.end_date,
+      buildingType: item.building_type || 'บ้านเดี่ยว',
+      price: Number(item.price) || 0,
+      installment: item.installment,
+      invoiceAmount: Number(item.invoice_amount) || 0,
+      invoiceStatus: item.invoice_status,
+      invoiceDueDate: item.invoice_due_date,
+      paymentMethod: item.payment_method || '-',
+      amountPaid: Number(item.amount_paid) || 0,
+      paidDate: item.paid_date || '-',
+      visitNumber: Number(item.visit_number) || 0,
+      lastServiceDate: item.last_service_date || '-',
+      nextServiceDate: item.next_service_date
+        ? new Date(item.next_service_date)
+        : new Date(),
+      nextServiceDisplay: item.next_service_date,
+      daysRemaining: Number(item.days_remaining) || 0,
+    }));
+  }, [data]);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
@@ -200,7 +174,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-10 bg-slate-50">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 w-16">
+                  ลำดับ
+                </th>
+                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">
                   เลขที่สัญญา
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
@@ -257,7 +234,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={17}
+                    colSpan={18}
                     className="px-6 py-10 text-center text-slate-500"
                   >
                     กำลังโหลดข้อมูล...
@@ -266,19 +243,22 @@ const Notifications: React.FC<NotificationsProps> = () => {
               ) : filteredData.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={17}
+                    colSpan={18}
                     className="px-6 py-10 text-center text-slate-500"
                   >
                     ไม่พบข้อมูล
                   </td>
                 </tr>
               ) : (
-                filteredData.map((row) => (
+                filteredData.map((row, index) => (
                   <tr
                     key={row.contractId}
                     className="hover:bg-slate-50 transition-colors"
                   >
-                    <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-0 z-10 bg-white">
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-500 sticky left-0 z-10 bg-white w-16">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-16 z-10 bg-white">
                       {row.contractId}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
@@ -379,6 +359,16 @@ const Notifications: React.FC<NotificationsProps> = () => {
           </table>
         </div>
       </Card>
+
+      {totalItems > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+        />
+      )}
     </div>
   );
 };
