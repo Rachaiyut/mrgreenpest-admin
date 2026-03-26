@@ -33,7 +33,7 @@ import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
 // ===== API =====
 import { JobApi } from '../../../api/job';
 import { UserApi } from '../../../api/user';
-import { VehicleApi } from '../../../api/vehicle';
+
 import { WarehouseApi } from '../../../api/warehouse';
 
 // ===== Assets =====
@@ -82,7 +82,12 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   
   const [items, setItems] = useState<Omit<IssueItemSummary, 'id' | 'stock_issue_summary_id'>[]>([]);
   
-  const [expenseItems, setExpenseItems] = useState<ExpenseItemType[]>([]);
+  const defaultExpenseItems: ExpenseItemType[] = [
+    { id: 'default-food', description: 'ค่าข้าว', amount: '' },
+    { id: 'default-fuel', description: 'ค่าน้ำมัน', amount: '' },
+    { id: 'default-other', description: 'อื่นๆ', amount: '' },
+  ];
+  const [expenseItems, setExpenseItems] = useState<ExpenseItemType[]>(defaultExpenseItems);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
   const [referenceType, setReferenceType] = useState<'JOB'>('JOB');
   const [jobId, setJobId] = useState<string>('');
@@ -92,7 +97,7 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   
   const [fetchedJobs, setFetchedJobs] = useState<JobType[]>([]); 
 
-  const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
+  // destinationLimits removed — limit display was incorrect per spec
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
 
@@ -180,25 +185,7 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
     }
   }, [warehouses]);
 
-  const fetchVehicleLimits = useCallback(async (selectedWarehouseId: string) => {
-    try {
-      const res = await VehicleApi.getVehicleStockLimit(selectedWarehouseId);
-      const limitMap = new Map<string, number>();
-      
-      const limitsData = Array.isArray(res) ? res : (res as any)?.data || [];
-      
-      if (limitsData && limitsData.length > 0) {
-        limitsData.forEach((limit: any) => {
-          limitMap.set(limit.product_id, Number(limit.max_return_qty));
-        });
-      }
-      
-      setDestinationLimits(limitMap); 
-    } catch (error) {
-      console.error('Failed to fetch vehicle limits', error);
-      setDestinationLimits(new Map());
-    }
-  }, []);
+  // fetchVehicleLimits removed — limit display was incorrect per spec
 
   const fetchJobs = useCallback(async (customerIds: string[] = []) => {
     try {
@@ -235,10 +222,9 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
       setWarehouseId('');
       setNotes('');
       setItems([]);
-      setExpenseItems([]);
+      setExpenseItems(defaultExpenseItems.map(item => ({ ...item, id: item.id, amount: '' })));
       setSelectedCustomerIds([]);
       setJobId('');
-      setDestinationLimits(new Map());
       setIsSubmitting(false);
       
       setRequesterId(loggedInUser.id);
@@ -263,13 +249,7 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCustomerIds, fetchJobs, isOpen]);
 
-  useEffect(() => {
-    if (warehouseId) {
-      fetchVehicleLimits(warehouseId);
-    } else {
-      setDestinationLimits(new Map());
-    }
-  }, [warehouseId, fetchVehicleLimits]);
+  // Vehicle limits effect removed — limit display was incorrect per spec
 
   useEffect(() => {
     if (requesterId) {
@@ -294,14 +274,9 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
     if (!warehouseId) return false;
     return items.some((item) => {
       const available = effectiveStockMap.get(warehouseId)?.get(item.product_id) || 0;
-      if (item.quantity > available) return true;
-
-      const limit = destinationLimits.get(item.product_id);
-      if (limit !== undefined && item.quantity > limit) return true;
-
-      return false;
+      return item.quantity > available;
     });
-  }, [items, warehouseId, effectiveStockMap, destinationLimits]);
+  }, [items, warehouseId, effectiveStockMap]);
 
   const selectedCustomers = useMemo(() => customers.filter((c) => selectedCustomerIds.includes(c.id)), [customers, selectedCustomerIds]);
 
@@ -330,7 +305,11 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
   };
 
   const handleAddExpense = () => setExpenseItems((prev) => [...prev, { id: crypto.randomUUID(), description: '', amount: '' }]);
-  const handleRemoveExpenseItem = (id: string) => setExpenseItems((prev) => prev.filter((item) => item.id !== id));
+  const isDefaultExpense = (id: string) => id === 'default-food' || id === 'default-fuel';
+  const handleRemoveExpenseItem = (id: string) => {
+    if (isDefaultExpense(id)) return;
+    setExpenseItems((prev) => prev.filter((item) => item.id !== id));
+  };
   const handleExpenseItemChange = (id: string, field: keyof ExpenseItemType, value: any) => {
     setExpenseItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
   };
@@ -573,26 +552,22 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
                   <div className="space-y-3 mt-2">
                     <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50/80 rounded-lg text-sm font-semibold text-slate-600 uppercase tracking-wider border border-slate-100 items-center">
                       <div className="col-span-4">รายละเอียดสินค้า</div>
-                      <div className="col-span-2 text-center">สต๊อกคงเหลือ</div>
-                      <div className="col-span-2 text-center text-blue-600">Limit รถ</div>
-                      <div className="col-span-3 text-center text-emerald-600">จำนวนที่ใช้จริง</div>
+                      <div className="col-span-3 text-center">สต๊อกคงเหลือ</div>
+                      <div className="col-span-4 text-center text-emerald-600">จำนวนที่ใช้จริง</div>
                       <div className="col-span-1 text-center">จัดการ</div>
                     </div>
 
                     {items.map((item, index) => {
                       const product = productMap.get(item.product_id);
                       const available = sourceWarehouse?.id ? effectiveStockMap.get(sourceWarehouse.id)?.get(item.product_id) || 0 : 0;
-                      const limit = destinationLimits.get(item.product_id);
-                      
+
                       const isOverStock = available > 0 && item.quantity > available;
-                      const isOverLimitObj = limit !== undefined && item.quantity > limit;
-                      const hasWarning = isOverStock || isOverLimitObj;
 
                       return (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className={`px-5 py-4 rounded-xl border transition-all duration-200 flex items-center bg-white shadow-sm hover:shadow-md ${
-                            hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
+                            isOverStock ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
@@ -607,30 +582,23 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
                               </div>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center col-span-2">
+                            <div className="flex flex-col items-center justify-center col-span-3">
                               <span className="text-[11px] text-slate-400 font-medium mb-1">ในรถมี</span>
                               <span className={`text-base font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
                                 {available.toLocaleString()} <span className="text-xs font-medium text-slate-500 ml-0.5">{item.unit}</span>
                               </span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center col-span-2">
-                              <span className="text-[11px] text-blue-400 font-medium mb-1">จำกัด</span>
-                              <span className="text-base font-bold text-blue-600">
-                                {limit !== undefined ? limit.toLocaleString() : '-'} <span className="text-xs font-medium text-blue-400 ml-0.5">{limit !== undefined ? item.unit : ''}</span>
-                              </span>
-                            </div>
-                            
-                            <div className="col-span-3 flex flex-col items-center justify-center relative">
-                              <div className="relative flex items-center w-full max-w-[130px] group">
+                            <div className="col-span-4 flex flex-col items-center justify-center relative">
+                              <div className="relative flex items-center w-full max-w-[160px] group">
                                 <Input
-                                  type="number" 
-                                  min="1" 
+                                  type="number"
+                                  min="1"
                                   value={item.quantity}
                                   onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))}
                                   className={`w-full text-center h-11 text-base font-bold rounded-lg pr-10 transition-all ${
-                                    hasWarning 
-                                      ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50' 
+                                    isOverStock
+                                      ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50'
                                       : 'border-slate-300 text-emerald-700 focus:border-emerald-500 focus:ring-emerald-200 bg-slate-50 group-hover:bg-white'
                                   }`}
                                 />
@@ -643,17 +611,12 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
                                   <XCircleIcon className="w-4 h-4" /> เกินสต๊อก
                                 </span>
                               )}
-                              {!isOverStock && isOverLimitObj && (
-                                <span className="text-xs font-bold absolute -bottom-6 whitespace-nowrap text-amber-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-4 h-4" /> เกินโควต้า
-                                </span>
-                              )}
                             </div>
-                            
+
                             <div className="col-span-1 flex justify-center">
-                              <button 
-                                type="button" 
-                                onClick={() => handleRemoveItem(index)} 
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(index)}
                                 className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none"
                               >
                                 <TrashIcon className="w-6 h-6" />
@@ -714,24 +677,29 @@ export const AddIssueSummaryModal: React.FC<AddIssueSummaryModalProps> = ({
                   expenseItems.map((item) => (
                     <div key={item.id} className="flex gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors">
                       <div className="p-2 bg-slate-100 rounded-md text-slate-400"><BanknotesIcon className="w-5 h-5" /></div>
-                      <input 
-                        type="text" 
-                        value={item.description} 
-                        onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)} 
-                        placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น ค่าทางด่วน, ค่าน้ำมัน)..." 
-                        className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2" 
+                      <input
+                        type="text"
+                        value={item.description}
+                        onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                        placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น ค่าทางด่วน, ค่าน้ำมัน)..."
+                        className={`flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2 ${isDefaultExpense(item.id) ? 'text-slate-700' : ''}`}
+                        readOnly={isDefaultExpense(item.id)}
                       />
                       <div className="relative flex items-center max-w-[150px]">
-                        <input 
-                          type="number" 
-                          value={item.amount} 
-                          onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)} 
-                          placeholder="0.00" 
-                          className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent" 
+                        <input
+                          type="number"
+                          value={item.amount}
+                          onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                          placeholder="0.00"
+                          className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
                         />
                         <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
                       </div>
-                      <button type="button" onClick={() => handleRemoveExpenseItem(item.id)} className="text-slate-300 hover:text-red-500 ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors"><XCircleIcon className="w-6 h-6" /></button>
+                      {isDefaultExpense(item.id) ? (
+                        <div className="ml-2 p-1 w-8" />
+                      ) : (
+                        <button type="button" onClick={() => handleRemoveExpenseItem(item.id)} className="text-slate-300 hover:text-red-500 ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors"><XCircleIcon className="w-6 h-6" /></button>
+                      )}
                     </div>
                   ))
                 )}
