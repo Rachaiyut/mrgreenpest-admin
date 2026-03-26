@@ -134,7 +134,7 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [fullQuotation, setFullQuotation] = useState<any>(null);
 
-  const [isSeparateContract, setIsSeparateContract] = useState<boolean>(false);
+  const [isSeparateContract, setIsSeparateContract] = useState<boolean | null>(null);
 
   // Service info
   const [serviceLocation, setServiceLocation] = useState(
@@ -197,6 +197,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
   // Installment Plan
   const [installments, setInstallments] = useState<InstallmentPlan[]>([]);
+  const [contractPaymentMethod, setContractPaymentMethod] = useState<'TRANSFER' | 'INSTALLMENT'>('TRANSFER');
 
   // Customer Search
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
@@ -359,6 +360,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           status: inst.status as any,
         }))
       );
+      setContractPaymentMethod('INSTALLMENT');
     }
   }, [mode, initialValues]);
 
@@ -642,6 +644,7 @@ export const ContractForm: FC<ContractFormProps> = ({
               }
 
               setInstallments(newInstallments);
+              setContractPaymentMethod('INSTALLMENT');
             }
           }
         }
@@ -881,6 +884,11 @@ export const ContractForm: FC<ContractFormProps> = ({
       return;
     }
 
+    if (isSeparateContract === null) {
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรูปแบบการออกสัญญา (รวม 1 สัญญา หรือ แยกตามพื้นที่)' });
+      return;
+    }
+
     const totalPercentage = installments.reduce(
       (sum, inst) => sum + Number(inst.percentage),
       0
@@ -981,7 +989,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         ? (fullQuotation?.signature || initialValues?.signature || undefined)
         : undefined,
 
-      is_separate_contract: isSeparateContract,
+      is_separate_contract: isSeparateContract === true,
 
       areas: finalAreas,
 
@@ -1111,33 +1119,33 @@ export const ContractForm: FC<ContractFormProps> = ({
           />
 
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField label="เลขที่สัญญา" htmlFor="code">
-                <Input
-                  id="code"
-                  value={contractCode}
-                  onChange={(e) => setContractCode(e.target.value)}
-                  readOnly={mode === 'create'}
-                  className={
-                    mode === 'create' ? 'bg-gray-50 font-mono' : 'font-mono'
-                  }
-                />
-              </FormField>
-              <FormField label="สถานะ" htmlFor="status">
-                <Select
-                  id="status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as ContractStatus)}
-                >
-                  <option value={ContractStatus.DRAFT}>ร่าง</option>
-                  <option value={ContractStatus.PENDING}>รอดำเนินการ</option>
-                  <option value={ContractStatus.ACTIVE}>ดำเนินการ</option>
-                  <option value={ContractStatus.COMPLETED}>เสร็จสิ้น</option>
-                  <option value={ContractStatus.CANCELLED}>ยกเลิก</option>
-                  <option value={ContractStatus.EXPIRED}>หมดอายุ</option>
-                </Select>
-              </FormField>
-            </div>
+            {mode !== 'create' && (
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="เลขที่สัญญา" htmlFor="code">
+                  <Input
+                    id="code"
+                    value={contractCode}
+                    onChange={(e) => setContractCode(e.target.value)}
+                    readOnly
+                    className="bg-gray-50 font-mono"
+                  />
+                </FormField>
+                <FormField label="สถานะ" htmlFor="status">
+                  <Select
+                    id="status"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as ContractStatus)}
+                  >
+                    <option value={ContractStatus.DRAFT}>ร่าง</option>
+                    <option value={ContractStatus.PENDING}>รอดำเนินการ</option>
+                    <option value={ContractStatus.ACTIVE}>ดำเนินการ</option>
+                    <option value={ContractStatus.COMPLETED}>เสร็จสิ้น</option>
+                    <option value={ContractStatus.CANCELLED}>ยกเลิก</option>
+                    <option value={ContractStatus.EXPIRED}>หมดอายุ</option>
+                  </Select>
+                </FormField>
+              </div>
+            )}
 
             {/* ลายเซ็นจากใบเสนอราคา — แสดงเมื่อสถานะเป็น ACTIVE */}
             {status === ContractStatus.ACTIVE && (
@@ -1165,11 +1173,18 @@ export const ContractForm: FC<ContractFormProps> = ({
 
             <FormField label="ลูกค้า" htmlFor="customer">
               <SearchableSelect
-                options={searchedCustomers.map((c) => ({
-                  value: c.id,
-                  label: `${c.code} - ${c.first_name} ${c.last_name}`,
-                  description: c.primary_phone,
-                }))}
+                options={(() => {
+                  const allCustomers = [...customers, ...searchedCustomers];
+                  if (fetchedSingleCustomer && !allCustomers.some(c => c.id === fetchedSingleCustomer.id)) {
+                    allCustomers.push(fetchedSingleCustomer);
+                  }
+                  const unique = allCustomers.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i);
+                  return unique.map((c) => ({
+                    value: c.id,
+                    label: `${c.code} - ${c.first_name} ${c.last_name}`,
+                    description: c.primary_phone,
+                  }));
+                })()}
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}
                 onSearchChange={handleCustomerSearch}
@@ -1186,43 +1201,6 @@ export const ContractForm: FC<ContractFormProps> = ({
               />
             </FormField>
 
-            {/* 🟢 UI สำหรับเลือกประเภทการออกสัญญา (แสดงเมื่อมีหลายพื้นที่) */}
-            {/* 🟢 UI สำหรับเลือกประเภทการออกสัญญา (แสดงเมื่อมีหลายพื้นที่ ทั้งแบบมีและไม่มีใบเสนอราคา) */}
-            {((selectedQuotationId && fullQuotation?.quotation_areas?.length > 1) ||
-              (!selectedQuotationId && customAreas.length > 1)) && (
-                <div className="col-span-2 p-4 bg-blue-50 rounded-lg border border-blue-100 flex flex-col gap-2 mt-2">
-                  <div>
-                    <h4 className="text-sm font-semibold text-blue-800">รูปแบบการออกสัญญา</h4>
-                    <p className="text-xs text-blue-600 mt-1">
-                      {selectedQuotationId ? 'ใบเสนอราคานี้' : 'การสร้างสัญญานี้'}มี{' '}
-                      {selectedQuotationId ? fullQuotation.quotation_areas.length : customAreas.length}{' '}
-                      พื้นที่ ต้องการออกสัญญาแบบใด?
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-6 mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
-                      <input
-                        type="radio"
-                        name="contract_type"
-                        checked={!isSeparateContract}
-                        onChange={() => setIsSeparateContract(false)}
-                        className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                      />
-                      รวมเป็น 1 สัญญา
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-700">
-                      <input
-                        type="radio"
-                        name="contract_type"
-                        checked={isSeparateContract}
-                        onChange={() => setIsSeparateContract(true)}
-                        className="text-blue-600 focus:ring-blue-500 w-4 h-4"
-                      />
-                      แยกสัญญาตามพื้นที่
-                    </label>
-                  </div>
-                </div>
-              )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField label="วันที่เริ่มสัญญา" htmlFor="startDate">
@@ -1322,6 +1300,19 @@ export const ContractForm: FC<ContractFormProps> = ({
           }}
           totalAmount={totalAmount}
           isReadOnly={false}
+          showPaymentMethodToggle
+          paymentMethod={contractPaymentMethod}
+          onPaymentMethodChange={(m) => {
+            setContractPaymentMethod(m);
+            if (m === 'INSTALLMENT' && installments.length === 0) {
+              setInstallments([
+                { id: crypto.randomUUID(), term: 1, description: 'งวดที่ 1', percentage: 50, amount: Math.round(totalAmount / 2), due_date: startDate || '', status: 'PENDING' as any },
+                { id: crypto.randomUUID(), term: 2, description: 'งวดที่ 2', percentage: 50, amount: Math.round(totalAmount / 2), due_date: '', status: 'PENDING' as any },
+              ]);
+            } else if (m === 'TRANSFER') {
+              setInstallments([]);
+            }
+          }}
           showDueDate
           showStatus
           showTotalAmountInput
@@ -1352,6 +1343,47 @@ export const ContractForm: FC<ContractFormProps> = ({
                 placeholder="หมายเหตุเพิ่มเติม..."
               />
             </FormField>
+          </div>
+        </div>
+
+        {/* รูปแบบการออกสัญญา */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <DocumentTextIcon className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">รูปแบบการออกสัญญา <span className="text-red-500">*</span></h3>
+              <p className="text-sm text-slate-500 mt-0.5">กรุณาเลือกรูปแบบการออกสัญญาก่อนบันทึก</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${isSeparateContract === false ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
+              <input
+                type="radio"
+                name="contract_type"
+                checked={isSeparateContract === false}
+                onChange={() => setIsSeparateContract(false)}
+                className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500"
+              />
+              <div className="ml-3">
+                <span className="block text-base font-bold text-slate-800">รวมเป็น 1 สัญญา</span>
+                <span className="block text-xs text-slate-500">รวมทุกพื้นที่ไว้ในสัญญาเดียว</span>
+              </div>
+            </label>
+            <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${isSeparateContract === true ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
+              <input
+                type="radio"
+                name="contract_type"
+                checked={isSeparateContract === true}
+                onChange={() => setIsSeparateContract(true)}
+                className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500"
+              />
+              <div className="ml-3">
+                <span className="block text-base font-bold text-slate-800">แยกสัญญาตามพื้นที่</span>
+                <span className="block text-xs text-slate-500">สร้าง 1 สัญญาต่อ 1 พื้นที่</span>
+              </div>
+            </label>
           </div>
         </div>
       </div>

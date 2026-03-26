@@ -31,7 +31,7 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
   onSelectPackage,
   isReadOnly = false,
   isEditing = false,
-  title = 'รายละเอียดพื้นที่ (Area Breakdown)',
+  title = 'รายละเอียดพื้นที่',
   notice,
   sortByCreatedAt = false,
   disabled = false,
