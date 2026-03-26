@@ -112,10 +112,18 @@ const Packages: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleEdit = (pkg: Package) => {
-    setSelectedPackage(pkg);
-    setIsEditModalOpen(true);
+  const handleEdit = async (pkg: Package) => {
     setOpenDropdownId(null);
+    try {
+      const res = await PackageApi.getPackageById(pkg.id);
+      const fullPkg = (res as any).data || res;
+      setSelectedPackage(fullPkg);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error('Failed to fetch package:', error);
+      setSelectedPackage(pkg);
+      setIsEditModalOpen(true);
+    }
   };
 
   const handleDelete = (pkg: Package) => {
