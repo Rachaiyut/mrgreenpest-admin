@@ -1125,6 +1125,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       service_system: a.service_system || undefined,
       service_system_other: a.service_system_other || undefined,
       area_size: Number(a.area_size) || 0,
+      measurement_unit: a.measurement_unit || 'sqm',
       total_price: Number(a.total_price) || Number(a.package_price) || 0,
       package_price: Number(a.package_price) || Number(a.total_price) || 0,
       package_price_id: a.package_price_id || undefined,
