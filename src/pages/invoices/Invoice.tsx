@@ -18,7 +18,9 @@ import {
   ExclamationTriangleIcon,
   PlusIcon,
   LoadingIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
+import { CustomerApi } from '../../api/customer';
 import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
 import { InvoiceStatus } from '../../types/enums/financial';
@@ -42,6 +44,8 @@ const invoiceStatusLabels: Record<string, string> = {
   PAID: 'ชำระแล้ว',
   PARTIAL: 'ชำระบางส่วน',
   OVERDUE: 'เกินกำหนด',
+  PENDING_REVIEW: 'รอตรวจสอบ',
+  CARRIED_OVER: 'ยกยอด',
   CANCELLED: 'ยกเลิก',
 };
 
@@ -88,6 +92,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [isInvoiceDeleteModalOpen, setIsInvoiceDeleteModalOpen] =
     useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
+  const [isInvoiceStatusModalOpen, setIsInvoiceStatusModalOpen] = useState(false);
+  const [targetInvoiceStatus, setTargetInvoiceStatus] = useState<InvoiceStatus>(InvoiceStatus.PENDING);
   const [invoiceInitialValues, setInvoiceInitialValues] = useState<
     Partial<Invoice> | undefined
   >(undefined);
@@ -397,6 +403,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบแจ้งหนี้
                 </th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  งวดที่
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  ครั้งที่
+                </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลูกค้า
                 </th>
@@ -420,7 +432,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={10} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-500">
                       {/* อย่าลืมตรวจสอบว่าคุณมีการ import LoadingIcon มาใช้ในไฟล์นี้แล้วหรือยัง */}
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
@@ -430,7 +442,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 </tr>
               ) : paginatedInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-16 text-center">
+                  <td colSpan={10} className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบแจ้งหนี้</p>
@@ -458,15 +470,18 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       >
                         {i.code || i.id}
                       </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {i.term ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">{i.term}</span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {(i as any).billing_count ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{(i as any).billing_count}</span>
+                        ) : '-'}
+                      </td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                        <div className="flex items-center gap-2">
-                          <TruncateText text={customer ? `${customer.first_name} ${customer.last_name || ''}`.trim() : i.customer_name || 'Unknown'} maxWidth={150} />
-                          {i.term && (
-                            <span className="flex-shrink-0 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                              งวดที่ {i.term}
-                            </span>
-                          )}
-                        </div>
+                        <TruncateText text={customer ? `${customer.first_name} ${customer.last_name || ''}`.trim() : i.customer_name || 'Unknown'} maxWidth={150} />
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone)}
@@ -561,6 +576,34 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             >
               <PencilIcon className="w-4 h-4 text-slate-400" /> แก้ไข
             </button>
+            <button
+              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
+              onClick={() => {
+                if (!selectedInvoice) return;
+                setTargetInvoiceStatus((selectedInvoice.status as InvoiceStatus) || InvoiceStatus.PENDING);
+                setIsInvoiceStatusModalOpen(true);
+                setOpenInvoiceDropdownId(null);
+              }}
+            >
+              <CheckCircleIcon className="w-4 h-4 text-slate-400" /> เปลี่ยนสถานะ
+            </button>
+            <button
+              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+              onClick={async () => {
+                if (!selectedInvoice?.customer_id) return;
+                try {
+                  const response = await CustomerApi.generatePortalToken(selectedInvoice.customer_id);
+                  const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                  await navigator.clipboard.writeText(portalUrl);
+                  Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
+                } catch {
+                  Swal.fire({ title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างลิงก์ Portal ได้', icon: 'error', confirmButtonColor: '#d33' });
+                }
+                setOpenInvoiceDropdownId(null);
+              }}
+            >
+              <DocumentTextIcon className="w-4 h-4 text-green-500" /> ส่ง Link Portal ลูกค้า
+            </button>
             <hr className="my-1 border-slate-100" />
             <button
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
@@ -594,8 +637,11 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         onSubmit={async (data) => {
           if (onUpdateInvoice) {
             await onUpdateInvoice({ ...selectedInvoice, ...data });
-            setIsInvoiceEditModalOpen(false);
+          } else if (selectedInvoice) {
+            await InvoiceApi.update(selectedInvoice.id, { ...selectedInvoice, ...data } as any);
           }
+          await fetchData(['invoices']);
+          setIsInvoiceEditModalOpen(false);
         }}
       />
 
@@ -678,6 +724,55 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           </div>
         )}
       </Modal>
+
+      {/* Status Update Modal */}
+      <ConfirmationModal
+        isOpen={isInvoiceStatusModalOpen}
+        onClose={() => setIsInvoiceStatusModalOpen(false)}
+        onConfirm={async () => {
+          if (selectedInvoice) {
+            try {
+              if (onUpdateInvoice) {
+                await onUpdateInvoice({ ...selectedInvoice, status: targetInvoiceStatus });
+              } else {
+                await InvoiceApi.update(selectedInvoice.id, { status: targetInvoiceStatus } as any);
+              }
+              await fetchData(['invoices']);
+            } catch (error) {
+              console.error('Failed to update invoice status:', error);
+            }
+          }
+          setIsInvoiceStatusModalOpen(false);
+          setSelectedInvoice(null);
+        }}
+        title="อัปเดตสถานะ"
+        message={
+          <div className="space-y-4 text-left">
+            <p>
+              กรุณาเลือกสถานะใหม่สำหรับใบแจ้งหนี้{' '}
+              <strong>{selectedInvoice?.code || selectedInvoice?.id}</strong>
+            </p>
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                สถานะ
+              </label>
+              <Select
+                value={targetInvoiceStatus}
+                onChange={(e) => setTargetInvoiceStatus(e.target.value as InvoiceStatus)}
+                className="w-full"
+              >
+                {Object.values(InvoiceStatus).map((status) => (
+                  <option key={status} value={status}>
+                    {invoiceStatusLabels[status] || status}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+        }
+        confirmButtonText="บันทึก"
+        confirmButtonClass="bg-primary hover:bg-primary/90"
+      />
     </div>
   );
 };

@@ -16,20 +16,19 @@ import {
   FormField,
   Input,
   Select,
-  Button,
   Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import InstallmentSection, { InstallmentItem } from '../../common/InstallmentSection';
+import ItemsSection from '../../common/ItemsSection';
+import WorkAreasSection from '../../common/WorkAreasSection';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import {
   PlusIcon,
-  TrashIcon,
   DocumentTextIcon,
   HomeIcon,
   MapIcon,
   ClipboardDocumentListIcon,
-  CurrencyDollarIcon,
   CalendarIcon,
   MapPinIcon,
   NewFieldOpsIcon,
@@ -865,15 +864,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }
   }, [selectedCustomer]);
 
-  const handleItemChange = (id: string, field: keyof QuotationItem, value: string | number) => {
-    setItems((prev) => prev.map((item) => {
-      if (item.id !== id) return item;
-      const updated = { ...item, [field]: value };
-      if (field === 'quantity' || field === 'unitPrice') updated.amount = updated.quantity * updated.unitPrice;
-      return updated;
-    }));
-  };
-
   const handleProductSelect = (itemId: string, productId: string) => {
     const product = products.find((p) => p.id === productId);
     setItems((prev) => prev.map((item) => {
@@ -887,8 +877,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     }));
   };
 
-  const addItem = () => setItems((prev) => [...prev, { id: crypto.randomUUID(), productId: '', description: '', quantity: 1, unit: 'ครั้ง', unitPrice: 0, amount: 0 }]);
-  const removeItem = (id: string) => { if (items.length <= 1) return; setItems((prev) => prev.filter((item) => item.id !== id)); };
 
   const handlePackagePricingToggle = (e: ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
@@ -1272,80 +1260,46 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </div>
         </div>
 
-        {/* Work Areas Section - ใช้ WorkAreaForm เดียวกับใบประเมิน */}
-        <div className={`bg-white rounded-xl border border-slate-200 shadow-sm p-6 col-span-1 lg:col-span-2 ${mode === 'create' && selectedAssessmentId ? 'opacity-50 pointer-events-none' : ''}`}>
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-green-50 rounded-lg text-green-600"><ClipboardDocumentListIcon className="w-5 h-5" /></div>
-              <h3 className="font-semibold text-slate-800 text-lg">รายละเอียดพื้นที่</h3>
-            </div>
-            {mode === 'create' && selectedAssessmentId && (
-              <span className="text-sm text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg">ข้อมูลพื้นที่จากใบประเมิน (แก้ไขไม่ได้)</span>
-            )}
-          </div>
-          <div className="space-y-4">
-            {editableAreas
-              .map((area, originalIndex) => ({ area, originalIndex }))
-              .sort((a, b) => new Date(a.area.created_at || 0).getTime() - new Date(b.area.created_at || 0).getTime())
-              .map(({ area, originalIndex }) => (
-              <WorkAreaForm
-                key={area.id || originalIndex}
-                area={area}
-                index={originalIndex}
-                // @ts-ignore
-                errors={{}}
-                onAreaChange={(i, updated) => setEditableAreas(prev => prev.map((a, idx) => idx === i ? updated : a))}
-                onClearArea={(i) => setEditableAreas(prev => prev.map((a, idx) => idx === i ? { ...a, building_type: '', area_size: undefined, category_services: [], service_system: undefined, total_price: 0, package_price: undefined } : a))}
-                onRemoveArea={editableAreas.length > 1 ? (i) => setEditableAreas(prev => prev.filter((_, idx) => idx !== i)) : undefined}
-                products={products}
-                categories={fetchedCategories}
-                selectedPackage={selectedAssessment?.package || fetchedPackage || null}
-                availablePackages={fetchedPackages}
-                onSelectPackage={(pkgId) => {
-                  if (pkgId) {
-                    const pkg = fetchedPackages.find(p => p.id === pkgId);
-                    if (pkg) {
-                      setFetchedPackage(pkg);
-                      setUsePackagePricing(true);
-                      setPackageName(pkg.name);
-
-                      // เปลี่ยนแพ็คเกจ → อัปเดตราคาทุกพื้นที่ตามแพ็คเกจใหม่
-                      const sortedPrices = [...(pkg.package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
-                      setEditableAreas(prev => prev.map(area => {
-                        if (!area.area_size || area.area_size <= 0) {
-                          return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
-                        }
-                        const bestFit = sortedPrices.find((c: any) => c.area_range >= area.area_size!);
-                        if (!bestFit) return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
-
-                        return {
-                          ...area,
-                          package_price: undefined,
-                          package_price_id: undefined,
-                          package_type: undefined as any,
-                          total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
-                        };
-                      }));
-                    }
+        {/* Work Areas Section */}
+        <WorkAreasSection
+          areas={editableAreas}
+          onAreasChange={setEditableAreas}
+          products={products}
+          categories={fetchedCategories}
+          packages={fetchedPackages}
+          getSelectedPackage={() => selectedAssessment?.package || fetchedPackage || null}
+          onSelectPackage={(pkgId) => {
+            if (pkgId) {
+              const pkg = fetchedPackages.find(p => p.id === pkgId);
+              if (pkg) {
+                setFetchedPackage(pkg);
+                setUsePackagePricing(true);
+                setPackageName(pkg.name);
+                const sortedPrices = [...(pkg.package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
+                setEditableAreas(prev => prev.map(area => {
+                  if (!area.area_size || area.area_size <= 0) {
+                    return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
                   }
-                }}
-                isEditing={mode === 'edit' || mode === 'revise'}
-              />
-            ))}
-            {editableAreas.length === 0 && (
-              <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
-                ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น
-              </div>
-            )}
-            {!isReadOnly && (
-              <div className="flex justify-center mt-6">
-                <button type="button" onClick={addNewArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
-                  <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
+                  const bestFit = sortedPrices.find((c: any) => c.area_range >= area.area_size!);
+                  if (!bestFit) return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
+                  return {
+                    ...area,
+                    package_price: undefined,
+                    package_price_id: undefined,
+                    package_type: undefined as any,
+                    total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
+                  };
+                }));
+              }
+            }
+          }}
+          isReadOnly={isReadOnly}
+          isEditing={mode === 'edit' || mode === 'revise'}
+          title="รายละเอียดพื้นที่"
+          notice={mode === 'create' && selectedAssessmentId ? 'ข้อมูลพื้นที่จากใบประเมิน (แก้ไขไม่ได้)' : undefined}
+          sortByCreatedAt
+          disabled={mode === 'create' && !!selectedAssessmentId}
+        />
 
         <InstallmentSection
           installments={installments.map(i => ({
@@ -1369,46 +1323,40 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           onPaymentMethodChange={(m) => setPaymentCondition(m === 'INSTALLMENT' ? PaymentMethod.INSTALLMENT : PaymentMethod.TRANSFER)}
         />
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-          {!selectedAssessmentId && (
-            <>
-              <SectionHeader icon={CurrencyDollarIcon} title="รายการสินค้าและบริการ" />
-              <div className="space-y-4">
-                {items.map((item, index) => (
-                  <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                      <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">{index + 1}</div>
-                      <div className="md:col-span-4"><label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label><SearchableSelect value={item.productId} onChange={(val) => handleProductSelect(item.id, val)} options={productOptions} placeholder="เลือกสินค้า..." disabled={isReadOnly || usePackagePricing} /></div>
-                      <div className="md:col-span-3"><label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label><Input value={item.description} onChange={(e) => handleItemChange(item.id, 'description', e.target.value)} placeholder="รายละเอียด..." disabled={isReadOnly} /></div>
-                      <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                        <div><label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label><Input type="number" min="1" value={item.quantity} onChange={(e) => handleItemChange(item.id, 'quantity', Number(e.target.value))} disabled={isReadOnly} className="text-center" /></div>
-                        <div><label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label><Input type="number" min="0" value={item.unitPrice} onChange={(e) => handleItemChange(item.id, 'unitPrice', Number(e.target.value))} disabled={isReadOnly} className="text-right" /></div>
-                      </div>
-                      <div className="md:col-span-2 text-right"><label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label><div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">{item.amount.toLocaleString()}</div></div>
-                      {!isReadOnly && items.length > 1 && (<button type="button" onClick={() => removeItem(item.id)} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"><TrashIcon className="w-5 h-5" /></button>)}
-                    </div>
-                  </div>
-                ))}
-                {!isReadOnly && !usePackagePricing && (<Button type="button" variant="outline" onClick={addItem} className="w-full border-dashed border-2 border-slate-300 text-slate-500 hover:text-green-600"><PlusIcon className="w-5 h-5 mr-2" /> เพิ่มรายการ</Button>)}
-              </div>
-            </>
-          )}
+        {!selectedAssessmentId && (
+          <ItemsSection
+            items={items.map((item) => ({
+              ...item,
+              product_id: item.productId,
+            }))}
+            onItemsChange={(updated) =>
+              setItems(
+                updated.map((item) => ({
+                  ...item,
+                  productId: item.product_id || '',
+                }))
+              )
+            }
+            productOptions={productOptions}
+            onProductSelect={handleProductSelect}
+            isReadOnly={isReadOnly}
+            disableProductSelect={usePackagePricing}
+            hideAddRemove={usePackagePricing}
+          />
+        )}
 
-          <div className={selectedAssessmentId ? 'pt-0' : 'mt-8 border-t border-slate-200 pt-6'}>
-            <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
-              <div className="flex-1 min-w-0 w-full flex flex-col">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
-                <div className="w-full"><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none" /></div>
-              </div>
-              <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
-                <div className="flex justify-between items-center text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
-                  <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
-                </div>
-                <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
-              </div>
+        <div className="flex flex-col lg:flex-row items-start gap-6 w-full lg:col-span-2">
+          <div className="flex-1 min-w-0 w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none" />
+          </div>
+          <div className="w-full lg:w-80 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
+            <div className="flex justify-between items-center text-sm">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
+              <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
             </div>
+            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
           </div>
         </div>
       </div>

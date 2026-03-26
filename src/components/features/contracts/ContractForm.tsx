@@ -40,7 +40,7 @@ import { ContractApi } from '../../../api/contract';
 import { PackageApi } from '../../../api/package';
 
 // ===== WorkAreaForm =====
-import { WorkAreaForm } from '../assessments/WorkAreaForm';
+import WorkAreasSection from '../../common/WorkAreasSection';
 import { Package } from '../../../types/entity/package.interface';
 
 // ===== Assets =====
@@ -1275,71 +1275,28 @@ export const ContractForm: FC<ContractFormProps> = ({
           </div>
         </div>
 
-        {(() => {
-
-          return (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-              <SectionHeader
-                icon={ClipboardDocumentListIcon}
-                title="รายละเอียดพื้นที่ (Area Breakdown)"
-              />
-              <div className="space-y-4">
-                {workAreaAreas.map((area, index) => (
-                  <WorkAreaForm
-                    key={area.id || index}
-                    area={area}
-                    index={index}
-                    // @ts-ignore
-                    errors={{}}
-                    onAreaChange={(i, updated) => setWorkAreaAreas(prev => prev.map((a, idx) => idx === i ? updated : a))}
-                    onClearArea={(i) => setWorkAreaAreas(prev => prev.map((a, idx) => idx === i ? { ...a, building_type: '', area_size: undefined, category_services: [], service_system: undefined, total_price: 0, package_price: undefined } : a))}
-                    onRemoveArea={workAreaAreas.length > 1 ? (i) => setWorkAreaAreas(prev => prev.filter((_, idx) => idx !== i)) : undefined}
-                    products={products}
-                    categories={fetchedCategories}
-                    selectedPackage={(() => {
-                      // Find package from fetchedPackages (has package_prices)
-                      const pkgId = area.packagePriceRelation?.package?.id || area.packagePriceRelation?.package_id;
-                      if (pkgId) {
-                        const fullPkg = fetchedPackages.find((p) => p.id === pkgId);
-                        if (fullPkg) return fullPkg;
-                      }
-                      // Fallback: find by package_price_id matching
-                      if (area.package_price_id) {
-                        const pkg = fetchedPackages.find((p: any) =>
-                          (p.package_prices || []).some((pp: any) => pp.id === area.package_price_id)
-                        );
-                        if (pkg) return pkg;
-                      }
-                      return null;
-                    })()}
-                    availablePackages={fetchedPackages}
-                    onSelectPackage={() => {}}
-                    isEditing={mode === 'edit'}
-                  />
-                ))}
-                <div className="flex justify-center mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setWorkAreaAreas(prev => [...prev, {
-                      id: crypto.randomUUID(),
-                      area_name: `พื้นที่ ${prev.length + 1}`,
-                      building_type: '',
-                      service_system: '',
-                      area_size: undefined,
-                      package_price: undefined,
-                      total_price: 0,
-                      category_services: [],
-                      items: [],
-                    }])}
-                    className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
-                  >
-                    <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        })()}
+        <WorkAreasSection
+          areas={workAreaAreas}
+          onAreasChange={setWorkAreaAreas}
+          products={products}
+          categories={fetchedCategories}
+          packages={fetchedPackages}
+          getSelectedPackage={(area) => {
+            const pkgId = area.packagePriceRelation?.package?.id || area.packagePriceRelation?.package_id;
+            if (pkgId) {
+              const fullPkg = fetchedPackages.find((p) => p.id === pkgId);
+              if (fullPkg) return fullPkg;
+            }
+            if (area.package_price_id) {
+              const pkg = fetchedPackages.find((p: any) =>
+                (p.package_prices || []).some((pp: any) => pp.id === area.package_price_id)
+              );
+              if (pkg) return pkg;
+            }
+            return null;
+          }}
+          isEditing={mode === 'edit'}
+        />
 
         {/* Payment & Installments - Full Width */}
         <InstallmentSection

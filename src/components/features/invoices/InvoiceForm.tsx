@@ -4,7 +4,8 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { PlusIcon, TrashIcon, DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
+import { DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
+import ItemsSection from '../../common/ItemsSection';
 import { useData } from '../../../contexts/DataContext';
 import { CustomerApi } from '../../../api/customer';
 import { ContractApi } from '../../../api/contract';
@@ -102,11 +103,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
-    // If it's an ad-hoc invoice, we don't populate normal items.
-    if (initialValues?.is_ad_hoc) {
-       return [{ id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }];
-    }
-    
+    // ถ้ามีข้อมูล items จากอ้างอิง (edit mode / ad-hoc) → แสดงเลย
     if (initialValues?.items && initialValues.items.length > 0) {
       return initialValues.items.map((i: any) => ({
         id: i.id || crypto.randomUUID(),
@@ -118,7 +115,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         amount: Number(i.amount),
       }));
     }
-    return [{ id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }];
+    // สร้างใหม่ → เริ่มต้นว่าง ไม่แสดงแถว จนกว่าจะกดเพิ่ม
+    return [];
   });
 
   // -- Initialization & Effects --
@@ -377,8 +375,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   };
 
-  const addItem = () => setItems(prev => [...prev, { id: crypto.randomUUID(), description: '', quantity: 1, unit: 'รายการ', unitPrice: 0, amount: 0 }]);
-  const removeItem = (id: string) => { if (items.length > 1) setItems(prev => prev.filter(i => i.id !== id)); };
 
   const submitForm = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -459,7 +455,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   };
 
   return (
-    <form id="invoice-form" onSubmit={submitForm} className={embedded ? 'space-y-8' : 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-8'}>
+    <form id="invoice-form" onSubmit={submitForm} className="space-y-8">
       {/* Top Header Section */}
       <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-6 border-b border-slate-200 pb-6">
@@ -471,26 +467,6 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               รายละเอียดเอกสาร
             </h3>
             <p className="text-sm text-slate-500 mt-1 ml-11">ข้อมูลสำคัญของใบแจ้งหนี้</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {mode === 'edit' && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-slate-600">สถานะ:</span>
-                <Select
-                  value={formData.status}
-                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as InvoiceStatus }))}
-                  className={`w-40 font-medium border-0 ring-1 ring-inset py-1.5 h-9 text-sm ${
-                    formData.status === InvoiceStatus.PAID ? 'text-green-700 bg-green-50 ring-green-600/20'
-                    : formData.status === InvoiceStatus.OVERDUE ? 'text-red-700 bg-red-50 ring-red-600/20'
-                    : 'text-slate-700 bg-slate-50 ring-slate-300'
-                  }`}
-                >
-                  {Object.values(InvoiceStatus).map((s) => (
-                    <option key={s} value={s}>{INVOICE_STATUS_LABELS[s] || s}</option>
-                  ))}
-                </Select>
-              </div>
-            )}
           </div>
         </div>
 
@@ -788,95 +764,12 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         ) : (
           
           /* NORMAL ITEMS: รายการสินค้าและบริการ */
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
-                  <CurrencyDollarIcon className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">รายการสินค้าและบริการ</h3>
-                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายการสินค้า จำนวน และราคาต่อหน่วย</p>
-                </div>
-              </div>
-
-              <div className="flex gap-3 w-full sm:w-auto items-center">
-                 <Button type="button" variant="outline" onClick={addItem} className="text-sm px-4 py-2 h-auto text-slate-600 hover:text-slate-800 hover:bg-slate-50 bg-white shadow-sm border-slate-300 rounded-md transition-colors flex items-center">
-                    <PlusIcon className="w-4 h-4 mr-1.5" /> เพิ่มรายการ
-                 </Button>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              {items.map((item, index) => (
-                <div key={item.id} className="p-4 rounded-lg border border-slate-200 bg-slate-50 relative group">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                    <div className="md:col-span-1 flex items-center justify-center bg-white h-10 w-10 rounded-full border border-slate-200 text-slate-500 font-semibold text-sm">
-                      {index + 1}
-                    </div>
-
-                    <div className="md:col-span-4">
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">สินค้า/บริการ</label>
-                      <SearchableSelect
-                        value={item.product_id || ''}
-                        onChange={(val) => handleProductSelect(item.id, val)}
-                        options={productOptions}
-                        placeholder="เลือกสินค้า..."
-                      />
-                    </div>
-
-                    <div className="md:col-span-3">
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">รายละเอียดเพิ่มเติม</label>
-                      <Input
-                        value={item.description}
-                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        placeholder="รายละเอียด..."
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 mb-1 block">จำนวน</label>
-                        <Input
-                          type="number" min="1"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(item.id, 'quantity', Number(e.target.value))}
-                          className="text-center"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 mb-1 block">ราคา/หน่วย</label>
-                        <Input
-                          type="number" min="0"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(item.id, 'unitPrice', Number(e.target.value))}
-                          className="text-right"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-2 text-right">
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">รวม</label>
-                      <div className="h-10 flex items-center justify-end px-3 font-semibold text-slate-900 bg-white rounded border border-slate-200">
-                        {item.amount.toLocaleString()}
-                      </div>
-                    </div>
-
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 transition-colors"
-                        title="ลบรายการ"
-                      >
-                        <TrashIcon className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ItemsSection
+            items={items}
+            onItemsChange={setItems}
+            productOptions={productOptions}
+            onProductSelect={handleProductSelect}
+          />
         )}
 
         {/* Totals Section */}
@@ -884,23 +777,21 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
             
             {/* กล่องหมายเหตุ */}
-            <div className="flex-1 min-w-0 w-full flex flex-col">
+            <div className="flex-1 min-w-0 w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 หมายเหตุ
               </label>
-              <div className="w-full">
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={4}
-                  placeholder="หมายเหตุเพิ่มเติม..."
-                  className="!w-full !max-w-none resize-none" 
-                />
-              </div>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={4}
+                placeholder="หมายเหตุเพิ่มเติม..."
+                className="!w-full !max-w-none resize-none"
+              />
             </div>
 
             {/* กล่องสรุปยอด */}
-            <div className="w-full lg:w-80 shrink-0 space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div className="w-full lg:w-80 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
                 <span className="font-medium text-slate-900">
