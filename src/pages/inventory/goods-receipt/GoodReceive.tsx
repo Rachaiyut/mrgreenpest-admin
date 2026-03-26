@@ -466,7 +466,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden"
+          className="origin-top-right mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30 overflow-hidden"
           role="menu"
           aria-orientation="vertical"
         >

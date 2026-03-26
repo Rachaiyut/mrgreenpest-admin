@@ -428,7 +428,7 @@ const ReturnToSupplierPage: React.FC<ReturnToSupplierProps> = ({
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+          className="origin-top-right mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
           role="menu"
           aria-orientation="vertical"
         >

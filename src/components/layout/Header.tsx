@@ -13,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
   const currentUser = useCurrentUser();
 
   return (
-    <header className="bg-white shadow-sm z-10 sticky top-0">
+    <header className="bg-white shadow-sm z-50 sticky top-0">
       <div className="mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14 sm:h-16">
         {/* Hamburger - mobile only */}
         <button

@@ -561,7 +561,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             left: `${invoiceDropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
+          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
         >
           <div className="py-1">
             <button
