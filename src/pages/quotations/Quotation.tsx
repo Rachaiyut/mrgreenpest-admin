@@ -256,6 +256,30 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setOpenDropdownId(null);
   };
 
+  const handleApprove = async () => {
+    if (!selectedQuotation) return;
+    setOpenDropdownId(null);
+    const result = await Swal.fire({
+      title: 'ยืนยันอนุมัติ',
+      text: `อนุมัติใบเสนอราคา ${selectedQuotation.code} ?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#16a34a',
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (result.isConfirmed) {
+      try {
+        await QuotationApi.approve(selectedQuotation.id);
+        Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
+        fetchData();
+      } catch (error) {
+        console.error('Approve error:', error);
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถอนุมัติได้' });
+      }
+    }
+  };
+
   const handleRevise = () => {
     if (selectedQuotation) {
       setModalMode('revise');
@@ -784,6 +808,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
             </button>
+            {console.log('[DEBUG Approve Button]', { status: selectedQuotation?.status, role: currentUser?.role, expected: QuotationStatus.PENDING_APPROVAL, match: selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL })}
+            {selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL && currentUser?.role === 'SUPERADMIN' && (
+              <button
+                onClick={handleApprove}
+                className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
+              >
+                <CheckCircleIcon className="w-4 h-4 text-green-500" />
+                ตรวจสอบและอนุมัติ
+              </button>
+            )}
             <button
               onClick={handleEdit}
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"

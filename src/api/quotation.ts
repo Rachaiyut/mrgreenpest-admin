@@ -39,11 +39,6 @@ class QuotationService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async verify(id: string, remark?: string): Promise<Quotation> {
-    const res = await this.http.patch<Quotation>(`${this.path}/${id}/verify`, { remark });
-    return res.data;
-  }
-
   async approve(id: string, remark?: string): Promise<Quotation> {
     const res = await this.http.patch<Quotation>(`${this.path}/${id}/approve`, { remark });
     return res.data;
