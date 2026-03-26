@@ -202,90 +202,75 @@ const PackageForm: FC<PackageFormProps> = ({
               <p className="text-sm">ยังไม่มีเงื่อนไขราคา กดปุ่ม "เพิ่มเงื่อนไข" เพื่อเริ่มต้น</p>
             </div>
           ) : (
-            conditions.map((cond, idx) => {
-              const hasError = invalidIndices.includes(idx);
-              return (
-                <div key={idx} className={`rounded-xl border overflow-hidden ${hasError ? 'border-red-300' : 'border-slate-200'}`}>
-                  {/* Header bar */}
-                  <div className={`flex items-center justify-between px-5 py-3 border-b ${hasError ? 'bg-red-50 border-red-100' : 'bg-slate-50 border-slate-100'}`}>
-                    <div className="flex items-center gap-3">
-                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">{idx + 1}</span>
-                      <span className="text-sm font-semibold text-slate-600">เงื่อนไขที่ {idx + 1}</span>
-                      {hasError && <span className="text-xs text-red-500 font-medium bg-red-100 px-2 py-0.5 rounded">ราคาต่ำสุดสูงกว่าราคาเสนอ</span>}
-                    </div>
-                    <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {/* Body */}
-                  <div className="bg-white px-5 py-4 space-y-4">
-                    {/* พื้นที่ + หน่วย */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">พื้นที่ (ตร.ม.)</label>
-                        <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="เช่น 150" className="h-10" required />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">หน่วย</label>
-                        <Select value={cond.unit_id || ''} onChange={(e) => handleConditionChange(idx, 'unit_id', e.target.value)} className="h-10" required>
-                          <option value="">เลือกหน่วย</option>
-                          {availableUnits.map((u) => (<option key={u.id} value={u.id}>{u.name}</option>))}
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* 2 กลุ่มราคา */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* กลุ่ม: มีปลวก */}
-                      <div className="rounded-lg border border-blue-200 overflow-hidden">
-                        <div className="bg-blue-50 px-4 py-2 border-b border-blue-100">
-                          <span className="text-sm font-bold text-blue-700">มีปลวก</span>
-                        </div>
-                        <div className="p-4 space-y-3 bg-white">
-                          <div>
-                            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">ราคาเสนอ</label>
-                            <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-10" style={{ textAlign: 'right' }} required />
-                          </div>
-                          <div>
-                            <label className={`text-xs font-medium uppercase tracking-wider mb-1.5 block ${hasError ? 'text-red-500' : 'text-slate-400'}`}>ราคาต่ำสุด</label>
-                            <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-10 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* กลุ่ม: ไม่มีปลวก */}
-                      <div className="rounded-lg border border-emerald-200 overflow-hidden">
-                        <div className="bg-emerald-50 px-4 py-2 border-b border-emerald-100">
-                          <span className="text-sm font-bold text-emerald-700">ไม่มีปลวก</span>
-                        </div>
-                        <div className="p-4 space-y-3 bg-white">
-                          <div>
-                            <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">ราคาเสนอ</label>
-                            <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-10" style={{ textAlign: 'right' }} required />
-                          </div>
-                          <div>
-                            <label className={`text-xs font-medium uppercase tracking-wider mb-1.5 block ${hasError ? 'text-red-500' : 'text-slate-400'}`}>ราคาต่ำสุด</label>
-                            <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-10 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            <div className="overflow-x-auto border border-slate-200 rounded-lg">
+              <table className="min-w-full divide-y divide-slate-200 table-fixed">
+                <colgroup>
+                  <col className="w-[4%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[3%]" />
+                </colgroup>
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-3 text-center text-sm font-semibold text-slate-600">#</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">พื้นที่</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-slate-600">หน่วย</th>
+                    <th className="px-3 py-3 text-right text-sm font-semibold text-blue-600">ราคาเสนอ (มีปลวก)</th>
+                    <th className="px-3 py-3 text-right text-sm font-semibold text-blue-600">ราคาต่ำสุด (มีปลวก)</th>
+                    <th className="px-3 py-3 text-right text-sm font-semibold text-emerald-600">ราคาเสนอ (ไม่มีปลวก)</th>
+                    <th className="px-3 py-3 text-right text-sm font-semibold text-emerald-600">ราคาต่ำสุด (ไม่มีปลวก)</th>
+                    <th className="px-2 py-3"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {conditions.map((cond, idx) => {
+                    const hasError = invalidIndices.includes(idx);
+                    return (
+                      <tr key={idx} className={hasError ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}>
+                        <td className="px-4 py-3 text-center">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">{idx + 1}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className="h-9 w-full" required />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Select value={cond.unit_id || ''} onChange={(e) => handleConditionChange(idx, 'unit_id', e.target.value)} className="h-9 w-full" required>
+                            <option value="">เลือก</option>
+                            {availableUnits.map((u) => (<option key={u.id} value={u.id}>{u.name}</option>))}
+                          </Select>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-9 w-28 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-9 w-28 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                        </td>
+                        <td className="px-3 py-3 text-center">
+                          <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
 
-          {/* Summary */}
-          {conditions.length > 0 && (
-            <div className={`flex items-center justify-between rounded-lg px-5 py-3 ${invalidIndices.length === 0 ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-              <span className={`text-sm font-semibold ${invalidIndices.length === 0 ? 'text-green-800' : 'text-red-800'}`}>
-                ทั้งหมด {conditions.length} เงื่อนไข
-              </span>
-              {invalidIndices.length > 0 && (
-                <span className="text-xs text-red-600 font-medium">{invalidIndices.length} รายการมีข้อผิดพลาด</span>
-              )}
-            </div>
+          {/* Error summary */}
+          {invalidIndices.length > 0 && (
+            <p className="text-xs text-red-500 text-right">{invalidIndices.length} รายการมีข้อผิดพลาด: ราคาต่ำสุดสูงกว่าราคาเสนอ</p>
           )}
 
           {/* Add button */}

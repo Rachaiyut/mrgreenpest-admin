@@ -24,8 +24,7 @@ import {
 } from '../../assets/icons/Icons';
 
 import {
-  AddPackageModal,
-  EditPackageModal,
+  PackageModal,
   PackageDetailsModal,
 } from '../../components/features/package';
 
@@ -34,8 +33,8 @@ const Packages: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -118,11 +117,13 @@ const Packages: React.FC = () => {
       const res = await PackageApi.getPackageById(pkg.id);
       const fullPkg = (res as any).data || res;
       setSelectedPackage(fullPkg);
-      setIsEditModalOpen(true);
+      setModalMode('edit');
+      setIsModalOpen(true);
     } catch (error) {
       console.error('Failed to fetch package:', error);
       setSelectedPackage(pkg);
-      setIsEditModalOpen(true);
+      setModalMode('edit');
+      setIsModalOpen(true);
     }
   };
 
@@ -146,7 +147,7 @@ const Packages: React.FC = () => {
     try {
       await PackageApi.updatePackage(id, data);
       fetchPackages();
-      setIsEditModalOpen(false);
+      setIsModalOpen(false);
     } catch (error) {
       console.error('Failed to update package:', error);
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update package' });
@@ -225,7 +226,7 @@ const Packages: React.FC = () => {
                 title="ค้นหาด้วย: รหัสแพ็กเกจ, ชื่อแพ็กเกจ, จำนวนครั้ง"
               />
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            <Button onClick={() => { setSelectedPackage(null); setModalMode('create'); setIsModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างแพ็กเกจ
             </Button>
@@ -402,20 +403,18 @@ const Packages: React.FC = () => {
         </div>
       )}
 
-      <AddPackageModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreatePackage={onCreatePackage}
-        categories={categories}
-        units={units}
-      />
-      <EditPackageModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        pkg={selectedPackage}
-        onUpdatePackage={(updatedPkg) =>
-          onUpdatePackage(updatedPkg.id, updatedPkg)
-        }
+      <PackageModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalMode}
+        initialValues={selectedPackage}
+        onSubmit={(data) => {
+          if (modalMode === 'create') {
+            onCreatePackage(data);
+          } else if (selectedPackage) {
+            onUpdatePackage(selectedPackage.id, data);
+          }
+        }}
         categories={categories}
         units={units}
       />

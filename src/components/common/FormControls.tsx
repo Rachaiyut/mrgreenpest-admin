@@ -1,4 +1,4 @@
-import { Children, isValidElement } from 'react';
+import { Children, isValidElement, useState, useCallback } from 'react';
 import type {
   FC,
   ReactNode,
@@ -53,30 +53,57 @@ export const FormField: FC<{
   );
 };
 
+const formatWithCommas = (val: string | number): string => {
+  if (val === '' || val === null || val === undefined) return '';
+  const str = String(val);
+  const [intPart, decPart] = str.split('.');
+  const formatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return decPart !== undefined ? `${formatted}.${decPart}` : formatted;
+};
+
+const stripCommas = (val: string): string => val.replace(/,/g, '');
+
 export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
-  // Ensure value is never undefined/null for controlled inputs to prevent React warning
-  // If the user explicitly provides a 'value' prop, we must ensure it's not undefined
-  // If they provide 'defaultValue', it's uncontrolled, so we don't interfere
+  const isNumber = props.type === 'number';
+  const [focused, setFocused] = useState(false);
+
   const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (props.type === 'number' && props.onChange) {
-      const raw = e.target.value;
+    if (isNumber && props.onChange) {
+      const raw = stripCommas(e.target.value);
+      // อนุญาตเฉพาะตัวเลข, จุด, และเครื่องหมายลบ
+      if (raw !== '' && raw !== '-' && raw !== '.' && raw !== '-.' && isNaN(Number(raw))) return;
       // ตัด leading zero ออก เช่น "0300" -> "300", แต่เก็บ "0" และ "0." ไว้
       if (raw.length > 1 && raw.startsWith('0') && raw[1] !== '.') {
         e.target.value = raw.replace(/^0+/, '') || '0';
+      } else {
+        e.target.value = raw;
       }
     }
     props.onChange?.(e);
   };
 
+  const displayValue = useCallback(() => {
+    if (!isNumber || !('value' in props)) return controlledProps.value;
+    const val = props.value;
+    if (val === '' || val === null || val === undefined) return '';
+    if (focused) return String(val);
+    return formatWithCommas(val as string | number);
+  }, [isNumber, props.value, focused]);
+
   return (
     <input
       {...props}
       {...controlledProps}
+      type={isNumber ? 'text' : props.type}
+      inputMode={isNumber ? 'decimal' : undefined}
+      value={isNumber && 'value' in props ? displayValue() : controlledProps.value}
       onChange={handleChange}
+      onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
       className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${
-        props.type === 'search' ? 'pl-10' : '' // Add padding for search icon
+        props.type === 'search' ? 'pl-10' : ''
       }`}
     />
   );

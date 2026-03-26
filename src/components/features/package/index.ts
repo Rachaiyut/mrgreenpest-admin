@@ -1,3 +1,2 @@
-export * from './AddPackageModal';
-export * from './EditPackageModal';
+export * from './PackageModal';
 export * from './PackageDetailsModal';
