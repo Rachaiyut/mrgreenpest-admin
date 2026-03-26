@@ -21,6 +21,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   REJECTED:           { label: 'ปฏิเสธ',           color: 'bg-red-100 text-red-700' },
   EXPIRED:            { label: 'หมดอายุ',           color: 'bg-zinc-100 text-zinc-600' },
   REVISED:            { label: 'ปรับปรุง',          color: 'bg-pink-100 text-pink-700' },
+  RENEWED:            { label: 'ต่อสัญญา',         color: 'bg-indigo-100 text-indigo-700' },
 
   // ===== ใบเสนอราคา =====
   FOLLOW_UP:          { label: 'ติดตาม',           color: 'bg-purple-100 text-purple-700' },
