@@ -102,7 +102,9 @@ export const NotificationMenu: React.FC = () => {
       <Popover.Button className="p-2 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 relative focus:outline-none">
         <BellIcon className="h-6 w-6" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white transform translate-x-1/4 -translate-y-1/4"></span>
+          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 ring-2 ring-white text-[10px] font-bold text-white leading-none">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
         )}
       </Popover.Button>
 
