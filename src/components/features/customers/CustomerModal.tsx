@@ -21,8 +21,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const getTitle = () => {
     if (mode === 'create') return 'สร้างลูกค้าใหม่';
-    if (mode === 'edit')
-      return `แก้ไขข้อมูลลูกค้า ${initialValues?.code ? `(${initialValues.code})` : ''}`;
+    if (mode === 'edit') {
+      const name = initialValues ? `${initialValues.first_name} ${initialValues.last_name || ''}`.trim() : '';
+      return `แก้ไขข้อมูลลูกค้า ${name ? `(${name})` : ''}`;
+    }
     return 'ข้อมูลลูกค้า';
   };
 

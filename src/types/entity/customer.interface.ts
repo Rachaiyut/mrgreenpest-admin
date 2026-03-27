@@ -20,8 +20,11 @@ export interface Customer extends IBase {
   phone_3?: string;
   phone_4?: string;
   phone_5?: string;
+  phone_6?: string;
   email: string;
   address_house_no: string;
+  address_soi?: string;
+  address_road?: string;
   sub_district: string;
   district: string;
   province: string;
@@ -31,6 +34,8 @@ export interface Customer extends IBase {
   service_area: string;
   service_group: string;
   google_map_link?: string;
+  contact_person?: string;
+  contact_person_phone?: string;
   line_user_id?: string;
   assessments: Assessment[];
   contracts: Contract[];

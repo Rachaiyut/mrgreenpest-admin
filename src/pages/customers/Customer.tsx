@@ -31,6 +31,7 @@ import { CustomerModal } from '../../components/features/customers/CustomerModal
 import { Pagination } from '../../components/common/Pagination';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
+import { CustomerHistoryModal } from '../../components/features/customers/CustomerHistoryModal';
 import { Input, Button, Select } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { SupplierType } from '@/src/types';
@@ -66,6 +67,7 @@ const Customers: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<SupplierType | undefined>(
     undefined
   );
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null
@@ -151,8 +153,15 @@ const Customers: React.FC = () => {
         setIsDeleteModalOpen(false);
         setCustomerToDelete(null);
         fetchCustomers();
-      } catch (error) {
-        console.error('Error deleting customer:', error);
+      } catch (error: any) {
+        setIsDeleteModalOpen(false);
+        const message = error?.response?.data?.message || 'เกิดข้อผิดพลาดในการลบลูกค้า';
+        Swal.fire({
+          icon: 'warning',
+          title: 'ลูกค้าอยู่ระหว่างสัญญา',
+          text: message,
+          confirmButtonText: 'ตกลง',
+        });
       }
     }
   };
@@ -177,7 +186,7 @@ const Customers: React.FC = () => {
     { label: 'สัญญา', icon: DocumentTextIcon },
     { label: 'ต่อสัญญา', icon: RenewIcon },
     { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
+    { label: 'ปิดใช้งาน', icon: TrashIcon, isDanger: true },
   ];
 
   const handleDropdownToggle = (
@@ -189,9 +198,15 @@ const Customers: React.FC = () => {
       setOpenDropdownId(null);
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
+      const dropdownHeight = 320; // approximate dropdown height
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      const showAbove = spaceBelow < dropdownHeight;
+
       setOpenDropdownId(customerId);
       setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
+        top: showAbove
+          ? buttonRect.top + window.scrollY - dropdownHeight
+          : buttonRect.bottom + window.scrollY,
         left: buttonRect.right + window.scrollX,
       });
     }
@@ -227,17 +242,17 @@ const Customers: React.FC = () => {
             <p className="mt-1 text-slate-600">จัดการฐานข้อมูลลูกค้าของคุณ</p>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto xl:flex-nowrap">
-            <div className="w-full sm:flex-1 xl:w-72">
+            <div className="w-full sm:flex-1 xl:w-96">
               <Input
                 type="search"
-                placeholder="ค้นหารหัส, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์, ที่อยู่"
+                placeholder="ค้นหารหัส, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์"
                 value={searchQuery || ''}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1); // Reset page on search
                 }}
                 className="w-full"
-                title="ค้นหาด้วย: เลขที่สัญญา, รหัสลูกค้า, ชื่อนามสกุล, ชื่อเล่น, เบอร์โทรศัพท์, ที่อยู่"
+                title="ค้นหาด้วย: รหัสลูกค้า, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์"
               />
             </div>
             <div className="w-full sm:w-48 shrink-0">
@@ -369,7 +384,15 @@ const Customers: React.FC = () => {
                     setSelectedCustomer(customer);
                     setIsContractsModalOpen(true);
                     setOpenDropdownId(null);
-                  } else if (action.label === 'ลบ') {
+                  } else if (action.label === 'ต่อสัญญา') {
+                    setSelectedCustomer(customer);
+                    setIsContractsModalOpen(true);
+                    setOpenDropdownId(null);
+                  } else if (action.label === 'ประวัติ') {
+                    setSelectedCustomer(customer);
+                    setIsHistoryModalOpen(true);
+                    setOpenDropdownId(null);
+                  } else if (action.label === 'ปิดใช้งาน') {
                     handleDelete(customer);
                   } else {
                     setOpenDropdownId(null);
@@ -412,19 +435,23 @@ const Customers: React.FC = () => {
         onCreateContract={() => {}}
         onCreateJob={() => {}}
       />
+      <CustomerHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        customer={selectedCustomer}
+      />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
+        title="ยืนยันการปิดใช้งาน"
         message={
           <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบลูกค้า{' '}
-            <strong>{customerToDelete?.id}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
+            คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานลูกค้า{' '}
+            <strong>{customerToDelete ? `${customerToDelete.first_name} ${customerToDelete.last_name || ''}`.trim() : ''}</strong>?
           </p>
         }
-        confirmButtonText="ยืนยันการลบ"
+        confirmButtonText="ยืนยันการปิดใช้งาน"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
     </>

@@ -80,6 +80,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       if (initialValues.phone_3) phones.push(initialValues.phone_3);
       if (initialValues.phone_4) phones.push(initialValues.phone_4);
       if (initialValues.phone_5) phones.push(initialValues.phone_5);
+      if (initialValues.phone_6) phones.push(initialValues.phone_6);
 
       setAdditionalPhones(phones);
 
@@ -87,12 +88,21 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         ...initialValues,
         name: initialValues.type === CustomerType.CORPORATE ? initialValues.first_name : '',
         type: initialValues.type,
+        gender: (initialValues as any).gender || (initialValues as any).gendder || '',
+        contactPerson: (initialValues as any).contact_person || '',
+        contactPersonPhone: (initialValues as any).contact_person_phone || '',
         'address-street': initialValues.address_house_no,
+        'address-soi': initialValues.address_soi || '',
+        'address-road': initialValues.address_road || '',
         'address-subdistrict': initialValues.sub_district,
         'address-district': initialValues.district,
         'address-province': initialValues.province,
         'address-postalcode': initialValues.postal_code,
         'address-country': initialValues.country || 'ประเทศไทย',
+        'address-zone': initialValues.service_area || '',
+        'address-group': initialValues.service_group || '',
+        'address-roadLine': initialValues.road_line || '',
+        'address-sequence': initialValues.sequence_no || '',
         googleMapLink: initialValues.google_map_link,
         taxId: initialValues.tax_id,
         primaryPhone: initialValues.primary_phone || '',
@@ -130,7 +140,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   };
 
   const handleAddAdditionalPhone = () => {
-    if (additionalPhones.length < 3) {
+    if (additionalPhones.length < 4) {
       setAdditionalPhones([...additionalPhones, '']);
     }
   };
@@ -194,7 +204,10 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
       phone_3: additionalPhones[0] || undefined,
       phone_4: additionalPhones[1] || undefined,
       phone_5: additionalPhones[2] || undefined,
+      phone_6: additionalPhones[3] || undefined,
       address_house_no: formData['address-street'] || '',
+      address_soi: formData['address-soi'] || '',
+      address_road: formData['address-road'] || '',
       sub_district: formData['address-subdistrict'] || '',
       district: formData['address-district'] || '',
       province: formData['address-province'] || '',
@@ -243,8 +256,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
         <div className="space-y-5">
           <FormField label="ประเภทลูกค้า">
-            <div className="flex rounded-xl bg-slate-100 p-1 w-full sm:w-80">
-              <label className="relative flex-1 cursor-pointer">
+            <div className={`flex rounded-xl bg-slate-100 p-1 w-full sm:w-80 ${mode === 'edit' ? 'opacity-60 pointer-events-none' : ''}`}>
+              <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="customerTypeRadio"
@@ -252,12 +265,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   className="sr-only peer"
                   checked={formData.type === CustomerType.INDIVIDUAL}
                   onChange={() => handleTypeChange(CustomerType.INDIVIDUAL)}
+                  disabled={mode === 'edit'}
                 />
                 <span className="block w-full text-center py-2 px-3 rounded-lg text-sm font-semibold text-slate-600 peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm transition-all duration-200">
                   บุคคลธรรมดา
                 </span>
               </label>
-              <label className="relative flex-1 cursor-pointer">
+              <label className={`relative flex-1 ${mode === 'edit' ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="customerTypeRadio"
@@ -265,6 +279,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   className="sr-only peer"
                   checked={formData.type === CustomerType.CORPORATE}
                   onChange={() => handleTypeChange(CustomerType.CORPORATE)}
+                  disabled={mode === 'edit'}
                 />
                 <span className="block w-full text-center py-2 px-3 rounded-lg text-sm font-semibold text-slate-600 peer-checked:bg-white peer-checked:text-primary peer-checked:shadow-sm transition-all duration-200">
                   นิติบุคคล
@@ -310,7 +325,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 </FormField>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <FormField label="ชื่อผู้ติดต่อ (Contact Person)" htmlFor="contactPerson">
+                <FormField label="ชื่อผู้ติดต่อ " htmlFor="contactPerson">
                   <Input id="contactPerson" name="contactPerson" type="text" value={formData.contactPerson || ''} onChange={handleChange} />
                 </FormField>
                 <FormField label="เบอร์โทรผู้ติดต่อ" htmlFor="contactPersonPhone">
@@ -378,9 +393,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <h4 className="text-sm font-bold text-slate-800">เบอร์โทรศัพท์เพิ่มเติม</h4>
-              <p className="text-xs text-slate-500 mt-1">สามารถเพิ่มเบอร์สำรองได้สูงสุด 3 เบอร์</p>
+              <p className="text-xs text-slate-500 mt-1">สามารถเพิ่มเบอร์สำรองได้สูงสุด 4 เบอร์</p>
             </div>
-            {additionalPhones.length < 3 && (
+            {additionalPhones.length < 4 && (
               <button
                 type="button"
                 onClick={handleAddAdditionalPhone}

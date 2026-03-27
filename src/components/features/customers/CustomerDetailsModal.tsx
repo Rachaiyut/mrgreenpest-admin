@@ -54,6 +54,16 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             <DetailsItem label="วันที่สร้าง">
               {formatThaiDate(customer.created_at)}
             </DetailsItem>
+            {customer.type === CustomerType.CORPORATE && customer.contact_person && (
+              <DetailsItem label="ชื่อผู้ติดต่อ">
+                {customer.contact_person}
+              </DetailsItem>
+            )}
+            {customer.type === CustomerType.CORPORATE && customer.contact_person_phone && (
+              <DetailsItem label="เบอร์โทรผู้ติดต่อ">
+                {customer.contact_person_phone}
+              </DetailsItem>
+            )}
           </DetailsList>
         </div>
 
@@ -79,6 +89,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             {customer.phone_5 && (
               <DetailsItem label="เบอร์โทร 5">{customer.phone_5}</DetailsItem>
             )}
+            {customer.phone_6 && (
+              <DetailsItem label="เบอร์โทร 6">{customer.phone_6}</DetailsItem>
+            )}
           </DetailsList>
         </div>
 
@@ -88,6 +101,12 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
           <DetailsList cols={3}>
             <DetailsItem label="บ้านเลขที่">
               {customer.address_house_no || '-'}
+            </DetailsItem>
+            <DetailsItem label="ซอย">
+              {customer.address_soi || '-'}
+            </DetailsItem>
+            <DetailsItem label="ถนน">
+              {customer.address_road || '-'}
             </DetailsItem>
             <DetailsItem label="แขวง/ตำบล">
               {customer.sub_district || '-'}
@@ -121,7 +140,7 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
         {/* กลุ่มเส้นทาง/พื้นที่บริการ */}
         <div className="bg-slate-50 rounded-lg p-4">
           <SectionTitle>กลุ่มเส้นทาง/พื้นที่บริการ</SectionTitle>
-          <DetailsList cols={3}>
+          <DetailsList cols={4}>
             <DetailsItem label="เขต (พื้นที่บริการ)">
               {customer.service_area || '-'}
             </DetailsItem>
@@ -130,6 +149,9 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             </DetailsItem>
             <DetailsItem label="สายถนนที่">
               {customer.road_line || '-'}
+            </DetailsItem>
+            <DetailsItem label="ลำดับที่">
+              {customer.sequence_no || '-'}
             </DetailsItem>
           </DetailsList>
         </div>

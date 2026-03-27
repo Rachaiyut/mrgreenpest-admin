@@ -1,19 +1,21 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
-import { Contract, Quotation } from '@/src/types/entity/app.interface';
+import { Contract } from '@/src/types/entity/financial.interface';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { StatusBadge } from '../../common/StatusBadge';
-import { PlusIcon } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
+import { ContractApi } from '@/src/api/contract';
+import { LoadingIcon, RenewIcon } from '../../../assets/icons/Icons';
+import { ContractModal } from '../contracts/ContractModal';
 
 interface CustomerContractsListModalProps {
   isOpen: boolean;
   onClose: () => void;
   customer: Customer | null;
-  contracts: Contract[];
-  onCreateContract: (contractData: Omit<Contract, 'id'>) => void;
+  contracts?: Contract[];
+  onCreateContract?: (contractData: Omit<Contract, 'id'>) => void;
   onCreateJob?: (jobData: any) => void;
 }
 
@@ -23,85 +25,72 @@ export const CustomerContractsListModal: React.FC<
   isOpen,
   onClose,
   customer,
-  contracts,
-  onCreateContract,
-  onCreateJob,
 }) => {
-  const [isAddContractModalOpen, setIsAddContractModalOpen] = useState(false);
+  const [customerContracts, setCustomerContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+
+  const fetchContracts = async () => {
+    if (!customer) return;
+    setLoading(true);
+    try {
+      const response = await ContractApi.getAll({
+        limit: 100,
+        customer_id: customer.id,
+      } as any);
+      setCustomerContracts(response.data || []);
+    } catch (error) {
+      console.error('Error fetching contracts:', error);
+      setCustomerContracts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && customer) {
+      fetchContracts();
+    }
+  }, [isOpen, customer]);
+
+  const handleRenewClick = async (contract: Contract) => {
+    try {
+      const response: any = await ContractApi.getById(contract.id);
+      const fullContract = response?.data || response;
+      setSelectedContract(fullContract);
+      setIsRenewModalOpen(true);
+    } catch {
+      setSelectedContract(contract);
+      setIsRenewModalOpen(true);
+    }
+  };
+
+  const handleRenewSubmit = async (data: any) => {
+    if (!selectedContract) return;
+    try {
+      await ContractApi.renew(selectedContract.id, data);
+      setIsRenewModalOpen(false);
+      setSelectedContract(null);
+      Swal.fire({ icon: 'success', title: 'ต่อสัญญาสำเร็จ', timer: 1500, showConfirmButton: false });
+      fetchContracts();
+    } catch (error) {
+      console.error('Error renewing contract:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถต่อสัญญาได้' });
+    }
+  };
 
   if (!isOpen || !customer) return null;
-
-  const customerContracts = useMemo(
-    () => [...contracts].reverse().filter((c) => c.customerId === customer.id),
-    [contracts, customer.id]
-  );
-
-  const handleCreateContractSuccess = (contractData: Omit<Contract, 'id'>) => {
-    onCreateContract(contractData);
-    setIsAddContractModalOpen(false); // Close add modal after creation
-  };
-
-  const handleAutoSchedule = (contract: Contract) => {
-    if (!onCreateJob) return;
-    if (!confirm(`ยืนยันการสร้างตารางงานอัตโนมัติสำหรับสัญญา ${contract.id}?`))
-      return;
-
-    const start = new Date(contract.startDate);
-    const end = new Date(contract.endDate);
-    const jobsToCreate = [];
-    let current = new Date(start);
-
-    // Default 9:00 AM
-    current.setHours(9, 0, 0, 0);
-
-    while (current <= end) {
-      const startTime = new Date(current);
-      const endTime = new Date(current);
-      endTime.setHours(10, 0, 0, 0);
-
-      // Calculate next month correctly (handling day overflow if started on 31st)
-      // Using simple month increment for now
-      const nextMonth = new Date(current);
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-      // If next month overshoot (e.g. Jan 31 -> Feb 28/29), Date object handles it but might skip Feb if we just do setMonth.
-      // But let's stick to simple logic: Same day next month.
-
-      const jobData = {
-        customerId: contract.customerId,
-        contractId: contract.id,
-        quotationId: contract.quotationId,
-        customerName: contract.customerName,
-        technicians: [],
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        title: `บริการ ${contract.servicePackage}`,
-        description: 'Auto-scheduled via contract',
-        status: 'Planned', // Hardcode or import Status
-        location: {
-          lat: 13.7563,
-          lng: 100.5018,
-          address: contract.address,
-        },
-      };
-
-      onCreateJob(jobData);
-
-      current = nextMonth;
-    }
-    Swal.fire({ icon: 'success', title: 'สร้างตารางงานอัตโนมัติเรียบร้อยแล้ว', timer: 1500, showConfirmButton: false });
-  };
 
   return (
     <>
       <Modal
-        isOpen={isOpen}
+        isOpen={isOpen && !isRenewModalOpen}
         onClose={onClose}
-        title={`สัญญาของ ${customer.first_name} ${customer.last_name || ''}`}
+        title={`รายการสัญญา (${customer.first_name} ${customer.last_name || ''})`}
         size="4xl"
         footer={
-          <div className="flex w-full justify-between items-center">
-            <div></div>
+          <div className="flex w-full justify-end">
             <Button
               type="button"
               onClick={onClose}
@@ -114,89 +103,94 @@ export const CustomerContractsListModal: React.FC<
         }
       >
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              onClick={() => setIsAddContractModalOpen(true)}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors"
-              variant="primary"
-            >
-              <PlusIcon className="h-5 w-5" />
-              สร้างสัญญาใหม่
-            </Button>
-          </div>
-          <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-[60vh] overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50 sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    เลขที่สัญญา
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    ที่อยู่
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    วันเริ่มต้น
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    วันสิ้นสุด
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    สถานะ
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
-                    จัดการ
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
-                {customerContracts.length > 0 ? (
-                  customerContracts.map((contract) => (
-                    <tr key={contract.id}>
-                      <td className="px-4 py-3 text-sm font-medium text-slate-800">
-                        {contract.id}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 truncate max-w-xs">
-                        {contract.address}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {formatThaiDate(contract.startDate)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {formatThaiDate(contract.endDate)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <StatusBadge status={contract.status} />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {onCreateJob && (
-                          <Button
-                            variant="ghost"
-                            className="text-primary hover:bg-primary/10 text-xs px-2 py-1 h-auto"
-                            onClick={() => handleAutoSchedule(contract)}
-                            title="สร้างตารางงานรายเดือนอัตโนมัติ"
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-10 text-slate-500">
+              <LoadingIcon className="w-8 h-8 animate-spin mb-3 text-primary" />
+              <p className="text-sm">กำลังโหลดข้อมูลสัญญา...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-[60vh] overflow-y-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                      เลขที่สัญญา
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                      ยอดสัญญา
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                      วันเริ่มต้น
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                      วันสิ้นสุด
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                      สถานะ
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                      จัดการ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {customerContracts.length > 0 ? (
+                    customerContracts.map((contract) => (
+                      <tr key={contract.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm font-medium text-primary">
+                          {contract.code || contract.id}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {Number(contract.total_amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {formatThaiDate(contract.start_date)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {formatThaiDate(contract.end_date)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <StatusBadge status={contract.status} />
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <button
+                            onClick={() => handleRenewClick(contract)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors"
+                            title="ต่อสัญญา"
                           >
-                            สร้างตารางงาน
-                          </Button>
-                        )}
+                            <RenewIcon className="w-4 h-4" />
+                            ต่อสัญญา
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="text-center py-10 text-slate-500"
+                      >
+                        ไม่พบสัญญาสำหรับลูกค้ารายนี้
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="text-center py-10 text-slate-500"
-                    >
-                      ไม่พบสัญญาสำหรับลูกค้ารายนี้
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </Modal>
+
+      <ContractModal
+        isOpen={isRenewModalOpen}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setSelectedContract(null);
+        }}
+        mode="renew"
+        initialValues={selectedContract}
+        onSubmit={handleRenewSubmit}
+      />
     </>
   );
 };
