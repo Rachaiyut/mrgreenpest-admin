@@ -18,19 +18,22 @@ const PortalSignQuotation: React.FC = () => {
   const [document, setDocument] = useState<any>(null);
   const [documentType, setDocumentType] = useState<DocumentType>('QUOTATION');
   const [signerName, setSignerName] = useState('');
+  const [contractorName, setContractorName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfState, setPdfState] = useState<PdfState>('loading');
   const signatureRef = useRef<SignatureCanvas>(null);
   const signatureContainerRef = useRef<HTMLDivElement>(null);
+  const contractorSignatureRef = useRef<SignatureCanvas>(null);
+  const contractorSignatureContainerRef = useRef<HTMLDivElement>(null);
 
   const isContract = documentType === 'CONTRACT';
   const docLabel = isContract ? 'สัญญา' : 'ใบเสนอราคา';
 
   // Resize signature canvas to match container width
-  const resizeCanvas = useCallback(() => {
-    if (!signatureContainerRef.current || !signatureRef.current) return;
-    const canvas = signatureRef.current.getCanvas();
-    const container = signatureContainerRef.current;
+  const resizeCanvasElement = useCallback((containerRef: React.RefObject<HTMLDivElement | null>, canvasRef: React.RefObject<SignatureCanvas | null>) => {
+    if (!containerRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current.getCanvas();
+    const container = containerRef.current;
     const ratio = window.devicePixelRatio || 1;
     const width = container.offsetWidth;
     const height = 160;
@@ -40,8 +43,13 @@ const PortalSignQuotation: React.FC = () => {
     canvas.style.width = `${width}px`;
     canvas.style.height = `${height}px`;
     canvas.getContext('2d')?.scale(ratio, ratio);
-    signatureRef.current.clear();
+    canvasRef.current.clear();
   }, []);
+
+  const resizeCanvas = useCallback(() => {
+    resizeCanvasElement(signatureContainerRef, signatureRef);
+    resizeCanvasElement(contractorSignatureContainerRef, contractorSignatureRef);
+  }, [resizeCanvasElement]);
 
   useEffect(() => {
     if (state !== 'ready') return;
@@ -87,17 +95,35 @@ const PortalSignQuotation: React.FC = () => {
     }
 
     if (!signatureRef.current || signatureRef.current.isEmpty()) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเซ็นลายมือในกรอบ' });
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเซ็นลายมือผู้ว่าจ้างในกรอบ' });
       return;
+    }
+
+    if (isContract) {
+      if (!contractorName.trim()) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกชื่อผู้รับจ้าง (ช่าง)' });
+        return;
+      }
+      if (!contractorSignatureRef.current || contractorSignatureRef.current.isEmpty()) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเซ็นลายมือผู้รับจ้าง (ช่าง) ในกรอบ' });
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
       const signatureData = signatureRef.current.toDataURL('image/png');
-      await portalApi.submitSignature(token, {
+      const payload: any = {
         signer_name: signerName.trim(),
         signature: signatureData,
-      });
+      };
+
+      if (isContract && contractorSignatureRef.current && !contractorSignatureRef.current.isEmpty()) {
+        payload.contractor_signer_name = contractorName.trim();
+        payload.contractor_signature = contractorSignatureRef.current.toDataURL('image/png');
+      }
+
+      await portalApi.submitSignature(token, payload);
       setState('signed');
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
@@ -244,12 +270,14 @@ const PortalSignQuotation: React.FC = () => {
 
         {/* Signature section */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 sm:p-6">
-          <h3 className="font-semibold text-slate-800 mb-3 sm:mb-4 text-sm sm:text-base">ลงนามอนุมัติ</h3>
+          <h3 className="font-semibold text-slate-800 mb-3 sm:mb-4 text-sm sm:text-base">
+            {isContract ? 'ลงนามผู้ว่าจ้าง (ลูกค้า)' : 'ลงนามอนุมัติ'}
+          </h3>
 
           {/* Signer name */}
           <div className="mb-3 sm:mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ชื่อผู้เซ็น <span className="text-red-500">*</span>
+              {isContract ? 'ชื่อผู้ว่าจ้าง' : 'ชื่อผู้เซ็น'} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -263,7 +291,7 @@ const PortalSignQuotation: React.FC = () => {
           {/* Signature canvas */}
           <div className="mb-3 sm:mb-4">
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              ลายเซ็น <span className="text-red-500">*</span>
+              {isContract ? 'ลายเซ็นผู้ว่าจ้าง' : 'ลายเซ็น'} <span className="text-red-500">*</span>
             </label>
             <div
               ref={signatureContainerRef}
@@ -289,6 +317,56 @@ const PortalSignQuotation: React.FC = () => {
               ล้างลายเซ็น
             </button>
           </div>
+
+          {/* Contractor signature - only for contracts */}
+          {isContract && (
+            <>
+              <div className="border-t border-slate-200 my-4 sm:my-5" />
+              <h3 className="font-semibold text-slate-800 mb-3 sm:mb-4 text-sm sm:text-base">ลงนามผู้รับจ้าง (ช่าง)</h3>
+
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  ชื่อผู้รับจ้าง <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={contractorName}
+                  onChange={(e) => setContractorName(e.target.value)}
+                  placeholder="กรอกชื่อ-นามสกุลช่าง"
+                  className="w-full px-3 py-2.5 sm:py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                />
+              </div>
+
+              <div className="mb-3 sm:mb-4">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  ลายเซ็นผู้รับจ้าง <span className="text-red-500">*</span>
+                </label>
+                <div
+                  ref={contractorSignatureContainerRef}
+                  className="border-2 border-dashed border-slate-300 rounded-lg bg-white relative touch-none"
+                >
+                  <SignatureCanvas
+                    ref={contractorSignatureRef}
+                    penColor="black"
+                    canvasProps={{
+                      className: 'w-full touch-none',
+                      style: { width: '100%', height: '160px', touchAction: 'none' },
+                    }}
+                  />
+                  <p className="absolute bottom-2 left-0 right-0 text-center text-[11px] sm:text-xs text-slate-400 pointer-events-none">
+                    วาดลายเซ็นผู้รับจ้างในกรอบนี้
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => contractorSignatureRef.current?.clear()}
+                  className="mt-2 text-sm text-slate-500 hover:text-slate-700 underline"
+                >
+                  ล้างลายเซ็น
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Submit */}
           <button

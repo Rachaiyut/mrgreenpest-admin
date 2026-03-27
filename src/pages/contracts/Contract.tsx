@@ -33,6 +33,7 @@ const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.PENDING]: 'รอดำเนินการ',
   [ContractStatus.ACTIVE]: 'ดำเนินการ',
   [ContractStatus.REVISED]: 'ปรับปรุง',
+  [ContractStatus.RENEWED]: 'ต่อสัญญา',
   [ContractStatus.COMPLETED]: 'เสร็จสิ้น',
   [ContractStatus.CANCELLED]: 'ยกเลิก',
   [ContractStatus.EXPIRED]: 'หมดอายุ',

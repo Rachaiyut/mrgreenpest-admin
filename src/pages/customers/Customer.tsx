@@ -32,6 +32,7 @@ import { Pagination } from '../../components/common/Pagination';
 import { CustomerDetailsModal } from '../../components/features/customers/CustomerDetailsModal';
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
 import { CustomerHistoryModal } from '../../components/features/customers/CustomerHistoryModal';
+import { CustomerFollowUpModal } from '../../components/features/customers/CustomerFollowUpModal';
 import { Input, Button, Select } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { SupplierType } from '@/src/types';
@@ -68,6 +69,7 @@ const Customers: React.FC = () => {
     undefined
   );
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(
     null
@@ -186,6 +188,7 @@ const Customers: React.FC = () => {
     { label: 'สัญญา', icon: DocumentTextIcon },
     { label: 'ต่อสัญญา', icon: RenewIcon },
     { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
+    { label: 'ติดตาม', icon: DocumentCheckIcon },
     { label: 'ปิดใช้งาน', icon: TrashIcon, isDanger: true },
   ];
 
@@ -392,6 +395,10 @@ const Customers: React.FC = () => {
                     setSelectedCustomer(customer);
                     setIsHistoryModalOpen(true);
                     setOpenDropdownId(null);
+                  } else if (action.label === 'ติดตาม') {
+                    setSelectedCustomer(customer);
+                    setIsFollowUpModalOpen(true);
+                    setOpenDropdownId(null);
                   } else if (action.label === 'ปิดใช้งาน') {
                     handleDelete(customer);
                   } else {
@@ -438,6 +445,11 @@ const Customers: React.FC = () => {
       <CustomerHistoryModal
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
+        customer={selectedCustomer}
+      />
+      <CustomerFollowUpModal
+        isOpen={isFollowUpModalOpen}
+        onClose={() => setIsFollowUpModalOpen(false)}
         customer={selectedCustomer}
       />
       <ConfirmationModal
