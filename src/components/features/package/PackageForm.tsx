@@ -9,7 +9,7 @@ interface PackageFormProps {
   initialValues?: Partial<Package>;
   categories: Category[];
   units: Unit[];
-  onSubmit: (data: Partial<Package>) => void;
+  onSubmit: (data: Partial<Package>) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -72,18 +72,28 @@ const PackageForm: FC<PackageFormProps> = ({
   const handleConditionChange = (index: number, field: string, value: string) => {
     setConditions((prev) => prev.map((c, i) => {
       if (i !== index) return c;
-      return { ...c, [field]: field === 'unit_id' ? value : (value ? parseFloat(value) : 0) };
+      if (field === 'unit_id') return { ...c, [field]: value };
+      return { ...c, [field]: value === '' ? '' : parseFloat(value) };
     }));
+  };
+
+  const handlePriceFocus = (index: number, field: string) => (e: React.FocusEvent<HTMLInputElement>) => {
+    const val = (conditions[index] as any)?.[field];
+    if (val === 0 || val === '0') {
+      handleConditionChange(index, field, '');
+    } else {
+      e.target.select();
+    }
   };
 
   const handleAddCondition = () => {
     setConditions((prev) => [...prev, {
       area_range: undefined,
       unit_id: availableUnits[0]?.id || undefined,
-      price_with_termite: 0,
-      price_without_termite: 0,
-      min_price_with_termite: 0,
-      min_price_without_termite: 0,
+      price_with_termite: undefined,
+      price_without_termite: undefined,
+      min_price_with_termite: undefined,
+      min_price_without_termite: undefined,
     }]);
   };
 
@@ -206,8 +216,8 @@ const PackageForm: FC<PackageFormProps> = ({
               <table className="min-w-full divide-y divide-slate-200 table-fixed">
                 <colgroup>
                   <col className="w-[4%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[16%]" />
                   <col className="w-[15%]" />
                   <col className="w-[15%]" />
                   <col className="w-[15%]" />
@@ -244,16 +254,16 @@ const PackageForm: FC<PackageFormProps> = ({
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-9 w-28 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_without_termite')} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} placeholder="0.00" step="0.01" className={`h-9 w-28 ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
                         </td>
                         <td className="px-3 py-3 text-center">
                           <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">

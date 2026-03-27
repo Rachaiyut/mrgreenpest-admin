@@ -8,7 +8,7 @@ interface PackageModalProps {
   onClose: () => void;
   mode: 'create' | 'edit';
   initialValues?: Package | null;
-  onSubmit: (data: Partial<Package>) => void;
+  onSubmit: (data: Partial<Package>) => Promise<boolean>;
   categories: Category[];
   units: Unit[];
 }
@@ -36,9 +36,9 @@ export const PackageModal: React.FC<PackageModalProps> = ({
         initialValues={mode === 'edit' ? initialValues || undefined : undefined}
         categories={categories}
         units={units}
-        onSubmit={(data) => {
-          onSubmit(data);
-          onClose();
+        onSubmit={async (data) => {
+          const success = await onSubmit(data);
+          if (success) onClose();
         }}
         onCancel={onClose}
       />

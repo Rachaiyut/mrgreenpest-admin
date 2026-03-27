@@ -48,6 +48,7 @@ const Packages: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [packageToDelete, setPackageToDelete] = useState<Package | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchCategories = async () => {
@@ -78,6 +79,7 @@ const Packages: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
+        ...(selectedCategoryId ? { category_id: selectedCategoryId } : {}),
       });
 
       setPackages(response.data);
@@ -87,7 +89,7 @@ const Packages: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId]);
 
   useEffect(() => {
     fetchCategories();
@@ -133,24 +135,34 @@ const Packages: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const onCreatePackage = async (data: Partial<Package>) => {
+  const onCreatePackage = async (data: Partial<Package>): Promise<boolean> => {
     try {
       await PackageApi.createPackage(data);
       fetchPackages();
-    } catch (error) {
+      return true;
+    } catch (error: any) {
       console.error('Failed to create package:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create package' });
+      const errMsg = error?.response?.data?.errors
+        ? Object.values(error.response.data.errors).join(', ')
+        : 'ไม่สามารถสร้างแพ็กเกจได้';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: errMsg });
+      return false;
     }
   };
 
-  const onUpdatePackage = async (id: string, data: Partial<Package>) => {
+  const onUpdatePackage = async (id: string, data: Partial<Package>): Promise<boolean> => {
     try {
       await PackageApi.updatePackage(id, data);
       fetchPackages();
       setIsModalOpen(false);
-    } catch (error) {
+      return true;
+    } catch (error: any) {
       console.error('Failed to update package:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update package' });
+      const errMsg = error?.response?.data?.errors
+        ? Object.values(error.response.data.errors).join(', ')
+        : 'ไม่สามารถแก้ไขแพ็กเกจได้';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: errMsg });
+      return false;
     }
   };
 
@@ -214,16 +226,30 @@ const Packages: React.FC = () => {
             <p className="mt-1 text-slate-600">จัดการแพ็กเกจบริการทั้งหมด</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-64">
+            <div className="w-48">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  setSelectedCategoryId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="">หมวดหมู่ทั้งหมด</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-80">
               <Input
                 type="search"
-                placeholder="ค้นหา (รหัส, ชื่อ, จำนวนครั้ง)..."
+                placeholder="ค้นหารหัสแพ็กเกจ, ชื่อแพ็กเกจ"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                title="ค้นหาด้วย: รหัสแพ็กเกจ, ชื่อแพ็กเกจ, จำนวนครั้ง"
               />
             </div>
             <Button onClick={() => { setSelectedPackage(null); setModalMode('create'); setIsModalOpen(true); }}>
@@ -408,12 +434,14 @@ const Packages: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         mode={modalMode}
         initialValues={selectedPackage}
-        onSubmit={(data) => {
+        onSubmit={async (data) => {
+          let success = false;
           if (modalMode === 'create') {
-            onCreatePackage(data);
+            success = await onCreatePackage(data);
           } else if (selectedPackage) {
-            onUpdatePackage(selectedPackage.id, data);
+            success = await onUpdatePackage(selectedPackage.id, data);
           }
+          return success;
         }}
         categories={categories}
         units={units}
