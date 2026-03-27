@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { usePortal } from '../../contexts/PortalContext';
-import { API_CONFIG } from '../../config/api';
+import { API_CONFIG } from '@/src/constants/config';
 
 const LIFF_ID = import.meta.env.VITE_LINE_LIFF_ID || '';
 
