@@ -1,0 +1,277 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import Swal from 'sweetalert2';
+import { FormField, Input, Textarea, Select } from '../../common/FormControls';
+import { PhotoIcon } from '../../../assets/icons/Icons';
+import { CategoryType } from '@/src/types/enums/category';
+import { Product } from '@/src/types/entity/product.interface';
+import { Category } from '@/src/types/entity/category.interface';
+import { Unit } from '@/src/types/entity/unit.interface';
+
+interface ProductFormProps {
+  mode: 'create' | 'edit';
+  initialValues?: Partial<Product> | null;
+  categories: Category[];
+  units: Unit[];
+  onSubmit: (data: any, type: CategoryType) => void | Promise<void>;
+  onCancel: () => void;
+}
+
+const ProductForm: React.FC<ProductFormProps> = ({
+  mode,
+  initialValues,
+  categories,
+  units,
+  onSubmit,
+  onCancel,
+}) => {
+  const initialType = initialValues?.category?.type || CategoryType.PRODUCT;
+
+  const [selectedType, setSelectedType] = useState<CategoryType>(initialType);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [formData, setFormData] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    if (initialValues) {
+      setFormData({
+        code: initialValues.code || '',
+        barcode: initialValues.barcode || '',
+        name: initialValues.name || '',
+        category_id: initialValues.category_id || '',
+        unit_id: initialValues.unit_id || '',
+        price: initialValues.price ?? '',
+        cost_price: initialValues.cost_price ?? '',
+        min_stock: initialValues.min_stock ?? '',
+        fda_number: initialValues.fda_number || '',
+        remark: (initialValues as any)?.remark || '',
+      });
+      setSelectedType(initialValues.category?.type || CategoryType.PRODUCT);
+    } else {
+      setFormData({});
+      setSelectedType(CategoryType.PRODUCT);
+    }
+    setImagePreview(null);
+  }, [initialValues]);
+
+  const isProduct = selectedType === CategoryType.PRODUCT;
+
+  const filteredCategories = useMemo(() => {
+    return categories.filter((c) => c.type === selectedType);
+  }, [categories, selectedType]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (value === '0' || value === '0.00') {
+      setFormData((prev) => ({ ...prev, [name]: '' }));
+    } else {
+      e.target.select();
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isProduct) {
+      const price = Number(formData.price);
+      if (!price || price <= 0) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุราคาขาย/หน่วย' });
+        return;
+      }
+    }
+
+    if (isProduct) {
+      onSubmit({
+        barcode: formData.barcode || '',
+        name: formData.name,
+        category_id: formData.category_id,
+        price: Number(formData.price) || 0,
+        cost_price: Number(formData.cost_price) || 0,
+        fda_number: formData.fda_number || '',
+        min_stock: Number(formData.min_stock) || 0,
+        unit_id: formData.unit_id,
+      }, CategoryType.PRODUCT);
+    } else {
+      onSubmit({
+        name: formData.name,
+        category_id: formData.category_id,
+        price: Number(formData.price) || 0,
+        remark: formData.remark || '',
+      }, CategoryType.SERVICE);
+    }
+  };
+
+  return (
+    <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Image */}
+        <div className="md:col-span-1">
+          <FormField label="รูปภาพ">
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Preview" className="mx-auto h-32 w-32 object-cover rounded-md" />
+                ) : (
+                  <PhotoIcon className="mx-auto h-12 w-12 text-slate-400" />
+                )}
+                <div className="flex text-sm text-slate-600 justify-center">
+                  <label
+                    htmlFor={`file-upload-${mode}`}
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                  >
+                    <span>{mode === 'create' ? 'อัปโหลดรูปภาพ' : 'เปลี่ยนรูปภาพ'}</span>
+                    <input
+                      id={`file-upload-${mode}`}
+                      name="file-upload"
+                      type="file"
+                      className="sr-only"
+                      accept="image/png, image/jpeg"
+                      onChange={handleImageChange}
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-slate-500">PNG, JPG</p>
+              </div>
+            </div>
+          </FormField>
+        </div>
+
+        {/* Type + Barcode/Code */}
+        <div className="md:col-span-2 space-y-4">
+          <FormField label="ประเภท">
+            {mode === 'create' ? (
+              <div className="flex rounded-lg bg-slate-100 p-1 w-full">
+                <label className="relative flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    className="sr-only peer"
+                    checked={selectedType === CategoryType.PRODUCT}
+                    onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }}
+                  />
+                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                    สินค้า
+                  </span>
+                </label>
+                <label className="relative flex-1 cursor-pointer">
+                  <input
+                    type="radio"
+                    className="sr-only peer"
+                    checked={selectedType === CategoryType.SERVICE}
+                    onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }}
+                  />
+                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
+                    บริการ
+                  </span>
+                </label>
+              </div>
+            ) : (
+              <div className="flex rounded-lg bg-slate-100 p-1 w-full">
+                <span className={`block flex-1 text-center py-1.5 px-3 rounded-md text-sm font-medium ${isProduct ? 'bg-primary text-white shadow-sm' : 'text-slate-800'}`}>สินค้า</span>
+                <span className={`block flex-1 text-center py-1.5 px-3 rounded-md text-sm font-medium ${!isProduct ? 'bg-primary text-white shadow-sm' : 'text-slate-800'}`}>บริการ</span>
+              </div>
+            )}
+          </FormField>
+
+          {/* Code (edit only) */}
+          {mode === 'edit' && (
+            <FormField label="รหัสสินค้า" htmlFor="code">
+              <Input name="code" type="text" value={formData.code || ''} disabled className="bg-slate-50 font-mono" />
+            </FormField>
+          )}
+
+          {/* Barcode (product only) */}
+          {isProduct && (
+            <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
+              <Input name="barcode" type="text" value={formData.barcode || ''} onChange={handleChange} />
+            </FormField>
+          )}
+        </div>
+      </div>
+
+      <FormField label="ชื่อสินค้า/บริการ *" htmlFor="name">
+        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+      </FormField>
+
+      <FormField label="หมวดหมู่ *" htmlFor="category_id">
+        <Select
+          name="category_id"
+          value={formData.category_id || ''}
+          onChange={handleChange}
+          required
+          disabled={mode === 'edit'}
+          className={mode === 'edit' ? 'bg-slate-50' : ''}
+        >
+          <option value="">-- เลือกหมวดหมู่ --</option>
+          {filteredCategories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </Select>
+      </FormField>
+
+      <FormField label="รายละเอียด" htmlFor="remark">
+        <Textarea name="remark" value={formData.remark || ''} onChange={handleChange} rows={3} />
+      </FormField>
+
+      {isProduct ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="หน่วย *" htmlFor="unit_id">
+              <Select name="unit_id" value={formData.unit_id || ''} onChange={handleChange} required>
+                <option value="">-- เลือกหน่วย --</option>
+                {units.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </Select>
+            </FormField>
+            <FormField label="ราคาขาย/หน่วย *" htmlFor="price">
+              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="ราคาต้นทุน" htmlFor="cost_price">
+              <Input name="cost_price" type="number" value={formData.cost_price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} step="0.01" min="0" placeholder="0.00" />
+            </FormField>
+            <FormField label="กำหนดสต็อกขั้นต่ำ" htmlFor="min_stock">
+              <Input name="min_stock" type="number" value={formData.min_stock ?? ''} onChange={handleChange} onFocus={handleNumberFocus} min="0" placeholder="เช่น 10" />
+            </FormField>
+          </div>
+          <div className="border-t pt-4 space-y-4">
+            <FormField label="เลขทะเบียน อย." htmlFor="fda_number">
+              <Input name="fda_number" type="text" value={formData.fda_number || ''} onChange={handleChange} />
+            </FormField>
+          </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField label="ราคาบริการ *" htmlFor="price">
+            <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
+          </FormField>
+        </div>
+      )}
+
+      {/* Footer buttons */}
+      <div className="flex justify-end gap-3 pt-2">
+        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-medium transition-colors">
+          ยกเลิก
+        </button>
+        <button type="submit" className="px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary/90 font-medium shadow-sm transition-colors">
+          {mode === 'create' ? 'บันทึก' : 'บันทึกการเปลี่ยนแปลง'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default ProductForm;

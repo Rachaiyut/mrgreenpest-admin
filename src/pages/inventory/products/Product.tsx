@@ -12,12 +12,11 @@ import { Unit } from '@/src/types/entity/unit.interface';
 
 // ===== API =====
 import { CategoryApi } from '@/src/api/category';
-import { ProductApi } from '@/src/api/product';
+import { ProductApi, ProductServiceApi } from '@/src/api/product';
 import { Unit as UnitApi } from '@/src/api/unit';
 
 // ===== Components (Absolute) =====
-import { AddProductModal } from '@/src/components/features/products/AddProductModal';
-import { EditProductModal } from '@/src/components/features/products/EditProductModal';
+import { ProductModal } from '@/src/components/features/products/ProductModal';
 import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 
 // ===== Components (Relative) =====
@@ -40,6 +39,8 @@ const Product: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedType, setSelectedType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -50,9 +51,9 @@ const Product: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [productToEdit, setProductToEdit] = useState<IProduct | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<IProduct | null>(null);
 
@@ -77,21 +78,39 @@ const Product: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await ProductApi.getProducts({
+      const baseQuery = {
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
         sort_by: 'created_at',
         sort_order: 'desc',
-      });
-      setProducts(response.data);
-      setTotalItems(response.meta?.total || response.data.length);
+        ...(selectedCategoryId ? { category_id: selectedCategoryId } : {}),
+      };
+
+      if (selectedType === 'SERVICE') {
+        const response = await ProductServiceApi.getAll(baseQuery);
+        const services = (response.data || []).map((s: any) => ({
+          ...s,
+          barcode: '',
+          price: s.price || 0,
+          cost_price: s.cost_price || 0,
+          min_stock: 0,
+          category: s.category || { name: '-', type: CategoryType.SERVICE },
+          _type: 'SERVICE',
+        }));
+        setProducts(services);
+        setTotalItems(response.meta?.total || services.length);
+      } else {
+        const response = await ProductApi.getProducts(baseQuery);
+        setProducts(response.data.map((p: any) => ({ ...p, _type: 'PRODUCT' })));
+        setTotalItems(response.meta?.total || response.data.length);
+      }
     } catch (error) {
       console.error('Failed to fetch products:', error);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, selectedType]);
 
   useEffect(() => {
     fetchCategories();
@@ -102,26 +121,47 @@ const Product: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const onUpdateProduct = async (product: IProduct) => {
+  const onSubmitProduct = async (data: any, type: CategoryType): Promise<boolean> => {
     try {
-      const { id, ...data } = product;
-      await ProductApi.updateProduct(id, data);
+      if (modalMode === 'create') {
+        if (type === CategoryType.SERVICE) {
+          await ProductServiceApi.create(data);
+        } else {
+          await ProductApi.createProduct(data);
+        }
+      } else if (selectedProduct) {
+        if ((selectedProduct as any)._type === 'SERVICE') {
+          await ProductServiceApi.update(selectedProduct.id, data);
+        } else {
+          await ProductApi.updateProduct(selectedProduct.id, data);
+        }
+      }
       fetchProducts();
-      setIsEditModalOpen(false);
-      setProductToEdit(null);
-    } catch (error) {
-      console.error('Failed to update product:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update product' });
+      setIsModalOpen(false);
+      setSelectedProduct(null);
+      return true;
+    } catch (error: any) {
+      console.error('Failed to save:', error);
+      const errMsg = error?.response?.data?.message
+        || (error?.response?.data?.errors && Object.values(error.response.data.errors).join(', '))
+        || 'ไม่สามารถบันทึกได้';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: errMsg });
+      return false;
     }
   };
 
   const onDeleteProduct = async (id: string) => {
     try {
-      await ProductApi.deleteProduct(id);
+      const item = products.find((p) => p.id === id);
+      if ((item as any)?._type === 'SERVICE') {
+        await ProductServiceApi.remove(id);
+      } else {
+        await ProductApi.deleteProduct(id);
+      }
       fetchProducts();
     } catch (error) {
       console.error('Failed to delete product:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete product' });
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบได้' });
     }
   };
 
@@ -174,8 +214,9 @@ const Product: React.FC = () => {
   }, [openDropdownId]);
 
   const handleEdit = (product: IProduct) => {
-    setProductToEdit(product);
-    setIsEditModalOpen(true);
+    setSelectedProduct(product);
+    setModalMode('edit');
+    setIsModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -202,19 +243,52 @@ const Product: React.FC = () => {
             <p className="mt-1 text-slate-600">จัดการสินค้าและบริการ</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-64">
+            {/* DF-1/12: wider search + placeholder */}
+            <div className="w-96">
               <Input
                 type="search"
-                placeholder="ค้นหา (รหัส, ชื่อ)..."
+                placeholder={selectedType === 'SERVICE' ? 'ค้นหารหัสบริการ, ชื่อบริการ' : 'ค้นหารหัสสินค้า, รหัสบาร์โค้ด, ชื่อสินค้า'}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset page on search
+                  setCurrentPage(1);
                 }}
-                title="ค้นหาด้วย: รหัสสินค้า/บริการ, ชื่อสินค้า/บริการ"
               />
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            {/* DF-2: type filter (สินค้า/บริการ) */}
+            <div className="w-36">
+              <select
+                value={selectedType}
+                onChange={(e) => {
+                  setSelectedType(e.target.value as 'PRODUCT' | 'SERVICE');
+                  setSelectedCategoryId('');
+                  setCurrentPage(1);
+                }}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="PRODUCT">สินค้า</option>
+                <option value="SERVICE">บริการ</option>
+              </select>
+            </div>
+            {/* DF-2/13: category filter */}
+            <div className="w-44">
+              <select
+                value={selectedCategoryId}
+                onChange={(e) => {
+                  setSelectedCategoryId(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="">หมวดหมู่ทั้งหมด</option>
+                {categories
+                  .filter((cat) => !selectedType || cat.type === selectedType)
+                  .map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+              </select>
+            </div>
+            <Button onClick={() => { setSelectedProduct(null); setModalMode('create'); setIsModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างสินค้า/บริการ
             </Button>
@@ -238,12 +312,14 @@ const Product: React.FC = () => {
                   >
                     รหัสสินค้า
                   </th>
+                  {selectedType === 'PRODUCT' && (
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัสบาร์โค้ด
                   </th>
+                  )}
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
@@ -260,8 +336,16 @@ const Product: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
+                    ประเภท
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
                     ราคา/หน่วย
                   </th>
+                  {selectedType === 'PRODUCT' && (
+                  <>
                   <th
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
@@ -274,8 +358,13 @@ const Product: React.FC = () => {
                   >
                     สต็อกขั้นต่ำ
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
+                  </>
+                  )}
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
@@ -288,27 +377,39 @@ const Product: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {product.code}
                     </td>
+                    {selectedType === 'PRODUCT' && (
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {product.barcode || '-'}
                     </td>
+                    )}
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {product.name}
                     </td>
 
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {product.category.name || '-'}
+                      {product.category?.name || '-'}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      {product.category?.type === CategoryType.PRODUCT ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">สินค้า</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">บริการ</span>
+                      )}
+                    </td>
+                    {/* DF-10: show price not cost_price */}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      ฿{Number(product.cost_price).toLocaleString()}
+                      ฿{Number(product.price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className={`px-4 py-3 whitespace-nowrap text-sm `}>
-                      {product.category?.type === CategoryType.PRODUCT
-                        ? 'สินค้า'
-                        : '-'}
+                    {selectedType === 'PRODUCT' && (
+                    <>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      {(product as any).stock_quantity ?? 0}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {product.min_stock}
                     </td>
+                    </>
+                    )}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button
@@ -382,18 +483,12 @@ const Product: React.FC = () => {
         </div>
       )}
 
-      <AddProductModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSuccess={fetchProducts}
-        categories={categories}
-        units={units}
-      />
-      <EditProductModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        product={productToEdit}
-        onUpdateProduct={onUpdateProduct}
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalMode}
+        initialValues={selectedProduct}
+        onSubmit={onSubmitProduct}
         categories={categories}
         units={units}
       />
