@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { FormField, Input, Select, Textarea } from '../../common/FormControls';
 import { Category } from '@/src/types/entity/app.interface';
@@ -17,25 +16,33 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   onCreateCategory,
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
-  const [prefix, setPrefix] = useState('');
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (isOpen) {
       formRef.current?.reset();
-      setPrefix('');
-      setError('');
+      setErrors({});
     }
   }, [isOpen]);
 
+  const validate = (data: Record<string, FormDataEntryValue>): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!data['name'] || !(data['name'] as string).trim()) errs.name = 'กรุณาระบุชื่อหมวดหมู่';
+    if (!data['code'] || !(data['code'] as string).trim()) errs.code = 'กรุณาระบุอักษรย่อหมวดหมู่';
+    if (!data['type'] || !(data['type'] as string).trim()) errs.type = 'กรุณาเลือกประเภทหมวดหมู่';
+    return errs;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (error) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: error });
-      return;
-    }
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
+
+    const validationErrors = validate(data);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
 
     const newCategory: Partial<Category> = {
       code: data['code'] as string,
@@ -67,7 +74,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             type="submit"
             form="add-category-form"
             className="py-2 px-4 rounded-lg bg-primary hover:bg-primary/90 text-white font-semibold shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed"
-            title={error || ''}
+            title=""
           >
             บันทึก
           </button>
@@ -80,31 +87,45 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
         onSubmit={handleSubmit}
         className="space-y-4"
       >
-        <FormField label="ชื่อหมวดหมู่" htmlFor="category-name">
-          <Input name="name" id="category-name" type="text" required />
+        <FormField label="ชื่อหมวดหมู่ *" htmlFor="category-name">
+          <Input
+            name="name"
+            id="category-name"
+            type="text"
+            className={errors.name ? 'border-red-500' : ''}
+            onChange={() => setErrors(prev => { const { name, ...rest } = prev; return rest; })}
+          />
+          {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="รหัสหมวดหมู่" htmlFor="prefix">
+          <FormField label="อักษรย่อหมวดหมู่ *" htmlFor="code">
             <Input
               name="code"
               id="code"
               type="text"
               maxLength={3}
-              required
               placeholder="เช่น CH, MAT"
+              className={errors.code ? 'border-red-500' : ''}
+              onChange={() => setErrors(prev => { const { code, ...rest } = prev; return rest; })}
             />
-            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+            {errors.code && <p className="text-sm text-red-500 mt-1">{errors.code}</p>}
           </FormField>
-          <FormField label="ประเภทหมวดหมู่" htmlFor="categoryId">
-            {/* Fixed htmlFor */}
-            <Select name="type" id="type" required defaultValue="">
+          <FormField label="ประเภทหมวดหมู่ *" htmlFor="type">
+            <Select
+              name="type"
+              id="type"
+              defaultValue=""
+              className={errors.type ? 'border-red-500' : ''}
+              onChange={() => setErrors(prev => { const { type, ...rest } = prev; return rest; })}
+            >
               <option value="" disabled>
-                -- เลือกหมวดหมู่ --
+                -- เลือกประเภท --
               </option>
               <option value={CategoryType.PRODUCT}>สินค้า</option>
               <option value={CategoryType.SERVICE}>บริการ</option>
             </Select>
+            {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
           </FormField>
         </div>
 

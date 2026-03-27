@@ -85,7 +85,7 @@ const EditCategoryModal: React.FC<EditProductModalProps> = ({
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
-          <FormField label="รหัสหมวดหมู่" htmlFor="prefix">
+          <FormField label="อักษรย่อหมวดหมู่" htmlFor="code">
             <Input
               name="code"
               id="code"
@@ -96,11 +96,15 @@ const EditCategoryModal: React.FC<EditProductModalProps> = ({
               placeholder="เช่น CH, MAT"
             />
           </FormField>
-          <FormField label="ประเภทหมวดหมู่" htmlFor="categoryId">
-            <Select name="type" id="type" defaultValue={category.type}>
+          <FormField label="ประเภทหมวดหมู่" htmlFor="type">
+            <Select
+              name="type"
+              id="type"
+              defaultValue={category.type}
+              disabled={!!((category as any).product_count > 0)}
+            >
               <option value="" disabled>
-                {' '}
-                -- เลือกหมวดหมู่ --{' '}
+                -- เลือกประเภท --
               </option>
               <option value={CategoryType.PRODUCT}>สินค้า</option>
               <option value={CategoryType.SERVICE}>บริการ</option>

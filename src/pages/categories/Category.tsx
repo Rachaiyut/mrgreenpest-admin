@@ -8,6 +8,7 @@ import React, {
 
 // Interface
 import { Category } from '@/src/types/entity/category.interface';
+import { CategoryType } from '@/src/types/enums/category';
 
 // API
 import { CategoryApi } from '@/src/api/category';
@@ -23,7 +24,7 @@ import {
 
 // Component
 import { Card } from '../../components/common/Card';
-import { Input, Button } from '../../components/common/FormControls';
+import { Input, Button, Select } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
 import { AddCategoryModal } from '../../components/features/category/AddCategoryModal';
 import EditCategoryModal from '@/src/components/features/category/EditCategoryModal';
@@ -48,6 +49,8 @@ const Categories: React.FC = () => {
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [totalCategories, setTotalCategories] = useState<number>(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
@@ -65,6 +68,8 @@ const Categories: React.FC = () => {
         search: searchQuery,
         sort_by: sortBy,
         sort_order: sortOrder as 'asc' | 'desc',
+        ...(typeFilter ? { type: typeFilter as CategoryType } : {}),
+        ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
       });
       setCategories(response.data);
 
@@ -75,7 +80,7 @@ const Categories: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, searchQuery, sortBy, sortOrder]);
+  }, [currentPage, pageSize, searchQuery, sortBy, sortOrder, typeFilter, statusFilter]);
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -135,6 +140,21 @@ const Categories: React.FC = () => {
     [fetchCategories, setIsEditModalOpen]
   );
 
+  const handleToggleStatus = useCallback(
+    async (category: Category) => {
+      try {
+        await CategoryApi.updateCategory(category.id, {
+          is_active: !category.is_active,
+        });
+        fetchCategories();
+      } catch (error) {
+        console.error('Error toggling category status:', error);
+      }
+      setOpenDropdownId(null);
+    },
+    [fetchCategories]
+  );
+
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
     categoryId: string
@@ -188,17 +208,42 @@ const Categories: React.FC = () => {
             <p className="mt-1 text-slate-600">จัดการหมวดหมู่สำหรับสินค้า</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-64">
+            <div className="w-80">
               <Input
                 type="search"
-                placeholder="ค้นหา (รหัส, ชื่อ, รายละเอียด)..."
+                placeholder="ค้นหารหัส, ชื่อ, รายละเอียด"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                title="ค้นหาด้วย: รหัส, ชื่อ, หรือรายละเอียดหมวดหมู่"
               />
+            </div>
+            <div className="w-48">
+              <Select
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">ประเภททั้งหมด</option>
+                <option value={CategoryType.PRODUCT}>สินค้า</option>
+                <option value={CategoryType.SERVICE}>บริการ</option>
+              </Select>
+            </div>
+            <div className="w-48">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="true">ใช้งาน</option>
+                <option value="false">ไม่ใช้งาน</option>
+              </Select>
             </div>
             <Button onClick={() => setIsAddModalOpen(true)}>
               <PlusIcon className="h-5 w-5" />
@@ -234,18 +279,39 @@ const Categories: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
+                    ประเภทหมวดหมู่
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                  >
                     รายละเอียด
                   </th>
-                  <th scope="col" className="relative px-4 py-2.5">
-                    <span className="sr-only">จัดการ</span>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                  >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                  >
+                    จัดการ
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {categories.map((category, index) => (
+                {categories.length === 0 && !loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                      ไม่มีข้อมูล
+                    </td>
+                  </tr>
+                ) : categories.map((category, index) => (
                   <tr key={category.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {index + 1}
+                      {(currentPage - 1) * pageSize + index + 1}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                       {category.code}
@@ -253,11 +319,25 @@ const Categories: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
                       {category.name}
                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      {category.type === CategoryType.PRODUCT ? 'สินค้า' : category.type === CategoryType.SERVICE ? 'บริการ' : '-'}
+                    </td>
                     <td className="px-4 py-3 text-sm text-slate-700 truncate max-w-sm">
                       {category.description || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="inline-block text-left">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          category.is_active !== false
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {category.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
+                      <div className="inline-block">
                         <Button
                           data-package-id={category.id}
                           onClick={(e) => handleDropdownToggle(e, category.id)}
@@ -311,6 +391,35 @@ const Categories: React.FC = () => {
             >
               <PencilIcon className="mr-3 h-5 w-5" />
               <span>แก้ไข</span>
+            </button>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                const category = categories.find(
+                  (p) => p.id === openDropdownId
+                );
+                if (category) handleToggleStatus(category);
+              }}
+              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              {(() => {
+                const category = categories.find((p) => p.id === openDropdownId);
+                return category?.is_active !== false ? (
+                  <>
+                    <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    <span>ปิดใช้งาน</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    <span>เปิดใช้งาน</span>
+                  </>
+                );
+              })()}
             </button>
           </div>
         </div>
