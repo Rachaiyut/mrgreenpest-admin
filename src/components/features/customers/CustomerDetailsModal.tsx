@@ -6,9 +6,9 @@ import {
   DetailsList,
   DetailsItem,
 } from '../../common/FormControls';
-
 import { Customer } from '@/src/types/entity/customer.interface';
 import { CustomerType } from '@/src/types';
+import { CustomerLineSection } from './CustomerLineSection';
 
 interface CustomerDetailsModalProps {
   isOpen: boolean;
@@ -23,28 +23,28 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
 }) => {
   if (!isOpen || !customer) return null;
 
+  const fullName = `${customer.first_name} ${customer.last_name || ''}`.trim();
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดลูกค้า: ${customer.first_name} ${customer.last_name}`}
+      title={`รายละเอียดลูกค้า`}
       size="3xl"
     >
-      <div className="space-y-6 text-sm">
-        <div>
+      <div className="space-y-4 text-sm">
+        {/* ข้อมูลทั่วไป */}
+        <div className="bg-slate-50 rounded-lg p-4">
           <SectionTitle>ข้อมูลทั่วไป</SectionTitle>
           <DetailsList cols={2}>
             <DetailsItem label="รหัสลูกค้า" valueClassName="font-semibold">
               {customer.code}
             </DetailsItem>
             <DetailsItem label="ชื่อลูกค้า" valueClassName="font-semibold">
-              {customer.first_name} {customer.last_name}{' '}
-              {customer.nickname && `(${customer.nickname})`}
+              {fullName}
             </DetailsItem>
             <DetailsItem label="ประเภท">
-              {customer.type === CustomerType.CORPORATE
-                ? 'นิติบุคคล'
-                : 'บุคคลธรรมดา'}
+              {customer.type === CustomerType.CORPORATE ? 'นิติบุคคล' : 'บุคคลธรรมดา'}
             </DetailsItem>
             {customer.tax_id && (
               <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
@@ -56,38 +56,39 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             </DetailsItem>
           </DetailsList>
         </div>
-        <hr />
-        <div>
+
+        {/* ข้อมูลการติดต่อ */}
+        <div className="bg-slate-50 rounded-lg p-4">
           <SectionTitle>ข้อมูลการติดต่อ</SectionTitle>
-          <DetailsList cols={2}>
-            {/* Contact Person field not available in ICustomer */}
-            {/* <DetailsItem label="ผู้ติดต่อ">
-              {customer.contactPerson || '-'}
-            </DetailsItem> */}
+          <DetailsList cols={3}>
             <DetailsItem label="เบอร์โทรศัพท์ (หลัก)">
-              {customer.phone}
+              {customer.primary_phone || '-'}
             </DetailsItem>
-            {/* Mobile phone field not available in ICustomer */}
-            {/* {customer.phone && (
-              <DetailsItem label="เบอร์มือถือ">
-                {customer.phone}
-              </DetailsItem>
-            )} */}
-            <DetailsItem label="อีเมล">{customer.email}</DetailsItem>
+            <DetailsItem label="เบอร์มือถือ">
+              {customer.mobile_phone || '-'}
+            </DetailsItem>
+            <DetailsItem label="อีเมล">
+              {customer.email || '-'}
+            </DetailsItem>
+            {customer.phone_3 && (
+              <DetailsItem label="เบอร์โทร 3">{customer.phone_3}</DetailsItem>
+            )}
+            {customer.phone_4 && (
+              <DetailsItem label="เบอร์โทร 4">{customer.phone_4}</DetailsItem>
+            )}
+            {customer.phone_5 && (
+              <DetailsItem label="เบอร์โทร 5">{customer.phone_5}</DetailsItem>
+            )}
           </DetailsList>
         </div>
-        <hr />
-        <div>
+
+        {/* ข้อมูลที่อยู่ */}
+        <div className="bg-slate-50 rounded-lg p-4">
           <SectionTitle>ข้อมูลที่อยู่</SectionTitle>
           <DetailsList cols={3}>
             <DetailsItem label="บ้านเลขที่">
               {customer.address_house_no || '-'}
             </DetailsItem>
-            {/* Soi/Road not in ICustomer */}
-            {/* <DetailsItem label="ซอย">{customer.address_house_no || '-'}</DetailsItem>
-            <DetailsItem label="ถนน">
-              {customer.country || '-'}
-            </DetailsItem> */}
             <DetailsItem label="แขวง/ตำบล">
               {customer.sub_district || '-'}
             </DetailsItem>
@@ -101,13 +102,26 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
               {customer.postal_code || '-'}
             </DetailsItem>
           </DetailsList>
+          {customer.google_map_link && (
+            <div className="mt-3">
+              <DetailsItem label="Google Map">
+                <a
+                  href={customer.google_map_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline truncate block text-sm"
+                >
+                  {customer.google_map_link}
+                </a>
+              </DetailsItem>
+            </div>
+          )}
         </div>
-        {/* Zone/Group fields not in ICustomer */}
-        <div>
-          <SectionTitle className="mt-4 border-t pt-4">
-            กลุ่มเส้นทาง/พื้นที่บริการ
-          </SectionTitle>
-          <DetailsList cols={4}>
+
+        {/* กลุ่มเส้นทาง/พื้นที่บริการ */}
+        <div className="bg-slate-50 rounded-lg p-4">
+          <SectionTitle>กลุ่มเส้นทาง/พื้นที่บริการ</SectionTitle>
+          <DetailsList cols={3}>
             <DetailsItem label="เขต (พื้นที่บริการ)">
               {customer.service_area || '-'}
             </DetailsItem>
@@ -119,23 +133,16 @@ export const CustomerDetailsModal: React.FC<CustomerDetailsModalProps> = ({
             </DetailsItem>
           </DetailsList>
         </div>
-        {customer.google_map_link && (
-          <div className="pt-4 border-t">
-            <SectionTitle>ตำแหน่ง</SectionTitle>
-            <DetailsList>
-              <DetailsItem label="Link Google Map">
-                <a
-                  href={customer.google_map_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline truncate block"
-                >
-                  {customer.google_map_link}
-                </a>
-              </DetailsItem>
-            </DetailsList>
-          </div>
-        )}
+
+        {/* LINE OA */}
+        <div className="bg-slate-50 rounded-lg p-4">
+          <SectionTitle>LINE OA</SectionTitle>
+          <CustomerLineSection
+            customerId={customer.id}
+            lineUserId={customer.line_user_id}
+            customerName={fullName}
+          />
+        </div>
       </div>
     </Modal>
   );

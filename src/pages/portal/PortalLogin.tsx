@@ -10,9 +10,16 @@ const PortalLogin: React.FC = () => {
 
   const token = searchParams.get('token');
 
+  const getTargetPath = () => {
+    const page = searchParams.get('page');
+    const validPages = ['dashboard', 'quotations', 'contracts', 'receipts', 'service-reports'];
+    const targetPage = page && validPages.includes(page) ? page : 'dashboard';
+    return `/portal/${targetPage}`;
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/portal/dashboard', { replace: true });
+      navigate(getTargetPath(), { replace: true });
       return;
     }
 
@@ -24,13 +31,14 @@ const PortalLogin: React.FC = () => {
     const verify = async () => {
       const success = await login(token);
       if (success) {
-        navigate('/portal/dashboard', { replace: true });
+        navigate(getTargetPath(), { replace: true });
       } else {
         setError('Token ไม่ถูกต้องหรือหมดอายุ กรุณาติดต่อผู้ดูแลระบบ');
       }
     };
 
     verify();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, login, navigate, isAuthenticated]);
 
   return (

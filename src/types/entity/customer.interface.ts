@@ -31,6 +31,7 @@ export interface Customer extends IBase {
   service_area: string;
   service_group: string;
   google_map_link?: string;
+  line_user_id?: string;
   assessments: Assessment[];
   contracts: Contract[];
 }

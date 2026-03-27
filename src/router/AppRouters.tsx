@@ -32,6 +32,7 @@ const PortalQuotations = lazy(() => import('../pages/portal/PortalQuotations'));
 const PortalContracts = lazy(() => import('../pages/portal/PortalContracts'));
 const PortalReceipts = lazy(() => import('../pages/portal/PortalReceipts'));
 const PortalServiceReports = lazy(() => import('../pages/portal/PortalServiceReports'));
+const PortalLiff = lazy(() => import('../pages/portal/PortalLiff'));
 const PortalLayoutLazy = lazy(() => import('../components/layout/PortalLayout').then(m => ({ default: m.PortalLayout })));
 
 import ProtectedRoute from './ProtectedRoute';
@@ -89,6 +90,7 @@ export const AppRouter = (props: AppRouterProps) => {
         <Suspense fallback={<div>Loading...</div>}>
           <Routes>
             <Route path="/portal" element={<PortalLogin />} />
+            <Route path="/portal/liff" element={<PortalLiff />} />
             <Route path="/portal/sign" element={<PortalSignQuotation />} />
             <Route path="/portal" element={<PortalRoute><PortalLayoutLazy /></PortalRoute>}>
               <Route path="dashboard" element={<PortalDashboard />} />
