@@ -41,6 +41,8 @@ const Product: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedType, setSelectedType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -78,13 +80,15 @@ const Product: React.FC = () => {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const baseQuery = {
+      const baseQuery: any = {
         page: currentPage,
         limit: itemsPerPage,
         search: searchQuery,
         sort_by: 'created_at',
         sort_order: 'desc',
         ...(selectedCategoryId ? { category_id: selectedCategoryId } : {}),
+        ...(minPrice ? { minPrice: Number(minPrice) } : {}),
+        ...(maxPrice ? { maxPrice: Number(maxPrice) } : {}),
       };
 
       if (selectedType === 'SERVICE') {
@@ -110,7 +114,7 @@ const Product: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, selectedType]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, selectedType, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchCategories();
@@ -288,6 +292,27 @@ const Product: React.FC = () => {
                   ))}
               </select>
             </div>
+            {selectedType === 'PRODUCT' && (
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  placeholder="ราคาต่ำสุด"
+                  value={minPrice}
+                  onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                  min="0"
+                  className="w-24 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+                <span className="text-slate-400 text-sm">-</span>
+                <input
+                  type="number"
+                  placeholder="ราคาสูงสุด"
+                  value={maxPrice}
+                  onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                  min="0"
+                  className="w-24 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            )}
             <Button onClick={() => { setSelectedProduct(null); setModalMode('create'); setIsModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างสินค้า/บริการ
@@ -374,7 +399,7 @@ const Product: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary">
                       {product.code}
                     </td>
                     {selectedType === 'PRODUCT' && (
