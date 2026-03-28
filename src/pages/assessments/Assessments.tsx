@@ -648,13 +648,19 @@ const Assessments: React.FC = () => {
                         รหัสใบประเมิน
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        รหัสลูกค้า
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ลูกค้า
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วันที่นัดหมาย
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ประเภท
+                        ประเภทสิ่งปลูกสร้าง
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ประเภทบริการ
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
@@ -672,18 +678,34 @@ const Assessments: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {paginatedAssessments.map((assessment, index) => {
-                      const allServiceTypes = [
-                        ...new Set(
-                          assessment.assessment_areas.flatMap(
-                            (area) => area.category_services || []
-                          )
-                        ),
-                      ];
+                      const buildingTypeMap: Record<string, string> = {
+                        'OFFICE': 'สำนักงาน',
+                        'HOUSE': 'บ้านพักอาศัย',
+                        'FACTORY': 'โรงงาน',
+                        'CONDO': 'คอนโดมิเนียม',
+                        'TOWNHOUSE': 'ทาวน์เฮ้าส์',
+                        'SHOPHOUSE': 'อาคารพาณิชย์',
+                        'OTHER': 'อื่นๆ',
+                      };
                       const allBuildingTypes = [
                         ...new Set(
                           assessment.assessment_areas
-                            .map((area) => area.building_type)
+                            .map((area) => {
+                              const bt = area.building_type as string;
+                              if (bt === 'OTHER' && area.building_type_other) return area.building_type_other;
+                              return buildingTypeMap[bt] || bt;
+                            })
                             .filter(Boolean)
+                        ),
+                      ];
+                      const allServiceTypes = [
+                        ...new Set(
+                          assessment.assessment_areas.flatMap(
+                            (area) => (area.category_services || []).map((cs: any) => {
+                              const name = cs.category?.name || cs.name;
+                              return name || null;
+                            }).filter(Boolean)
+                          )
                         ),
                       ];
                       return (
@@ -699,26 +721,11 @@ const Assessments: React.FC = () => {
                               {assessment.code || assessment.id}
                             </span>
                           </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {assessment.customer?.code || '-'}
+                          </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-primary font-bold text-xs">
-                                  {(getCustomerName(assessment) || '?')
-                                    .charAt(0)
-                                    .toUpperCase()}
-                                </span>
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-800 truncate">
-                                  {getCustomerName(assessment) || '-'}
-                                </p>
-                                <p className="text-xs text-slate-500 truncate">
-                                  {assessment.customer?.code ||
-                                    assessment.customer?.primary_phone ||
-                                    '-'}
-                                </p>
-                              </div>
-                            </div>
+                            {getCustomerName(assessment) || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <div className="flex items-center gap-2">
@@ -735,14 +742,10 @@ const Assessments: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-xs font-medium text-slate-700">
-                                {allBuildingTypes.join(', ') || '-'}
-                              </span>
-                              <span className="text-xs text-slate-500">
-                                {allServiceTypes.join(', ') || '-'}
-                              </span>
-                            </div>
+                            {allBuildingTypes.join(', ') || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            {allServiceTypes.join(', ') || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             <StatusBadge status={assessment.status as any} />

@@ -1091,6 +1091,7 @@ const Job: React.FC<JobProps> = ({
                               onStatusChange={handleStatusChange}
                               onViewDetails={handleViewDetails}
                               onWriteReport={handleWriteReport}
+                              onEditJob={handleEdit}
                               currentUser={currentUser}
                               isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
                             />

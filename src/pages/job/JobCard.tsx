@@ -19,6 +19,7 @@ import {
   JobTimeIcon,
   ManageIcon,
   MapPinIcon,
+  PencilIcon,
   PlayIcon,
   TechnicianIcon,
 } from "@/src/assets/icons/Icons";
@@ -33,6 +34,7 @@ const JobCard: React.FC<{
   onStatusChange: (jobId: string, newStatus: JobStatus) => void;
   onViewDetails: (job: FieldJob) => void;
   onWriteReport: (job: FieldJob) => void;
+  onEditJob?: (job: FieldJob) => void;
   currentUser: User;
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
@@ -41,6 +43,7 @@ const JobCard: React.FC<{
   onStatusChange,
   onViewDetails,
   onWriteReport,
+  onEditJob,
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
@@ -246,6 +249,17 @@ const JobCard: React.FC<{
               <EyeIcon className="h-4 w-4 mr-1.5" />
               ดูรายละเอียด
             </Button>
+
+            {job.assessment_id && onEditJob && (
+              <Button
+                onClick={() => onEditJob(job)}
+                title="แก้ไขใบประเมิน"
+                className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-amber-400 hover:bg-amber-500 text-white border-0 shadow-sm"
+              >
+                <PencilIcon className="h-4 w-4 mr-1.5" />
+                แก้ไขใบประเมิน
+              </Button>
+            )}
 
             {showCheckInButton && (
               <Button
