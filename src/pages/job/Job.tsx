@@ -321,11 +321,12 @@ const Job: React.FC<JobProps> = ({
   };
 
   // Fetch reports (รายงาน)
-  const fetchReports = async () => {
+  const fetchReports = async (page = reportCurrentPage) => {
     setIsLoading(true);
     try {
-      const reportsRes = await ServiceReportApi.getAll({ limit: 10 });
+      const reportsRes = await ServiceReportApi.getAll({ limit: 10, page });
       setReports(reportsRes.data || []);
+      setReportTotal(reportsRes.meta?.total || (reportsRes.data || []).length);
     } catch (error) {
       console.error('Error fetching reports:', error);
     } finally {
@@ -414,6 +415,7 @@ const Job: React.FC<JobProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
   const [reportItemsPerPage, setReportItemsPerPage] = useState(10);
+  const [reportTotal, setReportTotal] = useState(0);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -540,10 +542,7 @@ const Job: React.FC<JobProps> = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-  const paginatedReports = serviceReports.slice(
-    (reportCurrentPage - 1) * reportItemsPerPage,
-    reportCurrentPage * reportItemsPerPage
-  );
+  const paginatedReports = reports;
 
   const scheduledJobsForTable = useMemo(() => {
     if (!scheduleVehicleId || !scheduleDate) return [];
@@ -951,7 +950,7 @@ const Job: React.FC<JobProps> = ({
               </div>
               <div>
                 <p className="text-sm text-green-600 font-medium">รายงานทั้งหมด</p>
-                <p className="text-2xl font-bold text-green-800">{serviceReports.length}</p>
+                <p className="text-2xl font-bold text-green-800">{reportTotal || reports.length}</p>
               </div>
             </div>
           </Card>
@@ -1459,7 +1458,10 @@ const Job: React.FC<JobProps> = ({
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ลูกค้า/สถานที่
+                        รหัสลูกค้า
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ลูกค้า
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         วัน-เวลา
@@ -1482,8 +1484,24 @@ const Job: React.FC<JobProps> = ({
                     {paginatedReports.length > 0 ? (
                       paginatedReports.map((report, idx) => {
                         const job = jobs.find((j) => j.id === report.job_id);
+                        const reportJob = (report as any).job;
                         const reportDate = report.report_date || report.created_at || '';
                         const customerName = report.customer_name || job?.customerName || '-';
+
+                        // Build service types from boolean flags
+                        const serviceTypes: string[] = [];
+                        if ((report as any).is_service_termite) serviceTypes.push('ปลวก');
+                        if ((report as any).is_service_ant_roach) serviceTypes.push('มด,แมลงสาบ');
+                        if ((report as any).is_service_rodent) serviceTypes.push('หนู');
+                        if ((report as any).is_service_mosquito) serviceTypes.push('ยุง');
+                        if ((report as any).service_other && (report as any).service_other.toLowerCase() !== 'other') serviceTypes.push((report as any).service_other);
+
+                        // Build technician name (primary only)
+                        const techNames: string[] = [];
+                        if (reportJob?.primary_technician) {
+                          const t = reportJob.primary_technician;
+                          techNames.push(`${t.first_name || ''} ${t.last_name || ''}`.trim());
+                        }
 
                         return (
                           <tr
@@ -1491,48 +1509,26 @@ const Job: React.FC<JobProps> = ({
                             className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                               }`}
                           >
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                              {reportJob?.customer?.code || '-'}
+                            </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
-                              <div className="flex items-start gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-                                  <DocumentCheckIcon className="h-5 w-5 text-green-500" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-slate-800 truncate">
-                                    {customerName}
-                                  </p>
-                                  <p
-                                    className="text-xs text-slate-500 truncate max-w-[200px]"
-                                    title={job?.address}
-                                  >
-                                    {job?.address || '-'}
-                                  </p>
-                                </div>
-                              </div>
+                              {customerName}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              <div className="flex items-center gap-2">
-                                <div className="p-1.5 bg-blue-50 rounded-md">
-                                  <JobDateIcon className="h-4 w-4 text-blue-500" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-slate-800">
-                                    {formatThaiDate(reportDate)}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    {report.time_in && report.time_out
-                                      ? `${report.time_in} - ${report.time_out}`
-                                      : new Date(reportDate).toLocaleTimeString('th-TH', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
-                                  </p>
-                                </div>
-                              </div>
+                              <p className="text-sm font-medium text-slate-800">
+                                {formatThaiDate(reportDate)}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {report.time_in && report.time_out
+                                  ? `${report.time_in} - ${report.time_out}`
+                                  : '-'}
+                              </p>
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap gap-1">
-                                {report.service_types?.length ? (
-                                  report.service_types.slice(0, 2).map((type, i) => (
+                                {serviceTypes.length > 0 ? (
+                                  serviceTypes.slice(0, 3).map((type, i) => (
                                     <span
                                       key={i}
                                       className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
@@ -1546,16 +1542,11 @@ const Job: React.FC<JobProps> = ({
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
-                              <div className="flex items-center gap-2">
-                                <TechnicianIcon className="h-4 w-4 text-slate-400" />
-                                <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                  {job?.technicians
-                                    ?.map((t) => t.nick_name || t.name)
-                                    .join(', ') ||
-                                    report.signatures?.technician_name ||
-                                    '-'}
-                                </span>
-                              </div>
+                              <span className="text-sm text-slate-600 truncate max-w-[150px] block">
+                                {techNames.length > 0
+                                  ? techNames.join(', ')
+                                  : (report as any).technician_sign_name || '-'}
+                              </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                               <StatusBadge status={report.status || JobStatus.Draft} />
@@ -1616,7 +1607,7 @@ const Job: React.FC<JobProps> = ({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-6 py-16 text-center">
+                        <td colSpan={7} className="px-6 py-16 text-center">
                           <p className="text-lg font-medium text-slate-400">
                             ไม่พบรายงานบริการ
                           </p>
@@ -1630,10 +1621,13 @@ const Job: React.FC<JobProps> = ({
                 <div className="border-t border-slate-100 bg-white">
                   <Pagination
                     currentPage={reportCurrentPage}
-                    totalItems={serviceReports.length}
+                    totalItems={reportTotal}
                     itemsPerPage={reportItemsPerPage}
-                    onPageChange={setReportCurrentPage}
-                    onItemsPerPageChange={handleReportItemsPerPageChange}
+                    onPageChange={(page) => {
+                      setReportCurrentPage(page);
+                      fetchReports(page);
+                    }}
+                    onItemsPerPageChange={() => {}}
                   />
                 </div>
               )}
