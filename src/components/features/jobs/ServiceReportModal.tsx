@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import Swal from 'sweetalert2';
 import SignatureCanvas from 'react-signature-canvas';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -91,7 +92,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     payment_amount?: string | number;
     payment_slip_url?: string | null;
     quotation_url?: string | null;
-    blueprint_url?: string | null;
   }>>({});
   
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -100,6 +100,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<{ id: string; url: string }[]>([]);
   const [paymentSlip, setPaymentSlip] = useState<File | null>(null);
 
   const customerSigRef = useRef<SignatureCanvas>(null);
@@ -107,9 +108,21 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const [isCustomerSigning, setIsCustomerSigning] = useState(false);
   const [isTechSigning, setIsTechSigning] = useState(false);
 
+  const MAX_FILES = 5;
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files);
+      const totalExisting = existingImages.length;
+      setSelectedFiles((prev) => {
+        const combined = [...prev, ...newFiles];
+        const remaining = MAX_FILES - totalExisting;
+        if (combined.length > remaining) {
+          Swal.fire({ icon: 'warning', title: 'จำกัดจำนวนรูป', text: `อัพโหลดได้สูงสุด ${MAX_FILES} รูป (มีอยู่แล้ว ${totalExisting} รูป)` });
+          return combined.slice(0, remaining);
+        }
+        return combined;
+      });
     }
   };
 
@@ -218,7 +231,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   useEffect(() => {
     if (isOpen && job) {
-      let initialReport: Partial<ServiceReport & { payment_amount?: string | number, payment_slip_url?: string, quotation_url?: string, blueprint_url?: string }>;
+      let initialReport: Partial<ServiceReport & { payment_amount?: string | number, payment_slip_url?: string, quotation_url?: string }>;
 
       if (job.service_report) {
         const r = (job.service_report as any).data || (job.service_report as any);
@@ -268,7 +281,6 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           quotation_id: r.quotation_id,
           payment_slip_url: r.payment_slip_url || null,
           quotation_url: r.quotation_url || null,
-          blueprint_url: r.blueprint_url || null,
           service_types: types,
           service_actions: actions,
           check_in_time: r.time_in || (job.actual_start_time ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
@@ -374,6 +386,13 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       }
 
       setReportState(initialReport);
+
+      // Load existing blueprint images
+      const r = job.service_report as any;
+      const reportData = r?.data || r;
+      const images = reportData?.operation_images || [];
+      setExistingImages(images);
+      setSelectedFiles([]);
     }
   }, [isOpen, job, recommendedNextIso]);
 
@@ -685,7 +704,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const title =
     finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
-      : `บันทึกรายงานบริการ: ${job.code || 'N/A'}`;
+      : `บันทึกรายงานบริการ`;
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
@@ -1360,15 +1379,17 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <div className="col-span-2 md:col-span-2">
               <dt className="text-slate-500 mb-1">ช่างเทคนิค</dt>
               <dd className="font-semibold text-slate-900">
-                {job.technicians.length > 0
-                  ? job.technicians
-                    .map(
-                      (t) =>
-                        t.name ||
-                        (t as any).first_name + ' ' + (t as any).last_name
-                    )
-                    .join(', ')
-                  : 'ไม่มีช่างเทคนิค'}
+                {(() => {
+                  const techs = job.technicians?.length > 0 ? job.technicians : [];
+                  const reportJob = (job.service_report as any)?.job || (reportState as any)?.job;
+                  const allTechs = techs.length > 0 ? techs : [
+                    ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
+                    ...(reportJob?.job_team_members || []),
+                  ];
+                  return allTechs.length > 0
+                    ? allTechs.map((t: any) => t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim()).join(', ')
+                    : 'ไม่มีช่างเทคนิค';
+                })()}
               </dd>
             </div>
           </div>
@@ -1551,14 +1572,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <div className="flex items-center justify-center w-full">
               <label
                 htmlFor="blueprint-upload"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors"
+                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg transition-colors ${(existingImages.length + selectedFiles.length) >= MAX_FILES ? 'border-slate-200 bg-slate-100 cursor-not-allowed opacity-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer'}`}
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <svg className="w-8 h-8 mb-4 text-slate-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
                     <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2" />
                   </svg>
                   <p className="mb-2 text-sm text-slate-500"><span className="font-semibold">คลิกเพื่ออัพโหลด</span> หรือลากไฟล์มาวาง</p>
-                  <p className="text-xs text-slate-500">PNG, JPG (MAX. 10MB)</p>
+                  <p className="text-xs text-slate-500">PNG, JPG (MAX. 10MB) — สูงสุด {MAX_FILES} รูป ({existingImages.length + selectedFiles.length}/{MAX_FILES})</p>
                 </div>
                 <input
                   id="blueprint-upload"
@@ -1567,45 +1588,38 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   multiple
                   onChange={handleFileChange}
                   accept="image/*"
+                  disabled={(existingImages.length + selectedFiles.length) >= MAX_FILES}
                 />
               </label>
             </div>
             
             {/* 👇 5. แสดงรูปภาพ Blueprint เดิมที่มีในระบบ หรือที่อัปโหลดใหม่ */}
-            {(selectedFiles.length > 0 || reportState.blueprint_url) && (
+            {(selectedFiles.length > 0 || existingImages.length > 0) && (
               <div className="space-y-3 pt-2">
-                <p className="text-sm font-medium text-slate-700">รูปภาพที่แนบ</p>
+                <p className="text-sm font-medium text-slate-700">รูปภาพที่แนบ ({existingImages.length + selectedFiles.length}/{MAX_FILES})</p>
                 <div className="flex flex-wrap gap-4">
-                  
-                  {/* แสดงรูปภาพ Blueprint เดิม (ถ้ามี) โดยรองรับกรณีมีหลาย URL คั่นด้วยลูกน้ำ */}
-                  {reportState.blueprint_url && reportState.blueprint_url.split(',').filter(url => url.trim() !== '').map((url, idx) => (
-                    <div key={`old-img-${idx}`} className="relative w-28 h-28 rounded-xl border border-slate-200 overflow-hidden shadow-sm group bg-slate-50">
-                      <img 
-                         src={getFileUrl(url.trim())} 
-                         alt={`blueprint-old-${idx}`} 
-                         className="w-full h-full object-cover" 
-                         onError={(e) => {
-                           // กรณีรูปโหลดไม่ได้ จะโชว์รูป placeholder แทนไอคอนแตกๆ
-                           (e.target as HTMLImageElement).src = 'https://placehold.co/400x400/f8fafc/94a3b8?text=Not+Found';
-                         }}
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newUrls = reportState.blueprint_url!.split(',').filter((_, i) => i !== idx).join(',');
-                            setReportState(prev => ({ ...prev, blueprint_url: newUrls || null }));
-                          }}
-                          className="p-2 bg-white text-red-500 rounded-lg hover:bg-red-50 transform scale-95 group-hover:scale-100 transition-all"
-                          title="ลบรูปภาพนี้"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+
+                  {/* แสดงรูปจาก entity_type (ใหม่) */}
+                  {existingImages.map((img, idx) => (
+                    <div key={`existing-${img.id}`} className="relative w-28 h-28 rounded-xl border border-slate-200 overflow-hidden shadow-sm group bg-slate-50">
+                      <img src={img.url} alt={`Blueprint ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const { StorageApi } = await import('@/src/api/storage');
+                            await StorageApi.remove(img.id);
+                            setExistingImages((prev) => prev.filter((i) => i.id !== img.id));
+                          } catch (e) { console.error('Failed to delete image:', e); }
+                        }}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="ลบรูปภาพนี้"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
                     </div>
                   ))}
+
 
                   {/* แสดงรายการไฟล์ใหม่ที่กำลังจะอัปโหลด */}
                   {selectedFiles.map((file, index) => {

@@ -602,7 +602,8 @@ const Job: React.FC<JobProps> = ({
     if (job.service_report && job.service_report.id) {
       setIsLoading(true);
       try {
-        const fullReport = await ServiceReportApi.getById(job.service_report.id);
+        const res = await ServiceReportApi.getById(job.service_report.id);
+        const fullReport = (res as any)?.data || res;
         const updatedJob = { ...job, service_report: fullReport };
         setJobForReport(updatedJob);
       } catch (error) {
@@ -636,11 +637,14 @@ const Job: React.FC<JobProps> = ({
     paymentSlip?: File | null,
   ) => {
     try {
-      const job = jobs.find((j) => j.id === jobId);
-      if (!job) return;
+      let job = jobs.find((j) => j.id === jobId);
+      if (!job) {
+        // Fallback: job might come from report tab
+        job = jobForReport as any;
+        if (!job || job.id !== jobId) return;
+      }
 
       let paymentSlipFileId: string | undefined;
-      let blueprintFileId: string | undefined;
 
       if (paymentSlip) {
         const uploadedSlip = await StorageApi.upload({
@@ -653,31 +657,40 @@ const Job: React.FC<JobProps> = ({
         paymentSlipFileId = uploadedSlip.id;
       }
 
-      if (files && files.length > 0) {
-        const uploadedBlueprints = await StorageApi.uploadMultiple({
-          files: files,
-          path: `jobs/${jobId}/blueprints`,
-          provider: 'local',
-          type: 'image',
-          visibility: 'private',
-        });
-        blueprintFileId = uploadedBlueprints.map((f) => f.id).join(',');
-      }
-
       const payload = {
         ...reportData,
         job_id: jobId,
         customer_id: job.customer_id,
         payment_slip_file_id: paymentSlipFileId,
-        blueprint_file_id: blueprintFileId,
       };
 
       const { id, ...dataToSave } = payload;
 
-      if (job.service_report && job.service_report.id) {
-        await ServiceReportApi.update(job.service_report.id, dataToSave);
+      let reportId: string | undefined;
+
+      const existingReportId = job.service_report?.id
+        || (job.service_report as any)?.data?.id;
+
+      if (existingReportId) {
+        await ServiceReportApi.update(existingReportId, dataToSave);
+        reportId = existingReportId;
       } else {
-        await ServiceReportApi.create(dataToSave as any);
+        const created = await ServiceReportApi.create(dataToSave as any);
+        reportId = (created as any)?.data?.id || (created as any)?.id;
+      }
+
+      // Upload blueprint images via entity_type
+      if (files && files.length > 0 && reportId) {
+        for (const file of files) {
+          await StorageApi.upload({
+            file,
+            path: `service-reports/${reportId}/blueprints`,
+            entity_type: 'service_report_blueprint',
+            entity_id: reportId,
+            type: 'image',
+            visibility: 'private',
+          });
+        }
       }
 
       if (quotationId && quotationId !== job.quotation_id) {
@@ -1568,7 +1581,28 @@ const Job: React.FC<JobProps> = ({
                                 </Button>
                                 <Button
                                   onClick={() => {
-                                    if (job) handleWriteReport(job);
+                                    const reportJob = (report as any).job;
+                                    const techList: any[] = [];
+                                    if (reportJob?.primary_technician) {
+                                      techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
+                                    }
+                                    if (reportJob?.job_team_members) {
+                                      reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
+                                        techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
+                                      });
+                                    }
+                                    const targetJob = job || {
+                                      id: report.job_id,
+                                      customer_id: report.customer_id,
+                                      customerName: report.customer_name || '-',
+                                      service_report: report,
+                                      technicians: techList,
+                                      work_areas: [],
+                                      status: report.status,
+                                      assessment_id: reportJob?.assessment_id,
+                                      contract_id: reportJob?.contract_id,
+                                    } as any;
+                                    handleWriteReport(targetJob);
                                   }}
                                   variant="ghost"
                                   className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
