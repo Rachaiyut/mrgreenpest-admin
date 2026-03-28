@@ -48,6 +48,8 @@ const JobCard: React.FC<{
   isAnyJobInProgressForCurrentUser,
 }) => {
     const currentUserId = (currentUser as any)?.id as string | undefined;
+    const currentUserRole = String((currentUser as any)?.role?.name || (currentUser as any)?.role || '').toUpperCase();
+    const isLeadTechOrTech = currentUserRole === 'LEAD_TECH' || currentUserRole === 'TECH';
     const isAssignedToCurrentUser = useMemo(
       () =>
         !!currentUserId &&
@@ -56,11 +58,13 @@ const JobCard: React.FC<{
     );
 
     const showCheckInButton =
+      isLeadTechOrTech &&
       isAssignedToCurrentUser &&
       ((job.status as unknown as JobStatus) === JobStatus.Planned ||
         (job.status as unknown as string).toUpperCase() === 'PENDING');
 
     const showCheckOutButton =
+      isLeadTechOrTech &&
       isAssignedToCurrentUser &&
       ((job.status as unknown as JobStatus) === JobStatus.InProgress ||
         (job.status as unknown as string).toUpperCase() === 'IN_PROGRESS' ||
@@ -250,7 +254,7 @@ const JobCard: React.FC<{
               ดูรายละเอียด
             </Button>
 
-            {job.assessment_id && onEditJob && (
+            {job.assessment_id && onEditJob && isLeadTechOrTech && (
               <Button
                 onClick={() => onEditJob(job)}
                 title="แก้ไขใบประเมิน"
