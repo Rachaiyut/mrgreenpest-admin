@@ -14,6 +14,7 @@ import { Unit } from '@/src/types/entity/unit.interface';
 import { CategoryApi } from '@/src/api/category';
 import { ProductApi, ProductServiceApi } from '@/src/api/product';
 import { Unit as UnitApi } from '@/src/api/unit';
+import { StorageApi } from '@/src/api/storage';
 
 // ===== Components (Absolute) =====
 import { ProductModal } from '@/src/components/features/products/ProductModal';
@@ -125,21 +126,56 @@ const Product: React.FC = () => {
     fetchProducts();
   }, [fetchProducts]);
 
-  const onSubmitProduct = async (data: any, type: CategoryType): Promise<boolean> => {
+  const onSubmitProduct = async (data: any, type: CategoryType, imageFile?: File | null): Promise<boolean> => {
     try {
+      let resultId: string | null = null;
+
       if (modalMode === 'create') {
         if (type === CategoryType.SERVICE) {
-          await ProductServiceApi.create(data);
+          const res = await ProductServiceApi.create(data);
+          resultId = (res as any)?.data?.id || (res as any)?.id;
         } else {
-          await ProductApi.createProduct(data);
+          const res = await ProductApi.createProduct(data);
+          resultId = (res as any)?.data?.id || (res as any)?.id;
         }
       } else if (selectedProduct) {
+        resultId = selectedProduct.id;
         if ((selectedProduct as any)._type === 'SERVICE') {
           await ProductServiceApi.update(selectedProduct.id, data);
         } else {
           await ProductApi.updateProduct(selectedProduct.id, data);
         }
       }
+
+      // Upload image if selected
+      if (imageFile && resultId) {
+        try {
+          const entityType = type === CategoryType.SERVICE ? 'product_service' : 'product';
+          // Delete old image if exists
+          if (selectedProduct?.image_id) {
+            await StorageApi.remove(selectedProduct.image_id).catch(() => {});
+          }
+          const uploadRes = await StorageApi.upload({
+            file: imageFile,
+            path: `products/${resultId}`,
+            entity_type: entityType,
+            entity_id: resultId,
+            type: 'image',
+            visibility: 'private',
+          });
+          const storageId = (uploadRes as any)?.data?.id || (uploadRes as any)?.id;
+          if (storageId) {
+            if (type === CategoryType.SERVICE) {
+              await ProductServiceApi.update(resultId, { image_id: storageId });
+            } else {
+              await ProductApi.updateProduct(resultId, { image_id: storageId });
+            }
+          }
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+        }
+      }
+
       fetchProducts();
       setIsModalOpen(false);
       setSelectedProduct(null);

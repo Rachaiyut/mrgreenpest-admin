@@ -6,13 +6,14 @@ import { CategoryType } from '@/src/types/enums/category';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category } from '@/src/types/entity/category.interface';
 import { Unit } from '@/src/types/entity/unit.interface';
+import { StorageApi } from '@/src/api/storage';
 
 interface ProductFormProps {
   mode: 'create' | 'edit';
   initialValues?: Partial<Product> | null;
   categories: Category[];
   units: Unit[];
-  onSubmit: (data: any, type: CategoryType) => void | Promise<void>;
+  onSubmit: (data: any, type: CategoryType, imageFile?: File | null) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -28,6 +29,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   const [selectedType, setSelectedType] = useState<CategoryType>(initialType);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   useEffect(() => {
@@ -45,11 +47,15 @@ const ProductForm: React.FC<ProductFormProps> = ({
         remark: (initialValues as any)?.remark || '',
       });
       setSelectedType(initialValues.category?.type || CategoryType.PRODUCT);
+      if ((initialValues as any).image_url) {
+        setImagePreview((initialValues as any).image_url);
+      }
     } else {
       setFormData({});
       setSelectedType(CategoryType.PRODUCT);
     }
-    setImagePreview(null);
+    setImageFile(null);
+    if (!initialValues || !(initialValues as any).image_url) setImagePreview(null);
   }, [initialValues]);
 
   const isProduct = selectedType === CategoryType.PRODUCT;
@@ -77,6 +83,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
@@ -102,14 +109,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
         fda_number: formData.fda_number || '',
         min_stock: Number(formData.min_stock) || 0,
         unit_id: formData.unit_id,
-      }, CategoryType.PRODUCT);
+      }, CategoryType.PRODUCT, imageFile);
     } else {
       onSubmit({
         name: formData.name,
         category_id: formData.category_id,
         price: Number(formData.price) || 0,
         remark: formData.remark || '',
-      }, CategoryType.SERVICE);
+      }, CategoryType.SERVICE, imageFile);
     }
   };
 

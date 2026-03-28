@@ -12,6 +12,8 @@ export interface Product extends IBase {
   cost_price: number;
   min_stock: number;
   fda_number?: string;
+  image_id?: string;
+  image_url?: string;
   created_by?: string;
   updated_by?: string;
 

@@ -11,7 +11,7 @@ interface ProductModalProps {
   onClose: () => void;
   mode: 'create' | 'edit';
   initialValues?: Product | null;
-  onSubmit: (data: any, type: CategoryType) => Promise<boolean>;
+  onSubmit: (data: any, type: CategoryType, imageFile?: File | null) => Promise<boolean>;
   categories: Category[];
   units: Unit[];
 }
@@ -39,8 +39,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         initialValues={mode === 'edit' ? initialValues : null}
         categories={categories}
         units={units}
-        onSubmit={async (data, type) => {
-          const success = await onSubmit(data, type);
+        onSubmit={async (data, type, imageFile) => {
+          const success = await onSubmit(data, type, imageFile);
           if (success) onClose();
         }}
         onCancel={onClose}
