@@ -255,48 +255,50 @@ const JobCard: React.FC<{
             </Button>
 
             {job.assessment_id && onEditJob && isLeadTechOrTech && (
-              <Button
+              <button
                 onClick={() => onEditJob(job)}
-                title="แก้ไขใบประเมิน"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-amber-400 hover:bg-amber-500 text-white border-0 shadow-sm"
+                title="แก้ไขงานและใบประเมิน"
+                className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                style={{ backgroundColor: '#3b82f6' }}
               >
-                <PencilIcon className="h-4 w-4 mr-1.5" />
-                แก้ไขใบประเมิน
-              </Button>
+                <PencilIcon className="h-4 w-4" />
+                แก้ไขงานและใบประเมิน
+              </button>
             )}
 
             {showCheckInButton && (
-              <Button
+              <button
                 onClick={() => handleCheckIn()}
                 disabled={isAnyJobInProgressForCurrentUser}
                 title={checkInTooltip}
-                variant="outline"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+                className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white disabled:opacity-50"
+                style={{ backgroundColor: '#10b981' }}
               >
-                <PlayIcon className="h-4 w-4 mr-1.5" />
+                <PlayIcon className="h-4 w-4" />
                 เช็คอิน
-              </Button>
+              </button>
             )}
             {showReportButton && (
-              <Button
+              <button
                 onClick={() => onWriteReport(job)}
                 title="บันทึกรายงานบริการ"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+                className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                style={{ backgroundColor: '#f59e0b' }}
               >
-                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+                <DocumentCheckIcon className="h-4 w-4" />
                 บันทึกรายงาน
-              </Button>
+              </button>
             )}
             {showCheckOutButton && (
-              <Button
+              <button
                 onClick={() => handleCheckOut()}
                 title="เช็คเอาท์เพื่อจบงาน"
-                variant="outline"
-                className="w-full py-2 text-sm font-semibold rounded-lg h-auto shadow-sm"
+                className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                style={{ backgroundColor: '#ef4444' }}
               >
-                <DocumentCheckIcon className="h-4 w-4 mr-1.5" />
+                <DocumentCheckIcon className="h-4 w-4" />
                 เช็คเอาท์
-              </Button>
+              </button>
             )}
           </div>
         )}

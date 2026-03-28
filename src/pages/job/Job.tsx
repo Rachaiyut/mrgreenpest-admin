@@ -794,7 +794,7 @@ const Job: React.FC<JobProps> = ({
       status === JobStatus.InProgress ||
       status === JobStatus.Paused
     ) {
-      actions.push({ label: 'แก้ไขงาน', icon: PencilIcon, onClick: () => handleEdit(selectedJob) });
+      actions.push({ label: 'แก้ไขงานและใบประเมิน', icon: PencilIcon, onClick: () => handleEdit(selectedJob) });
     }
 
     if (
