@@ -107,6 +107,11 @@ const Job: React.FC<JobProps> = ({
 
   // Local state
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
+  const [unassignedJobs, setUnassignedJobs] = useState<FieldJob[]>([]);
+  const [unassignedCount, setUnassignedCount] = useState(0);
+  const [unassignedPage, setUnassignedPage] = useState(1);
+  const [unassignedTotal, setUnassignedTotal] = useState(0);
+  const [unassignedDateFilter, setUnassignedDateFilter] = useState('');
   const [reports, setReports] = useState<ServiceReport[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
     Array.isArray(initialWarehouses) ? initialWarehouses : []
@@ -118,19 +123,15 @@ const Job: React.FC<JobProps> = ({
   const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
 
 
-  const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
+  // Fetch schedule (นัดหมาย + ตารางงาน)
+  const fetchSchedule = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
     setIsLoading(true);
     try {
       const params: any = {};
-
       if (targetDate) params.appointment_date = targetDate;
       if (targetTech !== 'all') params.technician_id = targetTech;
 
-      const [warehousesRes, reportsRes, unassignedJobsRes] = await Promise.all([
-        VehicleApi.getVehiclesWithUserJobs(params),
-        ServiceReportApi.getAll({ limit: 10 }),
-        JobApi.getAllUnassigned({ limit: 10 }),
-      ]);
+      const warehousesRes = await VehicleApi.getVehiclesWithUserJobs(params);
 
       let warehousesData: any[] = [];
       if (Array.isArray((warehousesRes as any).data)) {
@@ -139,49 +140,9 @@ const Job: React.FC<JobProps> = ({
         warehousesData = warehousesRes as any[];
       }
 
-      const unassignedJobsData = unassignedJobsRes.data || [];
-      const reportsData = reportsRes.data || [];
-
-      const unassignedJobs = unassignedJobsData
-        .filter((job: any) => !job.vehicle_id)
-        .map((job: any) => {
-          const customer = job.customer || {};
-          const customerName =
-            customer.first_name || customer.last_name
-              ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
-              : customer.code || '-';
-          const address = [
-            customer.address_house_no, customer.address_soi, customer.address_road,
-            customer.sub_district, customer.district, customer.province, customer.postal_code,
-          ].filter(Boolean).join(' ') || '-';
-
-          return {
-            api_status: job.status,
-            id: job.id,
-            assessment_id: job.assessment_id || undefined,
-            contract_id: job.contract_id || undefined,
-            customer_id: job.customer_id || customer.id,
-            customer,
-            customerName,
-            address,
-            appointment_date: job.appointment_date,
-            start_time: job.start_date,
-            end_time: job.end_date,
-            actual_start_time: job.actual_start_time,
-            actual_end_time: job.actual_end_time,
-            primary_technician: job.primary_technician || null,
-            technicians: [],
-            work_areas: [],
-            status: JobStatus.Planned,
-            vehicle_id: null,
-            remarks: job.remark,
-            invoice_id: job.invoice_id,
-            invoice: job.invoice,
-          } as any;
-        });
-
       setWarehouses(warehousesData);
-      setReports(reportsData);
+
+      const reportsData = reports;
 
       const jobsFromWarehouses: FieldJob[] = warehousesData.flatMap(
         (warehouse: any) =>
@@ -284,11 +245,93 @@ const Job: React.FC<JobProps> = ({
           })
       );
 
-      setJobs([...jobsFromWarehouses, ...unassignedJobs]);
+      setJobs(jobsFromWarehouses);
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching schedule:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fetch unassigned jobs (รอจัดคิว)
+  const fetchUnassigned = async (page = unassignedPage, date = unassignedDateFilter) => {
+    setIsLoading(true);
+    try {
+      const params: any = { limit: 10, page };
+      if (date) params.appointment_date = date;
+      const unassignedJobsRes = await JobApi.getAllUnassigned(params);
+      const unassignedJobsData = (unassignedJobsRes.data || []);
+
+      const mapped = unassignedJobsData
+        .filter((job: any) => !job.vehicle_id)
+        .map((job: any) => {
+          const customer = job.customer || {};
+          const customerName =
+            customer.first_name || customer.last_name
+              ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
+              : customer.code || '-';
+          const address = [
+            customer.address_house_no, customer.address_soi, customer.address_road,
+            customer.sub_district, customer.district, customer.province, customer.postal_code,
+          ].filter(Boolean).join(' ') || '-';
+
+          return {
+            api_status: job.status,
+            id: job.id,
+            assessment_id: job.assessment_id || undefined,
+            contract_id: job.contract_id || undefined,
+            customer_id: job.customer_id || customer.id,
+            customer,
+            customerName,
+            address,
+            appointment_date: job.appointment_date,
+            start_time: job.start_date,
+            end_time: job.end_date,
+            actual_start_time: job.actual_start_time,
+            actual_end_time: job.actual_end_time,
+            primary_technician: job.primary_technician || null,
+            technicians: [],
+            work_areas: [],
+            status: JobStatus.Planned,
+            vehicle_id: null,
+            remarks: job.remark,
+            invoice_id: job.invoice_id,
+            invoice: job.invoice,
+          } as any;
+        });
+
+      setUnassignedJobs(mapped);
+      const total = unassignedJobsRes.meta?.total || mapped.length;
+      setUnassignedCount(total);
+      setUnassignedTotal(total);
+    } catch (error) {
+      console.error('Error fetching unassigned:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch reports (รายงาน)
+  const fetchReports = async () => {
+    setIsLoading(true);
+    try {
+      const reportsRes = await ServiceReportApi.getAll({ limit: 10 });
+      setReports(reportsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Wrapper for backward compat — refresh current tab
+  const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
+    if (activeTab === 'unassigned') {
+      await fetchUnassigned();
+    } else if (activeTab === 'reports') {
+      await fetchReports();
+    } else {
+      await fetchSchedule(targetDate, targetTech);
     }
   };
 
@@ -679,9 +722,24 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
+  // Initial load: fetch schedule + unassigned count
   useEffect(() => {
-    fetchData(filterDate, selectedTechnicianId);
+    fetchSchedule(filterDate, selectedTechnicianId);
+    // Fetch unassigned count for badge (lightweight API)
+    JobApi.getUnassignedCount().then((count) => {
+      setUnassignedCount(count);
+    }).catch(() => {});
   }, [filterDate, selectedTechnicianId]);
+
+  // Fetch when tab changes
+  useEffect(() => {
+    if (activeTab === 'unassigned') {
+      setUnassignedPage(1);
+      fetchUnassigned(1, unassignedDateFilter);
+    } else if (activeTab === 'reports') {
+      fetchReports();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -903,6 +961,34 @@ const Job: React.FC<JobProps> = ({
                     />
                   </svg>
                 </div>
+                {activeTab === 'unassigned' && (
+                  <div className="flex items-center gap-2">
+                    <DatePicker
+                      selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
+                      onChange={(date: Date | null) => {
+                        if (date) {
+                          const yyyy = date.getFullYear();
+                          const mm = String(date.getMonth() + 1).padStart(2, '0');
+                          const dd = String(date.getDate()).padStart(2, '0');
+                          const formatted = `${yyyy}-${mm}-${dd}`;
+                          setUnassignedDateFilter(formatted);
+                          setUnassignedPage(1);
+                          fetchUnassigned(1, formatted);
+                        } else {
+                          setUnassignedDateFilter('');
+                          setUnassignedPage(1);
+                          fetchUnassigned(1, '');
+                        }
+                      }}
+                      placeholderText="เลือกวันที่"
+                      dateFormat="dd/MM/yyyy"
+                      locale="th"
+                      isClearable
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 sm:min-w-[160px]"
+                      wrapperClassName="w-full sm:w-auto"
+                    />
+                  </div>
+                )}
                 {activeTab === 'schedule' && (
                   <div className="flex items-center gap-2">
                     <DatePicker
@@ -999,9 +1085,11 @@ const Job: React.FC<JobProps> = ({
                         }`}
                     >
                       รอจัดคิว
-                      <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
-                        {jobs.filter(j => !j.vehicle_id).length}
-                      </span>
+                      {unassignedCount > 0 && (
+                        <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
+                          {unassignedCount}
+                        </span>
+                      )}
                     </button>
                   )}
 
@@ -1127,8 +1215,8 @@ const Job: React.FC<JobProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {jobs.filter(j => !j.vehicle_id).length > 0 ? (
-                      jobs.filter(j => !j.vehicle_id).map((job, idx) => (
+                    {unassignedJobs.length > 0 ? (
+                      unassignedJobs.map((job, idx) => (
                         <tr key={job.id} className={`hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
@@ -1165,6 +1253,20 @@ const Job: React.FC<JobProps> = ({
                   </tbody>
                 </table>
               </div>
+              {unassignedTotal > 10 && (
+                <div className="border-t border-slate-200">
+                  <Pagination
+                    currentPage={unassignedPage}
+                    itemsPerPage={10}
+                    totalItems={unassignedTotal}
+                    onPageChange={(page) => {
+                      setUnassignedPage(page);
+                      fetchUnassigned(page, unassignedDateFilter);
+                    }}
+                    onItemsPerPageChange={() => {}}
+                  />
+                </div>
+              )}
             </Card>
           )}
 

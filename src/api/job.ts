@@ -25,6 +25,11 @@ class JobService extends AuthService {
     return res.data;
   }
 
+  async getUnassignedCount(): Promise<number> {
+    const res = await this.http.get<any>(`${this.path}/unassigned/count`);
+    return res.data?.data?.count || 0;
+  }
+
   async getById(id: string): Promise<Job> {
     const res = await this.http.get<Job>(`${this.path}/${id}`);
     return res.data;
