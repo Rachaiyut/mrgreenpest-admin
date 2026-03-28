@@ -292,19 +292,6 @@ const PackageForm: FC<PackageFormProps> = ({
         </div>
       </div>
 
-      {/* Footer buttons */}
-      <div className="flex justify-end gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-medium transition-colors">
-          ยกเลิก
-        </button>
-        <button
-          type="submit"
-          disabled={invalidIndices.length > 0}
-          className={`px-6 py-2.5 rounded-lg font-medium transition-colors ${invalidIndices.length > 0 ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}`}
-        >
-          {mode === 'create' ? 'สร้างแพ็กเกจ' : 'บันทึกการแก้ไข'}
-        </button>
-      </div>
     </form>
   );
 };

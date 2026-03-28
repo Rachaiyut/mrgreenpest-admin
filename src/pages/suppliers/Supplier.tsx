@@ -24,11 +24,10 @@ import {
   ManageIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
-import { AddSupplierModal } from '../../components/features/suppliers/AddSupplierModal';
+import { SupplierModal } from '../../components/features/suppliers/SupplierModal';
 import { SupplierDetailsModal } from '../../components/features/suppliers/SupplierDetailsModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { EditSupplierModal } from '../../components/features/suppliers/EditSupplierModal';
 import { SupplierType } from '@/src/types';
 
 const Suppliers: React.FC = () => {
@@ -40,8 +39,8 @@ const Suppliers: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [formModalMode, setFormModalMode] = useState<'create' | 'edit'>('create');
   const [supplierToEdit, setSupplierToEdit] = useState<Supplier | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -83,7 +82,8 @@ const Suppliers: React.FC = () => {
 
   const handleEdit = (supplier: Supplier) => {
     setSupplierToEdit(supplier);
-    setIsEditModalOpen(true);
+    setFormModalMode('edit');
+    setIsFormModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -169,25 +169,19 @@ const Suppliers: React.FC = () => {
     fetchSupplier();
   }, [fetchSupplier]);
 
-  const handleCreateSupplier = async (supplierData: Omit<Supplier, 'id'>) => {
+  const onSubmitSupplier = async (data: Partial<Supplier>) => {
     try {
-      await SupplierApi.createSupplier(supplierData);
-      setIsModalOpen(false);
+      if (formModalMode === 'create') {
+        await SupplierApi.createSupplier(data as any);
+      } else if (supplierToEdit) {
+        await SupplierApi.updateSupplier(supplierToEdit.id, data);
+      }
       fetchSupplier();
+      setIsFormModalOpen(false);
+      setSupplierToEdit(null);
     } catch (error) {
-      console.error('Error creating supplier:', error);
-    }
-  };
-
-  const handleUpdateSupplier = async (supplier: Supplier) => {
-    try {
-      const { id, ...data } = supplier;
-      await SupplierApi.updateSupplier(id, data);
-      fetchSupplier();
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error('Failed to update supplier:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update supplier' });
+      console.error('Error saving supplier:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถบันทึกได้' });
     }
   };
 
@@ -227,7 +221,7 @@ const Suppliers: React.FC = () => {
                 <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
             </div>
-            <Button onClick={() => setIsModalOpen(true)}>
+            <Button onClick={() => { setSupplierToEdit(null); setFormModalMode('create'); setIsFormModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างผู้จัดจำหน่าย
             </Button>
@@ -399,17 +393,12 @@ const Suppliers: React.FC = () => {
         </div>
       )}
 
-      <AddSupplierModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreateSupplier={handleCreateSupplier}
-        suppliers={suppliers}
-      />
-      <EditSupplierModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        supplier={supplierToEdit}
-        onUpdateSupplier={handleUpdateSupplier}
+      <SupplierModal
+        isOpen={isFormModalOpen}
+        onClose={() => { setIsFormModalOpen(false); setSupplierToEdit(null); }}
+        mode={formModalMode}
+        initialValues={supplierToEdit}
+        onSubmit={onSubmitSupplier}
       />
       <SupplierDetailsModal
         isOpen={isDetailsModalOpen}

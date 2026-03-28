@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal } from '../../common/Modal';
+import { Button } from '../../common/FormControls';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category } from '@/src/types/entity/category.interface';
 import { Unit } from '@/src/types/entity/unit.interface';
@@ -32,8 +33,19 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     return `แก้ไขสินค้า/บริการ: ${initialValues?.name || ''}`;
   };
 
+  const footer = (
+    <div className="flex gap-3 w-full justify-end">
+      <Button variant="secondary" onClick={onClose} type="button">
+        ยกเลิก
+      </Button>
+      <Button variant="primary" type="submit" form="product-form">
+        {mode === 'create' ? 'บันทึก' : 'บันทึกการเปลี่ยนแปลง'}
+      </Button>
+    </div>
+  );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={getTitle()} size="3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={getTitle()} size="3xl" footer={footer}>
       <ProductForm
         mode={mode}
         initialValues={mode === 'edit' ? initialValues : null}

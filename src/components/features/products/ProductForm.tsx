@@ -14,7 +14,7 @@ interface ProductFormProps {
   categories: Category[];
   units: Unit[];
   onSubmit: (data: any, type: CategoryType, imageFile?: File | null) => void | Promise<void>;
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
@@ -122,23 +122,24 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
   return (
     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Image */}
-        <div className="md:col-span-1">
+      {/* Type toggle */}
+      <div className={`grid gap-6 ${isProduct ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+        {/* Image — large for product, compact for service */}
+        <div className={isProduct ? 'md:col-span-1' : ''}>
           <FormField label="รูปภาพ">
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-md">
-              <div className="space-y-1 text-center">
+            <div className={`mt-1 flex justify-center border-2 border-slate-300 border-dashed rounded-md ${isProduct ? 'px-6 pt-5 pb-6' : 'px-4 py-3'}`}>
+              <div className={`text-center ${isProduct ? 'space-y-1' : 'flex items-center gap-3'}`}>
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className="mx-auto h-32 w-32 object-cover rounded-md" />
+                  <img src={imagePreview} alt="Preview" className={`object-cover rounded-md ${isProduct ? 'mx-auto h-32 w-32' : 'h-10 w-10'}`} />
                 ) : (
-                  <PhotoIcon className="mx-auto h-12 w-12 text-slate-400" />
+                  <PhotoIcon className={`text-slate-400 ${isProduct ? 'mx-auto h-12 w-12' : 'h-8 w-8 flex-shrink-0'}`} />
                 )}
-                <div className="flex text-sm text-slate-600 justify-center">
+                <div>
                   <label
                     htmlFor={`file-upload-${mode}`}
-                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-dark focus-within:outline-none text-sm"
                   >
-                    <span>{mode === 'create' ? 'อัปโหลดรูปภาพ' : 'เปลี่ยนรูปภาพ'}</span>
+                    <span>{imagePreview ? 'เปลี่ยนรูป' : 'อัปโหลดรูปภาพ'}</span>
                     <input
                       id={`file-upload-${mode}`}
                       name="file-upload"
@@ -148,39 +149,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
                       onChange={handleImageChange}
                     />
                   </label>
+                  <p className="text-xs text-slate-500">PNG, JPG</p>
                 </div>
-                <p className="text-xs text-slate-500">PNG, JPG</p>
               </div>
             </div>
           </FormField>
         </div>
 
-        {/* Type + Barcode/Code */}
-        <div className="md:col-span-2 space-y-4">
+        {/* Type + Code/Barcode */}
+        <div className={`space-y-4 ${isProduct ? 'md:col-span-2' : ''}`}>
           <FormField label="ประเภท">
             {mode === 'create' ? (
               <div className="flex rounded-lg bg-slate-100 p-1 w-full">
                 <label className="relative flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    className="sr-only peer"
-                    checked={selectedType === CategoryType.PRODUCT}
-                    onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }}
-                  />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                    สินค้า
-                  </span>
+                  <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.PRODUCT} onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">สินค้า</span>
                 </label>
                 <label className="relative flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    className="sr-only peer"
-                    checked={selectedType === CategoryType.SERVICE}
-                    onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }}
-                  />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">
-                    บริการ
-                  </span>
+                  <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.SERVICE} onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บริการ</span>
                 </label>
               </div>
             ) : (
@@ -191,14 +178,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
             )}
           </FormField>
 
-          {/* Code (edit only) */}
           {mode === 'edit' && (
-            <FormField label="รหัสสินค้า" htmlFor="code">
+            <FormField label={isProduct ? 'รหัสสินค้า' : 'รหัสบริการ'} htmlFor="code">
               <Input name="code" type="text" value={formData.code || ''} disabled className="bg-slate-50 font-mono" />
             </FormField>
           )}
 
-          {/* Barcode (product only) */}
           {isProduct && (
             <FormField label="รหัสบาร์โค้ด" htmlFor="barcode">
               <Input name="barcode" type="text" value={formData.barcode || ''} onChange={handleChange} />
@@ -207,32 +192,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
       </div>
 
-      <FormField label="ชื่อสินค้า/บริการ *" htmlFor="name">
-        <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
-      </FormField>
-
-      <FormField label="หมวดหมู่ *" htmlFor="category_id">
-        <Select
-          name="category_id"
-          value={formData.category_id || ''}
-          onChange={handleChange}
-          required
-          disabled={mode === 'edit'}
-          className={mode === 'edit' ? 'bg-slate-50' : ''}
-        >
-          <option value="">-- เลือกหมวดหมู่ --</option>
-          {filteredCategories.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
-          ))}
-        </Select>
-      </FormField>
-
-      <FormField label="รายละเอียด" htmlFor="remark">
-        <Textarea name="remark" value={formData.remark || ''} onChange={handleChange} rows={3} />
-      </FormField>
-
       {isProduct ? (
         <>
+          <FormField label="ชื่อสินค้า/บริการ *" htmlFor="name">
+            <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+          </FormField>
+
+          <FormField label="หมวดหมู่ *" htmlFor="category_id">
+            <Select name="category_id" value={formData.category_id || ''} onChange={handleChange} required disabled={mode === 'edit'} className={mode === 'edit' ? 'bg-slate-50' : ''}>
+              <option value="">-- เลือกหมวดหมู่ --</option>
+              {filteredCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </Select>
+          </FormField>
+
+          <FormField label="รายละเอียด" htmlFor="remark">
+            <Textarea name="remark" value={formData.remark || ''} onChange={handleChange} rows={3} />
+          </FormField>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="หน่วย *" htmlFor="unit_id">
               <Select name="unit_id" value={formData.unit_id || ''} onChange={handleChange} required>
@@ -261,22 +239,31 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </div>
         </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField label="ราคาบริการ *" htmlFor="price">
-            <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
-          </FormField>
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="ชื่อบริการ *" htmlFor="name">
+              <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
+            </FormField>
+            <FormField label="หมวดหมู่ *" htmlFor="category_id">
+              <Select name="category_id" value={formData.category_id || ''} onChange={handleChange} required disabled={mode === 'edit'} className={mode === 'edit' ? 'bg-slate-50' : ''}>
+                <option value="">-- เลือกหมวดหมู่ --</option>
+                {filteredCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </Select>
+            </FormField>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="ราคาบริการ *" htmlFor="price">
+              <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
+            </FormField>
+            <FormField label="รายละเอียด" htmlFor="remark">
+              <Input name="remark" type="text" value={formData.remark || ''} onChange={handleChange} placeholder="รายละเอียดเพิ่มเติม" />
+            </FormField>
+          </div>
+        </>
       )}
 
-      {/* Footer buttons */}
-      <div className="flex justify-end gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-medium transition-colors">
-          ยกเลิก
-        </button>
-        <button type="submit" className="px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary/90 font-medium shadow-sm transition-colors">
-          {mode === 'create' ? 'บันทึก' : 'บันทึกการเปลี่ยนแปลง'}
-        </button>
-      </div>
     </form>
   );
 };

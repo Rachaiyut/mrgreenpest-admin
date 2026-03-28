@@ -26,15 +26,14 @@ import {
 import { Card } from '../../components/common/Card';
 import { Input, Button, Select } from '../../components/common/FormControls';
 import { Pagination } from '../../components/common/Pagination';
-import { AddCategoryModal } from '../../components/features/category/AddCategoryModal';
-import EditCategoryModal from '@/src/components/features/category/EditCategoryModal';
+import { CategoryModal } from '../../components/features/category/CategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 
 const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -55,10 +54,6 @@ const Categories: React.FC = () => {
   const [totalCategories, setTotalCategories] = useState<number>(1);
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<string>('desc');
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
-    null
-  );
-
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true);
@@ -88,8 +83,9 @@ const Categories: React.FC = () => {
   };
 
   const handleEdit = (category: Category) => {
-    setCategoryToEdit(category);
-    setIsEditModalOpen(true);
+    setSelectedCategory(category);
+    setModalMode('edit');
+    setIsModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -112,32 +108,22 @@ const Categories: React.FC = () => {
     setCategoryToDelete(null);
   };
 
-  const onCreateCategory = useCallback(
-    async (newCategory: Partial<Category>) => {
+  const onSubmitCategory = useCallback(
+    async (data: Partial<Category>) => {
       try {
-        await CategoryApi.createCategory(newCategory);
+        if (modalMode === 'create') {
+          await CategoryApi.createCategory(data);
+        } else if (selectedCategory) {
+          await CategoryApi.updateCategory(selectedCategory.id, data);
+        }
         fetchCategories();
-        setIsAddModalOpen(false);
+        setIsModalOpen(false);
+        setSelectedCategory(null);
       } catch (error) {
-        console.error('Error creating category:', error);
+        console.error('Error saving category:', error);
       }
     },
-    [fetchCategories]
-  );
-
-  const onUpdateCategory = useCallback(
-    async (id: string, updatedCategory: Partial<Category>) => {
-      try {
-        console.log('payload', id, updatedCategory);
-
-        await CategoryApi.updateCategory(id, updatedCategory);
-        fetchCategories();
-        setIsEditModalOpen(false);
-      } catch (error) {
-        console.error('Error updating category:', error);
-      }
-    },
-    [fetchCategories, setIsEditModalOpen]
+    [fetchCategories, modalMode, selectedCategory]
   );
 
   const handleToggleStatus = useCallback(
@@ -245,7 +231,7 @@ const Categories: React.FC = () => {
                 <option value="false">ไม่ใช้งาน</option>
               </Select>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            <Button onClick={() => { setSelectedCategory(null); setModalMode('create'); setIsModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างหมวดหมู่
             </Button>
@@ -425,16 +411,12 @@ const Categories: React.FC = () => {
         </div>
       )}
 
-      <AddCategoryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreateCategory={onCreateCategory}
-      />
-      <EditCategoryModal
-        isOpen={isEditModalOpen}
-        category={categoryToEdit}
-        onClose={() => setIsEditModalOpen(false)}
-        onUpdateCategory={onUpdateCategory}
+      <CategoryModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setSelectedCategory(null); }}
+        mode={modalMode}
+        initialValues={selectedCategory}
+        onSubmit={onSubmitCategory}
       />
     </>
   );
