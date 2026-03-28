@@ -25,6 +25,7 @@ import { Package } from '@/src/types/entity/package.interface';
 import { WorkAreaForm } from './WorkAreaForm';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { AssessmentApi, CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
+import { StorageApi } from '@/src/api/storage';
 import { PaymentMethod } from '@/src/types/enums/financial';
 import { CategoryType, Role } from '@/src/types';
 import {
@@ -39,6 +40,8 @@ import {
   MapPinIcon,
   PhoneIcon,
   LoadingIcon,
+  PhotoIcon,
+  TrashIcon,
 } from '../../../assets/icons/Icons';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -47,6 +50,7 @@ interface AssessmentFormProps {
   isOpen: boolean;
   initialData?: Assessment | null;
   currentUserRole: Role;
+  currentUserId?: string;
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
@@ -61,6 +65,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   isOpen,
   initialData,
   currentUserRole,
+  currentUserId,
   onSubmit,
   onCancel,
 }) => {
@@ -80,6 +85,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [siteImage, setSiteImage] = useState<File | null>(null);
+  const [siteImagePreview, setSiteImagePreview] = useState<string | null>(null);
+  const [existingSiteImageId, setExistingSiteImageId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -90,6 +98,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         setCurrentStep(0);
         setVisitedSteps([0]);
         setErrors({});
+        setSiteImage(null);
+        setSiteImagePreview(null);
+        setExistingSiteImageId(null);
 
         if (isEdit && initialData?.id) {
           const res = await AssessmentApi.getById(initialData.id);
@@ -164,6 +175,12 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           });
 
           setWorkAreas(enrichedAreas);
+
+          // Load existing site image
+          if (loadedAssessment.site_image_url) {
+            setSiteImagePreview(loadedAssessment.site_image_url);
+            setExistingSiteImageId(loadedAssessment.site_image_id || null);
+          }
 
         } else {
           const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
@@ -496,7 +513,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       const payload: any = {
         ...formData,
         status: targetStatus || formData.status || AsessmentStatus.DRAFT,
-        updated_by: 'ผู้ดูแลระบบ',
+        updated_by: currentUserId || '',
         assessment_areas: sanitizedWorkAreas,
         total_price: totalEstimatedCost,
         payment_condition: paymentCondition,
@@ -507,7 +524,41 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
       // created_by จะถูก set โดย @BodyWithUser ฝั่ง backend อัตโนมัติ
 
-      await onSubmit(payload);
+      const result = await onSubmit(payload);
+      const assessmentId = (result as any)?.data?.id || (result as any)?.id || formData.id;
+
+      // Upload new image / replace old
+      if (siteImage && assessmentId) {
+        try {
+          // Delete old image if exists
+          if (existingSiteImageId) {
+            await StorageApi.remove(existingSiteImageId).catch(() => {});
+          }
+          // Upload new
+          const uploadResult = await StorageApi.upload({
+            file: siteImage,
+            path: `assessments/${assessmentId}`,
+            entity_type: 'assessment',
+            entity_id: assessmentId,
+            type: 'site_image',
+            visibility: 'private',
+          });
+          const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
+          if (storageId) {
+            await AssessmentApi.update(assessmentId, { site_image_id: storageId, updated_by: currentUserId || '' } as any);
+          }
+        } catch (uploadErr) {
+          console.error('Image upload failed:', uploadErr);
+        }
+      } else if (!siteImagePreview && existingSiteImageId && assessmentId) {
+        // User removed image without adding new one
+        try {
+          await StorageApi.remove(existingSiteImageId).catch(() => {});
+          await AssessmentApi.update(assessmentId, { site_image_id: null, updated_by: currentUserId || '' } as any);
+        } catch (removeErr) {
+          console.error('Image remove failed:', removeErr);
+        }
+      }
     } catch (error) {
       console.error('Submit Error:', error);
     } finally {
@@ -683,30 +734,83 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 <p className="text-sm text-slate-500">จัดการพื้นที่และเลือกแพ็กเกจบริการ</p>
               </div>
             </div>
-            <div className="space-y-4">
-              {workAreas
-                .map((area, originalIndex) => ({ area, originalIndex }))
-                .sort((a, b) => new Date(a.area.created_at || 0).getTime() - new Date(b.area.created_at || 0).getTime())
-                .map(({ area, originalIndex }) => (
-                <WorkAreaForm
-                  key={area.id || originalIndex}
-                  area={area}
-                  index={originalIndex}
-                  // @ts-ignore
-                  errors={errors}
-                  onAreaChange={handleAreaChange}
-                  onClearArea={handleClearArea}
-                  onRemoveArea={handleRemoveArea}
-                  products={products}
-                  categories={categories}
-                  selectedPackage={selectedPackageId ? packages.find((p) => p.id === selectedPackageId)! : null}
-                  availablePackages={packages}
-                  onSelectPackage={handlePackageSelect}
-                />
-              ))}
-              {workAreas.length === 0 && <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</div>}
-              <div className="flex justify-center mt-6">
-                <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"><PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ</button>
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                  <DocumentIcon className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-slate-800 text-lg">พื้นที่ให้บริการ</h3>
+              </div>
+              <div className="p-6 space-y-4">
+                {workAreas
+                  .map((area, originalIndex) => ({ area, originalIndex }))
+                  .sort((a, b) => new Date(a.area.created_at || 0).getTime() - new Date(b.area.created_at || 0).getTime())
+                  .map(({ area, originalIndex }) => (
+                  <WorkAreaForm
+                    key={area.id || originalIndex}
+                    area={area}
+                    index={originalIndex}
+                    // @ts-ignore
+                    errors={errors}
+                    onAreaChange={handleAreaChange}
+                    onClearArea={handleClearArea}
+                    onRemoveArea={handleRemoveArea}
+                    products={products}
+                    categories={categories}
+                    selectedPackage={selectedPackageId ? packages.find((p) => p.id === selectedPackageId)! : null}
+                    availablePackages={packages}
+                    onSelectPackage={handlePackageSelect}
+                  />
+                ))}
+                {workAreas.length === 0 && <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 text-slate-400">ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</div>}
+                <div className="flex justify-center mt-4">
+                  <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"><PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ</button>
+                </div>
+              </div>
+            </div>
+
+            {/* รูปภาพพื้นที่บริการ */}
+            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
+                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
+                  <PhotoIcon className="w-5 h-5" />
+                </div>
+                <h3 className="font-semibold text-slate-800 text-lg">รูปภาพพื้นที่บริการ</h3>
+              </div>
+              <div className="p-6">
+                {siteImagePreview ? (
+                  <div className="relative inline-block">
+                    <img src={siteImagePreview} alt="พื้นที่บริการ" className="max-h-64 rounded-lg border border-slate-200 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => { setSiteImage(null); setSiteImagePreview(null); }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50">
+                    <PhotoIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                    <label htmlFor="site-image-upload" className="cursor-pointer">
+                      <span className="text-sm font-medium text-primary hover:text-primary/80">เลือกรูปภาพ</span>
+                      <p className="text-xs text-slate-400 mt-1">PNG, JPG (ไม่เกิน 5MB)</p>
+                      <input
+                        id="site-image-upload"
+                        type="file"
+                        accept="image/png, image/jpeg"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSiteImage(file);
+                            setSiteImagePreview(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
           </div>

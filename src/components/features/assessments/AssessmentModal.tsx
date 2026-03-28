@@ -9,6 +9,7 @@ interface AssessmentModalProps {
   onClose: () => void;
   assessment?: Assessment | null;
   currentUserRole: Role;
+  currentUserId?: string;
   onSubmit: (data: any) => void;
 }
 
@@ -17,6 +18,7 @@ export const AssessmentModal: FC<AssessmentModalProps> = ({
   onClose,
   assessment,
   currentUserRole,
+  currentUserId,
   onSubmit,
 }) => {
   return (
@@ -32,6 +34,7 @@ export const AssessmentModal: FC<AssessmentModalProps> = ({
         isOpen={isOpen}
         initialData={assessment}
         currentUserRole={currentUserRole}
+        currentUserId={currentUserId}
         onSubmit={onSubmit}
         onCancel={onClose}
       />

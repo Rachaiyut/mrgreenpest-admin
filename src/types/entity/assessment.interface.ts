@@ -61,6 +61,8 @@ export interface Assessment extends IBase {
   total_price: number;
   created_by: string;
   updated_by: string;
+  site_image_id?: string;
+  site_image_url?: string;
 
   // Relations
   assessment_areas?: AssessmentWorkArea[];

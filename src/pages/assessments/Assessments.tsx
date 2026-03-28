@@ -857,6 +857,7 @@ const Assessments: React.FC = () => {
           setAssessmentToEdit(null);
         }}
         currentUserRole={currentUser.role as Role}
+        currentUserId={currentUser.id}
         assessment={assessmentToEdit}
         onSubmit={handleSaveAssessment}
       />

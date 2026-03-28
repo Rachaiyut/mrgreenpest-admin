@@ -21,7 +21,7 @@ import { Package } from '@/src/types/entity/package.interface';
 import { PackageType } from '@/src/types/enums/package';
 
 // ===== Components =====
-import { FormField, Input, Select, Textarea, Button } from '../../common/FormControls';
+import { FormField, Input, Textarea, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
 
@@ -37,6 +37,7 @@ import {
   ProductApi,
   PackageApi
 } from '@/src/api';
+import { StorageApi } from '@/src/api/storage';
 
 // ===== Assets =====
 import {
@@ -51,6 +52,9 @@ import {
   UserIcon,
   LoadingIcon,
   CreditCardIcon as CurrencyDollarIcon,
+  PlusIcon,
+  PhotoIcon,
+  TrashIcon,
 } from '../../../assets/icons/Icons';
 
 export interface JobFormProps {
@@ -101,6 +105,11 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [assessmentSiteImageUrl, setAssessmentSiteImageUrl] = useState<string | null>(null);
+  const [siteImage, setSiteImage] = useState<File | null>(null);
+  const [siteImagePreview, setSiteImagePreview] = useState<string | null>(null);
+  const [existingSiteImageId, setExistingSiteImageId] = useState<string | null>(null);
+  const [assessmentIdForImage, setAssessmentIdForImage] = useState<string | null>(null);
   const [packages, setPackages] = useState<Package[]>([]);
 
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
@@ -240,6 +249,13 @@ export const JobForm: React.FC<JobFormProps> = ({
                }
                if (realAssessment.package_id) {
                  globalPackageId = realAssessment.package_id;
+               }
+               // Load site image from assessment
+               if (realAssessment.site_image_url) {
+                 setAssessmentSiteImageUrl(realAssessment.site_image_url);
+                 setSiteImagePreview(realAssessment.site_image_url);
+                 setExistingSiteImageId(realAssessment.site_image_id || null);
+                 setAssessmentIdForImage(targetAssessmentId);
                }
             }
           } catch (err) {
@@ -576,10 +592,30 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const handleReferenceChange = async (reference: string) => {
     setSelectedReference(reference);
+    setAssessmentSiteImageUrl(null);
+    setSiteImage(null);
+    setSiteImagePreview(null);
+    setExistingSiteImageId(null);
+    setAssessmentIdForImage(null);
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
       const assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId));
+
+      // Load site image from full assessment data
+      try {
+        const fullRes: any = await AssessmentApi.getById(assessmentId);
+        const fullAssessment = fullRes.data || fullRes;
+        if (fullAssessment?.site_image_url) {
+          setAssessmentSiteImageUrl(fullAssessment.site_image_url);
+          setSiteImagePreview(fullAssessment.site_image_url);
+          setExistingSiteImageId(fullAssessment.site_image_id || null);
+          setAssessmentIdForImage(assessmentId);
+        }
+      } catch (err) {
+        console.error('Error fetching assessment image:', err);
+      }
+
       if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
         const system = assessment.assessment_areas[0].service_system;
         if (system) setServiceSystem(system);
@@ -787,8 +823,40 @@ export const JobForm: React.FC<JobFormProps> = ({
         }
 
         await onSubmitJob(jobData, jobData.assessment_id);
+
+        // Upload/replace site image if changed
+        if (siteImage && assessmentIdForImage) {
+          try {
+            if (existingSiteImageId) {
+              await StorageApi.remove(existingSiteImageId).catch(() => {});
+            }
+            const uploadResult = await StorageApi.upload({
+              file: siteImage,
+              path: `assessments/${assessmentIdForImage}`,
+              entity_type: 'assessment',
+              entity_id: assessmentIdForImage,
+              type: 'site_image',
+              visibility: 'private',
+            });
+            const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
+            if (storageId) {
+              await AssessmentApi.update(assessmentIdForImage, { site_image_id: storageId, updated_by: '' } as any);
+            }
+          } catch (uploadErr) {
+            console.error('Image upload failed:', uploadErr);
+          }
+        } else if (!siteImagePreview && existingSiteImageId && assessmentIdForImage) {
+          // User removed image
+          try {
+            await StorageApi.remove(existingSiteImageId).catch(() => {});
+            await AssessmentApi.update(assessmentIdForImage, { site_image_id: null, updated_by: '' } as any);
+          } catch (removeErr) {
+            console.error('Image remove failed:', removeErr);
+          }
+        }
+
         onCancel();
-        
+
       } catch (error) {
         console.error('Error handling job submission:', error);
         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง' });
@@ -811,23 +879,6 @@ export const JobForm: React.FC<JobFormProps> = ({
     );
   };
 
-  const handleNumberOfAreasChange = (count: number) => {
-    setWorkAreas((currentAreas) => {
-      const currentCount = currentAreas.length;
-      if (count > currentCount) {
-        const newAreas = Array.from({ length: count - currentCount }, (_, i) => ({
-          id: `area-${Date.now()}-${i}`,
-          area_name: `พื้นที่ ${currentCount + i + 1}`,
-          area_size: undefined,
-          items: []
-        }));
-        return [...currentAreas, ...newAreas];
-      } else if (count < currentCount) {
-        return currentAreas.slice(0, count);
-      }
-      return currentAreas;
-    });
-  };
 
   const handleAreaChange = (index: number, updatedArea: Partial<any>) => {
     setWorkAreas((prev) => {
@@ -852,6 +903,17 @@ export const JobForm: React.FC<JobFormProps> = ({
       }
       return newAreas;
     });
+  };
+
+  const handleAddArea = () => {
+    setWorkAreas((prev) => [...prev, {
+      id: `area-${Date.now()}`,
+      area_name: `พื้นที่ ${prev.length + 1}`,
+      area_size: undefined,
+      items: [],
+      category_services: [],
+      total_price: 0,
+    }]);
   };
 
   const handleRemoveArea = (index: number) => {
@@ -1112,58 +1174,122 @@ export const JobForm: React.FC<JobFormProps> = ({
               </div>
 
               <div className="space-y-4">
-                {selectedCustomerId && (!selectedReference || mode === 'edit') ? (
-                  <div className="flex items-end gap-4 mb-4">
-                    <FormField label="จำนวนพื้นที่ที่ต้องการเข้าบริการ" htmlFor="numberOfAreas" className="mb-0 flex-1">
-                      <Select
-                        id="numberOfAreas"
-                        value={workAreas.length}
-                        onChange={(e) => handleNumberOfAreasChange(parseInt(e.target.value, 10))}
-                      >
-                        <option value="0">ยังไม่ระบุพื้นที่</option>
-                        {Array.from({ length: 30 }, (_, i) => i + 1).map((num) => (
-                          <option key={num} value={num}>{num} พื้นที่</option>
-                        ))}
-                      </Select>
-                    </FormField>
-                  </div>
-                ) : (
-                  !selectedCustomerId && (
-                    <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
-                      กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
-                    </div>
-                  )
-                )}
+                {selectedCustomerId ? (
+                  <>
+                    {!selectedReference || mode === 'edit' ? (
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-500">จำนวนพื้นที่: <strong className="text-slate-800">{workAreas.length}</strong> พื้นที่</span>
+                      </div>
+                    ) : null}
 
-                <div className="grid grid-cols-1 gap-4">
-                  {workAreas.map((area, index) => (
-                    <div key={area.id || index} className="relative">
-                      {!!selectedReference && mode !== 'edit' && (
-                        <div className="absolute inset-0 z-10 bg-slate-50/30 rounded-lg cursor-not-allowed" title="ข้อมูลจากเอกสารอ้างอิง ไม่สามารถแก้ไขได้"></div>
+                    <div className="grid grid-cols-1 gap-4">
+                      {workAreas.map((area, index) => (
+                        <div key={area.id || index} className="relative">
+                          {!!selectedReference && mode !== 'edit' && (
+                            <div className="absolute inset-0 z-10 bg-slate-50/30 rounded-lg cursor-not-allowed" title="ข้อมูลจากเอกสารอ้างอิง ไม่สามารถแก้ไขได้"></div>
+                          )}
+                          <WorkAreaForm
+                            area={area}
+                            index={index}
+                            onAreaChange={handleAreaChange}
+                            onClearArea={handleClearArea}
+                            onRemoveArea={(!selectedReference || mode === 'edit') ? handleRemoveArea : undefined}
+                            products={products}
+                            categories={categories}
+                            availablePackages={packages}
+                            selectedPackage={packages.find((p) => String(p.id) === String(area.package_id)) || null}
+                            onSelectPackage={(pkgId) => {
+                              handleAreaChange(index, { package_id: pkgId });
+                            }}
+                            isEditing={mode === 'edit'}
+                          />
+                        </div>
+                      ))}
+
+                      {workAreas.length === 0 && !selectedReference && (
+                        <div className="text-center py-12 bg-white rounded-xl border-2 border-dashed border-slate-200 text-slate-400">ยังไม่มีพื้นที่ให้บริการ กด "เพิ่มพื้นที่" เพื่อเริ่มต้น</div>
                       )}
-                      <WorkAreaForm
-                        area={area}
-                        index={index}
-                        onAreaChange={handleAreaChange}
-                        onClearArea={handleClearArea}
-                        onRemoveArea={(!selectedReference || mode === 'edit') ? handleRemoveArea : undefined}
-                        products={products}
-                        categories={categories}
-                        availablePackages={packages}
-                        selectedPackage={packages.find((p) => String(p.id) === String(area.package_id)) || null}
-                        onSelectPackage={(pkgId) => {
-                          handleAreaChange(index, { package_id: pkgId });
-                        }}
-                        isEditing={mode === 'edit'}                        
-                      />
-                    </div>
-                  ))}
 
-                  {selectedReference && workAreas.length === 0 && (
-                    <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่ระบุไว้</div>
-                  )}
-                </div>
+                      {selectedReference && workAreas.length === 0 && (
+                        <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่ระบุไว้</div>
+                      )}
+                    </div>
+
+                    {(!selectedReference || mode === 'edit') && (
+                      <div className="flex justify-center mt-4">
+                        <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
+                          <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">
+                    กรุณาเลือกลูกค้าก่อนกำหนดพื้นที่
+                  </div>
+                )}
               </div>
+            </div>
+
+            {/* รูปภาพพื้นที่บริการ — card แยก */}
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+              <div className="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <PhotoIcon className="w-5 h-5 text-slate-400" />
+                  รูปภาพพื้นที่บริการ
+                </h3>
+                {(siteImagePreview || assessmentSiteImageUrl) && (
+                  <label htmlFor="job-site-image-upload" className="text-xs text-primary hover:text-primary/80 font-medium cursor-pointer">
+                    เปลี่ยนรูป
+                    <input
+                      id="job-site-image-upload"
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSiteImage(file);
+                          setSiteImagePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+              {(siteImagePreview || assessmentSiteImageUrl) ? (
+                <div className="relative inline-block">
+                  <img src={siteImagePreview || assessmentSiteImageUrl!} alt="พื้นที่บริการ" className="max-h-64 rounded-lg border border-slate-200 object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => { setSiteImage(null); setSiteImagePreview(null); setAssessmentSiteImageUrl(null); }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-white">
+                  <PhotoIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <label htmlFor="job-site-image-new" className="cursor-pointer">
+                    <span className="text-sm font-medium text-primary hover:text-primary/80">เลือกรูปภาพ</span>
+                    <p className="text-xs text-slate-400 mt-1">PNG, JPG (ไม่เกิน 5MB)</p>
+                    <input
+                      id="job-site-image-new"
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSiteImage(file);
+                          setSiteImagePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         </div>
