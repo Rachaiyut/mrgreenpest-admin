@@ -112,11 +112,14 @@ const Job: React.FC<JobProps> = ({
   const [unassignedPage, setUnassignedPage] = useState(1);
   const [unassignedTotal, setUnassignedTotal] = useState(0);
   const [unassignedDateFilter, setUnassignedDateFilter] = useState('');
+  const [unassignedSearch, setUnassignedSearch] = useState('');
   const [reports, setReports] = useState<ServiceReport[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>(
     Array.isArray(initialWarehouses) ? initialWarehouses : []
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState('all');
+  const [allVehicles, setAllVehicles] = useState<any[]>([]);
 
   // Filter States
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
@@ -124,11 +127,13 @@ const Job: React.FC<JobProps> = ({
 
 
   // Fetch schedule (นัดหมาย + ตารางงาน)
-  const fetchSchedule = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
+  const fetchSchedule = async (targetDate = filterDate, targetTech = selectedTechnicianId, search = searchQuery, vehicleId = selectedVehicleId) => {
     setIsLoading(true);
     try {
       const params: any = {};
       if (targetDate) params.appointment_date = targetDate;
+      if (search?.trim()) params.search = search.trim();
+      if (vehicleId && vehicleId !== 'all') params.vehicle_id = vehicleId;
       if (targetTech !== 'all') params.technician_id = targetTech;
 
       const warehousesRes = await VehicleApi.getVehiclesWithUserJobs(params);
@@ -141,6 +146,9 @@ const Job: React.FC<JobProps> = ({
       }
 
       setWarehouses(warehousesData);
+
+
+
 
       const reportsData = reports;
 
@@ -254,11 +262,12 @@ const Job: React.FC<JobProps> = ({
   };
 
   // Fetch unassigned jobs (รอจัดคิว)
-  const fetchUnassigned = async (page = unassignedPage, date = unassignedDateFilter) => {
+  const fetchUnassigned = async (page = unassignedPage, date = unassignedDateFilter, search = unassignedSearch) => {
     setIsLoading(true);
     try {
       const params: any = { limit: 10, page };
       if (date) params.appointment_date = date;
+      if (search) params.search = search;
       const unassignedJobsRes = await JobApi.getAllUnassigned(params);
       const unassignedJobsData = (unassignedJobsRes.data || []);
 
@@ -446,22 +455,14 @@ const Job: React.FC<JobProps> = ({
 
   const filteredJobs = useMemo(() => {
     let tempJobs = reversedJobs;
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (lowercasedQuery) {
-      tempJobs = tempJobs.filter((job) => {
-        const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
-        const vehicle = safeWarehouses.find((w: any) => w.id === job.vehicle_id);
-        const licensePlate = ((vehicle as any)?.license_plate || (vehicle as any)?.registration_no || (vehicle as any)?.name || '').toLowerCase();
-        const customerName = ((job as any).customerName || '').toLowerCase();
-        const appointmentDate = formatThaiDate((job as any).appointment_date || job.start_time);
 
-        return licensePlate.includes(lowercasedQuery) ||
-          customerName.includes(lowercasedQuery) ||
-          appointmentDate.includes(lowercasedQuery);
-      });
+    // Filter by vehicle (client-side since data is grouped by vehicle)
+    if (selectedVehicleId !== 'all') {
+      tempJobs = tempJobs.filter((job) => job.vehicle_id === selectedVehicleId);
     }
+
     return tempJobs;
-  }, [reversedJobs, searchQuery, warehouses]);
+  }, [reversedJobs, selectedVehicleId]);
 
   const isAnyJobInProgressForCurrentUser = useMemo(() => {
     if (!currentUser || !jobs) return false;
@@ -483,6 +484,7 @@ const Job: React.FC<JobProps> = ({
         j.status !== JobMainStatus.CANCELLED
     );
     return serviceVehicles
+      .filter((vehicle) => selectedVehicleId === 'all' || vehicle.id === selectedVehicleId)
       .map((vehicle) => {
         const license =
           (vehicle as any)?.license_plate ||
@@ -495,7 +497,7 @@ const Job: React.FC<JobProps> = ({
         };
       })
       .filter((v) => v.id);
-  }, [filteredJobs, warehouses]);
+  }, [filteredJobs, warehouses, selectedVehicleId]);
 
   const customerMap = useMemo(() => {
     return new Map((initialCustomers || []).map((c) => [c.id, c]));
@@ -722,6 +724,13 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
+  // Fetch all vehicles for dropdown (once)
+  useEffect(() => {
+    VehicleApi.getVehicles({ limit: 100, sort_by: 'vehicle_registration', sort_order: 'asc' } as any).then((res) => {
+      setAllVehicles((res.data || []) as any[]);
+    }).catch(() => {});
+  }, []);
+
   // Initial load: fetch schedule + unassigned count
   useEffect(() => {
     fetchSchedule(filterDate, selectedTechnicianId);
@@ -939,12 +948,21 @@ const Job: React.FC<JobProps> = ({
           <div className="flex flex-col gap-4">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                <div className="relative flex-1 sm:min-w-[240px]">
+                <div className={`relative flex-1 sm:min-w-[220px]`}>
                   <Input
                     type="search"
-                    placeholder="ค้นหาทะเบียนรถ, วันที่..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={activeTab === 'unassigned' ? 'ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์...' : 'ค้นหาชื่อลูกค้า...'}
+                    value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
+                    onChange={(e) => {
+                      if (activeTab === 'unassigned') {
+                        setUnassignedSearch(e.target.value);
+                        setUnassignedPage(1);
+                        fetchUnassigned(1, unassignedDateFilter, e.target.value);
+                      } else {
+                        setSearchQuery(e.target.value);
+                        fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
+                      }
+                    }}
                     className="w-full pl-10"
                   />
                   <svg
@@ -1027,6 +1045,22 @@ const Job: React.FC<JobProps> = ({
                       {technicians.map((tech) => (
                         <option key={tech.id} value={tech.id}>
                           {tech.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      id="vehicle-filter"
+                      value={selectedVehicleId}
+                      onChange={(e) => {
+                        setSelectedVehicleId(e.target.value);
+                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, e.target.value);
+                      }}
+                      className="w-full sm:w-48 text-sm"
+                    >
+                      <option value="all">รถทั้งหมด</option>
+                      {allVehicles.map((v: any) => (
+                        <option key={v.id} value={v.id}>
+                          {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
                         </option>
                       ))}
                     </Select>

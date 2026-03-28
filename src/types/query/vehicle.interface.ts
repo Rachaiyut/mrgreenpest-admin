@@ -6,4 +6,6 @@ export interface VehicleJobQuery extends IBaseQuery {
 	primary_tech_id?: string,
 	role?: Role
 	appointment_date?: Date
+	search?: string
+	vehicle_id?: string
 }
