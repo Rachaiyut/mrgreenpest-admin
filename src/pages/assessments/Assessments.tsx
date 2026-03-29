@@ -506,7 +506,7 @@ const Assessments: React.FC = () => {
               <div className="relative w-full sm:w-64 flex-shrink-0">
                 <Input
                   type="search"
-                  placeholder="ค้นหา (ลูกค้า, ประเภท, บริการ)..."
+                  placeholder="ค้นหารหัสใบประเมิน, ชื่อลูกค้า"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -665,7 +665,7 @@ const Assessments: React.FC = () => {
                         สถานะ
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ค่าใช้จ่าย
+                        ยอดรวม
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ผู้สร้าง
