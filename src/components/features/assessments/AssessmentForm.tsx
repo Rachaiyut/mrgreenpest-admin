@@ -43,8 +43,7 @@ import {
   PhotoIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 interface AssessmentFormProps {
   isOpen: boolean;

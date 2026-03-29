@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Swal from 'sweetalert2';
 import SignatureCanvas from 'react-signature-canvas';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../common/Modal';
 import { Textarea, Input, Select } from '../../common/FormControls';
 import {

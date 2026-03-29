@@ -25,8 +25,7 @@ import { useData } from '../../contexts/DataContext';
 import { ContractApi } from '../../api';
 import { CustomerApi } from '../../api/customer';
 import { ContractModal } from '@/src/components/features/contracts/ContractModal';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 const statusLabels: Record<ContractStatus, string> = {
   [ContractStatus.DRAFT]: 'ร่าง',

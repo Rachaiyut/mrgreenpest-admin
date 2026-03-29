@@ -1,8 +1,7 @@
 // ===== React =====
 import type { FC, FormEvent, MouseEvent } from 'react';
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Types / Enums =====
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';

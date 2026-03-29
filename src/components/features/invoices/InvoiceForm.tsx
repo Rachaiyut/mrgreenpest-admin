@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
 import Swal from 'sweetalert2';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';

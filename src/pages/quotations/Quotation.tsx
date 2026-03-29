@@ -21,8 +21,7 @@ import {
 import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
 import SignatureCanvas from 'react-signature-canvas';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { StorageApi } from '../../api/storage';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { CustomerApi } from '../../api/customer';
@@ -272,7 +271,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       try {
         await QuotationApi.approve(selectedQuotation.id);
         Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
-        fetchData();
+        fetchQuotations();
       } catch (error) {
         console.error('Approve error:', error);
         Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถอนุมัติได้' });
@@ -808,7 +807,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
             </button>
-            {console.log('[DEBUG Approve Button]', { status: selectedQuotation?.status, role: currentUser?.role, expected: QuotationStatus.PENDING_APPROVAL, match: selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL })}
             {selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL && currentUser?.role === 'SUPERADMIN' && (
               <button
                 onClick={handleApprove}

@@ -3,8 +3,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import Swal from 'sweetalert2';
 
 // ===== External Libraries =====
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Types / Enums =====
 import { AsessmentStatus, CategoryType, Role, ServiceSystem, WarehouseType } from '@/src/types';

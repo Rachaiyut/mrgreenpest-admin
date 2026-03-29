@@ -5,8 +5,7 @@ import { StatusBadge } from '../../components/common/StatusBadge';
 import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
   ManageIcon,
   EyeIcon,

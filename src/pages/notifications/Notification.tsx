@@ -6,8 +6,7 @@ import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
 import { Pagination } from '../../components/common/Pagination';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 interface NotificationsProps {}
 

@@ -1,8 +1,7 @@
 // ===== React =====
 import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Absolute Types =====
 import {

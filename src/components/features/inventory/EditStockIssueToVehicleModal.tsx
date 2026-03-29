@@ -9,8 +9,7 @@ import React, {
   useRef,
   useCallback,
 } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../common/Modal';
 import { Input, Button } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';

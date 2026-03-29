@@ -3,8 +3,7 @@ import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { formatThaiDate, formatThaiDateTime } from '../../utils/date';
 import {
   Product,
@@ -53,7 +52,7 @@ const Reports: React.FC<ReportsProps> = () => {
     jobs,
   } = useData();
 
-  const { user: currentUser } = useCurrentUser();
+  const currentUser = useCurrentUser();
 
   const [activeTab, setActiveTab] = useState<ReportTab>('สต็อกคงเหลือ');
   const [searchQuery, setSearchQuery] = useState('');
@@ -398,7 +397,8 @@ const Reports: React.FC<ReportsProps> = () => {
       last_name: cust.last_name,
       nickname: cust.nickname ?? '',
       tax_id: cust.tax_id,
-      phone: cust.phone,
+      primary_phone: cust.primary_phone,
+      mobile_phone: cust.mobile_phone,
       email: cust.email ?? '',
       address_house_no: cust.address_house_no,
       sub_district: cust.sub_district,

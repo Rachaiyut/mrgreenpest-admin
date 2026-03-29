@@ -2,8 +2,7 @@ import { FC, useMemo } from 'react';
 import { FormField, Input } from './FormControls';
 import { formatThaiDate } from '../../utils/date';
 import { PlusIcon, TrashIcon, CreditCardIcon } from '../../assets/icons/Icons';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 export interface InstallmentItem {
   id: string;

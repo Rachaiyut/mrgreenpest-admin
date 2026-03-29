@@ -9,8 +9,7 @@ import {
   FC,
   useCallback,
 } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Card } from '../../common/Card';
 import {
   FormField,

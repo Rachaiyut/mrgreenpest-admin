@@ -49,8 +49,7 @@ import {
 } from '@/src/api';
 import { CategoryType, Role } from '@/src/types';
 import { useCurrentUser } from '@/src/hooks';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 const Assessments: React.FC = () => {
   const location = useLocation();
@@ -727,18 +726,13 @@ const Assessments: React.FC = () => {
                             {getCustomerName(assessment) || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1 bg-blue-50 rounded">
-                                <JobDateIcon className="h-3.5 w-3.5 text-blue-500" />
-                              </div>
-                              <span className="text-sm text-slate-700">
-                                {formatThaiDate(
-                                  new Date(
-                                    assessment.appointment_date
-                                  ).toDateString()
-                                )}
-                              </span>
-                            </div>
+                            <span className="text-sm text-slate-700">
+                              {formatThaiDate(
+                                new Date(
+                                  assessment.appointment_date
+                                ).toDateString()
+                              )}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             {allBuildingTypes.join(', ') || '-'}
