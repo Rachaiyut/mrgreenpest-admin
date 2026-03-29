@@ -1464,16 +1464,16 @@ const Job: React.FC<JobProps> = ({
                         ลูกค้า
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        วัน-เวลา
+                        วัน
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        เวลา
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        สถานะ
                       </th>
                       <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
@@ -1509,21 +1509,19 @@ const Job: React.FC<JobProps> = ({
                             className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                               }`}
                           >
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600">
                               {reportJob?.customer?.code || '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               {customerName}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              <p className="text-sm font-medium text-slate-800">
-                                {formatThaiDate(reportDate)}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {report.time_in && report.time_out
-                                  ? `${report.time_in} - ${report.time_out}`
-                                  : '-'}
-                              </p>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-800">
+                              {formatThaiDate(reportDate)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                              {report.time_in && report.time_out
+                                ? `${report.time_in} - ${report.time_out}`
+                                : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap gap-1">
@@ -1547,9 +1545,6 @@ const Job: React.FC<JobProps> = ({
                                   ? techNames.join(', ')
                                   : (report as any).technician_sign_name || '-'}
                               </span>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              <StatusBadge status={report.status || JobStatus.Draft} />
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                               <div className="flex items-center justify-end gap-1">
