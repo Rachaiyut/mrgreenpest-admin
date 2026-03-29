@@ -14,7 +14,7 @@ import {
 
 // Component
 import AssessmentCard from './AssessmentCard';
-import { Button, Input } from '@/src/components/common/FormControls';
+import { Button, Input, Select } from '@/src/components/common/FormControls';
 import {
   PlusIcon,
   ViewColumnsIcon,
@@ -89,6 +89,7 @@ const Assessments: React.FC = () => {
     const dd = String(now.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   });
+  const [filterStatus, setFilterStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -100,7 +101,9 @@ const Assessments: React.FC = () => {
       const statusParam = searchParams.get('status');
 
       const filter: any = { limit: itemsPerPage, page: currentPage };
-      if (statusParam) {
+      if (filterStatus) {
+        filter.status = filterStatus;
+      } else if (statusParam) {
         filter.status = statusParam;
         filter.limit = 100;
       }
@@ -143,7 +146,7 @@ const Assessments: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [location.search, filterDate, debouncedSearch, currentPage, itemsPerPage]);
+  }, [location.search, filterDate, filterStatus, debouncedSearch, currentPage, itemsPerPage]);
 
   useEffect(() => {
     fetchData();
@@ -502,10 +505,10 @@ const Assessments: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 items-center">
               
               {/* ช่องค้นหา */}
-              <div className="relative w-full sm:w-64 flex-shrink-0">
+              <div className="relative w-full sm:w-80 flex-shrink-0">
                 <Input
                   type="search"
-                  placeholder="ค้นหารหัสใบประเมิน, ชื่อลูกค้า"
+                  placeholder="ค้นหารหัสใบประเมิน, ชื่อลูกค้า, รหัสลูกค้า"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -551,6 +554,24 @@ const Assessments: React.FC = () => {
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                     wrapperClassName="w-full"
                   />
+              </div>
+
+              {/* Dropdown สถานะ */}
+              <div className="w-full sm:w-40 flex-shrink-0">
+                <Select
+                  value={filterStatus}
+                  onChange={(e) => {
+                    setFilterStatus(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+                >
+                  <option value="">สถานะทั้งหมด</option>
+                  <option value={AsessmentStatus.DRAFT}>แบบร่าง</option>
+                  <option value={AsessmentStatus.APPOINTMENT}>นัดหมายแล้ว</option>
+                  <option value={AsessmentStatus.PENDING}>รอดำเนินการ</option>
+                  <option value={AsessmentStatus.COMPLETE}>เสร็จสิ้น</option>
+                </Select>
               </div>
             </div>
 
