@@ -931,7 +931,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   );
 
   const steps = [
-    { id: 0, label: 'ข้อมูลลูกค้า & กำหนดการ', icon: <UserIcon className="w-5 h-5" />, isValid: !!selectedCustomerId && !!workDate && !!startTime && !!endTime },
+    { id: 0, label: 'ข้อมูลลูกค้า & กำหนดการ', icon: <UserIcon className="w-5 h-5" />, isValid: !!selectedCustomerId && !!workDate && !!startTime && !!endTime && (!startTime || !endTime || endTime > startTime) },
     { id: 1, label: 'รายละเอียดบริการ', icon: <DocumentIcon className="w-5 h-5" />, isValid: true },
     { id: 2, label: 'ทีมช่าง & ยานพาหนะ', icon: <TruckIcon className="w-5 h-5" />, isValid: !!leadTechnicianId && !!selectedVehicleId && !timeConflictError },
   ];
@@ -1055,8 +1055,11 @@ export const JobForm: React.FC<JobFormProps> = ({
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาสิ้นสุด *" htmlFor="end-time" className="mb-0">
                       <div className="relative">
-                        <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
+                        <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className={`pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden ${startTime && endTime && endTime <= startTime ? 'border-red-500 focus:ring-red-500' : ''}`} />
                       </div>
+                      {startTime && endTime && endTime <= startTime && (
+                        <p className="text-xs text-red-500 mt-1">เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น</p>
+                      )}
                     </FormField>
                   </div>
                 </div>

@@ -230,11 +230,18 @@ const Job: React.FC<JobProps> = ({
             return {
               api_status: rawStatus,
               id: job.id,
+              code: job.code || '',
               assessment_id: job.assessment_id || undefined,
               contract_id: job.contract_id || undefined,
               customer_id: job.customer_id || customer.id,
+              customer: customer,
               customerName: customerName,
               address,
+              google_map_link: customer.google_map_link || job.google_map_link || '',
+              zone: customer.service_area || job.zone || '',
+              group: customer.service_group || job.group || '',
+              road_line: customer.road_line || job.road_line || '',
+              sequence: customer.sequence_no || job.sequence || '',
               appointment_date: job.appointment_date,
               start_time: job.start_date,
               end_time: job.end_date,
@@ -921,14 +928,14 @@ const Job: React.FC<JobProps> = ({
             )}
         </div>
 
-        <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500 rounded-lg">
                 <CalendarDaysIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-blue-600 font-medium">งานวันนี้</p>
+                <p className="text-xs sm:text-sm text-blue-600 font-medium whitespace-nowrap">งานวันนี้</p>
                 <p className="text-2xl font-bold text-blue-800">{jobStats.today}</p>
               </div>
             </div>
@@ -939,7 +946,7 @@ const Job: React.FC<JobProps> = ({
                 <PlayIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-amber-600 font-medium">กำลังดำเนินการ</p>
+                <p className="text-xs sm:text-sm text-amber-600 font-medium whitespace-nowrap">กำลังดำเนินการ</p>
                 <p className="text-2xl font-bold text-amber-800">{jobStats.inProgress}</p>
               </div>
             </div>
@@ -950,7 +957,7 @@ const Job: React.FC<JobProps> = ({
                 <ClipboardDocumentListIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-purple-600 font-medium">รอดำเนินการ</p>
+                <p className="text-xs sm:text-sm text-purple-600 font-medium whitespace-nowrap">รอดำเนินการ</p>
                 <p className="text-2xl font-bold text-amber-800">{jobStats.pending}</p>
               </div>
             </div>
@@ -961,7 +968,7 @@ const Job: React.FC<JobProps> = ({
                 <DocumentCheckIcon className="h-5 w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-green-600 font-medium">รายงานทั้งหมด</p>
+                <p className="text-xs sm:text-sm text-green-600 font-medium whitespace-nowrap">รายงานทั้งหมด</p>
                 <p className="text-2xl font-bold text-green-800">{reportTotal || reports.length}</p>
               </div>
             </div>
@@ -969,13 +976,13 @@ const Job: React.FC<JobProps> = ({
         </div>
 
         <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                <div className={`relative flex-1 sm:min-w-[220px]`}>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
+              <div className="relative w-full sm:w-56">
                   <Input
                     type="search"
-                    placeholder={activeTab === 'unassigned' ? 'ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์...' : 'ค้นหาชื่อลูกค้า...'}
+                    placeholder="ค้นหารหัสลูกค้า, ชื่อลูกค้า"
                     value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
                     onChange={(e) => {
                       if (activeTab === 'unassigned') {
@@ -1026,13 +1033,13 @@ const Job: React.FC<JobProps> = ({
                       dateFormat="dd/MM/yyyy"
                       locale="th"
                       isClearable
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 sm:min-w-[160px]"
+                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                       wrapperClassName="w-full sm:w-auto"
                     />
                   </div>
                 )}
                 {activeTab === 'schedule' && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <DatePicker
                       selected={filterDate ? new Date(filterDate) : null}
                       onChange={(date: Date | null) => {
@@ -1052,7 +1059,7 @@ const Job: React.FC<JobProps> = ({
                       dateFormat="dd/MM/yyyy"
                       locale="th"
                       isClearable
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 sm:min-w-[160px]"
+                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                       wrapperClassName="w-full sm:w-auto"
                     />
                     <Select
@@ -1063,7 +1070,7 @@ const Job: React.FC<JobProps> = ({
                         setSelectedTechnicianId(newTech);
                         fetchData(filterDate, newTech);
                       }}
-                      className="w-full sm:w-48 text-sm"
+                      className="w-fit text-sm !pr-8"
                     >
                       <option value="all">ช่างทั้งหมด</option>
                       {technicians.map((tech) => (
@@ -1079,7 +1086,7 @@ const Job: React.FC<JobProps> = ({
                         setSelectedVehicleId(e.target.value);
                         fetchSchedule(filterDate, selectedTechnicianId, searchQuery, e.target.value);
                       }}
-                      className="w-full sm:w-48 text-sm"
+                      className="w-fit text-sm !pr-8"
                     >
                       <option value="all">รถทั้งหมด</option>
                       {allVehicles.map((v: any) => (
@@ -1090,11 +1097,12 @@ const Job: React.FC<JobProps> = ({
                     </Select>
                   </div>
                 )}
-              </div>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-between lg:justify-end">
+            {/* Tabs + View Toggle */}
+            <div className="flex items-center gap-2 flex-shrink-0">
                 {activeTab === 'schedule' && (
-                  <div className="flex items-center rounded-lg bg-slate-100 p-1 order-2 lg:order-1">
+                  <div className="flex items-center rounded-lg bg-slate-100 p-1">
                     <Button
                       onClick={() => setView('kanban')}
                       variant="ghost"
@@ -1125,7 +1133,7 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg order-1 lg:order-2 overflow-x-auto max-w-full">
+                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
                   <button
                     onClick={() => setActiveTab('schedule')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
@@ -1172,9 +1180,9 @@ const Job: React.FC<JobProps> = ({
                   </button>
                 </div>
               </div>
-            </div>
           </div>
         </Card>
+
 
         <div className="flex-1 min-h-0 relative">
           {isLoading && (
@@ -1655,7 +1663,7 @@ const Job: React.FC<JobProps> = ({
                       <JobDateIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
                       วันที่
                     </label>
-                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
                   </div>
                   <div className="flex-1 max-w-sm">
                     <label className="block text-sm font-semibold text-slate-700 mb-2">

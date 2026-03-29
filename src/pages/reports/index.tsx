@@ -1360,7 +1360,7 @@ const Reports: React.FC<ReportsProps> = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-56">
+          <div className="w-80">
             <Input
               type="search"
               placeholder="ค้นหา..."
