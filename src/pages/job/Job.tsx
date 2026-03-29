@@ -110,6 +110,7 @@ const Job: React.FC<JobProps> = ({
   const [unassignedJobs, setUnassignedJobs] = useState<FieldJob[]>([]);
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [unassignedPage, setUnassignedPage] = useState(1);
+  const [unassignedItemsPerPage, setUnassignedItemsPerPage] = useState(10);
   const [unassignedTotal, setUnassignedTotal] = useState(0);
   const [unassignedDateFilter, setUnassignedDateFilter] = useState('');
   const [unassignedSearch, setUnassignedSearch] = useState('');
@@ -265,7 +266,7 @@ const Job: React.FC<JobProps> = ({
   const fetchUnassigned = async (page = unassignedPage, date = unassignedDateFilter, search = unassignedSearch) => {
     setIsLoading(true);
     try {
-      const params: any = { limit: 10, page };
+      const params: any = { limit: unassignedItemsPerPage, page };
       if (date) params.appointment_date = date;
       if (search) params.search = search;
       const unassignedJobsRes = await JobApi.getAllUnassigned(params);
@@ -324,7 +325,7 @@ const Job: React.FC<JobProps> = ({
   const fetchReports = async (page = reportCurrentPage) => {
     setIsLoading(true);
     try {
-      const reportsRes = await ServiceReportApi.getAll({ limit: 10, page });
+      const reportsRes = await ServiceReportApi.getAll({ limit: reportItemsPerPage, page });
       setReports(reportsRes.data || []);
       setReportTotal(reportsRes.meta?.total || (reportsRes.data || []).length);
     } catch (error) {
@@ -761,6 +762,18 @@ const Job: React.FC<JobProps> = ({
       fetchReports();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'reports') {
+      fetchReports(1);
+    }
+  }, [reportItemsPerPage]);
+
+  useEffect(() => {
+    if (activeTab === 'unassigned') {
+      fetchUnassigned(1, unassignedDateFilter);
+    }
+  }, [unassignedItemsPerPage]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -1299,17 +1312,20 @@ const Job: React.FC<JobProps> = ({
                   </tbody>
                 </table>
               </div>
-              {unassignedTotal > 10 && (
+              {unassignedTotal > 0 && (
                 <div className="border-t border-slate-200">
                   <Pagination
                     currentPage={unassignedPage}
-                    itemsPerPage={10}
+                    itemsPerPage={unassignedItemsPerPage}
                     totalItems={unassignedTotal}
                     onPageChange={(page) => {
                       setUnassignedPage(page);
                       fetchUnassigned(page, unassignedDateFilter);
                     }}
-                    onItemsPerPageChange={() => {}}
+                    onItemsPerPageChange={(size) => {
+                      setUnassignedItemsPerPage(size);
+                      setUnassignedPage(1);
+                    }}
                   />
                 </div>
               )}
@@ -1622,7 +1638,9 @@ const Job: React.FC<JobProps> = ({
                       setReportCurrentPage(page);
                       fetchReports(page);
                     }}
-                    onItemsPerPageChange={() => {}}
+                    onItemsPerPageChange={(size) => {
+                      handleReportItemsPerPageChange(size);
+                    }}
                   />
                 </div>
               )}

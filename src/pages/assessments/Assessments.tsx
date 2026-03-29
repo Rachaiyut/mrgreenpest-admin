@@ -68,6 +68,7 @@ const Assessments: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [serverTotal, setServerTotal] = useState(0);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -99,7 +100,7 @@ const Assessments: React.FC = () => {
       const searchParams = new URLSearchParams(location.search);
       const statusParam = searchParams.get('status');
 
-      const filter: any = { limit: 10 };
+      const filter: any = { limit: itemsPerPage, page: currentPage };
       if (statusParam) {
         filter.status = statusParam;
         filter.limit = 100;
@@ -133,6 +134,7 @@ const Assessments: React.FC = () => {
         CategoryApi.getCategories({ type: CategoryType.SERVICE }),
       ]);
       setAssessments(assessmentsRes.data);
+      setServerTotal(assessmentsRes.meta?.total || (assessmentsRes.data || []).length);
       setCustomers(customersRes.data);
       setProducts(productsRes.data);
       setPackages(packagesRes.data);
@@ -142,7 +144,7 @@ const Assessments: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [location.search, filterDate, debouncedSearch]); // 🌟 เพิ่ม debouncedSearch ใน array นี้
+  }, [location.search, filterDate, debouncedSearch, currentPage, itemsPerPage]);
 
   useEffect(() => {
     fetchData();
@@ -240,11 +242,8 @@ const Assessments: React.FC = () => {
       },
     ];
 
-  const totalItems = filteredAssessments.length;
-  const paginatedAssessments = filteredAssessments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const totalItems = serverTotal;
+  const paginatedAssessments = filteredAssessments;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
