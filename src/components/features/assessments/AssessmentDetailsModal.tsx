@@ -1,7 +1,5 @@
-import { FC, ReactNode, ReactElement, cloneElement, useState } from 'react';
-import Swal from 'sweetalert2';
+import { FC, ReactNode, ReactElement, cloneElement, useEffect, useState } from 'react';
 import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
 import {
   Assessment,
   AssessmentWorkArea,
@@ -15,15 +13,14 @@ import {
   GoogleMapIcon,
   DocumentTextIcon,
   HomeIcon,
-  MapIcon,
+  MapPinIcon,
   ClipboardDocumentListIcon,
-  UserGroupIcon,
-  EyeIcon,
-  LoadingIcon,
   CreditCardIcon,
+  PhotoIcon,
 } from '../../../assets/icons/Icons';
 import { PaymentMethod, ServiceSystem } from '@/src/types';
 import { AssessmentApi } from '@/src/api';
+import { useData } from '@/src/contexts/DataContext';
 
 interface AssessmentDetailsModalProps {
   isOpen: boolean;
@@ -34,36 +31,54 @@ interface AssessmentDetailsModalProps {
   packages?: Package[];
 }
 
+const InfoLabel: FC<{ children: ReactNode }> = ({ children }) => (
+  <dt className="text-xs text-slate-400 uppercase tracking-wide">{children}</dt>
+);
+
+const InfoValue: FC<{ children: ReactNode }> = ({ children }) => (
+  <dd className="text-sm font-medium text-slate-800 mt-0.5">{children || '-'}</dd>
+);
+
 const DetailItem: FC<{
   label: string;
   value: ReactNode;
   fullWidth?: boolean;
 }> = ({ label, value, fullWidth = false }) => (
-  <div className={`${fullWidth ? 'col-span-full' : ''}`}>
-    <dt className="text-xs font-medium text-slate-500 mb-1">{label}</dt>
-    <dd className="text-sm font-medium text-slate-900 break-words">
-      {value || '-'}
-    </dd>
+  <div className={fullWidth ? 'col-span-full' : ''}>
+    <InfoLabel>{label}</InfoLabel>
+    <InfoValue>{value}</InfoValue>
   </div>
 );
 
-const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({
-  icon,
-  title,
-}) => (
-  <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({ icon, title }) => (
+  <div className="flex items-center gap-2.5 mb-4 pb-2 border-b border-slate-100">
     <div className="p-1.5 bg-primary/10 rounded-lg text-primary shrink-0">
       {cloneElement(icon as ReactElement<any>, { className: 'w-4 h-4' })}
     </div>
-    <h4 className="font-semibold text-slate-800">{title}</h4>
+    <h4 className="font-semibold text-slate-800 text-sm">{title}</h4>
   </div>
 );
+
+const BUILDING_TYPE_MAP: Record<string, string> = {
+  OFFICE: 'สำนักงาน',
+  HOUSE: 'บ้านพักอาศัย',
+  FACTORY: 'โรงงาน',
+  CONDO: 'คอนโดมิเนียม',
+  TOWNHOUSE: 'ทาวน์เฮ้าส์',
+  SHOPHOUSE: 'อาคารพาณิชย์',
+  OTHER: 'อื่นๆ',
+};
+
+const SERVICE_SYSTEM_MAP: Record<string, string> = {
+  CHEMICAL: 'สารเคมี',
+  PREY: 'เหยื่อ',
+  OTHER: 'อื่นๆ',
+};
 
 const WorkAreaDetails: FC<{
   area: AssessmentWorkArea;
   products: Product[];
 }> = ({ area }) => {
-  // Calculate Base Price (Total - Items)
   const itemsTotal =
     area.items?.reduce((sum, item) => {
       const qty = Number(item.quantity) || 0;
@@ -75,37 +90,46 @@ const WorkAreaDetails: FC<{
   const basePrice = (Number(area.total_price) || 0) - itemsTotal;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
-      <div className="bg-slate-50/50 px-4 py-3 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <h5 className="font-bold text-slate-800 flex items-center gap-2">
-          <span className="w-2 h-6 bg-primary rounded-full shrink-0"></span>
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex justify-between items-center">
+        <h5 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+          <span className="w-1.5 h-5 bg-primary rounded-full shrink-0"></span>
           {area.area_name}
         </h5>
-        <span className="text-sm font-semibold text-primary bg-primary/5 px-3 py-1 rounded-full border border-primary/10">
-          ฿
-          {(area.total_price || 0).toLocaleString('th-TH', {
-            minimumFractionDigits: 2,
-          })}
+        <span className="text-sm font-bold text-primary">
+          ฿{Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
         </span>
       </div>
 
-      <div className="p-4 space-y-4">
-        {/* ปรับจาก grid-cols-2 เป็น grid-cols-1 บนมือถือ */}
-        <dl className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <DetailItem label="ประเภทสิ่งปลูกสร้าง" value={area.building_type} />
-          <DetailItem label="พื้นที่ (ตร.ม.)" value={area.area_size} />
+      <div className="p-4">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <DetailItem
+            label="ประเภทสิ่งปลูกสร้าง"
+            value={
+              area.building_type === 'OTHER' && area.building_type_other
+                ? area.building_type_other
+                : BUILDING_TYPE_MAP[area.building_type] || area.building_type
+            }
+          />
+          <DetailItem
+            label={`พื้นที่ (${(area as any).measurement_unit === 'meter' ? 'เมตร' : 'ตร.ม.'})`}
+            value={area.area_size}
+          />
           <DetailItem
             label="ระบบที่ใช้"
             value={
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${area.service_system === ServiceSystem.CHEMICAL
-                    ? 'bg-orange-100 text-orange-800'
-                    : 'bg-green-100 text-green-800'
-                  }`}
+                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                  area.service_system === ServiceSystem.CHEMICAL
+                    ? 'bg-orange-100 text-orange-700'
+                    : area.service_system === ServiceSystem.OTHER
+                      ? 'bg-slate-100 text-slate-700'
+                      : 'bg-green-100 text-green-700'
+                }`}
               >
-                {area.service_system === ServiceSystem.CHEMICAL
-                  ? 'สารเคมี'
-                  : 'เหยื่อ'}
+                {area.service_system === 'OTHER' && area.service_system_other
+                  ? area.service_system_other
+                  : SERVICE_SYSTEM_MAP[area.service_system || ''] || area.service_system}
               </span>
             }
           />
@@ -117,51 +141,33 @@ const WorkAreaDetails: FC<{
 
         {area.items && area.items.length > 0 && (
           <div className="mt-4">
-            <h6 className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               สินค้า/บริการเพิ่มเติม
-            </h6>
-            {/* เพิ่ม overflow-x-auto ให้ตารางเลื่อนซ้ายขวาได้ในจอมือถือ */}
-            <div className="overflow-x-auto border border-slate-200 rounded-lg w-full">
-              <table className="min-w-full text-sm divide-y divide-slate-200">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-slate-600 whitespace-nowrap">
-                      รายการ
-                    </th>
-                    <th className="px-3 py-2 text-center font-medium text-slate-600 whitespace-nowrap">
-                      จำนวน
-                    </th>
-                    <th className="px-3 py-2 text-right font-medium text-slate-600 whitespace-nowrap">
-                      ราคา/หน่วย
-                    </th>
-                    <th className="px-3 py-2 text-right font-medium text-slate-600 whitespace-nowrap">
-                      รวม
-                    </th>
+            </p>
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500">
+                    <th className="px-3 py-2 text-left text-xs font-medium">รายการ</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium">จำนวน</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">ราคา/หน่วย</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">รวม</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-50">
                   {area.items.map((item, index) => {
                     const quantity = item.quantity || 0;
                     const price = item.product_price || 0;
                     const total = quantity * price;
-
                     return (
                       <tr key={index} className="hover:bg-slate-50/50">
-                        <td className="px-3 py-2 text-slate-800 whitespace-nowrap min-w-[150px]">
-                          {item.product_name || 'N/A'}
+                        <td className="px-3 py-2 text-slate-700">{item.product_name || 'N/A'}</td>
+                        <td className="px-3 py-2 text-center text-slate-600">{quantity}</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {price.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="px-3 py-2 text-center text-slate-600 whitespace-nowrap">
-                          {quantity}
-                        </td>
-                        <td className="px-3 py-2 text-right text-slate-600 whitespace-nowrap">
-                          {price.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-3 py-2 text-right font-medium text-slate-800 whitespace-nowrap">
-                          {total.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                          })}
+                        <td className="px-3 py-2 text-right font-medium text-slate-800">
+                          {total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     );
@@ -183,210 +189,138 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
   products,
   customers = [],
 }) => {
-  const [loadingPdf, setLoadingPdf] = useState(false);
+  const { users = [] } = useData();
+  const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
+
+  useEffect(() => {
+    if (isOpen && assessment?.id) {
+      AssessmentApi.getById(assessment.id).then((data: any) => {
+        setFullAssessment(data.data || data);
+      }).catch(() => {});
+    } else {
+      setFullAssessment(null);
+    }
+  }, [isOpen, assessment?.id]);
 
   if (!isOpen || !assessment) return null;
 
-  const customer = customers.find((c) => c.id === assessment.customer_id);
-  const customerName = customer
-    ? `${customer.first_name} ${customer.last_name}`
-    : assessment.customer_id;
+  const data = fullAssessment || assessment;
 
-  const handleViewPdf = async () => {
-    try {
-      if (assessment?.id) {
-        setLoadingPdf(true);
-        const blob = await AssessmentApi.exportPdf(assessment.id);
-        const url = window.URL.createObjectURL(blob);
-        window.open(url, '_blank');
-        setTimeout(() => window.URL.revokeObjectURL(url), 100);
-      }
-    } catch (error) {
-      console.error('Error fetching PDF:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถดาวน์โหลด PDF ได้' });
-    } finally {
-      setLoadingPdf(false);
-    }
-  };
+  const customer =
+    data.customer ||
+    customers.find((c) => c.id === data.customer_id);
+  const customerName = customer
+    ? [customer.first_name, customer.last_name].filter((t) => t && t !== '-').join(' ') || customer.code
+    : '-';
+  const customerCode = customer?.code || '-';
+
+  const createdByUser = users.find((u: any) => u.id === data.created_by);
+  const createdByName = createdByUser
+    ? `${createdByUser.first_name || ''} ${createdByUser.last_name || ''}`.trim()
+    : data.created_by || '-';
+
+  const paymentLabel =
+    data.payment_condition === PaymentMethod.INSTALLMENT
+      ? 'แบ่งชำระ (งวดงาน)'
+      : 'ชำระเต็มจำนวน';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบประเมิน: ${assessment.code || assessment.id}`}
+      title={`รายละเอียดใบประเมิน: ${data.code || data.id}`}
       size="5xl"
       footer={
-        <div className="flex flex-col sm:flex-row w-full items-start sm:items-center justify-between gap-4">
-          <div className="flex flex-col text-left">
-            <span className="text-sm text-slate-500">ยอดรวมทั้งหมดสุทธิ</span>
-            <span className="text-2xl font-bold text-primary">
-              ฿
-              {assessment.total_price.toLocaleString('th-TH', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </span>
-          </div>
-          {/* ปรับปุ่มให้เต็มจอในมือถือ (w-full sm:w-auto) */}
-          <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-            <Button
-              onClick={handleViewPdf}
-              variant="outline"
-              className="w-full sm:w-auto px-6 border-slate-300 text-slate-700 hover:bg-slate-50"
-              disabled={loadingPdf}
-            >
-              {loadingPdf ? (
-                <LoadingIcon className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <EyeIcon className="w-4 h-4 mr-2" />
-              )}
-              {loadingPdf ? 'กำลังโหลด...' : 'ดู PDF'}
-            </Button>
-            <Button onClick={onClose} variant="primary" className="w-full sm:w-auto px-8">
-              ปิด
-            </Button>
+        <div className="flex w-full justify-end">
+          <div className="text-right">
+            <span className="text-slate-500 font-medium text-sm">ยอดรวมทั้งหมดสุทธิ</span>
+            <p className="text-2xl font-bold text-primary">
+              ฿{Number(data.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+            </p>
           </div>
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Top Section: Info & Address */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* General Info */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailItem
-                label="รหัสใบประเมิน"
-                value={assessment.code || assessment.id}
-              />
-              <DetailItem
-                label="สถานะ"
-                value={<StatusBadge status={assessment.status} />}
-              />
-              <DetailItem
-                label="ลูกค้า"
-                value={
-                  <div className="flex items-center gap-2">
-                    <UserGroupIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                    <span>{customerName}</span>
-                  </div>
-                }
-                fullWidth
-              />
-              <DetailItem
-                label="วันที่สร้าง"
-                value={formatThaiDate(assessment.created_at?.toString())}
-              />
-              <DetailItem
-                label="วันที่นัดหมาย"
-                value={formatThaiDate(assessment.appointment_date?.toString())}
-              />
-              <DetailItem
-                label="เงื่อนไขการชำระเงิน"
-                value={
-                  assessment.payment_condition === PaymentMethod.INSTALLMENT
-                    ? 'แบ่งชำระ (งวดงาน)'
-                    : assessment.payment_condition === PaymentMethod.TRANSFER
-                      ? 'โอนเงิน (เต็มจำนวน)'
-                      : assessment.payment_condition === PaymentMethod.CASH
-                        ? 'เงินสด'
-                        : assessment.payment_condition || '-'
-                }
-              />
-              <DetailItem label="ผู้สร้าง" value={assessment.created_by} />
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <DetailItem label="รหัสใบประเมิน" value={<span className="text-primary font-bold">{data.code || data.id}</span>} />
+              <DetailItem label="สถานะ" value={<StatusBadge status={data.status} />} />
+              <DetailItem label="ลูกค้า" value={customerName} />
+              <DetailItem label="รหัสลูกค้า" value={<span className="text-green-600 font-bold">{customerCode}</span>} />
+              <DetailItem label="วันที่สร้าง" value={formatThaiDate(data.created_at?.toString())} />
+              <DetailItem label="วันที่นัดหมาย" value={formatThaiDate(data.appointment_date?.toString())} />
+              <DetailItem label="การชำระเงิน" value={paymentLabel} />
+              <DetailItem label="ผู้สร้าง" value={createdByName} />
+              {data.package && (
+                <DetailItem label="แพ็คเกจ" value={<span className="text-primary font-medium">{(data.package as any).name || '-'}</span>} fullWidth />
+              )}
             </dl>
           </div>
 
           {/* Address Info */}
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
+          <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
-            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <DetailItem
-                label="ที่อยู่"
-                value={assessment.address}
-                fullWidth
-              />
-              <DetailItem label="แขวง/ตำบล" value={assessment.sub_district} />
-              <DetailItem label="เขต/อำเภอ" value={assessment.district} />
-              <DetailItem label="จังหวัด" value={assessment.province} />
-              <DetailItem label="รหัสไปรษณีย์" value={assessment.zipcode} />
-
-              {assessment.google_map_link && (
-                <div className="col-span-full mt-2 pt-2 border-t border-slate-100">
-                  <dt className="text-xs font-medium text-slate-500 mb-1">
-                    Google Map
-                  </dt>
-                  <dd>
-                    <a
-                      href={assessment.google_map_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-primary hover:text-primary-dark hover:underline bg-primary/5 px-3 py-1.5 rounded-lg border border-primary/10 transition-colors w-full justify-center sm:justify-start"
-                    >
-                      <GoogleMapIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate text-sm font-medium">
-                        เปิดแผนที่นำทาง
-                      </span>
-                    </a>
-                  </dd>
-                </div>
-              )}
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+              <DetailItem label="ที่อยู่" value={data.address} fullWidth />
+              <DetailItem label="แขวง/ตำบล" value={data.sub_district} />
+              <DetailItem label="เขต/อำเภอ" value={data.district} />
+              <DetailItem label="จังหวัด" value={data.province} />
+              <DetailItem label="รหัสไปรษณีย์" value={data.zipcode} />
             </dl>
+            {data.google_map_link && (
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <a
+                  href={data.google_map_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                >
+                  <GoogleMapIcon className="h-4 w-4 shrink-0" />
+                  เปิดแผนที่นำทาง
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Route Info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-          <SectionHeader
-            icon={<MapIcon />}
-            title="กลุ่มเส้นทาง/พื้นที่บริการ"
-          />
+        <div className="rounded-xl border border-slate-200 p-5">
+          <SectionHeader icon={<MapPinIcon />} title="กลุ่มเส้นทาง/พื้นที่บริการ" />
           <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <DetailItem label="เขต (พื้นที่บริการ)" value={assessment.zone} />
-            <DetailItem label="Group" value={assessment.route_group} />
-            <DetailItem label="สายถนนที่" value={assessment.road_line} />
-            <DetailItem label="ลำดับที่" value={assessment.sequence} />
+            <DetailItem label="เขต (พื้นที่บริการ)" value={data.zone} />
+            <DetailItem label="Group" value={data.route_group} />
+            <DetailItem label="สายถนนที่" value={data.road_line} />
+            <DetailItem label="ลำดับที่" value={data.sequence} />
           </dl>
         </div>
 
-        {/* Installment Info */}
-        {assessment.payment_condition === PaymentMethod.INSTALLMENT &&
-          assessment.installments &&
-          assessment.installments.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-              <SectionHeader
-                icon={<CreditCardIcon />}
-                title="รายละเอียดงวดชำระ (Installments)"
-              />
-              <div className="overflow-x-auto border border-slate-200 rounded-lg w-full">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16 whitespace-nowrap">
-                        งวดที่
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap min-w-[150px]">
-                        รายละเอียด
-                      </th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase whitespace-nowrap w-32">
-                        จำนวนเงิน
-                      </th>
+        {/* Installments */}
+        {data.payment_condition === PaymentMethod.INSTALLMENT &&
+          data.installments &&
+          data.installments.length > 0 && (
+            <div className="rounded-xl border border-slate-200 p-4">
+              <SectionHeader icon={<CreditCardIcon />} title="รายละเอียดงวดชำระ" />
+              <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500">
+                      <th className="px-4 py-2.5 text-center text-xs font-medium w-16">งวดที่</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium">รายละเอียด</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-medium w-32">จำนวนเงิน</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {assessment.installments.map((inst, idx) => (
+                  <tbody className="divide-y divide-slate-50">
+                    {data.installments.map((inst, idx) => (
                       <tr key={inst.id || idx}>
-                        <td className="px-4 py-2 text-center text-sm font-medium text-slate-700 whitespace-nowrap">
-                          {inst.installment_no}
-                        </td>
-                        <td className="px-4 py-2 text-sm text-slate-700">
-                          {inst.note || '-'}
-                        </td>
-                        <td className="px-4 py-2 text-right text-sm font-mono text-slate-700 whitespace-nowrap">
-                          {Number(inst.amount).toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                          })}
+                        <td className="px-4 py-2 text-center font-medium text-slate-700">{inst.installment_no}</td>
+                        <td className="px-4 py-2 text-slate-600">{inst.note || '-'}</td>
+                        <td className="px-4 py-2 text-right font-medium text-slate-800">
+                          {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     ))}
@@ -397,25 +331,36 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
           )}
 
         {/* Work Areas */}
-        <div>
-          <SectionHeader
-            icon={<ClipboardDocumentListIcon />}
-            title="รายละเอียดพื้นที่ประเมิน"
-          />
-          <div className="grid grid-cols-1 gap-4">
-            {assessment.assessment_areas &&
-              assessment.assessment_areas.length > 0 ? (
-              assessment.assessment_areas.map((area, index) => (
+        <div className="rounded-xl border border-slate-200 p-5">
+          <SectionHeader icon={<ClipboardDocumentListIcon />} title="รายละเอียดพื้นที่ประเมิน" />
+          <div className="space-y-3">
+            {data.assessment_areas && data.assessment_areas.length > 0 ? (
+              data.assessment_areas.map((area, index) => (
                 <WorkAreaDetails key={index} area={area} products={products} />
               ))
             ) : (
-              <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                <ClipboardDocumentListIcon className="w-10 h-10 sm:w-12 sm:h-12 text-slate-300 mx-auto mb-2" />
-                <p className="text-sm sm:text-base text-slate-500">ไม่พบข้อมูลพื้นที่ประเมิน</p>
+              <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <ClipboardDocumentListIcon className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm text-slate-400">ไม่พบข้อมูลพื้นที่ประเมิน</p>
               </div>
             )}
           </div>
         </div>
+
+        {/* Site Image */}
+        {data.site_image_url && (
+          <div className="rounded-xl border border-slate-200 p-5">
+            <SectionHeader icon={<PhotoIcon />} title="รูปภาพพื้นที่บริการ" />
+            <div className="flex justify-center">
+              <img
+                src={data.site_image_url}
+                alt="พื้นที่บริการ"
+                className="max-h-80 rounded-lg border border-slate-200 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                onClick={() => window.open(data.site_image_url!, '_blank')}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
