@@ -497,21 +497,8 @@ const Users: React.FC<UsersProps> = ({
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <img
-                                className="h-10 w-10 rounded-full object-cover"
-                                src={user.url}
-                                alt=""
-                              />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-slate-900">
-                                {user.name} ({user.nick_name})
-                              </div>
-                            </div>
-                          </div>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                          {user.name} ({user.nick_name})
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {user.email || '-'}

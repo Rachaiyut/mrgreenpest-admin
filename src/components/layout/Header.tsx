@@ -30,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
               <Button variant="ghost" className="flex items-center space-x-2">
                 <img
                   src={
+                    currentUser.url ||
                     'https://ui-avatars.com/api/?name=' +
                     currentUser.firstName +
                     ' ' +
