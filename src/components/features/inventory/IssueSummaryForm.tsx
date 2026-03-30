@@ -559,36 +559,6 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
     <>
       <form ref={goodsFormRef} id="issue-summary-form" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-6">
-          {/* Edit mode: ID Indicator & Status Dropdown */}
-          {isEditMode && summary && (
-            <div className="flex items-center gap-2 bg-slate-100 p-3 rounded-lg border border-slate-200">
-              <span className="text-slate-500 font-semibold text-sm">เลขที่ใบเบิก:</span>
-              <span className="text-slate-800 font-mono text-sm font-bold">{summary.id}</span>
-
-              <div className="ml-auto flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-600">สถานะเอกสาร:</span>
-                <select
-                  value={currentStatus}
-                  onChange={(e) => setCurrentStatus(e.target.value)}
-                  className={`text-xs font-bold border rounded-md shadow-sm focus:ring-primary focus:border-primary px-3 py-1.5 transition-colors cursor-pointer outline-none ${
-                    currentStatus === 'PENDING'
-                      ? 'bg-amber-50 text-amber-700 border-amber-300'
-                      : currentStatus === 'APPROVED' || currentStatus === 'COMPLETED'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                        : currentStatus === 'CANCELLED'
-                          ? 'bg-red-50 text-red-700 border-red-300'
-                          : 'bg-white text-slate-700 border-slate-300'
-                  }`}
-                >
-                  <option value="DRAFT">DRAFT (ฉบับร่าง)</option>
-                  <option value="PENDING">PENDING (รออนุมัติ)</option>
-                  <option value="APPROVED">APPROVED (อนุมัติแล้ว)</option>
-                  <option value="COMPLETED">COMPLETED (เสร็จสิ้น)</option>
-                  <option value="CANCELLED">CANCELLED (ยกเลิก)</option>
-                </select>
-              </div>
-            </div>
-          )}
 
           {/* Card 1: Logistics Header */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">

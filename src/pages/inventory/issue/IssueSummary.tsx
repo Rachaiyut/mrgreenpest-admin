@@ -18,6 +18,7 @@ import { IssueSummaryModal } from '../../../components/features/inventory/IssueS
 import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
 import { Card } from '../../../components/common/Card';
 import { Input, Select, Button } from '../../../components/common/FormControls';
+import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Pagination } from '../../../components/common/Pagination';
 
 // ===== Utils =====
@@ -34,8 +35,9 @@ import {
   TrashIcon,
   TruckIcon,
   UserIcon,
-  DocumentCheckIcon, 
-  LoadingIcon,       
+  DocumentCheckIcon,
+  LoadingIcon,
+  CheckCircleIcon,
 } from '../../../assets/icons/Icons';
 
 // Helper function สำหรับแสดงสถานะเป็นภาษาไทยและสี
@@ -110,6 +112,33 @@ const IssueSummaryPage: React.FC = () => {
     }
   };
 
+  const onUpdateStatus = async (summaryId: string, newStatus: string) => {
+    try {
+      const summary = stockIssueSummaries.find((s) => s.id === summaryId);
+      if (!summary) return;
+      await handlers.stockIssueSummaries.update({ ...summary, status: newStatus } as any);
+    } catch (error) {
+      console.error('Failed to update status', error);
+    }
+  };
+
+  const handleStatusClick = (summary: StockIssueSummaryType) => {
+    setSelectedSummary(summary);
+    setTargetStatus(summary.status || 'DRAFT');
+    setIsStatusModalOpen(true);
+    setOpenDropdownId(null);
+  };
+
+  const handleStatusConfirm = async () => {
+    if (!selectedSummary) return;
+    try {
+      await handlers.stockIssueSummaries.update({ ...selectedSummary, status: targetStatus } as any);
+    } catch (error) {
+      console.error('Failed to update status', error);
+    }
+    setIsStatusModalOpen(false);
+  };
+
   const onDeleteStockIssueSummary = async (id: string) => {
     try {
       await handlers.stockIssueSummaries.delete(id);
@@ -133,6 +162,9 @@ const IssueSummaryPage: React.FC = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [targetStatus, setTargetStatus] = useState('');
 
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w])),
@@ -176,6 +208,11 @@ const IssueSummaryPage: React.FC = () => {
       filtered = filtered.filter((s) => s.created_by === creatorFilter);
     }
 
+    // Filter by status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((s) => s.status === statusFilter);
+    }
+
     // Filter by search query
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
@@ -208,7 +245,7 @@ const IssueSummaryPage: React.FC = () => {
     }
 
     return filtered;
-  }, [stockIssueSummaries, searchQuery, creatorFilter, productMap]);
+  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap]);
 
   const totalItems = filteredSummaries.length;
   const paginatedSummaries = filteredSummaries.slice(
@@ -303,6 +340,13 @@ const IssueSummaryPage: React.FC = () => {
         hoverBg: 'hover:bg-blue-50',
         onClick: () => handleEditSummary(summary),
       },
+      ...(summary.status !== 'COMPLETED' ? [{
+        label: 'เปลี่ยนสถานะ',
+        icon: CheckCircleIcon,
+        color: 'text-slate-700',
+        hoverBg: 'hover:bg-slate-50',
+        onClick: () => handleStatusClick(summary),
+      }] : []),
       {
         label: 'ลบ',
         icon: TrashIcon,
@@ -354,6 +398,22 @@ const IssueSummaryPage: React.FC = () => {
                     {creator}
                   </option>
                 ))}
+              </Select>
+            </div>
+            <div className="w-40">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="all">สถานะทั้งหมด</option>
+                <option value="DRAFT">ฉบับร่าง</option>
+                <option value="PENDING">รออนุมัติ</option>
+                <option value="APPROVED">อนุมัติแล้ว</option>
+                <option value="COMPLETED">เสร็จสิ้น</option>
+                <option value="CANCELLED">ยกเลิก</option>
               </Select>
             </div>
             <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
@@ -717,6 +777,34 @@ const IssueSummaryPage: React.FC = () => {
         warehouses={warehouses}
         products={products}
         users={users}
+      />
+
+      {/* Status Change Modal */}
+      <ConfirmationModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        onConfirm={handleStatusConfirm}
+        title="อัปเดตสถานะ"
+        message={
+          <div className="space-y-4 text-left">
+            <p className="text-sm text-slate-600">
+              กรุณาเลือกสถานะใหม่
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
+              <Select
+                value={targetStatus}
+                onChange={(e) => setTargetStatus(e.target.value)}
+              >
+                <option value="DRAFT">ฉบับร่าง</option>
+                <option value="PENDING">รออนุมัติ</option>
+                <option value="APPROVED">อนุมัติแล้ว</option>
+                <option value="COMPLETED">เสร็จสิ้น</option>
+                <option value="CANCELLED">ยกเลิก</option>
+              </Select>
+            </div>
+          </div>
+        }
       />
     </>
   );
