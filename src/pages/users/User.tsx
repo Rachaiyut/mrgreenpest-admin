@@ -390,10 +390,10 @@ const Users: React.FC<UsersProps> = ({
                 <p className="mt-1 text-slate-600">จัดการบัญชีผู้ใช้ในระบบ</p>
               </div>
               <div className="flex items-center gap-3">
-                <div className="w-96">
+                <div className="w-64">
                   <Input
                     type="search"
-                    placeholder="ค้นหา (เลขบัตร, ชื่อ, ชื่อเล่น)..."
+                    placeholder="ค้นหาชื่อ, อีเมล, โทรศัพท์"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -408,7 +408,7 @@ const Users: React.FC<UsersProps> = ({
                     setRoleFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-auto"
+                  className="w-36"
                 >
                   <option value="all">ทุกบทบาท</option>
                   {roles.map((role) => {
