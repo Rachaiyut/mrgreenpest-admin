@@ -17,6 +17,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
   LoadingIcon,
+  XCircleIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { QuotationStatus } from '../../types/enums/quotaton';
@@ -881,11 +882,18 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             )}
             <hr className="my-1 border-slate-100" />
             <button
-              onClick={handleDelete}
+              onClick={() => {
+                if (selectedQuotation) {
+                  setTargetStatus(QuotationStatus.CANCELLED);
+                  setCancellationReason('');
+                  setIsCancelModalOpen(true);
+                }
+                setOpenDropdownId(null);
+              }}
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
-              <TrashIcon className="w-4 h-4 text-red-500" />
-              ลบ
+              <XCircleIcon className="w-4 h-4 text-red-500" />
+              ยกเลิก
             </button>
           </div>
         </div>

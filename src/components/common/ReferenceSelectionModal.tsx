@@ -1,15 +1,23 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Input, Button } from './FormControls';
-import { FieldJob } from '@/src/types/entity/app.interface';
 import { formatThaiDate } from '../../utils/date';
-import { Job } from '@/src/types/entity/job.interface';
+
+interface ReferenceJob {
+  id: string;
+  created_at?: string;
+  appointment_date?: Date | string;
+  customer?: {
+    first_name?: string;
+    last_name?: string;
+  };
+}
 
 interface ReferenceSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddReferences: (jobIds: string[]) => void;
-  jobs: Job[];
+  jobs: ReferenceJob[];
   allUsedReferenceIds: string[];
   currentSelection: string[];
 }
@@ -40,8 +48,8 @@ export const ReferenceSelectionModal: React.FC<
       (job) =>
         !usedIdsSet.has(job.id) &&
         (job.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          job.customer.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          formatThaiDate(job.created_at).includes(searchTerm))
+          (job.customer?.first_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          formatThaiDate(job.created_at || job.appointment_date?.toString()).includes(searchTerm))
     );
   }, [jobs, allUsedReferenceIds, searchTerm]);
 
@@ -140,10 +148,10 @@ export const ReferenceSelectionModal: React.FC<
                   </td>
                 
                   <td className="px-4 py-3 text-sm text-slate-600">
-                    {job.customer?.first_name} {job.customer.last_name}
+                    {job.customer?.first_name} {job.customer?.last_name}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                    {formatThaiDate(job.created_at)}
+                    {formatThaiDate(job.created_at || job.appointment_date?.toString())}
                   </td>
                 </tr>
               ))}

@@ -16,6 +16,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
   LoadingIcon,
+  XCircleIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Contract, ContractStatus } from '../../types';
@@ -58,6 +59,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
   const [targetStatus, setTargetStatus] = useState<ContractStatus>(ContractStatus.DRAFT);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
@@ -154,9 +157,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setSelectedContract(contracts?.find((c) => c.id === contractId) || null);
       setOpenDropdownId(contractId);
+      const dropdownHeight = 350;
+      const spaceBelow = window.innerHeight - buttonRect.bottom;
+      const showAbove = spaceBelow < dropdownHeight;
       setDropdownPosition({
-        top: buttonRect.bottom + window.scrollY,
-        left: buttonRect.right + window.scrollX,
+        top: showAbove ? buttonRect.top - dropdownHeight : buttonRect.bottom,
+        left: buttonRect.right,
       });
     }
   };
@@ -251,6 +257,27 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       }
     }
     setIsStatusModalOpen(false);
+    setSelectedContract(null);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedContract || !cancellationReason.trim()) {
+      Swal.fire({ title: 'กรุณากรอกเหตุผล', text: 'กรุณาระบุเหตุผลการยกเลิกสัญญา', icon: 'warning', confirmButtonText: 'ตกลง' });
+      return;
+    }
+    try {
+      const updatePayload = { status: ContractStatus.CANCELLED, cancellation_reason: cancellationReason.trim() };
+      if (onUpdateContract) {
+        await onUpdateContract({ ...selectedContract, ...updatePayload });
+      } else {
+        await ContractApi.update(selectedContract.id, { ...selectedContract, ...updatePayload });
+      }
+      fetchContractsData();
+    } catch (error) {
+      console.error('Failed to cancel contract:', error);
+    }
+    setIsCancelModalOpen(false);
+    setCancellationReason('');
     setSelectedContract(null);
   };
 
@@ -590,12 +617,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         <div
           ref={dropdownRef}
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: `${dropdownPosition.top}px`,
             left: `${dropdownPosition.left}px`,
             transform: 'translateX(-100%)',
           }}
-          className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
+          className="origin-top-right w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-50 border border-slate-100 overflow-hidden"
         >
           <div className="py-1">
             <button
@@ -673,11 +700,17 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
             )}
             <hr className="my-1 border-slate-100" />
             <button
-              onClick={() => handleDeleteClick(selectedContract)}
+              onClick={() => {
+                if (selectedContract) {
+                  setCancellationReason('');
+                  setIsCancelModalOpen(true);
+                }
+                setOpenDropdownId(null);
+              }}
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
-              <TrashIcon className="w-4 h-4 text-red-500" />
-              ลบ
+              <XCircleIcon className="w-4 h-4 text-red-500" />
+              ยกเลิก
             </button>
           </div>
         </div>
@@ -741,6 +774,39 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         }
         confirmButtonText="บันทึก"
         confirmButtonClass="bg-primary hover:bg-primary/90"
+      />
+
+      {/* Cancellation Reason Modal */}
+      <ConfirmationModal
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setCancellationReason('');
+        }}
+        onConfirm={handleCancelConfirm}
+        title="ยกเลิกสัญญา"
+        message={
+          <div className="space-y-4 text-left">
+            <p>
+              ยืนยันการยกเลิกสัญญา{' '}
+              <strong>{selectedContract?.code || selectedContract?.id}</strong>
+            </p>
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                เหตุผลการยกเลิก <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="กรุณาระบุเหตุผล เช่น ลูกค้าขอยกเลิก, หมดอายุ, เปลี่ยนเงื่อนไข..."
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                rows={4}
+              />
+            </div>
+          </div>
+        }
+        confirmButtonText="ยืนยันยกเลิก"
+        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
     </div>
   );
