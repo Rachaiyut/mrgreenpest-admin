@@ -23,6 +23,7 @@ import { Pagination } from '../../../components/common/Pagination';
 
 // ===== Utils =====
 import { formatThaiDate } from '../../../utils/date';
+import { StockIssueSummaryApi } from '../../../api/stock-issue-summary';
 
 // ===== Assets =====
 import {
@@ -132,7 +133,9 @@ const IssueSummaryPage: React.FC = () => {
   const handleStatusConfirm = async () => {
     if (!selectedSummary) return;
     try {
-      await handlers.stockIssueSummaries.update({ ...selectedSummary, status: targetStatus } as any);
+      await StockIssueSummaryApi.updateStatus(selectedSummary.id, targetStatus);
+      // Refresh list
+      fetchData(['stockIssueSummaries']);
     } catch (error) {
       console.error('Failed to update status', error);
     }

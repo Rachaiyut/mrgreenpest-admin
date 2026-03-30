@@ -30,6 +30,11 @@ class StockIssueSummaryService extends AuthService {
     return res.data;
   }
 
+  async updateStatus(id: string, status: string): Promise<StockIssueSummary> {
+    const res = await this.http.patch<StockIssueSummary>(`${this.path}/${id}/status`, { status });
+    return res.data;
+  }
+
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
