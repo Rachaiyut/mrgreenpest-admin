@@ -15,6 +15,7 @@ import { CategoryApi } from '@/src/api/category';
 
 // Icon
 import {
+  LoadingIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
@@ -185,7 +186,7 @@ const Categories: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
@@ -238,8 +239,16 @@ const Categories: React.FC = () => {
           </div>
         </div>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col">
-          <div className="overflow-auto flex-grow">
+        {loading ? (
+          <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+            <div className="flex flex-col items-center justify-center text-slate-500">
+              <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+              <p className="text-base font-medium">กำลังโหลดข้อมูลหมวดหมู่...</p>
+            </div>
+          </Card>
+        ) : (
+        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+          <div className="overflow-auto w-full flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
@@ -340,7 +349,7 @@ const Categories: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -350,6 +359,7 @@ const Categories: React.FC = () => {
             />
           </div>
         </Card>
+        )}
       </div>
 
       {openDropdownId && dropdownPosition && (

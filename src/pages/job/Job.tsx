@@ -679,7 +679,7 @@ const Job: React.FC<JobProps> = ({
 
       if (existingReportId) {
         await ServiceReportApi.update(existingReportId, dataToSave);
-        reportId = existingReportId;
+        
       } else {
         const created = await ServiceReportApi.create(dataToSave as any);
         reportId = (created as any)?.data?.id || (created as any)?.id;
@@ -909,6 +909,13 @@ const Job: React.FC<JobProps> = ({
 
   return (
     <>
+      <div className="relative min-h-screen">
+      {isLoading && (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
+          <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
+          <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดข้อมูลภาคสนาม...</p>
+        </div>
+      )}
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -1185,12 +1192,6 @@ const Job: React.FC<JobProps> = ({
 
 
         <div className="flex-1 min-h-0 relative">
-          {isLoading && (
-            <div className="absolute inset-0 z-[200] bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
-              <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
-              <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดข้อมูลภาคสนาม...</p>
-            </div>
-          )}
 
           {activeTab === 'schedule' && view === 'kanban' && (
             <div className="flex flex-col relative">
@@ -1805,6 +1806,7 @@ const Job: React.FC<JobProps> = ({
             </div>
           )}
         </div>
+      </div>
       </div>
 
       <JobModal

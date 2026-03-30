@@ -52,6 +52,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       { label: 'สินค้า/บริการ', module: 'PRODUCT' },
       { label: 'คลังสินค้า', module: 'WAREHOUSE' },
       { label: 'ผู้จัดจำหน่าย', module: 'SUPPLIER' },
+      { label: 'หน่วยนับ', module: 'UNIT' },
       { label: 'รับเข้า', module: 'RECEIVE_NOTE' },
       { label: 'เบิกสินค้าเข้าคลังย่อย', module: 'WITHDRAW_NOTE' },
       {

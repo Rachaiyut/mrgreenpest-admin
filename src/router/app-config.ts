@@ -77,6 +77,7 @@ const Product = React.lazy(() => import('../pages/inventory/products/Product'));
 const Package = React.lazy(() => import('../pages/packages/Package'));
 const Category = React.lazy(() => import('../pages/categories/Category'));
 const Supplier = React.lazy(() => import('../pages/suppliers/Supplier'));
+const UnitPage = React.lazy(() => import('../pages/units/Unit'));
 const User = React.lazy(() => import('../pages/users/User'));
 const Reports = React.lazy(() => import('../pages/reports'));
 const Notification = React.lazy(
@@ -342,6 +343,12 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         path: 'suppliers',
         access: 'ACCESS_SUPPLIER',
         component: Supplier,
+      },
+      {
+        name: 'หน่วยนับ',
+        path: 'units',
+        access: 'ACCESS_UNIT',
+        component: UnitPage,
       },
     ],
   },
