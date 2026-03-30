@@ -109,13 +109,13 @@ export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
   );
 };
 
-export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = (props) => {
+export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = ({ className, ...props }) => {
   const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
   return (
     <select
       {...props}
       {...controlledProps}
-      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900"
+      className={`px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${className || 'w-full'}`}
     />
   );
 };

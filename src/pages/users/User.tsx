@@ -14,6 +14,7 @@ import {
   PencilIcon,
   TrashIcon,
   WalletIcon,
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 import { AddRoleModal } from '../../components/features/users/AddRoleModal';
 import { EditRoleModal } from '../../components/features/users/EditRoleModal';
@@ -139,6 +140,7 @@ const Users: React.FC<UsersProps> = ({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -164,8 +166,8 @@ const Users: React.FC<UsersProps> = ({
   };
 
   useEffect(() => {
-    fetchRoles();
-    fetchUsers();
+    setLoading(true);
+    Promise.all([fetchRoles(), fetchUsers()]).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -387,8 +389,8 @@ const Users: React.FC<UsersProps> = ({
                 <h1 className="text-3xl font-bold text-slate-800">ผู้ใช้งาน</h1>
                 <p className="mt-1 text-slate-600">จัดการบัญชีผู้ใช้ในระบบ</p>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-64">
+              <div className="flex items-center gap-3">
+                <div className="w-96">
                   <Input
                     type="search"
                     placeholder="ค้นหา (เลขบัตร, ชื่อ, ชื่อเล่น)..."
@@ -406,6 +408,7 @@ const Users: React.FC<UsersProps> = ({
                     setRoleFilter(e.target.value);
                     setCurrentPage(1);
                   }}
+                  className="w-auto"
                 >
                   <option value="all">ทุกบทบาท</option>
                   {roles.map((role) => {
@@ -433,13 +436,21 @@ const Users: React.FC<UsersProps> = ({
                     );
                   })}
                 </Select>
+                <Button onClick={() => setIsAddUserModalOpen(true)}>
+                  <PlusIcon className="h-5 w-5" />
+                  สร้างผู้ใช้งาน
+                </Button>
               </div>
-              <Button onClick={() => setIsAddUserModalOpen(true)}>
-                <PlusIcon className="h-5 w-5" />
-                สร้างผู้ใช้งาน
-              </Button>
             </div>
 
+            {loading ? (
+              <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+                <div className="flex flex-col items-center justify-center text-slate-500">
+                  <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                  <p className="text-base font-medium">กำลังโหลดข้อมูลผู้ใช้งาน...</p>
+                </div>
+              </Card>
+            ) : (
             <Card className="!p-0">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
@@ -539,6 +550,7 @@ const Users: React.FC<UsersProps> = ({
                 onItemsPerPageChange={handleItemsPerPageChange}
               />
             </Card>
+            )}
           </>
         )}
 
@@ -564,6 +576,14 @@ const Users: React.FC<UsersProps> = ({
               </div>
             </div>
 
+            {loading ? (
+              <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+                <div className="flex flex-col items-center justify-center text-slate-500">
+                  <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                  <p className="text-base font-medium">กำลังโหลดข้อมูลบทบาท...</p>
+                </div>
+              </Card>
+            ) : (
             <Card className="!p-0">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
@@ -646,6 +666,7 @@ const Users: React.FC<UsersProps> = ({
                 </table>
               </div>
             </Card>
+            )}
           </>
         )}
       </div>
