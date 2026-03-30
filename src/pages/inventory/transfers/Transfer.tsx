@@ -19,9 +19,9 @@ import { TransferApi } from '@/src/api/transfer';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddTransferModal } from '../../../components/features/inventory/AddTransferModal';
-import { EditTransferModal } from '../../../components/features/inventory/EditTransferModal';
-import { TransferDetailsModal } from '../../../components/features/inventory/TransferDetailsModal';
+import { AddTransferModal } from '../../../components/features/inventory/transfer/AddTransferModal';
+import { EditTransferModal } from '../../../components/features/inventory/transfer/EditTransferModal';
+import { TransferDetailsModal } from '../../../components/features/inventory/transfer/TransferDetailsModal';
 
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Card } from '../../../components/common/Card';

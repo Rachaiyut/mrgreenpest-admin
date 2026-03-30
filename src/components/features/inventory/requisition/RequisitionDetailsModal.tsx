@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
+import { Modal } from '../../../common/Modal';
+import { Button } from '../../../common/FormControls';
 import {
   Requisition,
   RequisitionType,
@@ -8,8 +8,8 @@ import {
 } from '@/src/types/entity/requisition.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { Product } from '@/src/types/entity/product.interface';
-import { formatThaiDate } from '../../../utils/date';
-import { StatusBadge } from '../../common/StatusBadge';
+import { formatThaiDate } from '../../../../utils/date';
+import { StatusBadge } from '../../../common/StatusBadge';
 
 interface RequisitionDetailsModalProps {
   isOpen: boolean;

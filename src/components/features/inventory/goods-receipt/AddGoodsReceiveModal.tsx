@@ -14,10 +14,10 @@ import {
 } from '@/src/types/entity/app.interface';
 
 // ===== Components =====
-import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Button } from '../../common/FormControls';
-import { SearchableSelect } from '../../common/SearchableSelect';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
+import { Modal } from '../../../common/Modal';
+import { FormField, Input, Select, Button } from '../../../common/FormControls';
+import { SearchableSelect } from '../../../common/SearchableSelect';
+import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 
 // ===== Assets =====
 import {
@@ -26,7 +26,7 @@ import {
   PlusIcon,
   TrashIcon,
   TruckIcon,
-} from '../../../assets/icons/Icons';
+} from '../../../../assets/icons/Icons';
 
 interface AddGoodsReceiptModalProps {
   isOpen: boolean;

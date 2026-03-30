@@ -14,16 +14,16 @@ import {
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
-import { AddReturnModal } from '../../../components/features/inventory/AddReturnModal';
+import { AddReturnModal } from '../../../components/features/inventory/return/AddReturnModal';
 import {
   ProductReturn as ReturnType,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
 import { ProductReturnStatus } from '@/src/types/enums/inventory';
-import { ReturnDetailsModal } from '../../../components/features/inventory/ReturnDetailsModal';
+import { ReturnDetailsModal } from '../../../components/features/inventory/return/ReturnDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
-import { EditReturnModal } from '../../../components/features/inventory/EditReturnModal';
+import { EditReturnModal } from '../../../components/features/inventory/return/EditReturnModal';
 import { Input } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';

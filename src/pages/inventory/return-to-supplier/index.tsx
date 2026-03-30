@@ -9,7 +9,7 @@ import {
   XCircleIcon,
   TrashIcon,
 } from '../../../assets/icons/Icons';
-import { AddReturnToSupplierModal } from '../../../components/features/inventory/AddReturnToSupplierModal';
+import { AddReturnToSupplierModal } from '../../../components/features/inventory/return-to-supplier/AddReturnToSupplierModal';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import {
   ReturnToSupplier,
@@ -18,7 +18,7 @@ import {
   Supplier,
   Product,
 } from '@/src/types/entity/app.interface';
-import { ReturnToSupplierDetailsModal } from '../../../components/features/inventory/ReturnToSupplierDetailsModal';
+import { ReturnToSupplierDetailsModal } from '../../../components/features/inventory/return-to-supplier/ReturnToSupplierDetailsModal';
 import { Pagination } from '../../../components/common/Pagination';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input, Button } from '../../../components/common/FormControls';

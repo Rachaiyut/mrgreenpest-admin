@@ -20,8 +20,8 @@ import { Card } from '../../../components/common/Card';
 import { Input, Button } from '../../../components/common/FormControls';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
-import { AddGoodsReceiptModal } from '../../../components/features/inventory/AddGoodsReceiveModal';
-import { GoodsReceiptDetailsModal } from '../../../components/features/inventory/GoodsReceiptDetailsModal';
+import { AddGoodsReceiptModal } from '../../../components/features/inventory/goods-receipt/AddGoodsReceiveModal';
+import { GoodsReceiptDetailsModal } from '../../../components/features/inventory/goods-receipt/GoodsReceiptDetailsModal';
 
 // ===== Utils =====
 import { formatThaiDate } from '../../../utils/date';

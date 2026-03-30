@@ -15,8 +15,8 @@ import {
   Requisition as RequisitionType,
   RequisitionStatus,
 } from '@/src/types/entity/requisition.interface';
-// import { RequisitionDetailsModal } from '../../../components/features/inventory/RequisitionDetailsModal';
-import { RequisitionDetailsModal } from '../../../components/features/inventory/RequisitionDetailsModal';
+// import { RequisitionDetailsModal } from '../../../components/features/inventory/requisition/RequisitionDetailsModal';
+import { RequisitionDetailsModal } from '../../../components/features/inventory/requisition/RequisitionDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Input } from '../../../components/common/FormControls';

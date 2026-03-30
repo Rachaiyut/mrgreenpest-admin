@@ -10,15 +10,15 @@ import {
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
-import { AddStockAdjustmentModal } from '../../../components/features/inventory/AddAdjustmentModal';
+import { AddStockAdjustmentModal } from '../../../components/features/inventory/adjustment/AddAdjustmentModal';
 import {
   StockAdjustment as StockAdjustmentType,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { StockAdjustmentDetailsModal } from '../../../components/features/inventory/StockAdjustmentDetailsModal';
+import { StockAdjustmentDetailsModal } from '../../../components/features/inventory/adjustment/StockAdjustmentDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
-import { EditStockAdjustmentModal } from '../../../components/features/inventory/EditStockAdjustmentModal';
+import { EditStockAdjustmentModal } from '../../../components/features/inventory/adjustment/EditStockAdjustmentModal';
 import { Input } from '../../../components/common/FormControls';
 
 import { useData } from '../../../contexts/DataContext';

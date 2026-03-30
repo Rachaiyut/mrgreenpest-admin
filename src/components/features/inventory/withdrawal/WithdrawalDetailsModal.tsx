@@ -1,14 +1,14 @@
 import React, { useMemo } from 'react';
-import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
+import { Modal } from '../../../common/Modal';
+import { Button } from '../../../common/FormControls';
 import {
   Withdrawal,
   Warehouse as WarehouseType,
   Product,
   User,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../utils/date';
-import { StatusBadge } from '../../common/StatusBadge';
+import { formatThaiDate } from '../../../../utils/date';
+import { StatusBadge } from '../../../common/StatusBadge';
 
 interface WithdrawalDetailsModalProps {
   isOpen: boolean;

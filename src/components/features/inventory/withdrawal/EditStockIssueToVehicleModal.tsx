@@ -10,9 +10,9 @@ import React, {
   useCallback,
 } from 'react';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
-import { Modal } from '../../common/Modal';
-import { Input, Button } from '../../common/FormControls';
-import { SearchableSelect } from '../../common/SearchableSelect';
+import { Modal } from '../../../common/Modal';
+import { Input, Button } from '../../../common/FormControls';
+import { SearchableSelect } from '../../../common/SearchableSelect';
 import {
   PlusIcon,
   TrashIcon,
@@ -22,8 +22,8 @@ import {
   TruckIcon,
   DocumentCheckIcon,
   CalendarDaysIcon,
-} from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
+} from '../../../../assets/icons/Icons';
+import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 import {
   Withdrawal as WithdrawalType,
   User,
@@ -34,8 +34,8 @@ import {
   WarehouseType as InventoryWarehouseType,
   WithdrawalStatus,
 } from '@/src/types/enums/inventory';
-import { UserApi } from '../../../api/user';
-import { WarehouseApi } from '../../../api/warehouse';
+import { UserApi } from '../../../../api/user';
+import { WarehouseApi } from '../../../../api/warehouse';
 
 interface EditWithdrawalModalProps {
   isOpen: boolean;

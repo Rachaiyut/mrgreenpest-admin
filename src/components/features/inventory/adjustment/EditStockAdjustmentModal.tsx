@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
-import { Modal } from '../../common/Modal';
+import { Modal } from '../../../common/Modal';
 import {
   FormField,
   Input,
   Select,
   Textarea,
   Button,
-} from '../../common/FormControls';
+} from '../../../common/FormControls';
 import { Warehouse as WarehouseType } from '@/src/types/entity/app.interface';
-import { PlusIcon, TrashIcon } from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
+import { PlusIcon, TrashIcon } from '../../../../assets/icons/Icons';
+import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 import {
   Product,
   StockAdjustment as StockAdjustmentType,

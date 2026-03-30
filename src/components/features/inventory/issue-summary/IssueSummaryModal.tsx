@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
+import { Modal } from '../../../common/Modal';
+import { Button } from '../../../common/FormControls';
 import { IssueSummaryForm } from './IssueSummaryForm';
 
 // ===== Types =====

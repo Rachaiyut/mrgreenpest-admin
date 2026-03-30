@@ -1,12 +1,12 @@
 import React, { useMemo } from 'react';
-import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
+import { Modal } from '../../../common/Modal';
+import { Button } from '../../../common/FormControls';
 import {
   StockAdjustment,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../utils/date';
+import { formatThaiDate } from '../../../../utils/date';
 
 interface StockAdjustmentDetailsModalProps {
   isOpen: boolean;

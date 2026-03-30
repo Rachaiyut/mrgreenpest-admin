@@ -6,9 +6,9 @@ import React, {
   useCallback,
 } from 'react';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
-import { Modal } from '../../common/Modal';
-import { Input, Button } from '../../common/FormControls';
-import { SearchableSelect } from '../../common/SearchableSelect';
+import { Modal } from '../../../common/Modal';
+import { Input, Button } from '../../../common/FormControls';
+import { SearchableSelect } from '../../../common/SearchableSelect';
 import {
   PlusIcon,
   TrashIcon,
@@ -19,8 +19,8 @@ import {
   DocumentCheckIcon,
   CalendarDaysIcon,
   BanknotesIcon,
-} from '../../../assets/icons/Icons';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
+} from '../../../../assets/icons/Icons';
+import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 import {
   Withdrawal as WithdrawalType,
   User, 
@@ -36,11 +36,11 @@ import {
   WarehouseType as InventoryWarehouseType,
   WithdrawalStatus,
 } from '@/src/types/enums/inventory';
-import { UserApi } from '../../../api/user';
-import { WarehouseApi } from '../../../api/warehouse';
-import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
+import { UserApi } from '../../../../api/user';
+import { WarehouseApi } from '../../../../api/warehouse';
+import { ReferenceSelectionModal } from '../../../common/ReferenceSelectionModal';
 
-import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
+import { CustomerSelectionModal } from '../../customers/CustomerSelectionModal';
 
 interface EditWithdrawalModalProps {
   isOpen: boolean;

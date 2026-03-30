@@ -14,8 +14,8 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { IssueSummaryModal } from '../../../components/features/inventory/IssueSummaryModal';
-import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
+import { IssueSummaryModal } from '../../../components/features/inventory/issue-summary/IssueSummaryModal';
+import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/issue-summary/StockIssueSummaryDetailsModal';
 import { Card } from '../../../components/common/Card';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';

@@ -25,9 +25,9 @@ import { WithdrawalStatus } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/AddIssueModal';
-import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/EditStockIssueToVehicleModal';
-import { WithdrawalDetailsModal } from '../../../components/features/inventory/WithdrawalDetailsModal';
+import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/withdrawal/AddIssueModal';
+import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/withdrawal/EditStockIssueToVehicleModal';
+import { WithdrawalDetailsModal } from '../../../components/features/inventory/withdrawal/WithdrawalDetailsModal';
 
 import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Card } from '../../../components/common/Card';

@@ -27,17 +27,17 @@ import { Product } from '@/src/types/entity/product.interface';
 import { WarehouseType } from '@/src/types/enums/inventory';
 
 // ===== Components =====
-import { Input, Button } from '../../common/FormControls';
-import { SearchableSelect } from '../../common/SearchableSelect';
-import { ProductSelectionModal } from '../products/ProductSelectionModal';
-import { CustomerSelectionModal } from '../customers/CustomerSelectionModal';
-import { ReferenceSelectionModal } from '../../common/ReferenceSelectionModal';
+import { Input, Button } from '../../../common/FormControls';
+import { SearchableSelect } from '../../../common/SearchableSelect';
+import { ProductSelectionModal } from '../../products/ProductSelectionModal';
+import { CustomerSelectionModal } from '../../customers/CustomerSelectionModal';
+import { ReferenceSelectionModal } from '../../../common/ReferenceSelectionModal';
 
 // ===== API =====
-import { JobApi } from '../../../api/job';
-import { UserApi } from '../../../api/user';
-import { WarehouseApi } from '../../../api/warehouse';
-import { VehicleApi } from '../../../api/vehicle';
+import { JobApi } from '../../../../api/job';
+import { UserApi } from '../../../../api/user';
+import { WarehouseApi } from '../../../../api/warehouse';
+import { VehicleApi } from '../../../../api/vehicle';
 
 // ===== Assets =====
 import {
@@ -49,7 +49,7 @@ import {
   TruckIcon,
   UserIcon,
   XCircleIcon,
-} from '../../../assets/icons/Icons';
+} from '../../../../assets/icons/Icons';
 
 // ==========================================
 // INTERFACE

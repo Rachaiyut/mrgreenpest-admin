@@ -1,57 +1,64 @@
 import React, { useMemo } from 'react';
-import { Modal } from '../../common/Modal';
-import { Button } from '../../common/FormControls';
-import { StatusBadge } from '../../common/StatusBadge';
+import { Modal } from '../../../common/Modal';
+import { Button } from '../../../common/FormControls';
 import {
-  ProductReturn,
+  GoodsReceive as GoodsReceiveType,
   Warehouse as WarehouseType,
   Product,
 } from '@/src/types/entity/app.interface';
-import { formatThaiDate } from '../../../utils/date';
+import { formatThaiDate } from '../../../../utils/date';
+import { StatusBadge } from '../../../common/StatusBadge';
 
-interface ReturnDetailsModalProps {
+interface GoodsReceiptDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  returnItem: ProductReturn | null;
+  receipt: GoodsReceiveType | null;
   warehouses: WarehouseType[];
   products: Product[];
 }
 
-export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
-  isOpen,
-  onClose,
-  returnItem,
-  warehouses,
-  products,
-}) => {
-  const warehouseMap = useMemo(
-    () => new Map(warehouses.map((w) => [w.id, w.name])),
-    [warehouses]
-  );
+export const GoodsReceiptDetailsModal: React.FC<
+  GoodsReceiptDetailsModalProps
+> = ({ isOpen, onClose, receipt, warehouses, products }) => {
+  const warehouseMap = useMemo(() => {
+    return warehouses.reduce(
+      (acc, wh) => {
+        acc[wh.id] = wh.name;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+  }, [warehouses]);
 
+  // Map for fallback if product details are not nested in items
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
   );
 
-  if (!isOpen || !returnItem) return null;
+  if (!isOpen || !receipt) return null;
 
-  // Safe Cast or access for properties that might satisfy multiple interfaces or runtime variations
-  const r = returnItem as any;
+  // Safe Cast or access for properties that might satisfy multiple interfaces
+  const r = receipt as any;
+
+  // Calculate total quantity safely
+  const totalQuantity =
+    r.items?.reduce((sum: number, item: any) => {
+      const qty = Number((item.qty_received ?? item.quantity) || 0);
+      return sum + qty;
+    }, 0) || 0;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="รายละเอียดการคืนสินค้า"
+      title="รายละเอียดใบรับเข้า"
       size="4xl"
       footer={
         <div className="flex justify-between items-center w-full">
           <div className="text-sm text-slate-500">
-            {(r.updated_at || r.updatedAt) && (
-              <span>
-                แก้ไขล่าสุด: {formatThaiDate(r.updated_at || r.updatedAt)}
-              </span>
+            {r.updated_at && (
+              <span>แก้ไขล่าสุด: {formatThaiDate(r.updated_at)}</span>
             )}
           </div>
           <Button variant="primary" type="button" onClick={onClose}>
@@ -66,14 +73,14 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-4 border-b border-slate-100">
             <div>
               <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                ใบคืนสินค้า
+                ใบรับสินค้าเข้า
                 <span className="text-sm font-normal text-slate-500 px-2 py-0.5 bg-slate-100 rounded-full">
-                  {r.code || r.id}
+                  {r.code}
                 </span>
               </h4>
               <p className="text-sm text-slate-500 mt-1">
-                สร้างเมื่อ: {formatThaiDate(r.created_at || r.createdAt)} โดย{' '}
-                {r.created_by || r.createdBy || '-'}
+                สร้างเมื่อ: {formatThaiDate(r.created_at)} โดย{' '}
+                {r.created_by || '-'}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -84,41 +91,39 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
             {/* Reference Doc */}
             <div className="bg-slate-50 p-3 rounded border border-slate-100">
-              <p className="text-xs text-slate-500 mb-1">เลขที่ใบเบิกอ้างอิง</p>
+              <p className="text-xs text-slate-500 mb-1">เลขที่เอกสารอ้างอิง</p>
               <p className="font-semibold text-slate-800 text-base">
-                {r.withdrawalRefId || r.withdrawal_ref_id || '-'}
+                {r.receipt_no || '-'}
               </p>
             </div>
 
-            {/* From Warehouse (Source) */}
-            <div className="bg-amber-50 p-3 rounded border border-amber-100">
-              <p className="text-xs text-amber-600 mb-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                คืนจาก (รถ/คลัง)
-              </p>
-              <p className="font-semibold text-amber-900 text-base">
-                {warehouseMap.get(
-                  r.fromWarehouseId || r.warehouse_id || r.vehicle_id
-                ) || '-'}
-              </p>
-            </div>
-
-            {/* To Warehouse (Destination) */}
-            <div className="bg-blue-50 p-3 rounded border border-blue-100 col-span-1 md:col-span-2">
+            {/* Warehouse */}
+            <div className="bg-blue-50 p-3 rounded border border-blue-100">
               <p className="text-xs text-blue-600 mb-1 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                คืนเข้าคลัง
+                คลังสินค้าปลายทาง
               </p>
               <p className="font-semibold text-blue-900 text-base">
-                {warehouseMap.get(r.toWarehouseId || r.to_warehouse_id) || '-'}
+                {r.warehouse?.name || warehouseMap[r.warehouse_id] || '-'}
+              </p>
+            </div>
+
+            {/* Supplier */}
+            <div className="bg-amber-50 p-3 rounded border border-amber-100 col-span-1 md:col-span-2">
+              <p className="text-xs text-amber-600 mb-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                ผู้จัดจำหน่าย (Supplier)
+              </p>
+              <p className="font-semibold text-amber-900 text-base">
+                {r.supplier ? r.supplier.name : r.supplier_name || '-'}
               </p>
             </div>
           </div>
 
-          {(r.note || r.notes) && (
+          {r.remarks && (
             <div className="mt-4 pt-3 border-t border-slate-100">
               <p className="text-xs text-slate-500 mb-1">หมายเหตุ</p>
-              <p className="text-slate-700 italic">"{r.note || r.notes}"</p>
+              <p className="text-slate-700 italic">"{r.remarks}"</p>
             </div>
           )}
         </div>
@@ -127,7 +132,7 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
         <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
             <h4 className="font-bold text-slate-700 flex items-center gap-2">
-              รายการสินค้าที่คืน
+              รายการสินค้า
               <span className="bg-white text-slate-600 text-xs px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">
                 {r.items?.length || 0} รายการ
               </span>
@@ -168,34 +173,16 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
                   >
                     หน่วย
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
-                  >
-                    เหตุผล
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {r.items && r.items.length > 0 ? (
                   r.items.map((item: any, index: number) => {
-                    // Handle both snake_case and camelCase or flattened props
-                    const productId = item.productId || item.product_id;
-                    const product = productMap.get(productId) as any;
-                    const qty = Number(item.quantity || 0);
-
-                    // Safely access unit name
-                    let unitName = 'ชิ้น';
-                    if (product?.unit) {
-                      if (typeof product.unit === 'string') {
-                        unitName = product.unit;
-                      } else if (
-                        typeof product.unit === 'object' &&
-                        product.unit.name
-                      ) {
-                        unitName = product.unit.name;
-                      }
-                    }
+                    const productDesc =
+                      item.product || productMap.get(item.product_id);
+                    const qty = Number(
+                      (item.qty_received ?? item.quantity) || 0
+                    );
 
                     return (
                       <tr
@@ -207,26 +194,25 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600">
                           <div>
-                            {product?.code ||
-                              (productId && productId.substring(0, 8))}
+                            {productDesc?.code ||
+                              item.product_id?.substring(0, 8)}
                           </div>
-                          {product?.barcode && (
+                          {productDesc?.barcode && (
                             <div className="text-xs text-slate-400">
-                              {product.barcode}
+                              {productDesc.barcode}
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {product?.name || 'ไม่พบสินค้า'}
+                          {productDesc?.name || 'ไม่พบสินค้า'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-bold">
                           {qty.toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">
-                          {unitName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                          {item.reason || '-'}
+                          {productDesc?.unit?.name ||
+                            productDesc?.unit ||
+                            'ชิ้น'}
                         </td>
                       </tr>
                     );
@@ -234,7 +220,7 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
                 ) : (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={5}
                       className="text-center py-12 text-slate-500 bg-slate-50/50"
                     >
                       <div className="flex flex-col items-center justify-center">
@@ -257,6 +243,22 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
                   </tr>
                 )}
               </tbody>
+              <tfoot className="bg-slate-50 font-semibold text-slate-700 border-t-2 border-slate-200">
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-6 py-4 text-right uppercase text-xs tracking-wider"
+                  >
+                    รวมจำนวนทั้งสิ้น
+                  </td>
+                  <td className="px-6 py-4 text-right text-blue-700 text-lg font-bold">
+                    {totalQuantity.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 text-right text-slate-500">
+                    รายการ
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>

@@ -104,6 +104,8 @@ const Warehouse: React.FC = () => {
       const query: any = {
         page: currentPage,
         limit: itemsPerPage,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
       };
 
       if (searchQuery) query.search = searchQuery;
