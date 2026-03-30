@@ -14,8 +14,7 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddIssueSummaryModal } from '../../../components/features/inventory/AddIssueSummaryModal';
-import { EditStockIssueSummaryModal } from '../../../components/features/inventory/EditStockIssueSummaryModal';
+import { IssueSummaryModal } from '../../../components/features/inventory/IssueSummaryModal';
 import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/StockIssueSummaryDetailsModal';
 import { Card } from '../../../components/common/Card';
 import { Input, Select, Button } from '../../../components/common/FormControls';
@@ -129,9 +128,9 @@ const IssueSummaryPage: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedSummary, setSelectedSummary] =
     useState<StockIssueSummaryType | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
 
@@ -229,7 +228,7 @@ const IssueSummaryPage: React.FC = () => {
 
   const handleEditSummary = (summary: StockIssueSummaryType) => {
     setSelectedSummary(summary);
-    setIsEditModalOpen(true);
+    setModalMode('edit'); setIsModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -357,7 +356,7 @@ const IssueSummaryPage: React.FC = () => {
                 ))}
               </Select>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
+            <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
               <PlusIcon className="h-5 w-5" />
               สร้างใบเบิก
             </Button>
@@ -698,11 +697,13 @@ const IssueSummaryPage: React.FC = () => {
           document.body
         )}
 
-      {/* Add Modal */}
-      <AddIssueSummaryModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onCreate={onCreateStockIssueSummary}
+      {/* Create / Edit Modal */}
+      <IssueSummaryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        mode={modalMode}
+        onSubmit={modalMode === 'edit' ? onUpdateStockIssueSummary : onCreateStockIssueSummary}
+        summary={modalMode === 'edit' ? selectedSummary : null}
         warehouses={warehouses}
         products={products}
         users={users}
@@ -712,17 +713,6 @@ const IssueSummaryPage: React.FC = () => {
       <StockIssueSummaryDetailsModal
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
-        summary={selectedSummary}
-        warehouses={warehouses}
-        products={products}
-        users={users}
-      />
-
-      {/* Edit Modal */}
-      <EditStockIssueSummaryModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onUpdate={onUpdateStockIssueSummary}
         summary={selectedSummary}
         warehouses={warehouses}
         products={products}

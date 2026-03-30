@@ -71,6 +71,10 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   products,
   stockMap,
 }) => {
+  // Section toggles
+  const [enableGoods, setEnableGoods] = useState(true);
+  const [enableExpense, setEnableExpense] = useState(true);
+
   // Form state
   const [goodsItems, setGoodsItems] = useState<LineItem[]>([]);
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([]);
@@ -471,7 +475,41 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
               </div>
             </div>
 
+            {/* Section Toggles */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">ประเภทการเบิก</label>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableGoods}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableExpense) return;
+                      if (!e.target.checked) setGoodsItems([]);
+                      setEnableGoods(e.target.checked);
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">รายการสินค้า</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableExpense}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableGoods) return;
+                      if (!e.target.checked) setExpenseItems([]);
+                      setEnableExpense(e.target.checked);
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">การเงิน & ค่าใช้จ่าย</span>
+                </label>
+              </div>
+            </div>
+
             {/* Card 3: Items List */}
+            {enableGoods && (
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-20">
               <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -596,8 +634,10 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                 )}
               </div>
             </div>
+            )}
 
             {/* Card 5: Finance Card */}
+            {enableExpense && (
             <div className={`p-6 rounded-xl border shadow-sm transition-all relative z-10 ${isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
@@ -673,6 +713,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                 )}
               </div>
             </div>
+            )}
 
           </div>
         </form>

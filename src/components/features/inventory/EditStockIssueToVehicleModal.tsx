@@ -85,6 +85,10 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
   const [recipientId, setRecipientId] = useState('');
   const [withdrawalDate, setWithdrawalDate] = useState<string>('');
 
+  // Section toggles
+  const [enableGoods, setEnableGoods] = useState(true);
+  const [enableExpense, setEnableExpense] = useState(true);
+
   // UI & Options state
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [userOptions, setUserOptions] = useState<{ value: string; label: string }[]>([]);
@@ -181,6 +185,12 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
         description: exp.description,
         amount: exp.amount,
       })) : []);
+
+      // Set toggles based on existing data
+      const hasGoods = withdrawal.items && withdrawal.items.length > 0;
+      const hasExpenses = withdrawal.expenses && withdrawal.expenses.length > 0;
+      setEnableGoods(hasGoods || (!hasGoods && !hasExpenses));
+      setEnableExpense(hasExpenses || (!hasGoods && !hasExpenses));
 
       fetchWarehouses();
     }
@@ -435,7 +445,41 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
               </div>
             </div>
 
+            {/* Section Toggles */}
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">ประเภทการเบิก</label>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableGoods}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableExpense) return;
+                      if (!e.target.checked) setGoodsItems([]);
+                      setEnableGoods(e.target.checked);
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">รายการสินค้า</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={enableExpense}
+                    onChange={(e) => {
+                      if (!e.target.checked && !enableGoods) return;
+                      if (!e.target.checked) setExpenseItems([]);
+                      setEnableExpense(e.target.checked);
+                    }}
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm font-medium text-slate-700">การเงิน & ค่าใช้จ่าย</span>
+                </label>
+              </div>
+            </div>
+
             {/* 2. Items List Card */}
+            {enableGoods && (
             <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px]">
               <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                 <div className="flex items-center gap-2">
@@ -484,6 +528,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
                 )}
               </div>
             </div>
+            )}
 
             {/* 3. People Card */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -517,6 +562,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
             </div>
 
             {/* 4. Finance Card & Notes */}
+            {enableExpense && (
             <div className={`p-5 rounded-xl border shadow-sm ${isOverLimit ? 'bg-red-50/50 border-red-200' : 'bg-white border-slate-200'}`}>
               <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-2">
                 <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide"><span className="bg-emerald-100 text-emerald-700 p-0.5 rounded text-[10px] px-1.5 border border-emerald-200">฿</span> การเงิน & ค่าใช้จ่าย</h3>
@@ -538,6 +584,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
                 <textarea name="remarks" rows={3} defaultValue={withdrawal.notes || ''} className="w-full border border-slate-300 rounded-lg p-3 text-xs focus:ring-2 focus:ring-primary/20 resize-none bg-slate-50" placeholder="ระบุหมายเหตุเพิ่มเติม..." />
               </div>
             </div>
+            )}
           </div>
         </form>
       </Modal>
