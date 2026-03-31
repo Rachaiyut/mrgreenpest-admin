@@ -207,56 +207,23 @@ const DailyClosure: React.FC = () => {
     <>
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
         {/* Header */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 shrink-0">
-          <div className="shrink-0">
-            <h1 className="text-3xl font-bold text-slate-800">
-              สรุปงานรายวัน
-            </h1>
-            <p className="mt-1 text-slate-600">
-              ติดตามสถานะงานและการปิดงานรายวันของทีมช่าง
-            </p>
+        <div className="flex flex-wrap items-center justify-between gap-4 shrink-0">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-800">สรุปงานรายวัน</h1>
+            <p className="mt-1 text-slate-600">ติดตามสถานะงานและการปิดงานรายวันของทีมช่าง</p>
           </div>
-          <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto xl:flex-nowrap">
-            <div className="w-full sm:flex-1 xl:w-80">
-              <Input
-                type="search"
-                placeholder="ค้นหารถ, ชื่อช่าง..."
-                value={searchQuery || ''}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value || undefined);
-                  setCurrentPage(1);
-                }}
-                className="w-full"
-              />
-            </div>
-            <div className="w-full sm:w-48 shrink-0">
-              <BuddhistDatePicker
-                selected={filterDate}
-                onChange={(date: Date | null) => {
-                  setFilterDate(date);
-                  setCurrentPage(1);
-                }}
-                dateFormat="dd/MM/yyyy"
-                placeholderText="เลือกวันที่"
-                isClearable
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div className="w-full sm:w-48 shrink-0">
-              <Select
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value as ClosureStatus);
-                  setCurrentPage(1);
-                }}
-                className="w-full"
-              >
-                <option value="">สถานะทั้งหมด</option>
-                <option value="NOT_STARTED">ยังไม่เริ่ม</option>
-                <option value="OPEN">เปิดอยู่</option>
-                <option value="CLOSED">ปิดแล้ว</option>
-              </Select>
-            </div>
+          <div className="flex items-center gap-3">
+            <BuddhistDatePicker
+              selected={filterDate}
+              onChange={(date: Date | null) => {
+                setFilterDate(date);
+                setCurrentPage(1);
+              }}
+              dateFormat="dd/MM/yyyy"
+              placeholderText="เลือกวันที่"
+              isClearable
+              className="w-40 rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary"
+            />
           </div>
         </div>
 
@@ -330,6 +297,40 @@ const DailyClosure: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Search & Filter Bar */}
+        <Card className="!p-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+              <Input
+                type="search"
+                placeholder="ค้นหารถ, ชื่อช่าง..."
+                value={searchQuery || ''}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value || undefined);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <Select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value as ClosureStatus);
+                setCurrentPage(1);
+              }}
+              className="w-auto"
+            >
+              <option value="">สถานะทั้งหมด</option>
+              <option value="NOT_STARTED">ยังไม่เริ่ม</option>
+              <option value="OPEN">เปิดอยู่</option>
+              <option value="CLOSED">ปิดแล้ว</option>
+            </Select>
+          </div>
+        </Card>
 
         {/* Table Card */}
         {loading ? (
