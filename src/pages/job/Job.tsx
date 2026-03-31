@@ -10,6 +10,7 @@ import {
 } from '@/src/types/entity/field-job.interface';
 
 import { JobMainStatus, JobStatus, Quotation, WarehouseType } from '@/src/types';
+import { DailyJobClosure, CloseDailyJobClosurePayload } from '@/src/types/entity/daily-closure.interface';
 
 // ===== Relative Types =====
 import { User, UserRole } from '../../types/entity/core.interface';
@@ -28,6 +29,7 @@ import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
 import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal';
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { JobModal } from '@/src/components/features/jobs/JobModal';
+import { DailyClosureCloseModal } from '../../components/features/daily-closures/DailyClosureCloseModal';
 
 // ===== Components (Common) =====
 import { Card } from '../../components/common/Card';
@@ -46,6 +48,7 @@ import {
   StorageApi,
   VehicleApi,
 } from '@/src/api';
+import { DailyClosureApi } from '@/src/api/daily-closure';
 
 // ===== Utils =====
 import { formatThaiDate } from '@/src/utils/date';
@@ -68,6 +71,7 @@ import {
   TechnicianIcon,
   ViewColumnsIcon,
   XCircleIcon,
+  CheckCircleIcon,
 } from '../../assets/icons/Icons';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import dayjs from 'dayjs';
@@ -438,6 +442,13 @@ const Job: React.FC<JobProps> = ({
   const [selectedAssessmentForJob, setSelectedAssessmentForJob] = useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
+  // Daily Closure
+  const [isDailyClosureModalOpen, setIsDailyClosureModalOpen] = useState(false);
+  const [todayClosure, setTodayClosure] = useState<DailyJobClosure | null>(null);
+  const [closureJobStats, setClosureJobStats] = useState({ total: 0, completed: 0, incomplete: 0 });
+  const [closureHasIssueSummary, setClosureHasIssueSummary] = useState(false);
+  const [closureHasPendingIssue, setClosureHasPendingIssue] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState('');
 
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().substring(0, 10));
@@ -718,6 +729,110 @@ const Job: React.FC<JobProps> = ({
       setJobForReport(null);
     }
   };
+
+  // ===== Daily Closure Handlers =====
+  const handleOpenDailyClosure = async () => {
+    try {
+      // Use first vehicle from warehouses or selected vehicle
+      const targetVehicleId = selectedVehicleId !== 'all'
+        ? selectedVehicleId
+        : warehouses.length > 0
+          ? (warehouses[0] as Warehouse & { id: string }).id
+          : '';
+
+      if (!targetVehicleId) {
+        Swal.fire('ไม่พบรถ', 'กรุณาเลือกรถก่อนปิดงาน', 'warning');
+        return;
+      }
+
+      // Check if closure exists for today
+      let closure: DailyJobClosure | null = null;
+      try {
+        const res = await DailyClosureApi.getToday(targetVehicleId);
+        closure = res.data ?? null;
+      } catch {
+        // No closure for today yet — that's fine
+        closure = null;
+      }
+      setTodayClosure(closure);
+
+      // Count job stats from current warehouses data
+      const vehicleData = warehouses.find((w) => (w as Warehouse & { id: string }).id === targetVehicleId);
+      const vehicleJobs: FieldJob[] = (vehicleData as Warehouse & { jobs?: FieldJob[] })?.jobs ?? [];
+      const total = vehicleJobs.length;
+      const completed = vehicleJobs.filter((j) => {
+        const status = String(j.status || '').toUpperCase();
+        return status === 'COMPLETED' || status === 'COMPLETE';
+      }).length;
+      const incomplete = total - completed;
+      setClosureJobStats({ total, completed, incomplete });
+
+      // Stock issue checks — default to safe values
+      // These can be enhanced later when stock issue summary API is integrated
+      setClosureHasIssueSummary(closure?.has_no_stock_issue ? false : !!closure);
+      setClosureHasPendingIssue(false);
+
+      setIsDailyClosureModalOpen(true);
+    } catch (error) {
+      console.error('Error opening daily closure:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลปิดงานรายวันได้', 'error');
+    }
+  };
+
+  const handleCloseDailyClosure = async (data: CloseDailyJobClosurePayload) => {
+    try {
+      const targetVehicleId = selectedVehicleId !== 'all'
+        ? selectedVehicleId
+        : warehouses.length > 0
+          ? (warehouses[0] as Warehouse & { id: string }).id
+          : '';
+
+      let closureId = todayClosure?.id;
+
+      // If no closure exists, create one first
+      if (!closureId) {
+        const today = dayjs().format('YYYY-MM-DD');
+        const createRes = await DailyClosureApi.create({
+          closure_date: today,
+          vehicle_id: targetVehicleId,
+          primary_tech_id: currentUser.id,
+        });
+        closureId = createRes.data?.id;
+      }
+
+      if (!closureId) {
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างรายการปิดงานได้', 'error');
+        return;
+      }
+
+      // Close the closure
+      await DailyClosureApi.close(closureId, data);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'ปิดงานรายวันเรียบร้อย',
+        showConfirmButton: false,
+        timer: 1500,
+      });
+
+      setIsDailyClosureModalOpen(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error closing daily closure:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถปิดงานรายวันได้', 'error');
+    }
+  };
+
+  const closureVehicleName = (() => {
+    const targetVehicleId = selectedVehicleId !== 'all'
+      ? selectedVehicleId
+      : warehouses.length > 0
+        ? (warehouses[0] as Warehouse & { id: string }).id
+        : '';
+    const vehicle = allVehicles.find((v: { id: string }) => v.id === targetVehicleId);
+    if (!vehicle) return '-';
+    return vehicle.license_plate || vehicle.vehicle_registration || vehicle.name || '-';
+  })();
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -1139,6 +1254,18 @@ const Job: React.FC<JobProps> = ({
                     </Button>
                   </div>
                 )}
+
+                <Button
+                  onClick={handleOpenDailyClosure}
+                  variant="outline"
+                  className="text-sm font-medium border-primary text-primary bg-primary/5 hover:bg-primary/10"
+                >
+                  <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                  ปิดงานรายวัน
+                  {todayClosure?.status === 'CLOSED' && (
+                    <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">ปิดแล้ว</span>
+                  )}
+                </Button>
 
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
                   <button
@@ -1865,6 +1992,18 @@ const Job: React.FC<JobProps> = ({
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}
+      />
+
+      <DailyClosureCloseModal
+        isOpen={isDailyClosureModalOpen}
+        onClose={() => setIsDailyClosureModalOpen(false)}
+        onSubmit={handleCloseDailyClosure}
+        vehicleName={closureVehicleName}
+        totalJobs={closureJobStats.total}
+        completedJobs={closureJobStats.completed}
+        incompleteJobs={closureJobStats.incomplete}
+        hasStockIssueSummary={closureHasIssueSummary}
+        hasPendingStockIssue={closureHasPendingIssue}
       />
     </>
   );
