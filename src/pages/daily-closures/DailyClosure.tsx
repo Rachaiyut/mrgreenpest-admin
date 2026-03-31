@@ -15,7 +15,7 @@ import { DailyClosureDetailsModal } from '../../components/features/daily-closur
 import BuddhistDatePicker from '@/src/components/common/BuddhistDatePicker';
 import { formatThaiDate } from '@/src/utils/date';
 
-type ClosureStatus = '' | 'OPEN' | 'CLOSED';
+type ClosureStatus = '' | 'OPEN' | 'CLOSED' | 'NOT_STARTED';
 
 const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
   status,
@@ -42,7 +42,6 @@ const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
 
 const DailyClosure: React.FC = () => {
   const today = new Date();
-  const [closures, setClosures] = useState<DailyJobClosure[]>([]);
   const [overviewData, setOverviewData] = useState<DailyClosureOverviewItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,39 +63,46 @@ const DailyClosure: React.FC = () => {
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchClosures = useCallback(async () => {
+  const fetchOverview = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await DailyClosureApi.getAll({
-        page: currentPage,
-        limit: itemsPerPage,
-        search: searchQuery,
-        status: filterStatus || undefined,
-        closure_date: filterDate
-          ? filterDate.toISOString().split('T')[0]
-          : undefined,
-      });
-      setClosures(response.data);
-      setTotalItems(response.meta?.total ?? 0);
+      const dateStr = filterDate
+        ? filterDate.toISOString().split('T')[0]
+        : today.toISOString().split('T')[0];
+      const res = await DailyClosureApi.getOverview(dateStr);
+      let data = res.data || [];
+
+      // Client-side filters
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        data = data.filter(
+          (item) =>
+            item.vehicle_name.toLowerCase().includes(q) ||
+            item.primary_tech_name.toLowerCase().includes(q) ||
+            item.vehicle_registration.toLowerCase().includes(q)
+        );
+      }
+      if (filterStatus) {
+        data = data.filter((item) => item.closure_status === filterStatus);
+      }
+
+      setOverviewData(data);
+      setTotalItems(data.length);
     } catch (error) {
-      console.error('Error fetching daily closures:', error);
+      console.error('Error fetching overview:', error);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, filterStatus, filterDate]);
+  }, [filterDate, searchQuery, filterStatus]);
 
   useEffect(() => {
-    fetchClosures();
-  }, [fetchClosures]);
+    fetchOverview();
+  }, [fetchOverview]);
 
-  useEffect(() => {
-    const dateStr = filterDate
-      ? filterDate.toISOString().split('T')[0]
-      : today.toISOString().split('T')[0];
-    DailyClosureApi.getOverview(dateStr)
-      .then((res) => setOverviewData(res.data))
-      .catch((err) => console.error('Error fetching overview:', err));
-  }, [filterDate]);
+  const paginatedData = overviewData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -237,51 +243,13 @@ const DailyClosure: React.FC = () => {
                 className="w-full"
               >
                 <option value="">สถานะทั้งหมด</option>
+                <option value="NOT_STARTED">ยังไม่เริ่ม</option>
                 <option value="OPEN">เปิดอยู่</option>
                 <option value="CLOSED">ปิดแล้ว</option>
               </Select>
             </div>
           </div>
         </div>
-
-        {/* Daily Overview Cards */}
-        {overviewData.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {overviewData.map((item) => {
-              const statusConfig = {
-                CLOSED: { label: 'ปิดแล้ว', bg: 'bg-green-50 border-green-200', badge: 'bg-green-100 text-green-700' },
-                OPEN: { label: 'เปิดอยู่', bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700' },
-                NOT_STARTED: { label: 'ยังไม่เริ่ม', bg: 'bg-slate-50 border-slate-200', badge: 'bg-slate-100 text-slate-600' },
-              };
-              const config = statusConfig[item.closure_status];
-              return (
-                <div key={item.vehicle_id} className={`rounded-xl border p-4 ${config.bg}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-bold text-slate-800 text-sm">{item.vehicle_name}</p>
-                      {item.vehicle_registration && (
-                        <p className="text-xs text-slate-500">{item.vehicle_registration}</p>
-                      )}
-                    </div>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.badge}`}>
-                      {config.label}
-                    </span>
-                  </div>
-                  <div className="flex gap-4 text-xs mt-2">
-                    <span className="text-slate-600">ช่าง: <strong>{item.primary_tech_name}</strong></span>
-                  </div>
-                  <div className="flex gap-4 text-xs mt-1">
-                    <span className="text-slate-500">ทั้งหมด: <strong>{item.total_jobs}</strong></span>
-                    <span className="text-green-600">เสร็จ: <strong>{item.completed_jobs}</strong></span>
-                    {item.incomplete_jobs > 0 && (
-                      <span className="text-red-600">ค้าง: <strong>{item.incomplete_jobs}</strong></span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Table Card */}
         {loading ? (
@@ -329,63 +297,73 @@ const DailyClosure: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {closures.length === 0 ? (
+                  {paginatedData.length === 0 ? (
                     <tr>
                       <td
                         colSpan={9}
                         className="px-4 py-12 text-center text-slate-500"
                       >
-                        ไม่พบข้อมูลสรุปงานรายวัน
+                        ไม่พบข้อมูลงานสำหรับวันที่เลือก
                       </td>
                     </tr>
                   ) : (
-                    closures.map((closure, index) => {
+                    paginatedData.map((item, index) => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
-                      const techName = closure.primary_technician
-                        ? `${closure.primary_technician.first_name} ${closure.primary_technician.last_name}`
-                        : '-';
+                      const statusConfig: Record<string, { label: string; className: string }> = {
+                        CLOSED: { label: 'ปิดแล้ว', className: 'bg-green-100 text-green-800 border-green-200' },
+                        OPEN: { label: 'เปิดอยู่', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+                        NOT_STARTED: { label: 'ยังไม่เริ่ม', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+                      };
+                      const badge = statusConfig[item.closure_status] || statusConfig.NOT_STARTED;
 
                       return (
                         <tr
-                          key={closure.id}
+                          key={item.vehicle_id}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-slate-600">
                             {rowNumber}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
-                            {formatThaiDate(closure.closure_date)}
+                            {filterDate ? formatThaiDate(filterDate.toISOString().split('T')[0]) : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
-                            {closure.vehicle?.name ?? '-'}
+                            <div>
+                              <p className="font-medium">{item.vehicle_name}</p>
+                              {item.vehicle_registration && (
+                                <p className="text-xs text-slate-400">{item.vehicle_registration}</p>
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
-                            {techName}
+                            {item.primary_tech_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800 text-center">
-                            {closure.total_jobs}
+                          <td className="px-4 py-3 text-sm text-slate-800 text-center font-medium">
+                            {item.total_jobs}
                           </td>
                           <td className="px-4 py-3 text-sm text-green-600 font-medium text-center">
-                            {closure.completed_jobs}
+                            {item.completed_jobs}
                           </td>
                           <td
                             className={`px-4 py-3 text-sm font-medium text-center ${
-                              closure.incomplete_jobs > 0
+                              item.incomplete_jobs > 0
                                 ? 'text-red-600'
                                 : 'text-slate-800'
                             }`}
                           >
-                            {closure.incomplete_jobs}
+                            {item.incomplete_jobs}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <StatusBadge status={closure.status} />
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badge.className}`}>
+                              {badge.label}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button
-                              data-closure-id={closure.id}
+                              data-closure-id={item.vehicle_id}
                               onClick={(e) =>
-                                handleDropdownToggle(e, closure.id)
+                                handleDropdownToggle(e, item.vehicle_id)
                               }
                               className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
                               title="จัดการ"
