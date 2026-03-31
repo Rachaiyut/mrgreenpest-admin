@@ -1255,17 +1255,19 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
 
-                <Button
-                  onClick={handleOpenDailyClosure}
-                  variant="outline"
-                  className="text-sm font-medium border-primary text-primary bg-primary/5 hover:bg-primary/10"
-                >
-                  <CheckCircleIcon className="w-4 h-4 mr-1.5" />
-                  ปิดงานรายวัน
-                  {todayClosure?.status === 'CLOSED' && (
-                    <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">ปิดแล้ว</span>
-                  )}
-                </Button>
+                {currentUser?.role && [UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
+                  <Button
+                    onClick={handleOpenDailyClosure}
+                    variant="outline"
+                    className="text-sm font-medium border-red-500 text-red-600 bg-red-50 hover:bg-red-100"
+                  >
+                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                    ปิดงานรายวัน
+                    {todayClosure?.status === 'CLOSED' && (
+                      <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">จบงาน</span>
+                    )}
+                  </Button>
+                )}
 
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
                   <button

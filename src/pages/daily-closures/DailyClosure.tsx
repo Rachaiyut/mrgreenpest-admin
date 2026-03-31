@@ -29,7 +29,7 @@ const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
       className: 'bg-amber-100 text-amber-800 border-amber-200',
     },
     CLOSED: {
-      label: 'ปิดแล้ว',
+      label: 'จบงาน',
       className: 'bg-green-100 text-green-800 border-green-200',
     },
   };
@@ -317,7 +317,7 @@ const DailyClosure: React.FC = () => {
               <option value="">สถานะทั้งหมด</option>
               <option value="NOT_STARTED">ยังไม่เริ่ม</option>
               <option value="OPEN">เปิดอยู่</option>
-              <option value="CLOSED">ปิดแล้ว</option>
+              <option value="CLOSED">จบงาน</option>
             </Select>
           </div>
         </Card>
@@ -382,7 +382,7 @@ const DailyClosure: React.FC = () => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
                       const statusConfig: Record<string, { label: string; className: string }> = {
-                        CLOSED: { label: 'ปิดแล้ว', className: 'bg-green-100 text-green-800 border-green-200' },
+                        CLOSED: { label: 'จบงาน', className: 'bg-green-100 text-green-800 border-green-200' },
                         OPEN: { label: 'เปิดอยู่', className: 'bg-amber-100 text-amber-800 border-amber-200' },
                         NOT_STARTED: { label: 'ยังไม่เริ่ม', className: 'bg-red-50 text-red-700 border-red-200' },
                       };
