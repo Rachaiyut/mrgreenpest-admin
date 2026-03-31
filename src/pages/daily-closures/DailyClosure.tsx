@@ -215,14 +215,10 @@ const DailyClosure: React.FC = () => {
           </div>
         </div>
 
-        {/* Vehicle Kanban Cards */}
+        {/* Vehicle Cards */}
         {overviewData.length > 0 && (
-          <div className="flex flex-col relative">
-            <div
-              ref={vehicleScrollRef}
-              className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth"
-              style={{ scrollbarWidth: 'thin' }}
-            >
+          <div className="max-h-[280px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {overviewData.map((item) => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
@@ -235,7 +231,7 @@ const DailyClosure: React.FC = () => {
                   <button
                     key={item.vehicle_id}
                     onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`rounded-xl border flex-shrink-0 w-56 text-left transition-all overflow-hidden ${
+                    className={`rounded-xl border text-left transition-all overflow-hidden ${
                       isSelected
                         ? 'border-primary shadow-md ring-1 ring-primary/20'
                         : 'border-slate-200 bg-white hover:shadow-md hover:border-slate-300'
@@ -278,22 +274,6 @@ const DailyClosure: React.FC = () => {
                 );
               })}
             </div>
-            {overviewData.length > 3 && (
-              <>
-                <button
-                  onClick={() => { if (vehicleScrollRef.current) vehicleScrollRef.current.scrollLeft -= 280; }}
-                  className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
-                >
-                  <ChevronLeftIcon className="h-5 w-5 text-slate-600" />
-                </button>
-                <button
-                  onClick={() => { if (vehicleScrollRef.current) vehicleScrollRef.current.scrollLeft += 280; }}
-                  className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
-                >
-                  <ChevronRightIcon className="h-5 w-5 text-slate-600" />
-                </button>
-              </>
-            )}
           </div>
         )}
 
