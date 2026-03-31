@@ -517,6 +517,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <div className="p-2 bg-amber-500 rounded-lg">
                 <ClockIcon className="h-5 w-5 text-white" />
               </div>
+              
               <div>
                 <p className="text-sm text-amber-600 font-medium">
                   รอดำเนินการ

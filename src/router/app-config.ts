@@ -99,6 +99,7 @@ const WithDrawVehicle = React.lazy(
   () => import('../pages/inventory/issue/Issue')
 );
 const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
+const DailyClosure = React.lazy(() => import('../pages/daily-closures/DailyClosure'));
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -165,6 +166,14 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       onUpdateQuotation: data.handlers.quotations.update,
       onCreateQuotation: data.handlers.quotations.create,
     }),
+    subItems: [
+      {
+        name: 'สรุปงานรายวัน',
+        path: 'daily-closures',
+        access: 'ACCESS_DAILY_CLOSURE',
+        component: DailyClosure,
+      },
+    ],
   },
 
   // Billing & Finance Group

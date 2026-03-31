@@ -34,6 +34,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       { label: 'ภาคสนาม', module: 'OPERATION' },
       { label: 'รายงานบริการ', module: 'SERVICE_REPORT' },
       { label: 'ยานพาหนะ', module: 'VEHICLE' },
+      { label: 'สรุปงานรายวัน', module: 'DAILY_CLOSURE' },
     ],
   },
   {
