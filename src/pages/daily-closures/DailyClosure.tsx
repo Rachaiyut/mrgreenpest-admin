@@ -226,41 +226,50 @@ const DailyClosure: React.FC = () => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
                 const isOpen = item.closure_status === 'OPEN';
+                const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
+                const barColor = isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-400' : 'bg-slate-300';
                 const dotColor = isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300';
 
                 return (
                   <button
                     key={item.vehicle_id}
                     onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`bg-slate-100/80 rounded-xl p-4 border shadow-sm flex-shrink-0 w-64 text-left transition-all ${
+                    className={`rounded-xl border flex-shrink-0 w-56 text-left transition-all overflow-hidden ${
                       isSelected
-                        ? 'border-primary bg-primary/5 shadow-md'
-                        : 'border-slate-200 hover:shadow-md hover:border-slate-300'
+                        ? 'border-primary shadow-md ring-1 ring-primary/20'
+                        : 'border-slate-200 bg-white hover:shadow-md hover:border-slate-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200/60">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
-                        <h3 className="font-bold text-slate-700 text-sm truncate">{item.vehicle_name}</h3>
-                      </div>
-                      <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
-                        {item.total_jobs}
-                      </span>
+                    {/* Top color bar */}
+                    <div className="h-1.5 w-full bg-slate-100">
+                      <div className={`h-full ${barColor} transition-all duration-500`} style={{ width: `${progress}%` }} />
                     </div>
-                    {item.vehicle_registration && (
-                      <p className="text-xs text-slate-400 mb-2">{item.vehicle_registration}</p>
-                    )}
-                    <div className="flex items-center gap-4 text-xs">
-                      <div>
-                        <span className="text-lg font-bold text-green-600">{item.completed_jobs}</span>
-                        <span className="text-slate-400 ml-1">เสร็จ</span>
-                      </div>
-                      {item.incomplete_jobs > 0 && (
-                        <div>
-                          <span className="text-lg font-bold text-red-500">{item.incomplete_jobs}</span>
-                          <span className="text-slate-400 ml-1">ค้าง</span>
+
+                    <div className="p-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                          <h3 className="font-bold text-slate-800 text-sm truncate">{item.vehicle_name}</h3>
                         </div>
-                      )}
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                          {item.total_jobs} งาน
+                        </span>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                          <span className="text-xs text-slate-600"><strong className="text-green-600">{item.completed_jobs}</strong> เสร็จ</span>
+                        </div>
+                        {item.incomplete_jobs > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                            <span className="text-xs text-slate-600"><strong className="text-red-500">{item.incomplete_jobs}</strong> ค้าง</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </button>
                 );
