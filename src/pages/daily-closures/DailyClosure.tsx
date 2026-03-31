@@ -310,62 +310,71 @@ const DailyClosure: React.FC = () => {
 
         {/* Vehicle Overview Cards */}
         {overviewData.length > 0 && (
-          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-            <button
-              onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }}
-              className={`flex-shrink-0 rounded-xl border-2 px-5 py-4 min-w-[160px] text-left transition-all ${
-                selectedVehicleId === null
-                  ? 'border-primary bg-primary/5 shadow-md'
-                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-              }`}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 bg-slate-100 rounded-lg">
-                  <TruckIcon className="h-4 w-4 text-slate-600" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              {/* All vehicles card */}
+              <button
+                onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }}
+                className={`flex-shrink-0 rounded-xl px-5 py-4 min-w-[150px] text-left transition-all ${
+                  selectedVehicleId === null
+                    ? 'bg-primary/10 ring-2 ring-primary/30'
+                    : 'bg-slate-50 hover:bg-slate-100'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`p-2 rounded-lg ${selectedVehicleId === null ? 'bg-primary/20' : 'bg-slate-200'}`}>
+                    <TruckIcon className={`h-4 w-4 ${selectedVehicleId === null ? 'text-primary' : 'text-slate-500'}`} />
+                  </div>
+                  <span className="text-sm font-bold text-slate-700">ทั้งหมด</span>
                 </div>
-                <p className="text-sm font-bold text-slate-800">ทั้งหมด</p>
-              </div>
-              <p className="text-2xl font-bold text-slate-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)} <span className="text-sm font-normal text-slate-500">งาน</span></p>
-              <p className="text-xs text-slate-400 mt-1">{overviewData.length} คัน | {overviewData.reduce((s, v) => s + v.completed_jobs, 0)} เสร็จ</p>
-            </button>
-            {overviewData.map((item) => {
-              const isSelected = selectedVehicleId === item.vehicle_id;
-              const statusColor = item.closure_status === 'CLOSED'
-                ? 'bg-green-500'
-                : item.closure_status === 'OPEN'
-                  ? 'bg-amber-500'
-                  : 'bg-slate-300';
-              return (
-                <button
-                  key={item.vehicle_id}
-                  onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                  className={`flex-shrink-0 rounded-xl border-2 px-5 py-4 min-w-[170px] text-left transition-all ${
-                    isSelected
-                      ? 'border-primary bg-primary/5 shadow-md'
-                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-3 h-3 rounded-full ${statusColor} ring-2 ring-offset-1 ${
-                        item.closure_status === 'CLOSED' ? 'ring-green-200' : item.closure_status === 'OPEN' ? 'ring-amber-200' : 'ring-slate-200'
-                      }`} />
-                      <p className="text-sm font-bold text-slate-800">{item.vehicle_name}</p>
+                <p className="text-3xl font-black text-slate-800 mb-1">{overviewData.reduce((s, v) => s + v.total_jobs, 0)}</p>
+                <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                  <span>{overviewData.length} คัน</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300" />
+                  <span className="text-green-600 font-semibold">{overviewData.reduce((s, v) => s + v.completed_jobs, 0)} เสร็จ</span>
+                </div>
+              </button>
+
+              {/* Individual vehicle cards */}
+              {overviewData.map((item) => {
+                const isSelected = selectedVehicleId === item.vehicle_id;
+                const statusStyles = {
+                  CLOSED: { dot: 'bg-green-500', ring: 'ring-green-200', bg: isSelected ? 'bg-green-50 ring-2 ring-green-300' : 'bg-green-50/50 hover:bg-green-50' },
+                  OPEN: { dot: 'bg-amber-500', ring: 'ring-amber-200', bg: isSelected ? 'bg-amber-50 ring-2 ring-amber-300' : 'bg-amber-50/50 hover:bg-amber-50' },
+                  NOT_STARTED: { dot: 'bg-slate-400', ring: 'ring-slate-200', bg: isSelected ? 'bg-slate-100 ring-2 ring-slate-400' : 'bg-slate-50 hover:bg-slate-100' },
+                };
+                const style = statusStyles[item.closure_status] || statusStyles.NOT_STARTED;
+
+                return (
+                  <button
+                    key={item.vehicle_id}
+                    onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
+                    className={`flex-shrink-0 rounded-xl px-5 py-4 min-w-[180px] text-left transition-all ${style.bg}`}
+                  >
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <span className={`w-2.5 h-2.5 rounded-full ${style.dot} ring-2 ring-offset-1 ${style.ring}`} />
+                      <span className="text-sm font-bold text-slate-800">{item.vehicle_name}</span>
                     </div>
-                  </div>
-                  {item.vehicle_registration && (
-                    <p className="text-[11px] text-slate-400 mb-2">{item.vehicle_registration}</p>
-                  )}
-                  <div className="flex items-center gap-2 text-xs font-semibold">
-                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded">{item.total_jobs} งาน</span>
-                    <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded">{item.completed_jobs} เสร็จ</span>
-                    {item.incomplete_jobs > 0 && (
-                      <span className="bg-red-50 text-red-600 px-2 py-0.5 rounded">{item.incomplete_jobs} ค้าง</span>
+                    {item.vehicle_registration && (
+                      <p className="text-[11px] text-slate-400 -mt-1 mb-3 ml-5">{item.vehicle_registration}</p>
                     )}
-                  </div>
-                </button>
-              );
-            })}
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center h-6 min-w-[28px] px-2 rounded-md bg-white/80 text-xs font-bold text-slate-700 border border-slate-200">
+                        {item.total_jobs}
+                      </span>
+                      <span className="inline-flex items-center justify-center h-6 min-w-[28px] px-2 rounded-md bg-green-100 text-xs font-bold text-green-700">
+                        {item.completed_jobs}
+                      </span>
+                      {item.incomplete_jobs > 0 && (
+                        <span className="inline-flex items-center justify-center h-6 min-w-[28px] px-2 rounded-md bg-red-100 text-xs font-bold text-red-600">
+                          {item.incomplete_jobs}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
