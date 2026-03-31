@@ -7,9 +7,8 @@ import {
   CheckCircleIcon,
   ManageIcon,
   LoadingIcon,
-  TruckIcon,
-  ClockIcon,
-  DocumentCheckIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -66,6 +65,7 @@ const DailyClosure: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const vehicleScrollRef = useRef<HTMLDivElement>(null);
 
   const fetchOverview = useCallback(async () => {
     setLoading(true);
@@ -260,18 +260,14 @@ const DailyClosure: React.FC = () => {
           </div>
         </div>
 
-        {/* Vehicle Cards */}
+        {/* Vehicle Kanban Cards */}
         {overviewData.length > 0 && (
-          <Card className="!p-4">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-slate-700">รถบริการวันนี้ ({overviewData.length} คัน)</p>
-              {selectedVehicleId && (
-                <button onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }} className="text-xs text-primary font-medium hover:underline">
-                  แสดงทั้งหมด
-                </button>
-              )}
-            </div>
-            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex flex-col relative">
+            <div
+              ref={vehicleScrollRef}
+              className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth"
+              style={{ scrollbarWidth: 'thin' }}
+            >
               {overviewData.map((item) => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
@@ -282,26 +278,57 @@ const DailyClosure: React.FC = () => {
                   <button
                     key={item.vehicle_id}
                     onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`flex items-center gap-3 flex-shrink-0 rounded-lg border px-4 py-2.5 text-left transition-all ${
+                    className={`bg-slate-100/80 rounded-xl p-4 border shadow-sm flex-shrink-0 w-64 text-left transition-all ${
                       isSelected
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+                        ? 'border-primary bg-primary/5 shadow-md'
+                        : 'border-slate-200 hover:shadow-md hover:border-slate-300'
                     }`}
                   >
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 whitespace-nowrap">{item.vehicle_name}</p>
-                      <p className="text-xs text-slate-500 whitespace-nowrap">
-                        {item.total_jobs} งาน
-                        <span className="text-green-600 ml-2">{item.completed_jobs} เสร็จ</span>
-                        {item.incomplete_jobs > 0 && <span className="text-red-500 ml-2">{item.incomplete_jobs} ค้าง</span>}
-                      </p>
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-200/60">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                        <h3 className="font-bold text-slate-700 text-sm truncate">{item.vehicle_name}</h3>
+                      </div>
+                      <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
+                        {item.total_jobs}
+                      </span>
+                    </div>
+                    {item.vehicle_registration && (
+                      <p className="text-xs text-slate-400 mb-2">{item.vehicle_registration}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs">
+                      <div>
+                        <span className="text-lg font-bold text-green-600">{item.completed_jobs}</span>
+                        <span className="text-slate-400 ml-1">เสร็จ</span>
+                      </div>
+                      {item.incomplete_jobs > 0 && (
+                        <div>
+                          <span className="text-lg font-bold text-red-500">{item.incomplete_jobs}</span>
+                          <span className="text-slate-400 ml-1">ค้าง</span>
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
               })}
             </div>
-          </Card>
+            {overviewData.length > 3 && (
+              <>
+                <button
+                  onClick={() => { if (vehicleScrollRef.current) vehicleScrollRef.current.scrollLeft -= 280; }}
+                  className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
+                >
+                  <ChevronLeftIcon className="h-5 w-5 text-slate-600" />
+                </button>
+                <button
+                  onClick={() => { if (vehicleScrollRef.current) vehicleScrollRef.current.scrollLeft += 280; }}
+                  className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
+                >
+                  <ChevronRightIcon className="h-5 w-5 text-slate-600" />
+                </button>
+              </>
+            )}
+          </div>
         )}
 
         {/* Table Card */}
