@@ -1037,17 +1037,32 @@ const Job: React.FC<JobProps> = ({
             <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
             <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
           </div>
-          {authUser?.role &&
-            [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role) && (
+          <div className="flex items-center gap-3">
+            {currentUser?.role && [UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
               <Button
-                onClick={() => setIsAddModalOpen(true)}
-                variant="primary"
-                className="shadow-md shadow-primary/20"
+                onClick={handleOpenDailyClosure}
+                variant="outline"
+                className="text-sm font-medium border-red-500 text-red-600 bg-red-50 hover:bg-red-100 shadow-sm"
               >
-                <PlusIcon className="h-5 w-5 mr-2" />
-                สร้างนัดหมาย
+                <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                ปิดงานรายวัน
+                {todayClosure?.status === 'CLOSED' && (
+                  <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">จบงาน</span>
+                )}
               </Button>
             )}
+            {authUser?.role &&
+              [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role) && (
+                <Button
+                  onClick={() => setIsAddModalOpen(true)}
+                  variant="primary"
+                  className="shadow-md shadow-primary/20"
+                >
+                  <PlusIcon className="h-5 w-5 mr-2" />
+                  สร้างนัดหมาย
+                </Button>
+              )}
+          </div>
         </div>
 
         <div className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -1253,20 +1268,6 @@ const Job: React.FC<JobProps> = ({
                       <CalendarDaysIcon className="h-4 w-4" />
                     </Button>
                   </div>
-                )}
-
-                {currentUser?.role && [UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
-                  <Button
-                    onClick={handleOpenDailyClosure}
-                    variant="outline"
-                    className="text-sm font-medium border-red-500 text-red-600 bg-red-50 hover:bg-red-100"
-                  >
-                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
-                    ปิดงานรายวัน
-                    {todayClosure?.status === 'CLOSED' && (
-                      <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">จบงาน</span>
-                    )}
-                  </Button>
                 )}
 
                 <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
