@@ -310,45 +310,86 @@ const DailyClosure: React.FC = () => {
 
         {/* Vehicle Overview Cards */}
         {overviewData.length > 0 && (
-          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
             {overviewData.map((item) => {
               const isSelected = selectedVehicleId === item.vehicle_id;
               const isClosed = item.closure_status === 'CLOSED';
               const isOpen = item.closure_status === 'OPEN';
+              const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
+
+              const gradientBg = isClosed
+                ? 'from-green-50 to-emerald-50'
+                : isOpen
+                  ? 'from-amber-50 to-orange-50'
+                  : 'from-slate-50 to-slate-100';
+
+              const statusLabel = isClosed ? 'ปิดแล้ว' : isOpen ? 'กำลังทำ' : 'รอเริ่มงาน';
+              const statusClass = isClosed
+                ? 'bg-green-100 text-green-700'
+                : isOpen
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-slate-200 text-slate-600';
 
               return (
                 <button
                   key={item.vehicle_id}
                   onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                  className={`flex-shrink-0 rounded-2xl border p-5 min-w-[220px] text-left transition-all ${
+                  className={`flex-shrink-0 rounded-2xl p-5 min-w-[230px] text-left transition-all bg-gradient-to-br ${gradientBg} ${
                     isSelected
-                      ? 'border-primary bg-white shadow-lg ring-1 ring-primary/20'
-                      : 'border-slate-200 bg-white hover:shadow-md hover:border-slate-300'
+                      ? 'ring-2 ring-primary shadow-lg scale-[1.02]'
+                      : 'ring-1 ring-slate-200/60 hover:shadow-md hover:scale-[1.01]'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-lg ${isClosed ? 'bg-green-100' : isOpen ? 'bg-amber-100' : 'bg-slate-100'}`}>
-                        <TruckIcon className={`h-4 w-4 ${isClosed ? 'text-green-600' : isOpen ? 'text-amber-600' : 'text-slate-500'}`} />
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2.5 rounded-xl shadow-sm ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                        <TruckIcon className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-slate-800">{item.vehicle_name}</p>
+                        <p className="text-base font-bold text-slate-800 leading-tight">{item.vehicle_name}</p>
                         {item.vehicle_registration && (
-                          <p className="text-[11px] text-slate-400">{item.vehicle_registration}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{item.vehicle_registration}</p>
                         )}
                       </div>
                     </div>
-                    <span className={`w-2.5 h-2.5 rounded-full ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300'}`} />
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${statusClass}`}>
+                      {statusLabel}
+                    </span>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-2xl font-black text-slate-800">{item.total_jobs}</span>
-                    <span className="text-xs text-slate-400 font-medium">งาน</span>
+
+                  {/* Progress bar */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
+                      <span>ความคืบหน้า</span>
+                      <span className="font-bold text-slate-700">{progress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300'}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-green-600 font-semibold">{item.completed_jobs} เสร็จ</span>
-                    {item.incomplete_jobs > 0 && (
-                      <span className="text-red-500 font-semibold">{item.incomplete_jobs} ค้าง</span>
-                    )}
+
+                  {/* Stats */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4 text-xs font-semibold">
+                      <div className="text-center">
+                        <p className="text-lg font-black text-slate-800">{item.total_jobs}</p>
+                        <p className="text-slate-400 font-medium">ทั้งหมด</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-lg font-black text-green-600">{item.completed_jobs}</p>
+                        <p className="text-green-500 font-medium">เสร็จ</p>
+                      </div>
+                      {item.incomplete_jobs > 0 && (
+                        <div className="text-center">
+                          <p className="text-lg font-black text-red-500">{item.incomplete_jobs}</p>
+                          <p className="text-red-400 font-medium">ค้าง</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </button>
               );
