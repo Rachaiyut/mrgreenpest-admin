@@ -212,19 +212,6 @@ const DailyClosure: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800">สรุปงานรายวัน</h1>
             <p className="mt-1 text-slate-600">ติดตามสถานะงานและการปิดงานรายวันของทีมช่าง</p>
           </div>
-          <div className="flex items-center gap-3">
-            <BuddhistDatePicker
-              selected={filterDate}
-              onChange={(date: Date | null) => {
-                setFilterDate(date);
-                setCurrentPage(1);
-              }}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="เลือกวันที่"
-              isClearable
-              className="w-40 rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary"
-            />
-          </div>
         </div>
 
         {/* Vehicle Kanban Cards */}
@@ -316,6 +303,17 @@ const DailyClosure: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+            <BuddhistDatePicker
+              selected={filterDate}
+              onChange={(date: Date | null) => {
+                setFilterDate(date);
+                setCurrentPage(1);
+              }}
+              dateFormat="dd/MM/yyyy"
+              placeholderText="เลือกวันที่"
+              isClearable
+              className="w-36 rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary h-10"
+            />
             <Select
               value={filterStatus}
               onChange={(e) => {
