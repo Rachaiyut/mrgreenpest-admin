@@ -341,34 +341,15 @@ const DailyClosure: React.FC = () => {
                   }`}
                 >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-xl shadow-sm ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-400'}`}>
-                        <TruckIcon className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="text-base font-bold text-slate-800 leading-tight">{item.vehicle_name}</p>
-                        {item.vehicle_registration && (
-                          <p className="text-xs text-slate-500 mt-0.5">{item.vehicle_registration}</p>
-                        )}
-                      </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className={`p-2.5 rounded-xl shadow-sm ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-400'}`}>
+                      <TruckIcon className="h-5 w-5 text-white" />
                     </div>
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${statusClass}`}>
-                      {statusLabel}
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-[11px] text-slate-500 mb-1.5">
-                      <span>ความคืบหน้า</span>
-                      <span className="font-bold text-slate-700">{progress}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300'}`}
-                        style={{ width: `${progress}%` }}
-                      />
+                    <div>
+                      <p className="text-base font-bold text-slate-800 leading-tight">{item.vehicle_name}</p>
+                      {item.vehicle_registration && (
+                        <p className="text-xs text-slate-500 mt-0.5">{item.vehicle_registration}</p>
+                      )}
                     </div>
                   </div>
 
