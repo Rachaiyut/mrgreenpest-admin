@@ -166,14 +166,15 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       onUpdateQuotation: data.handlers.quotations.update,
       onCreateQuotation: data.handlers.quotations.create,
     }),
-    subItems: [
-      {
-        name: 'สรุปงานรายวัน',
-        path: 'daily-closures',
-        access: 'ACCESS_DAILY_CLOSURE',
-        component: DailyClosure,
-      },
-    ],
+  },
+
+  // Daily Job Closure
+  {
+    name: 'สรุปงานรายวัน',
+    path: 'daily-closures',
+    icon: NewFieldOpsIcon,
+    access: 'ACCESS_DAILY_CLOSURE',
+    component: DailyClosure,
   },
 
   // Billing & Finance Group

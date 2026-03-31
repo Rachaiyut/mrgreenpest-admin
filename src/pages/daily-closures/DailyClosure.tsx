@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import { DailyJobClosure } from '@/src/types/entity/daily-closure.interface';
+import { DailyJobClosure, DailyClosureOverviewItem } from '@/src/types/entity/daily-closure.interface';
 import { DailyClosureApi } from '@/src/api/daily-closure';
 import {
   EyeIcon,
@@ -41,14 +41,16 @@ const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
 };
 
 const DailyClosure: React.FC = () => {
+  const today = new Date();
   const [closures, setClosures] = useState<DailyJobClosure[]>([]);
+  const [overviewData, setOverviewData] = useState<DailyClosureOverviewItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
-  const [filterDate, setFilterDate] = useState<Date | null>(null);
+  const [filterDate, setFilterDate] = useState<Date | null>(today);
   const [filterStatus, setFilterStatus] = useState<ClosureStatus>('');
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -86,6 +88,15 @@ const DailyClosure: React.FC = () => {
   useEffect(() => {
     fetchClosures();
   }, [fetchClosures]);
+
+  useEffect(() => {
+    const dateStr = filterDate
+      ? filterDate.toISOString().split('T')[0]
+      : today.toISOString().split('T')[0];
+    DailyClosureApi.getOverview(dateStr)
+      .then((res) => setOverviewData(res.data))
+      .catch((err) => console.error('Error fetching overview:', err));
+  }, [filterDate]);
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -232,6 +243,45 @@ const DailyClosure: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Daily Overview Cards */}
+        {overviewData.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {overviewData.map((item) => {
+              const statusConfig = {
+                CLOSED: { label: 'ปิดแล้ว', bg: 'bg-green-50 border-green-200', badge: 'bg-green-100 text-green-700' },
+                OPEN: { label: 'เปิดอยู่', bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700' },
+                NOT_STARTED: { label: 'ยังไม่เริ่ม', bg: 'bg-slate-50 border-slate-200', badge: 'bg-slate-100 text-slate-600' },
+              };
+              const config = statusConfig[item.closure_status];
+              return (
+                <div key={item.vehicle_id} className={`rounded-xl border p-4 ${config.bg}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">{item.vehicle_name}</p>
+                      {item.vehicle_registration && (
+                        <p className="text-xs text-slate-500">{item.vehicle_registration}</p>
+                      )}
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${config.badge}`}>
+                      {config.label}
+                    </span>
+                  </div>
+                  <div className="flex gap-4 text-xs mt-2">
+                    <span className="text-slate-600">ช่าง: <strong>{item.primary_tech_name}</strong></span>
+                  </div>
+                  <div className="flex gap-4 text-xs mt-1">
+                    <span className="text-slate-500">ทั้งหมด: <strong>{item.total_jobs}</strong></span>
+                    <span className="text-green-600">เสร็จ: <strong>{item.completed_jobs}</strong></span>
+                    {item.incomplete_jobs > 0 && (
+                      <span className="text-red-600">ค้าง: <strong>{item.incomplete_jobs}</strong></span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Table Card */}
         {loading ? (

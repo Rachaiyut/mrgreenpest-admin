@@ -5,6 +5,7 @@ import {
 } from '@/src/types/entity/base.interface';
 import {
   DailyJobClosure,
+  DailyClosureOverviewItem,
   CreateDailyJobClosurePayload,
   CloseDailyJobClosurePayload,
 } from '@/src/types/entity/daily-closure.interface';
@@ -70,6 +71,13 @@ class DailyClosureService extends AuthService {
   ): Promise<IBaseResponse<DailyJobClosure>> {
     const res = await this.http.patch<IBaseResponse<DailyJobClosure>>(
       `${this.path}/${id}/close-retroactive`
+    );
+    return res.data;
+  }
+
+  async getOverview(date: string): Promise<IBaseResponse<DailyClosureOverviewItem[]>> {
+    const res = await this.http.get<IBaseResponse<DailyClosureOverviewItem[]>>(
+      `${this.path}/overview/${date}`
     );
     return res.data;
   }

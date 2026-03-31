@@ -56,3 +56,15 @@ export interface CloseDailyJobClosurePayload {
   has_no_stock_issue?: boolean;
   notes?: string;
 }
+
+export interface DailyClosureOverviewItem {
+  vehicle_id: string;
+  vehicle_name: string;
+  vehicle_registration: string;
+  primary_tech_name: string;
+  total_jobs: number;
+  completed_jobs: number;
+  incomplete_jobs: number;
+  closure_id: string | null;
+  closure_status: 'OPEN' | 'CLOSED' | 'NOT_STARTED';
+}
