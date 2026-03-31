@@ -136,7 +136,7 @@ const DailyClosure: React.FC = () => {
           timer: 1500,
           showConfirmButton: false,
         });
-        fetchClosures();
+        fetchOverview();
       } catch (error) {
         console.error('Error closing retroactive:', error);
         Swal.fire({
@@ -406,32 +406,38 @@ const DailyClosure: React.FC = () => {
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                const closure = closures.find(
-                  (c) => c.id === openDropdownId
-                );
-                if (closure) handleViewDetails(closure);
-              }}
-              className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-              role="menuitem"
-            >
-              <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-              <span>ดูรายละเอียด</span>
-            </a>
-            {closures.find((c) => c.id === openDropdownId)?.status ===
-              'OPEN' && (
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const closure = closures.find(
-                    (c) => c.id === openDropdownId
-                  );
-                  if (closure) handleCloseRetroactive(closure);
-                }}
+            {(() => {
+              const item = overviewData.find((v) => v.vehicle_id === openDropdownId);
+              if (!item) return null;
+              return (
+                <>
+                  {item.closure_id && (
+                    <a
+                      href="#"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const res = await DailyClosureApi.getById(item.closure_id!);
+                          if (res.data) handleViewDetails(res.data);
+                        } catch { /* ignore */ }
+                      }}
+                      className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                      role="menuitem"
+                    >
+                      <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+                      <span>ดูรายละเอียด</span>
+                    </a>
+                  )}
+                  {item.closure_id && item.closure_status === 'OPEN' && (
+                    <a
+                      href="#"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          const res = await DailyClosureApi.getById(item.closure_id!);
+                          if (res.data) handleCloseRetroactive(res.data);
+                        } catch { /* ignore */ }
+                      }}
                 className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                 role="menuitem"
               >
@@ -442,6 +448,9 @@ const DailyClosure: React.FC = () => {
                 <span>ปิดย้อนหลัง</span>
               </a>
             )}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
