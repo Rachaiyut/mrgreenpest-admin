@@ -9,6 +9,7 @@ import {
   LoadingIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  TruckIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -249,7 +250,9 @@ const DailyClosure: React.FC = () => {
                       {/* Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`} />
+                          <div className={`p-1.5 rounded-lg flex-shrink-0 ${isClosed ? 'bg-green-100' : isOpen ? 'bg-amber-100' : 'bg-slate-100'}`}>
+                            <TruckIcon className={`h-4 w-4 ${isClosed ? 'text-green-600' : isOpen ? 'text-amber-600' : 'text-slate-400'}`} />
+                          </div>
                           <h3 className="font-bold text-slate-800 text-sm truncate">{item.vehicle_name}</h3>
                         </div>
                         <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
