@@ -260,122 +260,48 @@ const DailyClosure: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <TruckIcon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-blue-600 font-medium">รถทั้งหมด</p>
-                <p className="text-2xl font-bold text-blue-800">{overviewData.length}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <CheckCircleIcon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-green-600 font-medium">ปิดงานแล้ว</p>
-                <p className="text-2xl font-bold text-green-800">{overviewData.filter(v => v.closure_status === 'CLOSED').length}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500 rounded-lg">
-                <ClockIcon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-amber-600 font-medium">กำลังดำเนินการ</p>
-                <p className="text-2xl font-bold text-amber-800">{overviewData.filter(v => v.closure_status === 'OPEN' || v.closure_status === 'NOT_STARTED').length}</p>
-              </div>
-            </div>
-          </Card>
-          <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <DocumentCheckIcon className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-purple-600 font-medium">งานทั้งหมด</p>
-                <p className="text-2xl font-bold text-purple-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)}</p>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Vehicle Overview Cards */}
+        {/* Vehicle Cards */}
         {overviewData.length > 0 && (
-          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
-            {overviewData.map((item) => {
-              const isSelected = selectedVehicleId === item.vehicle_id;
-              const isClosed = item.closure_status === 'CLOSED';
-              const isOpen = item.closure_status === 'OPEN';
-              const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
-
-              const gradientBg = isClosed
-                ? 'from-green-50 to-emerald-50'
-                : isOpen
-                  ? 'from-amber-50 to-orange-50'
-                  : 'from-slate-50 to-slate-100';
-
-              const statusLabel = isClosed ? 'ปิดแล้ว' : isOpen ? 'กำลังทำ' : 'รอเริ่มงาน';
-              const statusClass = isClosed
-                ? 'bg-green-100 text-green-700'
-                : isOpen
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-slate-200 text-slate-600';
-
-              return (
-                <button
-                  key={item.vehicle_id}
-                  onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                  className={`flex-shrink-0 rounded-2xl p-5 min-w-[230px] text-left transition-all bg-gradient-to-br ${gradientBg} ${
-                    isSelected
-                      ? 'ring-2 ring-primary shadow-lg scale-[1.02]'
-                      : 'ring-1 ring-slate-200/60 hover:shadow-md hover:scale-[1.01]'
-                  }`}
-                >
-                  {/* Header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2.5 rounded-xl shadow-sm ${isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-400'}`}>
-                      <TruckIcon className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-slate-800 leading-tight">{item.vehicle_name}</p>
-                      {item.vehicle_registration && (
-                        <p className="text-xs text-slate-500 mt-0.5">{item.vehicle_registration}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-xs font-semibold">
-                      <div className="text-center">
-                        <p className="text-lg font-black text-slate-800">{item.total_jobs}</p>
-                        <p className="text-slate-400 font-medium">ทั้งหมด</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-black text-green-600">{item.completed_jobs}</p>
-                        <p className="text-green-500 font-medium">เสร็จ</p>
-                      </div>
-                      {item.incomplete_jobs > 0 && (
-                        <div className="text-center">
-                          <p className="text-lg font-black text-red-500">{item.incomplete_jobs}</p>
-                          <p className="text-red-400 font-medium">ค้าง</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+          <Card className="!p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-slate-700">รถบริการวันนี้ ({overviewData.length} คัน)</p>
+              {selectedVehicleId && (
+                <button onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }} className="text-xs text-primary font-medium hover:underline">
+                  แสดงทั้งหมด
                 </button>
-              );
-            })}
-          </div>
+              )}
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+              {overviewData.map((item) => {
+                const isSelected = selectedVehicleId === item.vehicle_id;
+                const isClosed = item.closure_status === 'CLOSED';
+                const isOpen = item.closure_status === 'OPEN';
+                const dotColor = isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300';
+
+                return (
+                  <button
+                    key={item.vehicle_id}
+                    onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
+                    className={`flex items-center gap-3 flex-shrink-0 rounded-lg border px-4 py-2.5 text-left transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/5 shadow-sm'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800 whitespace-nowrap">{item.vehicle_name}</p>
+                      <p className="text-xs text-slate-500 whitespace-nowrap">
+                        {item.total_jobs} งาน
+                        <span className="text-green-600 ml-2">{item.completed_jobs} เสร็จ</span>
+                        {item.incomplete_jobs > 0 && <span className="text-red-500 ml-2">{item.incomplete_jobs} ค้าง</span>}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
         )}
 
         {/* Table Card */}
