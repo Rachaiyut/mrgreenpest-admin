@@ -51,6 +51,7 @@ const DailyClosure: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
   const [filterDate, setFilterDate] = useState<Date | null>(today);
   const [filterStatus, setFilterStatus] = useState<ClosureStatus>('');
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedClosure, setSelectedClosure] =
@@ -88,6 +89,7 @@ const DailyClosure: React.FC = () => {
 
       setOverviewData(data);
       setTotalItems(data.length);
+      setSelectedVehicleId(null);
     } catch (error) {
       console.error('Error fetching overview:', error);
     } finally {
@@ -99,7 +101,11 @@ const DailyClosure: React.FC = () => {
     fetchOverview();
   }, [fetchOverview]);
 
-  const paginatedData = overviewData.slice(
+  const filteredByVehicle = selectedVehicleId
+    ? overviewData.filter((item) => item.vehicle_id === selectedVehicleId)
+    : overviewData;
+
+  const paginatedData = filteredByVehicle.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -250,6 +256,58 @@ const DailyClosure: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Vehicle Overview Cards */}
+        {overviewData.length > 0 && (
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }}
+              className={`flex-shrink-0 rounded-xl border-2 px-4 py-3 min-w-[140px] text-left transition-all ${
+                selectedVehicleId === null
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
+            >
+              <p className="text-xs text-slate-500">ทั้งหมด</p>
+              <p className="text-xl font-bold text-slate-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)}</p>
+              <p className="text-xs text-slate-400">{overviewData.length} คัน</p>
+            </button>
+            {overviewData.map((item) => {
+              const isSelected = selectedVehicleId === item.vehicle_id;
+              const statusColor = item.closure_status === 'CLOSED'
+                ? 'bg-green-500'
+                : item.closure_status === 'OPEN'
+                  ? 'bg-amber-500'
+                  : 'bg-slate-300';
+              return (
+                <button
+                  key={item.vehicle_id}
+                  onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
+                  className={`flex-shrink-0 rounded-xl border-2 px-4 py-3 min-w-[160px] text-left transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />
+                    <p className="text-sm font-bold text-slate-800 truncate">{item.vehicle_name}</p>
+                  </div>
+                  {item.vehicle_registration && (
+                    <p className="text-xs text-slate-400 mb-1">{item.vehicle_registration}</p>
+                  )}
+                  <div className="flex gap-3 text-xs">
+                    <span className="text-slate-600">{item.total_jobs} งาน</span>
+                    <span className="text-green-600">{item.completed_jobs} เสร็จ</span>
+                    {item.incomplete_jobs > 0 && (
+                      <span className="text-red-500">{item.incomplete_jobs} ค้าง</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Table Card */}
         {loading ? (
