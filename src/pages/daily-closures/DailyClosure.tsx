@@ -7,6 +7,9 @@ import {
   CheckCircleIcon,
   ManageIcon,
   LoadingIcon,
+  TruckIcon,
+  ClockIcon,
+  DocumentCheckIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -210,7 +213,7 @@ const DailyClosure: React.FC = () => {
               สรุปงานรายวัน
             </h1>
             <p className="mt-1 text-slate-600">
-              ติดตามการปิดงานรายวันของทีมช่าง
+              ติดตามสถานะงานและการปิดงานรายวันของทีมช่าง
             </p>
           </div>
           <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto xl:flex-nowrap">
@@ -257,20 +260,73 @@ const DailyClosure: React.FC = () => {
           </div>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <TruckIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-blue-600 font-medium">รถทั้งหมด</p>
+                <p className="text-2xl font-bold text-blue-800">{overviewData.length}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-500 rounded-lg">
+                <CheckCircleIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-green-600 font-medium">ปิดงานแล้ว</p>
+                <p className="text-2xl font-bold text-green-800">{overviewData.filter(v => v.closure_status === 'CLOSED').length}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <ClockIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-amber-600 font-medium">กำลังดำเนินการ</p>
+                <p className="text-2xl font-bold text-amber-800">{overviewData.filter(v => v.closure_status === 'OPEN' || v.closure_status === 'NOT_STARTED').length}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-500 rounded-lg">
+                <DocumentCheckIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-purple-600 font-medium">งานทั้งหมด</p>
+                <p className="text-2xl font-bold text-purple-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
+
         {/* Vehicle Overview Cards */}
         {overviewData.length > 0 && (
           <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
             <button
               onClick={() => { setSelectedVehicleId(null); setCurrentPage(1); }}
-              className={`flex-shrink-0 rounded-xl border-2 px-4 py-3 min-w-[140px] text-left transition-all ${
+              className={`flex-shrink-0 rounded-xl border-2 px-5 py-4 min-w-[160px] text-left transition-all ${
                 selectedVehicleId === null
-                  ? 'border-primary bg-primary/5 shadow-sm'
-                  : 'border-slate-200 bg-white hover:border-slate-300'
+                  ? 'border-primary bg-primary/5 shadow-md'
+                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
               }`}
             >
-              <p className="text-xs text-slate-500">ทั้งหมด</p>
-              <p className="text-xl font-bold text-slate-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)}</p>
-              <p className="text-xs text-slate-400">{overviewData.length} คัน</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 bg-slate-100 rounded-lg">
+                  <TruckIcon className="h-4 w-4 text-slate-600" />
+                </div>
+                <p className="text-sm font-bold text-slate-800">ทั้งหมด</p>
+              </div>
+              <p className="text-2xl font-bold text-slate-800">{overviewData.reduce((s, v) => s + v.total_jobs, 0)} <span className="text-sm font-normal text-slate-500">งาน</span></p>
+              <p className="text-xs text-slate-400 mt-1">{overviewData.length} คัน | {overviewData.reduce((s, v) => s + v.completed_jobs, 0)} เสร็จ</p>
             </button>
             {overviewData.map((item) => {
               const isSelected = selectedVehicleId === item.vehicle_id;
@@ -283,21 +339,24 @@ const DailyClosure: React.FC = () => {
                 <button
                   key={item.vehicle_id}
                   onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                  className={`flex-shrink-0 rounded-xl border-2 px-4 py-3 min-w-[160px] text-left transition-all ${
+                  className={`flex-shrink-0 rounded-xl border-2 px-5 py-4 min-w-[180px] text-left transition-all ${
                     isSelected
-                      ? 'border-primary bg-primary/5 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-slate-300'
+                      ? 'border-primary bg-primary/5 shadow-md'
+                      : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`w-2.5 h-2.5 rounded-full ${statusColor}`} />
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`w-3 h-3 rounded-full ${statusColor} ring-2 ring-offset-1 ${
+                      item.closure_status === 'CLOSED' ? 'ring-green-200' : item.closure_status === 'OPEN' ? 'ring-amber-200' : 'ring-slate-200'
+                    }`} />
                     <p className="text-sm font-bold text-slate-800 truncate">{item.vehicle_name}</p>
                   </div>
                   {item.vehicle_registration && (
                     <p className="text-xs text-slate-400 mb-1">{item.vehicle_registration}</p>
                   )}
-                  <div className="flex gap-3 text-xs">
-                    <span className="text-slate-600">{item.total_jobs} งาน</span>
+                  <p className="text-xs text-slate-500 mb-2 truncate">{item.primary_tech_name}</p>
+                  <div className="flex gap-3 text-xs font-medium">
+                    <span className="text-slate-700">{item.total_jobs} งาน</span>
                     <span className="text-green-600">{item.completed_jobs} เสร็จ</span>
                     {item.incomplete_jobs > 0 && (
                       <span className="text-red-500">{item.incomplete_jobs} ค้าง</span>
@@ -371,7 +430,7 @@ const DailyClosure: React.FC = () => {
                       const statusConfig: Record<string, { label: string; className: string }> = {
                         CLOSED: { label: 'ปิดแล้ว', className: 'bg-green-100 text-green-800 border-green-200' },
                         OPEN: { label: 'เปิดอยู่', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-                        NOT_STARTED: { label: 'ยังไม่เริ่ม', className: 'bg-slate-100 text-slate-600 border-slate-200' },
+                        NOT_STARTED: { label: 'ยังไม่เริ่ม', className: 'bg-red-50 text-red-700 border-red-200' },
                       };
                       const badge = statusConfig[item.closure_status] || statusConfig.NOT_STARTED;
 
