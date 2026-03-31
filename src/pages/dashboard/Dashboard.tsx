@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardApi, DashboardData } from '../../api/dashboard';
+import { DailyClosureApi } from '../../api/daily-closure';
+import { DailyJobClosure } from '../../types/entity/daily-closure.interface';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingIcon } from '../../assets/icons/Icons';
 
@@ -43,6 +45,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [range, setRange] = useState<Range>('month');
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [openClosures, setOpenClosures] = useState<DailyJobClosure[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -51,6 +54,13 @@ const Dashboard: React.FC<DashboardProps> = () => {
       .catch((err) => console.error('Dashboard fetch error:', err))
       .finally(() => setLoading(false));
   }, [range]);
+
+  useEffect(() => {
+    const today = new Date().toISOString().substring(0, 10);
+    DailyClosureApi.getAll({ closure_date: today, status: 'OPEN', limit: 50 })
+      .then((res) => setOpenClosures(res.data || []))
+      .catch(() => setOpenClosures([]));
+  }, []);
 
   if (loading || !data) {
     return (
@@ -108,6 +118,29 @@ const Dashboard: React.FC<DashboardProps> = () => {
           สร้างใบเสนอราคา
         </button>
       </div>
+
+      {/* Daily Closure Alert */}
+      {openClosures.length > 0 && (
+        <div
+          onClick={() => navigate('/daily-closures')}
+          className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between cursor-pointer hover:bg-amber-100 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-100 rounded-xl">
+              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-amber-800">รถที่ยังไม่ปิดงานวันนี้</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                {openClosures.map((c) => c.vehicle?.name || 'ไม่ระบุ').join(', ')}
+              </p>
+            </div>
+          </div>
+          <span className="text-2xl font-black text-amber-700">{openClosures.length}</span>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
