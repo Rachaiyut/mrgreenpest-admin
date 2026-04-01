@@ -9,12 +9,12 @@ interface StatusBadgeProps {
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   // ===== สถานะทั่วไป =====
   DRAFT:              { label: 'จัดทำ',             color: 'bg-slate-100 text-slate-600' },
-  PENDING:            { label: 'รอดำเนินการ',       color: 'bg-yellow-100 text-yellow-700' },
+  PENDING:            { label: 'รอเข้าดำเนินการ',    color: 'bg-yellow-100 text-yellow-700' },
   PENDING_APPROVAL:   { label: 'รออนุมัติ',         color: 'bg-orange-100 text-orange-700' },
   PENDING_SIGNATURE:  { label: 'รอเซ็น',           color: 'bg-amber-100 text-amber-700' },
   APPROVED:           { label: 'อนุมัติ',           color: 'bg-emerald-100 text-emerald-700' },
   SIGNED:             { label: 'เซ็นแล้ว',          color: 'bg-green-100 text-green-700' },
-  IN_PROGRESS:        { label: 'กำลังดำเนินการ',    color: 'bg-blue-100 text-blue-700' },
+  IN_PROGRESS:        { label: 'ระหว่างดำเนินการ',   color: 'bg-blue-100 text-blue-700' },
   COMPLETED:          { label: 'เสร็จสิ้น',         color: 'bg-green-100 text-green-700' },
   COMPLETE:           { label: 'เสร็จสิ้น',         color: 'bg-green-100 text-green-700' },
   CANCELLED:          { label: 'ยกเลิก',           color: 'bg-red-100 text-red-700' },
