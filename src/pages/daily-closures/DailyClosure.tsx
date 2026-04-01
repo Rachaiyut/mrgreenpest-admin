@@ -260,16 +260,9 @@ const DailyClosure: React.FC = () => {
                 const isOpen = item.closure_status === 'OPEN';
                 const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
 
-                const allComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
-                const statusConfig = isClosed && allComplete
-                  ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน', labelBg: 'bg-green-100 text-green-700' }
-                  : allComplete && item.has_issue_summary
-                    ? { bg: 'bg-blue-400', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', label: 'รอจบงาน', labelBg: 'bg-blue-100 text-blue-700' }
-                    : allComplete && !item.has_issue_summary
-                      ? { bg: 'bg-orange-400', iconBg: 'bg-orange-50', iconColor: 'text-orange-600', label: 'รอเคลียค่าใช้จ่าย', labelBg: 'bg-orange-100 text-orange-700' }
-                      : item.incomplete_jobs > 0
-                        ? { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'ระหว่างดำเนินการ', labelBg: 'bg-amber-100 text-amber-700' }
-                        : { bg: 'bg-slate-300', iconBg: 'bg-slate-50', iconColor: 'text-slate-400', label: 'รอเริ่ม', labelBg: 'bg-slate-100 text-slate-600' };
+                const statusConfig = isClosed
+                  ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน' }
+                  : { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังทำ' };
 
                 return (
                   <button
@@ -433,24 +426,21 @@ const DailyClosure: React.FC = () => {
                     paginatedData.map((item, index) => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
-                      const allJobsComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
-                      const derivedStatus = item.closure_status === 'CLOSED' && allJobsComplete
+                      const allComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
+                      const derivedStatus = item.closure_status === 'CLOSED'
                         ? 'CLOSED'
-                        : allJobsComplete && item.has_issue_summary
+                        : allComplete && item.has_issue_summary
                           ? 'READY_CLOSE'
-                          : allJobsComplete && !item.has_issue_summary
+                          : allComplete && !item.has_issue_summary
                             ? 'WAITING_CLEAR'
-                            : item.incomplete_jobs > 0
-                              ? 'OPEN'
-                              : 'NOT_STARTED';
+                            : 'OPEN';
                       const statusConfig: Record<string, { label: string; className: string }> = {
                         CLOSED: { label: 'จบงาน', className: 'bg-green-100 text-green-800 border-green-200' },
                         WAITING_CLEAR: { label: 'รอเคลียค่าใช้จ่ายและสารเคมี', className: 'bg-orange-100 text-orange-800 border-orange-200' },
                         READY_CLOSE: { label: 'รอจบงาน', className: 'bg-blue-100 text-blue-800 border-blue-200' },
                         OPEN: { label: 'ระหว่างดำเนินการ', className: 'bg-amber-100 text-amber-800 border-amber-200' },
-                        NOT_STARTED: { label: 'รอเข้าดำเนินการ', className: 'bg-red-50 text-red-700 border-red-200' },
                       };
-                      const badge = statusConfig[derivedStatus] || statusConfig.NOT_STARTED;
+                      const badge = statusConfig[derivedStatus] || statusConfig.OPEN;
 
                       return (
                         <tr
