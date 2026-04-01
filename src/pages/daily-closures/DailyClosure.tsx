@@ -237,24 +237,37 @@ const DailyClosure: React.FC = () => {
           </div>
         </div>
 
-        {/* Vehicle Cards */}
-        {overviewData.length > 0 && (
+        {/* Vehicle Cards - aggregate per vehicle */}
+        {overviewData.length > 0 && (() => {
+          const vehicleAgg = new Map<string, DailyClosureOverviewItem>();
+          for (const row of overviewData) {
+            const existing = vehicleAgg.get(row.vehicle_id);
+            if (existing) {
+              existing.total_jobs += row.total_jobs;
+              existing.completed_jobs += row.completed_jobs;
+              existing.incomplete_jobs += row.incomplete_jobs;
+            } else {
+              vehicleAgg.set(row.vehicle_id, { ...row });
+            }
+          }
+          const vehicleCards = Array.from(vehicleAgg.values());
+          return (
           <div className="max-h-[280px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {overviewData.map((item) => {
+              {vehicleCards.map((item) => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
                 const isOpen = item.closure_status === 'OPEN';
                 const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
 
                 const allComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
-                const statusConfig = isClosed
+                const statusConfig = isClosed && allComplete
                   ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน', labelBg: 'bg-green-100 text-green-700' }
-                  : isOpen && allComplete && !item.has_issue_summary
-                    ? { bg: 'bg-orange-400', iconBg: 'bg-orange-50', iconColor: 'text-orange-600', label: 'รอเคลียค่าใช้จ่าย', labelBg: 'bg-orange-100 text-orange-700' }
-                    : isOpen && allComplete && item.has_issue_summary
-                      ? { bg: 'bg-blue-400', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', label: 'รอจบงาน', labelBg: 'bg-blue-100 text-blue-700' }
-                      : isOpen
+                  : allComplete && item.has_issue_summary
+                    ? { bg: 'bg-blue-400', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', label: 'รอจบงาน', labelBg: 'bg-blue-100 text-blue-700' }
+                    : allComplete && !item.has_issue_summary
+                      ? { bg: 'bg-orange-400', iconBg: 'bg-orange-50', iconColor: 'text-orange-600', label: 'รอเคลียค่าใช้จ่าย', labelBg: 'bg-orange-100 text-orange-700' }
+                      : item.incomplete_jobs > 0
                         ? { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'ระหว่างดำเนินการ', labelBg: 'bg-amber-100 text-amber-700' }
                         : { bg: 'bg-slate-300', iconBg: 'bg-slate-50', iconColor: 'text-slate-400', label: 'รอเริ่ม', labelBg: 'bg-slate-100 text-slate-600' };
 
@@ -307,7 +320,8 @@ const DailyClosure: React.FC = () => {
               })}
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* Search & Filter Bar */}
         <Card className="!p-4 flex-shrink-0">
@@ -385,6 +399,9 @@ const DailyClosure: React.FC = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       หัวหน้าทีม
                     </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      ลูกค้า
+                    </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       งานทั้งหมด
                     </th>
@@ -417,13 +434,13 @@ const DailyClosure: React.FC = () => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
                       const allJobsComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
-                      const derivedStatus = item.closure_status === 'CLOSED'
+                      const derivedStatus = item.closure_status === 'CLOSED' && allJobsComplete
                         ? 'CLOSED'
-                        : item.closure_status === 'OPEN' && allJobsComplete && !item.has_issue_summary
-                          ? 'WAITING_CLEAR'
-                          : item.closure_status === 'OPEN' && allJobsComplete && item.has_issue_summary
-                            ? 'READY_CLOSE'
-                            : item.closure_status === 'OPEN'
+                        : allJobsComplete && item.has_issue_summary
+                          ? 'READY_CLOSE'
+                          : allJobsComplete && !item.has_issue_summary
+                            ? 'WAITING_CLEAR'
+                            : item.incomplete_jobs > 0
                               ? 'OPEN'
                               : 'NOT_STARTED';
                       const statusConfig: Record<string, { label: string; className: string }> = {
@@ -437,7 +454,7 @@ const DailyClosure: React.FC = () => {
 
                       return (
                         <tr
-                          key={item.vehicle_id}
+                          key={`${item.vehicle_id}::${item.primary_tech_name}`}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-slate-600">
@@ -454,6 +471,9 @@ const DailyClosure: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
                             {item.primary_tech_name}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            {item.customer_names?.length > 0 ? item.customer_names.join(', ') : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800 text-center font-medium">
                             {item.total_jobs}
@@ -492,9 +512,9 @@ const DailyClosure: React.FC = () => {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button
-                              data-closure-id={item.vehicle_id}
+                              data-closure-id={`${item.vehicle_id}::${item.primary_tech_name}`}
                               onClick={(e) =>
-                                handleDropdownToggle(e, item.vehicle_id)
+                                handleDropdownToggle(e, `${item.vehicle_id}::${item.primary_tech_name}`)
                               }
                               className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
                               title="จัดการ"
@@ -538,7 +558,7 @@ const DailyClosure: React.FC = () => {
         >
           <div className="py-1" role="none">
             {(() => {
-              const item = overviewData.find((v) => v.vehicle_id === openDropdownId);
+              const item = overviewData.find((v) => `${v.vehicle_id}::${v.primary_tech_name}` === openDropdownId);
               if (!item) return null;
               return (
                 <>
@@ -549,7 +569,17 @@ const DailyClosure: React.FC = () => {
                         e.preventDefault();
                         try {
                           const res = await DailyClosureApi.getById(item.closure_id!);
-                          if (res.data) handleViewDetails(res.data);
+                          if (res.data) {
+                            // Override with per-tech data
+                            const techClosure = {
+                              ...res.data,
+                              primary_technician: { id: '', first_name: item.primary_tech_name.split(' ')[0], last_name: item.primary_tech_name.split(' ').slice(1).join(' ') },
+                              total_jobs: item.total_jobs,
+                              completed_jobs: item.completed_jobs,
+                              incomplete_jobs: item.incomplete_jobs,
+                            };
+                            handleViewDetails(techClosure);
+                          }
                         } catch { /* ignore */ }
                       }}
                       className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"

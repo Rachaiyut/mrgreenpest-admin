@@ -66,6 +66,7 @@ export interface DailyClosureOverviewItem {
   total_jobs: number;
   completed_jobs: number;
   incomplete_jobs: number;
+  customer_names: string[];
   closure_id: string | null;
   closure_status: 'OPEN' | 'CLOSED' | 'NOT_STARTED';
   has_issue_summary: boolean;
