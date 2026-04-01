@@ -38,9 +38,10 @@ class DailyClosureService extends AuthService {
     return res.data;
   }
 
-  async getToday(vehicleId: string): Promise<IBaseResponse<DailyJobClosure>> {
+  async getToday(vehicleId: string, date?: string): Promise<IBaseResponse<DailyJobClosure>> {
     const res = await this.http.get<IBaseResponse<DailyJobClosure>>(
-      `${this.path}/today/${vehicleId}`
+      `${this.path}/today/${vehicleId}`,
+      { params: date ? { date } : undefined }
     );
     return res.data;
   }

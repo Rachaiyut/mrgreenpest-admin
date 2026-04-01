@@ -1,5 +1,6 @@
 // ===== React =====
 import Swal from 'sweetalert2';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import React, {
   useCallback,
   useEffect,
@@ -89,6 +90,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const [enableGoods, setEnableGoods] = useState(true);
   const [enableExpense, setEnableExpense] = useState(true);
   const [warehouseId, setWarehouseId] = useState('');
+  const [issueDate, setIssueDate] = useState<Date | null>(
+    isEditMode && summary?.created_at ? new Date(summary.created_at) : null
+  );
+  const [formErrors, setFormErrors] = useState<{ warehouseId: string; issueDate: string; requesterId: string }>({ warehouseId: '', issueDate: '', requesterId: '' });
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
   const [notes, setNotes] = useState('');
@@ -427,8 +432,13 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!warehouseId)
-      return Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกรถบริการ' });
+    const errors = {
+      warehouseId: !warehouseId ? 'กรุณาเลือกรถบริการ' : '',
+      issueDate: !issueDate ? 'กรุณาเลือกวันที่เบิก' : '',
+      requesterId: !requesterId ? 'กรุณาเลือกผู้เบิก' : '',
+    };
+    setFormErrors(errors);
+    if (errors.warehouseId || errors.issueDate || errors.requesterId) return;
 
     // Validate: need at least 1 valid item (product or expense)
     if (!hasValidEntries) {
@@ -474,6 +484,9 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       const payload: any = {
         ...(isEditMode && summary ? summary : {}), // spread original fields for edit
         warehouse_id: warehouseId,
+        issue_date: issueDate
+          ? `${issueDate.getFullYear()}-${String(issueDate.getMonth() + 1).padStart(2, '0')}-${String(issueDate.getDate()).padStart(2, '0')}`
+          : undefined,
         requester_id: requesterId || undefined,
         recipient_id: recipientId || undefined,
         purpose: isEditMode ? undefined : 'เบิกสินค้า/อุปกรณ์',
@@ -511,6 +524,9 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       const payload: any = {
         ...(isEditMode && summary ? summary : {}),
         warehouse_id: warehouseId,
+        issue_date: issueDate
+          ? `${issueDate.getFullYear()}-${String(issueDate.getMonth() + 1).padStart(2, '0')}-${String(issueDate.getDate()).padStart(2, '0')}`
+          : undefined,
         requester_id: requesterId || undefined,
         recipient_id: recipientId || undefined,
         purpose: isEditMode ? undefined : 'เบิกสินค้า/อุปกรณ์ (Draft)',
@@ -567,19 +583,22 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                 <TruckIcon className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
-              <div className="ml-auto flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                <CalendarDaysIcon className="w-5 h-5 text-slate-400" />
-                <span className="text-sm text-slate-500 font-medium">วันที่เบิก:</span>
-                <input
-                  type="date"
-                  defaultValue={
-                    isEditMode && summary?.created_at
-                      ? new Date(summary.created_at).toISOString().substring(0, 10)
-                      : new Date().toISOString().substring(0, 10)
-                  }
-                  className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
-                  readOnly
+              <div className="ml-auto">
+              <div className={`flex items-center gap-2 bg-white px-3 py-2 rounded-lg border hover:border-slate-400 transition-colors cursor-pointer ${formErrors.issueDate ? 'border-red-500' : !issueDate ? 'border-red-300' : 'border-slate-300'}`}>
+                <CalendarDaysIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <DatePicker
+                  selected={issueDate}
+                  onChange={(date: Date | null) => { setIssueDate(date); if (date) setFormErrors((prev) => ({ ...prev, issueDate: '' })); }}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="เลือกวันที่เบิก *"
+                  required
+                  portalId="root"
+                  popperClassName="!z-[9999]"
+                  className="bg-transparent border-none p-0 text-slate-800 font-semibold focus:ring-0 focus:outline-none text-sm w-[100px] cursor-pointer placeholder:text-slate-400 placeholder:font-normal"
                 />
+              </div>
+              {formErrors.issueDate && <p className="text-xs text-red-500 mt-1">{formErrors.issueDate}</p>}
               </div>
             </div>
 
@@ -591,10 +610,12 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                 <SearchableSelect
                   options={vehicleWarehouseOptions}
                   value={warehouseId}
-                  onChange={setWarehouseId}
+                  onChange={(v) => { setWarehouseId(v); if (v) setFormErrors((prev) => ({ ...prev, warehouseId: '' })); }}
                   placeholder="เลือกรถบริการ..."
                   required
+                  className={formErrors.warehouseId ? 'border-red-500' : ''}
                 />
+                {formErrors.warehouseId && <p className="text-xs text-red-500 mt-1">{formErrors.warehouseId}</p>}
               </div>
             </div>
           </div>
@@ -618,9 +639,12 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   onChange={(v) => {
                     if (isLockedRole) return;
                     setRequesterId(v);
+                    if (v) setFormErrors((prev) => ({ ...prev, requesterId: '' }));
                   }}
                   placeholder="ค้นหาผู้เบิก..."
+                  className={formErrors.requesterId ? 'border-red-500' : ''}
                 />
+                {formErrors.requesterId && <p className="text-xs text-red-500 mt-1">{formErrors.requesterId}</p>}
               </div>
               <div className="flex-1 w-full relative z-30">
                 <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน (Recipient)</label>

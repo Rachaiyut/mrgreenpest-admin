@@ -52,6 +52,7 @@ export interface CreateDailyJobClosurePayload {
 }
 
 export interface CloseDailyJobClosurePayload {
+  closure_date?: string;
   day_end_mileage?: number;
   has_no_stock_issue?: boolean;
   notes?: string;

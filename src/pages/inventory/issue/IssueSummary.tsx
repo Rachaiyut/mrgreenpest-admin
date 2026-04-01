@@ -12,6 +12,7 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
+import { useCurrentUser } from '../../../hooks/useCurrentUser';
 
 // ===== Components =====
 import { IssueSummaryModal } from '../../../components/features/inventory/issue-summary/IssueSummaryModal';
@@ -60,6 +61,9 @@ const getStatusBadge = (status?: string) => {
 };
 
 const IssueSummaryPage: React.FC = () => {
+  const currentUser = useCurrentUser();
+  const isTechRole = currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH';
+
   const {
     stockIssueSummaries,
     users,
@@ -206,6 +210,13 @@ const IssueSummaryPage: React.FC = () => {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
 
+    // LEAD_TECH / TECH เห็นเฉพาะที่ตัวเองสร้าง
+    if (isTechRole && currentUser?.id) {
+      filtered = filtered.filter((s) =>
+        s.requester_id === currentUser.id || s.created_by === currentUser.id
+      );
+    }
+
     // Filter by creator
     if (creatorFilter !== 'all') {
       filtered = filtered.filter((s) => s.created_by === creatorFilter);
@@ -248,7 +259,7 @@ const IssueSummaryPage: React.FC = () => {
     }
 
     return filtered;
-  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap]);
+  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap, isTechRole, currentUser?.id]);
 
   const totalItems = filteredSummaries.length;
   const paginatedSummaries = filteredSummaries.slice(
@@ -364,7 +375,7 @@ const IssueSummaryPage: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
@@ -427,7 +438,7 @@ const IssueSummaryPage: React.FC = () => {
         </div>
 
         {/* --- Mobile View: Cards --- */}
-        <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
+        <div className="hidden">
           {isLoading ? (
             <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
               <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
@@ -490,9 +501,11 @@ const IssueSummaryPage: React.FC = () => {
                       <div className="flex items-center">
                         <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                         <span>
-                          {summary.created_at
-                            ? formatThaiDate(summary.created_at)
-                            : '-'}
+                          {(summary as any).issue_date
+                            ? formatThaiDate((summary as any).issue_date)
+                            : summary.created_at
+                              ? formatThaiDate(summary.created_at)
+                              : '-'}
                         </span>
                       </div>
                       <div className="flex items-center">
@@ -537,65 +550,19 @@ const IssueSummaryPage: React.FC = () => {
         </div>
 
         {/* --- Desktop View: Table --- */}
-        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex relative">
-          <div className="overflow-auto flex-grow flex flex-col">
+        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm relative">
+          <div className="overflow-auto w-full flex-1 relative">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
-                  >
-                    ลำดับ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    วันที่เบิก
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase lg:table-cell hidden whitespace-nowrap"
-                  >
-                    จำนวนรายการ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    จำนวนเงินที่เบิก
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    คลัง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ผู้สร้าง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ผู้เบิก
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    จัดการ
-                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-16">ลำดับ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
                 </tr>
               </thead>
               
@@ -630,39 +597,37 @@ const IssueSummaryPage: React.FC = () => {
 
                     return (
                       <tr key={summary.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {summary.created_at
-                            ? formatThaiDate(summary.created_at)
-                            : '-'}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          {(summary as any).issue_date
+                            ? formatThaiDate((summary as any).issue_date)
+                            : summary.created_at
+                              ? formatThaiDate(summary.created_at)
+                              : '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {totalItemsCount}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                          ฿
-                          {totalAmount.toLocaleString('th-TH', {
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          ฿{totalAmount.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {warehouse?.name || '-'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {summary.created_by || '-'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {requesterName}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
                             {statusBadge.text}
                           </span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          {requesterName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                           <div className="inline-block text-left">
                             <Button
                               variant="icon"
@@ -705,7 +670,7 @@ const IssueSummaryPage: React.FC = () => {
           </div>
 
           {!isLoading && totalItems > 0 && (
-            <div className="flex-shrink-0 border-t border-slate-100 mt-auto bg-white">
+            <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full">
               <Pagination
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}

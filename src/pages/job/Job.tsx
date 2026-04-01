@@ -30,6 +30,8 @@ import { JobDetailsModal } from '../../components/features/jobs/JobDetailsModal'
 import { ServiceReportModal } from '../../components/features/jobs/ServiceReportModal';
 import { JobModal } from '@/src/components/features/jobs/JobModal';
 import { DailyClosureCloseModal } from '../../components/features/daily-closures/DailyClosureCloseModal';
+import { VehicleSelectModal } from '../../components/features/daily-closures/VehicleSelectModal';
+import { IssueSummaryModal } from '../../components/features/inventory/issue-summary/IssueSummaryModal';
 
 // ===== Components (Common) =====
 import { Card } from '../../components/common/Card';
@@ -49,6 +51,7 @@ import {
   VehicleApi,
 } from '@/src/api';
 import { DailyClosureApi } from '@/src/api/daily-closure';
+import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
 
 // ===== Utils =====
 import { formatThaiDate } from '@/src/utils/date';
@@ -256,7 +259,7 @@ const Job: React.FC<JobProps> = ({
               work_areas: [],
               status: mappedStatus,
               vehicle_id: warehouse.id,
-              service_report: reportsData.find((r: any) => r.job_id === job.id),
+              service_report: job.service_report || reportsData.find((r) => r.job_id === job.id),
               remarks: job.remark,
               invoice_id: job.invoice_id,
               invoice: job.invoice,
@@ -447,7 +450,15 @@ const Job: React.FC<JobProps> = ({
   const [todayClosure, setTodayClosure] = useState<DailyJobClosure | null>(null);
   const [closureJobStats, setClosureJobStats] = useState({ total: 0, completed: 0, incomplete: 0 });
   const [closureHasIssueSummary, setClosureHasIssueSummary] = useState(false);
+  const [isIssueSummaryModalOpen, setIsIssueSummaryModalOpen] = useState(false);
   const [closureHasPendingIssue, setClosureHasPendingIssue] = useState(false);
+  const [closureIssueSummaries, setClosureIssueSummaries] = useState<{
+    id: string;
+    status: string;
+    notes: string;
+    items: { product_name: string; quantity: number; unit: string }[];
+    expenses: { description: string; amount: number }[];
+  }[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -615,22 +626,37 @@ const Job: React.FC<JobProps> = ({
 
   const handleWriteReport = async (job: FieldJob) => {
     setOpenDropdownId(null);
+    setIsLoading(true);
 
-    if (job.service_report && job.service_report.id) {
-      setIsLoading(true);
-      try {
-        const res = await ServiceReportApi.getById(job.service_report.id);
-        const fullReport = (res as any)?.data || res;
-        const updatedJob = { ...job, service_report: fullReport };
-        setJobForReport(updatedJob);
-      } catch (error) {
-        console.error('Error fetching full service report details:', error);
-        setJobForReport(job);
-      } finally {
-        setIsLoading(false);
+    try {
+      let reportId = job.service_report?.id;
+
+      // If service_report is not loaded on the job (e.g. schedule tab), try to find it by job_id
+      if (!reportId) {
+        try {
+          const searchRes = await ServiceReportApi.getAll({ job_id: job.id, limit: 1 });
+          const foundReports = searchRes?.data;
+          if (Array.isArray(foundReports) && foundReports.length > 0) {
+            reportId = foundReports[0].id;
+          }
+        } catch {
+          // No existing report found — will open as new
+        }
       }
-    } else {
+
+      if (reportId) {
+        const res = await ServiceReportApi.getById(reportId);
+        const fullReport = (res as unknown as { data?: ServiceReport })?.data || res;
+        const updatedJob = { ...job, service_report: fullReport as ServiceReport };
+        setJobForReport(updatedJob);
+      } else {
+        setJobForReport(job);
+      }
+    } catch (error) {
+      console.error('Error fetching service report:', error);
       setJobForReport(job);
+    } finally {
+      setIsLoading(false);
     }
 
     setReportFinalStatus(
@@ -731,27 +757,73 @@ const Job: React.FC<JobProps> = ({
   };
 
   // ===== Daily Closure Handlers =====
+  const [closureTargetVehicleId, setClosureTargetVehicleId] = useState('');
+  const [isVehicleSelectModalOpen, setIsVehicleSelectModalOpen] = useState(false);
+  const [closureVehicleOptions, setClosureVehicleOptions] = useState<{ id: string; name: string; registration: string; jobCount: number }[]>([]);
+
   const handleOpenDailyClosure = async () => {
     try {
-      // Use first vehicle from warehouses or selected vehicle
-      const targetVehicleId = selectedVehicleId !== 'all'
-        ? selectedVehicleId
-        : warehouses.length > 0
-          ? (warehouses[0] as Warehouse & { id: string }).id
-          : '';
+      // Find vehicles that have jobs today for this tech
+      const vehiclesWithJobs = (Array.isArray(warehouses) ? warehouses : [])
+        .filter((w) => w.type === WarehouseType.VEHICLE)
+        .filter((w) => {
+          const vehicleJobs = (w as Warehouse & { jobs?: FieldJob[] }).jobs || [];
+          return vehicleJobs.length > 0;
+        });
 
-      if (!targetVehicleId) {
-        Swal.fire('ไม่พบรถ', 'กรุณาเลือกรถก่อนปิดงาน', 'warning');
+      if (vehiclesWithJobs.length === 0) {
+        Swal.fire('ไม่พบรถ', 'ไม่มีรถที่มีงานวันนี้', 'warning');
         return;
       }
 
-      // Check if closure exists for today
+      let targetVehicleId: string;
+
+      if (vehiclesWithJobs.length === 1) {
+        // มีรถเดียว → ใช้เลย
+        targetVehicleId = vehiclesWithJobs[0].id;
+      } else {
+        // มีหลายรถ → เปิด modal ให้เลือก
+        setClosureVehicleOptions(vehiclesWithJobs.map((v) => {
+          const vJobs = (v as Warehouse & { jobs?: FieldJob[] }).jobs || [];
+          return {
+            id: v.id,
+            name: v.name,
+            registration: v.vehicle?.vehicle_registration || '',
+            jobCount: vJobs.length,
+          };
+        }));
+        setIsVehicleSelectModalOpen(true);
+        return; // จะ continue ใน handleVehicleSelected
+      }
+
+      await openClosureForVehicle(targetVehicleId);
+    } catch (error) {
+      console.error('Error opening daily closure:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลจบงานรายวันได้', 'error');
+    }
+  };
+
+  const handleVehicleSelected = async (vehicleId: string) => {
+    setIsVehicleSelectModalOpen(false);
+    try {
+      await openClosureForVehicle(vehicleId);
+    } catch (error) {
+      console.error('Error opening daily closure:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลจบงานรายวันได้', 'error');
+    }
+  };
+
+  const openClosureForVehicle = async (targetVehicleId: string) => {
+    setClosureTargetVehicleId(targetVehicleId);
+
+    // Check if closure exists for the selected date
+      const targetDateStr = filterDate || dayjs().format('YYYY-MM-DD');
       let closure: DailyJobClosure | null = null;
       try {
-        const res = await DailyClosureApi.getToday(targetVehicleId);
+        const res = await DailyClosureApi.getToday(targetVehicleId, targetDateStr);
         closure = res.data ?? null;
       } catch {
-        // No closure for today yet — that's fine
+        // No closure for this date yet — that's fine
         closure = null;
       }
       setTodayClosure(closure);
@@ -767,33 +839,57 @@ const Job: React.FC<JobProps> = ({
       const incomplete = total - completed;
       setClosureJobStats({ total, completed, incomplete });
 
-      // Stock issue checks — default to safe values
-      // These can be enhanced later when stock issue summary API is integrated
-      setClosureHasIssueSummary(closure?.has_no_stock_issue ? false : !!closure);
-      setClosureHasPendingIssue(false);
+      // Fetch stock issue summaries: by vehicle + selected date
+      try {
+        const issueRes = await StockIssueSummaryApi.getAll({
+          warehouse_id: targetVehicleId,
+          start_date: `${targetDateStr}T00:00:00`,
+          end_date: `${targetDateStr}T23:59:59`,
+          limit: 50,
+        });
+
+        const summaries = issueRes.data || [];
+        setClosureIssueSummaries(summaries.map((s) => ({
+          id: s.id,
+          status: s.status || 'DRAFT',
+          notes: s.notes || '',
+          items: (s.items || []).map((item) => ({
+            product_name: item.product_name,
+            quantity: item.quantity,
+            unit: item.unit,
+          })),
+          expenses: (s.expense_items || s.expense_item || []).map((exp) => ({
+            description: exp.description || '',
+            amount: Number(exp.amount) || 0,
+          })),
+        })));
+        setClosureHasIssueSummary(summaries.length > 0);
+        setClosureHasPendingIssue(summaries.some((s) => s.status === 'PENDING'));
+      } catch {
+        setClosureIssueSummaries([]);
+        setClosureHasIssueSummary(false);
+        setClosureHasPendingIssue(false);
+      }
 
       setIsDailyClosureModalOpen(true);
-    } catch (error) {
-      console.error('Error opening daily closure:', error);
-      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลปิดงานรายวันได้', 'error');
-    }
   };
 
   const handleCloseDailyClosure = async (data: CloseDailyJobClosurePayload) => {
     try {
-      const targetVehicleId = selectedVehicleId !== 'all'
-        ? selectedVehicleId
-        : warehouses.length > 0
-          ? (warehouses[0] as Warehouse & { id: string }).id
-          : '';
+      const targetVehicleId = closureTargetVehicleId;
+
+      if (!targetVehicleId) {
+        Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบรถที่เลือก', 'error');
+        return;
+      }
 
       let closureId = todayClosure?.id;
 
       // If no closure exists, create one first
       if (!closureId) {
-        const today = dayjs().format('YYYY-MM-DD');
+        const closureDate = data.closure_date || dayjs().format('YYYY-MM-DD');
         const createRes = await DailyClosureApi.create({
-          closure_date: today,
+          closure_date: closureDate,
           vehicle_id: targetVehicleId,
           primary_tech_id: currentUser.id,
         });
@@ -810,7 +906,7 @@ const Job: React.FC<JobProps> = ({
 
       Swal.fire({
         icon: 'success',
-        title: 'ปิดงานรายวันเรียบร้อย',
+        title: 'จบงานรายวันเรียบร้อย',
         showConfirmButton: false,
         timer: 1500,
       });
@@ -819,18 +915,33 @@ const Job: React.FC<JobProps> = ({
       fetchData();
     } catch (error) {
       console.error('Error closing daily closure:', error);
-      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถปิดงานรายวันได้', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถจบงานรายวันได้', 'error');
+    }
+  };
+
+  const handleCreateIssueSummary = async (data: Record<string, unknown>) => {
+    try {
+      await StockIssueSummaryApi.create(data as Parameters<typeof StockIssueSummaryApi.create>[0]);
+      Swal.fire({
+        icon: 'success',
+        title: 'สร้างสรุปเบิกสำเร็จ',
+        showConfirmButton: false,
+        timer: 1500,
+      });
+      setIsIssueSummaryModalOpen(false);
+    } catch (error: unknown) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถสร้างใบเบิกได้', 'error');
     }
   };
 
   const closureVehicleName = (() => {
-    const targetVehicleId = selectedVehicleId !== 'all'
-      ? selectedVehicleId
-      : warehouses.length > 0
-        ? (warehouses[0] as Warehouse & { id: string }).id
-        : '';
-    const vehicle = allVehicles.find((v: { id: string }) => v.id === targetVehicleId);
-    if (!vehicle) return '-';
+    if (!closureTargetVehicleId) return '-';
+    const vehicle = allVehicles.find((v: { id: string }) => v.id === closureTargetVehicleId);
+    if (!vehicle) {
+      const wh = warehouses.find((w) => w.id === closureTargetVehicleId);
+      return wh?.name || '-';
+    }
     return vehicle.license_plate || vehicle.vehicle_registration || vehicle.name || '-';
   })();
 
@@ -860,7 +971,7 @@ const Job: React.FC<JobProps> = ({
 
   // Fetch all vehicles for dropdown (once)
   useEffect(() => {
-    VehicleApi.getVehicles({ limit: 100, sort_by: 'vehicle_registration', sort_order: 'asc' } as any).then((res) => {
+    VehicleApi.getVehicles({ limit: 10, sort_by: 'vehicle_registration', sort_order: 'asc' } as any).then((res) => {
       setAllVehicles((res.data || []) as any[]);
     }).catch(() => {});
   }, []);
@@ -1039,17 +1150,35 @@ const Job: React.FC<JobProps> = ({
           </div>
           <div className="flex items-center gap-3">
             {currentUser?.role && [UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
-              <Button
-                onClick={handleOpenDailyClosure}
-                variant="outline"
-                className="text-sm font-medium border-red-500 text-red-600 bg-red-50 hover:bg-red-100 shadow-sm"
-              >
-                <CheckCircleIcon className="w-4 h-4 mr-1.5" />
-                ปิดงานรายวัน
-                {todayClosure?.status === 'CLOSED' && (
-                  <span className="ml-1.5 bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">จบงาน</span>
+              <>
+                <Button
+                  onClick={() => setIsIssueSummaryModalOpen(true)}
+                  variant="primary"
+                  className="!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
+                >
+                  <DocumentCheckIcon className="w-4 h-4 mr-1.5" />
+                  สรุปเบิกสินค้า/ค่าใช้จ่าย
+                </Button>
+                {todayClosure?.status === 'CLOSED' ? (
+                  <Button
+                    variant="primary"
+                    disabled
+                    className="!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
+                  >
+                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                    จบงานรายวันแล้ว
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleOpenDailyClosure}
+                    variant="primary"
+                    className="!text-sm !font-medium !bg-red-600 !text-white hover:!bg-red-700 !border-red-600 !shadow-md"
+                  >
+                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                    จบงานรายวัน
+                  </Button>
                 )}
-              </Button>
+              </>
             )}
             {authUser?.role &&
               [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role) && (
@@ -2007,6 +2136,25 @@ const Job: React.FC<JobProps> = ({
         incompleteJobs={closureJobStats.incomplete}
         hasStockIssueSummary={closureHasIssueSummary}
         hasPendingStockIssue={closureHasPendingIssue}
+        issueSummaries={closureIssueSummaries}
+      />
+
+      <VehicleSelectModal
+        isOpen={isVehicleSelectModalOpen}
+        onClose={() => setIsVehicleSelectModalOpen(false)}
+        onSelect={handleVehicleSelected}
+        vehicles={closureVehicleOptions}
+      />
+      <IssueSummaryModal
+        isOpen={isIssueSummaryModalOpen}
+        onClose={() => setIsIssueSummaryModalOpen(false)}
+        mode="create"
+        onSubmit={handleCreateIssueSummary}
+        warehouses={initialWarehouses}
+        products={initialProducts}
+        users={users}
+        customers={initialCustomers}
+        currentUser={currentUser}
       />
     </>
   );
