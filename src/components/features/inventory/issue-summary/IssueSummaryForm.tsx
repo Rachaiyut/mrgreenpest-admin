@@ -286,12 +286,13 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
           setItems([]);
         }
 
-        if ((summary as any).expenses && (summary as any).expenses.length > 0) {
+        const expenseData = (summary as unknown as Record<string, unknown>).expense_items || (summary as unknown as Record<string, unknown>).expenses || [];
+        if (Array.isArray(expenseData) && expenseData.length > 0) {
           setExpenseItems(
-            (summary as any).expenses.map((e: any) => ({
-              id: e.id || crypto.randomUUID(),
-              description: e.description || '',
-              amount: e.amount || 0,
+            (expenseData as Array<Record<string, unknown>>).map((e) => ({
+              id: (e.id as string) || crypto.randomUUID(),
+              description: (e.description as string) || '',
+              amount: (e.amount as number) || 0,
             })),
           );
           setEnableExpense(true);
