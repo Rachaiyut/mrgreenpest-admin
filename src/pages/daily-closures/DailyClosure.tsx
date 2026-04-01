@@ -7,9 +7,9 @@ import {
   CheckCircleIcon,
   ManageIcon,
   LoadingIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   TruckIcon,
+  DocumentCheckIcon,
+  ClockIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -71,16 +71,26 @@ const DailyClosure: React.FC = () => {
   const fetchOverview = useCallback(async () => {
     setLoading(true);
     try {
-      const dateStr = filterDate
-        ? filterDate.toISOString().split('T')[0]
-        : today.toISOString().split('T')[0];
+      const toLocalDate = (d: Date) => {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+      };
+      const dateStr = filterDate ? toLocalDate(filterDate) : toLocalDate(today);
       const res = await DailyClosureApi.getOverview(dateStr);
-      let data = res.data || [];
+      const allData = res.data || [];
+      setOverviewData(allData);
 
-      // Client-side filters
+      // Filter for table
+      let tableData = [...allData];
+
+      if (selectedVehicleId) {
+        tableData = tableData.filter((item) => item.vehicle_id === selectedVehicleId);
+      }
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        data = data.filter(
+        tableData = tableData.filter(
           (item) =>
             item.vehicle_name.toLowerCase().includes(q) ||
             item.primary_tech_name.toLowerCase().includes(q) ||
@@ -88,26 +98,38 @@ const DailyClosure: React.FC = () => {
         );
       }
       if (filterStatus) {
-        data = data.filter((item) => item.closure_status === filterStatus);
+        tableData = tableData.filter((item) => item.closure_status === filterStatus);
       }
 
-      setOverviewData(data);
-      setTotalItems(data.length);
-      setSelectedVehicleId(null);
+      setTotalItems(tableData.length);
     } catch (error) {
       console.error('Error fetching overview:', error);
     } finally {
       setLoading(false);
     }
-  }, [filterDate, searchQuery, filterStatus]);
+  }, [filterDate, searchQuery, filterStatus, selectedVehicleId]);
 
   useEffect(() => {
     fetchOverview();
   }, [fetchOverview]);
 
-  const filteredByVehicle = selectedVehicleId
-    ? overviewData.filter((item) => item.vehicle_id === selectedVehicleId)
-    : overviewData;
+  const filteredByVehicle = (() => {
+    let data = selectedVehicleId
+      ? overviewData.filter((item) => item.vehicle_id === selectedVehicleId)
+      : overviewData;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      data = data.filter((item) =>
+        item.vehicle_name.toLowerCase().includes(q) ||
+        item.primary_tech_name.toLowerCase().includes(q) ||
+        item.vehicle_registration.toLowerCase().includes(q)
+      );
+    }
+    if (filterStatus) {
+      data = data.filter((item) => item.closure_status === filterStatus);
+    }
+    return data;
+  })();
 
   const paginatedData = filteredByVehicle.slice(
     (currentPage - 1) * itemsPerPage,
@@ -224,50 +246,55 @@ const DailyClosure: React.FC = () => {
                 const isClosed = item.closure_status === 'CLOSED';
                 const isOpen = item.closure_status === 'OPEN';
                 const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
-                const barColor = isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-400' : 'bg-slate-300';
-                const dotColor = isClosed ? 'bg-green-500' : isOpen ? 'bg-amber-500' : 'bg-slate-300';
+
+                const statusConfig = isClosed
+                  ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน', labelBg: 'bg-green-100 text-green-700' }
+                  : isOpen
+                    ? { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังทำ', labelBg: 'bg-amber-100 text-amber-700' }
+                    : { bg: 'bg-slate-300', iconBg: 'bg-slate-50', iconColor: 'text-slate-400', label: 'รอเริ่ม', labelBg: 'bg-slate-100 text-slate-600' };
 
                 return (
                   <button
                     key={item.vehicle_id}
                     onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`rounded-xl border text-left transition-all overflow-hidden ${
+                    className={`rounded-2xl text-left transition-all border-2 ${
                       isSelected
-                        ? 'border-primary shadow-md ring-1 ring-primary/20'
-                        : 'border-slate-200 bg-white hover:shadow-md hover:border-slate-300'
+                        ? 'border-primary shadow-lg bg-primary/5'
+                        : 'border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5'
                     }`}
                   >
-                    {/* Top color bar */}
-                    <div className="h-1.5 w-full bg-slate-100">
-                      <div className={`h-full ${barColor} transition-all duration-500`} style={{ width: `${progress}%` }} />
-                    </div>
-
-                    <div className="p-4">
-                      {/* Header */}
+                    <div className="px-4 pt-4 pb-4">
+                      {/* Vehicle name + status */}
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className={`p-1.5 rounded-lg flex-shrink-0 ${isClosed ? 'bg-green-100' : isOpen ? 'bg-amber-100' : 'bg-slate-100'}`}>
-                            <TruckIcon className={`h-4 w-4 ${isClosed ? 'text-green-600' : isOpen ? 'text-amber-600' : 'text-slate-400'}`} />
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className={`p-2 rounded-xl flex-shrink-0 ${statusConfig.iconBg}`}>
+                            <TruckIcon className={`h-4 w-4 ${statusConfig.iconColor}`} />
                           </div>
-                          <h3 className="font-bold text-slate-800 text-sm truncate">{item.vehicle_name}</h3>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-slate-800 text-base truncate leading-tight">
+                              {item.vehicle_name}
+                              {item.vehicle_registration && (
+                                <span className="text-slate-400 font-normal ml-1">({item.vehicle_registration})</span>
+                              )}
+                            </h3>
+                          </div>
                         </div>
-                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                          {item.total_jobs} งาน
-                        </span>
                       </div>
 
-                      {/* Stats row */}
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                          <span className="text-xs text-slate-600"><strong className="text-green-600">{item.completed_jobs}</strong> เสร็จ</span>
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-0">
+                        <div className="text-center py-2 bg-slate-50 rounded-l-lg border border-slate-200">
+                          <p className="text-[10px] text-slate-500 font-semibold uppercase mb-0.5">งาน</p>
+                          <p className="text-lg font-black text-slate-800">{item.total_jobs}</p>
                         </div>
-                        {item.incomplete_jobs > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                            <span className="text-xs text-slate-600"><strong className="text-red-500">{item.incomplete_jobs}</strong> ค้าง</span>
-                          </div>
-                        )}
+                        <div className={`text-center py-2 border-y border-slate-200 ${item.incomplete_jobs > 0 ? 'bg-red-50' : 'bg-slate-50'}`}>
+                          <p className={`text-[10px] font-semibold uppercase mb-0.5 ${item.incomplete_jobs > 0 ? 'text-red-500' : 'text-slate-300'}`}>ค้าง</p>
+                          <p className={`text-lg font-black ${item.incomplete_jobs > 0 ? 'text-red-500' : 'text-slate-300'}`}>{item.incomplete_jobs}</p>
+                        </div>
+                        <div className="text-center py-2 bg-green-50 rounded-r-lg border border-slate-200">
+                          <p className="text-[10px] text-green-600 font-semibold uppercase mb-0.5">เสร็จ</p>
+                          <p className="text-lg font-black text-green-600">{item.completed_jobs}</p>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -348,6 +375,9 @@ const DailyClosure: React.FC = () => {
                       รถ
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      ทะเบียน
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       หัวหน้าทีม
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -371,7 +401,7 @@ const DailyClosure: React.FC = () => {
                   {paginatedData.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={9}
+                        colSpan={10}
                         className="px-4 py-12 text-center text-slate-500"
                       >
                         ไม่พบข้อมูลงานสำหรับวันที่เลือก
@@ -397,15 +427,13 @@ const DailyClosure: React.FC = () => {
                             {rowNumber}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
-                            {filterDate ? formatThaiDate(filterDate.toISOString().split('T')[0]) : '-'}
+                            {filterDate ? formatThaiDate(`${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}-${String(filterDate.getDate()).padStart(2, '0')}`) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800">
-                            <div>
-                              <p className="font-medium">{item.vehicle_name}</p>
-                              {item.vehicle_registration && (
-                                <p className="text-xs text-slate-400">{item.vehicle_registration}</p>
-                              )}
-                            </div>
+                          <td className="px-4 py-3 text-sm font-medium text-slate-800">
+                            {item.vehicle_name}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500">
+                            {item.vehicle_registration || '-'}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800">
                             {item.primary_tech_name}

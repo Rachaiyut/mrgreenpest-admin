@@ -224,7 +224,8 @@ export interface StockIssueSummary extends IBase {
   requester_id?: string;
   created_by?: string;
   items?: IssueItemSummary[];
-  expense_item: UserExpense[];
+  expense_item?: UserExpense[];
+  expense_items?: UserExpense[];
 }
 
 export interface ExpenseItem {

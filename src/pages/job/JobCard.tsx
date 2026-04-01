@@ -281,12 +281,12 @@ const JobCard: React.FC<{
             {showReportButton && (
               <button
                 onClick={() => onWriteReport(job)}
-                title="บันทึกรายงานบริการ"
+                title={job.service_report ? 'แก้ไขรายงานบริการ' : 'บันทึกรายงานบริการ'}
                 className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
-                style={{ backgroundColor: '#f59e0b' }}
+                style={{ backgroundColor: job.service_report ? '#3b82f6' : '#f59e0b' }}
               >
-                <DocumentCheckIcon className="h-4 w-4" />
-                บันทึกรายงาน
+                {job.service_report ? <PencilIcon className="h-4 w-4" /> : <DocumentCheckIcon className="h-4 w-4" />}
+                {job.service_report ? 'แก้ไขรายงาน' : 'บันทึกรายงาน'}
               </button>
             )}
             {showCheckOutButton && (

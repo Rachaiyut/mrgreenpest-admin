@@ -196,15 +196,29 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   }, [job, contracts, products, jobs, packageMapByName]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && job) {
       const fetchQuotations = async () => {
         try {
           const res = await QuotationApi.getAll({
             limit: 10,
-            status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED}` as any,
+            customer_id: job.customer_id,
+            status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}` as any,
             ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
           } as any);
-          setQuotations(res.data);
+          let list: Quotation[] = res.data || [];
+
+          // ถ้า report มี quotation_id อยู่แล้ว ให้ fetch มาใส่ใน list ด้วย (กันกรณี status ไม่ตรง)
+          const existingQId = (job.service_report as { data?: ServiceReport })?.data?.quotation_id
+            || (job.service_report as ServiceReport)?.quotation_id;
+          if (existingQId && !list.some((q) => q.id === existingQId)) {
+            try {
+              const qRes = await QuotationApi.getById(existingQId);
+              const existingQ = (qRes as unknown as { data?: Quotation })?.data || qRes;
+              if (existingQ?.id) list = [existingQ as Quotation, ...list];
+            } catch { /* quotation might have been deleted */ }
+          }
+
+          setQuotations(list);
         } catch (error) {
           console.error('Failed to fetch quotations:', error);
         }
@@ -212,13 +226,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       fetchQuotations();
     }
-  }, [isOpen]);
+  }, [isOpen, job]);
 
   const handleQuotationSearch = async (value: string) => {
     try {
       const res = await QuotationApi.getAll({
         limit: 10,
-        status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED}` as any,
+        customer_id: job?.customer_id,
+        status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}` as any,
         search: value,
         ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
       } as any);
@@ -233,7 +248,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       let initialReport: Partial<ServiceReport & { payment_amount?: string | number, payment_slip_url?: string, quotation_url?: string }>;
 
       if (job.service_report) {
-        const r = (job.service_report as any).data || (job.service_report as any);
+        const r = (job.service_report as { data?: ServiceReport }).data || (job.service_report as ServiceReport);
         const d = r.service_report_pest_detail || {};
 
         const types: string[] = [];
