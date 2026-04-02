@@ -1234,66 +1234,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               </div>
             </div>
 
-            {/* รูปภาพพื้นที่บริการ — card แยก */}
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-              <div className="flex justify-between items-center mb-4 border-b pb-2">
-                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                  <PhotoIcon className="w-5 h-5 text-slate-400" />
-                  รูปภาพพื้นที่บริการ
-                </h3>
-                {(siteImagePreview || assessmentSiteImageUrl) && (
-                  <label htmlFor="job-site-image-upload" className="text-xs text-primary hover:text-primary/80 font-medium cursor-pointer">
-                    เปลี่ยนรูป
-                    <input
-                      id="job-site-image-upload"
-                      type="file"
-                      accept="image/png, image/jpeg"
-                      className="sr-only"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setSiteImage(file);
-                          setSiteImagePreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    />
-                  </label>
-                )}
-              </div>
-              {(siteImagePreview || assessmentSiteImageUrl) ? (
-                <div className="relative inline-block">
-                  <img src={siteImagePreview || assessmentSiteImageUrl!} alt="พื้นที่บริการ" className="max-h-64 rounded-lg border border-slate-200 object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => { setSiteImage(null); setSiteImagePreview(null); setAssessmentSiteImageUrl(null); }}
-                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-colors"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-white">
-                  <PhotoIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                  <label htmlFor="job-site-image-new" className="cursor-pointer">
-                    <span className="text-sm font-medium text-primary hover:text-primary/80">เลือกรูปภาพ</span>
-                    <p className="text-xs text-slate-400 mt-1">PNG, JPG (ไม่เกิน 5MB)</p>
-                    <input
-                      id="job-site-image-new"
-                      type="file"
-                      accept="image/png, image/jpeg"
-                      className="sr-only"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setSiteImage(file);
-                          setSiteImagePreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
+            {/* รูปภาพอยู่ใน WorkAreaForm แต่ละ area แล้ว */}
           </div>
         </div>
 
