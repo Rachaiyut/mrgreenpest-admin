@@ -13,7 +13,7 @@ import { InvoiceApi } from '../../../api/invoice';
 import { Customer } from '../../../types/entity/customer.interface';
 import { Status } from '../../../types/entity/core.interface';
 import { Invoice, Contract } from '../../../types/entity/financial.interface';
-import { InvoiceStatus } from '../../../types/enums/financial';
+import { InvoiceStatus } from '../../../types/enums/invoice';
 import { ContractStatus } from '../../../types/enums/contract';
 import { Quotation } from '@/src/types';
 import { QuotationStatus } from '@/src/types/enums/quotaton';

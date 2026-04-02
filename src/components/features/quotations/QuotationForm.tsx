@@ -367,11 +367,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           .map((item: any) => ({
             id: item.id || crypto.randomUUID(),
             productId: item.product_id || '',
-            description: item.description || '',
+            description: item.product_name || item.description || '',
             quantity: Number(item.quantity) || 1,
             unit: item.unit || 'ครั้ง',
-            unitPrice: Number(item.unit_price) || 0,
-            amount: Number(item.amount) || 0,
+            unitPrice: Number(item.product_price || item.unit_price || 0),
+            amount: Number(item.total_price || item.amount) || 0,
           }));
 
         if (normalItems.length > 0) {
@@ -830,9 +830,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               newAmount = Math.round(newAmount * 100) / 100;
               accumulatedAmount += newAmount;
             }
-            const pct = targetTotal > 0 ? (newAmount / targetTotal) * 100 : 0;
+            let pct: number;
+            if (index === sortedAssessmentInstallments.length - 1) {
+              const prevPctSum = sortedAssessmentInstallments.slice(0, index).reduce((_s: number, _: unknown, i2: number) => {
+                const a = Number(sortedAssessmentInstallments[i2].amount) * scale;
+                return _s + Math.round(targetTotal > 0 ? (Math.round(a * 100) / 100 / targetTotal) * 100 : 0);
+              }, 0);
+              pct = 100 - prevPctSum;
+            } else {
+              pct = targetTotal > 0 ? Math.round((newAmount / targetTotal) * 100) : 0;
+            }
             return {
-              id: inst.id || crypto.randomUUID(), installment_no: inst.installment_no, percentage: Math.round(pct), amount: newAmount > 0 ? newAmount : 0, notes: inst.note || `งวดที่ ${inst.installment_no}`,
+              id: inst.id || crypto.randomUUID(), installment_no: inst.installment_no, percentage: pct, amount: Number((newAmount > 0 ? newAmount : 0).toFixed(2)), notes: inst.note || `งวดที่ ${inst.installment_no}`,
             };
           });
           setInstallments(newInstallments);
@@ -912,14 +921,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const areaPricesKey = editableAreas.map(a => `${Number(a.total_price)||0}`).join(',');
 
   const subtotal = useMemo(() => {
-    let areaTotal = 0;
     if (editableAreas.length > 0) {
-      areaTotal = editableAreas.reduce((sum, area) => sum + (Number(area.total_price) || Number(area.package_price) || 0), 0);
+      // area.total_price already includes items within the area — don't add items again
+      return editableAreas.reduce((sum, area) => sum + (Number(area.total_price) || Number(area.package_price) || 0), 0);
     } else if (usePackagePricing) {
-      areaTotal = packagePrice;
+      const extraItemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+      return packagePrice + extraItemsTotal;
     }
-    const extraItemsTotal = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    return areaTotal + extraItemsTotal;
+    return items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   }, [items, usePackagePricing, packagePrice, editableAreas, areaPricesKey]);
 
   const vatAmount = useMemo(() => includeVat ? subtotal * vatRate : 0, [subtotal, includeVat]);
@@ -930,17 +939,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     if (paymentCondition !== PaymentMethod.INSTALLMENT || installments.length === 0 || netTotal <= 0) return;
 
     setInstallments(prev => {
-      let accumulated = 0;
+      let accumulatedAmount = 0;
+      let accumulatedPct = 0;
       return prev.map((inst, i) => {
-        const pct = inst.percentage || (100 / prev.length);
+        const isLast = i === prev.length - 1;
+        let pct: number;
         let amount: number;
-        if (i === prev.length - 1) {
-          amount = Math.round((netTotal - accumulated) * 100) / 100;
+        if (isLast) {
+          pct = 100 - accumulatedPct;
+          amount = Number((netTotal - accumulatedAmount).toFixed(2));
         } else {
-          amount = Math.round((netTotal * pct / 100) * 100) / 100;
-          accumulated += amount;
+          pct = inst.percentage || Math.floor(100 / prev.length);
+          amount = Number((netTotal * pct / 100).toFixed(2));
         }
-        return { ...inst, percentage: Math.round(pct), amount };
+        accumulatedAmount += amount;
+        accumulatedPct += pct;
+        return { ...inst, percentage: pct, amount };
       });
     });
   }, [netTotal]);
@@ -1090,31 +1104,26 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
 
-    let finalItems = items.map((item, index) => ({
-      id: '', quotation_id: '', sequence: index + 1, product_id: item.productId || null,
-      description: item.description, quantity: item.quantity, unit: item.unit, unit_price: item.unitPrice, amount: item.amount,
-    }));
+    let finalItems: Record<string, unknown>[] = [];
 
-    // Build items from editableAreas package prices (each area = 1 package item)
     if (editableAreas.length > 0) {
-      const areaItems = editableAreas
-        .filter((a: any) => Number(a.package_price) > 0 || Number(a.total_price) > 0)
-        .map((a: any) => ({
-          id: '', quotation_id: '', sequence: 1, product_id: null,
-          description: `แพ็กเกจ: ${a.area_name}`,
-          quantity: 1, unit: 'งาน/แพ็กเกจ',
-          unit_price: Number(a.package_price) || Number(a.total_price) || 0,
-          amount: Number(a.package_price) || Number(a.total_price) || 0,
-        }));
-      finalItems = [...areaItems, ...finalItems];
+      // Areas mode: items are inside quotation_areas.items — don't duplicate at quotation level
+      finalItems = [];
     } else if (usePackagePricing) {
-      const packageItem = { id: '', quotation_id: '', sequence: 1, product_id: null, description: `แพ็กเกจ: ${packageName || 'บริการหลัก'}`, quantity: 1, unit: 'งาน/แพ็กเกจ', unit_price: packagePrice, amount: packagePrice };
-      finalItems = [packageItem, ...finalItems];
+      const packageItem = { id: '', quotation_id: '', sequence: 1, product_id: null, product_name: `แพ็กเกจ: ${packageName || 'บริการหลัก'}`, quantity: 1, unit: 'งาน/แพ็กเกจ', product_price: packagePrice, total_price: packagePrice };
+      const productItems = items.filter(i => i.productId).map((item, index) => ({
+        id: '', quotation_id: '', sequence: index + 2, product_id: item.productId || null,
+        product_name: item.description, quantity: item.quantity, unit: item.unit, product_price: item.unitPrice, total_price: item.amount,
+      }));
+      finalItems = [packageItem, ...productItems];
     } else {
-      finalItems = finalItems.filter((i) => i.description || i.amount > 0);
+      finalItems = items.filter(i => i.description || i.amount > 0).map((item, index) => ({
+        id: '', quotation_id: '', sequence: index + 1, product_id: item.productId || null,
+        product_name: item.description, quantity: item.quantity, unit: item.unit, product_price: item.unitPrice, total_price: item.amount,
+      }));
     }
 
-    finalItems = finalItems.map((item, idx) => ({ ...item, id: '', quotation_id: '', sequence: idx + 1 }));
+    finalItems = finalItems.map((item, idx) => ({ ...item, sequence: idx + 1 }));
 
     // Build quotation_areas from editableAreas
     const quotationAreas = editableAreas.map((a: any) => ({
@@ -1130,6 +1139,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       package_price_id: a.package_price_id || undefined,
       package_type: a.package_type || undefined,
       category_ids: (a.category_services || []).map((cs: any) => cs.category_id).filter(Boolean),
+      items: (a.items || []).filter((item: any) => item.product_id).map((item: any) => ({
+        product_id: item.product_id,
+        product_name: item.product_name || item.description || '',
+        quantity: Number(item.quantity) || 1,
+        unit: item.unit || 'Unit',
+        product_price: Number(item.product_price || item.unit_price || 0),
+        total_price: Number(item.total_price || item.amount || 0),
+      })),
     }));
 
     const quotationData: Partial<Quotation> = {

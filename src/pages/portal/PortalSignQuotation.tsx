@@ -99,16 +99,7 @@ const PortalSignQuotation: React.FC = () => {
       return;
     }
 
-    if (isContract) {
-      if (!contractorName.trim()) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกชื่อผู้รับจ้าง (ช่าง)' });
-        return;
-      }
-      if (!contractorSignatureRef.current || contractorSignatureRef.current.isEmpty()) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเซ็นลายมือผู้รับจ้าง (ช่าง) ในกรอบ' });
-        return;
-      }
-    }
+    // ช่างไม่บังคับเซ็น - ส่งได้ถ้ามี
 
     setIsSubmitting(true);
     try {

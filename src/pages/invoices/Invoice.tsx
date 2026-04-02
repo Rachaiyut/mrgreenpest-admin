@@ -22,7 +22,7 @@ import {
 import { CustomerApi } from '../../api/customer';
 import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
-import { InvoiceStatus } from '../../types/enums/financial';
+import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '../../types/enums/invoice';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
@@ -36,17 +36,7 @@ interface InvoicesPageProps {
   onDeleteInvoice?: (id: string) => void | Promise<void>;
 }
 
-const invoiceStatusLabels: Record<string, string> = {
-  DRAFT: 'ร่าง',
-  PENDING: 'รอชำระ',
-  SENT: 'ส่งแล้ว',
-  PAID: 'ชำระแล้ว',
-  PARTIAL: 'ชำระบางส่วน',
-  OVERDUE: 'เกินกำหนด',
-  PENDING_REVIEW: 'รอตรวจสอบ',
-  CARRIED_OVER: 'ยกยอด',
-  CANCELLED: 'ยกเลิก',
-};
+const invoiceStatusLabels = InvoiceStatusLabel as Record<string, string>;
 
 const getInvoiceStatusLabel = (status: string): string => {
   return invoiceStatusLabels[status] || status;
@@ -489,7 +479,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         {formatThaiDate(i.due_at)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <StatusBadge status={i.status} />
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         ฿
@@ -706,7 +696,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               <div>
                 <div className="text-sm text-slate-600">สถานะ</div>
                 <div>
-                  <StatusBadge status={selectedInvoice.status} />
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[selectedInvoice.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[selectedInvoice.status as InvoiceStatus] || selectedInvoice.status}</span>
                 </div>
               </div>
               <div>

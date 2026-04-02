@@ -577,7 +577,13 @@ export const ContractForm: FC<ContractFormProps> = ({
                   category_id: cs.category_id || cs.category?.id,
                   name: cs.category?.name || cs.name || '',
                 })),
-                items: a.items || [],
+                items: (a.items || []).map((item: any) => ({
+                  ...item,
+                  product_name: item.product_name || item.description || '',
+                  product_price: Number(item.product_price || item.unit_price || 0),
+                  total_price: Number(item.total_price || item.amount || 0),
+                  quantity: Number(item.quantity) || 1,
+                })),
               })));
 
             }
@@ -722,7 +728,13 @@ export const ContractForm: FC<ContractFormProps> = ({
               category_id: cs.category_id || cs.category?.id,
               name: cs.category?.name || cs.name || '',
             })),
-            items: a.items || [],
+            items: (a.items || []).map((item: any) => ({
+              ...item,
+              product_name: item.product_name || item.description || '',
+              product_price: Number(item.product_price || item.unit_price || 0),
+              total_price: Number(item.total_price || item.amount || 0),
+              quantity: Number(item.quantity) || 1,
+            })),
           })));
         }
       } catch (error) {
@@ -941,6 +953,14 @@ export const ContractForm: FC<ContractFormProps> = ({
           package_price_id: area.package_price_id || undefined,
           package_type: area.package_type || undefined,
           category_services: categoryServices,
+          items: (area.items || []).filter((item: any) => item.product_id).map((item: any) => ({
+            product_id: item.product_id,
+            product_name: item.product_name || '',
+            quantity: Number(item.quantity) || 1,
+            unit: item.unit || 'Unit',
+            product_price: Number(item.product_price) || 0,
+            total_price: Number(item.total_price) || 0,
+          })),
         };
       });
     } else {

@@ -24,4 +24,5 @@ export * from './enums/product';
 export * from './enums/role';
 export * from './enums/inventory';
 export * from './enums/contract';
+export * from './enums/invoice';
 export * from './nav';
