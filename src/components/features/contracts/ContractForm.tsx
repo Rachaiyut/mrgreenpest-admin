@@ -752,7 +752,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     setInstallments((prev) => {
       const newInstallments = prev.map((inst) => ({
         ...inst,
-        amount: Math.round(totalAmount * (inst.percentage / 100)),
+        amount: Number((totalAmount * (inst.percentage / 100)).toFixed(2)),
       }));
 
       const hasChanged = prev.some(
@@ -777,7 +777,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
       if (field === 'percentage') {
         currentInst.percentage = Number(value) || 0;
-        currentInst.amount = Math.round(totalAmount * (currentInst.percentage / 100));
+        currentInst.amount = Number((totalAmount * (currentInst.percentage / 100)).toFixed(2));
       } else if (field === 'amount') {
         currentInst.amount = Number(value) || 0;
         currentInst.percentage = totalAmount > 0 ? (currentInst.amount / totalAmount) * 100 : 0;
@@ -812,7 +812,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           updatedList[i] = {
             ...updatedList[i],
             percentage: p,
-            amount: Math.round(totalAmount * (p / 100)),
+            amount: Number((totalAmount * (p / 100)).toFixed(2)),
           };
         }
       }
@@ -869,7 +869,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           currentTotalPercent += percentage;
         }
 
-        const amount = Math.round(totalAmount * (percentage / 100));
+        const amount = Number((totalAmount * (percentage / 100)).toFixed(2));
 
         return {
           ...inst,
@@ -1333,8 +1333,8 @@ export const ContractForm: FC<ContractFormProps> = ({
             setContractPaymentMethod(m);
             if (m === 'INSTALLMENT' && installments.length === 0) {
               setInstallments([
-                { id: crypto.randomUUID(), term: 1, description: 'งวดที่ 1', percentage: 50, amount: Math.round(totalAmount / 2), due_date: startDate || '', status: 'PENDING' as any },
-                { id: crypto.randomUUID(), term: 2, description: 'งวดที่ 2', percentage: 50, amount: Math.round(totalAmount / 2), due_date: '', status: 'PENDING' as any },
+                { id: crypto.randomUUID(), term: 1, description: 'งวดที่ 1', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: startDate || '', status: 'PENDING' as any },
+                { id: crypto.randomUUID(), term: 2, description: 'งวดที่ 2', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: '', status: 'PENDING' as any },
               ]);
             } else if (m === 'TRANSFER') {
               setInstallments([]);

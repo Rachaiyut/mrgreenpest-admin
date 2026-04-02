@@ -277,16 +277,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [expiresAt, setExpiresAt] = useState(initialValues?.expires_at ? new Date(initialValues.expires_at).toISOString().substring(0, 10) : '');
   const [contactPhone, setContactPhone] = useState(initialValues?.contact_phone || '');
   const [serviceLocation, setServiceLocation] = useState(initialValues?.service_location || '');
-  const [buildingType, setBuildingType] = useState(initialValues?.building_type || '');
-  const [serviceArea, setServiceArea] = useState(initialValues?.service_area || '');
-  const [serviceSystem, setServiceSystem] = useState(initialValues?.service_system || '');
-  const [systemUsed, setSystemUsed] = useState(initialValues?.system_used || '');
-  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(initialValues?.service_type ? initialValues.service_type.split(',').map((s) => s.trim()).filter(Boolean) : []);
-  const [serviceType, setServiceType] = useState(initialValues?.service_type || '');
-
-  useEffect(() => {
-    setServiceType(selectedServiceTypes.join(', '));
-  }, [selectedServiceTypes]);
+  // Removed: building_type, service_area, service_system, system_used, service_type
+  // These are now derived from quotation_areas only
 
   const [paymentTerms, setPaymentTerms] = useState(initialValues?.payment_terms || 'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย');
   const [notes, setNotes] = useState(initialValues?.notes || '');
@@ -334,10 +326,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
 
       if (activeData.service_location) setServiceLocation(activeData.service_location);
-      if (activeData.building_type) setBuildingType(activeData.building_type);
-      if (activeData.service_area) setServiceArea(activeData.service_area);
-      if (activeData.service_system) setServiceSystem(activeData.service_system);
-      if (activeData.system_used) setSystemUsed(activeData.system_used);
+      // building_type, service_area, service_system, system_used removed - derived from areas
       if (activeData.payment_terms) setPaymentTerms(activeData.payment_terms);
       if (activeData.notes) setNotes(activeData.notes);
       if (activeData.contract_duration) setContractDuration(activeData.contract_duration);
@@ -503,7 +492,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         ? activeData.quotation_areas
         : selectedAssessment?.assessment_areas;
     if (source && source.length > 0) {
-      setEditableAreas(source.map((a: any) => {
+      const sortedSource = [...source].sort((a: any, b: any) =>
+        new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
+      );
+      setEditableAreas(sortedSource.map((a: any) => {
         // Auto-detect package_type from service_system or price match
         let packageType = a.package_type;
         if (!packageType && a.packagePriceRelation) {
@@ -629,10 +621,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         }
       }
 
-      let areaSize = 0;
-      if (serviceArea) {
-        areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-      }
+      // Derive areaSize from editableAreas
+      const areaSize = editableAreas.reduce((sum, a: any) => sum + (Number(a.area_size) || 0), 0);
 
       let masterPrice = 0;
       const pkgPrices = fetchedPackage.package_prices;
@@ -642,7 +632,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         const condition = sortedPrices.find((p: any) => Number(p.area_range) >= areaSize);
 
         if (condition) {
-          const hasTermite = selectedServiceTypes.some((s) => /ปลวก|termite/i.test(s));
+          // Derive hasTermite from areas' category_services
+          const allCatNames = editableAreas.flatMap((a: any) => (a.category_services || []).map((cs: any) => cs.name || cs.category?.name || ''));
+          const hasTermite = allCatNames.some((s: string) => /ปลวก|termite/i.test(s));
           const priceWith = Number(condition.price_with_termite);
           const priceWithout = Number(condition.price_without_termite);
 
@@ -654,7 +646,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         setPackagePrice(masterPrice);
       }
     }
-  }, [fetchedPackage, selectedAssessmentId, serviceArea, selectedServiceTypes]);
+  }, [fetchedPackage, selectedAssessmentId, editableAreas]);
 
   // Reset areas when assessment changes so they get re-initialized
   useEffect(() => {
@@ -715,29 +707,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           setServiceLocation(address);
         }
 
-        if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
-          const buildingTypes = selectedAssessment.assessment_areas.map((a) => a.building_type).filter(Boolean);
-          if (buildingTypes.length > 0) setBuildingType([...new Set(buildingTypes)][0]);
-
-          const totalArea = selectedAssessment.assessment_areas.reduce((sum, a) => sum + (Number(a.area_size) || 0), 0);
-          if (totalArea > 0) setServiceArea(`${totalArea.toFixed(2)} ตร.ม.`);
-
-          const systems = selectedAssessment.assessment_areas.map((a) => a.service_system).filter(Boolean);
-          if (systems.length > 0) setServiceSystem([...new Set(systems)][0]);
-
-          const allCategories = new Set<string>();
-          selectedAssessment.assessment_areas.forEach((area) => {
-            area.category_services?.forEach((cat) => {
-              const categoryName = cat.category?.name || cat.name;
-              if (categoryName) allCategories.add(categoryName);
-            });
-          });
-          if (allCategories.size > 0) {
-            const categoryString = Array.from(allCategories).join(', ');
-            setServiceType(categoryString);
-            setSelectedServiceTypes(Array.from(allCategories));
-          }
-        }
+        // building_type, service_area, service_system, service_type derived from areas - no state needed
 
         if (selectedAssessment.package) {
           setUsePackagePricing(true);
@@ -749,9 +719,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           if (pkg) {
             const pkgPrices = pkg.package_prices;
             let areaSize = 0;
-            if (serviceArea) areaSize = parseFloat(serviceArea.replace(/[^0-9.]/g, '')) || 0;
-
-            if (areaSize === 0 && selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
+            if (selectedAssessment.assessment_areas && selectedAssessment.assessment_areas.length > 0) {
               areaSize = Number(selectedAssessment.assessment_areas[0].area_size) || 0;
             }
 
@@ -853,8 +821,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     mode,
     fetchedCategories,
     fetchedPackage,
-    serviceArea,
-    activeData, 
+    activeData,
     selectedAssessmentId
   ]);
 
@@ -1082,9 +1049,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุชื่อพื้นที่ ${i + 1}` }); return; }
         if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); return; }
       }
-    } else if (!selectedAssessmentId) {
-      if (!buildingType) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุประเภทสิ่งปลูกสร้าง (Building Type is required)' }); return; }
-      if (!serviceType) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุประเภทบริการ (Service Type is required)' }); return; }
     }
 
     const hasValidItems = items.some((item) => item.description && item.amount > 0);
@@ -1104,7 +1068,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       }
     }
 
-    let finalItems: Record<string, unknown>[] = [];
+    let finalItems: any[] = [];
 
     if (editableAreas.length > 0) {
       // Areas mode: items are inside quotation_areas.items — don't duplicate at quotation level
@@ -1162,11 +1126,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       google_map_link: selectedCustomer.google_map_link || '',
       payment_terms: paymentTerms,
       service_location: serviceLocation || undefined,
-      building_type: buildingType || undefined,
-      service_area: serviceArea || undefined,
-      service_system: serviceSystem || undefined,
-      system_used: systemUsed || undefined,
-      service_type: serviceType || undefined,
       notes: notes,
       contract_duration: contractDuration,
       service_count: serviceCount,

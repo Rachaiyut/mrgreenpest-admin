@@ -281,10 +281,10 @@ const Assessments: React.FC = () => {
 
   const handleDeleteAssessment = async (assessmentId: string) => {
     try {
-      await AssessmentApi.delete(assessmentId);
+      await AssessmentApi.update(assessmentId, { status: 'CANCELLED' } as any);
       fetchData();
     } catch (error) {
-      console.error('Error deleting assessment:', error);
+      console.error('Error cancelling assessment:', error);
     }
   };
 
@@ -386,7 +386,7 @@ const Assessments: React.FC = () => {
     }
 
     actions.push({
-      label: 'ลบ',
+      label: 'ยกเลิก',
       icon: TrashIcon,
       onClick: () => handleDelete(selectedAssessment),
       isDanger: true,
