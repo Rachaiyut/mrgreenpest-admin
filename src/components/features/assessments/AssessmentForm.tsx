@@ -108,18 +108,18 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             });
           });
 
-          const [categoriesRes, customerRes, packageRes, ...productResults] = await Promise.all([
+          const [categoriesRes, customerRes, packageRes, productsRes] = await Promise.all([
             CategoryApi.getCategories({ type: CategoryType.SERVICE }),
             loadedAssessment.customer_id ? CustomerApi.getCustomerById(loadedAssessment.customer_id).catch(() => null) : Promise.resolve(null),
             loadedAssessment.package_id ? PackageApi.getPackages() : Promise.resolve(null),
-            ...Array.from(productIds).map(pid => ProductApi.getProductById(pid).catch(() => null))
+            ProductApi.getProducts({ limit: 200 }),
           ]);
 
           const fetchedCategories = categoriesRes?.data || [];
 
           const fetchedCustomers = customerRes ? [(customerRes as any).data || customerRes] : [];
           const fetchedPackages = packageRes ? ((packageRes as any).data || packageRes) : [];
-          const fetchedProducts = productResults.map(pr => (pr as any)?.data || pr).filter(Boolean);
+          const fetchedProducts = (productsRes as any)?.data || [];
 
           setCustomers(fetchedCustomers);
           setPackages(Array.isArray(fetchedPackages) ? fetchedPackages : []);
@@ -150,11 +150,13 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           const rawAreas = assessment_areas || [];
           const enrichedAreas = rawAreas.map((wa: any) => {
             const enrichedItems = (wa.items || []).map((item: any) => {
-              if (item.product_id && (!item.product_name || !item.product_price)) {
-                const product = fetchedProducts.find((p: any) => p.id === item.product_id);
-                if (product) return { ...item, product_name: product.name, product_price: Number(product.cost_price || 0) };
-              }
-              return item;
+              const product = fetchedProducts.find((p: any) => p.id === item.product_id);
+              return {
+                ...item,
+                product_name: item.product_name || product?.name || '',
+                product_price: item.product_price ? Number(item.product_price) : Number(product?.cost_price || 0),
+                unit: item.unit || product?.unit?.name || '',
+              };
             });
 
             let packagePrice = wa.package_price !== undefined && wa.package_price !== null ? Number(wa.package_price) : 0;
@@ -508,7 +510,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
       const payload: any = {
         ...formData,
-        status: targetStatus || formData.status || AsessmentStatus.DRAFT,
+        // status managed by backend only
         updated_by: currentUserId || '',
         assessment_areas: sanitizedWorkAreas,
         total_price: totalEstimatedCost,

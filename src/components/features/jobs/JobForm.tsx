@@ -641,6 +641,8 @@ export const JobForm: React.FC<JobFormProps> = ({
             package_id: exactPackageId,
             package_price_id: area.package_price_id,
             package_type: area.package_type as any,
+            site_image_id: (area as any).site_image_id || null,
+            site_image_url: (area as any).site_image_url || null,
           };
         });
         setWorkAreas(areas);

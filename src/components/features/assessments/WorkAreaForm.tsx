@@ -391,6 +391,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         product_id: pid,
         quantity: 1,
         product_name: product?.name || '',
+        unit: (product as any)?.unit?.name || (product as any)?.unit?.symbol || '',
         product_price: product?.cost_price ? Number(product.cost_price) : 0,
         total_price: product?.cost_price ? Number(product.cost_price) : 0,
       } as any;
@@ -897,7 +898,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 />
                               </td>
                               <td className="p-1 text-slate-600">
-                                {product?.unit?.name || '-'}
+                                {(item as any).unit || product?.unit?.name || '-'}
                               </td>
                               <td className="p-1 w-32 text-right text-slate-800">
                                 ฿
@@ -979,26 +980,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </div>
               )}
 
-              <div className="text-right font-semibold text-slate-800 pt-2 border-t">
-                ยอดรวมพื้นที่นี้: ฿
-                {(area.total_price || 0).toLocaleString('th-TH', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}
-              </div>
             </div>
           </div>
         )}
         {/* รูปภาพพื้นที่ */}
-        <div className="border border-slate-200 rounded-lg p-3 bg-white mt-3">
-          <h4 className="text-sm font-semibold text-slate-700 mb-2">รูปภาพพื้นที่</h4>
-          {(area as any).site_image_url || (area as any).siteImagePreview ? (
-            <div className="relative inline-block">
-              <img
-                src={(area as any).siteImagePreview || (area as any).site_image_url}
-                alt={area.area_name}
-                className="max-h-40 rounded-lg border border-slate-200 object-cover"
-              />
+        <div className="border border-slate-200 p-2 rounded-lg bg-white mb-4 mx-2">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold text-slate-800">รูปภาพพื้นที่</h3>
+            {((area as any).site_image_url || (area as any).siteImagePreview) && (
               <button
                 type="button"
                 onClick={() => onAreaChange(index, {
@@ -1008,13 +997,23 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   siteImagePreview: null,
                   site_image_url: null,
                 } as any)}
-                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow text-xs"
+                className="flex items-center gap-1 bg-red-50 text-red-600 font-semibold py-1 px-2 rounded-md text-sm hover:bg-red-100 transition-colors"
               >
-                ✕
+                ลบรูป
               </button>
+            )}
+          </div>
+          {(area as any).site_image_url || (area as any).siteImagePreview ? (
+            <div className="p-2">
+              <img
+                src={(area as any).siteImagePreview || (area as any).site_image_url}
+                alt={area.area_name}
+                className="max-h-48 rounded-lg border border-slate-200 object-cover"
+              />
             </div>
           ) : (
-            <label className="block border-2 border-dashed border-slate-200 rounded-lg p-4 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
+            <label className="block border-2 border-dashed border-slate-200 rounded-lg p-6 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
+              <svg className="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
               <span className="text-sm text-primary font-medium">เลือกรูปภาพ</span>
               <p className="text-xs text-slate-400 mt-0.5">PNG, JPG (ไม่เกิน 5MB)</p>
               <input
@@ -1034,6 +1033,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               />
             </label>
           )}
+        </div>
+
+        <div className="text-right font-semibold text-slate-800 pt-2 pb-3 border-t mx-2">
+          ยอดรวมพื้นที่นี้: ฿
+          {(area.total_price || 0).toLocaleString('th-TH', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </div>
       </div>
       <ProductSelectionModal
