@@ -494,6 +494,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             product_name: item.product_name || '',
             product_price: Number(item.product_price) || 0,
             quantity: Number(item.quantity) || 1,
+            unit_id: item.unit_id || null,
             total_price: (Number(item.product_price) || 0) * (Number(item.quantity) || 1),
           };
           if (item.id && !item.id.startsWith('item-') && item.id.includes('-')) sanitizedItem.id = item.id;

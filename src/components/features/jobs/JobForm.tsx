@@ -599,20 +599,18 @@ export const JobForm: React.FC<JobFormProps> = ({
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
-      const assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId));
+      let assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId)) as any;
 
-      // Load site image from full assessment data
+      // Fetch full assessment to get site_image_url per area
       try {
         const fullRes: any = await AssessmentApi.getById(assessmentId);
         const fullAssessment = fullRes.data || fullRes;
-        if (fullAssessment?.site_image_url) {
-          setAssessmentSiteImageUrl(fullAssessment.site_image_url);
-          setSiteImagePreview(fullAssessment.site_image_url);
-          setExistingSiteImageId(fullAssessment.site_image_id || null);
-          setAssessmentIdForImage(assessmentId);
+        if (fullAssessment?.assessment_areas) {
+          // Override assessment areas with full data (includes site_image_url)
+          assessment = { ...assessment, assessment_areas: fullAssessment.assessment_areas } as any;
         }
       } catch (err) {
-        console.error('Error fetching assessment image:', err);
+        console.error('Error fetching full assessment:', err);
       }
 
       if (assessment && assessment.assessment_areas && assessment.assessment_areas.length > 0) {
@@ -801,19 +799,20 @@ export const JobForm: React.FC<JobFormProps> = ({
 
               package_price_id: area.package_price_id,
               package_price: area.package_price,
-              package_type: area.package_type, 
+              package_type: area.package_type,
               base_service_price: area.base_service_price || area.package_price,
               total_price: area.total_price,
-              
+              site_image_id: area.site_image_id || undefined,
+
               category_services: area.category_services,
-              
+
               items: (area.items || []).map((it: any) => ({
                 product_id: it.product_id,
                 product_name: it.product_name,
                 product_price: it.product_price,
                 quantity: it.quantity,
+                unit_id: it.unit_id || undefined,
                 total_price: it.total_price,
-                package_type: area.package_type,
               })),
             })) as any,
             
