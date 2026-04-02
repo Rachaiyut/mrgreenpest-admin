@@ -256,6 +256,10 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         district: customer.district || '',
         province: customer.province || '',
         zipcode: customer.postal_code || '',
+        zone: customer.service_area || '',
+        route_group: customer.service_group || '',
+        road_line: customer.road_line || '',
+        sequence: customer.sequence_no ? String(customer.sequence_no) : '',
         google_map_link: customer.google_map_link || '',
       }));
       setErrors((prev) => ({ ...prev, customer_id: '', address: '' }));
