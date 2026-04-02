@@ -989,6 +989,52 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             </div>
           </div>
         )}
+        {/* รูปภาพพื้นที่ */}
+        <div className="border border-slate-200 rounded-lg p-3 bg-white mt-3">
+          <h4 className="text-sm font-semibold text-slate-700 mb-2">รูปภาพพื้นที่</h4>
+          {(area as any).site_image_url || (area as any).siteImagePreview ? (
+            <div className="relative inline-block">
+              <img
+                src={(area as any).siteImagePreview || (area as any).site_image_url}
+                alt={area.area_name}
+                className="max-h-40 rounded-lg border border-slate-200 object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => onAreaChange(index, {
+                  ...area,
+                  site_image_id: null,
+                  siteImageFile: null,
+                  siteImagePreview: null,
+                  site_image_url: null,
+                } as any)}
+                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow text-xs"
+              >
+                ✕
+              </button>
+            </div>
+          ) : (
+            <label className="block border-2 border-dashed border-slate-200 rounded-lg p-4 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
+              <span className="text-sm text-primary font-medium">เลือกรูปภาพ</span>
+              <p className="text-xs text-slate-400 mt-0.5">PNG, JPG (ไม่เกิน 5MB)</p>
+              <input
+                type="file"
+                accept="image/png, image/jpeg"
+                className="sr-only"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    onAreaChange(index, {
+                      ...area,
+                      siteImageFile: file,
+                      siteImagePreview: URL.createObjectURL(file),
+                    } as any);
+                  }
+                }}
+              />
+            </label>
+          )}
+        </div>
       </div>
       <ProductSelectionModal
         isOpen={isProductModalOpen}

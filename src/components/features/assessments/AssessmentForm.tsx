@@ -84,9 +84,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [siteImage, setSiteImage] = useState<File | null>(null);
-  const [siteImagePreview, setSiteImagePreview] = useState<string | null>(null);
-  const [existingSiteImageId, setExistingSiteImageId] = useState<string | null>(null);
+  // Site image moved to per-area in WorkAreaForm
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,9 +95,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         setCurrentStep(0);
         setVisitedSteps([0]);
         setErrors({});
-        setSiteImage(null);
-        setSiteImagePreview(null);
-        setExistingSiteImageId(null);
+        // site image reset handled per-area in WorkAreaForm
 
         if (isEdit && initialData?.id) {
           const res = await AssessmentApi.getById(initialData.id);
@@ -176,10 +172,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           setWorkAreas(enrichedAreas);
 
           // Load existing site image
-          if (loadedAssessment.site_image_url) {
-            setSiteImagePreview(loadedAssessment.site_image_url);
-            setExistingSiteImageId(loadedAssessment.site_image_id || null);
-          }
+          // site_image is now per-area, loaded via WorkAreaForm
 
         } else {
           const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
@@ -530,36 +523,44 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       const result = await onSubmit(payload);
       const assessmentId = (result as any)?.data?.id || (result as any)?.id || formData.id;
 
-      // Upload new image / replace old
-      if (siteImage && assessmentId) {
+      // Upload images per area
+      if (assessmentId) {
         try {
-          // Delete old image if exists
-          if (existingSiteImageId) {
-            await StorageApi.remove(existingSiteImageId).catch(() => {});
-          }
-          // Upload new
-          const uploadResult = await StorageApi.upload({
-            file: siteImage,
-            path: `assessments/${assessmentId}`,
-            entity_type: 'assessment',
-            entity_id: assessmentId,
-            type: 'site_image',
-            visibility: 'private',
-          });
-          const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
-          if (storageId) {
-            await AssessmentApi.update(assessmentId, { site_image_id: storageId, updated_by: currentUserId || '' } as any);
+          // Fetch saved areas to get their IDs
+          const savedAssessment = await AssessmentApi.getById(assessmentId);
+          const savedAreas = (savedAssessment as any)?.data?.assessment_areas || (savedAssessment as any)?.assessment_areas || [];
+
+          for (let i = 0; i < workAreas.length; i++) {
+            const area = workAreas[i] as any;
+            const savedArea = savedAreas[i]; // match by index (same order)
+            if (!savedArea) continue;
+            const areaId = savedArea.id;
+
+            if (area.siteImageFile) {
+              // Delete old image if exists
+              if (savedArea.site_image_id) {
+                await StorageApi.remove(savedArea.site_image_id).catch(() => {});
+              }
+              const uploadResult = await StorageApi.upload({
+                file: area.siteImageFile,
+                path: `assessments/${assessmentId}/areas/${areaId}`,
+                entity_type: 'assessment_area',
+                entity_id: areaId,
+                type: 'site_image',
+                visibility: 'private',
+              });
+              const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
+              if (storageId) {
+                await AssessmentApi.updateArea(areaId, { site_image_id: storageId } as any).catch(() => {});
+              }
+            } else if (!area.siteImagePreview && !area.site_image_url && savedArea.site_image_id) {
+              // User removed image
+              await StorageApi.remove(savedArea.site_image_id).catch(() => {});
+              await AssessmentApi.updateArea(areaId, { site_image_id: null } as any).catch(() => {});
+            }
           }
         } catch (uploadErr) {
-          console.error('Image upload failed:', uploadErr);
-        }
-      } else if (!siteImagePreview && existingSiteImageId && assessmentId) {
-        // User removed image without adding new one
-        try {
-          await StorageApi.remove(existingSiteImageId).catch(() => {});
-          await AssessmentApi.update(assessmentId, { site_image_id: null, updated_by: currentUserId || '' } as any);
-        } catch (removeErr) {
-          console.error('Image remove failed:', removeErr);
+          console.error('Area image upload failed:', uploadErr);
         }
       }
     } catch (error) {
@@ -772,50 +773,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               </div>
             </div>
 
-            {/* รูปภาพพื้นที่บริการ */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <div className="p-1.5 bg-green-50 rounded-lg text-green-600">
-                  <PhotoIcon className="w-5 h-5" />
-                </div>
-                <h3 className="font-semibold text-slate-800 text-lg">รูปภาพพื้นที่บริการ</h3>
-              </div>
-              <div className="p-6">
-                {siteImagePreview ? (
-                  <div className="relative inline-block">
-                    <img src={siteImagePreview} alt="พื้นที่บริการ" className="max-h-64 rounded-lg border border-slate-200 object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => { setSiteImage(null); setSiteImagePreview(null); }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md transition-colors"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center bg-slate-50">
-                    <PhotoIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                    <label htmlFor="site-image-upload" className="cursor-pointer">
-                      <span className="text-sm font-medium text-primary hover:text-primary/80">เลือกรูปภาพ</span>
-                      <p className="text-xs text-slate-400 mt-1">PNG, JPG (ไม่เกิน 5MB)</p>
-                      <input
-                        id="site-image-upload"
-                        type="file"
-                        accept="image/png, image/jpeg"
-                        className="sr-only"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setSiteImage(file);
-                            setSiteImagePreview(URL.createObjectURL(file));
-                          }
-                        }}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-            </div>
+            {/* รูปภาพพื้นที่ - อยู่ใน WorkAreaForm แต่ละ area แล้ว */}
           </div>
         )}
 
