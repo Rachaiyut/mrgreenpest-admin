@@ -28,16 +28,14 @@ import { CustomerApi } from '../../api/customer';
 import { ContractModal } from '@/src/components/features/contracts/ContractModal';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
-const statusLabels: Record<ContractStatus, string> = {
-  [ContractStatus.DRAFT]: 'ร่าง',
+const statusLabels = {
+  [ContractStatus.DRAFT]: 'ร่างสัญญา',
   [ContractStatus.PENDING]: 'รอดำเนินการ',
-  [ContractStatus.ACTIVE]: 'ดำเนินการ',
-  [ContractStatus.REVISED]: 'ปรับปรุง',
-  [ContractStatus.RENEWED]: 'ต่อสัญญา',
-  [ContractStatus.COMPLETED]: 'เสร็จสิ้น',
-  [ContractStatus.CANCELLED]: 'ยกเลิก',
+  [ContractStatus.ACTIVE]: 'อยู่ในสัญญา',
+  [ContractStatus.CANCELLED]: 'ยกเลิกสัญญา',
   [ContractStatus.EXPIRED]: 'หมดอายุ',
-};
+  [ContractStatus.RENEWED]: 'ต่อสัญญา',
+} as Record<string, string>;
 interface ContractsPageProps {
   onUpdateContract?: (updated: Contract) => void;
   onDeleteContract?: (id: string) => void;
@@ -120,7 +118,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       (c) => c.status === ContractStatus.ACTIVE
     ).length;
     const completed = contracts.filter(
-      (c) => c.status === ContractStatus.COMPLETED
+      (c) => (c.status as string) === 'COMPLETED'
     ).length;
     const totalValue = contracts.reduce(
       (sum, c) => sum + (Number(c.total_amount) || 0),
@@ -517,9 +515,17 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           {formatThaiDate(c.end_date)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          <StatusBadge
-                            status={c.status}
-                          />
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
+                            c.status === ContractStatus.ACTIVE ? 'bg-green-100 text-green-700' :
+                            c.status === ContractStatus.DRAFT ? 'bg-slate-100 text-slate-600' :
+                            c.status === ContractStatus.PENDING ? 'bg-yellow-100 text-yellow-700' :
+                            c.status === ContractStatus.CANCELLED ? 'bg-red-100 text-red-700' :
+                            c.status === ContractStatus.EXPIRED ? 'bg-zinc-100 text-zinc-600' :
+                            c.status === ContractStatus.RENEWED ? 'bg-indigo-100 text-indigo-700' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {statusLabels[c.status] || c.status}
+                          </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
                           ฿

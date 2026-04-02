@@ -13,7 +13,8 @@ import { InvoiceApi } from '../../../api/invoice';
 import { Customer } from '../../../types/entity/customer.interface';
 import { Status } from '../../../types/entity/core.interface';
 import { Invoice, Contract } from '../../../types/entity/financial.interface';
-import { ContractStatus, InvoiceStatus } from '../../../types/enums/financial';
+import { InvoiceStatus } from '../../../types/enums/financial';
+import { ContractStatus } from '../../../types/enums/contract';
 import { Quotation } from '@/src/types';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 
@@ -241,7 +242,23 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       });
     }
 
-    if (!referenceSource?.installments || referenceSource.installments.length === 0) return [];
+    if (!referenceSource?.installments || referenceSource.installments.length === 0) {
+      // ชำระเต็มจำนวน: สร้าง option เดียวจาก contract total
+      if (formData.contractId) {
+        const contract = contracts.find((c: any) => c.id === formData.contractId);
+        if (contract) {
+          return [{
+            id: 'full-payment',
+            term: 1,
+            description: 'ชำระเต็มจำนวน',
+            percentage: 100,
+            amount: Number(contract.total_amount || 0),
+            is_pay_all: true,
+          }];
+        }
+      }
+      return [];
+    }
     
     return referenceSource.installments.filter((inst: any) => {
       const term = inst.term || inst.installment_no;
@@ -258,7 +275,19 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       amount: Number(inst.amount),
       is_pay_all: false,
     }));
-  }, [referenceSource, invoices, initialValues, formData.contractId, invoiceSchedules]);
+  }, [referenceSource, invoices, initialValues, formData.contractId, invoiceSchedules, contracts]);
+
+  // ชำระเต็มจำนวน: auto-select + auto-set items
+  const isFullPayment = useMemo(() => {
+    return availableInstallments.length === 1 && availableInstallments[0].is_pay_all;
+  }, [availableInstallments]);
+
+  useEffect(() => {
+    if (isFullPayment && !formData.selectedScheduleId && mode === 'create') {
+      const inst = availableInstallments[0];
+      handleSelectInstallment(inst);
+    }
+  }, [isFullPayment]);
 
   const productOptions = useMemo(() => {
     return products
@@ -383,7 +412,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       return;
     }
 
-    if (!isAdhocMode && availableInstallments.length > 0 && !formData.selectedScheduleId) {
+    if (!isAdhocMode && !isFullPayment && availableInstallments.length > 0 && !formData.selectedScheduleId) {
       Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกงวดที่ต้องการเรียกเก็บเงิน หรือ กดปุ่ม "สร้างบิลพิเศษ"' });
       return;
     }
@@ -585,13 +614,13 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       </div>
 
       {/* Bottom Section: Installments & Items */}
-      <div className="pt-8 border-t border-slate-200">
+      <div className={isFullPayment && items.length <= 1 ? '' : 'pt-8 border-t border-slate-200'}>
         {isLoadingSchedules ? (
           <div className="flex items-center justify-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-slate-500 font-medium gap-3">
             <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></span>
             กำลังดึงข้อมูลตารางการวางบิล...
           </div>
-        ) : !isAdhocMode && referenceSource && availableInstallments.length > 0 ? (
+        ) : !isAdhocMode && referenceSource && availableInstallments.length > 0 && !isFullPayment ? (
           
           /* 🌟 INSTALLMENT UI */
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
@@ -760,8 +789,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             </div>
           </div>
 
-        ) : (
-          
+        ) : isFullPayment && items.length <= 1 ? null : (
+
           /* NORMAL ITEMS: รายการสินค้าและบริการ */
           <ItemsSection
             items={items}
@@ -813,11 +842,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </span>
               </div>
 
-              <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
-                <span className="text-base font-bold text-slate-800">
-                  จำนวนเงินรวมทั้งสิ้น
-                </span>
-                <span className="text-xl font-bold text-green-600">
+              <div className="border-t border-slate-200 pt-3 flex justify-between items-center gap-4">
+                <span className="text-sm font-bold text-slate-800 whitespace-nowrap">จำนวนเงินรวมทั้งสิ้น</span>
+                <span className="text-lg font-bold text-green-600 whitespace-nowrap">
                   {totals.netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                 </span>
               </div>

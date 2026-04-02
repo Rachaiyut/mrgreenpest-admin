@@ -9,7 +9,7 @@ interface StatusBadgeProps {
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   // ===== สถานะทั่วไป =====
   DRAFT:              { label: 'จัดทำ',             color: 'bg-slate-100 text-slate-600' },
-  PENDING:            { label: 'รอเข้าดำเนินการ',    color: 'bg-yellow-100 text-yellow-700' },
+  PENDING:            { label: 'รอดำเนินการ',       color: 'bg-yellow-100 text-yellow-700' },
   PENDING_APPROVAL:   { label: 'รออนุมัติ',         color: 'bg-orange-100 text-orange-700' },
   PENDING_SIGNATURE:  { label: 'รอเซ็น',           color: 'bg-amber-100 text-amber-700' },
   APPROVED:           { label: 'อนุมัติ',           color: 'bg-emerald-100 text-emerald-700' },
@@ -27,7 +27,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   FOLLOW_UP:          { label: 'ติดตาม',           color: 'bg-purple-100 text-purple-700' },
 
   // ===== สัญญา =====
-  ACTIVE:             { label: 'ใช้งาน',           color: 'bg-green-100 text-green-700' },
+  ACTIVE:             { label: 'กำลังดำเนินการ',    color: 'bg-green-100 text-green-700' },
 
   // ===== ใบแจ้งหนี้ =====
   SENT:               { label: 'ส่งแล้ว',           color: 'bg-indigo-100 text-indigo-700' },

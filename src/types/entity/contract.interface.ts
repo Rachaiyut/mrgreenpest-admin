@@ -3,7 +3,7 @@ import { IBase } from './base.interface';
 
 // Enum
 import { BuildingType, ServiceSystem } from '../enums/assessment';
-import { ContractStatus } from '../enums/financial';
+import { ContractStatus } from '../enums/contract';
 import { Customer } from './customer.interface';
 import { ContractArea } from '@/src/components/features/contracts/ContractForm';
 import { InstallmentPlan } from './app.interface';
@@ -26,6 +26,7 @@ export interface Contract {
   service_count?: number;
   total_amount: number;
   vat_amount: number;
+  is_separate_contract?: boolean;
   status: ContractStatus;
   start_date: string;
   end_date: string;

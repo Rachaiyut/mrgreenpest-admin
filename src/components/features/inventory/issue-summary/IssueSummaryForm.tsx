@@ -136,7 +136,15 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const loggedInUser = useMemo(() => {
     let role = '';
     let id = currentUser?.id || '';
-    let name = currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'ผู้เบิก (ตัวฉันเอง)';
+    let name = '';
+
+    // Try from currentUser prop (could be AuthUser with firstName or User with first_name)
+    const cu = currentUser as Record<string, unknown> | undefined;
+    if (cu) {
+      const fn = (cu.first_name || cu.firstName || '') as string;
+      const ln = (cu.last_name || cu.lastName || '') as string;
+      name = `${fn} ${ln}`.trim();
+    }
 
     try {
       const raw = localStorage.getItem('user_info');
@@ -145,14 +153,15 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         const rawRole = parsed?.role || parsed?.role_name || parsed?.role_code || parsed?.role_id || '';
         role = String(rawRole).toUpperCase().trim();
         id = parsed?.id || parsed?.user_id || id;
-        if (parsed?.first_name) {
-          name = `${parsed.first_name} ${parsed.last_name || ''}`.trim();
-        }
+        const fn = parsed?.first_name || parsed?.firstName || '';
+        const ln = parsed?.last_name || parsed?.lastName || '';
+        if (fn) name = `${fn} ${ln}`.trim();
       }
     } catch (e) {
       console.error('Localstorage parsing error', e);
     }
 
+    if (!name) name = 'ผู้เบิก (ตัวฉันเอง)';
     return { id: String(id), role, name };
   }, [currentUser]);
 
@@ -161,11 +170,16 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   }, [loggedInUser.role]);
 
   const userOptions = useMemo(() => {
-    return users.map((u) => ({
+    const opts = users.map((u) => ({
       value: String(u.id),
       label: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.nick_name || 'Unknown',
     }));
-  }, [users]);
+    // Ensure current user is always in the list
+    if (loggedInUser.id && !opts.find((o) => o.value === loggedInUser.id)) {
+      opts.unshift({ value: loggedInUser.id, label: loggedInUser.name });
+    }
+    return opts;
+  }, [users, loggedInUser.id, loggedInUser.name]);
 
   const requesterOptions = useMemo(() => {
     if (isLockedRole) {

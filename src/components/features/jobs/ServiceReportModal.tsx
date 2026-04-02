@@ -1514,7 +1514,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         ...prev,
                         next_appointment: {
                           ...(prev.next_appointment || { notes: '', reasons: [] }),
-                          scheduled_at: date ? date.toISOString() : undefined,
+                          scheduled_at: date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0).toISOString() : undefined,
                         },
                       }))
                     }

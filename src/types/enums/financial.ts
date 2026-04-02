@@ -27,16 +27,6 @@ export enum PaymentMethod {
   INSTALLMENT = 'INSTALLMENT',
 }
 
-export enum ContractStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  REVISED = 'REVISED',
-  RENEWED = 'RENEWED',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  EXPIRED = 'EXPIRED',
-}
 
 export enum ExpenseType {
   INCOME = 'INCOME',

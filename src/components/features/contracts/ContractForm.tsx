@@ -15,7 +15,7 @@ import { CategoryType, Quotation } from '../../../types';
 import { Customer } from '../../../types/entity/customer.interface';
 import { InstallmentPlan } from '../../../types/entity/financial.interface';
 import InstallmentSection from '../../common/InstallmentSection';
-import { ContractStatus } from '../../../types/enums/financial';
+import { ContractStatus } from '../../../types/enums/contract';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 
 // ===== Context =====
@@ -133,7 +133,9 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [fullQuotation, setFullQuotation] = useState<any>(null);
 
-  const [isSeparateContract, setIsSeparateContract] = useState<boolean | null>(null);
+  const [isSeparateContract, setIsSeparateContract] = useState<boolean | null>(
+    initialValues?.is_separate_contract != null ? initialValues.is_separate_contract : null
+  );
 
   // Service info
   const [serviceLocation, setServiceLocation] = useState(
@@ -339,7 +341,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           }))
         );
       }
-    } else if (initialValues?.installments) {
+    } else if (initialValues?.installments && initialValues.installments.length > 0) {
       const sortedInstallments = [...initialValues.installments].sort((a: any, b: any) => {
         const termA = a.term || a.installment_no || 0;
         const termB = b.term || b.installment_no || 0;
@@ -360,6 +362,8 @@ export const ContractForm: FC<ContractFormProps> = ({
         }))
       );
       setContractPaymentMethod('INSTALLMENT');
+    } else {
+      setContractPaymentMethod('TRANSFER');
     }
   }, [mode, initialValues]);
 
@@ -888,13 +892,15 @@ export const ContractForm: FC<ContractFormProps> = ({
       return;
     }
 
-    const totalPercentage = installments.reduce(
-      (sum, inst) => sum + Number(inst.percentage),
-      0
-    );
-    if (Math.abs(totalPercentage - 100) > 0.5) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `สัดส่วนการแบ่งงวดรวมกันต้องเท่ากับ 100% (ปัจจุบัน: ${totalPercentage}%)` });
-      return;
+    if (contractPaymentMethod === 'INSTALLMENT') {
+      const totalPercentage = installments.reduce(
+        (sum, inst) => sum + Number(inst.percentage),
+        0
+      );
+      if (Math.abs(totalPercentage - 100) > 0.5) {
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `สัดส่วนการแบ่งงวดรวมกันต้องเท่ากับ 100% (ปัจจุบัน: ${totalPercentage}%)` });
+        return;
+      }
     }
 
     let selectedCustomerObj =
@@ -1328,22 +1334,19 @@ export const ContractForm: FC<ContractFormProps> = ({
           }}
         />
 
-        {/* Notes Section */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 lg:col-span-2">
-          <SectionHeader
-            icon={CurrencyDollarIcon}
-            title="หมายเหตุ"
-          />
-          <div>
-            <FormField label="หมายเหตุ" htmlFor="notes">
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                placeholder="หมายเหตุเพิ่มเติม..."
-              />
-            </FormField>
+        {/* Notes + Price Summary */}
+        <div className="flex flex-col lg:flex-row items-start gap-6 w-full lg:col-span-2">
+          <div className="flex-1 min-w-0 w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none" />
+          </div>
+          <div className="w-full lg:w-80 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{(includeVat ? totalAmount - vatAmount : totalAmount).toLocaleString()} บาท</span></div>
+            <div className="flex justify-between items-center text-sm">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
+              <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
+            </div>
+            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{totalAmount.toLocaleString()} บาท</span></div>
           </div>
         </div>
 
