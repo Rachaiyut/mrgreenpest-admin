@@ -74,6 +74,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     return availablePackages.find((p) => p.id === activePackageId) || selectedPackage;
   }, [activePackageId, availablePackages, selectedPackage]);
 
+  // filteredPackages moved below selectedUnitId declaration
+
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
     [products]
@@ -85,17 +87,18 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     [ServiceSystem.OTHER]: 'อื่นๆ',
   };
 
-  // หา unique units จาก package_prices
+  // หา unique units จาก ALL packages' prices (not just active)
   const availableUnitOptions = useMemo(() => {
-    if (!activePackage?.package_prices) return [];
     const unitMap = new Map<string, string>();
-    (activePackage.package_prices as any[]).forEach((p) => {
-      if (p.unit_id) {
-        unitMap.set(p.unit_id, p.unit?.name || p.unit?.symbol || p.unit_id);
-      }
+    availablePackages.forEach((pkg: any) => {
+      (pkg.package_prices || []).forEach((p: any) => {
+        if (p.unit_id) {
+          unitMap.set(p.unit_id, p.unit?.name || p.unit?.symbol || p.unit_id);
+        }
+      });
     });
     return Array.from(unitMap, ([id, name]) => ({ id, name }));
-  }, [activePackage]);
+  }, [availablePackages]);
 
   const [selectedUnitId, setSelectedUnitId] = useState<string>('');
 
@@ -123,6 +126,15 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     }
     return prices.sort((a, b) => a.area_range - b.area_range);
   }, [activePackage, selectedUnitId]);
+
+  // Filter packages by selected measurement type unit
+  const filteredPackages = useMemo(() => {
+    if (!selectedUnitId) return availablePackages;
+    return availablePackages.filter((pkg: any) => {
+      const prices = pkg.package_prices || [];
+      return prices.some((p: any) => p.unit_id === selectedUnitId);
+    });
+  }, [availablePackages, selectedUnitId]);
 
   const selectedCondition = useMemo(() => {
     if (!activePackage || !area.area_size) return null;
@@ -685,7 +697,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 {measurementType === 'sqm' && (
                   <div className="space-y-2">
                     <PackageSelectionGrid
-                      packages={availablePackages}
+                      packages={filteredPackages}
                       areaSize={area.area_size}
                       activePackageId={activePackageId}
                       selectedPackageId={selectedPackage?.id}
@@ -767,7 +779,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 {measurementType === 'meter' && (
                   <div className="space-y-2">
                     <PackageSelectionGrid
-                      packages={availablePackages}
+                      packages={filteredPackages}
                       areaSize={area.area_size}
                       activePackageId={activePackageId}
                       selectedPackageId={selectedPackage?.id}
