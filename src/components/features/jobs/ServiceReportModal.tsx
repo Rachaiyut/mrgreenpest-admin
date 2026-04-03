@@ -89,10 +89,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   jobs = [],
   readOnly = false,
 }) => {
-  const [reportState, setReportState] = useState<Partial<ServiceReport & { 
+  const [reportState, setReportState] = useState<Partial<ServiceReport & {
     payment_amount?: string | number;
     payment_slip_url?: string | null;
     quotation_url?: string | null;
+    service_other_text?: string;
   }>>({});
   
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -263,6 +264,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         if (r.is_service_mosquito) types.push('กำจัดยุง');
         if (r.service_other) types.push('กำจัดอื่นๆ');
 
+        const serviceOtherText = r.service_other === 'Other' ? '' : (r.service_other || '');
+
         const actions: string[] = [];
         if (r.is_op_station) actions.push('ฝังสถานี');
         if (r.is_op_refill) actions.push('เติมเหยื่อ');
@@ -298,6 +301,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           payment_slip_url: r.payment_slip_url || null,
           quotation_url: r.quotation_url || null,
           service_types: types,
+          service_other_text: serviceOtherText,
           service_actions: actions,
           check_in_time: r.time_in || (job.actual_start_time ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
           check_out_time: r.time_out || (job.actual_end_time ? new Date(job.actual_end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
@@ -329,6 +333,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           lizard: {
             place_traps: d.lizard_trap,
             other: d.pest_other,
+          },
+          mosquito: {
+            spray_chemical: d.mosquito_spray_chemical,
+            fogging: d.mosquito_fogging,
           },
           termite: {
             status:
@@ -438,7 +446,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       is_service_rodent: reportState.service_types?.includes('กำจัดหนู'),
       is_service_mosquito: reportState.service_types?.includes('กำจัดยุง'),
       service_other: reportState.service_types?.includes('กำจัดอื่นๆ')
-        ? 'Other'
+        ? reportState.service_other_text || ''
         : null,
 
       time_in: reportState.check_in_time,
@@ -516,6 +524,12 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         // จิ้งจก
         ...(reportState.service_types?.includes('กำจัดจิ้งจก') ? {
           lizard_trap: reportState.lizard?.place_traps || false,
+        } : {}),
+
+        // ยุง
+        ...(reportState.service_types?.includes('กำจัดยุง') ? {
+          mosquito_spray_chemical: (reportState as Record<string, Record<string, boolean>>).mosquito?.spray_chemical || false,
+          mosquito_fogging: (reportState as Record<string, Record<string, boolean>>).mosquito?.fogging || false,
         } : {}),
 
         pest_other:
@@ -610,7 +624,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   };
 
   const handlePestDataChange = (
-    pest: 'ant' | 'cockroach' | 'rat' | 'lizard' | 'termite',
+    pest: 'ant' | 'cockroach' | 'rat' | 'lizard' | 'termite' | 'mosquito',
     key: string,
     value: any
   ) => {
@@ -1238,6 +1252,35 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     </div>
   );
 
+  const renderMosquitoForm = (): React.ReactElement => (
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.mosquito?.spray_chemical ?? false}
+            onChange={(e) =>
+              handlePestDataChange('mosquito', 'spray_chemical', e.target.checked)
+            }
+          />
+          <span className="font-medium">ใส่สารป้องกัน</span>
+        </label>
+        <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
+          <input
+            type="checkbox"
+            className="w-5 h-5 text-primary rounded"
+            checked={reportState.mosquito?.fogging ?? false}
+            onChange={(e) =>
+              handlePestDataChange('mosquito', 'fogging', e.target.checked)
+            }
+          />
+          <span className="font-medium">ใช้เครื่องพ่น</span>
+        </label>
+      </div>
+    </div>
+  );
+
   const renderRatForm = (): React.ReactElement => (
     <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1301,6 +1344,20 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     </div>
   );
 
+  const renderOtherForm = (): React.ReactElement => (
+    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+      <label className="block text-sm font-medium text-slate-700 mb-1">ระบุรายละเอียด</label>
+      <Textarea
+        placeholder="ระบุประเภทแมลงและวิธีการดำเนินการ..."
+        rows={3}
+        value={reportState.service_other_text || ''}
+        onChange={(e) =>
+          setReportState((prev) => ({ ...prev, service_other_text: e.target.value }))
+        }
+      />
+    </div>
+  );
+
   const pestRenderConfig: Record<
     PestType,
     { label: string; render: () => React.ReactElement }
@@ -1310,8 +1367,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     cockroach: { label: 'แมลงสาบ', render: renderCockroachForm },
     rat: { label: 'หนู', render: renderRatForm },
     lizard: { label: 'จิ้งจก', render: renderLizardForm },
-    mosquito: { label: 'ยุง', render: null  },
-    other: { label: 'อื่นๆ', render: null },
+    mosquito: { label: 'ยุง', render: renderMosquitoForm },
+    other: { label: 'อื่นๆ', render: renderOtherForm },
   };
 
   return (

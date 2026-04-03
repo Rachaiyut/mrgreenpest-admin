@@ -66,6 +66,7 @@ export interface ServiceReport {
   cockroach?: any;
   rat?: any;
   lizard?: any;
+  mosquito?: any;
   other?: string;
   next_appointment?: {
     notes: string;
