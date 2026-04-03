@@ -560,8 +560,8 @@ const IssueSummaryPage: React.FC = () => {
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
                 </tr>
               </thead>
@@ -619,13 +619,13 @@ const IssueSummaryPage: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {warehouse?.name || '-'}
                         </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          {requesterName}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
                             {statusBadge.text}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                          {requesterName}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                           <div className="inline-block text-left">

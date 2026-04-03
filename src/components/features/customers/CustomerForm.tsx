@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import {
   FormField,
@@ -9,6 +9,119 @@ import {
 import { Customer } from '@/src/types/entity/customer.interface';
 import { PlusIcon, TrashIcon } from '@/src/assets/icons/Icons';
 import { CustomerType } from '@/src/types';
+import geoData from '@/src/data/geo.json';
+
+interface GeoSubdistrict {
+  name_th: string;
+  name_en: string;
+  postal_code: number;
+}
+
+interface GeoDistrict {
+  name_th: string;
+  name_en: string;
+  subdistricts: GeoSubdistrict[];
+}
+
+interface GeoProvince {
+  name_th: string;
+  name_en: string;
+  districts: GeoDistrict[];
+}
+
+const provinces = geoData as GeoProvince[];
+
+// Searchable select with dropdown
+const SearchableSelect: React.FC<{
+  id?: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
+}> = ({ id, value, options, onChange, placeholder, required, disabled }) => {
+  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync search text with external value
+  useEffect(() => {
+    setSearch(value || '');
+  }, [value]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        // Reset search to current value if closed without selection
+        setSearch(value || '');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [value]);
+
+  const filtered = useMemo(() => {
+    if (!search) return options;
+    const lower = search.toLowerCase();
+    return options.filter((o) => o.toLowerCase().includes(lower));
+  }, [options, search]);
+
+  const handleSelect = useCallback((opt: string) => {
+    onChange(opt);
+    setSearch(opt);
+    setOpen(false);
+  }, [onChange]);
+
+  return (
+    <div ref={ref} className="relative">
+      <input
+        ref={inputRef}
+        id={id}
+        type="text"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setOpen(true);
+          // Clear the selected value if user is typing something different
+          if (e.target.value !== value) {
+            onChange('');
+          }
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        autoComplete="off"
+        className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900"
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-60 overflow-auto text-sm">
+          {filtered.slice(0, 100).map((opt) => (
+            <li
+              key={opt}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                handleSelect(opt);
+              }}
+              className={`px-3 py-2 cursor-pointer hover:bg-primary/10 ${opt === value ? 'bg-primary/5 font-medium text-primary' : 'text-slate-700'}`}
+            >
+              {opt}
+            </li>
+          ))}
+          {filtered.length > 100 && (
+            <li className="px-3 py-2 text-slate-400 text-xs text-center">
+              พิมพ์เพิ่มเพื่อกรองผลลัพธ์...
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 export interface CustomerFormProps {
   mode: 'create' | 'edit';
@@ -73,6 +186,57 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
   });
 
   const [additionalPhones, setAdditionalPhones] = useState<string[]>([]);
+
+  // Geo cascading data
+  const provinceNames = useMemo(() => provinces.map((p) => p.name_th), []);
+
+  const selectedProvince = useMemo(
+    () => provinces.find((p) => p.name_th === formData['address-province']),
+    [formData['address-province']]
+  );
+
+  const districtNames = useMemo(
+    () => selectedProvince?.districts.map((d) => d.name_th) || [],
+    [selectedProvince]
+  );
+
+  const selectedDistrict = useMemo(
+    () => selectedProvince?.districts.find((d) => d.name_th === formData['address-district']),
+    [selectedProvince, formData['address-district']]
+  );
+
+  const subdistrictNames = useMemo(
+    () => selectedDistrict?.subdistricts.map((s) => s.name_th) || [],
+    [selectedDistrict]
+  );
+
+  const handleProvinceChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      'address-province': value,
+      'address-district': '',
+      'address-subdistrict': '',
+      'address-postalcode': '',
+    }));
+  };
+
+  const handleDistrictChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      'address-district': value,
+      'address-subdistrict': '',
+      'address-postalcode': '',
+    }));
+  };
+
+  const handleSubdistrictChange = (value: string) => {
+    const subdistrict = selectedDistrict?.subdistricts.find((s) => s.name_th === value);
+    setFormData((prev) => ({
+      ...prev,
+      'address-subdistrict': value,
+      'address-postalcode': subdistrict ? String(subdistrict.postal_code) : prev['address-postalcode'] || '',
+    }));
+  };
 
   useEffect(() => {
     if (mode === 'edit' && initialValues) {
@@ -477,21 +641,44 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             </FormField>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
-              <Input id="address-subdistrict" name="address-subdistrict" type="text" value={formData['address-subdistrict'] || ''} onChange={handleChange} required />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <FormField label="จังหวัด" htmlFor="address-province">
+              <SearchableSelect
+                id="address-province"
+                value={formData['address-province'] || ''}
+                options={provinceNames}
+                onChange={handleProvinceChange}
+                placeholder="พิมพ์เพื่อค้นหาจังหวัด..."
+                required
+              />
             </FormField>
             <FormField label="เขต/อำเภอ" htmlFor="address-district">
-              <Input id="address-district" name="address-district" type="text" value={formData['address-district'] || ''} onChange={handleChange} required />
+              <SearchableSelect
+                id="address-district"
+                value={formData['address-district'] || ''}
+                options={districtNames}
+                onChange={handleDistrictChange}
+                placeholder="เลือกจังหวัดก่อน"
+                required
+                disabled={!formData['address-province']}
+              />
+            </FormField>
+            <FormField label="แขวง/ตำบล" htmlFor="address-subdistrict">
+              <SearchableSelect
+                id="address-subdistrict"
+                value={formData['address-subdistrict'] || ''}
+                options={subdistrictNames}
+                onChange={handleSubdistrictChange}
+                placeholder="เลือกเขต/อำเภอก่อน"
+                required
+                disabled={!formData['address-district']}
+              />
             </FormField>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <FormField label="จังหวัด" htmlFor="address-province">
-              <Input id="address-province" name="address-province" type="text" value={formData['address-province'] || ''} onChange={handleChange} required />
-            </FormField>
             <FormField label="รหัสไปรษณีย์" htmlFor="address-postalcode">
-              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} required className="font-mono" />
+              <Input id="address-postalcode" name="address-postalcode" type="text" value={formData['address-postalcode'] || ''} onChange={handleChange} required className="font-mono" readOnly />
             </FormField>
             <FormField label="ประเทศ" htmlFor="address-country">
               <Input id="address-country" name="address-country" type="text" value={formData['address-country'] || ''} onChange={handleChange} required />
