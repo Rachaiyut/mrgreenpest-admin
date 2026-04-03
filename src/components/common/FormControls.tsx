@@ -120,16 +120,18 @@ export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = ({ className,
   );
 };
 
-export const Textarea: FC<TextareaHTMLAttributes<HTMLTextAreaElement>> = (
-  props
-) => {
+export const Textarea: FC<TextareaHTMLAttributes<HTMLTextAreaElement>> = ({
+  className,
+  rows,
+  ...props
+}) => {
   const controlledProps = 'value' in props ? { value: props.value ?? '' } : {};
   return (
     <textarea
       {...props}
       {...controlledProps}
-      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900"
-      rows={3}
+      className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900 ${className || ''}`}
+      rows={rows ?? 3}
     />
   );
 };

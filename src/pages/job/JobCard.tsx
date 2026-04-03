@@ -110,18 +110,27 @@ const JobCard: React.FC<{
     const handleCheckIn = () => {
       // 💡 ตรวจสอบให้ชัวร์ว่าข้อมูลใน job ใช้คำว่า remark หรือ remarks
       // ผมทำตัวแปรมารองรับไว้ให้ทั้งสองแบบครับ
-      const currentRemark = job.remarks || (job as any).remark;
+      const currentRemark = job.remarks || (job as any).remark || '';
+      const operationDetails = (job as any).operation_details || '';
+      const hasInfo = operationDetails.trim() || currentRemark.trim();
 
-      if (currentRemark && currentRemark.trim() !== "") {
+      if (hasInfo) {
+        const sections: string[] = [];
+        if (operationDetails.trim()) {
+          sections.push(`<div class="text-left mb-3"><div class="text-sm font-semibold text-slate-600 mb-1">รายละเอียดการปฏิบัติงาน</div><div class="text-sm text-slate-800 bg-slate-50 rounded-lg p-3 border border-slate-200">${operationDetails.replace(/\n/g, '<br>')}</div></div>`);
+        }
+        if (currentRemark.trim()) {
+          sections.push(`<div class="text-left"><div class="text-sm font-semibold text-slate-600 mb-1">หมายเหตุ / ข้อควรระวัง</div><div class="text-sm text-orange-800 bg-orange-50 rounded-lg p-3 border border-orange-200">${currentRemark.replace(/\n/g, '<br>')}</div></div>`);
+        }
+
         Swal.fire({
-          title: 'หมายเหตุการปฏิบัติงาน',
-          text: currentRemark,
+          title: 'ข้อมูลก่อนเริ่มงาน',
+          html: sections.join(''),
           icon: 'warning',
           confirmButtonText: 'รับทราบและเริ่มงาน',
           confirmButtonColor: '#10b981',
           showCancelButton: true,
           cancelButtonText: 'ยกเลิก',
-          // เพิ่มบรรทัดนี้เพื่อให้สไตล์ปุ่มดูดีขึ้นตาม Tailwind
           customClass: {
             confirmButton: 'px-4 py-2 rounded-lg',
             cancelButton: 'px-4 py-2 rounded-lg'

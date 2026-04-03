@@ -117,6 +117,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const [workAreas, setWorkAreas] = useState<Partial<any>[]>([]);
   const [operationDetails, setOperationDetails] = useState('');
+  const [operationDetailsText, setOperationDetailsText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [serviceSystem, setServiceSystem] = useState<string>('');
@@ -211,7 +212,8 @@ export const JobForm: React.FC<JobFormProps> = ({
         }
 
         setSelectedVehicleId(getSafeId(jobToEdit.vehicle_id) || getSafeId(jobToEdit.vehicle) || '');
-        setOperationDetails(jobToEdit.remarks || jobToEdit.operation_details || '');
+        setOperationDetails(jobToEdit.remarks || jobToEdit.remark || '');
+        setOperationDetailsText(jobToEdit.operation_details || '');
         setServiceSystem(jobToEdit.service_system || '');
 
         let leadId = '';
@@ -796,6 +798,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       end_date: new Date(endDateTime),
       service_system: serviceSystem,
       remark: operationDetails,
+      operation_details: operationDetailsText,
       vehicle_id: selectedVehicleId,
       status: finalStatus,
       work_areas: workAreas,
@@ -1120,14 +1123,18 @@ export const JobForm: React.FC<JobFormProps> = ({
 
         {/* STEP 1: Service Details */}
         <div className={currentStep === 1 ? 'block animate-fadeIn' : 'hidden'}>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
+              <Textarea id="operation-details" name="operationDetails" value={operationDetailsText} onChange={(e) => setOperationDetailsText(e.target.value)} placeholder="รายละเอียดขั้นตอนการปฏิบัติงาน เช่น วิธีการดำเนินงาน สารเคมีที่ใช้ ฯลฯ" rows={3} className="bg-slate-50 focus:bg-white transition-colors" />
+            </FormField>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-4">
                 <SearchableSelect label="อ้างอิง (ใบประเมิน/สัญญา)" options={filteredReferences} value={selectedReference} onChange={handleReferenceChange} onSearchChange={setReferenceSearch} placeholder={selectedCustomerId ? 'เลือกรายการอ้างอิง...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
                 <SearchableSelect label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)" options={filteredInvoices} value={selectedInvoiceId} onChange={handleInvoiceChange} onSearchChange={setInvoiceSearch} placeholder={selectedCustomerId ? 'เลือกใบแจ้งหนี้...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
               </div>
-              <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
-                <Textarea id="operation-details" name="operationDetails" value={operationDetails} onChange={(e) => setOperationDetails(e.target.value)} placeholder="รายละเอียดจากใบประเมิน/สัญญาจะแสดงที่นี่ สามารถเพิ่มหมายเหตุเพิ่มเติมได้" rows={4} className="bg-slate-50 focus:bg-white transition-colors h-full" />
+              <FormField label="หมายเหตุ หรือข้อควรระวัง" htmlFor="remark" className="flex flex-col h-full">
+                <Textarea id="remark" name="remark" value={operationDetails} onChange={(e) => setOperationDetails(e.target.value)} placeholder="หมายเหตุเพิ่มเติม หรือข้อควรระวัง" className="bg-slate-50 focus:bg-white transition-colors flex-1" />
               </FormField>
             </div>
 

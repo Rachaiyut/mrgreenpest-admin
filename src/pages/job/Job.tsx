@@ -261,6 +261,7 @@ const Job: React.FC<JobProps> = ({
               vehicle_id: warehouse.id,
               service_report: job.service_report || reportsData.find((r) => r.job_id === job.id),
               remarks: job.remark,
+              operation_details: job.operation_details,
               invoice_id: job.invoice_id,
               invoice: job.invoice,
             } as any;
@@ -318,6 +319,7 @@ const Job: React.FC<JobProps> = ({
             status: JobStatus.Planned,
             vehicle_id: null,
             remarks: job.remark,
+            operation_details: job.operation_details,
             invoice_id: job.invoice_id,
             invoice: job.invoice,
           } as any;
