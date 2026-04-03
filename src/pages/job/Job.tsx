@@ -36,7 +36,7 @@ import { IssueSummaryModal } from '../../components/features/inventory/issue-sum
 // ===== Components (Common) =====
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
-import { StatusBadge } from '../../components/common/StatusBadge';
+import { JobStatusLabel } from '@/src/types/enums/job';
 import { Select, Input, Button } from '../../components/common/FormControls';
 
 // ===== Local Components =====
@@ -1692,7 +1692,19 @@ const Job: React.FC<JobProps> = ({
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <StatusBadge status={job.api_status || job.status} />
+                            {(() => {
+                              const key = String(job.api_status || job.status || '').toUpperCase();
+                              const label = JobStatusLabel[key] || key;
+                              const colorMap: Record<string, string> = {
+                                UNASSIGNED: 'bg-amber-100 text-amber-700',
+                                PENDING: 'bg-yellow-100 text-yellow-700',
+                                IN_PROGRESS: 'bg-blue-100 text-blue-700',
+                                COMPLETE: 'bg-green-100 text-green-700',
+                                CANCELLED: 'bg-red-100 text-red-700',
+                              };
+                              const color = colorMap[key] || 'bg-slate-100 text-slate-600';
+                              return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>{label}</span>;
+                            })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <Button

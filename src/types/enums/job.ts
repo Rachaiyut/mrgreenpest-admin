@@ -23,3 +23,12 @@ export enum JobMainStatus {
   CANCELLED = 'CANCELLED',
   FAILED = 'FAILED',
 }
+
+export const JobStatusLabel: Record<string, string> = {
+  [JobMainStatus.UNASSIGNED]: 'รอจัดคิว',
+  [JobMainStatus.PENDING]: 'รอเข้าดำเนินการ',
+  [JobMainStatus.IN_PROGRESS]: 'ระหว่างดำเนินการ',
+  [JobMainStatus.COMPLETE]: 'แล้วเสร็จ',
+  [JobMainStatus.CANCELLED]: 'ยกเลิก',
+  [JobMainStatus.FAILED]: 'ล้มเหลว',
+};

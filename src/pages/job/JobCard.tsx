@@ -5,7 +5,8 @@ import { useMemo } from "react";
 import { FieldJob, JobStatus, User } from "@/src/types";
 
 // ===== Components =====
-import { StatusBadge, Button } from "@/src/components/common";
+import { Button } from "@/src/components/common";
+import { JobStatusLabel } from '@/src/types/enums/job';
 
 // ===== Utils =====
 import { formatThaiDate } from "@/src/utils/date";
@@ -201,7 +202,19 @@ const JobCard: React.FC<{
             </Button>
           </div>
           <div className="mt-2">
-            <StatusBadge status={job.api_status} />
+            {(() => {
+              const key = String(job.api_status || '').toUpperCase();
+              const label = JobStatusLabel[key] || key;
+              const colorMap: Record<string, string> = {
+                UNASSIGNED: 'bg-amber-100 text-amber-700',
+                PENDING: 'bg-yellow-100 text-yellow-700',
+                IN_PROGRESS: 'bg-blue-100 text-blue-700',
+                COMPLETE: 'bg-green-100 text-green-700',
+                CANCELLED: 'bg-red-100 text-red-700',
+              };
+              const color = colorMap[key] || 'bg-slate-100 text-slate-600';
+              return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>{label}</span>;
+            })()}
           </div>
         </div>
 
