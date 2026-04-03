@@ -262,7 +262,7 @@ const DailyClosure: React.FC = () => {
 
                 const statusConfig = isClosed
                   ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน' }
-                  : { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังทำ' };
+                  : { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังดำเนินการ' };
 
                 return (
                   <button
@@ -354,8 +354,7 @@ const DailyClosure: React.FC = () => {
               className="w-auto"
             >
               <option value="">สถานะทั้งหมด</option>
-              <option value="NOT_STARTED">ยังไม่เริ่ม</option>
-              <option value="OPEN">เปิดอยู่</option>
+              <option value="OPEN">กำลังดำเนินการ</option>
               <option value="CLOSED">จบงาน</option>
             </Select>
           </div>
@@ -427,18 +426,26 @@ const DailyClosure: React.FC = () => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
                       const allComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
+                      const hasInProgress = (item.in_progress_jobs || 0) > 0;
+                      const allCancelled = item.total_jobs > 0 && (item.cancelled_jobs || 0) >= item.total_jobs;
                       const derivedStatus = item.closure_status === 'CLOSED'
                         ? 'CLOSED'
-                        : allComplete && item.has_issue_summary
-                          ? 'READY_CLOSE'
+                        : allCancelled
+                          ? 'CANCELLED'
                           : allComplete && !item.has_issue_summary
                             ? 'WAITING_CLEAR'
-                            : 'OPEN';
+                            : allComplete
+                              ? 'COMPLETED'
+                              : hasInProgress
+                                ? 'IN_PROGRESS'
+                                : 'PENDING';
                       const statusConfig: Record<string, { label: string; className: string }> = {
-                        CLOSED: { label: 'จบงาน', className: 'bg-green-100 text-green-800 border-green-200' },
+                        CLOSED: { label: 'จบงาน', className: 'bg-slate-100 text-slate-800 border-slate-200' },
+                        COMPLETED: { label: 'แล้วเสร็จ', className: 'bg-green-100 text-green-800 border-green-200' },
                         WAITING_CLEAR: { label: 'รอเคลียค่าใช้จ่ายและสารเคมี', className: 'bg-orange-100 text-orange-800 border-orange-200' },
-                        READY_CLOSE: { label: 'รอจบงาน', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-                        OPEN: { label: 'ระหว่างดำเนินการ', className: 'bg-amber-100 text-amber-800 border-amber-200' },
+                        IN_PROGRESS: { label: 'ระหว่างดำเนินการ', className: 'bg-blue-100 text-blue-800 border-blue-200' },
+                        PENDING: { label: 'รอเข้าดำเนินการ', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+                        CANCELLED: { label: 'ยกเลิก', className: 'bg-red-100 text-red-800 border-red-200' },
                       };
                       const badge = statusConfig[derivedStatus] || statusConfig.OPEN;
 
@@ -485,7 +492,7 @@ const DailyClosure: React.FC = () => {
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badge.className}`}>
                                 {badge.label}
                               </span>
-                              {derivedStatus === 'READY_CLOSE' && item.closure_id && (
+                              {derivedStatus === 'COMPLETED' && item.closure_id && (
                                 <button
                                   onClick={async () => {
                                     try {
