@@ -486,11 +486,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     if (mode !== 'create' && !fetchedQuotation) return;
 
     // Priority: fetchedQuotation.quotation_areas > activeData.quotation_areas > assessment_areas
-    const source = (fetchedQuotation?.quotation_areas && fetchedQuotation.quotation_areas.length > 0)
+    const assessmentAreas = selectedAssessment?.assessment_areas || [];
+    let source = (fetchedQuotation?.quotation_areas && fetchedQuotation.quotation_areas.length > 0)
       ? fetchedQuotation.quotation_areas
       : (activeData?.quotation_areas && activeData.quotation_areas.length > 0)
         ? activeData.quotation_areas
-        : selectedAssessment?.assessment_areas;
+        : assessmentAreas;
+
     if (source && source.length > 0) {
       const sortedSource = [...source].sort((a: any, b: any) =>
         new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
@@ -529,6 +531,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             return { category_id: catId, name: cs.category?.name || cs.name || '' };
           }),
           items: a.items || [],
+          site_image_id: a.site_image_id || null,
+          site_image_url: a.site_image_url || null,
         };
       }));
       setHasInitializedAreas(true);

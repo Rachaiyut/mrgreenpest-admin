@@ -1356,7 +1356,7 @@ const Job: React.FC<JobProps> = ({
                     >
                       <option value="all">รถทั้งหมด</option>
                       {allVehicles.map((v: any) => (
-                        <option key={v.id} value={v.id}>
+                        <option key={v.id} value={v.warehouse_id || v.id}>
                           {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
                         </option>
                       ))}
