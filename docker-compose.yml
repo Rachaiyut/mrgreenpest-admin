@@ -7,15 +7,15 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        - API_BASE_URL=https://mrgreenpest.knacx.dev/api
+        - API_BASE_URL=https://mrgreenpest.knacx.uat/api
     image: mrgreenpest-dev:latest
-    container_name: mrgreenpest-dev
+    container_name: mrgreenpest-uat
     ports:
       - '4500:80'
     restart: unless-stopped
     networks:
-      - mrgreenpest-dev-network
+      - mrgreenpest-uat-network
 
 networks:
-  mrgreenpest-dev-network:
+  mrgreenpest-uat-network:
     driver: bridge
