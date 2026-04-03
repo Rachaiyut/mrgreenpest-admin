@@ -41,6 +41,7 @@ interface ServiceReportModalProps {
   contracts: any[];
   products: Product[];
   jobs?: FieldJob[];
+  readOnly?: boolean;
 }
 
 const ALL_SERVICE_TYPES = [
@@ -86,6 +87,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   contracts,
   products = [],
   jobs = [],
+  readOnly = false,
 }) => {
   const [reportState, setReportState] = useState<Partial<ServiceReport & { 
     payment_amount?: string | number;
@@ -715,10 +717,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     e.target.value = '';
   };
 
-  const title =
-    finalStatus === JobStatus.Cancelled
+  const title = readOnly
+    ? 'รายงานบริการ'
+    : finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
-      : `บันทึกรายงานบริการ`;
+      : 'บันทึกรายงานบริการ';
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
@@ -1318,42 +1321,54 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       title={title}
       size="5xl"
       footer={
-        <div className="flex justify-between w-full">
-          <div className="text-sm text-slate-500 flex items-center">
-            * กรุณาตรวจสอบข้อมูลก่อนบันทึก
-          </div>
-          <div className="flex gap-2">
+        readOnly ? (
+          <div className="flex justify-end w-full">
             <button
               type="button"
               onClick={onClose}
               className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 transition-all"
             >
-              ยกเลิก
+              ปิด
             </button>
-            <button
-              type="submit"
-              form="service-report-form"
-              className="py-2.5 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-            >
-              {submitButtonText}
-            </button>
-            {isAdmin && isPending && (
+          </div>
+        ) : (
+          <div className="flex justify-between w-full">
+            <div className="text-sm text-slate-500 flex items-center">
+              * กรุณาตรวจสอบข้อมูลก่อนบันทึก
+            </div>
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={handleApprove}
-                className="py-2.5 px-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                onClick={onClose}
+                className="py-2.5 px-5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold border border-slate-300 transition-all"
               >
-                อนุมัติรายงาน
+                ยกเลิก
               </button>
-            )}
+              <button
+                type="submit"
+                form="service-report-form"
+                className="py-2.5 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+              >
+                {submitButtonText}
+              </button>
+              {isAdmin && isPending && (
+                <button
+                  type="button"
+                  onClick={handleApprove}
+                  className="py-2.5 px-5 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                >
+                  อนุมัติรายงาน
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )
       }
     >
       <form
         id="service-report-form"
         onSubmit={handleSubmit}
-        className="space-y-6"
+        className={`space-y-6 ${readOnly ? 'pointer-events-none opacity-80' : ''}`}
       >
         {/* Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

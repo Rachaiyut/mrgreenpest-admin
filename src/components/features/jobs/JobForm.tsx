@@ -1124,17 +1124,17 @@ export const JobForm: React.FC<JobFormProps> = ({
         {/* STEP 1: Service Details */}
         <div className={currentStep === 1 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-4">
-            <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
-              <Textarea id="operation-details" name="operationDetails" value={operationDetailsText} onChange={(e) => setOperationDetailsText(e.target.value)} placeholder="รายละเอียดขั้นตอนการปฏิบัติงาน เช่น วิธีการดำเนินงาน สารเคมีที่ใช้ ฯลฯ" rows={3} className="bg-slate-50 focus:bg-white transition-colors" />
-            </FormField>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SearchableSelect label="อ้างอิง (ใบประเมิน/สัญญา)" options={filteredReferences} value={selectedReference} onChange={handleReferenceChange} onSearchChange={setReferenceSearch} placeholder={selectedCustomerId ? 'เลือกรายการอ้างอิง...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
+              <SearchableSelect label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)" options={filteredInvoices} value={selectedInvoiceId} onChange={handleInvoiceChange} onSearchChange={setInvoiceSearch} placeholder={selectedCustomerId ? 'เลือกใบแจ้งหนี้...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <SearchableSelect label="อ้างอิง (ใบประเมิน/สัญญา)" options={filteredReferences} value={selectedReference} onChange={handleReferenceChange} onSearchChange={setReferenceSearch} placeholder={selectedCustomerId ? 'เลือกรายการอ้างอิง...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
-                <SearchableSelect label="อ้างอิงใบแจ้งหนี้ (ถ้ามี)" options={filteredInvoices} value={selectedInvoiceId} onChange={handleInvoiceChange} onSearchChange={setInvoiceSearch} placeholder={selectedCustomerId ? 'เลือกใบแจ้งหนี้...' : 'กรุณาเลือกลูกค้าก่อน'} className={!selectedCustomerId ? 'opacity-50 pointer-events-none' : ''} />
-              </div>
-              <FormField label="หมายเหตุ หรือข้อควรระวัง" htmlFor="remark" className="flex flex-col h-full">
-                <Textarea id="remark" name="remark" value={operationDetails} onChange={(e) => setOperationDetails(e.target.value)} placeholder="หมายเหตุเพิ่มเติม หรือข้อควรระวัง" className="bg-slate-50 focus:bg-white transition-colors flex-1" />
+              <FormField label="รายละเอียดการปฏิบัติงาน" htmlFor="operation-details">
+                <Textarea id="operation-details" name="operationDetails" value={operationDetailsText} onChange={(e) => setOperationDetailsText(e.target.value)} placeholder="รายละเอียดขั้นตอนการปฏิบัติงาน เช่น วิธีการดำเนินงาน สารเคมีที่ใช้ ฯลฯ" rows={3} className="bg-slate-50 focus:bg-white transition-colors" />
+              </FormField>
+              <FormField label="หมายเหตุ หรือข้อควรระวัง" htmlFor="remark">
+                <Textarea id="remark" name="remark" value={operationDetails} onChange={(e) => setOperationDetails(e.target.value)} placeholder="หมายเหตุเพิ่มเติม หรือข้อควรระวัง" rows={3} className="bg-slate-50 focus:bg-white transition-colors" />
               </FormField>
             </div>
 
