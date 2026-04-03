@@ -657,6 +657,24 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 {errors?.[`area_${index}_category_services`] && (
                   <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_category_services`]}</p>
                 )}
+                {(area.category_services || []).some(
+                  (s) => {
+                    const cat = categories.find((c) => c.id === s.category_id);
+                    return cat?.name === 'อื่นๆ';
+                  }
+                ) && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="ระบุประเภทบริการอื่นๆ..."
+                      value={(area as Record<string, unknown>).category_other as string || ''}
+                      onChange={(e) =>
+                        onAreaChange(index, { ...area, category_other: e.target.value } as typeof area)
+                      }
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Measurement Selection */}

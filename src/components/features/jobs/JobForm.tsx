@@ -651,6 +651,7 @@ export const JobForm: React.FC<JobFormProps> = ({
             building_type_other: area.building_type_other || '',
             service_system: area.service_system,
             service_system_other: area.service_system_other || '',
+            category_other: area.category_other || '',
             package_price: area.package_price ? Number(area.package_price) : undefined,
             total_price: area.total_price ? Number(area.total_price) : undefined,
             items: area.items || [],
@@ -721,6 +722,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               building_type_other: area.building_type_other || '',
               service_system: area.service_system,
               service_system_other: area.service_system_other || '',
+            category_other: area.category_other || '',
               package_price: area.package_price ? Number(area.package_price) : undefined,
               total_price: area.total_price ? Number(area.total_price) : undefined,
               items: area.items || [],
@@ -836,6 +838,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               building_type_other: area.building_type_other || undefined,
               service_system: area.service_system,
               service_system_other: area.service_system_other || undefined,
+              category_other: area.category_other || undefined,
               area_size: area.area_size,
 
               package_price_id: area.package_price_id,
