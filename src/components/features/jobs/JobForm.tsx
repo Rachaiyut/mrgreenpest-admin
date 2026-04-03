@@ -104,11 +104,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [assessmentSiteImageUrl, setAssessmentSiteImageUrl] = useState<string | null>(null);
-  const [siteImage, setSiteImage] = useState<File | null>(null);
-  const [siteImagePreview, setSiteImagePreview] = useState<string | null>(null);
-  const [existingSiteImageId, setExistingSiteImageId] = useState<string | null>(null);
-  const [assessmentIdForImage, setAssessmentIdForImage] = useState<string | null>(null);
+  // Per-area site images are handled inside WorkAreaForm + upload on save
   const [packages, setPackages] = useState<Package[]>([]);
 
   const [leadTechnicianId, setLeadTechnicianId] = useState('');
@@ -249,13 +245,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                if (realAssessment.package_id) {
                  globalPackageId = realAssessment.package_id;
                }
-               // Load site image from assessment
-               if (realAssessment.site_image_url) {
-                 setAssessmentSiteImageUrl(realAssessment.site_image_url);
-                 setSiteImagePreview(realAssessment.site_image_url);
-                 setExistingSiteImageId(realAssessment.site_image_id || null);
-                 setAssessmentIdForImage(targetAssessmentId);
-               }
+               // site_image is now per-area, handled in WorkAreaForm
             }
           } catch (err) {
             console.error('Error fetching full assessment data:', err);
@@ -316,12 +306,44 @@ export const JobForm: React.FC<JobFormProps> = ({
             package_id: recoveredPkg?.id || undefined,
             package_price_id: recoveredPriceId,
             package_type: recoveredType as any,
-            service_package: recoveredPkg?.name || wa.service_package || ''
+            service_package: recoveredPkg?.name || wa.service_package || '',
+            site_image_id: wa.site_image_id || null,
+            site_image_url: wa.site_image_url || null,
           };
         };
 
         if (Array.isArray(rawAreas) && rawAreas.length > 0) {
-          setWorkAreas(rawAreas.map((area: any, idx: number) => enrichArea(area, idx)));
+          const enrichedAreas = rawAreas.map((area: any, idx: number) => enrichArea(area, idx));
+          setWorkAreas(enrichedAreas);
+
+          // Populate site_image_url for areas that have site_image_id but no URL
+          const areasNeedingUrl = enrichedAreas
+            .map((area: Record<string, unknown>, idx: number) => ({ area, idx }))
+            .filter(({ area }) => area.site_image_id && !area.site_image_url);
+
+          if (areasNeedingUrl.length > 0) {
+            Promise.all(
+              areasNeedingUrl.map(async ({ area, idx }) => {
+                try {
+                  const result = await StorageApi.getSignedUrl(area.site_image_id as string);
+                  const url = (result as Record<string, unknown>)?.url || (result as Record<string, unknown>)?.data && ((result as Record<string, unknown>).data as Record<string, unknown>)?.url;
+                  return { idx, url: url as string };
+                } catch {
+                  return { idx, url: null };
+                }
+              })
+            ).then((results) => {
+              setWorkAreas((prev) => {
+                const updated = [...prev];
+                for (const { idx, url } of results) {
+                  if (url && updated[idx]) {
+                    updated[idx] = { ...updated[idx], site_image_url: url };
+                  }
+                }
+                return updated;
+              });
+            });
+          }
         } else {
           setWorkAreas([]);
         }
@@ -591,11 +613,6 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const handleReferenceChange = async (reference: string) => {
     setSelectedReference(reference);
-    setAssessmentSiteImageUrl(null);
-    setSiteImage(null);
-    setSiteImagePreview(null);
-    setExistingSiteImageId(null);
-    setAssessmentIdForImage(null);
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
@@ -644,6 +661,27 @@ export const JobForm: React.FC<JobFormProps> = ({
           };
         });
         setWorkAreas(areas);
+
+        // Populate site_image_url for areas that have site_image_id but no URL
+        const needUrl = areas.filter((a: Record<string, unknown>) => a.site_image_id && !a.site_image_url);
+        if (needUrl.length > 0) {
+          Promise.all(
+            needUrl.map(async (a: Record<string, unknown>) => {
+              try {
+                const result = await StorageApi.getSignedUrl(a.site_image_id as string);
+                const url = (result as Record<string, unknown>)?.url || ((result as Record<string, unknown>)?.data as Record<string, unknown>)?.url;
+                return { id: a.id, url };
+              } catch {
+                return { id: a.id, url: null };
+              }
+            })
+          ).then((results) => {
+            setWorkAreas((prev) => prev.map((p) => {
+              const match = results.find((r) => r.id === p.id);
+              return match?.url ? { ...p, site_image_url: match.url as string } : p;
+            }));
+          });
+        }
       }
     } else if (reference.startsWith('cnt-')) {
       const contractId = reference.replace('cnt-', '');
@@ -824,34 +862,45 @@ export const JobForm: React.FC<JobFormProps> = ({
 
         await onSubmitJob(jobData, jobData.assessment_id);
 
-        // Upload/replace site image if changed
-        if (siteImage && assessmentIdForImage) {
+        // Upload/remove per-area site images
+        if (jobData.assessment_id) {
           try {
-            if (existingSiteImageId) {
-              await StorageApi.remove(existingSiteImageId).catch(() => {});
-            }
-            const uploadResult = await StorageApi.upload({
-              file: siteImage,
-              path: `assessments/${assessmentIdForImage}`,
-              entity_type: 'assessment',
-              entity_id: assessmentIdForImage,
-              type: 'site_image',
-              visibility: 'private',
-            });
-            const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
-            if (storageId) {
-              await AssessmentApi.update(assessmentIdForImage, { site_image_id: storageId, updated_by: '' } as any);
+            const savedRes = await AssessmentApi.getById(jobData.assessment_id) as unknown as Record<string, unknown>;
+            const savedAssessment = (savedRes?.data || savedRes) as Record<string, unknown>;
+            const savedAreas = (savedAssessment?.assessment_areas || []) as Array<Record<string, unknown>>;
+
+            for (let i = 0; i < workAreas.length; i++) {
+              const area = workAreas[i] as unknown as Record<string, unknown>;
+              const savedArea = savedAreas[i];
+              if (!savedArea) continue;
+              const areaId = savedArea.id as string;
+
+              if (area.siteImageFile) {
+                // Delete old image if exists
+                if (savedArea.site_image_id) {
+                  await StorageApi.remove(savedArea.site_image_id as string).catch(() => {});
+                }
+                const uploadResult = await StorageApi.upload({
+                  file: area.siteImageFile as File,
+                  path: `assessments/${jobData.assessment_id}/areas/${areaId}`,
+                  entity_type: 'assessment_area',
+                  entity_id: areaId,
+                  type: 'site_image',
+                  visibility: 'private',
+                });
+                const resultData = uploadResult as unknown as Record<string, unknown>;
+                const storageId = (resultData?.data as Record<string, unknown>)?.id || resultData?.id;
+                if (storageId) {
+                  await AssessmentApi.updateArea(areaId, { site_image_id: storageId }).catch(() => {});
+                }
+              } else if (!area.siteImagePreview && !area.site_image_url && savedArea.site_image_id) {
+                // User removed image
+                await StorageApi.remove(savedArea.site_image_id as string).catch(() => {});
+                await AssessmentApi.updateArea(areaId, { site_image_id: null }).catch(() => {});
+              }
             }
           } catch (uploadErr) {
-            console.error('Image upload failed:', uploadErr);
-          }
-        } else if (!siteImagePreview && existingSiteImageId && assessmentIdForImage) {
-          // User removed image
-          try {
-            await StorageApi.remove(existingSiteImageId).catch(() => {});
-            await AssessmentApi.update(assessmentIdForImage, { site_image_id: null, updated_by: '' } as any);
-          } catch (removeErr) {
-            console.error('Image remove failed:', removeErr);
+            console.error('Area image upload failed:', uploadErr);
           }
         }
 
