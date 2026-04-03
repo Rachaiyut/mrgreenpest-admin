@@ -246,7 +246,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         {/* Operation Details / Work Areas */}
         {((job.work_areas && job.work_areas.length > 0) || job.operation_details) && (
           <div className="rounded-xl border border-slate-200 p-5">
-            <SectionHeader icon={<MapPinIcon />} title="รายละเอียดการปฏิบัติงาน" />
+            <SectionHeader icon={<MapPinIcon />} title="หมายเหตุ หรือข้อควรระวัง" />
 
             {job.operation_details && (
               <div className="mb-4">
