@@ -99,7 +99,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       try {
         const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
           WarehouseApi.getWarehouses(),
-          SupplierApi.getSuppliers({} as any),
+          SupplierApi.getSuppliers({}),
           ProductApi.getProducts(),
         ]);
         setWarehouses(warehousesRes.data || []);
@@ -203,7 +203,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
       const found = receipts.find((r) => r.id === receiptId);
-      setSelectedReceipt((found as any) || null);
+      setSelectedReceipt(found || null);
       setOpenDropdownId(receiptId);
       setDropdownPosition({
         top: buttonRect.bottom + window.scrollY,
@@ -225,7 +225,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         ...receiptToUpdate,
         status: approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
         remarks: remarks,
-      } as any);
+      } as GoodsReceiveType);
     }
     setIsApprovalModalOpen(false);
     setOpenDropdownId(null);
@@ -241,7 +241,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         status: 'CANCELLED',
         remarks: 'ยกเลิกโดยผู้ใช้',
         updated_by: 'ผู้ดูแลระบบ',
-      } as any);
+      } as GoodsReceiveType);
     }
     setOpenDropdownId(null);
   };
@@ -403,14 +403,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                       </td>
                       <td
                         className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:text-primary-dark cursor-pointer transition-colors"
-                        onClick={() => handleViewDetails(receipt as any)}
+                        onClick={() => handleViewDetails(receipt)}
                       >
                         {receipt.code || receipt.id.substring(0, 8)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{receipt.receipt_no || '-'}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">{formatThaiDate(receipt.created_at)}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                        {(receipt as any).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
+                        {(receipt as unknown as Record<string, { name?: string }>).warehouse?.name || warehouseMap[receipt.warehouse_id] || '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {receipt.supplier_id ? supplierMap[receipt.supplier_id] : '-'}
@@ -481,8 +481,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         <AddGoodsReceiptModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onCreateReceipt={handleCreate as any} 
-          receipts={receipts as any}
+          onCreateReceipt={handleCreate}
+          receipts={receipts}
           warehouses={warehouses}
           suppliers={suppliers}
           products={products}
@@ -499,7 +499,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
         action={approvalAction}
-        item={selectedReceipt as any}
+        item={selectedReceipt as never}
         onConfirm={handleConfirmApproval}
       />
     </>

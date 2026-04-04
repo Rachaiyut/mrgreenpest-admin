@@ -76,7 +76,7 @@ const Returns: React.FC<ReturnsProps> = ({
       new Map(
         users.map((u) => [
           u.id,
-          `${(u as any).first_name || (u as any).firstName} ${(u as any).last_name || (u as any).lastName}`,
+          `${u.first_name || ''} ${u.last_name || ''}`.trim(),
         ])
       ),
     [users]
@@ -91,7 +91,7 @@ const Returns: React.FC<ReturnsProps> = ({
     return reversed.filter(
       (item) =>
         item.id.toLowerCase().includes(lowercasedQuery) ||
-        formatThaiDate(item.created_at || (item as any).createdAt).includes(
+        formatThaiDate(item.created_at || '').includes(
           lowercasedQuery
         )
     );
@@ -189,7 +189,7 @@ const Returns: React.FC<ReturnsProps> = ({
     try {
       if (confirm('ยืนยันการไม่อนุมัติ?')) {
         await ProductReturnApi.update(returnItem.id, {
-          status: ProductReturnStatus.REJECTED as any,
+          status: ProductReturnStatus.REJECTED as ProductReturn['status'],
         });
         fetchData(['productReturns', 'warehouses']);
         setOpenDropdownId(null);
@@ -386,8 +386,8 @@ const Returns: React.FC<ReturnsProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {paginatedReturns.map((item, index) => {
                   const fromWarehouse =
-                    warehouseMap.get((item as any).vehicle_id) ||
-                    (item as any).vehicle_id;
+                    warehouseMap.get((item as unknown as Record<string, string>).vehicle_id) ||
+                    (item as unknown as Record<string, string>).vehicle_id;
                   const toWarehouse =
                     warehouseMap.get(item.warehouse_id) || item.warehouse_id;
 
@@ -404,7 +404,7 @@ const Returns: React.FC<ReturnsProps> = ({
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {formatThaiDate(
-                          item.created_at || (item as any).createdAt
+                          item.created_at || ''
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
@@ -417,11 +417,9 @@ const Returns: React.FC<ReturnsProps> = ({
                         {item.items?.length || 0}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                        {userMap.get(
-                          item.created_by || (item as any).createdBy
-                        ) ||
+                        {userMap.get(item.created_by || '') ||
                           item.created_by ||
-                          (item as any).createdBy}
+                          '-'}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {getStatusBadge(item.status)}
