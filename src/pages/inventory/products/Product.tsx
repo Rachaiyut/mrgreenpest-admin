@@ -134,14 +134,14 @@ const Product: React.FC = () => {
       if (modalMode === 'create') {
         if (type === CategoryType.SERVICE) {
           const res = await ProductServiceApi.create(data);
-          resultId = (res as any)?.data?.id || (res as any)?.id;
+          resultId = ((res as unknown as Record<string, Record<string, string>>)?.data?.id || (res as unknown as Record<string, string>)?.id);
         } else {
           const res = await ProductApi.createProduct(data);
-          resultId = (res as any)?.data?.id || (res as any)?.id;
+          resultId = ((res as unknown as Record<string, Record<string, string>>)?.data?.id || (res as unknown as Record<string, string>)?.id);
         }
       } else if (selectedProduct) {
         resultId = selectedProduct.id;
-        if ((selectedProduct as any)._type === 'SERVICE') {
+        if ((selectedProduct as unknown as Record<string, string>)._type === 'SERVICE') {
           await ProductServiceApi.update(selectedProduct.id, data);
         } else {
           await ProductApi.updateProduct(selectedProduct.id, data);
@@ -164,7 +164,7 @@ const Product: React.FC = () => {
             type: 'image',
             visibility: 'private',
           });
-          const storageId = (uploadRes as any)?.data?.id || (uploadRes as any)?.id;
+          const storageId = ((uploadRes as unknown as Record<string, Record<string, string>>)?.data?.id || (uploadRes as unknown as Record<string, string>)?.id);
           if (storageId) {
             if (type === CategoryType.SERVICE) {
               await ProductServiceApi.update(resultId, { image_id: storageId });
@@ -194,7 +194,7 @@ const Product: React.FC = () => {
   const onDeleteProduct = async (id: string) => {
     try {
       const item = products.find((p) => p.id === id);
-      if ((item as any)?._type === 'SERVICE') {
+      if ((item as unknown as Record<string, string>)?._type === 'SERVICE') {
         await ProductServiceApi.remove(id);
       } else {
         await ProductApi.deleteProduct(id);
@@ -473,7 +473,7 @@ const Product: React.FC = () => {
                     {selectedType === 'PRODUCT' && (
                     <>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {(product as any).stock_quantity ?? 0}
+                      {(product as unknown as Record<string, number>).stock_quantity ?? 0}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {product.min_stock}

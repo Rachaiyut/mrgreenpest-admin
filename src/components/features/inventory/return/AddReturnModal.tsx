@@ -130,13 +130,14 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         warehouses
           .filter(
             (w) =>
-              (w as any).type === 'รถ' ||
+              (w as unknown as Record<string, string>).type === 'รถ' ||
               w.type === InventoryWarehouseType.VEHICLE
           )
           .map((w) => {
+            const wExt = w as unknown as Record<string, Record<string, string>>;
             const licensePlate =
-              (w as any).vehicle?.vehicle_registration ||
-              (w as any).licensePlate ||
+              wExt.vehicle?.vehicle_registration ||
+              (wExt.licensePlate as unknown as string) ||
               '';
             return {
               value: w.id,
@@ -148,7 +149,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
         warehouses
           .filter(
             (w) =>
-              (w as any).type === 'คลัง' ||
+              (w as unknown as Record<string, string>).type === 'คลัง' ||
               w.type === InventoryWarehouseType.MAIN ||
               w.type === InventoryWarehouseType.SUB
           )
@@ -259,9 +260,9 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
             unitName = product.unit;
           } else if (
             typeof product.unit === 'object' &&
-            (product.unit as any).name
+            (product.unit as unknown as Record<string, string>).name
           ) {
-            unitName = (product.unit as any).name;
+            unitName = (product.unit as unknown as Record<string, string>).name;
           }
         }
 

@@ -48,8 +48,9 @@ const JobCard: React.FC<{
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
-    const currentUserId = (currentUser as any)?.id as string | undefined;
-    const currentUserRole = String((currentUser as any)?.role?.name || (currentUser as any)?.role || '').toUpperCase();
+    const currentUserId = currentUser?.id as string | undefined;
+    const roleVal = currentUser?.role;
+    const currentUserRole = String(typeof roleVal === 'object' ? (roleVal as Record<string, string>)?.name : roleVal || '').toUpperCase();
     const isLeadTechOrTech = currentUserRole === 'LEAD_TECH' || currentUserRole === 'TECH';
     const isAssignedToCurrentUser = useMemo(
       () =>
@@ -111,8 +112,8 @@ const JobCard: React.FC<{
     const handleCheckIn = () => {
       // 💡 ตรวจสอบให้ชัวร์ว่าข้อมูลใน job ใช้คำว่า remark หรือ remarks
       // ผมทำตัวแปรมารองรับไว้ให้ทั้งสองแบบครับ
-      const currentRemark = job.remarks || (job as any).remark || '';
-      const operationDetails = (job as any).operation_details || '';
+      const currentRemark = job.remarks || (job as unknown as Record<string, string>).remark || '';
+      const operationDetails = (job as unknown as Record<string, string>).operation_details || '';
       const hasInfo = operationDetails.trim() || currentRemark.trim();
 
       if (hasInfo) {

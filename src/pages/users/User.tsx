@@ -51,11 +51,11 @@ const RoleBadge: React.FC<{
   if (typeof role === 'string') {
     roleNameRaw = role;
   } else if (typeof role === 'object' && role !== null) {
-    const r = role as any;
+    const r = role as Record<string, unknown>;
     if (typeof r.name === 'string') {
       roleNameRaw = r.name;
     } else if (typeof r.name === 'object' && r.name !== null) {
-      roleNameRaw = (r.name as any).name || JSON.stringify(r.name);
+      roleNameRaw = (r.name as Record<string, string>).name || JSON.stringify(r.name);
     } else {
       roleNameRaw = JSON.stringify(role);
     }
@@ -779,14 +779,14 @@ const Users: React.FC<UsersProps> = ({
         onClose={() => setIsAddUserModalOpen(false)}
         onCreateUser={handleCreateUser}
         onUpdateUser={handleUpdateUser}
-        roles={roles as any}
+        roles={roles as { id: string; name: string }[]}
       />
       <EditUserModal
         isOpen={isEditUserModalOpen}
         onClose={() => setIsEditUserModalOpen(false)}
         user={userToEdit}
         onUpdateUser={handleUpdateUser}
-        roles={roles as any}
+        roles={roles as { id: string; name: string }[]}
       />
       <UserDetailsModal
         isOpen={isDetailsModalOpen}

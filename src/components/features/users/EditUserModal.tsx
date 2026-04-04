@@ -33,17 +33,17 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     if (user) {
       setFormData({
         ...user,
-        first_name: (user as any).first_name || user.name.split(' ')[0] || '',
+        first_name: user.first_name || user.name.split(' ')[0] || '',
         last_name:
-          (user as any).last_name ||
+          user.last_name ||
           user.name.split(' ').slice(1).join(' ') ||
           '',
-        nickname: (user as any).nick_name || (user as any).nickname || '',
-        role_id: typeof user.role === 'object' ? (user.role as any).id : '',
+        nickname: user.nick_name || '',
+        role_id: typeof user.role === 'object' ? (user.role as unknown as Record<string, string>).id : '',
         citizen_id: user.citizen_id,
       });
     
-      setImagePreview((user as any).avatarUrl || (user as any).url || (user as any).avatar_url || null);
+      setImagePreview(user.url || null);
       
       console.log("User Data in Modal:", user); 
     }
