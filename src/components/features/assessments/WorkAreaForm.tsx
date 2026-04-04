@@ -10,6 +10,7 @@ import {
 import {
   AssessmentWorkArea,
   AssessmentWorkAreaItem,
+  AssessmentWorkAreaCategory,
 } from '@/src/types/entity/assessment.interface';
 import { Package } from '@/src/types/entity/package.interface';
 import { Product } from '@/src/types/entity/product.interface';
@@ -106,7 +107,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (availableUnitOptions.length === 1) {
       setSelectedUnitId(availableUnitOptions[0].id);
     } else if (area.package_price_id && activePackage?.package_prices) {
-      const matched = (activePackage.package_prices as any[]).find((p) => p.id === area.package_price_id);
+      const matched = (activePackage.package_prices || []).find((p) => p.id === area.package_price_id);
       if (matched?.unit_id) setSelectedUnitId(matched.unit_id);
     } else if (availableUnitOptions.length > 1 && !selectedUnitId) {
       // Default: set ตาม measurementType ปัจจุบัน
@@ -120,7 +121,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
   const sortedConditions = useMemo(() => {
     if (!activePackage) return [];
-    let prices = [...(activePackage.package_prices || [])] as any[];
+    let prices = [...(activePackage.package_prices || [])];
     if (selectedUnitId) {
       prices = prices.filter((p) => p.unit_id === selectedUnitId);
     }
@@ -284,7 +285,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             ...area,
             package_price: undefined, // ✅ เปลี่ยนจาก 0 เป็น undefined
             package_price_id: undefined,
-            package_type: undefined as any,
+            package_type: undefined!,
             total_price: (area.items || []).reduce((sum, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
           });
         }
@@ -335,7 +336,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (name === 'area_size') {
       updatedArea[name] = value === '' ? undefined : parseFloat(value);
     } else {
-      (updatedArea as any)[name] = value;
+      (updatedArea as Record<string, unknown>)[name] = value;
     }
 
     onAreaChange(index, updatedArea);
@@ -379,7 +380,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
     const newCategories = exists
       ? currentCategories.filter((c) => c.category_id !== categoryId)
-      : [...currentCategories, { category_id: categoryId } as any];
+      : [...currentCategories, { category_id: categoryId } as AssessmentWorkAreaCategory];
 
     onAreaChange(index, { ...area, category_services: newCategories });
   };
@@ -391,10 +392,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         product_id: pid,
         quantity: 1,
         product_name: product?.name || '',
-        unit: (product as any)?.unit?.name || (product as any)?.unit?.symbol || '',
+        unit: (product as unknown as Record<string, Record<string, string>>)?.unit?.name || '',
         product_price: product?.cost_price ? Number(product.cost_price) : 0,
         total_price: product?.cost_price ? Number(product.cost_price) : 0,
-      } as any;
+      } as unknown as AssessmentWorkAreaItem;
     });
 
     const currentItems = [...(area.items || []), ...newItems];
@@ -458,7 +459,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   };
 
   const [measurementType, setMeasurementType] = useState<'sqm' | 'meter'>(
-    (area as any).measurement_unit === 'meter' ? 'meter' : 'sqm'
+    (area as unknown as Record<string, string>).measurement_unit === 'meter' ? 'meter' : 'sqm'
   );
 
   const handleMeasurementTypeChange = (type: 'sqm' | 'meter') => {
@@ -478,7 +479,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   };
 
   const displayIndex = useMemo(() => {
-    const idx = typeof index === 'number' ? index : parseInt(index as any, 10);
+    const idx = typeof index === 'number' ? index : parseInt(String(index), 10);
     return isNaN(idx) ? index : idx + 1;
   }, [index]);
 
@@ -624,7 +625,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <FormField label="ระบุระบบ" htmlFor={`serviceSystemOther-${index}`}>
                     <Input
                       name="service_system_other"
-                      value={(area as any).service_system_other || ''}
+                      value={(area as unknown as Record<string, string>).service_system_other || ''}
                       onChange={handleFieldChange}
                       placeholder="ระบุระบบที่ใช้บริการ"
                       required
@@ -728,7 +729,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         if (activePackageId !== pkgId) {
                           setOptimisticPackageId(pkgId);
                           onSelectPackage?.(pkgId);
-                          onAreaChange(index, { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any, total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0) });
+                          onAreaChange(index, { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined!, total_price: (area.items || []).reduce((sum: number, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0) });
                         }
                       }}
                       onPriceOptionChange={handlePriceOptionChange}
@@ -764,7 +765,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 }
                               />
                               <div className="font-semibold text-slate-800 text-sm">
-                                {condition.area_range.toLocaleString()} {(condition as any).unit?.name || selectedUnitName}
+                                {condition.area_range.toLocaleString()} {(condition as unknown as Record<string, Record<string, string>>).unit?.name || selectedUnitName}
                               </div>
                             </label>
                           ))}
@@ -810,7 +811,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         if (activePackageId !== pkgId) {
                           setOptimisticPackageId(pkgId);
                           onSelectPackage?.(pkgId);
-                          onAreaChange(index, { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any, total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0) });
+                          onAreaChange(index, { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined!, total_price: (area.items || []).reduce((sum: number, item) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0) });
                         }
                       }}
                       onPriceOptionChange={handlePriceOptionChange}
@@ -824,7 +825,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                           {sortedConditions.map((condition, idx) => (
                             <label key={condition.id || idx} className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}>
                               <input type="radio" name={`areaSize-${index}`} value={condition.area_range} className="sr-only" onChange={() => handleAreaSizeRadioChange(condition.area_range)} checked={area.area_size === condition.area_range} />
-                              <div className="font-semibold text-slate-800 text-sm">{condition.area_range.toLocaleString()} {(condition as any).unit?.name || 'เมตร'}</div>
+                              <div className="font-semibold text-slate-800 text-sm">{condition.area_range.toLocaleString()} {(condition as unknown as Record<string, Record<string, string>>).unit?.name || 'เมตร'}</div>
                             </label>
                           ))}
                         </div>
@@ -916,7 +917,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 />
                               </td>
                               <td className="p-1 text-slate-600">
-                                {(item as any).unit || product?.unit?.name || '-'}
+                                {(item as unknown as Record<string, string>).unit || product?.unit?.name || '-'}
                               </td>
                               <td className="p-1 w-32 text-right text-slate-800">
                                 ฿
@@ -1005,7 +1006,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         <div className="border border-slate-200 p-2 rounded-lg bg-white mb-4 mx-2">
           <div className="flex justify-between items-center mb-2">
             <h3 className="font-semibold text-slate-800">รูปภาพพื้นที่</h3>
-            {((area as any).site_image_url || (area as any).siteImagePreview) && (
+            {((area as unknown as Record<string, string>).site_image_url || (area as unknown as Record<string, string>).siteImagePreview) && (
               <button
                 type="button"
                 onClick={() => onAreaChange(index, {
@@ -1014,17 +1015,17 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   siteImageFile: null,
                   siteImagePreview: null,
                   site_image_url: null,
-                } as any)}
+                } as Partial<AssessmentWorkArea>)}
                 className="flex items-center gap-1 bg-red-50 text-red-600 font-semibold py-1 px-2 rounded-md text-sm hover:bg-red-100 transition-colors"
               >
                 ลบรูป
               </button>
             )}
           </div>
-          {(area as any).site_image_url || (area as any).siteImagePreview ? (
+          {(area as unknown as Record<string, string>).site_image_url || (area as unknown as Record<string, string>).siteImagePreview ? (
             <div className="p-2">
               <img
-                src={(area as any).siteImagePreview || (area as any).site_image_url}
+                src={(area as unknown as Record<string, string>).siteImagePreview || (area as unknown as Record<string, string>).site_image_url}
                 alt={area.area_name}
                 className="max-h-48 rounded-lg border border-slate-200 object-cover"
               />
@@ -1045,7 +1046,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       ...area,
                       siteImageFile: file,
                       siteImagePreview: URL.createObjectURL(file),
-                    } as any);
+                    } as Partial<AssessmentWorkArea>);
                   }
                 }}
               />
