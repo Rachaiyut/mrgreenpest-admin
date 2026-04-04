@@ -396,8 +396,7 @@ const Job: React.FC<JobProps> = ({
       } else if (newStatus === JobStatus.Completed) {
         await JobApi.checkOut(jobId);
       } else {
-        const status =
-          newStatus === JobStatus.Completed ? 'COMPLETE' : 'PENDING';
+        const status = 'PENDING';
         await JobApi.update(jobId, { status } as Partial<JobEntity>);
       }
       fetchData();
@@ -2097,7 +2096,7 @@ const Job: React.FC<JobProps> = ({
         users={users}
         warehouses={warehouses}
         contracts={contracts}
-        currentUserRole={currentUser.role}
+        currentUserRole={currentUser.role as Role}
       />
 
       <JobModal
@@ -2113,7 +2112,7 @@ const Job: React.FC<JobProps> = ({
         users={users}
         warehouses={warehouses}
         contracts={contracts}
-        currentUserRole={currentUser.role}
+        currentUserRole={currentUser.role as Role}
       />
 
       <JobDetailsModal
