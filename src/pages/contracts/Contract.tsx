@@ -690,7 +690,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   if (!selectedContract?.customer_id) return;
                   try {
                     const response = await ContractApi.generateSigningLink(selectedContract.customer_id, selectedContract.id);
-                    const signingUrl = response.signing_url || `${window.location.origin}/portal/sign`;
+                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
                     await navigator.clipboard.writeText(signingUrl);
                     Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นสัญญาสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                   } catch {

@@ -867,7 +867,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   if (!selectedQuotation?.customer_id) return;
                   try {
                     const response = await QuotationApi.generateSigningLink(selectedQuotation.customer_id, selectedQuotation.id);
-                    const signingUrl = response.signing_url || `${window.location.origin}/portal/sign`;
+                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.token}`;
                     await navigator.clipboard.writeText(signingUrl);
                     Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นเอกสารสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                   } catch {
