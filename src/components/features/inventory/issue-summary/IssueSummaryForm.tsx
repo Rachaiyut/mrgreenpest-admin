@@ -218,7 +218,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       }
     } catch (error) {
       console.error('Failed to fetch warehouses', error);
-      const vehicleWhs = (warehouses as any[])
+      const vehicleWhs = warehouses
         .filter((w) => w.type === WarehouseType.VEHICLE)
         .map((w) => ({ value: w.id, label: `${w.name}${w.vehicle?.vehicle_registration ? ` (${w.vehicle.vehicle_registration})` : ''}` }));
       setVehicleWarehouseOptions(vehicleWhs);
@@ -230,11 +230,11 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
       const res = await VehicleApi.getVehicleStockLimit(selectedWarehouseId);
       const limitMap = new Map<string, number>();
 
-      const limitsData = Array.isArray(res) ? res : (res as any)?.data || [];
+      const limitsData = Array.isArray(res) ? res : (res as unknown as Record<string, unknown[]>)?.data || [];
 
       if (limitsData && limitsData.length > 0) {
-        limitsData.forEach((limit: any) => {
-          limitMap.set(limit.product_id, Number(limit.max_return_qty));
+        limitsData.forEach((limit: Record<string, unknown>) => {
+          limitMap.set(String(limit.product_id), Number(limit.max_return_qty));
         });
       }
 
@@ -282,13 +282,14 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         // --- EDIT mode: populate from summary ---
         setWarehouseId(summary.warehouse_id || '');
         setRequesterId(summary.requester_id || loggedInUser.id);
-        setRecipientId((summary as any).recipient_id || loggedInUser.id);
+        const ext = summary as unknown as Record<string, string>;
+        setRecipientId(ext.recipient_id || loggedInUser.id);
         setNotes(summary.notes || '');
         setCurrentStatus(summary.status || 'PENDING');
 
-        setJobId((summary as any).job_id || '');
-        if ((summary as any).customer_id) {
-          setSelectedCustomerIds([(summary as any).customer_id]);
+        setJobId(summary.job_id || '');
+        if (ext.customer_id) {
+          setSelectedCustomerIds([ext.customer_id]);
         } else {
           setSelectedCustomerIds([]);
         }
@@ -380,8 +381,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
 
   const isOverLimit = useMemo(() => {
     if (walletInfo && typeof walletInfo.balance === 'number') return totalExpenses > walletInfo.balance;
-    if (!selectedRequester || typeof (selectedRequester as any).creditLimit !== 'number') return false;
-    return totalExpenses > (selectedRequester as any).creditLimit;
+    if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
+    return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
 
   const isAnyItemOverLimit = useMemo(() => {
@@ -412,7 +413,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         product_id: pid,
         product_name: product?.name || '',
         quantity: 1,
-        unit: (product as any)?.unit?.name || 'หน่วย',
+        unit: (product as unknown as Record<string, { name?: string }>)?.unit?.name || 'หน่วย',
       };
     });
     setItems((prev) => [...prev, ...newItems]);
@@ -578,7 +579,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   }, [warehouseId, effectiveStockMap, products]);
 
   const sourceWarehouse = useMemo(
-    () => (warehouses as any[]).find((w) => w.id === warehouseId) || { id: warehouseId },
+    () => warehouses.find((w) => w.id === warehouseId) || { id: warehouseId },
     [warehouseId, warehouses],
   );
   const existingProductIds = useMemo(() => Array.from(new Set(items.map((item) => item.product_id))), [items]);
@@ -767,7 +768,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
                             <div className="col-span-2">
                               <span className="font-mono text-sm font-bold text-green-600">
-                                {(product as any)?.code || item.product_id.substring(0, 8)}
+                                {product?.code || item.product_id.substring(0, 8)}
                               </span>
                             </div>
                             <div className="col-span-3">
@@ -1015,9 +1016,10 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                       value={jobId || ''}
                       onChange={(value) => setJobId(value || '')}
                       options={fetchedJobs.map((j) => {
-                        const c = (j as any).customer;
+                        const jExt = j as unknown as Record<string, unknown>;
+                        const c = jExt.customer as Record<string, string> | undefined;
                         const customerName = c ? `${c.first_name || ''} ${c.last_name || ''}`.trim() : '-';
-                        const workDate = (j as any).start_date || (j as any).appointment_date || j.created_at;
+                        const workDate = (jExt.start_date || jExt.appointment_date || j.created_at) as string;
                         const formattedDate = workDate ? new Date(workDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
                         return {
                           value: j.id,

@@ -99,7 +99,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
         if (isEdit && initialData?.id) {
           const res = await AssessmentApi.getById(initialData.id);
-          const loadedAssessment = (res as any).data || res;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const loadedAssessment = ((res as unknown as Record<string, unknown>).data || res) as Record<string, any>;
 
           const productIds = new Set<string>();
           (loadedAssessment.assessment_areas || []).forEach((area: any) => {
@@ -117,9 +118,12 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
           const fetchedCategories = categoriesRes?.data || [];
 
-          const fetchedCustomers = customerRes ? [(customerRes as any).data || customerRes] : [];
-          const fetchedPackages = packageRes ? ((packageRes as any).data || packageRes) : [];
-          const fetchedProducts = (productsRes as any)?.data || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fetchedCustomers = customerRes ? [((customerRes as unknown as Record<string, any>).data || customerRes)] : [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fetchedPackages = packageRes ? (((packageRes as unknown as Record<string, any>).data || packageRes)) : [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const fetchedProducts = ((productsRes as unknown as Record<string, any>)?.data || []);
 
           setCustomers(fetchedCustomers);
           setPackages(Array.isArray(fetchedPackages) ? fetchedPackages : []);
@@ -322,7 +326,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       prevAreas.map((area) => {
         if (!selectedPkg || !area.area_size || area.area_size <= 0) return { ...area };
 
-        const sortedConditions = [...((selectedPkg as any).package_price || (selectedPkg as any).package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pkgExt = selectedPkg as unknown as Record<string, any[]>;
+        const sortedConditions = [...(pkgExt.package_price || pkgExt.package_prices || [])].sort((a: Record<string, number>, b: Record<string, number>) => a.area_range - b.area_range);
         const bestFit = sortedConditions.find((c: any) => c.area_range >= area.area_size!);
 
         if (bestFit) {
@@ -455,7 +461,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
   const getSubmitButtonText = () => {
     if (isEdit && formData.status === AsessmentStatus.PENDING) {
-      const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as any)?.name : String(currentUserRole);
+      const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as Record<string, string>)?.name : String(currentUserRole);
       const formattedRole = String(roleStr || '').toUpperCase();
 
       if (formattedRole === 'SUPERADMIN') {
@@ -524,17 +530,22 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       // created_by จะถูก set โดย @BodyWithUser ฝั่ง backend อัตโนมัติ
 
       const result = await onSubmit(payload);
-      const assessmentId = (result as any)?.data?.id || (result as any)?.id || formData.id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const resultObj = result as unknown as Record<string, any>;
+      const assessmentId = resultObj?.data?.id || resultObj?.id || formData.id;
 
       // Upload images per area
       if (assessmentId) {
         try {
           // Fetch saved areas to get their IDs
           const savedAssessment = await AssessmentApi.getById(assessmentId);
-          const savedAreas = (savedAssessment as any)?.data?.assessment_areas || (savedAssessment as any)?.assessment_areas || [];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const savedObj = savedAssessment as unknown as Record<string, any>;
+          const savedAreas = (savedObj?.data?.assessment_areas || savedObj?.assessment_areas) || [];
 
           for (let i = 0; i < workAreas.length; i++) {
-            const area = workAreas[i] as any;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const area = workAreas[i] as Record<string, any>;
             const savedArea = savedAreas[i]; // match by index (same order)
             if (!savedArea) continue;
             const areaId = savedArea.id;
@@ -552,14 +563,16 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 type: 'site_image',
                 visibility: 'private',
               });
-              const storageId = (uploadResult as any)?.data?.id || (uploadResult as any)?.id;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const uploadObj = uploadResult as unknown as Record<string, any>;
+              const storageId = uploadObj?.data?.id || uploadObj?.id;
               if (storageId) {
-                await AssessmentApi.updateArea(areaId, { site_image_id: storageId } as any).catch(() => {});
+                await AssessmentApi.updateArea(areaId, { site_image_id: storageId }).catch(() => {});
               }
             } else if (!area.siteImagePreview && !area.site_image_url && savedArea.site_image_id) {
               // User removed image
               await StorageApi.remove(savedArea.site_image_id).catch(() => {});
-              await AssessmentApi.updateArea(areaId, { site_image_id: null } as any).catch(() => {});
+              await AssessmentApi.updateArea(areaId, { site_image_id: null }).catch(() => {});
             }
           }
         } catch (uploadErr) {
