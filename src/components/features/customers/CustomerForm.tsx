@@ -252,9 +252,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         ...initialValues,
         name: initialValues.type === CustomerType.CORPORATE ? initialValues.first_name : '',
         type: initialValues.type,
-        gender: (initialValues as any).gender || (initialValues as any).gendder || '',
-        contactPerson: (initialValues as any).contact_person || '',
-        contactPersonPhone: (initialValues as any).contact_person_phone || '',
+        gender: initialValues.gendder || '',
+        contactPerson: initialValues.contact_person || '',
+        contactPersonPhone: initialValues.contact_person_phone || '',
         'address-street': initialValues.address_house_no,
         'address-soi': initialValues.address_soi || '',
         'address-road': initialValues.address_road || '',
@@ -270,7 +270,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         googleMapLink: initialValues.google_map_link,
         taxId: initialValues.tax_id,
         primaryPhone: initialValues.primary_phone || '',
-        mobilePhone: (initialValues as any).mobile_phone || '',
+        mobilePhone: initialValues.mobile_phone || '',
       });
     } else if (mode === 'create') {
       setFormData({

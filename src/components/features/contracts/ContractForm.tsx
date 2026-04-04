@@ -220,7 +220,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     if (!foundInContext && !foundInSearch) {
       CustomerApi.getCustomerById(selectedCustomerId)
         .then((res) => {
-          const cust = (res as any).data || res;
+          const cust = ((res as unknown as Record<string, unknown>).data || res) as Customer;
           if (cust) setFetchedSingleCustomer(cust);
         })
         .catch((err) => console.error('Error fetching customer:', err));
@@ -284,7 +284,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           percentage: 30,
           amount: 0,
           due_date: '',
-          status: 'PENDING' as any,
+          status: 'PENDING' as InstallmentPlan['status'],
         },
         {
           id: crypto.randomUUID(),
@@ -293,7 +293,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           percentage: 35,
           amount: 0,
           due_date: '',
-          status: 'PENDING' as any,
+          status: 'PENDING' as InstallmentPlan['status'],
         },
         {
           id: crypto.randomUUID(),
@@ -302,7 +302,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           percentage: 35,
           amount: 0,
           due_date: '',
-          status: 'PENDING' as any,
+          status: 'PENDING' as InstallmentPlan['status'],
         },
       ]);
     } else if (mode === 'renew' && initialValues) {
@@ -337,7 +337,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             percentage: Number(inst.percentage),
             amount: Number(inst.amount),
             due_date: idx === 0 ? startStr : '', 
-            status: 'PENDING' as any,
+            status: 'PENDING' as InstallmentPlan['status'],
           }))
         );
       }
@@ -358,7 +358,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           due_date: inst.due_date
             ? new Date(inst.due_date).toISOString().substring(0, 10)
             : '',
-          status: inst.status as any,
+          status: inst.status as InstallmentPlan['status'],
         }))
       );
       setContractPaymentMethod('INSTALLMENT');
@@ -502,7 +502,8 @@ export const ContractForm: FC<ContractFormProps> = ({
     const fetchQuotationDetails = async () => {
       try {
         const response = await QuotationApi.getById(selectedQuotationId);
-        const fullQuotationData = (response as any).data || response;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fullQuotationData = ((response as unknown as Record<string, unknown>).data || response) as Record<string, any>;
 
         setFullQuotation(fullQuotationData);
 
@@ -598,7 +599,8 @@ export const ContractForm: FC<ContractFormProps> = ({
 
             // 5. Installments (กระจายยอดเงินลงงวด)
             if (fullQuotationData.installments && fullQuotationData.installments.length > 0) {
-              const backendInstallments = fullQuotationData.installments as any[];
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const backendInstallments = fullQuotationData.installments as Record<string, any>[];
               const durationMatch = (fullQuotationData.contract_duration || '').match(/(\d+)\s*ปี/);
               const years = durationMatch ? parseInt(durationMatch[1]) : 1;
               const totalMonths = years * 12;
@@ -641,7 +643,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                   percentage: calculatedPercentage,
                   amount: newAmount,
                   due_date: dueDate,
-                  status: 'PENDING' as any,
+                  status: 'PENDING' as InstallmentPlan['status'],
                 };
               });
 
@@ -691,7 +693,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       setIsLoading(true);
       try {
         const res = await ContractApi.getById(initialValues.id!);
-        const fullData = (res as any).data || res;
+        const fullData = ((res as unknown as Record<string, unknown>).data || res) as Record<string, any>;
         const existingAreas = fullData?.contract_areas || fullData?.areas || fullData?.area || [];
         console.log('[ContractForm] existingAreas from API:', JSON.stringify(existingAreas.map((a: any) => ({ building_type: a.building_type, building_type_other: a.building_type_other, service_system: a.service_system, service_system_other: a.service_system_other }))));
 
@@ -845,7 +847,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         percentage: 0,
         amount: 0,
         due_date: nextDueDate,
-        status: 'PENDING' as any,
+        status: 'PENDING' as InstallmentPlan['status'],
       },
     ]);
   };
@@ -923,7 +925,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     if (!selectedCustomerObj && selectedCustomerId) {
       try {
         const res = await CustomerApi.getCustomerById(selectedCustomerId);
-        selectedCustomerObj = (res as any).data || res;
+        selectedCustomerObj = ((res as unknown as Record<string, unknown>).data || res) as Customer;
       } catch (error) {
         console.error('Error fetching customer before submit:', error);
       }
@@ -1322,7 +1324,7 @@ export const ContractForm: FC<ContractFormProps> = ({
               percentage: i.percentage,
               amount: i.amount,
               due_date: i.due_date,
-              status: (i.status || 'PENDING') as any,
+              status: (i.status || 'PENDING') as InstallmentPlan['status'],
             })));
           }}
           totalAmount={totalAmount}
@@ -1333,8 +1335,8 @@ export const ContractForm: FC<ContractFormProps> = ({
             setContractPaymentMethod(m);
             if (m === 'INSTALLMENT' && installments.length === 0) {
               setInstallments([
-                { id: crypto.randomUUID(), term: 1, description: 'งวดที่ 1', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: startDate || '', status: 'PENDING' as any },
-                { id: crypto.randomUUID(), term: 2, description: 'งวดที่ 2', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: '', status: 'PENDING' as any },
+                { id: crypto.randomUUID(), term: 1, description: 'งวดที่ 1', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: startDate || '', status: 'PENDING' as InstallmentPlan['status'] },
+                { id: crypto.randomUUID(), term: 2, description: 'งวดที่ 2', percentage: 50, amount: Number((totalAmount / 2).toFixed(2)), due_date: '', status: 'PENDING' as InstallmentPlan['status'] },
               ]);
             } else if (m === 'TRANSFER') {
               setInstallments([]);
