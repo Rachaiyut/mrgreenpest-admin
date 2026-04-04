@@ -16,6 +16,7 @@ import { DailyJobClosure, CloseDailyJobClosurePayload } from '@/src/types/entity
 import { User, UserRole } from '../../types/entity/core.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract } from '../../types/entity/financial.interface';
+import { Job as JobEntity } from '../../types/entity/job.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
@@ -145,11 +146,13 @@ const Job: React.FC<JobProps> = ({
 
       const warehousesRes = await VehicleApi.getVehiclesWithUserJobs(params);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let warehousesData: any[] = [];
-      if (Array.isArray((warehousesRes as any).data)) {
-        warehousesData = (warehousesRes as any).data;
+      const wRes = warehousesRes as unknown as Record<string, unknown>;
+      if (Array.isArray(wRes.data)) {
+        warehousesData = wRes.data;
       } else if (Array.isArray(warehousesRes)) {
-        warehousesData = warehousesRes as any[];
+        warehousesData = warehousesRes as unknown[];
       }
 
       setWarehouses(warehousesData);
@@ -264,7 +267,7 @@ const Job: React.FC<JobProps> = ({
               operation_details: job.operation_details,
               invoice_id: job.invoice_id,
               invoice: job.invoice,
-            } as any;
+            } as unknown as FieldJob;
           })
       );
 
@@ -322,7 +325,7 @@ const Job: React.FC<JobProps> = ({
             operation_details: job.operation_details,
             invoice_id: job.invoice_id,
             invoice: job.invoice,
-          } as any;
+          } as unknown as FieldJob;
         });
 
       setUnassignedJobs(mapped);
@@ -364,7 +367,7 @@ const Job: React.FC<JobProps> = ({
 
   const handleCreateJob = async (newJob: Omit<FieldJob, 'id'>) => {
     try {
-      await JobApi.create(newJob as any);
+      await JobApi.create(newJob as unknown as Omit<JobEntity, 'id'>);
       fetchData();
       setIsAddModalOpen(false);
     } catch (error) {
@@ -376,7 +379,7 @@ const Job: React.FC<JobProps> = ({
     try {
       if (updatedJob.id) {
         const { id, ...data } = updatedJob;
-        await JobApi.update(id, data as any);
+        await JobApi.update(id, data as Partial<JobEntity>);
         fetchData();
         setIsEditModalOpen(false);
         setJobToEdit(null);
@@ -394,8 +397,8 @@ const Job: React.FC<JobProps> = ({
         await JobApi.checkOut(jobId);
       } else {
         const status =
-          newStatus === (JobStatus.Completed as any) ? 'COMPLETE' : 'PENDING';
-        await JobApi.update(jobId, { status } as any);
+          newStatus === JobStatus.Completed ? 'COMPLETE' : 'PENDING';
+        await JobApi.update(jobId, { status } as Partial<JobEntity>);
       }
       fetchData();
     } catch (error) {
@@ -520,9 +523,9 @@ const Job: React.FC<JobProps> = ({
       .filter((vehicle) => selectedVehicleId === 'all' || vehicle.id === selectedVehicleId)
       .map((vehicle) => {
         const license =
-          (vehicle as any)?.license_plate ||
-          (vehicle as any)?.vehicle?.vehicle_registration ||
-          (vehicle as any)?.vehicle_registration;
+          (vehicle as unknown as Record<string, string>)?.license_plate ||
+          (vehicle as unknown as Record<string, Record<string, string>>)?.vehicle?.vehicle_registration ||
+          (vehicle as unknown as Record<string, string>)?.vehicle_registration;
         return {
           title: license ? `${vehicle.name} (${license})` : vehicle.name,
           id: vehicle.id,
@@ -546,11 +549,11 @@ const Job: React.FC<JobProps> = ({
     if (q) {
       sorted = sorted.filter((r: any) => {
         const job = jobs.find((j) => j.id === r.job_id);
-        const customerName = (r.customer_name || (job as any)?.customerName || '').toLowerCase();
+        const customerName = (r.customer_name || (job as unknown as Record<string, string>)?.customerName || '').toLowerCase();
         const reportDate = formatThaiDate(r.report_date || r.created_at || '');
         const safeWarehouses = Array.isArray(warehouses) ? warehouses : [];
-        const vehicle = safeWarehouses.find((w: any) => w.id === (job as any)?.vehicle_id);
-        const licensePlate = ((vehicle as any)?.license_plate || (vehicle as any)?.registration_no || (vehicle as any)?.name || '').toLowerCase();
+        const vehicle = safeWarehouses.find((w) => w.id === (job as unknown as Record<string, string>)?.vehicle_id);
+        const licensePlate = ((vehicle as unknown as Record<string, string>)?.license_plate || (vehicle as unknown as Record<string, string>)?.registration_no || (vehicle as unknown as Record<string, string>)?.name || '').toLowerCase();
 
         return customerName.includes(q) || reportDate.includes(q) || licensePlate.includes(q);
       });
@@ -685,7 +688,7 @@ const Job: React.FC<JobProps> = ({
       let job = jobs.find((j) => j.id === jobId);
       if (!job) {
         // Fallback: job might come from report tab
-        job = jobForReport as any;
+        job = jobForReport as FieldJob;
         if (!job || job.id !== jobId) return;
       }
 
@@ -714,14 +717,15 @@ const Job: React.FC<JobProps> = ({
       let reportId: string | undefined;
 
       const existingReportId = job.service_report?.id
-        || (job.service_report as any)?.data?.id;
+        || (job.service_report as unknown as Record<string, Record<string, string>>)?.data?.id;
 
       if (existingReportId) {
         await ServiceReportApi.update(existingReportId, dataToSave);
         
       } else {
-        const created = await ServiceReportApi.create(dataToSave as any);
-        reportId = (created as any)?.data?.id || (created as any)?.id;
+        const created = await ServiceReportApi.create(dataToSave as Omit<ServiceReport, 'id'>);
+        const createdObj = created as unknown as Record<string, Record<string, string>>;
+        reportId = createdObj?.data?.id || (created as unknown as Record<string, string>)?.id;
       }
 
       // Upload blueprint images via entity_type
@@ -739,7 +743,7 @@ const Job: React.FC<JobProps> = ({
       }
 
       if (quotationId && quotationId !== job.quotation_id) {
-        await JobApi.update(jobId, { quotation_id: quotationId } as any);
+        await JobApi.update(jobId, { quotation_id: quotationId } as Partial<JobEntity>);
       }
 
       if (quotationId) {
@@ -973,8 +977,8 @@ const Job: React.FC<JobProps> = ({
 
   // Fetch all vehicles for dropdown (once)
   useEffect(() => {
-    VehicleApi.getVehicles({ limit: 10, sort_by: 'vehicle_registration', sort_order: 'asc' } as any).then((res) => {
-      setAllVehicles((res.data || []) as any[]);
+    VehicleApi.getVehicles({ limit: 10, sort_by: 'vehicle_registration', sort_order: 'asc' } as Record<string, unknown>).then((res) => {
+      setAllVehicles((res.data || []) as Warehouse[]);
     }).catch(() => {});
   }, []);
 
@@ -1780,18 +1784,20 @@ const Job: React.FC<JobProps> = ({
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {paginatedReports.length > 0 ? (
                       paginatedReports.map((report, idx) => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const rData = report as unknown as Record<string, any>;
                         const job = jobs.find((j) => j.id === report.job_id);
-                        const reportJob = (report as any).job;
+                        const reportJob = rData.job;
                         const reportDate = report.report_date || report.created_at || '';
                         const customerName = report.customer_name || job?.customerName || '-';
 
                         // Build service types from boolean flags
                         const serviceTypes: string[] = [];
-                        if ((report as any).is_service_termite) serviceTypes.push('ปลวก');
-                        if ((report as any).is_service_ant_roach) serviceTypes.push('มด,แมลงสาบ');
-                        if ((report as any).is_service_rodent) serviceTypes.push('หนู');
-                        if ((report as any).is_service_mosquito) serviceTypes.push('ยุง');
-                        if ((report as any).service_other && (report as any).service_other.toLowerCase() !== 'other') serviceTypes.push((report as any).service_other);
+                        if (rData.is_service_termite) serviceTypes.push('ปลวก');
+                        if (rData.is_service_ant_roach) serviceTypes.push('มด,แมลงสาบ');
+                        if (rData.is_service_rodent) serviceTypes.push('หนู');
+                        if (rData.is_service_mosquito) serviceTypes.push('ยุง');
+                        if (rData.service_other && String(rData.service_other).toLowerCase() !== 'other') serviceTypes.push(String(rData.service_other));
 
                         // Build technician name (primary only)
                         const techNames: string[] = [];
@@ -1840,7 +1846,7 @@ const Job: React.FC<JobProps> = ({
                               <span className="text-sm text-slate-600 truncate max-w-[150px] block">
                                 {techNames.length > 0
                                   ? techNames.join(', ')
-                                  : (report as any).technician_sign_name || '-'}
+                                  : rData.technician_sign_name || '-'}
                               </span>
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
@@ -1864,7 +1870,7 @@ const Job: React.FC<JobProps> = ({
                                 </Button>
                                 <Button
                                   onClick={() => {
-                                    const reportJob = (report as any).job;
+                                    const reportJob = rData.job;
                                     const techList: any[] = [];
                                     if (reportJob?.primary_technician) {
                                       techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
@@ -1884,7 +1890,7 @@ const Job: React.FC<JobProps> = ({
                                       status: report.status,
                                       assessment_id: reportJob?.assessment_id,
                                       contract_id: reportJob?.contract_id,
-                                    } as any;
+                                    } as unknown as FieldJob;
                                     handleWriteReport(targetJob);
                                   }}
                                   variant="ghost"
@@ -1953,12 +1959,12 @@ const Job: React.FC<JobProps> = ({
                       {warehouses
                         .filter(
                           (w) =>
-                            (w as any).type === 'รถ' ||
-                            (w as any).type === 'VEHICLE'
+                            (w as unknown as Record<string, string>).type === 'รถ' ||
+                            (w as unknown as Record<string, string>).type === 'VEHICLE'
                         )
                         .map((w) => (
                           <option key={w.id} value={w.id}>
-                            {(w as any).license_plate} ({w.name})
+                            {(w as unknown as Record<string, string>).license_plate} ({w.name})
                           </option>
                         ))}
                     </Select>
