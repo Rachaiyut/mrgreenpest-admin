@@ -52,7 +52,7 @@ export interface User {
   nick_name?: string;
   email?: string;
   phone?: string;
-  role?: any;
+  role?: Role | string;
   stroage_id?: string;
   creditLimit?: number;
   current_balance: number;

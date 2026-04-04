@@ -3,6 +3,8 @@ import {
   Warehouse,
   WarehouseQuery,
   WarehouseStats,
+  StockBalance,
+  VehicleStockLimit,
 } from '@/src/types/entity/inventory.interface';
 import { AuthService } from './auth';
 
@@ -40,13 +42,13 @@ class WarehouseService extends AuthService {
     return res.data;
   }
 
-  async getStockBalances(id: string): Promise<any[]> {
-    const res = await this.http.get<any[]>(`${this.path}/${id}/stock-balances`);
+  async getStockBalances(id: string): Promise<StockBalance[]> {
+    const res = await this.http.get<StockBalance[]>(`${this.path}/${id}/stock-balances`);
     return res.data;
   }
 
   async getWarehouseById(id: string): Promise<Warehouse> {
-    const res = await this.http.get<any>(`${this.path}/${id}`);
+    const res = await this.http.get<{ data: Warehouse }>(`${this.path}/${id}`);
     return res.data.data;
   }
 
@@ -60,7 +62,7 @@ class WarehouseService extends AuthService {
     return res.data;
   }
 
-  async updateLimits(id: string, limits: any[]): Promise<void> {
+  async updateLimits(id: string, limits: Partial<VehicleStockLimit>[]): Promise<void> {
     await this.http.post(`${this.path}/${id}/limits`, { limits });
   }
 

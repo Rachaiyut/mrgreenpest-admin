@@ -26,7 +26,7 @@ class JobService extends AuthService {
   }
 
   async getUnassignedCount(): Promise<number> {
-    const res = await this.http.get<any>(`${this.path}/unassigned/count`);
+    const res = await this.http.get<{ data: { count: number } }>(`${this.path}/unassigned/count`);
     return res.data?.data?.count || 0;
   }
 
@@ -40,8 +40,8 @@ class JobService extends AuthService {
     return res.data;
   }
 
-  async update(id: string, data: Partial<any>): Promise<Job> {
-    const res = await this.http.patch<any>(`${this.path}/${id}`, data);
+  async update(id: string, data: Partial<Job>): Promise<Job> {
+    const res = await this.http.patch<Job>(`${this.path}/${id}`, data);
     return res.data;
   }
 

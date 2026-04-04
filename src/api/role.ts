@@ -9,7 +9,7 @@ export interface Role {
   status: boolean;
   created_at?: string;
   updated_at?: string;
-  permissions?: any[]; // Allow permissions to be included
+  permissions?: Permission[];
 }
 
 export interface Permission {
@@ -21,7 +21,7 @@ export interface Permission {
 class RoleService extends AuthService {
   protected path = '/roles';
 
-  async getAll(params?: any): Promise<IBaseResponseArray<Role>> {
+  async getAll(params?: Record<string, string | number | boolean>): Promise<IBaseResponseArray<Role>> {
     const res = await this.http.get<IBaseResponseArray<Role>>(this.path, {
       params,
     });
@@ -29,17 +29,17 @@ class RoleService extends AuthService {
   }
 
   async getById(id: string): Promise<Role> {
-    const res = await this.http.get<any>(`${this.path}/${id}`);
+    const res = await this.http.get<{ data: Role }>(`${this.path}/${id}`);
     return res.data.data;
   }
 
   async create(data: Partial<Role>): Promise<Role> {
-    const res = await this.http.post<any>(this.path, data);
+    const res = await this.http.post<{ data: Role }>(this.path, data);
     return res.data.data;
   }
 
   async update(id: string, data: Partial<Role>): Promise<Role> {
-    const res = await this.http.patch<any>(`${this.path}/${id}`, data);
+    const res = await this.http.patch<{ data: Role }>(`${this.path}/${id}`, data);
     return res.data.data;
   }
 
@@ -48,7 +48,7 @@ class RoleService extends AuthService {
   }
 
   async assignPermissions(id: string, permissionIds: string[]): Promise<Role> {
-    const res = await this.http.post<any>(`${this.path}/${id}/permissions`, {
+    const res = await this.http.post<{ data: Role }>(`${this.path}/${id}/permissions`, {
       permission_ids: permissionIds,
     });
     return res.data.data;

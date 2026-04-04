@@ -57,9 +57,9 @@ class CustomerService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async generatePortalToken(customerId: string): Promise<any> {
-    const res = await this.http.post<any>(`${this.path}/${customerId}/portal-token`);
-    return res.data;
+  async generatePortalToken(customerId: string): Promise<{ token: string; expires_at: string }> {
+    const res = await this.http.post<{ data: { token: string; expires_at: string } }>(`${this.path}/${customerId}/portal-token`);
+    return res.data.data;
   }
 }
 

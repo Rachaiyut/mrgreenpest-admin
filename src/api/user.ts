@@ -1,23 +1,33 @@
 import { IBaseResponseArray } from '@/src/types/entity/base.interface';
 import { User, UserQuery } from '@/src/types/entity/core.interface';
+import { UserExpense } from '@/src/types/entity/user-expense.interface';
 import { AuthService } from './auth';
+
+interface UserWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  expense_limit: number;
+  total_expenses: number;
+}
 
 class UserService extends AuthService {
   protected path = '/users';
 
   async getAll(query?: UserQuery): Promise<IBaseResponseArray<User>> {
-    const res = await this.http.get<any>(this.path, {
+    const res = await this.http.get<IBaseResponseArray<User>>(this.path, {
       params: query,
     });
 
-    // Map users and compute the name property
-    const mapUser = (u: any): User => ({
+    const mapUser = (u: User): User => ({
       ...u,
       name:
         `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
         u.nick_name ||
         'Unknown',
-      creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
+      creditLimit: (u as unknown as Record<string, unknown>).expense_limit
+        ? Number((u as unknown as Record<string, unknown>).expense_limit)
+        : undefined,
     });
 
     if (res.data && Array.isArray(res.data.data)) {
@@ -26,18 +36,11 @@ class UserService extends AuthService {
         data: res.data.data.map(mapUser),
       };
     }
-    if (res.data && Array.isArray(res.data)) {
-      return {
-        status: 'success',
-        success: true,
-        data: res.data.map(mapUser),
-      };
-    }
     return res.data;
   }
 
   async getById(id: string): Promise<User> {
-    const res = await this.http.get<any>(`${this.path}/${id}`);
+    const res = await this.http.get<User>(`${this.path}/${id}`);
     const u = res.data;
     return {
       ...u,
@@ -45,16 +48,18 @@ class UserService extends AuthService {
         `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
         u.nick_name ||
         'Unknown',
-      creditLimit: u.expense_limit ? Number(u.expense_limit) : undefined,
+      creditLimit: (u as unknown as Record<string, unknown>).expense_limit
+        ? Number((u as unknown as Record<string, unknown>).expense_limit)
+        : undefined,
     };
   }
 
-  async create(data: any): Promise<User> {
+  async create(data: Partial<User>): Promise<User> {
     const res = await this.http.post<User>(this.path, data);
     return res.data;
   }
 
-  async update(id: string, data: any): Promise<User> {
+  async update(id: string, data: Partial<User>): Promise<User> {
     const res = await this.http.patch<User>(`${this.path}/${id}`, data);
     return res.data;
   }
@@ -63,13 +68,13 @@ class UserService extends AuthService {
     await this.http.delete(`${this.path}/${id}`);
   }
 
-  async getWallet(userId: string): Promise<any> {
-    const res = await this.http.get(`${this.path}/${userId}/wallet`);
+  async getWallet(userId: string): Promise<UserWallet> {
+    const res = await this.http.get<{ data: UserWallet }>(`${this.path}/${userId}/wallet`);
     return res.data.data;
   }
 
-  async createExpense(userId: string, data: any): Promise<any> {
-    const res = await this.http.post(`${this.path}/${userId}/expenses`, data);
+  async createExpense(userId: string, data: Partial<UserExpense>): Promise<UserExpense> {
+    const res = await this.http.post<UserExpense>(`${this.path}/${userId}/expenses`, data);
     return res.data;
   }
 

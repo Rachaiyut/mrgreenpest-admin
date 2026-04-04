@@ -44,9 +44,9 @@ class QuotationService extends AuthService {
     return res.data;
   }
 
-  async generateSigningLink(customerId: string, quotationId: string, expiresHours: number = 72) {
-    const res = await this.http.post(`/customer/${customerId}/quotation/${quotationId}/signing-link`, { expires_hours: expiresHours });
-    return res.data;
+  async generateSigningLink(customerId: string, quotationId: string, expiresHours: number = 72): Promise<{ signing_url: string; expires_at: string }> {
+    const res = await this.http.post<{ data: { signing_url: string; expires_at: string } }>(`/customer/${customerId}/quotation/${quotationId}/signing-link`, { expires_hours: expiresHours });
+    return res.data.data;
   }
 
   async getPDF(id: string): Promise<Blob> {

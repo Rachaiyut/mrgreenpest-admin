@@ -1,5 +1,5 @@
 import { User } from './core.interface';
-import { Warehouse } from './inventory.interface';
+import { Warehouse, Vehicle } from './inventory.interface';
 import { Product } from './product.interface';
 
 export enum RequisitionType {
@@ -75,7 +75,7 @@ export interface Requisition {
 
   requester?: User;
   warehouse?: Warehouse;
-  vehicle?: any; // Vehicle interface might be in another file, using any for now or I can import if I find it
+  vehicle?: Vehicle;
   items?: RequisitionItem[];
   expenses?: RequisitionExpense[];
   approvals?: Approval[];

@@ -1,5 +1,49 @@
 import { AuthService } from './auth';
 
+interface DashboardJobItem {
+  id: string;
+  code: string;
+  customer_name: string;
+  appointment_date: string;
+  start_date: string;
+  status: string;
+  primary_tech_name?: string;
+  vehicle_name?: string;
+}
+
+interface DashboardInvoiceItem {
+  id: string;
+  code: string;
+  customer_name: string;
+  due_date: string;
+  total_amount: number;
+  days_overdue: number;
+}
+
+interface DashboardStockItem {
+  id: string;
+  product_name: string;
+  warehouse_name: string;
+  current_qty: number;
+  min_stock: number;
+}
+
+interface DashboardContractItem {
+  id: string;
+  code: string;
+  customer_name: string;
+  end_date: string;
+  days_remaining: number;
+}
+
+interface DashboardActivityItem {
+  id: string;
+  type: string;
+  description: string;
+  created_at: string;
+  user_name?: string;
+}
+
 export interface DashboardData {
   kpi: {
     revenue: number;
@@ -17,17 +61,17 @@ export interface DashboardData {
     contracts: { total: number; active: number };
     conversion: { assessment_to_quotation: number; quotation_to_signed: number };
   };
-  todayJobs: any[];
-  upcomingJobs: any[];
+  todayJobs: DashboardJobItem[];
+  upcomingJobs: DashboardJobItem[];
   overdueInvoices: {
-    items: any[];
+    items: DashboardInvoiceItem[];
     aging: { current: number; '1-30': number; '31-60': number; '61-90': number; '90+': number };
   };
-  lowStockItems: any[];
-  expiringContracts: any[];
+  lowStockItems: DashboardStockItem[];
+  expiringContracts: DashboardContractItem[];
   revenueByMonth: { month: string; revenue: number }[];
   jobsByStatus: { status: string; count: number }[];
-  recentActivities: any[];
+  recentActivities: DashboardActivityItem[];
   pendingActions: {
     total: number;
     items: { key: string; label: string; count: number; color: string; path: string }[];
@@ -46,7 +90,8 @@ class DashboardApiService extends AuthService {
 
   async getSummary(range: 'today' | 'week' | 'month' | 'quarter' = 'month'): Promise<DashboardData> {
     const res = await this.http.get<DashboardData>(this.path, { params: { range } });
-    return (res.data as any)?.data || res.data;
+    const body = res.data as unknown as { data?: DashboardData };
+    return body?.data || res.data;
   }
 }
 

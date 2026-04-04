@@ -2,8 +2,9 @@ import { IBase } from './base.interface';
 import { JobMainStatus } from '../enums/job';
 import { Customer } from './customer.interface';
 import { ServiceSystem } from '../enums/assessment';
-import { ServiceReport } from './field-job.interface';
-import { Vehicle } from './app.interface';
+import { ServiceReport } from './service-report.interface';
+import { User } from './core.interface';
+import { Vehicle } from './inventory.interface';
 
 export interface TeamMember {
   id?: string;
@@ -32,7 +33,7 @@ export interface Job extends IBase {
 
   // Relations
   customer?: Customer;
-  primary_technician?: any;
+  primary_technician?: User;
   job_team_members?: TeamMember[];
   team_member?: TeamMember[];
   vehicle?: Vehicle;

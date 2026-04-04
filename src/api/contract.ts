@@ -39,9 +39,9 @@ class ContractService extends AuthService {
     return res.data;
   }
 
-  async generateSigningLink(customerId: string, contractId: string, expiresHours: number = 72) {
-    const res = await this.http.post(`/customer/${customerId}/contract/${contractId}/signing-link`, { expires_hours: expiresHours });
-    return res.data;
+  async generateSigningLink(customerId: string, contractId: string, expiresHours: number = 72): Promise<{ signing_url: string; expires_at: string }> {
+    const res = await this.http.post<{ data: { signing_url: string; expires_at: string } }>(`/customer/${customerId}/contract/${contractId}/signing-link`, { expires_hours: expiresHours });
+    return res.data.data;
   }
 
   async getPdf(id: string): Promise<Blob> {
