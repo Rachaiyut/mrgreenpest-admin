@@ -484,7 +484,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">ใบเสนอราคา</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">ใบเสนอราคา</h1>
             <p className="mt-1 text-slate-600">
               จัดการและติดตามใบเสนอราคาทั้งหมด
             </p>
@@ -498,8 +498,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-500 rounded-lg">
                 <DocumentTextIcon className="h-5 w-5 text-white" />
@@ -512,7 +512,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500 rounded-lg">
                 <ClockIcon className="h-5 w-5 text-white" />
@@ -528,7 +528,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-500 rounded-lg">
                 <CheckCircleIcon className="h-5 w-5 text-white" />
@@ -543,14 +543,14 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-500 rounded-lg">
                 <CurrencyDollarIcon className="h-5 w-5 text-white" />
               </div>
               <div>
                 <p className="text-sm text-purple-600 font-medium">มูลค่ารวม</p>
-                <p className="text-xl font-bold text-purple-800">
+                <p className="text-base sm:text-xl font-bold text-purple-800 truncate">
                   ฿
                   {stats.totalValue.toLocaleString('th-TH', {
                     minimumFractionDigits: 0,
@@ -565,8 +565,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         <Card
           className="!p-0 flex flex-col flex-grow min-h-0"
           actions={
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-              <div className="w-full sm:w-64">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
+              <div className="w-full sm:w-64 sm:flex-shrink-0">
                 <Input
                   type="search"
                   placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
@@ -577,12 +577,12 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   }}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
                 <span className="text-slate-400">-</span>
-                <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-40" />
+                <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
               </div>
-              <div className="w-full sm:w-48">
+              <div className="w-full sm:w-40">
                 <Select
                   value={statusFilter}
                   onChange={(e) => {
@@ -604,7 +604,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
           }
         >
           <div className="overflow-x-auto flex-grow relative">
-            <table className="min-w-full divide-y divide-slate-200">
+            <table className="min-w-[900px] w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
