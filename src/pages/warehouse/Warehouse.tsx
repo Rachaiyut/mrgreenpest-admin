@@ -156,8 +156,9 @@ const Warehouse: React.FC = () => {
       // For vehicle-warehouses, backend validation errors indicate it expects
       // vehicle fields flattened in the DTO:
       // `brand`, `model`, `vehicle_registration`, `color` (not nested).
+      const warehouseExt = warehouse as unknown as Record<string, unknown>;
       const address =
-        (warehouse as any).address ||
+        (warehouseExt.address as string) ||
         warehouse.warehouse_branch?.location ||
         (warehouse.vehicle ? 'เคลื่อนที่' : '-') ||
         '-';
@@ -167,7 +168,7 @@ const Warehouse: React.FC = () => {
         warehouse.type === WarehouseTypeEnum.SUB ||
         warehouse.type === WarehouseTypeEnum.VEHICLE;
 
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         name: warehouse.name,
         type: warehouse.type,
         status: warehouse.status,
@@ -176,15 +177,15 @@ const Warehouse: React.FC = () => {
 
       if (isVehicleWarehouse) {
         payload.vehicle_registration =
-          (warehouse as any).vehicle_registration ||
+          (warehouseExt.vehicle_registration as string) ||
           warehouse.vehicle?.vehicle_registration ||
           '';
         payload.brand =
-          (warehouse as any).brand || warehouse.vehicle?.brand || '';
+          (warehouseExt.brand as string) || warehouse.vehicle?.brand || '';
         payload.model =
-          (warehouse as any).model || warehouse.vehicle?.model || '';
+          (warehouseExt.model as string) || warehouse.vehicle?.model || '';
         payload.color =
-          (warehouse as any).color || warehouse.vehicle?.color || '';
+          (warehouseExt.color as string) || warehouse.vehicle?.color || '';
       }
 
       await WarehouseApi.update(warehouse.id, payload);
@@ -230,10 +231,10 @@ const Warehouse: React.FC = () => {
         const full = await WarehouseApi.getWarehouseById(warehouseId);
         if (full && full.id) {
           setWarehouses((prev) =>
-            prev.map((w) => (w.id === warehouseId ? (full as any) : w))
+            prev.map((w) => (w.id === warehouseId ? full as WarehouseType : w))
           );
           setWarehouseForLimits((prev) =>
-            prev && prev.id === warehouseId ? (full as any) : prev
+            prev && prev.id === warehouseId ? full as WarehouseType : prev
           );
         }
       } catch (e) {
@@ -245,13 +246,13 @@ const Warehouse: React.FC = () => {
         setWarehouses((prev) =>
           prev.map((w) =>
             w.id === warehouseId
-              ? { ...w, withdrawal_limits: limitsArray as any }
+              ? { ...w, withdrawal_limits: limitsArray as WarehouseType['withdrawal_limits'] }
               : w
           )
         );
         setWarehouseForLimits((prev) =>
           prev && prev.id === warehouseId
-            ? { ...(prev as any), withdrawal_limits: limitsArray as any }
+            ? { ...prev, withdrawal_limits: limitsArray as WarehouseType['withdrawal_limits'] }
             : prev
         );
       }
@@ -358,7 +359,7 @@ const Warehouse: React.FC = () => {
     try {
       const full = await WarehouseApi.getWarehouseById(warehouse.id);
       if (full && full.id) {
-        setWarehouseForLimits(full as any);
+        setWarehouseForLimits(full as WarehouseType);
       } else {
         throw new Error('Warehouse data is invalid or missing ID');
       }
@@ -409,7 +410,7 @@ const Warehouse: React.FC = () => {
       action: handleSetLimits,
       // Limits apply to vehicle warehouses (บาง backend ส่งเป็น SUB แต่มี vehicle)
       condition: (w: WarehouseType) =>
-        !!(w as any).vehicle ||
+        !!w.vehicle ||
         w.type === WarehouseTypeEnum.SUB ||
         w.type === WarehouseTypeEnum.VEHICLE,
     },
@@ -419,7 +420,7 @@ const Warehouse: React.FC = () => {
       action: handleReturnStock,
       // Only for Vehicle Warehouses
       condition: (w: WarehouseType) =>
-        !!(w as any).vehicle || w.type === WarehouseTypeEnum.VEHICLE,
+        !!w.vehicle || w.type === WarehouseTypeEnum.VEHICLE,
     },
     { label: 'ลบ', icon: TrashIcon, isDanger: true, action: handleDelete },
   ];
