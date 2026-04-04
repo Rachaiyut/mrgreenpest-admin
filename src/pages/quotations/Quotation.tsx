@@ -614,19 +614,19 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่สร้าง
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     หมดอายุ
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     สถานะ
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -692,10 +692,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-700">
                           {formatThaiDate(q.created_at)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatThaiDate(q.expires_at)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           <StatusBadge
                             status={q.status}
                           />
@@ -707,11 +707,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                             maximumFractionDigits: 2,
                           })}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           <TruncateText text={((q as unknown as Record<string, Record<string, string>>).creator) ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
-                        <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center justify-center gap-2">
                             <Button
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === q.id
                                 ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
