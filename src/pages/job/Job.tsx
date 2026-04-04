@@ -7,7 +7,7 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import {
   FieldJob,
   ServiceReport,
-} from '@/src/types/entity/field-job.interface';
+} from '@/src/types/entity/service-report.interface';
 
 import { JobMainStatus, JobStatus, Quotation, WarehouseType } from '@/src/types';
 import { DailyJobClosure, CloseDailyJobClosurePayload } from '@/src/types/entity/daily-closure.interface';

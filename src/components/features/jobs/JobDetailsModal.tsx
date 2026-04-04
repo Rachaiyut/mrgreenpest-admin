@@ -6,7 +6,7 @@ import React, {
   cloneElement,
 } from 'react';
 import { Modal } from '../../common/Modal';
-import { FieldJob } from '@/src/types/entity/field-job.interface';
+import { FieldJob } from '@/src/types/entity/service-report.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { StatusBadge } from '../../common/StatusBadge';

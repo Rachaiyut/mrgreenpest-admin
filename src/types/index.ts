@@ -6,7 +6,7 @@ export * from './entity/category.interface';
 export * from './entity/contract.interface';
 export * from './entity/core.interface';
 export * from './entity/customer.interface';
-export * from './entity/field-job.interface';
+export * from './entity/service-report.interface';
 export * from './entity/financial.interface';
 export * from './entity/inventory.interface';
 export * from './entity/nav.interface';

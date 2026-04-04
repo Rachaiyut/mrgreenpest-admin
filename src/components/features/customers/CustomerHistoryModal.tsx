@@ -9,7 +9,7 @@ import { JobApi } from '@/src/api/job';
 import { ServiceReportApi } from '@/src/api/service-report';
 import { LoadingIcon } from '../../../assets/icons/Icons';
 import { ServiceReportModal } from '../jobs/ServiceReportModal';
-import { FieldJob, ServiceReport } from '@/src/types/entity/field-job.interface';
+import { FieldJob, ServiceReport } from '@/src/types/entity/service-report.interface';
 import { JobMainStatus } from '@/src/types/enums/job';
 
 interface CustomerHistoryModalProps {

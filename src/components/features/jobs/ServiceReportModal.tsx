@@ -7,7 +7,7 @@ import { Textarea, Input, Select } from '../../common/FormControls';
 import {
   FieldJob,
   ServiceReport,
-} from '@/src/types/entity/field-job.interface';
+} from '@/src/types/entity/service-report.interface';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
