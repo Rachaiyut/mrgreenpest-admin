@@ -79,7 +79,7 @@ export const Sidebar: FC<SidebarProps> = ({
       ></div>
 
       <aside
-        className={`fixed md:relative top-0 left-0 h-full bg-[#0e6d2e] text-white transform ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-all duration-300 ease-in-out z-30 flex flex-col ${isOpen ? 'w-[300px]' : 'w-[300px] md:w-20'}`}
+        className={`fixed md:relative top-0 left-0 h-full bg-[#0e6d2e] text-white transform ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-all duration-300 ease-in-out z-30 flex flex-col shrink-0 ${isOpen ? 'w-[280px] lg:w-[260px]' : 'w-[280px] md:w-20'}`}
       >
         <div
           className={`flex items-center justify-between h-16 ${collapsed ? 'px-2' : 'px-4'} border-b border-white/20`}

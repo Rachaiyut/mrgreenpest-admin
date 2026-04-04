@@ -70,11 +70,31 @@ export const AppRouter = (props: AppRouterProps) => {
 
   useEffect(() => {
     setCurrentPage(getCurrentPageFromPath(location.pathname, PATH_PAGE));
+    // Auto-close sidebar on mobile when navigating
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
   }, [location.pathname, PATH_PAGE]);
+
+  // Auto-collapse sidebar on small screens
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleNavigation = useCallback(
     (page: Page) => {
       navigate('/' + pagePaths[page]);
+      // Close sidebar on mobile after navigation
+      if (window.innerWidth < 768) {
+        setIsSidebarOpen(false);
+      }
     },
     [navigate, pagePaths]
   );
@@ -117,16 +137,16 @@ export const AppRouter = (props: AppRouterProps) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar
         currentPage={currentPage}
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
         onPageChange={handleNavigation}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header toggleSidebar={toggleSidebar} onLogout={onLogout} />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               {routes.map((route, index) => (
