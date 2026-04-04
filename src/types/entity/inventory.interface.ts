@@ -223,6 +223,7 @@ export interface StockIssueSummary extends IBase {
   status: IssueSummaryStatus
   requester_id?: string;
   created_by?: string;
+  issue_date?: string;
   items?: IssueItemSummary[];
   expense_item?: UserExpense[];
   expense_items?: UserExpense[];

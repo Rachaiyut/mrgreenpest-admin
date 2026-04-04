@@ -8,6 +8,7 @@ import {
   StockIssueSummary as StockIssueSummaryType,
   Warehouse as WarehouseEntity,
 } from '@/src/types/entity/inventory.interface';
+import { UserExpense } from '@/src/types/entity/user-expense.interface';
 import { WarehouseType } from '@/src/types/enums/inventory';
 
 // ===== Context =====
@@ -121,7 +122,7 @@ const IssueSummaryPage: React.FC = () => {
     try {
       const summary = stockIssueSummaries.find((s) => s.id === summaryId);
       if (!summary) return;
-      await handlers.stockIssueSummaries.update({ ...summary, status: newStatus } as any);
+      await handlers.stockIssueSummaries.update({ ...summary, status: newStatus } as StockIssueSummaryType);
     } catch (error) {
       console.error('Failed to update status', error);
     }
@@ -238,7 +239,7 @@ const IssueSummaryPage: React.FC = () => {
           }, 0) || 0;
         
         const totalExpenseAmount = 
-          (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
+          summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
         
         const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
@@ -461,7 +462,7 @@ const IssueSummaryPage: React.FC = () => {
                   }, 0) || 0;
                 
                 const totalExpenseAmount = 
-                  (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
+                  summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
                 
                 const totalAmount = totalGoodsAmount + totalExpenseAmount;
 
@@ -501,8 +502,8 @@ const IssueSummaryPage: React.FC = () => {
                       <div className="flex items-center">
                         <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                         <span>
-                          {(summary as any).issue_date
-                            ? formatThaiDate((summary as any).issue_date)
+                          {summary.issue_date
+                            ? formatThaiDate(summary.issue_date)
                             : summary.created_at
                               ? formatThaiDate(summary.created_at)
                               : '-'}
@@ -571,7 +572,7 @@ const IssueSummaryPage: React.FC = () => {
                   {paginatedSummaries.map((summary, index) => {
                     const warehouse = warehouseMap.get(summary.warehouse_id);
                     
-                    const totalItemsCount = (summary.items?.length || 0) + ((summary as any).expense_items?.length || 0);
+                    const totalItemsCount = (summary.items?.length || 0) + (summary.expense_items?.length || 0);
 
                     // --- คำนวณมูลค่าสินค้ารวม ---
                     const totalGoodsAmount =
@@ -584,7 +585,7 @@ const IssueSummaryPage: React.FC = () => {
                     
                     // --- คำนวณมูลค่าค่าใช้จ่ายรวม ---
                     const totalExpenseAmount = 
-                      (summary as any).expense_items?.reduce((sum: number, exp: any) => sum + Number(exp.amount || 0), 0) || 0;
+                      summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
 
                     // --- รวมมูลค่าทั้งหมด ---
                     const totalAmount = totalGoodsAmount + totalExpenseAmount;
@@ -601,8 +602,8 @@ const IssueSummaryPage: React.FC = () => {
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                          {(summary as any).issue_date
-                            ? formatThaiDate((summary as any).issue_date)
+                          {summary.issue_date
+                            ? formatThaiDate(summary.issue_date)
                             : summary.created_at
                               ? formatThaiDate(summary.created_at)
                               : '-'}

@@ -69,8 +69,8 @@ const getFileUrl = (path: string | null | undefined): string => {
     return path;
   }
   
-  const backendBaseUrl = (import.meta as any).env?.VITE_API_URL 
-    ? (import.meta as any).env.VITE_API_URL.replace(/\/api\/?$/, '') 
+  const backendBaseUrl = import.meta.env?.VITE_API_URL
+    ? String(import.meta.env.VITE_API_URL).replace(/\/api\/?$/, '')
     : 'http://localhost:3000';
     
   const cleanPath = path.startsWith('/') ? path.substring(1) : path;
@@ -144,8 +144,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     if (!job || !job.contract_id) return undefined;
     const c = (contracts || []).find((ct) => ct.id === job.contract_id);
     if (!c) return undefined;
-    const pkg = packageMapByName.get(c.servicePackage || '') as any;
-    const visitsRequired = pkg?.number_of_visits ?? 0;
+    const pkg = packageMapByName.get(c.servicePackage || '');
+    const visitsRequired = (pkg as unknown as Record<string, number>)?.number_of_visits ?? 0;
     if (!visitsRequired) return undefined;
     const parseDurationMonths = (text?: string) => {
       if (!text) return 12;
@@ -205,9 +205,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           const res = await QuotationApi.getAll({
             limit: 10,
             customer_id: job.customer_id,
-            status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}` as any,
+            status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}`,
             ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
-          } as any);
+          } as Record<string, unknown>);
           let list: Quotation[] = res.data || [];
 
           // ถ้า report มี quotation_id อยู่แล้ว ให้ fetch มาใส่ใน list ด้วย (กันกรณี status ไม่ตรง)
@@ -236,10 +236,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const res = await QuotationApi.getAll({
         limit: 10,
         customer_id: job?.customer_id,
-        status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}` as any,
+        status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}`,
         search: value,
         ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
-      } as any);
+      } as Record<string, unknown>);
       setQuotations(res.data);
     } catch (error) {
       console.error('Failed to search quotations:', error);
@@ -412,9 +412,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       setReportState(initialReport);
 
       // Load existing blueprint images
-      const r = job.service_report as any;
-      const reportData = r?.data || r;
-      const images = reportData?.operation_images || [];
+      const r = job.service_report as unknown as Record<string, unknown>;
+      const reportData = (r?.data || r) as Record<string, unknown>;
+      const images = (reportData?.operation_images || []) as { id: string; url: string }[];
       setExistingImages(images);
       setSelectedFiles([]);
     }
@@ -437,7 +437,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       customer_id: job.customer_id,
       payment_amount: reportState.payment_amount ? Number(reportState.payment_amount) : 0, 
       report_date: new Date().toISOString(),
-      customer_name: (job as any).customerName || (job as any).customer_name,
+      customer_name: (job as unknown as Record<string, string>).customerName || (job as unknown as Record<string, string>).customer_name,
 
       is_service_termite: reportState.service_types?.includes('กำจัดปลวก'),
       is_service_ant_roach: reportState.service_types?.some((t) =>
@@ -605,7 +605,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const currentValues =
         field === 'next_appointment_reasons'
           ? prev.next_appointment?.reasons || []
-          : (prev as any)[field] || [];
+          : (prev as unknown as Record<string, string[]>)[field] || [];
       const newValues = currentValues.includes(value)
         ? currentValues.filter((v: string) => v !== value)
         : [...currentValues, value];
@@ -630,7 +630,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   ) => {
     setReportState((prev) => ({
       ...prev,
-      [pest]: { ...(prev[pest as keyof typeof prev] || {}), [key]: value },
+      [pest]: { ...((prev[pest as keyof typeof prev] as Record<string, unknown>) || {}), [key]: value },
     }));
   };
 
@@ -1440,7 +1440,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <div>
               <dt className="text-slate-500 mb-1">ลูกค้า</dt>
               <dd className="font-semibold text-slate-900 text-base">
-                {(job as any).customerName || (job as any).customer_name}
+                {(job as unknown as Record<string, string>).customerName || (job as unknown as Record<string, string>).customer_name}
               </dd>
             </div>
             <div>
@@ -1467,10 +1467,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               <dd className="font-semibold text-slate-900">
                 {(() => {
                   const techs = job.technicians?.length > 0 ? job.technicians : [];
-                  const reportJob = (job.service_report as any)?.job || (reportState as any)?.job;
+                  const reportJob = ((job.service_report as unknown as Record<string, unknown>)?.job || (reportState as unknown as Record<string, unknown>)?.job) as Record<string, unknown> | undefined;
                   const allTechs = techs.length > 0 ? techs : [
                     ...(reportJob?.primary_technician ? [reportJob.primary_technician] : []),
-                    ...(reportJob?.job_team_members || []),
+                    ...((reportJob?.job_team_members || []) as User[]),
                   ];
                   return allTechs.length > 0
                     ? allTechs.map((t: any) => t.name || `${t.first_name || ''} ${t.last_name || ''}`.trim()).join(', ')
@@ -1804,7 +1804,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       const condition = e.target.value;
                       setReportState((prev) => ({
                         ...prev,
-                        payment_condition: condition as any,
+                        payment_condition: condition as ServiceReport['payment_condition'],
                         payment_amount: condition && !prev.payment_amount && job.invoice ? job.invoice.total : (condition ? prev.payment_amount : ''),
                         payment_installment_count: job.invoice?.term || prev.payment_installment_count,
                       }));

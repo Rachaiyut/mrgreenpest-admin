@@ -45,7 +45,8 @@ export interface ServiceReportPestDetail {
 }
 
 export interface PestFormData {
-  [key: string]: string | number | boolean | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 export interface FieldJobWorkArea {
