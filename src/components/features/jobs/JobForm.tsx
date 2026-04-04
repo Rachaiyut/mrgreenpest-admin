@@ -131,7 +131,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [leadTechSearch, setLeadTechSearch] = useState('');
   const [leadTechnicianOptions, setLeadTechnicianOptions] = useState<User[]>(
     users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+      const roleName = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).name : u.role;
       return roleName === UserRole.TECH;
     })
   );
@@ -139,7 +139,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [additionalTechSearch, setAdditionalTechSearch] = useState('');
   const [additionalTechnicianOptions, setAdditionalTechnicianOptions] = useState<User[]>(
     users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as any).name : u.role;
+      const roleName = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).name : u.role;
       return roleName === UserRole.TECH;
     })
   );
@@ -307,7 +307,7 @@ export const JobForm: React.FC<JobFormProps> = ({
             
             package_id: recoveredPkg?.id || undefined,
             package_price_id: recoveredPriceId,
-            package_type: recoveredType as any,
+            package_type: recoveredType as PackageType,
             service_package: recoveredPkg?.name || wa.service_package || '',
             site_image_id: wa.site_image_id || null,
             site_image_url: wa.site_image_url || null,
@@ -431,7 +431,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const filteredVehicles = useMemo(() => {
     return vehicleWarehouses.map((v) => ({
       value: v.id,
-      label: `${v.name} (${(v as any).license_plate || '-'})`,
+      label: `${v.name} (${(v as unknown as Record<string, string>).license_plate || '-'})`,
     }));
   }, [vehicleWarehouses]);
 
@@ -452,12 +452,12 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const availableContracts = useMemo(() => {
     if (fetchedContracts.length > 0) {
-      return fetchedContracts.filter((a) => (a.status as any) === AsessmentStatus.DRAFT || (a.status as any) === AsessmentStatus.COMPLETE || (a.status as any) === 'ACTIVE');
+      return fetchedContracts.filter((a) => (a.status as string) === AsessmentStatus.DRAFT || (a.status as string) === AsessmentStatus.COMPLETE || (a.status as string) === 'ACTIVE');
     }
     if (selectedCustomerId) {
       const customer = (selectedCustomerData?.id === selectedCustomerId ? selectedCustomerData : undefined) || customers.find((c) => c.id === selectedCustomerId);
       if (customer?.contracts) {
-        return customer.contracts.filter((a) => (a.status as any) === AsessmentStatus.DRAFT || (a.status as any) === AsessmentStatus.COMPLETE || (a.status as any) === 'ACTIVE');
+        return customer.contracts.filter((a) => (a.status as string) === AsessmentStatus.DRAFT || (a.status as string) === AsessmentStatus.COMPLETE || (a.status as string) === 'ACTIVE');
       }
     }
     return [];
@@ -590,7 +590,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       try {
         const fullCustomer = await CustomerApi.getCustomerById(customerId);
         if (fullCustomer) {
-          const customerData = (fullCustomer as any).data || fullCustomer;
+          const customerData = ((fullCustomer as unknown as Record<string, unknown>).data || fullCustomer) as Customer;
           setSelectedCustomerData(customerData);
         }
 
@@ -618,7 +618,8 @@ export const JobForm: React.FC<JobFormProps> = ({
 
     if (reference.startsWith('asm-')) {
       const assessmentId = reference.replace('asm-', '');
-      let assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId)) as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let assessment = availableAssessments.find((a) => String(a.id) === String(assessmentId)) as Record<string, any> | undefined;
 
       // Fetch full assessment to get site_image_url per area
       try {
@@ -626,7 +627,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         const fullAssessment = fullRes.data || fullRes;
         if (fullAssessment?.assessment_areas) {
           // Override assessment areas with full data (includes site_image_url)
-          assessment = { ...assessment, assessment_areas: fullAssessment.assessment_areas } as any;
+          assessment = { ...assessment, assessment_areas: fullAssessment.assessment_areas };
         }
       } catch (err) {
         console.error('Error fetching full assessment:', err);
@@ -658,9 +659,9 @@ export const JobForm: React.FC<JobFormProps> = ({
             category_services: area.category_services || [],
             package_id: exactPackageId,
             package_price_id: area.package_price_id,
-            package_type: area.package_type as any,
-            site_image_id: (area as any).site_image_id || null,
-            site_image_url: (area as any).site_image_url || null,
+            package_type: area.package_type as PackageType,
+            site_image_id: area.site_image_id || null,
+            site_image_url: area.site_image_url || null,
           };
         });
         setWorkAreas(areas);
@@ -690,7 +691,8 @@ export const JobForm: React.FC<JobFormProps> = ({
       const contractId = reference.replace('cnt-', '');
       try {
         const contractRes = await ContractApi.getById(contractId);
-        const contract = (contractRes as any).data || contractRes;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const contract = ((contractRes as unknown as Record<string, unknown>).data || contractRes) as Record<string, any>;
         const contractAreas = contract?.contract_areas || contract?.areas || [];
 
         if (contractAreas.length > 0) {
@@ -729,7 +731,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               category_services: area.category_services || [],
               package_id: exactPackageId,
               package_price_id: area.package_price_id,
-              package_type: pkgType as any,
+              package_type: pkgType as PackageType,
               service_count: area.service_count,
             };
           });
@@ -806,8 +808,8 @@ export const JobForm: React.FC<JobFormProps> = ({
       work_areas: workAreas,
       team_member: uniqueTechnicianIds.map((uid) => ({
         user_id: uid,
-        check_in: null as any,
-        check_out: null as any,
+        check_in: null!,
+        check_out: null!,
       })),
     };
   };
@@ -858,12 +860,12 @@ export const JobForm: React.FC<JobFormProps> = ({
                 unit_id: it.unit_id || undefined,
                 total_price: it.total_price,
               })),
-            })) as any,
+            })) as Record<string, unknown>[],
             
             total_price: workAreas.reduce((sum, a) => sum + (Number(a.total_price) || 0), 0)
           };
 
-          await AssessmentApi.update(jobData.assessment_id, assessmentPayload);
+          await AssessmentApi.update(jobData.assessment_id, assessmentPayload as unknown as Partial<Assessment>);
         }
 
         await onSubmitJob(jobData, jobData.assessment_id);
@@ -1146,14 +1148,15 @@ export const JobForm: React.FC<JobFormProps> = ({
               const contractId = selectedReference.replace('cnt-', '');
               const contractInvoices = fetchedInvoices.filter((inv: any) => inv.contract_id === contractId);
               const contractRef = availableContracts.find((c: any) => String(c.id) === contractId);
-              const installments = [...((contractRef as any)?.installments || (contractRef as any)?.contract_installments || [])]
+              const cRef = contractRef as unknown as Record<string, unknown>;
+              const installments = [...((cRef?.installments || cRef?.contract_installments || []) as Record<string, unknown>[])]
                 .sort((a: any, b: any) => (a.installment_no || a.term || 0) - (b.installment_no || b.term || 0));
 
               if (installments.length === 0 && contractInvoices.length === 0) return null;
 
               const totalOutstanding = contractInvoices
                 .filter((inv: any) => ['PENDING', 'PARTIAL', 'OVERDUE', 'SENT'].includes(String(inv.status).toUpperCase()))
-                .reduce((sum: number, inv: any) => sum + (Number(inv.total) - Number((inv as any).paid_amount || 0)), 0);
+                .reduce((sum: number, inv: Invoice) => sum + (Number(inv.total) - Number((inv as unknown as Record<string, number>).paid_amount || 0)), 0);
 
               const getStatusConfig = (status: string) => {
                 switch (status) {
