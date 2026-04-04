@@ -145,7 +145,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         try {
           const res = await QuotationApi.getById(initialValues.id);
           // แกะ wrapper: API returns { status, success, data: QuotationObject }
-          const actualData = (res as any).data || res;
+          const actualData = ((res as unknown as Record<string, unknown>).data || res) as Record<string, any>;
           setFetchedQuotation(actualData);
         } catch (error) {
           console.error('Failed to fetch full quotation details:', error);
@@ -312,15 +312,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       if (activeData.customer_id) setSelectedCustomerId(activeData.customer_id);
       if (activeData.assessment_id) setSelectedAssessmentId(activeData.assessment_id);
       
-      if ((activeData as any).customer) {
+      if ((activeData as unknown as Record<string, unknown>).customer) {
         setFetchedCustomers(prev => {
-          if (!prev.some(c => c.id === activeData.customer_id)) return [...prev, (activeData as any).customer];
+          if (!prev.some(c => c.id === activeData.customer_id)) return [...prev, (activeData as unknown as Record<string, unknown>).customer as Customer];
           return prev;
         });
       }
-      if ((activeData as any).assessment) {
+      if ((activeData as unknown as Record<string, unknown>).assessment) {
         setFetchedAssessments(prev => {
-          if (!prev.some(a => a.id === activeData.assessment_id)) return [...prev, (activeData as any).assessment];
+          if (!prev.some(a => a.id === activeData.assessment_id)) return [...prev, (activeData as unknown as Record<string, unknown>).assessment as Assessment];
           return prev;
         });
       }
@@ -538,12 +538,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       setHasInitializedAreas(true);
 
       // Extract package from packagePriceRelation for WorkAreaForm
-      const areaWithPkg = source.find((a: any) => (a as any).packagePriceRelation?.package);
-      if ((areaWithPkg as any)?.packagePriceRelation?.package) {
-        const pkg = (areaWithPkg as any).packagePriceRelation.package;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const areaWithPkg = source.find((a: any) => a.packagePriceRelation?.package);
+      if (((areaWithPkg as unknown as Record<string, unknown>)?.packagePriceRelation as Record<string, unknown>)?.package) {
+        const pkg = ((areaWithPkg as unknown as Record<string, Record<string, unknown>>).packagePriceRelation).package;
         // Fetch full package with package_prices
         PackageApi.getPackages({ limit: 50 }).then(res => {
-          const fullPkg = (res.data || []).find((p: any) => p.id === pkg.id);
+          const fullPkg = (res.data || []).find((p: Package) => p.id === (pkg as Record<string, string>).id);
           if (fullPkg) {
             setFetchedPackage(fullPkg);
             setSelectedPackageId(fullPkg.id);
@@ -670,7 +671,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     (async () => {
       try {
         const res = await AssessmentApi.getById(selectedAssessmentId);
-        const fullData = (res as any).data || res;
+        const fullData = ((res as unknown as Record<string, unknown>).data || res) as Assessment;
         if (fullData?.id) {
           setFetchedAssessments(prev => {
             const others = prev.filter(a => a.id !== fullData.id);
@@ -694,8 +695,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         // ถ้าลูกค้าไม่อยู่ใน list ให้เพิ่มจาก assessment.customer
         const customerExists = fetchedCustomers.some(c => c.id === selectedAssessment.customer_id);
-        if (!customerExists && (selectedAssessment as any).customer) {
-          setFetchedCustomers(prev => [(selectedAssessment as any).customer, ...prev]);
+        if (!customerExists && (selectedAssessment as unknown as Record<string, unknown>).customer) {
+          setFetchedCustomers(prev => [(selectedAssessment as unknown as Record<string, unknown>).customer as Customer, ...prev]);
         }
       }
 
@@ -1137,7 +1138,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       vat_amount: vatAmount,
       include_vat: includeVat,
       items: finalItems,
-      quotation_areas: quotationAreas as any,
+      quotation_areas: quotationAreas,
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
     };
@@ -1258,15 +1259,15 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 const sortedPrices = [...(pkg.package_prices || [])].sort((a: any, b: any) => a.area_range - b.area_range);
                 setEditableAreas(prev => prev.map(area => {
                   if (!area.area_size || area.area_size <= 0) {
-                    return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
+                    return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as unknown };
                   }
                   const bestFit = sortedPrices.find((c: any) => c.area_range >= area.area_size!);
-                  if (!bestFit) return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as any };
+                  if (!bestFit) return { ...area, package_price: undefined, package_price_id: undefined, package_type: undefined as unknown };
                   return {
                     ...area,
                     package_price: undefined,
                     package_price_id: undefined,
-                    package_type: undefined as any,
+                    package_type: undefined as unknown,
                     total_price: (area.items || []).reduce((sum: number, item: any) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
                   };
                 }));
@@ -1294,7 +1295,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
               ...i,
               installment_no: i.no,
               notes: i.description,
-            } as any)));
+            } as Record<string, unknown>)));
           }}
           totalAmount={netTotal}
           isReadOnly={isReadOnly}
