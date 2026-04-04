@@ -171,7 +171,7 @@ const Customers: React.FC = () => {
   const handleCopyPortalLink = async (customer: Customer) => {
     try {
       const response = await CustomerApi.generatePortalToken(customer.id);
-      const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+      const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
       await navigator.clipboard.writeText(portalUrl);
       Swal.fire({ icon: 'success', title: 'คัดลอกลิงก์ Portal สำเร็จ!', timer: 1500, showConfirmButton: false });
     } catch (error) {

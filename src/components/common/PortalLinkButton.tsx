@@ -19,7 +19,7 @@ export const PortalLinkButton: React.FC<PortalLinkButtonProps> = ({
     setLoading(true);
     try {
       const response = await CustomerApi.generatePortalToken(customerId);
-      const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+      const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
 
       await navigator.clipboard.writeText(portalUrl);
 

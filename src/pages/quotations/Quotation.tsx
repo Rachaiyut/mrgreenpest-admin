@@ -847,7 +847,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   if (!selectedQuotation?.customer_id) return;
                   try {
                     const response = await CustomerApi.generatePortalToken(selectedQuotation.customer_id);
-                    const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                    const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
                     await navigator.clipboard.writeText(portalUrl);
                     Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                   } catch {
@@ -867,7 +867,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   if (!selectedQuotation?.customer_id) return;
                   try {
                     const response = await QuotationApi.generateSigningLink(selectedQuotation.customer_id, selectedQuotation.id);
-                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.data.token}`;
+                    const signingUrl = response.signing_url || `${window.location.origin}/portal/sign`;
                     await navigator.clipboard.writeText(signingUrl);
                     Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นเอกสารสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                   } catch {

@@ -671,7 +671,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                 if (!selectedContract?.customer_id) return;
                 try {
                   const response = await CustomerApi.generatePortalToken(selectedContract.customer_id);
-                  const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                  const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
                   await navigator.clipboard.writeText(portalUrl);
                   Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                 } catch {
@@ -690,7 +690,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                   if (!selectedContract?.customer_id) return;
                   try {
                     const response = await ContractApi.generateSigningLink(selectedContract.customer_id, selectedContract.id);
-                    const signingUrl = `${window.location.origin}/portal/sign?token=${response.data.token}`;
+                    const signingUrl = response.signing_url || `${window.location.origin}/portal/sign`;
                     await navigator.clipboard.writeText(signingUrl);
                     Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์เซ็นสัญญาสำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                   } catch {

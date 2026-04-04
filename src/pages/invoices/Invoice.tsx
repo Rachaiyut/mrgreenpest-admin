@@ -175,9 +175,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         (i) =>
           (i.status === InvoiceStatus.PENDING ||
           i.status === InvoiceStatus.OVERDUE) &&
-          !(i as any).carried_over_to_id
+          !(i as unknown as Record<string, unknown>).carried_over_to_id
       )
-      .reduce((sum, i) => sum + ((Number(i.total) || 0) - (Number((i as any).paid_amount) || 0)), 0);
+      .reduce((sum, i) => sum + ((Number(i.total) || 0) - (Number((i as unknown as Record<string, number>).paid_amount) || 0)), 0);
 
     return { total, pending, paid, overdue, totalValue, pendingValue };
   }, [invoiceData]);
@@ -465,8 +465,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         ) : '-'}
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
-                        {(i as any).billing_count ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{(i as any).billing_count}</span>
+                        {(i as unknown as Record<string, number>).billing_count ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{(i as unknown as Record<string, number>).billing_count}</span>
                         ) : '-'}
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-800">
@@ -582,7 +582,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 if (!selectedInvoice?.customer_id) return;
                 try {
                   const response = await CustomerApi.generatePortalToken(selectedInvoice.customer_id);
-                  const portalUrl = `${window.location.origin}/portal?token=${response.data.token}`;
+                  const portalUrl = `${window.location.origin}/portal?token=${response.token}`;
                   await navigator.clipboard.writeText(portalUrl);
                   Swal.fire({ title: 'คัดลอกสำเร็จ!', text: 'คัดลอกลิงก์ Portal สำหรับลูกค้าเรียบร้อยแล้ว', icon: 'success', timer: 2000, timerProgressBar: true, confirmButtonColor: '#3085d6' });
                 } catch {
@@ -627,7 +627,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           if (onUpdateInvoice) {
             await onUpdateInvoice({ ...selectedInvoice, ...data });
           } else if (selectedInvoice) {
-            await InvoiceApi.update(selectedInvoice.id, { ...selectedInvoice, ...data } as any);
+            await InvoiceApi.update(selectedInvoice.id, { ...selectedInvoice, ...data } as Partial<Invoice>);
           }
           await fetchData(['invoices']);
           setIsInvoiceEditModalOpen(false);
@@ -724,7 +724,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               if (onUpdateInvoice) {
                 await onUpdateInvoice({ ...selectedInvoice, status: targetInvoiceStatus });
               } else {
-                await InvoiceApi.update(selectedInvoice.id, { status: targetInvoiceStatus } as any);
+                await InvoiceApi.update(selectedInvoice.id, { status: targetInvoiceStatus } as Partial<Invoice>);
               }
               await fetchData(['invoices']);
             } catch (error) {
