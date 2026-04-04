@@ -499,62 +499,48 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <DocumentTextIcon className="h-5 w-5 text-white" />
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg shrink-0">
+                <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-                <p className="text-2xl font-bold text-blue-800">
-                  {stats.total}
-                </p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-blue-600 font-medium truncate">ทั้งหมด</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-800">{stats.total}</p>
               </div>
             </div>
           </Card>
-          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500 rounded-lg">
-                <ClockIcon className="h-5 w-5 text-white" />
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-amber-500 rounded-lg shrink-0">
+                <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              
-              <div>
-                <p className="text-sm text-amber-600 font-medium">
-                  รอดำเนินการ
-                </p>
-                <p className="text-2xl font-bold text-amber-800">
-                  {stats.pending}
-                </p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-amber-600 font-medium truncate">รอดำเนินการ</p>
+                <p className="text-xl sm:text-2xl font-bold text-amber-800">{stats.pending}</p>
               </div>
             </div>
           </Card>
-          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <CheckCircleIcon className="h-5 w-5 text-white" />
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg shrink-0">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-green-600 font-medium">
-                  อนุมัติแล้ว
-                </p>
-                <p className="text-2xl font-bold text-green-800">
-                  {stats.approved}
-                </p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-green-600 font-medium truncate">อนุมัติแล้ว</p>
+                <p className="text-xl sm:text-2xl font-bold text-green-800">{stats.approved}</p>
               </div>
             </div>
           </Card>
-          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500 rounded-lg">
-                <CurrencyDollarIcon className="h-5 w-5 text-white" />
+          <Card className="!p-3 sm:!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-purple-500 rounded-lg shrink-0">
+                <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <div>
-                <p className="text-sm text-purple-600 font-medium">มูลค่ารวม</p>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-purple-600 font-medium truncate">มูลค่ารวม</p>
                 <p className="text-base sm:text-xl font-bold text-purple-800 truncate">
-                  ฿
-                  {stats.totalValue.toLocaleString('th-TH', {
-                    minimumFractionDigits: 0,
-                  })}
+                  ฿{stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
                 </p>
               </div>
             </div>
