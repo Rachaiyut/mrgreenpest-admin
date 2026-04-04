@@ -130,7 +130,7 @@ export const AddStockAdjustmentModal: React.FC<
         if (field === 'adjustedQuantity') {
           updatedItem[field] = value === '' ? '' : Number(value);
         } else {
-          (updatedItem as any)[field] = value;
+          (updatedItem as Record<string, unknown>)[field] = value;
         }
         return updatedItem;
       }

@@ -133,7 +133,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
             <div className="w-full sm:w-40">
               <Select
                 value={filterType}
-                onChange={(e) => setFilterType(e.target.value as any)}
+                onChange={(e) => setFilterType(e.target.value as string)}
                 className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
               >
                 <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>

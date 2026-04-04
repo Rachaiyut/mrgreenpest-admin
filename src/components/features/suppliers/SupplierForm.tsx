@@ -25,7 +25,7 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       setFormData({
         name: initialValues.name || '',
         tax_id: initialValues.tax_id || '',
-        contact_name: (initialValues as any).contact_name || '',
+        contact_name: (initialValues as unknown as Record<string, string>).contact_name || '',
         email: initialValues.email || '',
       });
       setPhones([initialValues.phone || '']);

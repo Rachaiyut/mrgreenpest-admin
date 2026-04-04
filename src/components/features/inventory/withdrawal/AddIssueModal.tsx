@@ -335,8 +335,8 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     if (walletInfo && typeof walletInfo.balance === 'number') {
       return (walletInfo.balance + totalExpenses) > walletInfo.expense_limit;
     }
-    if (!selectedRequester || typeof (selectedRequester as any).creditLimit !== 'number') return false;
-    return totalExpenses > (selectedRequester as any).creditLimit;
+    if (!selectedRequester || typeof selectedRequester.creditLimit !== 'number') return false;
+    return totalExpenses > selectedRequester.creditLimit;
   }, [totalExpenses, selectedRequester, walletInfo]);
 
   // ตรวจสอบว่ามีข้อมูลถูกกรอกหรือไม่ (สำหรับปุ่มบันทึก)

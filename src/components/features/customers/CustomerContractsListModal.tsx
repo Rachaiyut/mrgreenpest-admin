@@ -38,7 +38,7 @@ export const CustomerContractsListModal: React.FC<
       const response = await ContractApi.getAll({
         limit: 100,
         customer_id: customer.id,
-      } as any);
+      } as Record<string, unknown>);
       setCustomerContracts(response.data || []);
     } catch (error) {
       console.error('Error fetching contracts:', error);

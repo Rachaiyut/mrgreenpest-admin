@@ -68,7 +68,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
           setUserOptions(res.data.map((u) => ({ value: u.id, label: u.name })));
         } else if (Array.isArray(res)) {
           setUserOptions(
-            (res as any).map((u: any) => ({ value: u.id, label: u.name }))
+            (Array.isArray(res) ? res : []).map((u: Record<string, string>) => ({ value: u.id, label: u.name }))
           );
         }
       } catch (error) {
@@ -86,7 +86,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
         setUserOptions(res.data.map((u) => ({ value: u.id, label: u.name })));
       } else if (Array.isArray(res)) {
         setUserOptions(
-          (res as any).map((u: any) => ({ value: u.id, label: u.name }))
+          (Array.isArray(res) ? res : []).map((u: Record<string, string>) => ({ value: u.id, label: u.name }))
         );
       }
       return;
@@ -97,7 +97,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
         setUserOptions(res.data.map((u) => ({ value: u.id, label: u.name })));
       } else if (Array.isArray(res)) {
         setUserOptions(
-          (res as any).map((u: any) => ({ value: u.id, label: u.name }))
+          (Array.isArray(res) ? res : []).map((u: Record<string, string>) => ({ value: u.id, label: u.name }))
         );
       }
     } catch (error) {

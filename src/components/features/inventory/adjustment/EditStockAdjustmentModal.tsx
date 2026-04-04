@@ -96,7 +96,7 @@ export const EditStockAdjustmentModal: React.FC<
     const newItems: EditableAdjustmentItem[] = selectedProducts.map((p) => ({
       product_id: p.id,
       product: p,
-      qty_before: (p as any).quantity || 0,
+      qty_before: (p as unknown as Record<string, number>).quantity || 0,
       quantity_change: '',
       reason: '',
     }));

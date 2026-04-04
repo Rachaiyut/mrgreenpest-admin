@@ -118,7 +118,7 @@ const Packages: React.FC = () => {
     setOpenDropdownId(null);
     try {
       const res = await PackageApi.getPackageById(pkg.id);
-      const fullPkg = (res as any).data || res;
+      const fullPkg = (res as unknown as Record<string, unknown>).data || res;
       setSelectedPackage(fullPkg);
       setModalMode('edit');
       setIsModalOpen(true);

@@ -66,7 +66,7 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
     try {
       const [followUpRes, contractRes] = await Promise.all([
         ContractFollowUpApi.getByCustomerId(customer.id),
-        ContractApi.getAll({ limit: 100, customer_id: customer.id } as any),
+        ContractApi.getAll({ limit: 100, customer_id: customer.id } as Record<string, unknown>),
       ]);
       setFollowUps(followUpRes?.data || []);
       setContracts(contractRes?.data || []);

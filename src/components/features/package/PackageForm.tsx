@@ -78,7 +78,7 @@ const PackageForm: FC<PackageFormProps> = ({
   };
 
   const handlePriceFocus = (index: number, field: string) => (e: React.FocusEvent<HTMLInputElement>) => {
-    const val = (conditions[index] as any)?.[field];
+    const val = ((conditions[index] as unknown as Record<string, unknown>))?.[field];
     if (val === 0 || val === '0') {
       handleConditionChange(index, field, '');
     } else {

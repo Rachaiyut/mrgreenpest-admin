@@ -37,7 +37,8 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
   if (!isOpen || !returnItem) return null;
 
   // Safe Cast or access for properties that might satisfy multiple interfaces or runtime variations
-  const r = returnItem as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r = returnItem as unknown as Record<string, any>;
 
   return (
     <Modal
@@ -181,7 +182,7 @@ export const ReturnDetailsModal: React.FC<ReturnDetailsModalProps> = ({
                   r.items.map((item: any, index: number) => {
                     // Handle both snake_case and camelCase or flattened props
                     const productId = item.productId || item.product_id;
-                    const product = productMap.get(productId) as any;
+                    const product = productMap.get(productId);
                     const qty = Number(item.quantity || 0);
 
                     // Safely access unit name

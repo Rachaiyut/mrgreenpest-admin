@@ -27,7 +27,7 @@ export const EditWarehouseModal: React.FC<EditWarehouseModalProps> = ({
   useEffect(() => {
     if (warehouse) {
       const existingAddress =
-        (warehouse as any).address ||
+        (warehouse as unknown as Record<string, string>).address ||
         warehouse.warehouse_branch?.location ||
         (warehouse.vehicle ? 'เคลื่อนที่' : '');
 

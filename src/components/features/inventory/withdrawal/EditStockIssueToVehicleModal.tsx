@@ -101,7 +101,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
 
   const techRoles = ['LEAD_TECH', 'TECH'];
   const isTechUser = fullCurrentUser && techRoles.includes(
-    typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as any)?.name
+    typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as unknown as Record<string, string>)?.name
   );
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
@@ -310,7 +310,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
     e.preventDefault();
     const payload = constructPayload(WithdrawalStatus.PENDING);
     if (payload) {
-      onUpdateWithdrawal(payload as any);
+      onUpdateWithdrawal(payload as WithdrawalType);
       onClose();
     }
   };
@@ -318,7 +318,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
   const handleSaveDraft = () => {
     const payload = constructPayload(WithdrawalStatus.DRAFT);
     if (payload) {
-      onUpdateWithdrawal(payload as any);
+      onUpdateWithdrawal(payload as WithdrawalType);
       onClose();
     }
   };

@@ -79,7 +79,7 @@ export const AddSupplierModal: React.FC<AddSupplierModalProps> = ({
     };
 
     if (supplierType === 'นิติบุคคล') {
-      (newSupplier as any).contact_name = data['contact-person'] as string;
+      (newSupplier as unknown as Record<string, string>).contact_name = data['contact-person'] as string;
     }
 
     onCreateSupplier(newSupplier);

@@ -692,7 +692,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {q.code}
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-slate-600">
-                          {(q as any).revision || 1}
+                          {((q as unknown as Record<string, number>).revision) || 1}
                         </td>
                         <td className="px-6 py-4 text-sm font-bold text-slate-800">
                           <TruncateText text={q.customer_name || '-'} maxWidth={160} />
@@ -722,7 +722,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          <TruncateText text={(q as any).creator ? `${(q as any).creator.first_name} ${(q as any).creator.last_name || ''}`.trim() : '-'} maxWidth={140} />
+                          <TruncateText text={((q as unknown as Record<string, Record<string, string>>).creator) ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
                         <td className="px-6 py-4 text-right whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">

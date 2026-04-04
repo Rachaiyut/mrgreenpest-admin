@@ -89,7 +89,7 @@ const CustomerListView: React.FC<{
           const expiringContracts = Number(customer.expiring_contracts_count) || 0;
 
           return (
-            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as any, customer.id); }}>
+            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                 {(currentPage - 1) * itemsPerPage + index + 1}
               </td>

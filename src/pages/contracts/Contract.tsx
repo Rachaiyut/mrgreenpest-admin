@@ -535,7 +535,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
-                          <TruncateText text={(c as any).creator ? `${(c as any).creator.first_name} ${(c as any).creator.last_name || ''}`.trim() : '-'} maxWidth={140} />
+                          <TruncateText text={((c as unknown as Record<string, Record<string, string>>).creator) ? `${((c as unknown as Record<string, Record<string, string>>).creator).first_name} ${((c as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">

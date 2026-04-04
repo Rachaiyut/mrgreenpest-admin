@@ -853,7 +853,7 @@ const Issue: React.FC = () => {
         isOpen={isApprovalModalOpen}
         onClose={() => setIsApprovalModalOpen(false)}
         action={approvalAction}
-        item={selectedWithdrawal as any}
+        item={selectedWithdrawal as never}
         onConfirm={handleConfirmApproval}
       />
       <WithdrawalDetailsModal

@@ -74,7 +74,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
       setLoadingStock(true);
       WarehouseApi.getStockBalances(fromWarehouseId)
         .then((res: any) => {
-          const stocks = (res.data || res) as any[];
+          const stocks = (res.data || res) as unknown[];
           const map: Record<string, number> = {};
           if (Array.isArray(stocks)) {
             stocks.forEach((s: any) => {

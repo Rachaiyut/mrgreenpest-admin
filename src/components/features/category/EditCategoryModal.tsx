@@ -101,7 +101,7 @@ const EditCategoryModal: React.FC<EditProductModalProps> = ({
               name="type"
               id="type"
               defaultValue={category.type}
-              disabled={!!((category as any).product_count > 0)}
+              disabled={!!((category as unknown as Record<string, number>).product_count > 0)}
             >
               <option value="" disabled>
                 -- เลือกประเภท --

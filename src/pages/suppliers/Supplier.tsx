@@ -173,7 +173,7 @@ const Suppliers: React.FC = () => {
   const onSubmitSupplier = async (data: Partial<Supplier>) => {
     try {
       if (formModalMode === 'create') {
-        await SupplierApi.createSupplier(data as any);
+        await SupplierApi.createSupplier(data as Partial<Supplier>);
       } else if (supplierToEdit) {
         await SupplierApi.updateSupplier(supplierToEdit.id, data);
       }

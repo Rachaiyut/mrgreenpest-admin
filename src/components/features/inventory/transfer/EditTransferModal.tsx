@@ -306,7 +306,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                             {product?.name || 'N/A'}
                           </td>
                           <td className="p-2 align-middle text-center text-slate-600">
-                            {(product as any)?.stock ?? '-'}
+                            {(product as unknown as Record<string, number>)?.stock ?? '-'}
                           </td>
                           <td className="p-2 align-middle">
                             <Input
@@ -315,7 +315,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                               onChange={(e) => {
                                 const newQuantity =
                                   parseInt(e.target.value, 10) || 0;
-                                const stock = (product as any)?.stock ?? 9999;
+                                const stock = (product as unknown as Record<string, number>)?.stock ?? 9999;
                                 const validatedQuantity = Math.min(
                                   newQuantity,
                                   stock
@@ -327,7 +327,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                               }}
                               className="w-24 h-10"
                               min="1"
-                              max={(product as any)?.stock ?? 9999}
+                              max={(product as unknown as Record<string, number>)?.stock ?? 9999}
                               required
                             />
                           </td>

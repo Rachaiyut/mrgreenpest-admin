@@ -77,7 +77,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
             name="type"
             value={formData.type || ''}
             onChange={handleChange}
-            disabled={mode === 'edit' && !!((initialValues as any)?.product_count > 0)}
+            disabled={mode === 'edit' && !!(((initialValues as unknown as Record<string, number>)?.product_count) > 0)}
             className={errors.type ? 'border-red-500' : ''}
           >
             <option value="" disabled>-- เลือกประเภท --</option>

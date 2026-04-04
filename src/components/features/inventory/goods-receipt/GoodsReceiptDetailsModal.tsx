@@ -39,7 +39,8 @@ export const GoodsReceiptDetailsModal: React.FC<
   if (!isOpen || !receipt) return null;
 
   // Safe Cast or access for properties that might satisfy multiple interfaces
-  const r = receipt as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r = receipt as unknown as Record<string, any>;
 
   // Calculate total quantity safely
   const totalQuantity =

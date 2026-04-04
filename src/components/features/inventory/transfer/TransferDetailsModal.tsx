@@ -105,7 +105,7 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
               </p>
               <p className="font-semibold text-amber-900 text-lg">
                 {warehouseMap[transfer.from_warehouse_id] ||
-                  (transfer as any).from_warehouse?.name ||
+                  (transfer as unknown as Record<string, Record<string, string>>).from_warehouse?.name ||
                   '-'}
               </p>
             </div>
@@ -118,7 +118,7 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
               </p>
               <p className="font-semibold text-blue-900 text-lg">
                 {warehouseMap[transfer.to_warehouse_id] ||
-                  (transfer as any).to_warehouse?.name ||
+                  (transfer as unknown as Record<string, Record<string, string>>).to_warehouse?.name ||
                   '-'}
               </p>
             </div>
@@ -185,7 +185,7 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
                 {transfer.items && transfer.items.length > 0 ? (
                   transfer.items.map((item, index) => {
                     const productId =
-                      item.product_id || (item as any).productId;
+                      item.product_id || (item as unknown as Record<string, string>).productId;
                     const product = productMap.get(productId);
                     const qty = Number(item.qty || item.quantity || 0);
                     return (

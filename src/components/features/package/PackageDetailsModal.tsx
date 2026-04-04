@@ -45,7 +45,7 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
               </div>
               <div>
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">หมวดหมู่</span>
-                <span className="text-base text-slate-700">{(pkg as any).category?.name || '-'}</span>
+                <span className="text-base text-slate-700">{(pkg as unknown as Record<string, Record<string, string>>).category?.name || '-'}</span>
               </div>
               <div>
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">จำนวนครั้งเข้าบริการ</span>
@@ -87,7 +87,7 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
                   <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
                     <div className="flex items-center gap-3">
                       <span className="flex-shrink-0 w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center text-sm font-bold text-slate-600">{idx + 1}</span>
-                      <span className="text-sm font-semibold text-slate-700">พื้นที่ไม่เกิน {cond.area_range} {(cond as any).unit?.name || 'ตร.ม.'}</span>
+                      <span className="text-sm font-semibold text-slate-700">พื้นที่ไม่เกิน {cond.area_range} {(cond as unknown as Record<string, Record<string, string>>).unit?.name || 'ตร.ม.'}</span>
                     </div>
                   </div>
                   {/* Body: 2 กลุ่ม */}

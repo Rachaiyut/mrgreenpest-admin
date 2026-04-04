@@ -365,10 +365,10 @@ const Transfers: React.FC = () => {
                 {paginatedTransfers.map((transfer, index) => {
                   const fromWarehouse =
                     warehouseMap.get(transfer.from_warehouse_id) ||
-                    (transfer as any).from_warehouse?.name;
+                    (transfer as unknown as Record<string, Record<string, string>>).from_warehouse?.name;
                   const toWarehouse =
                     warehouseMap.get(transfer.to_warehouse_id) ||
-                    (transfer as any).to_warehouse?.name;
+                    (transfer as unknown as Record<string, Record<string, string>>).to_warehouse?.name;
                   const totalQuantity =
                     transfer.items?.reduce(
                       (sum, item) =>

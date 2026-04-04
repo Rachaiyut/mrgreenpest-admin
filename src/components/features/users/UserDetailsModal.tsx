@@ -80,7 +80,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   const role = user.role;
                   if (typeof role === 'string') roleNameRaw = role;
                   else if (typeof role === 'object' && role) {
-                    const r = role as any;
+                    const r = role as Record<string, unknown>;
                     roleNameRaw =
                       typeof r.name === 'string'
                         ? r.name

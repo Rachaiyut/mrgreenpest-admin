@@ -35,7 +35,7 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
         await JobApi.update(job.id, {
           status: JobMainStatus.CANCELLED,
           remarks: reason,
-        } as any);
+        } as Record<string, unknown>);
         onConfirm(job.id, reason);
         onClose();
       } catch (error) {

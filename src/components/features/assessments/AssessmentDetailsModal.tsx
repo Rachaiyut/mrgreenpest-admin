@@ -112,7 +112,7 @@ const WorkAreaDetails: FC<{
             }
           />
           <DetailItem
-            label={`พื้นที่ (${(area as any).measurement_unit === 'meter' ? 'เมตร' : 'ตร.ม.'})`}
+            label={`พื้นที่ (${(area as unknown as Record<string, string>).measurement_unit === 'meter' ? 'เมตร' : 'ตร.ม.'})`}
             value={area.area_size}
           />
           <DetailItem
@@ -257,7 +257,7 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
               <DetailItem label="การชำระเงิน" value={paymentLabel} />
               <DetailItem label="ผู้สร้าง" value={createdByName} />
               {data.package && (
-                <DetailItem label="แพ็คเกจ" value={<span className="text-primary font-medium">{(data.package as any).name || '-'}</span>} fullWidth />
+                <DetailItem label="แพ็คเกจ" value={<span className="text-primary font-medium">{(data.package as unknown as Record<string, string>)?.name || '-'}</span>} fullWidth />
               )}
             </dl>
           </div>
