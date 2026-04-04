@@ -114,11 +114,11 @@ export const ReturnToMainWarehouseModal: React.FC<
             vehicleRes.data.map((w) => ({ value: w.id, label: w.name }))
           );
 
-          if (usersRes && Array.isArray((usersRes as any).data)) {
-            setUsers((usersRes as any).data);
+          const usersData = (usersRes as unknown as Record<string, unknown>)?.data;
+          if (usersRes && Array.isArray(usersData)) {
+            setUsers(usersData as User[]);
           } else if (Array.isArray(usersRes)) {
-            // Fallback if structure is different
-            setUsers(usersRes as any);
+            setUsers(usersRes as User[]);
           }
 
           // Auto-select destination if only one
@@ -309,7 +309,7 @@ export const ReturnToMainWarehouseModal: React.FC<
             </Button>
             <Button
               variant="primary"
-              onClick={(e) => handleSubmit(e as any)}
+              onClick={(e) => handleSubmit(e as unknown as React.FormEvent)}
               disabled={isSubmitting || isLoading}
               className="py-2 px-6 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow-sm"
             >

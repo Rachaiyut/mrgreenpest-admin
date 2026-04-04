@@ -11,6 +11,7 @@ import {
   Package,
   Category,
 } from '@/src/types/entity/app.interface';
+import { AssessmentAction } from '@/src/types/entity/assessment.interface';
 
 // Component
 import AssessmentCard from './AssessmentCard';
@@ -262,7 +263,7 @@ const Assessments: React.FC = () => {
 
         if (currentStatus === 'PENDING') {
           if (currentUser.role === 'SUPERADMIN') {
-            await AssessmentApi.approveById(id, { status: 'APPROVED' } as any);
+            await AssessmentApi.approveById(id, { status: 'APPROVED' } as unknown as AssessmentAction);
           }
         }
       } else {
@@ -281,7 +282,7 @@ const Assessments: React.FC = () => {
 
   const handleDeleteAssessment = async (assessmentId: string) => {
     try {
-      await AssessmentApi.update(assessmentId, { status: 'CANCELLED' } as any);
+      await AssessmentApi.update(assessmentId, { status: 'CANCELLED' } as Partial<Assessment>);
       fetchData();
     } catch (error) {
       console.error('Error cancelling assessment:', error);
@@ -762,7 +763,7 @@ const Assessments: React.FC = () => {
                             {allServiceTypes.join(', ') || '-'}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <StatusBadge status={assessment.status as any} />
+                            <StatusBadge status={assessment.status} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
                             ฿
@@ -772,7 +773,7 @@ const Assessments: React.FC = () => {
                             })}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            {(assessment as any).creator ? `${(assessment as any).creator.first_name} ${(assessment as any).creator.last_name || ''}`.trim() : '-'}
+                            {(() => { const creator = (assessment as unknown as Record<string, Record<string, string>>).creator; return creator ? `${creator.first_name} ${creator.last_name || ''}`.trim() : '-'; })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
                             <div className="flex items-center justify-end gap-1">

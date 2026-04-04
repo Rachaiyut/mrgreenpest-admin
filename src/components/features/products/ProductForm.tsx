@@ -44,18 +44,18 @@ const ProductForm: React.FC<ProductFormProps> = ({
         cost_price: initialValues.cost_price ?? '',
         min_stock: initialValues.min_stock ?? '',
         fda_number: initialValues.fda_number || '',
-        remark: (initialValues as any)?.remark || '',
+        remark: (initialValues as unknown as Record<string, string>)?.remark || '',
       });
       setSelectedType(initialValues.category?.type || CategoryType.PRODUCT);
-      if ((initialValues as any).image_url) {
-        setImagePreview((initialValues as any).image_url);
+      if ((initialValues as unknown as Record<string, string>).image_url) {
+        setImagePreview((initialValues as unknown as Record<string, string>).image_url);
       }
     } else {
       setFormData({});
       setSelectedType(CategoryType.PRODUCT);
     }
     setImageFile(null);
-    if (!initialValues || !(initialValues as any).image_url) setImagePreview(null);
+    if (!initialValues || !(initialValues as unknown as Record<string, string>).image_url) setImagePreview(null);
   }, [initialValues]);
 
   const isProduct = selectedType === CategoryType.PRODUCT;

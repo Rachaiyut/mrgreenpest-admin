@@ -96,7 +96,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
   const jobCode = job.code || job.id?.substring(0, 8) || '-';
   const customerName = job.customerName || '-';
-  const customerCode = job.customer?.code || (job as any).customer_code || '-';
+  const customerCode = job.customer?.code || (job as unknown as Record<string, string>).customer_code || '-';
 
   const timeRange = (() => {
     try {
@@ -128,8 +128,8 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
               <DetailItem label="รหัสลูกค้า" value={<span className="text-green-600 font-bold">{customerCode}</span>} />
               <DetailItem label="วันที่ปฏิบัติงาน" value={formatThaiDate(job.start_time)} />
               <DetailItem label="เวลา" value={timeRange} />
-              {(job as any).reference_code && (
-                <DetailItem label="อ้างอิง" value={(job as any).reference_code} fullWidth />
+              {(job as unknown as Record<string, string>).reference_code && (
+                <DetailItem label="อ้างอิง" value={(job as unknown as Record<string, string>).reference_code} fullWidth />
               )}
             </dl>
           </div>
@@ -178,7 +178,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                   <div>
                     <div className="text-sm font-medium text-slate-800">{vehicle.name}</div>
                     <div className="text-xs text-slate-500">
-                      {(vehicle as any).license_plate || vehicle.vehicle?.vehicle_registration || '-'}
+                      {(vehicle as unknown as Record<string, string>).license_plate || vehicle.vehicle?.vehicle_registration || '-'}
                     </div>
                   </div>
                 </div>

@@ -96,10 +96,10 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     notes: initialValues?.notes || '',
     includeVat: initialValues?.include_vat ?? true,
     customerId: initialValues?.customer_id || '',
-    contractId: (initialValues as any)?.contract_id || undefined, // Make sure this matches your DB
+    contractId: (initialValues as unknown as Record<string, string>)?.contract_id || undefined, // Make sure this matches your DB
     quotationId: initialValues?.quotation_id || '',
     term: initialValues?.term || null as number | null,
-    selectedScheduleId: (initialValues as any)?.invoice_schedule_id || null as string | null,
+    selectedScheduleId: (initialValues as unknown as Record<string, string>)?.invoice_schedule_id || null as string | null,
   });
 
   const [items, setItems] = useState<InvoiceItem[]>(() => {
@@ -161,7 +161,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           setInvoiceSchedules(Array.isArray(data) ? data : []);
           
           // Only reset these if we are CHANGING the contract, not on initial load of an edit
-          if(mode === 'create' || (mode === 'edit' && formData.contractId !== (initialValues as any)?.contract_id)) {
+          if(mode === 'create' || (mode === 'edit' && formData.contractId !== (initialValues as unknown as Record<string, string>)?.contract_id)) {
               setIsAdhocMode(false);
               setFormData(prev => ({ ...prev, term: null, selectedScheduleId: null }));
           }
@@ -391,7 +391,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 ...item,
                 product_id: productId,
                 description: product.name,
-                unit: (typeof product.unit === 'string' ? product.unit : (product.unit as any)?.name) || 'รายการ',
+                unit: (typeof product.unit === 'string' ? product.unit : (product.unit as unknown as Record<string, string>)?.name) || 'รายการ',
                 unitPrice: Number(product.price) || 0,
                 amount: item.quantity * (Number(product.price) || 0),
               }
