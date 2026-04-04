@@ -1180,7 +1180,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         </div>
       )}
     <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

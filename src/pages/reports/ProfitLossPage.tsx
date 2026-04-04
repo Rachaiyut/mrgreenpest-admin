@@ -161,7 +161,7 @@ const ProfitLossPage: React.FC = () => {
       </div>
 
       {/* Income & Expense Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income by Method */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-200 bg-green-50/50">

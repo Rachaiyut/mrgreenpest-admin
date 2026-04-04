@@ -1139,7 +1139,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column: General Information */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader

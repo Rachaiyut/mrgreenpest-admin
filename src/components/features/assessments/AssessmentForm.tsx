@@ -620,7 +620,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         {/* STEP 1 */}
         {currentStep === 0 && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
                   <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
@@ -796,7 +796,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         {/* STEP 3 */}
         {currentStep === 2 && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2"><CreditCardIcon className="w-5 h-5 text-primary" />เงื่อนไขการชำระเงิน</h3>

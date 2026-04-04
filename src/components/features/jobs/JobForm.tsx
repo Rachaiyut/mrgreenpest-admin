@@ -1040,7 +1040,7 @@ export const JobForm: React.FC<JobFormProps> = ({
       <form id="job-form" onSubmit={handleSubmit} className={`space-y-6 flex-1 ${isLoadingData ? 'hidden' : ''}`}>
         {/* STEP 0: Customer & Schedule */}
         <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full flex flex-col">
               <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
@@ -1303,7 +1303,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         {/* STEP 2: Team & Vehicle */}
         <div className={currentStep === 2 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-full">
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-slate-100 rounded-lg text-slate-600"><TruckIcon className="w-5 h-5" /></div>ยานพาหนะ</h3>
                 <div className="space-y-4">

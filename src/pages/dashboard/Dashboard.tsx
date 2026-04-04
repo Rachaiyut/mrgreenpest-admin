@@ -143,7 +143,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         <KPICard title="รายได้" value={`${fmt(kpi.revenue)} บาท`} color="green" subtitle={RANGE_LABELS[range]} />
         <KPICard title="ยอดค้างชำระ" value={`${fmt(kpi.outstanding_amount)} บาท`} color="red" subtitle={`${fmtInt(kpi.outstanding_count)} รายการ`} />
         <KPICard title="สัญญาที่ใช้งาน" value={`${fmtInt(kpi.active_contracts)}`} color="blue" subtitle="สัญญา" />
@@ -151,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Pending Actions + Month Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Pending Actions */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -219,7 +219,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Row 2: Revenue Chart + Sales Pipeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">รายได้รายเดือน (6 เดือนล่าสุด)</h3>
@@ -252,7 +252,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Row 3: Today Jobs + Job Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Today's Jobs */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -295,7 +295,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Row 4: Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Overdue Invoices */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">ใบแจ้งหนี้ค้างชำระ</h3>
@@ -371,7 +371,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Row 5: Upcoming + Recent */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Upcoming Jobs */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">งานที่จะมาถึง (7 วัน)</h3>

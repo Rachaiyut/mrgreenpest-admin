@@ -239,7 +239,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
       </div>
 
       {/* Summary Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Table 1: Sales Type Summary */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden h-fit">
           <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center gap-2">

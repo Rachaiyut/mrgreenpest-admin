@@ -117,7 +117,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
     >
       <div className="space-y-5">
         {/* Top Section: Info & Address */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* General Info */}
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
