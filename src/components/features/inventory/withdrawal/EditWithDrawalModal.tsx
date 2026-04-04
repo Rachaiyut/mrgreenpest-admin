@@ -163,7 +163,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
     techRoles.includes(
       typeof fullCurrentUser.role === 'string'
         ? fullCurrentUser.role
-        : (fullCurrentUser.role as any)?.name
+        : (fullCurrentUser.role as unknown as Record<string, string>)?.name
     );
 
   useEffect(() => {
@@ -321,7 +321,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
         const customerIds = withdrawal.reference_ids
           .map((refId) => {
             const job = jobs.find((j) => j.id === refId);
-            return (job as any)?.customer_id || (job as any)?.customer?.id;
+            return job?.customer_id || job?.customer?.id;
           })
           .filter((id): id is string => !!id);
         setSelectedCustomerIds([...new Set(customerIds)]);
@@ -347,7 +347,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   useEffect(() => {
     if (selectedCustomerIds.length > 0) {
       const customerJobs = jobs.filter((j) => {
-        const cId = (j as any).customer_id || (j as any).customer?.id;
+        const cId = j?.customer_id || j?.customer?.id;
         return selectedCustomerIds.includes(cId);
       });
       setFetchedJobs(customerJobs);
@@ -485,7 +485,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   const jobsForSelectedCustomers = useMemo(() => {
     if (selectedCustomerIds.length === 0) return jobs;
     return jobs.filter((job) => {
-      const cId = (job as any).customer_id || (job as any).customer?.id;
+      const cId = job?.customer_id || job?.customer?.id;
       return selectedCustomerIds.includes(cId);
     });
   }, [jobs, selectedCustomerIds]);
@@ -1095,7 +1095,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                     <select
                       className="w-1/3 border border-slate-300 rounded-lg p-2 bg-slate-50 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-sm"
                       value={referenceType}
-                      onChange={(e) => setReferenceType(e.target.value as any)}
+                      onChange={(e) => setReferenceType(e.target.value as 'JOB' | 'ASSESSMENT' | 'CONTRACT')}
                     >
                       <option value="JOB">ใบงาน (Job)</option>
                     </select>
@@ -1110,12 +1110,13 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
                             ? fetchedJobs
                             : jobs
                           ).map((j) => {
-                            const c = (j as any).customer;
+                            const jExt = j as unknown as Record<string, unknown>;
+                            const c = jExt.customer as Record<string, string> | undefined;
                             const customerName = c
                               ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
-                              : (j as any).customer_name || 'Unknown';
+                              : (jExt.customer_name as string) || 'Unknown';
                             const jobDate =
-                              (j as any).start_date || (j as any).created_at;
+                              (jExt.start_date || jExt.created_at) as string;
                             const dateStr = jobDate
                               ? new Date(jobDate).toLocaleDateString('th-TH')
                               : '-';
