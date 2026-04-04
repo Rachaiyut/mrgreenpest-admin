@@ -386,7 +386,7 @@ const SalesPipelinePage: React.FC = () => {
             <h2 className="text-lg font-semibold text-slate-800 mb-4">
               สถานะใบเสนอราคา
             </h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               <div className="text-center p-4 bg-emerald-50 rounded-xl">
                 <p className="text-2xl font-bold text-emerald-600">
                   {data.quotations.signed.toLocaleString()}
