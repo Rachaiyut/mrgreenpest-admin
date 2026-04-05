@@ -12,7 +12,7 @@ import {
   AssessmentWorkAreaItem,
   AssessmentWorkAreaCategory,
 } from '@/src/types/entity/assessment.interface';
-import { Package } from '@/src/types/entity/package.interface';
+import { Package, PackagePrice } from '@/src/types/entity/package.interface';
 import { Product } from '@/src/types/entity/product.interface';
 import { Category, ServiceSystem } from '@/src/types';
 import { PackageType } from '@/src/types/enums/package';
@@ -91,8 +91,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   // หา unique units จาก ALL packages' prices (not just active)
   const availableUnitOptions = useMemo(() => {
     const unitMap = new Map<string, string>();
-    availablePackages.forEach((pkg: any) => {
-      (pkg.package_prices || []).forEach((p: any) => {
+    availablePackages.forEach((pkg: Package) => {
+      (pkg.package_prices || []).forEach((p: PackagePrice) => {
         if (p.unit_id) {
           unitMap.set(p.unit_id, p.unit?.name || p.unit?.symbol || p.unit_id);
         }
@@ -131,9 +131,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   // Filter packages by selected measurement type unit
   const filteredPackages = useMemo(() => {
     if (!selectedUnitId) return availablePackages;
-    return availablePackages.filter((pkg: any) => {
+    return availablePackages.filter((pkg: Package) => {
       const prices = pkg.package_prices || [];
-      return prices.some((p: any) => p.unit_id === selectedUnitId);
+      return prices.some((p: PackagePrice) => p.unit_id === selectedUnitId);
     });
   }, [availablePackages, selectedUnitId]);
 
@@ -413,7 +413,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const handleItemChange = (
     itemIndex: number,
     field: keyof AssessmentWorkAreaItem,
-    value: any
+    value: string | number
   ) => {
     const currentItems = area.items || [];
     const newItems = currentItems.map((item, idx) => {

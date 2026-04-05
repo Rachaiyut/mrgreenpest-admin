@@ -520,6 +520,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           building_type_other: a.building_type_other || '',
           service_system: a.service_system || '',
           service_system_other: a.service_system_other || '',
+          category_other: a.category_other || '',
+          measurement_unit: a.measurement_unit || 'sqm',
           area_size: Number(a.area_size) || undefined,
           package_price: Number(a.package_price) || Number(a.total_price) || undefined,
           total_price: Number(a.total_price) || 0,
@@ -1095,18 +1097,21 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     finalItems = finalItems.map((item, idx) => ({ ...item, sequence: idx + 1 }));
 
     // Build quotation_areas from editableAreas
-    const quotationAreas = editableAreas.map((a: any) => ({
+    const quotationAreas = editableAreas.map((a: any, idx: number) => ({
+      sequence: idx + 1,
       area_name: a.area_name,
       building_type: a.building_type || undefined,
       building_type_other: a.building_type_other || undefined,
       service_system: a.service_system || undefined,
       service_system_other: a.service_system_other || undefined,
+      category_other: a.category_other || undefined,
       area_size: Number(a.area_size) || 0,
       measurement_unit: a.measurement_unit || 'sqm',
       total_price: Number(a.total_price) || Number(a.package_price) || 0,
       package_price: Number(a.package_price) || Number(a.total_price) || 0,
       package_price_id: a.package_price_id || undefined,
       package_type: a.package_type || undefined,
+      site_image_id: a.site_image_id || undefined,
       category_ids: (a.category_services || []).map((cs: any) => cs.category_id).filter(Boolean),
       items: (a.items || []).filter((item: any) => item.product_id).map((item: any) => ({
         product_id: item.product_id,

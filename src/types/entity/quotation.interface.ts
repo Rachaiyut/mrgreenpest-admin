@@ -66,16 +66,22 @@ export interface QuotationItem extends IBase{
 
 
 export interface QuotationArea {
-quotation_id: string;
+  quotation_id: string;
   package_price_id?: string;
+  sequence?: number;
   area_name: string;
   building_type?: BuildingType;
   building_type_other?: string;
   service_system?: ServiceSystem;
   service_system_other?: string;
+  category_other?: string;
+  service_count?: string;
   area_size: number;
+  measurement_unit?: string;
   total_price: number;
   package_price?: number;
+  package_type?: string;
+  site_image_id?: string;
 
   items?: QuotationItem[];
 }

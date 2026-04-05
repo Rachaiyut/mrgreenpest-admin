@@ -489,9 +489,10 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const sanitizedWorkAreas = workAreas.map((area) => {
-        const newArea: any = { ...area };
-        if (newArea.id && newArea.id.startsWith('area-')) newArea.id = crypto.randomUUID();
+      const sanitizedWorkAreas = workAreas.map((area, idx) => {
+        const newArea: Record<string, unknown> = { ...area };
+        newArea.sequence = idx + 1;
+        if (newArea.id && String(newArea.id).startsWith('area-')) newArea.id = crypto.randomUUID();
         if (newArea.package_price !== undefined && newArea.package_price !== null) newArea.package_price = Number(newArea.package_price);
 
         newArea.items = (newArea.items || []).map((item: any) => {

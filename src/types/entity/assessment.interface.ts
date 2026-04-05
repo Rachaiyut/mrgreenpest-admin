@@ -25,15 +25,20 @@ export interface AssessmentWorkAreaCategory extends IBase {
 export interface AssessmentWorkArea extends IBase {
   assessment_id: string;
   package_price_id?: string;
+  sequence?: number;
   package_price?: number;
-  package_type: PackageType;
+  package_type?: PackageType;
   building_type: string;
   building_type_other?: string;
   area_name: string;
   service_system?: ServiceSystem;
   service_system_other?: string;
+  category_other?: string;
+  service_count?: string;
   area_size?: number;
+  measurement_unit?: string;
   total_price: number;
+  site_image_id?: string;
 
   package_price_relation?: PackagePrice;
   items?: AssessmentWorkAreaItem[];

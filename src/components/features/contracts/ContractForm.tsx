@@ -61,14 +61,20 @@ import { Contract } from '@/src/types/entity/contract.interface';
 export interface ContractArea {
   id?: string;
   package_price_id?: string;
+  sequence?: number;
   area_name: string;
   building_type?: string;
   building_type_other?: string;
   service_system?: string;
   service_system_other?: string;
+  category_other?: string;
+  service_count?: string;
   area_size: number;
+  measurement_unit?: string;
   total_price: number;
   package_price?: number | null;
+  package_type?: string;
+  site_image_id?: string;
 
   category_service?: ContractAreaCategory[];
 }
@@ -568,12 +574,17 @@ export const ContractForm: FC<ContractFormProps> = ({
                 building_type_other: a.building_type_other || '',
                 service_system: a.service_system || '',
                 service_system_other: a.service_system_other || '',
+                category_other: a.category_other || '',
+                service_count: a.service_count || '',
+                measurement_unit: a.measurement_unit || 'sqm',
                 area_size: Number(a.area_size) || undefined,
                 package_price: Number(a.package_price) || Number(a.total_price) || undefined,
                 total_price: Number(a.total_price) || 0,
                 package_price_id: a.package_price_id || null,
                 package_type: a.package_type || (a.service_system === 'PREY' ? 'WITH_TERMITE' : undefined),
                 packagePriceRelation: a.packagePriceRelation || null,
+                site_image_id: a.site_image_id || null,
+                site_image_url: a.site_image_url || null,
                 category_services: (a.category_services || []).map((cs: any) => ({
                   category_id: cs.category_id || cs.category?.id,
                   name: cs.category?.name || cs.name || '',
@@ -936,17 +947,19 @@ export const ContractForm: FC<ContractFormProps> = ({
 
     if (workAreaAreas.length > 0) {
       // ใช้ workAreaAreas ทั้งกรณีมีและไม่มี quotation (user อาจปรับราคาแล้ว)
-      finalAreas = workAreaAreas.map((area: any) => {
+      finalAreas = workAreaAreas.map((area: any, idx: number) => {
         const categoryServices = (area.category_services || []).map((cs: any) => ({
           category_id: cs.category_id || cs.category?.id,
         })).filter((cs: any) => cs.category_id);
 
         return {
+          sequence: idx + 1,
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
           building_type_other: area.building_type === 'OTHER' ? (area.building_type_other || null) : null,
           service_system: area.service_system || undefined,
           service_system_other: area.service_system === 'OTHER' ? (area.service_system_other || null) : null,
+          category_other: area.category_other || undefined,
           service_count: String(area.service_count || serviceCount || '7 ครั้ง'),
           area_size: Number(area.area_size) || 0,
           measurement_unit: area.measurement_unit || 'sqm',
@@ -954,6 +967,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           package_price: Number(area.package_price) || Number(area.total_price) || 0,
           package_price_id: area.package_price_id || undefined,
           package_type: area.package_type || undefined,
+          site_image_id: area.site_image_id || undefined,
           category_services: categoryServices,
           items: (area.items || []).filter((item: any) => item.product_id).map((item: any) => ({
             product_id: item.product_id,
@@ -967,12 +981,13 @@ export const ContractForm: FC<ContractFormProps> = ({
       });
     } else {
       // 2. กรณีไม่อ้างอิงใบเสนอราคา ให้ดึงข้อมูลจาก workAreaAreas (WorkAreaForm)
-      finalAreas = workAreaAreas.map((area: any) => {
+      finalAreas = workAreaAreas.map((area: any, idx: number) => {
         const categoryServices = (area.category_services || []).map((cs: any) => ({
           category_id: cs.category_id || cs.category?.id,
         })).filter((cs: any) => cs.category_id);
 
         return {
+          sequence: idx + 1,
           area_name: area.area_name || '',
           building_type: area.building_type || undefined,
           building_type_other: area.building_type === 'OTHER' ? (area.building_type_other || null) : null,
@@ -985,6 +1000,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           package_price: Number(area.package_price) || Number(area.total_price) || 0,
           package_price_id: area.package_price_id || undefined,
           package_type: area.package_type || undefined,
+          site_image_id: area.site_image_id || undefined,
           category_services: categoryServices,
         };
       });

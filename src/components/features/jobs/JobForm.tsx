@@ -831,9 +831,10 @@ export const JobForm: React.FC<JobFormProps> = ({
       try {
         if (jobData.assessment_id) {
           const assessmentPayload = {
-            assessment_areas: workAreas.map((area: any) => ({
+            assessment_areas: workAreas.map((area: any, idx: number) => ({
               id: String(area.id).startsWith('area-') ? undefined : area.id,
               assessment_id: jobData.assessment_id,
+              sequence: idx + 1,
 
               area_name: area.area_name,
               building_type: area.building_type,
