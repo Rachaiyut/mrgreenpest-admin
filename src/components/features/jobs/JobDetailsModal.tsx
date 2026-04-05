@@ -9,7 +9,7 @@ import { Modal } from '../../common/Modal';
 import { FieldJob } from '@/src/types/entity/service-report.interface';
 import { Assessment } from '@/src/types/entity/assessment.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
-import { StatusBadge } from '../../common/StatusBadge';
+import { JobStatusLabel } from '@/src/types/enums/job';
 import {
   GoogleMapIcon,
   DocumentTextIcon,
@@ -123,7 +123,18 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="รหัสงาน" value={<span className="text-primary font-bold">{jobCode}</span>} />
-              <DetailItem label="สถานะ" value={<StatusBadge status={job.status} />} />
+              <DetailItem label="สถานะ" value={(() => {
+                const key = String(job.api_status || job.status || '').toUpperCase();
+                const label = JobStatusLabel[key] || job.status || '-';
+                const colorMap: Record<string, string> = {
+                  UNASSIGNED: 'bg-amber-100 text-amber-700',
+                  PENDING: 'bg-yellow-100 text-yellow-700',
+                  IN_PROGRESS: 'bg-blue-100 text-blue-700',
+                  COMPLETE: 'bg-green-100 text-green-700',
+                  CANCELLED: 'bg-red-100 text-red-700',
+                };
+                return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[key] || 'bg-slate-100 text-slate-600'}`}>{label}</span>;
+              })()} />
               <DetailItem label="ลูกค้า" value={customerName} />
               <DetailItem label="รหัสลูกค้า" value={<span className="text-green-600 font-bold">{customerCode}</span>} />
               <DetailItem label="วันที่ปฏิบัติงาน" value={formatThaiDate(job.start_time)} />
@@ -139,10 +150,10 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
             <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="ที่อยู่" value={job.address} fullWidth />
-              <DetailItem label="เขต (พื้นที่บริการ)" value={job.zone} />
-              <DetailItem label="กลุ่มบริการ" value={job.group} />
-              <DetailItem label="สายถนนที่" value={job.road_line} />
-              <DetailItem label="ลำดับที่" value={job.sequence} />
+              <DetailItem label="เขต (พื้นที่บริการ)" value={job.zone || job.customer?.service_area || '-'} />
+              <DetailItem label="กลุ่มบริการ" value={job.group || job.customer?.service_group || '-'} />
+              <DetailItem label="สายถนนที่" value={job.road_line || job.customer?.road_line || '-'} />
+              <DetailItem label="ลำดับที่" value={job.sequence || job.customer?.sequence_no || '-'} />
             </dl>
             {job.google_map_link && (
               <div className="mt-4 pt-3 border-t border-slate-100">
@@ -243,16 +254,26 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Operation Details / Work Areas */}
-        {((job.work_areas && job.work_areas.length > 0) || job.operation_details) && (
+        {/* รายละเอียดงาน */}
+        {job.operation_details && (
+          <div className="rounded-xl border border-slate-200 p-5">
+            <SectionHeader icon={<DocumentTextIcon />} title="รายละเอียดงาน" />
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-slate-700 whitespace-pre-wrap">
+              {job.operation_details}
+            </div>
+          </div>
+        )}
+
+        {/* หมายเหตุ / พื้นที่ */}
+        {((job.work_areas && job.work_areas.length > 0) || job.remarks) && (
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<MapPinIcon />} title="หมายเหตุ หรือข้อควรระวัง" />
 
-            {job.operation_details && (
+            {job.remarks && (
               <div className="mb-4">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">หมายเหตุ</p>
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm text-slate-600 whitespace-pre-wrap">
-                  {job.operation_details}
+                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-sm text-slate-700 whitespace-pre-wrap">
+                  {job.remarks}
                 </div>
               </div>
             )}

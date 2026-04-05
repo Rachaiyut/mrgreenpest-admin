@@ -1170,7 +1170,7 @@ export const ContractForm: FC<ContractFormProps> = ({
 
           <div className="space-y-4">
             {mode !== 'create' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div>
                 <FormField label="เลขที่สัญญา" htmlFor="code">
                   <Input
                     id="code"
@@ -1179,20 +1179,6 @@ export const ContractForm: FC<ContractFormProps> = ({
                     readOnly
                     className="bg-gray-50 font-mono"
                   />
-                </FormField>
-                <FormField label="สถานะ" htmlFor="status">
-                  <Select
-                    id="status"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as ContractStatus)}
-                  >
-                    <option value={ContractStatus.DRAFT}>ร่าง</option>
-                    <option value={ContractStatus.PENDING}>รอดำเนินการ</option>
-                    <option value={ContractStatus.ACTIVE}>ดำเนินการ</option>
-                    <option value={ContractStatus.COMPLETED}>เสร็จสิ้น</option>
-                    <option value={ContractStatus.CANCELLED}>ยกเลิก</option>
-                    <option value={ContractStatus.EXPIRED}>หมดอายุ</option>
-                  </Select>
                 </FormField>
               </div>
             )}

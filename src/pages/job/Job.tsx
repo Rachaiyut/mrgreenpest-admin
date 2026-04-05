@@ -992,7 +992,9 @@ const Job: React.FC<JobProps> = ({
 
   // Fetch when tab changes
   useEffect(() => {
-    if (activeTab === 'unassigned') {
+    if (activeTab === 'schedule' || activeTab === 'work-schedule') {
+      fetchSchedule();
+    } else if (activeTab === 'unassigned') {
       setUnassignedPage(1);
       fetchUnassigned(1, unassignedDateFilter);
     } else if (activeTab === 'reports') {
