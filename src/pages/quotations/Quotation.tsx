@@ -593,25 +593,25 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             <table className="min-w-[900px] w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลำดับ
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เลขที่ใบเสนอราคา
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เวอร์ชั่น
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ลูกค้า
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     เบอร์โทร
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงใบประเมิน
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     วันที่สร้าง
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -626,7 +626,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -663,11 +663,11 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         key={q.id}
                         className="hover:bg-slate-50 transition-colors"
                       >
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
-                          className="px-6 py-4 text-sm font-medium text-primary hover:underline cursor-pointer"
+                          className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer text-center"
                           onClick={() => {
                             setSelectedQuotation(q);
                             setModalMode('detail');
@@ -680,16 +680,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-4 py-3 text-center text-sm text-slate-600">
                           {((q as unknown as Record<string, number>).revision) || 1}
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-800">
+                        <td className="px-4 py-3 text-sm font-bold text-slate-800 text-center">
                           <TruncateText text={q.customer_name || '-'} maxWidth={160} />
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatPhoneNumber(phoneNumber)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {q['assessment']?.code || '-'}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatThaiDate(q.created_at)}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
@@ -711,7 +711,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           <TruncateText text={((q as unknown as Record<string, Record<string, string>>).creator) ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="hidden md:block">
                             <Button
                               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === q.id
                                 ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
@@ -721,15 +722,12 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (loadingPdfId === q.id) return;
-
                                 setSelectedQuotation(q);
                                 setLoadingPdfId(q.id);
                                 (async () => {
                                   try {
                                     const blob = await PrintApi.getById(q.id);
-                                    const url =
-                                      window.URL.createObjectURL(blob);
-                                    window.open(url, '_blank');
+                                    window.open(window.URL.createObjectURL(blob), '_blank');
                                   } catch (error) {
                                     console.error('Error viewing PDF:', error);
                                     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
@@ -739,20 +737,15 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 })();
                               }}
                             >
-                              {loadingPdfId === q.id ? (
-                                <LoadingIcon className="w-4 h-4 animate-spin" />
-                              ) : (
-                                <EyeIcon className="w-4 h-4" />
-                              )}
-                              {loadingPdfId === q.id
-                                ? 'กำลังโหลด...'
-                                : 'ดู PDF'}
+                              {loadingPdfId === q.id ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <EyeIcon className="w-4 h-4" />}
+                              {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
                             </Button>
+                            </div>
                             <Button
                               data-quotation-id={q.id}
                               onClick={(e) => handleDropdownToggle(e, q.id)}
                               variant="icon"
-                              title="ตัวเลือก"
+                              title="จัดการ"
                             >
                               <ManageIcon className="h-5 w-5" />
                             </Button>
@@ -788,6 +781,28 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
           className="origin-top-right mt-2 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 focus:outline-none z-30 border border-slate-100 overflow-hidden"
         >
           <div className="py-1">
+            <button
+              onClick={() => {
+                if (!selectedQuotation || loadingPdfId) return;
+                setLoadingPdfId(selectedQuotation.id);
+                setOpenDropdownId(null);
+                (async () => {
+                  try {
+                    const blob = await PrintApi.getById(selectedQuotation.id);
+                    window.open(window.URL.createObjectURL(blob), '_blank');
+                  } catch (error) {
+                    console.error('Error viewing PDF:', error);
+                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
+                  } finally {
+                    setLoadingPdfId(null);
+                  }
+                })();
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 items-center gap-3 transition-colors flex md:hidden"
+            >
+              <EyeIcon className="w-4 h-4 text-green-500" />
+              {loadingPdfId === selectedQuotation?.id ? 'กำลังโหลด...' : 'ดู PDF'}
+            </button>
             <button
               onClick={handleViewDetails}
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"

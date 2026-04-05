@@ -691,7 +691,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   <div className={`p-4 rounded-xl border transition-colors ${errors.created_at ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField label="วันที่สร้าง *" htmlFor="created_at" className="mb-0">
                       <div className="relative">
-                        <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
+                        <DatePicker selected={formData.created_at ? new Date(formData.created_at) : new Date()} onChange={(date) => handleDateChange('created_at', date)} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.created_at ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
                         <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
@@ -700,7 +700,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   <div className={`p-4 rounded-xl border transition-colors ${errors.appointment_date ? 'border-red-500 bg-red-50/50' : 'border-slate-200/60 bg-slate-50/50'}`}>
                     <FormField label="วันที่นัดหมาย *" htmlFor="appointment_date" className="mb-0">
                       <div className="relative">
-                        <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
+                        <DatePicker selected={formData.appointment_date ? new Date(formData.appointment_date) : null} onChange={(date) => handleDateChange('appointment_date', date)} minDate={new Date()} placeholderText="dd/mm/yyyy" dateFormat="dd/MM/yyyy" locale="th" wrapperClassName="w-full" className={`h-10 border text-sm rounded-md p-2 w-full transition-colors ${errors.appointment_date ? 'border-red-500 focus:ring-red-500' : 'bg-white'}`} />
                         <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                       </div>
                     </FormField>
