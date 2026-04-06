@@ -94,6 +94,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     payment_slip_url?: string | null;
     quotation_url?: string | null;
     service_other_text?: string;
+    pest_other_text?: string;
   }>>({});
   
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -302,6 +303,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           quotation_url: r.quotation_url || null,
           service_types: types,
           service_other_text: serviceOtherText,
+          pest_other_text: d.pest_other || '',
           service_actions: actions,
           check_in_time: r.time_in || (job.actual_start_time ? new Date(job.actual_start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
           check_out_time: r.time_out || (job.actual_end_time ? new Date(job.actual_end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) : ''),
@@ -402,6 +404,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             other: '',
           },
           lizard: { place_traps: false },
+          customer_sign_name: (job as unknown as Record<string, string>).customerName || job.customer?.first_name ? `${job.customer?.first_name || ''} ${job.customer?.last_name || ''}`.trim() : '',
+          technician_sign_name: job.primary_technician ? `${job.primary_technician.first_name || ''} ${job.primary_technician.last_name || ''}`.trim() : (currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : ''),
           next_appointment: {
             notes: '',
             reasons: [],
@@ -426,6 +430,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const totalImages = existingImages.length + selectedFiles.length;
+    if (totalImages < 2) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณาเพิ่มรูปภาพ',
+        text: `ต้องแนบรูปการปฏิบัติงานอย่างน้อย 2 รูป (ตอนนี้มี ${totalImages} รูป)`,
+      });
+      return;
+    }
 
     let nextStatus = reportState.status || JobStatus.Draft;
     if (currentUser.role !== UserRole.ADMIN && nextStatus === JobStatus.Draft) {
@@ -534,11 +548,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           mosquito_fogging: (reportState as Record<string, Record<string, boolean>>).mosquito?.fogging || false,
         } : {}),
 
-        pest_other:
-          reportState.ant?.other ||
-          reportState.cockroach?.other ||
-          reportState.rat?.other ||
-          reportState.lizard?.other || null,
+        pest_other: reportState.pest_other_text || null,
 
         // ปลวก — ส่งเฉพาะเมื่อเลือกกำจัดปลวก
         ...(reportState.service_types?.includes('กำจัดปลวก') ? {
@@ -733,11 +743,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     e.target.value = '';
   };
 
+  const hasExistingReport = !!job?.service_report;
   const title = readOnly
     ? 'รายงานบริการ'
     : finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
-      : 'บันทึกรายงานบริการ';
+      : hasExistingReport
+        ? 'แก้ไขใบรายงานบริการ'
+        : 'บันทึกรายงานบริการ';
 
   const isAdmin = currentUser.role === UserRole.ADMIN;
   const isPending = reportState.status === JobStatus.PendingApproval;
@@ -1352,9 +1365,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <Textarea
         placeholder="ระบุประเภทแมลงและวิธีการดำเนินการ..."
         rows={3}
-        value={reportState.service_other_text || ''}
+        value={reportState.pest_other_text || ''}
         onChange={(e) =>
-          setReportState((prev) => ({ ...prev, service_other_text: e.target.value }))
+          setReportState((prev) => ({ ...prev, pest_other_text: e.target.value }))
         }
       />
     </div>
@@ -1492,14 +1505,23 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                 <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
                     type="checkbox"
-                    className="rounded text-primary focus:ring-primary"
+                    className="rounded text-primary focus:ring-primary shrink-0"
                     checked={reportState.service_types?.includes(type)}
                     onChange={() => handleMultiSelect('service_types', type)}
                   />
-                  <span>{type}</span>
+                  <span className="whitespace-nowrap">{type}</span>
                 </label>
               ))}
             </div>
+            {reportState.service_types?.includes('กำจัดอื่นๆ') && (
+              <input
+                type="text"
+                placeholder="ระบุประเภทบริการอื่นๆ..."
+                value={reportState.service_other_text || ''}
+                onChange={(e) => setReportState((prev) => ({ ...prev, service_other_text: e.target.value }))}
+                className="mt-3 w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+              />
+            )}
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-800 mb-3">การบริการ</h4>
@@ -1519,29 +1541,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
         </div>
 
-        {/* Service Result Tabs */}
+        {/* Pest Detail Tabs */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
             <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
               <CheckCircleIcon className="w-5 h-5 text-primary" />
-              การปฎิบัติงาน การบริการ ปัญหาที่พบ และข้อเสนอแนะ
+              การปฏิบัติงาน การบริการ ปัญหาที่พบ และข้อเสนอแนะ
             </h3>
           </div>
           <div className="flex overflow-x-auto p-2 gap-2 bg-white border-b border-slate-100 no-scrollbar">
-            {(Object.keys(pestRenderConfig) as PestType[]).filter((pest) => {
-              // แสดง tab เฉพาะ pest ที่เลือกใน service_types
-              const types = reportState.service_types || [];
-              const mapping: Record<string, string[]> = {
-                termite: ['กำจัดปลวก'],
-                ant: ['กำจัดมด'],
-                cockroach: ['กำจัดแมลงสาบ'],
-                rat: ['กำจัดหนู'],
-                lizard: ['กำจัดจิ้งจก'],
-                mosquito: ['กำจัดยุง'],
-                other: ['กำจัดอื่นๆ'],
-              };
-              return (mapping[pest] || []).some(t => types.includes(t));
-            }).map((pest) => (
+            {(Object.keys(pestRenderConfig) as PestType[]).map((pest) => (
               <button
                 key={pest}
                 type="button"
@@ -1556,17 +1565,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             ))}
           </div>
           <div className="p-6 bg-slate-50/50 min-h-[300px]">
-            {(() => {
-              const types = reportState.service_types || [];
-              const mapping: Record<string, string[]> = {
-                termite: ['กำจัดปลวก'], ant: ['กำจัดมด'], cockroach: ['กำจัดแมลงสาบ'],
-                rat: ['กำจัดหนู'], lizard: ['กำจัดจิ้งจก'], mosquito: ['กำจัดยุง'], other: ['กำจัดอื่นๆ'],
-              };
-              const isTabVisible = (mapping[activePestTab] || []).some(t => types.includes(t));
-              if (types.length === 0) return <div className="text-slate-400 text-center py-8">กรุณาเลือกประเภทบริการก่อน</div>;
-              if (!isTabVisible) return <div className="text-slate-400 text-center py-8">เลือก tab ด้านบนเพื่อดูรายละเอียด</div>;
-              return pestRenderConfig[activePestTab]?.render?.() || null;
-            })()}
+            {pestRenderConfig[activePestTab]?.render?.() || <div className="text-slate-400 text-center py-8">เลือก tab ด้านบนเพื่อดูรายละเอียด</div>}
           </div>
         </div>
 

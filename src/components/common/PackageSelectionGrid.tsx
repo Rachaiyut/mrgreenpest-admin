@@ -50,13 +50,13 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
             const isSelected = activePackageId === pkg.id;
             const isOtherPackageLocked = !!selectedPackageId && selectedPackageId !== pkg.id;
 
-            const isWithTermiteSelected = isSelected && area.package_price_id === fit?.id && (
+            const isWithTermiteSelected = isSelected && (
               area.package_type === PackageType.WITH_TERMITE ||
-              (!area.package_type && area.package_price === fit?.price_with_termite)
+              (!area.package_type && area.package_price_id === fit?.id && area.package_price === fit?.price_with_termite)
             );
-            const isWithoutTermiteSelected = isSelected && area.package_price_id === fit?.id && (
+            const isWithoutTermiteSelected = isSelected && (
               area.package_type === PackageType.WITHOUT_TERMITE ||
-              (!area.package_type && area.package_price === fit?.price_without_termite)
+              (!area.package_type && area.package_price_id === fit?.id && area.package_price === fit?.price_without_termite)
             );
 
             return (

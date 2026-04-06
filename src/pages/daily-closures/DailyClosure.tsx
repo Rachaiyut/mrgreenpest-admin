@@ -253,7 +253,7 @@ const DailyClosure: React.FC = () => {
           const vehicleCards = Array.from(vehicleAgg.values());
           return (
           <div className="max-h-[280px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {vehicleCards.map((item) => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
@@ -264,47 +264,65 @@ const DailyClosure: React.FC = () => {
                   ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน' }
                   : { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังดำเนินการ' };
 
+                const completionPercent = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
+
                 return (
                   <button
                     key={item.vehicle_id}
                     onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`rounded-2xl text-left transition-all border-2 ${
+                    className={`group relative rounded-2xl text-left overflow-hidden border-2 ${
                       isSelected
-                        ? 'border-primary shadow-lg bg-primary/5'
-                        : 'border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5'
+                        ? 'shadow-lg bg-white border-green-500'
+                        : 'bg-white hover:shadow-md shadow-sm border-slate-200'
                     }`}
                   >
-                    <div className="px-4 pt-4 pb-4">
-                      {/* Vehicle name + status */}
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                          <div className={`p-2 rounded-xl flex-shrink-0 ${statusConfig.iconBg}`}>
-                            <TruckIcon className={`h-4 w-4 ${statusConfig.iconColor}`} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="font-bold text-slate-800 text-base truncate leading-tight">
-                              {item.vehicle_name}
-                              {item.vehicle_registration && (
-                                <span className="text-slate-400 font-normal ml-1">({item.vehicle_registration})</span>
-                              )}
-                            </h3>
-                          </div>
+
+                    <div className="p-4">
+                      {/* Vehicle header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`relative p-2.5 rounded-xl ${isClosed ? 'bg-gradient-to-br from-green-50 to-emerald-100' : 'bg-gradient-to-br from-blue-50 to-primary/10'}`}>
+                          <TruckIcon className={`h-5 w-5 ${isClosed ? 'text-green-600' : 'text-primary'}`} />
+                          {isClosed && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-bold text-slate-800 text-sm truncate">{item.vehicle_name}</h3>
+                          {item.vehicle_registration && (
+                            <p className="text-xs text-slate-400 truncate">{item.vehicle_registration}</p>
+                          )}
                         </div>
                       </div>
 
-                      {/* Stats */}
-                      <div className="grid grid-cols-3 gap-0">
-                        <div className="text-center py-2 bg-slate-50 rounded-l-lg border border-slate-200">
-                          <p className="text-[10px] text-slate-500 font-semibold uppercase mb-0.5">งาน</p>
+                      {/* Progress bar */}
+                      <div className="mb-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-semibold text-slate-400 uppercase">ความคืบหน้า</span>
+                          <span className="text-xs font-bold text-slate-600">{completionPercent}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${completionPercent === 100 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`}
+                            style={{ width: `${completionPercent}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Stats row */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 text-center py-2 rounded-xl bg-slate-50">
                           <p className="text-lg font-black text-slate-800">{item.total_jobs}</p>
+                          <p className="text-[9px] font-semibold text-slate-400 uppercase">งาน</p>
                         </div>
-                        <div className={`text-center py-2 border-y border-slate-200 ${item.incomplete_jobs > 0 ? 'bg-red-50' : 'bg-slate-50'}`}>
-                          <p className={`text-[10px] font-semibold uppercase mb-0.5 ${item.incomplete_jobs > 0 ? 'text-red-500' : 'text-slate-300'}`}>ค้าง</p>
+                        <div className={`flex-1 text-center py-2 rounded-xl ${item.completed_jobs > 0 ? 'bg-green-50' : 'bg-slate-50'}`}>
+                          <p className={`text-lg font-black ${item.completed_jobs > 0 ? 'text-green-600' : 'text-slate-300'}`}>{item.completed_jobs}</p>
+                          <p className="text-[9px] font-semibold text-green-500 uppercase">เสร็จ</p>
+                        </div>
+                        <div className={`flex-1 text-center py-2 rounded-xl ${item.incomplete_jobs > 0 ? 'bg-red-50' : 'bg-slate-50'}`}>
                           <p className={`text-lg font-black ${item.incomplete_jobs > 0 ? 'text-red-500' : 'text-slate-300'}`}>{item.incomplete_jobs}</p>
-                        </div>
-                        <div className="text-center py-2 bg-green-50 rounded-r-lg border border-slate-200">
-                          <p className="text-[10px] text-green-600 font-semibold uppercase mb-0.5">เสร็จ</p>
-                          <p className="text-lg font-black text-green-600">{item.completed_jobs}</p>
+                          <p className={`text-[9px] font-semibold uppercase ${item.incomplete_jobs > 0 ? 'text-red-400' : 'text-slate-300'}`}>ค้าง</p>
                         </div>
                       </div>
                     </div>
@@ -376,32 +394,23 @@ const DailyClosure: React.FC = () => {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-16">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider w-16">
                       ลำดับ
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       วันที่
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       รถ
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       ทะเบียน
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       หัวหน้าทีม
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       ลูกค้า
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      งานทั้งหมด
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      เสร็จ
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                      ค้าง
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                       สถานะ
@@ -454,38 +463,23 @@ const DailyClosure: React.FC = () => {
                           key={`${item.vehicle_id}::${item.primary_tech_name}`}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-sm text-slate-600">
+                          <td className="px-4 py-3 text-sm text-slate-600 text-center">
                             {rowNumber}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800">
+                          <td className="px-4 py-3 text-sm text-slate-800 text-center">
                             {filterDate ? formatThaiDate(`${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}-${String(filterDate.getDate()).padStart(2, '0')}`) : '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm font-medium text-slate-800">
+                          <td className="px-4 py-3 text-sm font-medium text-slate-800 text-center">
                             {item.vehicle_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-500">
+                          <td className="px-4 py-3 text-sm text-slate-500 text-center">
                             {item.vehicle_registration || '-'}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-800">
+                          <td className="px-4 py-3 text-sm text-slate-800 text-center">
                             {item.primary_tech_name}
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700">
+                          <td className="px-4 py-3 text-sm text-slate-700 text-center">
                             {item.customer_names?.length > 0 ? item.customer_names.join(', ') : '-'}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-800 text-center font-medium">
-                            {item.total_jobs}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-green-600 font-medium text-center">
-                            {item.completed_jobs}
-                          </td>
-                          <td
-                            className={`px-4 py-3 text-sm font-medium text-center ${
-                              item.incomplete_jobs > 0
-                                ? 'text-red-600'
-                                : 'text-slate-800'
-                            }`}
-                          >
-                            {item.incomplete_jobs}
                           </td>
                           <td className="px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-2">

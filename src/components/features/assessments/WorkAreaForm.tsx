@@ -110,8 +110,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       const matched = (activePackage.package_prices || []).find((p) => p.id === area.package_price_id);
       if (matched?.unit_id) setSelectedUnitId(matched.unit_id);
     } else if (availableUnitOptions.length > 1 && !selectedUnitId) {
-      // Default: set ตาม measurementType ปัจจุบัน
-      handleMeasurementTypeChange(measurementType);
+      // Default: set selectedUnitId ตาม measurementType โดยไม่ reset area data
+      const matched = availableUnitOptions.find(u => {
+        const name = u.name.toLowerCase();
+        if (measurementType === 'meter') {
+          return name.includes('เมตร') && !name.includes('ตาราง') && !name.includes('ตร.');
+        } else {
+          return name.includes('ตาราง') || name.includes('ตร.');
+        }
+      });
+      if (matched) setSelectedUnitId(matched.id);
     }
   }, [availableUnitOptions, area.package_price_id, activePackage]);
 
@@ -474,8 +482,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
       }
     });
     if (matched) setSelectedUnitId(matched.id);
-    // save measurement_unit ลง area
-    onAreaChange(index, { ...area, measurement_unit: type });
+    // Reset area size + package selection เพื่อให้ user เลือกใหม่ตาม unit ใหม่
+    onAreaChange(index, {
+      ...area,
+      measurement_unit: type,
+      area_size: undefined,
+      package_price: undefined,
+      package_price_id: undefined,
+      package_type: undefined!,
+      total_price: (area.items || []).reduce((sum: number, item: AssessmentWorkAreaItem) => sum + (Number(item.product_price) || 0) * (Number(item.quantity) || 0), 0),
+    });
   };
 
   const displayIndex = useMemo(() => {
@@ -1004,31 +1020,30 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         )}
         {/* รูปภาพพื้นที่ */}
         <div className="border border-slate-200 p-2 rounded-lg bg-white mb-4 mx-2">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="font-semibold text-slate-800">รูปภาพพื้นที่</h3>
-            {((area as unknown as Record<string, string>).site_image_url || (area as unknown as Record<string, string>).siteImagePreview) && (
-              <button
-                type="button"
-                onClick={() => onAreaChange(index, {
-                  ...area,
-                  site_image_id: null,
-                  siteImageFile: null,
-                  siteImagePreview: null,
-                  site_image_url: null,
-                } as Partial<AssessmentWorkArea>)}
-                className="flex items-center gap-1 bg-red-50 text-red-600 font-semibold py-1 px-2 rounded-md text-sm hover:bg-red-100 transition-colors"
-              >
-                ลบรูป
-              </button>
-            )}
-          </div>
+          <h3 className="font-semibold text-slate-800 mb-2">รูปภาพพื้นที่</h3>
           {(area as unknown as Record<string, string>).site_image_url || (area as unknown as Record<string, string>).siteImagePreview ? (
             <div className="p-2">
-              <img
-                src={(area as unknown as Record<string, string>).siteImagePreview || (area as unknown as Record<string, string>).site_image_url}
-                alt={area.area_name}
-                className="max-h-48 rounded-lg border border-slate-200 object-cover"
-              />
+              <div className="relative inline-block">
+                <img
+                  src={(area as unknown as Record<string, string>).siteImagePreview || (area as unknown as Record<string, string>).site_image_url}
+                  alt={area.area_name}
+                  className="max-h-48 rounded-lg border border-slate-200 object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => onAreaChange(index, {
+                    ...area,
+                    site_image_id: null,
+                    siteImageFile: null,
+                    siteImagePreview: null,
+                    site_image_url: null,
+                  } as Partial<AssessmentWorkArea>)}
+                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
+                  title="ลบรูป"
+                >
+                  <TrashIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           ) : (
             <label className="block border-2 border-dashed border-slate-200 rounded-lg p-6 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">

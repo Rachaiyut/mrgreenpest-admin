@@ -50,15 +50,14 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex justify-center items-center transition-opacity duration-300 p-4"
+      className="fixed inset-0 bg-black/40 z-50 flex justify-center items-center transition-opacity duration-300 p-4"
       aria-modal="true"
       role="dialog"
       onClick={closeOnOutsideClick ? onClose : undefined}
     >
       <div
-        className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale`}
+        className={`bg-white rounded-lg shadow-xl w-full ${maxWidthClass} max-h-[90vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
-        style={{ animation: 'fade-in-scale 0.3s forwards' }}
       >
         <div className="flex justify-between items-center p-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-xl font-semibold text-slate-800">{title}</h3>

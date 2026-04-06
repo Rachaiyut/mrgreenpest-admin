@@ -258,8 +258,9 @@ const Assessments: React.FC = () => {
       const id = assessmentToEdit?.id || assessmentData.id;
       const currentStatus = String(assessmentToEdit?.status || assessmentData.status).toUpperCase();
 
+      let result;
       if (id) {
-        await AssessmentApi.update(id, assessmentData);
+        result = await AssessmentApi.update(id, assessmentData);
 
         if (currentStatus === 'PENDING') {
           if (currentUser.role === 'SUPERADMIN') {
@@ -268,12 +269,13 @@ const Assessments: React.FC = () => {
         }
       } else {
         // โหมดสร้างใหม่
-        await AssessmentApi.create(assessmentData);
+        result = await AssessmentApi.create(assessmentData);
       }
 
       fetchData();
       setIsModalOpen(false);
       setAssessmentToEdit(null);
+      return result;
     } catch (error) {
       console.error('Error saving assessment:', error);
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกหรือตรวจสอบใบประเมิน' });

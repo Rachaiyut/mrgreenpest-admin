@@ -1364,12 +1364,12 @@ export const ContractForm: FC<ContractFormProps> = ({
         />
 
         {/* Notes + Price Summary */}
-        <div className="flex flex-col lg:flex-row items-start gap-6 w-full lg:col-span-2">
-          <div className="flex-1 min-w-0 w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
+          <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none" />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
           </div>
-          <div className="w-full lg:w-80 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{(includeVat ? totalAmount - vatAmount : totalAmount).toLocaleString()} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
               <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>

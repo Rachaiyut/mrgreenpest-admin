@@ -720,7 +720,7 @@ const Job: React.FC<JobProps> = ({
 
       if (existingReportId) {
         await ServiceReportApi.update(existingReportId, dataToSave);
-        
+        reportId = existingReportId;
       } else {
         const created = await ServiceReportApi.create(dataToSave as Omit<ServiceReport, 'id'>);
         const createdObj = created as unknown as Record<string, Record<string, string>>;
@@ -1068,7 +1068,7 @@ const Job: React.FC<JobProps> = ({
       (status as unknown as string) === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'แก้ไขรายงานบริการ',
+        label: 'แก้ไขใบรายงานบริการ',
         icon: DocumentCheckIcon,
         onClick: () => handleWriteReport(selectedJob),
       });

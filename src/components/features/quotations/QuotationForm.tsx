@@ -44,7 +44,7 @@ import { Customer } from '../../../types/entity/customer.interface';
 import { CategoryType, Quotation } from '@/src/types';
 
 import { PackageApi } from '../../../api/package';
-import { Package } from '../../../types/entity/package.interface';
+import { Package, PackagePrice } from '../../../types/entity/package.interface';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { QuotationApi } from '@/src/api';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
@@ -497,6 +497,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       const sortedSource = [...source].sort((a: any, b: any) =>
         new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
       );
+      // Resolve package conditions for deriving missing package_price_id
+      const assessmentPkg = selectedAssessment?.package;
+      const pkgConditions = assessmentPkg?.package_prices
+        ? [...assessmentPkg.package_prices].sort((x: PackagePrice, y: PackagePrice) => x.area_range - y.area_range)
+        : [];
+
       setEditableAreas(sortedSource.map((a: any) => {
         // Auto-detect package_type from service_system or price match
         let packageType = a.package_type;
@@ -512,6 +518,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           packageType = 'WITH_TERMITE';
         }
 
+        // Derive package_price_id from current conditions if missing
+        let pricePriceId = a.package_price_id || null;
+        if (!pricePriceId && pkgConditions.length > 0 && a.area_size) {
+          const fit = pkgConditions.find((c: PackagePrice) => c.area_range >= Number(a.area_size));
+          if (fit) pricePriceId = fit.id;
+        }
+
         return {
           id: a.id || crypto.randomUUID(),
           created_at: a.created_at,
@@ -525,7 +538,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           area_size: Number(a.area_size) || undefined,
           package_price: Number(a.package_price) || Number(a.total_price) || undefined,
           total_price: Number(a.total_price) || 0,
-          package_price_id: a.package_price_id || null,
+          package_price_id: pricePriceId,
           package_type: packageType,
           packagePriceRelation: a.packagePriceRelation || null,
           category_services: (a.category_services || []).map((cs: any) => {
@@ -665,20 +678,25 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   // Fetch full assessment (with packagePriceRelation) when assessment is selected
   useEffect(() => {
     if (!selectedAssessmentId) return;
-    // Only fetch if we don't already have full data (packagePriceRelation)
+    // Only fetch if we don't already have full data (package with package_prices)
+    if (fullAssessment?.id === selectedAssessmentId && fullAssessment?.package) return;
     const currentAssessment = fetchedAssessments.find(a => a.id === selectedAssessmentId);
-    const hasFullData = currentAssessment?.assessment_areas?.some((a: any) => a.packagePriceRelation);
-    if (hasFullData) return;
+    if (currentAssessment?.package?.package_prices?.length) return;
 
     (async () => {
       try {
         const res = await AssessmentApi.getById(selectedAssessmentId);
         const fullData = ((res as unknown as Record<string, unknown>).data || res) as Assessment;
         if (fullData?.id) {
+          setFullAssessment(fullData);
           setFetchedAssessments(prev => {
             const others = prev.filter(a => a.id !== fullData.id);
             return [fullData, ...others];
           });
+          // Re-initialize areas if they were initialized from partial list data (no package)
+          if (hasInitializedAreas && fullData.package) {
+            setHasInitializedAreas(false);
+          }
         }
       } catch (err) {
         console.error('Failed to fetch full assessment:', err);
@@ -720,6 +738,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           setUsePackagePricing(true);
           setPackageName(selectedAssessment.package.name);
           setSelectedPackageId(selectedAssessment.package.id);
+          // Ensure fetchedPackage is set so WorkAreaForm receives it
+          if (!fetchedPackage && selectedAssessment.package.package_prices) {
+            setFetchedPackage(selectedAssessment.package as Package);
+          }
           let masterPrice = 0;
           const pkg = fetchedPackage || selectedAssessment.package;
 
@@ -1331,12 +1353,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           />
         )}
 
-        <div className="flex flex-col lg:flex-row items-start gap-6 w-full lg:col-span-2">
-          <div className="flex-1 min-w-0 w-full flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
+          <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none" />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
           </div>
-          <div className="w-full lg:w-80 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
               <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
