@@ -379,16 +379,22 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
       if (activeData.installments && activeData.installments.length > 0) {
         const sumInitialAmt = activeData.installments.reduce((sum: number, curr: any) => sum + Number(curr.amount || 0), 0);
-        const mappedInst = [...activeData.installments]
-          .sort((a: any, b: any) => a.installment_no - b.installment_no)
-          .map((inst: any) => {
-            const pct = inst.percentage ? Math.round(Number(inst.percentage)) : (sumInitialAmt > 0 ? Math.round((Number(inst.amount) / sumInitialAmt) * 100) : 0);
+        let accPct = 0;
+        const sorted = [...activeData.installments].sort((a: any, b: any) => a.installment_no - b.installment_no);
+        const mappedInst = sorted.map((inst: any, idx: number) => {
+            let pct: number;
+            if (idx === sorted.length - 1) {
+              pct = Math.max(0, 100 - accPct);
+            } else {
+              pct = inst.percentage ? Math.round(Number(inst.percentage)) : (sumInitialAmt > 0 ? Math.round((Number(inst.amount) / sumInitialAmt) * 100) : 0);
+              accPct += pct;
+            }
             return {
               id: inst.id || crypto.randomUUID(),
               installment_no: inst.installment_no,
               amount: Number(inst.amount) || 0,
               percentage: pct,
-              notes: inst.notes || inst.note || '', 
+              notes: inst.notes || inst.note || '',
             };
           });
 
@@ -931,7 +937,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const netTotal = useMemo(() => subtotal + vatAmount, [subtotal, vatAmount]);
 
   // Auto-recalculate installment amounts when netTotal changes
+  const prevNetTotalRef = useRef(netTotal);
   useEffect(() => {
+    if (prevNetTotalRef.current === netTotal) return;
+    prevNetTotalRef.current = netTotal;
     if (paymentCondition !== PaymentMethod.INSTALLMENT || installments.length === 0 || netTotal <= 0) return;
 
     setInstallments(prev => {
@@ -942,7 +951,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         let pct: number;
         let amount: number;
         if (isLast) {
-          pct = 100 - accumulatedPct;
+          pct = Math.max(0, 100 - accumulatedPct);
           amount = Number((netTotal - accumulatedAmount).toFixed(2));
         } else {
           pct = inst.percentage || Math.floor(100 / prev.length);
@@ -1042,29 +1051,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       ]);
     }
   }, [paymentCondition, netTotal, installments.length]);
-
-  const prevNetTotalRef = useRef(netTotal);
-  useEffect(() => {
-    if (prevNetTotalRef.current === netTotal) return;
-    prevNetTotalRef.current = netTotal;
-
-    if (paymentCondition === PaymentMethod.INSTALLMENT && installments.length > 0 && netTotal > 0) {
-      setInstallments((prev) => {
-        let accumulatedAmt = 0;
-        return prev.map((inst, index) => {
-          const pct = inst.percentage || (netTotal > 0 ? Math.round((inst.amount / netTotal) * 100) : 0);
-
-          if (index === prev.length - 1) {
-            return { ...inst, percentage: pct, amount: Number((netTotal - accumulatedAmt).toFixed(2)) };
-          } else {
-            const amt = Number(((pct / 100) * netTotal).toFixed(2));
-            accumulatedAmt += amt;
-            return { ...inst, percentage: pct, amount: amt };
-          }
-        });
-      });
-    }
-  }, [netTotal]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
