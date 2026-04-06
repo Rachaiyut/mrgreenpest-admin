@@ -83,7 +83,7 @@ const IssueSummaryPage: React.FC = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        await fetchData(['stockIssueSummaries']);
+        await fetchData(['stockIssueSummaries', 'warehouses', 'users']);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -171,6 +171,7 @@ const IssueSummaryPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'stock' | 'expense'>('all');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState('');
 
@@ -218,6 +219,13 @@ const IssueSummaryPage: React.FC = () => {
       );
     }
 
+    // Filter by tab
+    if (activeTab === 'stock') {
+      filtered = filtered.filter((s) => s.items && s.items.length > 0);
+    } else if (activeTab === 'expense') {
+      filtered = filtered.filter((s) => s.expense_items && s.expense_items.length > 0);
+    }
+
     // Filter by creator
     if (creatorFilter !== 'all') {
       filtered = filtered.filter((s) => s.created_by === creatorFilter);
@@ -260,7 +268,7 @@ const IssueSummaryPage: React.FC = () => {
     }
 
     return filtered;
-  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap, isTechRole, currentUser?.id]);
+  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, activeTab, productMap, isTechRole, currentUser?.id]);
 
   const totalItems = filteredSummaries.length;
   const paginatedSummaries = filteredSummaries.slice(
@@ -376,8 +384,9 @@ const IssueSummaryPage: React.FC = () => {
 
   return (
     <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
-        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-4 max-w-full">
+        {/* --- Header: Title + Create Button --- */}
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
               สรุปการเบิกสินค้า/อุปกรณ์
@@ -386,42 +395,59 @@ const IssueSummaryPage: React.FC = () => {
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
-              <Input
-                type="search"
-                placeholder="ค้นหา (เลขที่, สินค้า, จำนวนเงิน, วันที่)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                title="ค้นหาด้วย: เลขที่เอกสารเบิก, สินค้า/อุปกรณ์, จำนวนเงินที่เบิก, วันที่เบิก"
-              />
-            </div>
-            <div className="w-48">
+          <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างใบเบิก
+          </Button>
+        </div>
+
+        {/* --- Filter Bar + Tabs (เหมือนหน้าภาคสนาม) --- */}
+        <Card className="!p-4 flex-shrink-0">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
+              <div className="relative w-full sm:w-56">
+                <Input
+                  type="search"
+                  placeholder="ค้นหา (เลขที่, สินค้า, จำนวนเงิน)..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
               <Select
                 value={creatorFilter}
                 onChange={(e) => {
                   setCreatorFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-fit text-sm !pr-8"
               >
                 <option value="all">ผู้เบิกทั้งหมด</option>
                 {uniqueCreators.map((creator) => (
                   <option key={creator} value={creator}>
-                    {creator}
+                    {userMap.get(creator) || creator}
                   </option>
                 ))}
               </Select>
-            </div>
-            <div className="w-40">
               <Select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-fit text-sm !pr-8"
               >
                 <option value="all">สถานะทั้งหมด</option>
                 <option value="DRAFT">ฉบับร่าง</option>
@@ -431,124 +457,29 @@ const IssueSummaryPage: React.FC = () => {
                 <option value="CANCELLED">ยกเลิก</option>
               </Select>
             </div>
-            <Button onClick={() => { setModalMode('create'); setIsModalOpen(true); }}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างใบเบิก
-            </Button>
+
+            {/* Tabs (ขวาสุด — pill style เหมือนหน้า Job) */}
+            <div className="flex gap-1 p-1 bg-slate-100 rounded-lg flex-shrink-0">
+              {([
+                { key: 'all', label: 'ทั้งหมด' },
+                { key: 'stock', label: 'สินค้า/สารเคมี' },
+                { key: 'expense', label: 'ค่าใช้จ่าย' },
+              ] as const).map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
+                    activeTab === tab.key
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-
-        {/* --- Mobile View: Cards --- */}
-        <div className="hidden">
-          {isLoading ? (
-            <div className="flex flex-col flex-grow items-center justify-center text-slate-500 py-16 min-h-[40vh]">
-              <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-              <p className="text-base font-medium">กำลังโหลดข้อมูลสรุปการเบิก...</p>
-            </div>
-          ) : paginatedSummaries.length === 0 ? (
-            <div className="flex flex-col flex-grow items-center justify-center text-slate-400 py-16 min-h-[40vh]">
-              <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
-              <p className="text-lg font-medium">ไม่พบข้อมูลสรุปการเบิก</p>
-            </div>
-          ) : (
-            <>
-              {paginatedSummaries.map((summary) => {
-                const warehouse = warehouseMap.get(summary.warehouse_id);
-
-                const totalGoodsAmount =
-                  summary.items?.reduce((sum, item) => {
-                    const product = productMap.get(item.product_id);
-                    return sum + (product ? product.price * item.quantity : 0);
-                  }, 0) || 0;
-                
-                const totalExpenseAmount = 
-                  summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
-                
-                const totalAmount = totalGoodsAmount + totalExpenseAmount;
-
-                const requesterName = summary.requester_id
-                  ? userMap.get(summary.requester_id)
-                  : '-';
-                const statusBadge = getStatusBadge(summary.status);
-
-                return (
-                  <Card key={summary.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p
-                          className="font-bold text-primary hover:underline cursor-pointer"
-                          onClick={() => handleViewDetails(summary)}
-                        >
-                          {summary.id}
-                        </p>
-                        <div className="mt-1">
-                          <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
-                            {statusBadge.text}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <Button
-                          variant="icon"
-                          data-summary-id={summary.id}
-                          onClick={(e) => handleDropdownToggle(e, summary.id)}
-                          className="-mr-2 -mt-2"
-                        >
-                          <ManageIcon className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="mt-4 space-y-3 text-sm text-slate-600">
-                      <div className="flex items-center">
-                        <CalendarDaysIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>
-                          {summary.issue_date
-                            ? formatThaiDate(summary.issue_date)
-                            : summary.created_at
-                              ? formatThaiDate(summary.created_at)
-                              : '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span className="font-semibold text-slate-800">
-                          ฿
-                          {totalAmount.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <TruckIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span className="truncate">
-                          {warehouse?.name || '-'}
-                        </span>
-                      </div>
-                      <div className="flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>ผู้สร้าง: {summary.created_by || '-'}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>ผู้เบิก: {requesterName}</span>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-              {totalItems > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={totalItems}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                />
-              )}
-            </>
-          )}
-        </div>
+        </Card>
 
         {/* --- Desktop View: Table --- */}
         <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm relative">
@@ -558,8 +489,12 @@ const IssueSummaryPage: React.FC = () => {
                 <tr>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-16">ลำดับ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่เบิก</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                    {activeTab === 'expense' ? 'รายการค่าใช้จ่าย' : activeTab === 'stock' ? 'รายการสินค้า' : 'จำนวนรายการ'}
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                    {activeTab === 'expense' ? 'ยอดค่าใช้จ่าย' : activeTab === 'stock' ? 'มูลค่าสินค้า' : 'จำนวนเงินที่เบิก'}
+                  </th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
@@ -572,7 +507,8 @@ const IssueSummaryPage: React.FC = () => {
                   {paginatedSummaries.map((summary, index) => {
                     const warehouse = warehouseMap.get(summary.warehouse_id);
                     
-                    const totalItemsCount = (summary.items?.length || 0) + (summary.expense_items?.length || 0);
+                    const stockCount = summary.items?.length || 0;
+                    const expenseCount = summary.expense_items?.length || 0;
 
                     // --- คำนวณมูลค่าสินค้ารวม ---
                     const totalGoodsAmount =
@@ -582,13 +518,14 @@ const IssueSummaryPage: React.FC = () => {
                           sum + (product ? product.price * item.quantity : 0)
                         );
                       }, 0) || 0;
-                    
+
                     // --- คำนวณมูลค่าค่าใช้จ่ายรวม ---
-                    const totalExpenseAmount = 
+                    const totalExpenseAmount =
                       summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
 
-                    // --- รวมมูลค่าทั้งหมด ---
-                    const totalAmount = totalGoodsAmount + totalExpenseAmount;
+                    // --- แสดงตาม tab ---
+                    const displayCount = activeTab === 'stock' ? stockCount : activeTab === 'expense' ? expenseCount : stockCount + expenseCount;
+                    const displayAmount = activeTab === 'stock' ? totalGoodsAmount : activeTab === 'expense' ? totalExpenseAmount : totalGoodsAmount + totalExpenseAmount;
 
                     const requesterName = summary.requester_id
                       ? userMap.get(summary.requester_id) || '-'
@@ -609,10 +546,10 @@ const IssueSummaryPage: React.FC = () => {
                               : '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                          {totalItemsCount}
+                          {displayCount}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                          ฿{totalAmount.toLocaleString('th-TH', {
+                          ฿{displayAmount.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}
