@@ -30,8 +30,8 @@ import { RoleApi, Role } from '../../api/role';
 import { UserApi } from '../../api/user';
 
 const ROLE_NAME_MAPPING: Record<string, string> = {
-  admin: 'ผู้ดูแลระบบ',
-  lead_tech: 'หัวหน้าช่าง',
+  admin: 'ผู้ดูแลระบบ (Admin)',
+  lead_tech: 'หัวหน้าทีมช่าง',
   cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
   coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
   ceo: 'ผู้บริหาร (CEO)',
