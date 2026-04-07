@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User, UserRole } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
-import { PhotoIcon } from '../../../assets/icons/Icons';
+import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
 import {
@@ -45,6 +45,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -379,14 +380,23 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
 
                 <div className="grid grid-cols-1 gap-4">
                   <FormField label="รหัสผ่าน*" htmlFor="user-password">
-                    <Input
-                      id="user-password"
-                      name="user-password"
-                      type="password"
-                      className="h-11"
-                      value={formData['user-password']}
-                      onChange={handleChange}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="user-password"
+                        name="user-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="h-11 pr-11"
+                        value={formData['user-password']}
+                        onChange={handleChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                      </button>
+                    </div>
                     {errors['user-password'] && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors['user-password']}

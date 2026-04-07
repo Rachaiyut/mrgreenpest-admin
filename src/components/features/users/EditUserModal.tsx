@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User } from '@/src/types/entity/app.interface';
 import { FormField, Input, Select, Button } from '../../common/FormControls';
-import { PhotoIcon } from '../../../assets/icons/Icons';
+import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
 import { validateEmail, validatePhone } from '@/src/utils/validation';
@@ -27,6 +27,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
 
   useEffect(() => {
@@ -52,6 +56,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       setSelectedFile(null);
       setIsUploading(false);
       setErrors({});
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setShowConfirmPassword(false);
     }
   }, [user, isOpen]);
 
@@ -88,6 +96,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
     if (!formData.last_name) newErrors.last_name = 'กรุณากรอกนามสกุล';
     if (!formData.nickname) newErrors.nickname = 'กรุณากรอกชื่อเล่น';
     if (!formData.role_id) newErrors.role_id = 'กรุณาเลือกบทบาท';
+    if (newPassword && newPassword !== confirmPassword) newErrors.confirmPassword = 'รหัสผ่านไม่ตรงกัน';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -125,8 +134,11 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
           email: formData.email,
           phone: formData.phone,
           role_id: formData.role_id,
-          // password: only if changed? (Usually handled in separate change password flow or optional)
         };
+
+        if (newPassword.trim()) {
+          updatePayload.password = newPassword;
+        }
 
         if (storageId) {
           updatePayload.storage_id = storageId;
@@ -355,6 +367,64 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       <p className="text-red-500 text-sm mt-1">
                         {errors.role_id}
                       </p>
+                    )}
+                  </FormField>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField label="รหัสผ่านใหม่" htmlFor="edit-password">
+                    <div className="relative">
+                      <Input
+                        id="edit-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="h-11 pr-11"
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                          if (confirmPassword && e.target.value !== confirmPassword) {
+                            setErrors(prev => ({ ...prev, confirmPassword: 'รหัสผ่านไม่ตรงกัน' }));
+                          } else {
+                            setErrors(prev => { const { confirmPassword: _, ...rest } = prev; return rest; });
+                          }
+                        }}
+                        placeholder="เว้นว่างถ้าไม่ต้องการเปลี่ยน"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </FormField>
+                  <FormField label="ยืนยันรหัสผ่าน" htmlFor="edit-confirm-password">
+                    <div className="relative">
+                      <Input
+                        id="edit-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        className={`h-11 pr-11 ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : ''}`}
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (newPassword && e.target.value && newPassword !== e.target.value) {
+                            setErrors(prev => ({ ...prev, confirmPassword: 'รหัสผ่านไม่ตรงกัน' }));
+                          } else {
+                            setErrors(prev => { const { confirmPassword: _, ...rest } = prev; return rest; });
+                          }
+                        }}
+                        placeholder="กรอกรหัสผ่านอีกครั้ง"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      >
+                        {showConfirmPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                      </button>
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
                     )}
                   </FormField>
                 </div>
