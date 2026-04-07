@@ -537,68 +537,74 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                   </div>
                 ) : (
                   <div className="space-y-3 mt-2">
-                    <div className="grid grid-cols-12 gap-4 px-5 py-3 bg-slate-50/80 rounded-lg text-sm font-semibold text-slate-600 uppercase tracking-wider border border-slate-100 items-center">
-                      <div className="col-span-4">รายละเอียดสินค้า</div>
-                      <div className="col-span-2 text-center">สต๊อกคงเหลือ</div>
-                      <div className="col-span-2 text-center text-blue-600">Limit รถ</div>
-                      <div className="col-span-3 text-center text-emerald-600">จำนวนที่เบิก</div>
-                      <div className="col-span-1 text-center">จัดการ</div>
+                    {/* Column Headers */}
+                    <div className="grid grid-cols-12 gap-4 px-5 py-3 text-sm font-semibold text-slate-500 items-center">
+                      <div className="col-span-1">รหัส</div>
+                      <div className="col-span-3">สินค้า</div>
+                      <div className="col-span-2 text-center">คงเหลือ</div>
+                      <div className="col-span-2 text-center text-blue-600">LIMIT รถ</div>
+                      <div className="col-span-3 text-center">จำนวน</div>
+                      <div className="col-span-1 text-center"></div>
                     </div>
 
                     {goodsItems.map((item) => {
                       const product = productMap.get(item.productId);
                       const available = fromWarehouseId ? effectiveStockMap.get(fromWarehouseId)?.get(item.productId) || 0 : 0;
                       const limit = destinationLimits.get(item.productId);
-                      
+
                       const isOverStock = available > 0 && item.quantity > available;
                       const isOverLimitObj = limit !== undefined && item.quantity > limit;
                       const hasWarning = isOverStock || isOverLimitObj;
                       const unitName = product?.unit?.name || product?.unit?.symbol || 'หน่วย';
 
                       return (
-                        <div 
-                          key={item.id} 
-                          className={`px-5 py-4 rounded-xl border transition-all duration-200 flex items-center bg-white shadow-sm hover:shadow-md ${
-                            hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200 hover:border-indigo-200'
+                        <div
+                          key={item.id}
+                          className={`px-5 py-4 rounded-xl border transition-all duration-200 bg-white ${
+                            hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200'
                           }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center w-full">
-                            <div className="flex flex-col justify-center col-span-4">
-                              <span className="font-bold text-slate-800 text-sm truncate pr-2" title={product?.name}>
+                            {/* รหัส */}
+                            <div className="col-span-1">
+                              <span className="font-mono text-sm font-bold text-green-600">
+                                {product?.code || item.productId.substring(0, 8)}
+                              </span>
+                            </div>
+
+                            {/* สินค้า */}
+                            <div className="col-span-3">
+                              <span className="font-bold text-slate-800 text-sm">
                                 {product?.name || 'Unknown Product'}
                               </span>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="font-mono text-[11px] font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200">
-                                  {product?.code || item.productId.substring(0, 8)}
-                                </span>
-                              </div>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center col-span-2">
-                              <span className="text-[11px] text-slate-400 font-medium mb-1">ในคลังมี</span>
+                            {/* คงเหลือ */}
+                            <div className="col-span-2 text-center">
                               <span className={`text-base font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
-                                {available.toLocaleString()} <span className="text-xs font-medium text-slate-500 ml-0.5">{unitName}</span>
+                                {available.toLocaleString()}
                               </span>
                             </div>
 
-                            <div className="flex flex-col items-center justify-center col-span-2">
-                              <span className="text-[11px] text-blue-400 font-medium mb-1">จำกัด</span>
+                            {/* LIMIT รถ */}
+                            <div className="col-span-2 text-center">
                               <span className="text-base font-bold text-blue-600">
-                                {limit !== undefined ? limit.toLocaleString() : '-'} <span className="text-xs font-medium text-blue-400 ml-0.5">{limit !== undefined ? unitName : ''}</span>
+                                {limit !== undefined ? limit.toLocaleString() : '-'}
                               </span>
                             </div>
-                            
-                            <div className="col-span-3 flex flex-col items-center justify-center relative">
-                              <div className="relative flex items-center w-full max-w-[130px] group">
+
+                            {/* จำนวน */}
+                            <div className="col-span-3 flex items-center justify-center relative">
+                              <div className="relative flex items-center w-full max-w-[130px]">
                                 <Input
-                                  type="number" 
-                                  min="1" 
+                                  type="number"
+                                  min="1"
                                   value={item.quantity}
                                   onChange={(e) => handleGoodsItemChange(item.id, 'quantity', Number(e.target.value))}
-                                  className={`w-full text-center h-11 text-base font-bold rounded-lg pr-10 transition-all ${
-                                    hasWarning 
-                                      ? 'border-red-400 text-red-600 focus:border-red-500 focus:ring-red-200 bg-red-50' 
-                                      : 'border-slate-300 text-emerald-700 focus:border-emerald-500 focus:ring-emerald-200 bg-slate-50 group-hover:bg-white'
+                                  className={`w-full text-center h-10 text-base font-bold rounded-lg pr-12 ${
+                                    hasWarning
+                                      ? 'border-red-400 text-red-600 bg-red-50'
+                                      : 'border-slate-300 text-slate-800 bg-white'
                                   }`}
                                 />
                                 <span className="absolute right-3 text-xs font-semibold text-slate-400 pointer-events-none">
@@ -606,24 +612,25 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                                 </span>
                               </div>
                               {isOverStock && (
-                                <span className="text-xs font-bold absolute -bottom-6 whitespace-nowrap text-red-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-4 h-4" /> เกินสต๊อก
+                                <span className="text-xs font-bold absolute -bottom-5 whitespace-nowrap text-red-500 flex items-center gap-1">
+                                  <XCircleIcon className="w-3.5 h-3.5" /> เกินสต๊อก
                                 </span>
                               )}
                               {!isOverStock && isOverLimitObj && (
-                                <span className="text-xs font-bold absolute -bottom-6 whitespace-nowrap text-amber-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-4 h-4" /> เกินโควต้า
+                                <span className="text-xs font-bold absolute -bottom-5 whitespace-nowrap text-amber-500 flex items-center gap-1">
+                                  <XCircleIcon className="w-3.5 h-3.5" /> เกินโควต้า
                                 </span>
                               )}
                             </div>
-                            
+
+                            {/* ลบ */}
                             <div className="col-span-1 flex justify-center">
-                              <button 
-                                type="button" 
-                                onClick={() => handleRemoveGoodsItem(item.id)} 
-                                className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none"
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveGoodsItem(item.id)}
+                                className="text-red-400 hover:text-red-600 p-2 rounded-lg transition-colors"
                               >
-                                <TrashIcon className="w-6 h-6" />
+                                <TrashIcon className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
