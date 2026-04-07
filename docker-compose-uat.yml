@@ -1,4 +1,4 @@
-name: mrgreenpest-dev
+name: mrgreenpest-uat
 services:
   # React Frontend Application (Production)
   app:
@@ -7,15 +7,15 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        - API_BASE_URL=https://mrgreenpest.knacx.dev/api
-    image: mrgreenpest-dev:latest
-    container_name: mrgreenpest-dev
+        - API_BASE_URL=https://mrgreenpest-uat.knacx.uat/api
+    image: mrgreenpest-uat:latest
+    container_name: mrgreenpest-uat
     ports:
-      - '4100:80'
+      - '4500:80'
     restart: unless-stopped
     networks:
-      - mrgreenpest-dev-network
+      - mrgreenpest-uat-network
 
 networks:
-  mrgreenpest-dev-network:
+  mrgreenpest-uat-network:
     driver: bridge

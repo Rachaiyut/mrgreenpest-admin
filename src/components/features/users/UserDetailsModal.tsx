@@ -88,17 +88,17 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                   }
 
                   const mapping: Record<string, string> = {
-                    admin: 'ผู้ดูแลระบบ',
-                    lead_tech: 'หัวหน้าช่าง',
-                    cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน',
-                    coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ',
-                    ceo: 'ประธานเจ้าหน้าที่บริหาร',
-                    superadmin: 'ผู้ดูแลระบบสูงสุด',
+                    admin: 'ผู้ดูแลระบบ (Admin)',
+                    lead_tech: 'หัวหน้าทีมช่าง',
+                    cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
+                    coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
+                    ceo: 'ผู้บริหาร (CEO)',
+                    superadmin: 'หัวหน้าผู้ดูแลระบบ (หัวหน้า Admin)',
                     sales: 'ฝ่ายขาย',
                     accounting: 'ฝ่ายบัญชี',
                     warehouse: 'คลังสินค้า',
                     dispatcher: 'ผู้จัดส่ง',
-                    tech: 'ช่างเทคนิค',
+                    tech: 'ลูกทีมปฏิบัติงาน (ช่าง)',
                   };
                   return (
                     mapping[String(roleNameRaw).toLowerCase()] || roleNameRaw
