@@ -3,8 +3,9 @@ export const PERMISSION_ACTIONS = [
   { label: 'ดู', action: 'READ' },
   { label: 'สร้าง', action: 'CREATE' },
   { label: 'แก้ไข', action: 'UPDATE' },
-  { label: 'ลบ', action: 'DELETE' },
+  { label: 'ยกเลิก', action: 'CANCEL' },
   { label: 'อนุมัติ', action: 'APPROVE' },
+  { label: 'แจ้งเตือน', action: 'NOTIFY' },
 ];
 
 export interface PermissionRow {
@@ -55,10 +56,10 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       { label: 'ผู้จัดจำหน่าย', module: 'SUPPLIER' },
       { label: 'หน่วยนับ', module: 'UNIT' },
       { label: 'รับเข้า', module: 'RECEIVE_NOTE' },
-      { label: 'เบิกสินค้าเข้าคลังย่อย', module: 'WITHDRAW_NOTE' },
+      { label: 'เบิกสินค้าเข้าคลังย่อย', module: 'ISSUE_NOTE' },
       {
         label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-        module: 'SUMMARY_WITHDRAW',
+        module: 'ISSUE_SUMMARY',
       },
       { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },
       { label: 'ปรับปรุง Stock', module: 'ADJUSTMENT_NOTE' },

@@ -297,14 +297,14 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         name: 'เบิกสินค้าเข้าคลังย่อย',
         path: 'withdraw-vehicle',
         icon: NewWarehouseIcon,
-        access: 'ACCESS_WITHDRAW_NOTE',
+        access: 'ACCESS_ISSUE_NOTE',
         component: WithDrawVehicle,
       },
       {
         name: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         path: 'withdrawals',
         icon: DocumentTextIcon,
-        access: 'ACCESS_SUMMARY_WITHDRAW',
+        access: 'ACCESS_ISSUE_SUMMARY',
         component: Withdrawals,
       },
       {
