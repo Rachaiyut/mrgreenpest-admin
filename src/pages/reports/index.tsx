@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
@@ -209,7 +210,7 @@ const Reports: React.FC<ReportsProps> = () => {
   }, [productReturns, warehouseById]);
 
   const foRows = useMemo(() => {
-    const isTech = currentUser?.role === 'TECH' || currentUser?.role === 'LEAD_TECH';
+    const isTech = isFieldRole(currentUser?.roleType);
 
     return jobs
       .filter((j) => {

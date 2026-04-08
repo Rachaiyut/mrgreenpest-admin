@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 // ===== React =====
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
@@ -166,7 +167,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   }, [currentUser]);
 
   const isLockedRole = useMemo(() => {
-    return ['LEAD_TEACH', 'LEAD_TECH', 'TECH'].includes(loggedInUser.role);
+    return isFieldRole(loggedInUser.roleType);
   }, [loggedInUser.role]);
 
   const userOptions = useMemo(() => {

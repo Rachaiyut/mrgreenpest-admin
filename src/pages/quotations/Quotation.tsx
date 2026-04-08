@@ -1,3 +1,5 @@
+import { isFieldRole } from '@/src/utils/role';
+import { usePermissions } from '@/src/hooks/usePermissions';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -74,6 +76,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
 }) => {
   const { customers } = useData();
   const currentUser = useCurrentUser();
+  const { hasPermission } = usePermissions();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [totalFromServer, setTotalFromServer] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -104,7 +107,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       if (endDate) query.end_date = endDate;
 
       // LEAD_TECH/TECH: เห็นที่ตัวเองสร้าง + ที่ผูกกับ job ของตัวเอง
-      if (currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH') {
+      if (isFieldRole(currentUser?.roleType)) {
         query.tech_id = currentUser.id;
       }
 
@@ -810,7 +813,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <EyeIcon className="w-4 h-4 text-slate-400" />
               ดูรายละเอียด
             </button>
-            {selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL && currentUser?.role === 'SUPERADMIN' && (
+            {selectedQuotation?.status === QuotationStatus.PENDING_APPROVAL && hasPermission('APPROVE_QUOTATION') && (
               <button
                 onClick={handleApprove}
                 className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
@@ -833,7 +836,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <DocumentTextIcon className="w-4 h-4 text-amber-500" />
               สร้างฉบับใหม่
             </button>
-            {currentUser?.role !== 'LEAD_TECH' && currentUser?.role !== 'TECH' && (
+            {!isFieldRole(currentUser?.roleType) && (
               <button
                 onClick={handleStatusClick}
                 className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
@@ -842,7 +845,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 เปลี่ยนสถานะ
               </button>
             )}
-            {currentUser?.role !== 'LEAD_TECH' && currentUser?.role !== 'TECH' && (
+            {!isFieldRole(currentUser?.roleType) && (
               <button
                 onClick={async () => {
                   if (!selectedQuotation?.customer_id) return;

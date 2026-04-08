@@ -1,3 +1,5 @@
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
+import { usePermissions } from '@/src/hooks/usePermissions';
 import {
   useState,
   useEffect,
@@ -68,6 +70,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
+  const currentUser = useCurrentUser();
+  const { hasPermission } = usePermissions();
   const isEdit = !!initialData?.id;
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -464,7 +468,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       const roleStr = typeof currentUserRole === 'object' ? (currentUserRole as Record<string, string>)?.name : String(currentUserRole);
       const formattedRole = String(roleStr || '').toUpperCase();
 
-      if (formattedRole === 'SUPERADMIN') {
+      if (hasPermission('APPROVE_ASSESSMENT')) {
         return 'ตรวจสอบและอนุมัติ';
       }
       return 'บันทึกและแก้ไข';

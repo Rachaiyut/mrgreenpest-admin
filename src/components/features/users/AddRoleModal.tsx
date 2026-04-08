@@ -21,6 +21,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
   onSuccess,
 }) => {
   const [roleName, setRoleName] = useState('');
+  const [roleType, setRoleType] = useState('');
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<
@@ -34,6 +35,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
     if (isOpen) {
       fetchPermissions();
       setRoleName('');
+      setRoleType('');
       setDescription('');
       setSelectedPermissionIds(new Set());
     }
@@ -70,9 +72,10 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
       // 1. Create Role
       const createdRole = await RoleApi.create({
         name: roleName,
+        role_type: roleType,
         description: description,
         status: true,
-      });
+      } as Record<string, unknown>);
 
       // 2. Assign Permissions
       if (selectedPermissionIds.size > 0) {
@@ -124,10 +127,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
       <form id="add-role-form" onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label
-              htmlFor="role-name"
-              className="block text-sm font-medium text-slate-700 mb-1"
-            >
+            <label htmlFor="role-name" className="block text-sm font-medium text-slate-700 mb-1">
               ชื่อบทบาท<span className="text-red-500">*</span>
             </label>
             <Input
@@ -139,22 +139,37 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
               placeholder="เช่น ผู้จัดการฝ่ายขาย"
             />
           </div>
-
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-slate-700 mb-1"
-            >
-              รายละเอียด
+            <label htmlFor="role-type" className="block text-sm font-medium text-slate-700 mb-1">
+              ประเภทบทบาท<span className="text-red-500">*</span>
             </label>
-            <Input
-              id="description"
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับบทบาท"
-            />
+            <select
+              id="role-type"
+              required
+              value={roleType}
+              onChange={(e) => setRoleType(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">เลือกประเภท</option>
+              <option value="MANAGEMENT">ผู้บริหาร/จัดการ</option>
+              <option value="EXECUTIVE">ผู้บริหารระดับสูง</option>
+              <option value="FIELD_LEAD">หัวหน้าทีมช่าง</option>
+              <option value="FIELD_TECH">ช่างปฏิบัติงาน</option>
+            </select>
           </div>
+        </div>
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-slate-700 mb-1">
+            รายละเอียด
+          </label>
+          <textarea
+            id="description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับบทบาท"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          />
         </div>
 
         <div className="pt-2">

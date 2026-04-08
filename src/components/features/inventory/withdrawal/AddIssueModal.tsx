@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 /**
  * @file AddWithDrawModal.tsx
  * @description Modal component for creating a new goods withdrawal.
@@ -127,7 +128,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   }, [currentUser]);
 
   const isLockedRole = useMemo(() => {
-    return ['LEAD_TEACH', 'TECH'].includes(loggedInUser.role);
+    return isFieldRole(loggedInUser.roleType);
   }, [loggedInUser.role]);
 
   const userOptions = useMemo(() => {

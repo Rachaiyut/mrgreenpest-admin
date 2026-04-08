@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 // ===== React =====
 import { useMemo } from "react";
 
@@ -51,7 +52,7 @@ const JobCard: React.FC<{
     const currentUserId = currentUser?.id as string | undefined;
     const roleVal = currentUser?.role;
     const currentUserRole = String(typeof roleVal === 'object' ? (roleVal as Record<string, string>)?.name : roleVal || '').toUpperCase();
-    const isLeadTechOrTech = currentUserRole === 'LEAD_TECH' || currentUserRole === 'TECH';
+    const isLeadTechOrTech = isFieldRole(currentUser?.roleType);
     const isAssignedToCurrentUser = useMemo(
       () =>
         !!currentUserId &&

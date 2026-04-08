@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 // ===== React / External =====
 import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -63,7 +64,7 @@ const getStatusBadge = (status?: string) => {
 
 const IssueSummaryPage: React.FC = () => {
   const currentUser = useCurrentUser();
-  const isTechRole = currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH';
+  const isTechRole = isFieldRole(currentUser?.roleType);
 
   const {
     stockIssueSummaries,

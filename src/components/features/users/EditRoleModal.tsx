@@ -24,6 +24,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
   onSuccess,
 }) => {
   const [roleName, setRoleName] = useState('');
+  const [roleType, setRoleType] = useState('');
   const [description, setDescription] = useState('');
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<
@@ -38,6 +39,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
       fetchData();
     } else {
       setRoleName('');
+      setRoleType('');
       setDescription('');
       setSelectedPermissionIds(new Set());
     }
@@ -57,6 +59,7 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
 
       const role = roleRes;
       setRoleName(role.name);
+      setRoleType(role.role_type || '');
       setDescription(role.description || '');
 
       // Set selected permissions
@@ -174,6 +177,24 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
       }
     >
       <form id="edit-role-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="mb-4">
+          <label htmlFor="edit-role-type" className="block text-sm font-medium text-slate-700 mb-1">
+            ประเภทบทบาท
+          </label>
+          <select
+            id="edit-role-type"
+            value={roleType}
+            onChange={(e) => setRoleType(e.target.value)}
+            className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">เลือกประเภท</option>
+            <option value="MANAGEMENT">ผู้บริหาร/จัดการ</option>
+            <option value="EXECUTIVE">ผู้บริหารระดับสูง</option>
+            <option value="FIELD_LEAD">หัวหน้าทีมช่าง</option>
+            <option value="FIELD_TECH">ช่างปฏิบัติงาน</option>
+          </select>
+        </div>
+
         <div className="pt-2">
           <h3 className="text-md font-medium text-slate-800 mb-3">
             สิทธิ์การใช้งาน

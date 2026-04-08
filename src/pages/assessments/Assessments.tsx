@@ -1,3 +1,5 @@
+import { isFieldRole, isManagementRole } from '@/src/utils/role';
+import { usePermissions } from '@/src/hooks/usePermissions';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useLocation } from 'react-router-dom';
@@ -55,6 +57,7 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 const Assessments: React.FC = () => {
   const location = useLocation();
   const currentUser = useCurrentUser()
+  const { hasPermission } = usePermissions();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -119,7 +122,7 @@ const Assessments: React.FC = () => {
       }
 
       // LEAD_TECH/TECH เห็นเฉพาะที่ตัวเองสร้าง
-      if (currentUser?.role === 'LEAD_TECH' || currentUser?.role === 'TECH') {
+      if (isFieldRole(currentUser?.roleType)) {
         filter.created_by = currentUser.id;
       }
 
@@ -263,7 +266,7 @@ const Assessments: React.FC = () => {
         result = await AssessmentApi.update(id, assessmentData);
 
         if (currentStatus === 'PENDING') {
-          if (currentUser.role === 'SUPERADMIN') {
+          if (hasPermission('APPROVE_ASSESSMENT')) {
             await AssessmentApi.approveById(id, { status: 'APPROVED' } as unknown as AssessmentAction);
           }
         }
@@ -365,7 +368,7 @@ const Assessments: React.FC = () => {
     if (!selectedAssessment) return null;
 
     const isPending = String(selectedAssessment.status).toUpperCase() === 'PENDING';
-    const isSuperAdmin = currentUser.role === 'SUPERADMIN';
+    const canApprove = hasPermission('APPROVE_ASSESSMENT');
 
     const actions: {
       label: string;
@@ -380,7 +383,7 @@ const Assessments: React.FC = () => {
         },
       ];
 
-    if (!isPending || isSuperAdmin) {
+    if (!isPending || canApprove) {
       actions.push({
         label: 'แก้ไข',
         icon: PencilIcon,

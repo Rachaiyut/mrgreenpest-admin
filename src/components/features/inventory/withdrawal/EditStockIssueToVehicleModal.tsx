@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 /**
  * @file EditWithdrawalModal.tsx
  * @description Modal component for editing a goods withdrawal with Source and Destination warehouses.

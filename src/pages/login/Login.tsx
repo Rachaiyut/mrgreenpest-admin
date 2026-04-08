@@ -1,3 +1,4 @@
+import { isFieldRole } from '@/src/utils/role';
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -76,7 +77,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         // Wait for state updates to propagate before redirect
         setTimeout(() => {
-          if (user && (user.role === 'LEAD_TECH' || user.role === 'TECH')) {
+          if (user && isFieldRole(user.roleType)) {
             navigate('/field-operations');
           } else {
             navigate('/');

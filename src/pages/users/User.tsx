@@ -16,8 +16,7 @@ import {
   WalletIcon,
   LoadingIcon,
 } from '../../assets/icons/Icons';
-import { AddRoleModal } from '../../components/features/users/AddRoleModal';
-import { EditRoleModal } from '../../components/features/users/EditRoleModal';
+import { RoleModal } from '../../components/features/users/RoleModal';
 import { AddUserModal } from '../../components/features/users/AddUserModal';
 import { Pagination } from '../../components/common/Pagination';
 import { UserDetailsModal } from '../../components/features/users/UserDetailsModal';
@@ -763,14 +762,16 @@ const Users: React.FC<UsersProps> = ({
           </div>
         </div>
       )}
-      <AddRoleModal
+      <RoleModal
         isOpen={isAddRoleModalOpen}
         onClose={() => setIsAddRoleModalOpen(false)}
+        mode="create"
         onSuccess={() => fetchRoles()}
       />
-      <EditRoleModal
+      <RoleModal
         isOpen={isEditRoleModalOpen}
         onClose={() => setIsEditRoleModalOpen(false)}
+        mode="edit"
         roleId={roleToEditId}
         onSuccess={() => fetchRoles()}
       />
