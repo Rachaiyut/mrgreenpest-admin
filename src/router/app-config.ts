@@ -17,8 +17,8 @@ import {
   NewReportIcon,
   BellIcon,
   BuildingOfficeIcon,
+  ClipboardDocumentListIcon,
 } from '../assets/icons/Icons';
-import { Role } from '../types/enums/role';
 
 // Route Configuration Interface
 interface RouteConfig {
@@ -100,6 +100,7 @@ const WithDrawVehicle = React.lazy(
 );
 const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 const DailyClosure = React.lazy(() => import('../pages/daily-closures/DailyClosure'));
+const ServiceSchedulePage = React.lazy(() => import('../pages/service-schedules/ServiceSchedule'));
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -175,6 +176,25 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
       onUpdateQuotation: data.handlers.quotations.update,
       onCreateQuotation: data.handlers.quotations.create,
     }),
+  },
+
+  // Service Schedule
+  {
+    name: 'แผนการเข้าปฏิบัติงาน',
+    path: 'service-schedules',
+    icon: ClipboardDocumentListIcon,
+    access: null,
+    group: 'service-schedule',
+    component: ServiceSchedulePage,
+    subItems: [
+      {
+        name: 'ตารางปฏิบัติงาน',
+        path: 'service-schedules',
+        icon: DocumentTextIcon,
+        access: 'ACCESS_SERVICE_SCHEDULE',
+        component: ServiceSchedulePage,
+      },
+    ],
   },
 
   // Billing & Finance Group
