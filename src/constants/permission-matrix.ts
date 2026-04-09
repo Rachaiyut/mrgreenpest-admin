@@ -42,6 +42,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     groupName: 'แผนการเข้าปฏิบัติงาน',
     items: [
       { label: 'ตารางปฏิบัติงาน', module: 'SERVICE_SCHEDULE' },
+      { label: 'รายละเอียดขั้นตอนบริการ', module: 'SERVICE_PROCEDURE_TEMPLATE' },
     ],
   },
   {

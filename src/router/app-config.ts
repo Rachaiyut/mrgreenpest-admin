@@ -101,6 +101,7 @@ const WithDrawVehicle = React.lazy(
 const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 const DailyClosure = React.lazy(() => import('../pages/daily-closures/DailyClosure'));
 const ServiceSchedulePage = React.lazy(() => import('../pages/service-schedules/ServiceSchedule'));
+const ServiceDetailPage = React.lazy(() => import('../pages/service-schedules/ServiceDetail'));
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -193,6 +194,13 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: DocumentTextIcon,
         access: 'ACCESS_SERVICE_SCHEDULE',
         component: ServiceSchedulePage,
+      },
+      {
+        name: 'รายละเอียดขั้นตอนบริการ',
+        path: 'service-details',
+        icon: DocumentTextIcon,
+        access: 'ACCESS_SERVICE_PROCEDURE_TEMPLATE',
+        component: ServiceDetailPage,
       },
     ],
   },
