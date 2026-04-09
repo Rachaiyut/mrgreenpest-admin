@@ -10,6 +10,7 @@ import {
   EyeIcon,
   DocumentTextIcon,
   ManageIcon,
+  LoadingIcon,
 } from '../../assets/icons/Icons';
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { isManagementRole, isExecutiveRole } from '../../utils/role';
@@ -34,6 +35,98 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Highlight } from '@tiptap/extension-highlight';
+
+// Custom FontSize extension
+const FontSize = TextStyle.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      fontSize: {
+        default: null,
+        parseHTML: (element) => element.style.fontSize || null,
+        renderHTML: (attributes) => {
+          if (!attributes.fontSize) return {};
+          return { style: `font-size: ${attributes.fontSize}` };
+        },
+      },
+    };
+  },
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      setFontSize: (size: string) => ({ chain }: { chain: () => ReturnType<ReturnType<typeof useEditor>['chain']> }) => {
+        return chain().setMark('textStyle', { fontSize: size }).run();
+      },
+      unsetFontSize: () => ({ chain }: { chain: () => ReturnType<ReturnType<typeof useEditor>['chain']> }) => {
+        return chain().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run();
+      },
+    };
+  },
+});
+
+const FONT_SIZES = [
+  { label: '12', value: '12px' },
+  { label: '14', value: '14px' },
+  { label: '16', value: '16px' },
+  { label: '18', value: '18px' },
+  { label: '20', value: '20px' },
+  { label: '24', value: '24px' },
+  { label: '28', value: '28px' },
+  { label: '32', value: '32px' },
+];
+
+// Font Size Dropdown
+const FontSizeDropdown: FC<{ editor: ReturnType<typeof useEditor> }> = ({ editor }) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  if (!editor) return null;
+
+  const currentSize = editor.getAttributes('textStyle').fontSize || '';
+  const currentLabel = FONT_SIZES.find((s) => s.value === currentSize)?.label || '16';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-0.5 px-2 py-1 text-xs rounded transition-colors text-slate-600 hover:bg-slate-100 min-w-[40px] justify-center"
+      >
+        <span className="text-sm font-medium">{currentLabel}</span>
+        <svg className="w-2.5 h-2.5" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 5l3 3 3-3" /></svg>
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 w-20 max-h-48 overflow-y-auto">
+          {FONT_SIZES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => {
+                if (s.value === '16px') {
+                  editor.chain().focus().setMark('textStyle', { fontSize: null }).removeEmptyTextStyle().run();
+                } else {
+                  editor.chain().focus().setMark('textStyle', { fontSize: s.value }).run();
+                }
+                setOpen(false);
+              }}
+              className={`w-full px-3 py-1.5 text-left text-sm hover:bg-slate-50 ${currentSize === s.value ? 'text-green-700 bg-green-50 font-medium' : 'text-slate-700'}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const TEXT_COLORS = [
   { label: 'Default', value: '' },
@@ -251,6 +344,7 @@ const EditorToolbar: FC<{ editor: ReturnType<typeof useEditor> }> = ({ editor })
       <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btnClass(editor.isActive('underline'))}>U</button>
       <ColorPickerDropdown editor={editor} type="text" />
       <ColorPickerDropdown editor={editor} type="highlight" />
+      <FontSizeDropdown editor={editor} />
 
       <div className="w-px h-6 bg-slate-300 mx-1 self-center" />
 
@@ -308,7 +402,7 @@ const TipTapEditor: FC<{ content: string; onChange: (html: string) => void }> = 
       TableHeader,
       TableCell,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      TextStyle,
+      FontSize,
       Color,
       Highlight.configure({ multicolor: true }),
       Placeholder.configure({ placeholder: 'พิมพ์รายละเอียดขั้นตอนบริการ...' }),
@@ -366,6 +460,9 @@ const ServiceDetailPage: FC = () => {
   // Data
   const [details, setDetails] = useState<IServiceProcedureTemplate[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // PDF loading
+  const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
 
   // Dropdown
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -582,7 +679,9 @@ const ServiceDetailPage: FC = () => {
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            disabled={loadingPdfId === detail.id}
                             onClick={async () => {
+                              setLoadingPdfId(detail.id);
                               try {
                                 const blob = await ServiceProcedureTemplateApi.exportPdf(detail.id);
                                 const url = URL.createObjectURL(blob);
@@ -590,13 +689,14 @@ const ServiceDetailPage: FC = () => {
                               } catch (err) {
                                 console.error('Failed to export PDF:', err);
                                 Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถ Export PDF ได้', 'error');
+                              } finally {
+                                setLoadingPdfId(null);
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                            title="Export PDF"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors disabled:opacity-50"
                           >
-                            <EyeIcon className="h-3.5 w-3.5" />
-                            <span>ดู PDF</span>
+                            {loadingPdfId === detail.id ? <LoadingIcon className="h-3.5 w-3.5 animate-spin" /> : <EyeIcon className="h-3.5 w-3.5" />}
+                            <span>{loadingPdfId === detail.id ? 'กำลังโหลด...' : 'ดู PDF'}</span>
                           </button>
                           <Button
                             data-detail-id={detail.id}
