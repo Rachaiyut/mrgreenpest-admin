@@ -17,6 +17,11 @@ export interface IServiceProcedureTemplate {
   updated_by?: string;
   created_at: string;
   updated_at: string;
+  creator?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export interface ICreateServiceProcedureTemplate {
