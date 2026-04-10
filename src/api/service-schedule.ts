@@ -18,6 +18,8 @@ export interface ServiceSchedule {
   details: ServiceScheduleDetailItem[];
   created_at: string;
   updated_at: string;
+  quotations?: { id: string; code: string; customer_name: string }[];
+  contracts?: { id: string; code: string; customer_name: string }[];
 }
 
 export interface CreateServiceSchedulePayload {

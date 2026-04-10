@@ -305,19 +305,21 @@ const ServiceSchedulePage: FC = () => {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">แพ็กเกจ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">แพ็กเกจ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนครั้ง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ใบเสนอราคาที่ใช้</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญญาที่ใช้</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={9}>
                       <div className="flex items-center justify-center py-16">
                         <p className="text-slate-500">กำลังโหลด...</p>
                       </div>
@@ -325,7 +327,7 @@ const ServiceSchedulePage: FC = () => {
                   </tr>
                 ) : schedules.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={9}>
                       <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
                         <div className="text-center">
                           <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -339,10 +341,10 @@ const ServiceSchedulePage: FC = () => {
                   </tr>
                 ) : (
                   schedules.map((schedule, index) => (
-                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
-                      <td className="px-4 py-3 text-sm text-slate-800 font-medium">{schedule.name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-700 text-center">{index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{schedule.name}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
                         {schedule.package ? `${schedule.package.code} - ${schedule.package.name}` : '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -350,10 +352,32 @@ const ServiceSchedulePage: FC = () => {
                           {schedule.details?.length || 0} ครั้ง
                         </span>
                       </td>
+                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                        {schedule.quotations && schedule.quotations.length > 0
+                          ? schedule.quotations.map((q) => (
+                              <div key={q.id} className="text-xs">
+                                <span className="font-medium text-green-700">{q.code}</span>
+                                <span className="text-slate-400 ml-1">({q.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
+                              </div>
+                            ))
+                          : <span className="text-slate-400">-</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                        {schedule.contracts && schedule.contracts.length > 0
+                          ? schedule.contracts.map((c) => (
+                              <div key={c.id} className="text-xs">
+                                <span className="font-medium text-blue-700">{c.code}</span>
+                                <span className="text-slate-400 ml-1">({c.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
+                              </div>
+                            ))
+                          : <span className="text-slate-400">-</span>
+                        }
+                      </td>
                       <td className="px-4 py-3 text-center text-sm text-slate-500">
                         {formatThaiDate(schedule.created_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600">
+                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
                         {schedule.creator ? `${schedule.creator.first_name} ${schedule.creator.last_name || ''}`.trim() : '-'}
                       </td>
                       <td className="px-4 py-3 text-right">

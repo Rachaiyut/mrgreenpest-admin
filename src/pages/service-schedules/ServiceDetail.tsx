@@ -640,8 +640,9 @@ const ServiceDetailPage: FC = () => {
             <table className="min-w-full">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ใบเสนอราคาที่ใช้</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
@@ -650,7 +651,7 @@ const ServiceDetailPage: FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <div className="flex items-center justify-center py-16">
                         <p className="text-slate-500">กำลังโหลด...</p>
                       </div>
@@ -658,7 +659,7 @@ const ServiceDetailPage: FC = () => {
                   </tr>
                 ) : details.length === 0 ? (
                   <tr>
-                    <td colSpan={5}>
+                    <td colSpan={6}>
                       <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
                         <div className="text-center">
                           <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -672,9 +673,20 @@ const ServiceDetailPage: FC = () => {
                   </tr>
                 ) : (
                   details.map((detail, index) => (
-                    <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-700">{index + 1}</td>
-                      <td className="px-4 py-3 text-sm text-slate-800 font-medium">{detail.name}</td>
+                    <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-700 text-center">{index + 1}</td>
+                      <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{detail.name}</td>
+                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                        {detail.quotations && detail.quotations.length > 0
+                          ? detail.quotations.map((q) => (
+                              <div key={q.id} className="text-xs">
+                                <span className="font-medium text-green-700">{q.code}</span>
+                                <span className="text-slate-400 ml-1">({q.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
+                              </div>
+                            ))
+                          : <span className="text-slate-400">-</span>
+                        }
+                      </td>
                       <td className="px-4 py-3 text-center text-sm text-slate-500">
                         {formatThaiDate(detail.created_at)}
                       </td>

@@ -22,6 +22,11 @@ export interface IServiceProcedureTemplate {
     first_name: string;
     last_name: string;
   };
+  quotations?: {
+    id: string;
+    code: string;
+    customer_name: string;
+  }[];
 }
 
 export interface ICreateServiceProcedureTemplate {
