@@ -676,14 +676,9 @@ const ServiceDetailPage: FC = () => {
                     <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                       <td className="px-4 py-3 text-sm text-slate-700 text-center">{index + 1}</td>
                       <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{detail.name}</td>
-                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-4 py-3 text-sm text-center">
                         {detail.quotations && detail.quotations.length > 0
-                          ? detail.quotations.map((q) => (
-                              <div key={q.id} className="text-xs">
-                                <span className="font-medium text-green-700">{q.code}</span>
-                                <span className="text-slate-400 ml-1">({q.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
-                              </div>
-                            ))
+                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{detail.quotations.length} รายการ</span>
                           : <span className="text-slate-400">-</span>
                         }
                       </td>

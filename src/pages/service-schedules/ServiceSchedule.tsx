@@ -352,25 +352,15 @@ const ServiceSchedulePage: FC = () => {
                           {schedule.details?.length || 0} ครั้ง
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-4 py-3 text-sm text-center">
                         {schedule.quotations && schedule.quotations.length > 0
-                          ? schedule.quotations.map((q) => (
-                              <div key={q.id} className="text-xs">
-                                <span className="font-medium text-green-700">{q.code}</span>
-                                <span className="text-slate-400 ml-1">({q.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
-                              </div>
-                            ))
+                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{schedule.quotations.length} รายการ</span>
                           : <span className="text-slate-400">-</span>
                         }
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-600 text-center">
+                      <td className="px-4 py-3 text-sm text-center">
                         {schedule.contracts && schedule.contracts.length > 0
-                          ? schedule.contracts.map((c) => (
-                              <div key={c.id} className="text-xs">
-                                <span className="font-medium text-blue-700">{c.code}</span>
-                                <span className="text-slate-400 ml-1">({c.customer_name?.replace(/\s*-\s*$/, '').trim()})</span>
-                              </div>
-                            ))
+                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{schedule.contracts.length} รายการ</span>
                           : <span className="text-slate-400">-</span>
                         }
                       </td>
@@ -497,9 +487,9 @@ const ServiceSchedulePage: FC = () => {
           <div className="space-y-6">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-600 mb-1.5">ชื่อตาราง <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-slate-600 mb-1.5">{isReadOnly ? 'ชื่อตาราง' : <>ชื่อตาราง <span className="text-red-500">*</span></>}</label>
               {isReadOnly ? (
-                <p className="text-sm text-slate-800 font-medium">{scheduleName}</p>
+                <p className="text-sm text-slate-800 font-medium truncate">{scheduleName}</p>
               ) : (
                 <input
                   type="text"
@@ -563,60 +553,60 @@ const ServiceSchedulePage: FC = () => {
               </div>
 
               {/* Desktop: Table */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm border-collapse border border-slate-200">
+              <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-50">
-                      <th className="border border-slate-200 px-3 py-2.5 text-center font-semibold text-slate-700 w-16">ครั้งที่</th>
-                      <th className="border border-slate-200 px-3 py-2.5 text-center font-semibold text-slate-700 w-32">เดือน</th>
-                      <th className="border border-slate-200 px-3 py-2.5 text-left font-semibold text-slate-700 w-52">งานที่ปฏิบัติ</th>
-                      <th className="border border-slate-200 px-3 py-2.5 text-left font-semibold text-slate-700">รายละเอียดการทำบริการ</th>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b-2 border-green-500/30">
+                      <th className="px-4 py-3 text-center font-semibold text-slate-600 text-xs uppercase tracking-wider w-16">ครั้งที่</th>
+                      <th className="px-4 py-3 text-center font-semibold text-slate-600 text-xs uppercase tracking-wider w-28">เดือน</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-600 text-xs uppercase tracking-wider w-48">งานที่ปฏิบัติ</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-600 text-xs uppercase tracking-wider">รายละเอียดการทำบริการ</th>
                       {!isReadOnly && (
-                        <th className="border border-slate-200 px-3 py-2.5 text-center font-semibold text-slate-700 w-16"></th>
+                        <th className="px-2 py-3 w-12"></th>
                       )}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100">
                     {rows.map((row, index) => (
-                      <tr key={index}>
-                        <td className="border border-slate-200 px-3 py-2 text-center align-top">
-                          <span className="font-semibold text-slate-700">{row.visit_no}</span>
+                      <tr key={index} className={`transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'} ${!isReadOnly ? 'hover:bg-green-50/30' : ''}`}>
+                        <td className="px-4 py-3 text-center align-top">
+                          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100 text-green-700 font-bold text-xs">{row.visit_no}</span>
                         </td>
-                        <td className="border border-slate-200 px-3 py-2 text-center align-top">
+                        <td className="px-4 py-3 text-center align-top">
                           {isReadOnly ? (
-                            <span>{row.month || '-'}</span>
+                            <span className="text-slate-700 font-medium">{row.month || '-'}</span>
                           ) : (
                             <select
-                              className="w-full border border-slate-200 rounded-md px-2 py-1.5 text-sm bg-white focus:ring-1 focus:ring-green-500"
+                              className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none cursor-pointer border-0 px-0 py-0"
                               value={row.month}
                               onChange={(e) => updateRow(index, 'month', e.target.value)}
                             >
-                              <option value="">เลือกเดือน</option>
+                              <option value="">เลือก</option>
                               {THAI_MONTHS.map((m) => (
                                 <option key={m} value={m}>{m}</option>
                               ))}
                             </select>
                           )}
                         </td>
-                        <td className="border border-slate-200 px-3 py-2 align-top">
+                        <td className="px-4 py-3 align-top">
                           {isReadOnly ? (
-                            <span>{row.work_task || '-'}</span>
+                            <span className="text-slate-800 whitespace-pre-line break-words">{row.work_task || '-'}</span>
                           ) : (
-                            <input
-                              type="text"
-                              className="w-full border border-slate-200 rounded-md px-2.5 py-1.5 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                            <textarea
+                              className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none min-h-[50px] resize-none border-0 px-0 py-0"
                               placeholder="เช่น สำรวจและติดตั้งกล่อง"
                               value={row.work_task}
                               onChange={(e) => updateRow(index, 'work_task', e.target.value)}
+                              rows={2}
                             />
                           )}
                         </td>
-                        <td className="border border-slate-200 px-3 py-2 align-top">
+                        <td className="px-4 py-3 align-top">
                           {isReadOnly ? (
-                            <span className="whitespace-pre-line">{row.service_details || '-'}</span>
+                            <div className="whitespace-pre-line text-sm text-slate-700 leading-relaxed break-words">{row.service_details || '-'}</div>
                           ) : (
                             <textarea
-                              className="w-full border border-slate-200 rounded-md px-2.5 py-1.5 text-sm focus:ring-1 focus:ring-green-500 focus:border-green-500 min-h-[60px] resize-y"
+                              className="w-full bg-transparent text-sm focus:ring-0 focus:outline-none min-h-[50px] resize-none border-0 px-0 py-0"
                               placeholder={"1. สำรวจปลวกภายในอาคาร\n2. หากพบปลวกจะติดตั้งสถานี (AG)"}
                               value={row.service_details}
                               onChange={(e) => updateRow(index, 'service_details', e.target.value)}
@@ -625,11 +615,11 @@ const ServiceSchedulePage: FC = () => {
                           )}
                         </td>
                         {!isReadOnly && (
-                          <td className="border border-slate-200 px-2 py-2 text-center align-top">
+                          <td className="px-2 py-3 text-center align-top">
                             {rows.length > 1 && (
                               <button
                                 onClick={() => removeRow(index)}
-                                className="text-red-400 hover:text-red-600 p-1"
+                                className="text-red-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors"
                                 title="ลบแถว"
                               >
                                 <TrashIcon className="w-4 h-4" />
