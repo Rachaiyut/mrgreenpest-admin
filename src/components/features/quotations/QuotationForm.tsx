@@ -46,13 +46,11 @@ import { CategoryType, Quotation } from '@/src/types';
 import { PackageApi } from '../../../api/package';
 import { Package, PackagePrice } from '../../../types/entity/package.interface';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
-import { QuotationApi } from '@/src/api';
-import { WorkAreaForm } from '../assessments/WorkAreaForm';
-import { AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
 import { formatThaiDate } from '@/src/utils/date';
 import { ServiceProcedureTemplateApi, IServiceProcedureTemplate } from '../../../api/service-procedure-template';
 import { ServiceScheduleApi } from '../../../api/service-schedule';
 import type { ServiceSchedule } from '../../../api/service-schedule';
+import { QuotationApi } from '@/src/api/quotation';
 
 interface QuotationItem {
   id: string;
@@ -101,9 +99,9 @@ export const QuotationForm: FC<QuotationFormProps> = ({
         const [custRes, assessRes, catRes, pkgRes, templatesRes, schedulesRes] = await Promise.all([
           CustomerApi.getCustomers({ limit: 10 }),
           AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
-          CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 50 }),
+          CategoryApi.getCategories({ type: CategoryType.SERVICE  }),
           PackageApi.getPackages({ limit: 10 }),
-          ServiceProcedureTemplateApi.getAll({ limit: 100, is_active: true }),
+          ServiceProcedureTemplateApi.getAll({ limit: 10 }),
           ServiceScheduleApi.getAll(),
         ]);
 

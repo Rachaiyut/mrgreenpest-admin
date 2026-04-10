@@ -309,8 +309,6 @@ const ServiceSchedulePage: FC = () => {
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">แพ็กเกจ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนครั้ง</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ใบเสนอราคาที่ใช้</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญญาที่ใช้</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
@@ -319,7 +317,7 @@ const ServiceSchedulePage: FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={9}>
+                    <td colSpan={7}>
                       <div className="flex items-center justify-center py-16">
                         <p className="text-slate-500">กำลังโหลด...</p>
                       </div>
@@ -327,7 +325,7 @@ const ServiceSchedulePage: FC = () => {
                   </tr>
                 ) : schedules.length === 0 ? (
                   <tr>
-                    <td colSpan={9}>
+                    <td colSpan={7}>
                       <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
                         <div className="text-center">
                           <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
@@ -351,18 +349,6 @@ const ServiceSchedulePage: FC = () => {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           {schedule.details?.length || 0} ครั้ง
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {schedule.quotations && schedule.quotations.length > 0
-                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{schedule.quotations.length} รายการ</span>
-                          : <span className="text-slate-400">-</span>
-                        }
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {schedule.contracts && schedule.contracts.length > 0
-                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{schedule.contracts.length} รายการ</span>
-                          : <span className="text-slate-400">-</span>
-                        }
                       </td>
                       <td className="px-4 py-3 text-center text-sm text-slate-500">
                         {formatThaiDate(schedule.created_at)}

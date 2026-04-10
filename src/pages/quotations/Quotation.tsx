@@ -670,7 +670,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     return (
                       <tr
                         key={q.id}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 transition-colors [&>td]:align-middle [&>td]:text-center"
                       >
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
@@ -690,7 +690,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {((q as unknown as Record<string, number>).revision) || 1}
                         </td>
                         <td className="px-4 py-3 text-sm font-bold text-slate-800 text-center">
-                          <TruncateText text={q.customer_name || '-'} maxWidth={160} />
+                          <span className="font-semibold text-slate-800">{(q.customer_name || '-').replace(/\s*-\s*$/, '').trim()}</span>
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatPhoneNumber(phoneNumber)}
@@ -729,7 +729,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
-                          <TruncateText text={((q as unknown as Record<string, Record<string, string>>).creator) ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
+                          {((q as unknown as Record<string, Record<string, string>>).creator)
+                            ? `${((q as unknown as Record<string, Record<string, string>>).creator).first_name} ${((q as unknown as Record<string, Record<string, string>>).creator).last_name && ((q as unknown as Record<string, Record<string, string>>).creator).last_name !== '-' ? ((q as unknown as Record<string, Record<string, string>>).creator).last_name : ''}`.trim()
+                            : '-'
+                          }
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
