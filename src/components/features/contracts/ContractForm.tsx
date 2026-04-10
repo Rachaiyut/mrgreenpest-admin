@@ -40,6 +40,8 @@ import { PackageApi } from '../../../api/package';
 
 // ===== WorkAreaForm =====
 import WorkAreasSection from '../../common/WorkAreasSection';
+import { ServiceScheduleApi } from '../../../api/service-schedule';
+import type { ServiceSchedule } from '../../../api/service-schedule';
 import { Package } from '../../../types/entity/package.interface';
 
 // ===== Assets =====
@@ -177,6 +179,10 @@ export const ContractForm: FC<ContractFormProps> = ({
   );
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
+  // Schedule attachment
+  const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
+  const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
+
   // Pricing & VAT (เพิ่ม State สำหรับคำนวณ VAT)
   const [totalAmount, setTotalAmount] = useState(
     Number(initialValues?.total_amount) || 0
@@ -201,6 +207,11 @@ export const ContractForm: FC<ContractFormProps> = ({
       setTotalAmount(newTotal);
     }
   }, [workAreaAreas, includeVat]);
+
+  // Fetch schedules
+  useEffect(() => {
+    ServiceScheduleApi.getAll().then(setSchedules).catch(console.error);
+  }, []);
 
   // Installment Plan
   const [installments, setInstallments] = useState<InstallmentPlan[]>([]);
@@ -517,6 +528,11 @@ export const ContractForm: FC<ContractFormProps> = ({
           const shouldOverwriteForm = mode === 'create' || selectedQuotationId !== initialValues?.quotation_id;
 
           if (shouldOverwriteForm) {
+            // Auto-copy schedule from quotation
+            if (fullQuotationData.service_schedule_id) {
+              setScheduleId(fullQuotationData.service_schedule_id);
+            }
+
             // 1. Customer & Basic Info
             if (mode === 'create' || !selectedCustomerId) {
               setSelectedCustomerId(fullQuotationData.customer_id);
@@ -1016,6 +1032,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       id: mode === 'renew' ? undefined : initialValues?.id,
       code: contractCode,
       quotation_id: selectedQuotationId || undefined,
+      service_schedule_id: scheduleId || undefined,
       customer_id: selectedCustomerId,
       customer_name: selectedCustomerObj
         ? `${selectedCustomerObj.first_name} ${selectedCustomerObj.last_name || ''}`.trim()
@@ -1364,6 +1381,23 @@ export const ContractForm: FC<ContractFormProps> = ({
         />
 
         {/* Notes + Price Summary */}
+        {/* เอกสารแนบ */}
+        {mode !== 'detail' && (
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายสัญญา</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ตารางเข้าปฏิบัติงาน">
+                <SearchableSelect
+                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
+                  value={scheduleId}
+                  onChange={(val) => setScheduleId(val)}
+                  placeholder="เลือกตารางปฏิบัติงาน..."
+                />
+              </FormField>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
           <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
             <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>

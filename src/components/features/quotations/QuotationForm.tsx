@@ -50,6 +50,9 @@ import { QuotationApi } from '@/src/api';
 import { WorkAreaForm } from '../assessments/WorkAreaForm';
 import { AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
 import { formatThaiDate } from '@/src/utils/date';
+import { ServiceProcedureTemplateApi, IServiceProcedureTemplate } from '../../../api/service-procedure-template';
+import { ServiceScheduleApi } from '../../../api/service-schedule';
+import type { ServiceSchedule } from '../../../api/service-schedule';
 
 interface QuotationItem {
   id: string;
@@ -95,12 +98,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   useEffect(() => {
     const initData = async () => {
       try {
-        const [custRes, assessRes, catRes, pkgRes] = await Promise.all([
+        const [custRes, assessRes, catRes, pkgRes, templatesRes, schedulesRes] = await Promise.all([
           CustomerApi.getCustomers({ limit: 10 }),
           AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE, limit: 50 }),
           PackageApi.getPackages({ limit: 10 }),
+          ServiceProcedureTemplateApi.getAll({ limit: 100, is_active: true }),
+          ServiceScheduleApi.getAll(),
         ]);
+
+        if (templatesRes?.data) setProcedureTemplates(templatesRes.data);
+        if (schedulesRes) setSchedules(schedulesRes);
 
         // 🟢 ใช้เทคนิค Merge ข้อมูล ป้องกันการเตะลูกค้าของบิลนี้ทิ้ง
         if (custRes) {
@@ -282,6 +290,12 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   const [paymentTerms, setPaymentTerms] = useState(initialValues?.payment_terms || 'ชำระเมื่อเข้าปฏิบัติงานครั้งแรกเสร็จเรียบร้อย');
   const [notes, setNotes] = useState(initialValues?.notes || '');
+
+  // Attachments
+  const [procedureTemplateId, setProcedureTemplateId] = useState(initialValues?.service_procedure_template_id || '');
+  const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
+  const [procedureTemplates, setProcedureTemplates] = useState<IServiceProcedureTemplate[]>([]);
+  const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
   const [contractDuration, setContractDuration] = useState(initialValues?.contract_duration || '1 ปี');
   const [serviceCount, setServiceCount] = useState(initialValues?.service_count || '7 ครั้ง');
 
@@ -1154,6 +1168,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       quotation_areas: quotationAreas,
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
+      service_procedure_template_id: procedureTemplateId || undefined,
+      service_schedule_id: scheduleId || undefined,
     };
 
     setIsSubmitting(true);
@@ -1337,6 +1353,31 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             disableProductSelect={usePackagePricing}
             hideAddRemove={usePackagePricing}
           />
+        )}
+
+        {/* เอกสารแนบ */}
+        {!isReadOnly && (
+          <Card className="lg:col-span-2">
+            <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายใบเสนอราคา</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="รายละเอียดงานโดยสังเขป">
+                <SearchableSelect
+                  options={[{ value: '', label: 'ไม่แนบ' }, ...procedureTemplates.map((t) => ({ value: t.id, label: t.name }))]}
+                  value={procedureTemplateId}
+                  onChange={(val) => setProcedureTemplateId(val)}
+                  placeholder="เลือกรายละเอียดขั้นตอนบริการ..."
+                />
+              </FormField>
+              <FormField label="ตารางเข้าปฏิบัติงาน">
+                <SearchableSelect
+                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
+                  value={scheduleId}
+                  onChange={(val) => setScheduleId(val)}
+                  placeholder="เลือกตารางปฏิบัติงาน..."
+                />
+              </FormField>
+            </div>
+          </Card>
         )}
 
         <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">

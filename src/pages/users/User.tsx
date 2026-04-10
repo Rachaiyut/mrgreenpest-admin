@@ -29,17 +29,17 @@ import { RoleApi, Role } from '../../api/role';
 import { UserApi } from '../../api/user';
 
 const ROLE_NAME_MAPPING: Record<string, string> = {
-  admin: 'ผู้ดูแลระบบ (Admin)',
-  lead_tech: 'หัวหน้าทีมช่าง',
-  cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
-  coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
-  ceo: 'ผู้บริหาร (CEO)',
   superadmin: 'หัวหน้าผู้ดูแลระบบ (หัวหน้า Admin)',
+  admin: 'ผู้ดูแลระบบ (Admin)',
+  coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
+  cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
+  ceo: 'ผู้บริหาร (CEO)',
+  tech: 'ลูกทีมปฏิบัติงาน (ช่าง)',
+  lead_tech: 'หัวหน้าทีมช่าง',
   sales: 'ฝ่ายขาย',
   accounting: 'ฝ่ายบัญชี',
   warehouse: 'คลังสินค้า',
   dispatcher: 'ผู้จัดส่ง',
-  tech: 'ลูกทีมปฏิบัติงาน (ช่าง)',
 };
 
 const RoleBadge: React.FC<{
