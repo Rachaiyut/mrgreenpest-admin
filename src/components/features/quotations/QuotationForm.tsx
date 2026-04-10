@@ -1357,8 +1357,13 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
         {/* เอกสารแนบ */}
         {!isReadOnly && (
-          <Card className="lg:col-span-2">
-            <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายใบเสนอราคา</h3>
+          <Card className="lg:col-span-2 !bg-white !rounded-2xl !border !border-slate-200 !shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <ClipboardDocumentListIcon className="w-5 h-5 text-green-600" />
+              </div>
+              <h3 className="text-base font-semibold text-slate-800">เอกสารแนบท้ายใบเสนอราคา</h3>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="รายละเอียดงานโดยสังเขป">
                 <SearchableSelect
