@@ -13,14 +13,14 @@ import { JobMainStatus, JobStatus, Quotation, WarehouseType } from '@/src/types'
 import { DailyJobClosure, CloseDailyJobClosurePayload } from '@/src/types/entity/daily-closure.interface';
 
 // ===== Relative Types =====
-import { User, UserRole } from '../../types/entity/core.interface';
+import { User } from '../../types/entity/core.interface';
 import { Assessment } from '../../types/entity/assessment.interface';
 import { Contract } from '../../types/entity/financial.interface';
 import { Job as JobEntity } from '../../types/entity/job.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
-import { Role } from '../../types/enums/role';
+import { isFieldRole, isManagementRole, isExecutiveRole } from '../../utils/role';
 
 // ===== Hooks =====
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -203,7 +203,7 @@ const Job: React.FC<JobProps> = ({
             if (job.primary_technician) {
               techniciansList.push({
                 ...job.primary_technician,
-                role: 'LEAD_TECH',
+                role_type: 'FIELD_LEAD',
                 name: job.primary_technician.first_name
                   ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''
                     }`.trim()
@@ -221,7 +221,7 @@ const Job: React.FC<JobProps> = ({
               techniciansList.push(
                 ...teamMembers.map((t: any) => ({
                   ...t,
-                  role: 'TECH',
+                  role_type: 'FIELD_TECH',
                   name: t.first_name
                     ? `${t.first_name} ${t.last_name || ''}`.trim()
                     : t.name,
@@ -473,11 +473,10 @@ const Job: React.FC<JobProps> = ({
   const technicians = useMemo(
     () =>
       users.filter((user) => {
-        const roleName =
-          typeof user.role === 'object' && user.role !== null
-            ? (user.role as { name: string }).name
-            : String(user.role || '');
-        return roleName === UserRole.TECH;
+        const rt = typeof user.role === 'object' && user.role !== null
+            ? (user.role as { role_type: string }).role_type
+            : (user as any).roleType;
+        return rt === 'FIELD_TECH';
       }),
     [users]
   );
@@ -1156,7 +1155,7 @@ const Job: React.FC<JobProps> = ({
             <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
           </div>
           <div className="flex items-center gap-3">
-            {currentUser?.role && [UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
+            {isFieldRole(authUser?.roleType) && (
               <>
                 <Button
                   onClick={() => setIsIssueSummaryModalOpen(true)}
@@ -1187,8 +1186,7 @@ const Job: React.FC<JobProps> = ({
                 )}
               </>
             )}
-            {authUser?.role &&
-              [Role.CEO, Role.SUPERADMIN, Role.ADMIN].includes(authUser.role as Role) && (
+            {(isManagementRole(authUser?.roleType) || isExecutiveRole(authUser?.roleType)) && (
                 <Button
                   onClick={() => setIsAddModalOpen(true)}
                   variant="primary"
@@ -1417,7 +1415,7 @@ const Job: React.FC<JobProps> = ({
                     นัดหมาย
                   </button>
 
-                  {currentUser?.role && ![UserRole.LEAD_TECH, UserRole.TECH].includes(currentUser.role as UserRole) && (
+                  {!isFieldRole(authUser?.roleType) && (
                     <button
                       onClick={() => setActiveTab('unassigned')}
                       className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'

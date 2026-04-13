@@ -28,19 +28,7 @@ import { UserWalletModal } from '../../components/features/users/UserWalletModal
 import { RoleApi, Role } from '../../api/role';
 import { UserApi } from '../../api/user';
 
-const ROLE_NAME_MAPPING: Record<string, string> = {
-  superadmin: 'หัวหน้าผู้ดูแลระบบ (หัวหน้า Admin)',
-  admin: 'ผู้ดูแลระบบ (Admin)',
-  coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
-  cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
-  ceo: 'ผู้บริหาร (CEO)',
-  tech: 'ลูกทีมปฏิบัติงาน (ช่าง)',
-  lead_tech: 'หัวหน้าทีมช่าง',
-  sales: 'ฝ่ายขาย',
-  accounting: 'ฝ่ายบัญชี',
-  warehouse: 'คลังสินค้า',
-  dispatcher: 'ผู้จัดส่ง',
-};
+const ROLE_NAME_MAPPING: Record<string, string> = {};
 
 const RoleBadge: React.FC<{
   role: UserRole | { id: string; name: string } | string;
@@ -66,22 +54,18 @@ const RoleBadge: React.FC<{
     ROLE_NAME_MAPPING[normalizedName.toLowerCase()] || normalizedName;
 
   const roleColors: Record<string, string> = {
-    [UserRole.ADMIN]: 'bg-purple-100 text-purple-700',
-    [UserRole.SALES]: 'bg-blue-100 text-blue-700',
-    [UserRole.ACCOUNTING]: 'bg-green-100 text-green-700',
-    [UserRole.WAREHOUSE]: 'bg-orange-100 text-orange-700',
-    [UserRole.DISPATCHER]: 'bg-yellow-100 text-yellow-700',
-    [UserRole.TECH]: 'bg-sky-100 text-sky-700',
-    [UserRole.LEAD_TECH]: 'bg-sky-100 text-sky-700',
-    [UserRole.CEO]: 'bg-purple-100 text-purple-700',
-    [UserRole.COO]: 'bg-purple-100 text-purple-700',
-    [UserRole.CFO]: 'bg-green-100 text-green-700',
-    [UserRole.SUPERADMIN]: 'bg-purple-100 text-purple-700',
+    MANAGEMENT: 'bg-purple-100 text-purple-700',
+    EXECUTIVE: 'bg-indigo-100 text-indigo-700',
+    FIELD_LEAD: 'bg-sky-100 text-sky-700',
+    FIELD_TECH: 'bg-teal-100 text-teal-700',
   };
 
+  const roleType = typeof role === 'object' && role !== null
+    ? (role as Record<string, string>).role_type || ''
+    : '';
   const colorClass =
-    roleColors[roleNameRaw] ||
-    roleColors[roleNameRaw.toUpperCase()] ||
+    roleColors[roleType] ||
+    roleColors[roleType.toUpperCase()] ||
     'bg-slate-100 text-slate-700';
 
   return (
@@ -181,14 +165,13 @@ const Users: React.FC<UsersProps> = ({
     const lowercasedQuery = searchQuery.toLowerCase();
     return [...users].reverse().filter((user) => {
       // Handle role as object or string
-      const userRoleName =
+      const userRoleType =
         typeof user.role === 'object' && user.role !== null
-          ? (user.role as { name: string }).name
-          : String(user.role || '');
+          ? (user.role as { role_type: string }).role_type
+          : (user.role_type || '');
       const matchesRole =
         roleFilter === 'all' ||
-        userRoleName === roleFilter ||
-        userRoleName.toUpperCase() === roleFilter.toUpperCase();
+        userRoleType === roleFilter;
       const matchesSearch =
         !searchQuery ||
         (user.citizen_id || '').toLowerCase().includes(lowercasedQuery) ||
@@ -312,18 +295,17 @@ const Users: React.FC<UsersProps> = ({
   // Calculate user counts per role dynamically
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    roles.forEach((r) => (counts[r.name] = 0));
+    roles.forEach((r) => (counts[r.role_type || r.name] = 0));
 
     users.forEach((user) => {
-      const roleName =
+      const userRoleType =
         typeof user.role === 'object' && user.role !== null
-          ? (user.role as { name: string }).name
-          : String(user.role || '');
-      if (counts[roleName] !== undefined) {
-        counts[roleName]++;
+          ? (user.role as { role_type: string }).role_type
+          : (user.role_type || '');
+      if (counts[userRoleType] !== undefined) {
+        counts[userRoleType]++;
       } else {
-        // Handle roles not in list or fallback
-        counts[roleName] = (counts[roleName] || 0) + 1;
+        counts[userRoleType] = (counts[userRoleType] || 0) + 1;
       }
     });
     return counts;
@@ -410,27 +392,17 @@ const Users: React.FC<UsersProps> = ({
                   className="w-36"
                 >
                   <option value="all">ทุกบทบาท</option>
-                  {roles.map((role) => {
-                    if (typeof role.name === 'object')
-                      console.error('Role name is object:', role);
+                  {[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
+                    const rt = role.role_type || role.name;
+                    const labels: Record<string, string> = {
+                      MANAGEMENT: 'ผู้บริหาร/จัดการ',
+                      EXECUTIVE: 'ผู้บริหารระดับสูง',
+                      FIELD_LEAD: 'หัวหน้าทีมช่าง',
+                      FIELD_TECH: 'ช่างปฏิบัติงาน',
+                    };
                     return (
-                      <option
-                        key={role.id}
-                        value={
-                          typeof role.name === 'string'
-                            ? role.name
-                            : JSON.stringify(role.name)
-                        }
-                      >
-                        {ROLE_NAME_MAPPING[
-                          (typeof role.name === 'string'
-                            ? role.name
-                            : ''
-                          ).toLowerCase()
-                        ] ||
-                          (typeof role.name === 'string'
-                            ? role.name
-                            : 'Invalid Name')}
+                      <option key={rt} value={rt}>
+                        {labels[rt] || rt}
                       </option>
                     );
                   })}

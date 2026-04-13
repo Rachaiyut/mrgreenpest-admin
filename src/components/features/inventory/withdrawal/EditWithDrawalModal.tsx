@@ -1,4 +1,5 @@
 import { isFieldRole } from '@/src/utils/role';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import React, {
   useState,
   useEffect,
@@ -86,6 +87,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   contracts,
   currentUser,
 }) => {
+  const authUser = useCurrentUser();
   const fullCurrentUser = currentUser
     ? users.find((u) => u.id === currentUser.id)
     : null;
@@ -158,14 +160,7 @@ export const EditWithdrawalModal: React.FC<EditWithdrawalModalProps> = ({
   } | null>(null);
   const [withdrawalDate, setWithdrawalDate] = useState<string>('');
 
-  const techRoles = ['LEAD_TECH', 'TECH'];
-  const isTechUser =
-    fullCurrentUser &&
-    techRoles.includes(
-      typeof fullCurrentUser.role === 'string'
-        ? fullCurrentUser.role
-        : (fullCurrentUser.role as unknown as Record<string, string>)?.name
-    );
+  const isTechUser = isFieldRole(authUser?.roleType);
 
   useEffect(() => {
     if (withdrawal) {

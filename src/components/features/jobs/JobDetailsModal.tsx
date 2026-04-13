@@ -20,7 +20,6 @@ import {
   TruckIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
-import { UserRole } from '@/src/types/entity/core.interface';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -77,16 +76,10 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
     if (!job?.technicians) return { leadTechs: [], otherTechs: [] };
 
     const leads = job.technicians.filter(
-      (t) =>
-        t.role === UserRole.LEAD_TECH ||
-        t.role === 'LEAD_TECH' ||
-        t.role === 'Lead Technician'
+      (t) => t.role_type === 'FIELD_LEAD'
     );
     const others = job.technicians.filter(
-      (t) =>
-        t.role !== UserRole.LEAD_TECH &&
-        t.role !== 'LEAD_TECH' &&
-        t.role !== 'Lead Technician'
+      (t) => t.role_type !== 'FIELD_LEAD'
     );
 
     return { leadTechs: leads, otherTechs: others };

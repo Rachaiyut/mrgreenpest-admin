@@ -6,7 +6,10 @@ import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Types / Enums =====
-import { AsessmentStatus, CategoryType, Role, ServiceSystem, WarehouseType } from '@/src/types';
+import { AsessmentStatus, CategoryType, ServiceSystem, WarehouseType } from '@/src/types';
+import { isFieldRole } from '@/src/utils/role';
+import { RoleType } from '@/src/types/enums/role';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import { JobMainStatus } from '@/src/types/enums/job';
 import { User, UserRole } from '@/src/types/entity/core.interface';
 import { Job } from '@/src/types/entity/job.interface';
@@ -67,7 +70,7 @@ export interface JobFormProps {
   contracts?: Contract[];
   jobs: any[];
   users: User[];
-  currentUserRole: Role
+  currentUserRole: RoleType
 }
 
 // 🌟 ตัวช่วยดึง ID อัจฉริยะ ป้องกัน API ส่งค่ามาผิดรูปแบบ
@@ -131,23 +134,24 @@ export const JobForm: React.FC<JobFormProps> = ({
   const [leadTechSearch, setLeadTechSearch] = useState('');
   const [leadTechnicianOptions, setLeadTechnicianOptions] = useState<User[]>(
     users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).name : u.role;
-      return roleName === UserRole.TECH;
+      const rt = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).role_type : u.role_type;
+      return rt === 'FIELD_TECH';
     })
   );
 
   const [additionalTechSearch, setAdditionalTechSearch] = useState('');
   const [additionalTechnicianOptions, setAdditionalTechnicianOptions] = useState<User[]>(
     users.filter((u) => {
-      const roleName = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).name : u.role;
-      return roleName === UserRole.TECH;
+      const rt = typeof u.role === 'object' && u.role ? (u.role as unknown as Record<string, string>).role_type : u.role_type;
+      return rt === 'FIELD_TECH';
     })
   );
 
   const hasInitializedRef = useRef<string | null>(null);
 
 
-  const isTechRole = currentUserRole === Role.TECH || currentUserRole === Role.LEAD_TECH;
+  const authUser = useCurrentUser();
+  const isTechRole = isFieldRole(authUser?.roleType);
   const isDisableTeamEdit = mode === 'edit' && isTechRole;
 
   useEffect(() => {
@@ -384,7 +388,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const fetchLeadTechnicians = async (search: string) => {
     try {
-      const response = await UserApi.getAll({ limit: 10, search: search, role: Role.LEAD_TECH });
+      const response = await UserApi.getAll({ limit: 10, search: search, role_type: 'FIELD_LEAD' });
       setLeadTechnicianOptions(response.data);
     } catch (error) {
       console.error('Error fetching lead technicians:', error);
@@ -393,7 +397,7 @@ export const JobForm: React.FC<JobFormProps> = ({
 
   const fetchAdditionalTechnicians = async (search: string) => {
     try {
-      const response = await UserApi.getAll({ limit: 10, search: search, role: Role.TECH });
+      const response = await UserApi.getAll({ limit: 10, search: search, role_type: 'FIELD_TECH' });
       setAdditionalTechnicianOptions(response.data);
     } catch (error) {
       console.error('Error fetching additional technicians:', error);
@@ -1331,7 +1335,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <h3 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2"><div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>หัวหน้าทีม (Leader)</h3>
                 <div className="mb-4">
                   <SearchableSelect 
-                  label="หัวหน้าช่าง *" 
+                  label="หัวหน้าช่าง"
                   name="primary_tech_id" 
                   options={leadTechnicianOptions.map((tech) => ({ value: tech.id, label: `${getTechnicianName(tech)} ${tech.nick_name ? `(${tech.nick_name})` : ''}`, description: tech.phone || '' }))} 
                   value={leadTechnicianId} 

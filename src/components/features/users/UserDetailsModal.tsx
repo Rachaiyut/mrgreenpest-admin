@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal } from '../../common/Modal';
 import { User } from '@/src/types/entity/app.interface';
 import { Button } from '../../common/FormControls';
+import { getRoleNameTh } from '@/src/utils/role';
 
 interface UserDetailsModalProps {
   isOpen: boolean;
@@ -76,31 +77,11 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
               <h3 className="text-xl font-bold text-slate-800">{user.name}</h3>
               <p className="text-slate-500 text-sm">
                 {(() => {
-                  let roleNameRaw = '-';
                   const role = user.role;
-                  if (typeof role === 'string') roleNameRaw = role;
-                  else if (typeof role === 'object' && role) {
-                    const r = role as Record<string, unknown>;
-                    roleNameRaw =
-                      typeof r.name === 'string'
-                        ? r.name
-                        : JSON.stringify(r.name);
-                  }
-
-                  const mapping: Record<string, string> = {
-                    superadmin: 'หัวหน้าผู้ดูแลระบบ (หัวหน้า Admin)',
-                    admin: 'ผู้ดูแลระบบ (Admin)',
-                    coo: 'ประธานเจ้าหน้าที่ฝ่ายปฏิบัติการ (COO)',
-                    cfo: 'ประธานเจ้าหน้าที่ฝ่ายการเงิน (CFO)',
-                    ceo: 'ผู้บริหาร (CEO)',
-                    tech: 'ลูกทีมปฏิบัติงาน (ช่าง)',
-                    lead_tech: 'หัวหน้าทีมช่าง',
-                    sales: 'ฝ่ายขาย',
-                    accounting: 'ฝ่ายบัญชี',
-                    warehouse: 'คลังสินค้า',
-                    dispatcher: 'ผู้จัดส่ง',
-                  };
-                  return mapping[String(roleNameRaw).toLowerCase()] || roleNameRaw;
+                  const roleName = typeof role === 'object' && role
+                    ? (role as Record<string, string>).name
+                    : String(role || '-');
+                  return getRoleNameTh(roleName);
                 })()}
               </p>
             </div>

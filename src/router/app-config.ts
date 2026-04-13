@@ -2,7 +2,6 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { DataContextType } from '../contexts/DataContext';
 import { NavigationItem } from '@/src/types/nav';
-import { Role } from '../types/enums/role';
 import {
   NewDashboardIcon,
   NewCustomerIcon,
@@ -127,8 +126,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     name: 'การแจ้งเตือนและนัดหมาย',
     path: 'notifications',
     icon: BellIcon,
-    access: '',
-    roles: [Role.SUPERADMIN, Role.ADMIN, Role.CEO, Role.COO, Role.CFO],
+    access: 'ACCESS_NOTIFICATION',
     component: Notification,
   },
 
@@ -512,7 +510,7 @@ export const createRoutes = (data: DataContextType): RouteConfig[] => {
       const userInfo = localStorage.getItem('user_info');
       if (userInfo) {
         const user = JSON.parse(userInfo);
-        if (user.role === Role.LEAD_TECH || user.role === Role.TECH) {
+        if (user.roleType === 'FIELD_LEAD' || user.roleType === 'FIELD_TECH') {
           return React.createElement(Navigate, { to: '/field-operations', replace: true });
         }
       }

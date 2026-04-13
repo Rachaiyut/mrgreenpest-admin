@@ -1,4 +1,5 @@
 import { isFieldRole } from '@/src/utils/role';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 /**
  * @file EditWithdrawalModal.tsx
  * @description Modal component for editing a goods withdrawal with Source and Destination warehouses.
@@ -100,10 +101,8 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
 
-  const techRoles = ['LEAD_TECH', 'TECH'];
-  const isTechUser = fullCurrentUser && techRoles.includes(
-    typeof fullCurrentUser.role === 'string' ? fullCurrentUser.role : (fullCurrentUser.role as unknown as Record<string, string>)?.name
-  );
+  const authUser = useCurrentUser();
+  const isTechUser = isFieldRole(authUser?.roleType);
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);

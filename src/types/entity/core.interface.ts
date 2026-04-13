@@ -41,7 +41,7 @@ export enum UserRole {
 export interface UserQuery extends IBaseQuery {
   citizen_id?: string;
   phone?: string;
-  role?: Role;
+  role?: string;
 }
 
 export interface User {
@@ -53,6 +53,7 @@ export interface User {
   email?: string;
   phone?: string;
   role?: Role | string;
+  role_type?: string;
   stroage_id?: string;
   creditLimit?: number;
   current_balance: number;

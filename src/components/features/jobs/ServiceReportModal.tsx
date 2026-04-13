@@ -8,7 +8,9 @@ import {
   FieldJob,
   ServiceReport,
 } from '@/src/types/entity/service-report.interface';
-import { User, UserRole } from '@/src/types/entity/core.interface';
+import { User } from '@/src/types/entity/core.interface';
+import { isFieldRole, isManagementRole } from '@/src/utils/role';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
@@ -89,6 +91,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   jobs = [],
   readOnly = false,
 }) => {
+  const authUser = useCurrentUser();
   const [reportState, setReportState] = useState<Partial<ServiceReport & {
     payment_amount?: string | number;
     payment_slip_url?: string | null;
@@ -207,7 +210,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             limit: 10,
             customer_id: job.customer_id,
             status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}`,
-            ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
+            ...(isFieldRole(authUser?.roleType) ? { created_by: currentUser.id } : {}),
           } as Record<string, unknown>);
           let list: Quotation[] = res.data || [];
 
@@ -239,7 +242,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         customer_id: job?.customer_id,
         status: `${QuotationStatus.DRAFT},${QuotationStatus.PENDING_APPROVAL},${QuotationStatus.APPROVED},${QuotationStatus.SIGNED}`,
         search: value,
-        ...(currentUser.role === UserRole.LEAD_TECH || currentUser.role === UserRole.TECH ? { created_by: currentUser.id } : {}),
+        ...(isFieldRole(authUser?.roleType) ? { created_by: currentUser.id } : {}),
       } as Record<string, unknown>);
       setQuotations(res.data);
     } catch (error) {
@@ -442,7 +445,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     }
 
     let nextStatus = reportState.status || JobStatus.Draft;
-    if (currentUser.role !== UserRole.ADMIN && nextStatus === JobStatus.Draft) {
+    if (!isManagementRole(authUser?.roleType) && nextStatus === JobStatus.Draft) {
       nextStatus = JobStatus.PendingApproval;
     }
 
@@ -752,7 +755,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         ? 'แก้ไขใบรายงานบริการ'
         : 'บันทึกรายงานบริการ';
 
-  const isAdmin = currentUser.role === UserRole.ADMIN;
+  const isManagement = isManagementRole(authUser?.roleType);
   const isPending = reportState.status === JobStatus.PendingApproval;
   const isDraft = reportState.status === JobStatus.Draft;
 
@@ -1423,7 +1426,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               >
                 {submitButtonText}
               </button>
-              {isAdmin && isPending && (
+              {isManagement && isPending && (
                 <button
                   type="button"
                   onClick={handleApprove}

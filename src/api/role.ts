@@ -1,10 +1,12 @@
 import { IBaseResponseArray } from '@/src/types/entity/base.interface';
+import { RoleType } from '@/src/types/enums/role';
 import { AuthService } from './auth';
 
 // Define Role interface temporarily if not exists, but better to import shared one
 export interface Role {
   id: string;
   name: string;
+  role_type?: RoleType;
   description?: string;
   status: boolean;
   created_at?: string;

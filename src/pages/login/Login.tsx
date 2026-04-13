@@ -1,4 +1,4 @@
-import { isFieldRole } from '@/src/utils/role';
+import { isFieldRole, getRoleNameTh } from '@/src/utils/role';
 import React, { useState, useEffect } from 'react';
 import {
   Form,
@@ -251,7 +251,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     }}
                     options={demoUsers.map((user) => ({
                       value: user.citizen_id,
-                      label: `${user.role} - ${user.first_name} ${user.last_name} (${user.nick_name || '-'})`,
+                      label: `${getRoleNameTh(user.role || '')} - ${user.first_name} ${user.last_name} (${user.nick_name || '-'})`,
                     }))}
                   />
                 </div>
