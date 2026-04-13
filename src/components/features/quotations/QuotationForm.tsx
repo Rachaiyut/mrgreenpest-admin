@@ -149,7 +149,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       if (mode !== 'create' && initialValues?.id) {
         setIsLoading(true);
         try {
-          const res = await typQuotationApi.getById(initialValues.id);
+          const res = await QuotationApi.getById(initialValues.id);
           // แกะ wrapper: API returns { status, success, data: QuotationObject }
           const actualData = ((res as unknown as Record<string, unknown>).data || res) as Record<string, any>;
           setFetchedQuotation(actualData);

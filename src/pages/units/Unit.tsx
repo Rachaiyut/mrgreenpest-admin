@@ -138,8 +138,22 @@ const Units: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800">หน่วยนับ</h1>
             <p className="mt-1 text-slate-600">จัดการหน่วยนับสินค้าและบริการ</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-80">
+          <Button
+            onClick={() => {
+              setUnitToEdit(null);
+              setFormModalMode('create');
+              setIsFormModalOpen(true);
+            }}
+          >
+            <PlusIcon className="h-5 w-5" />
+            เพิ่มหน่วยนับ
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหาหน่วยนับ..."
@@ -148,20 +162,14 @@ const Units: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full pl-10"
               />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <Button
-              onClick={() => {
-                setUnitToEdit(null);
-                setFormModalMode('create');
-                setIsFormModalOpen(true);
-              }}
-            >
-              <PlusIcon className="h-5 w-5" />
-              เพิ่มหน่วยนับ
-            </Button>
           </div>
-        </div>
+        </Card>
 
         {loading ? (
           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
@@ -176,17 +184,17 @@ const Units: React.FC = () => {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อหน่วยนับ</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญลักษณ์</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อหน่วยนับ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญลักษณ์</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
                 {units.length > 0 ? (
                   units.map((unit, idx) => (
-                    <tr key={unit.id} className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                    <tr key={unit.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                       <td className="px-4 py-3 text-sm text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                       <td className="px-4 py-3 text-sm font-medium text-slate-800">{unit.name}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">

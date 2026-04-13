@@ -194,8 +194,16 @@ const Categories: React.FC = () => {
             </h1>
             <p className="mt-1 text-slate-600">จัดการหมวดหมู่สำหรับสินค้า</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-80">
+          <Button onClick={() => { setSelectedCategory(null); setModalMode('create'); setIsModalOpen(true); }}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างหมวดหมู่
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหารหัส, ชื่อ, รายละเอียด"
@@ -204,40 +212,42 @@ const Categories: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full pl-10"
               />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-44 flex-shrink-0">
               <Select
                 value={typeFilter}
                 onChange={(e) => {
                   setTypeFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
               >
                 <option value="">ประเภททั้งหมด</option>
                 <option value={CategoryType.PRODUCT}>สินค้า</option>
                 <option value={CategoryType.SERVICE}>บริการ</option>
               </Select>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-44 flex-shrink-0">
               <Select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
               >
                 <option value="">สถานะทั้งหมด</option>
                 <option value="true">ใช้งาน</option>
                 <option value="false">ไม่ใช้งาน</option>
               </Select>
             </div>
-            <Button onClick={() => { setSelectedCategory(null); setModalMode('create'); setIsModalOpen(true); }}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างหมวดหมู่
-            </Button>
           </div>
-        </div>
+        </Card>
 
         {loading ? (
           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
@@ -254,37 +264,37 @@ const Categories: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รหัสหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ประเภทหมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รายละเอียด
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     สถานะ
                   </th>
@@ -304,7 +314,7 @@ const Categories: React.FC = () => {
                     </td>
                   </tr>
                 ) : categories.map((category, index) => (
-                  <tr key={category.id} className="hover:bg-slate-50">
+                  <tr key={category.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * pageSize + index + 1}
                     </td>

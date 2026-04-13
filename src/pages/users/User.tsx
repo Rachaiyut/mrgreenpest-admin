@@ -358,8 +358,16 @@ const Users: React.FC<UsersProps> = ({
                 <h1 className="text-3xl font-bold text-slate-800">ผู้ใช้งาน</h1>
                 <p className="mt-1 text-slate-600">จัดการบัญชีผู้ใช้ในระบบ</p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-64">
+              <Button onClick={() => setIsAddUserModalOpen(true)}>
+                <PlusIcon className="h-5 w-5" />
+                  สร้างผู้ใช้งาน
+              </Button>
+            </div>
+
+            {/* Toolbar */}
+            <Card className="!p-4 mb-4">
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <div className="relative w-full sm:w-80 flex-shrink-0">
                   <Input
                     type="search"
                     placeholder="ค้นหาชื่อ, อีเมล, โทรศัพท์"
@@ -368,39 +376,40 @@ const Users: React.FC<UsersProps> = ({
                       setSearchQuery(e.target.value);
                       setCurrentPage(1);
                     }}
-                    title="ค้นหาด้วย: เลขบัตรประชาชน, ชื่อ-นามสกุล, ชื่อเล่น, อีเมล"
+                    className="w-full pl-10"
                   />
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </div>
-                <Select
-                  value={roleFilter}
-                  onChange={(e) => {
-                    setRoleFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-36"
-                >
-                  <option value="all">ทุกบทบาท</option>
-                  {[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
-                    const rt = role.role_type || role.name;
-                    const labels: Record<string, string> = {
-                      MANAGEMENT: 'ผู้บริหาร/จัดการ',
-                      EXECUTIVE: 'ผู้บริหารระดับสูง',
-                      FIELD_LEAD: 'หัวหน้าทีมช่าง',
-                      FIELD_TECH: 'ช่างปฏิบัติงาน',
-                    };
-                    return (
-                      <option key={rt} value={rt}>
-                        {labels[rt] || rt}
-                      </option>
-                    );
-                  })}
-                </Select>
-                <Button onClick={() => setIsAddUserModalOpen(true)}>
-                  <PlusIcon className="h-5 w-5" />
-                  สร้างผู้ใช้งาน
-                </Button>
+                <div className="w-full sm:w-44 flex-shrink-0">
+                  <Select
+                    value={roleFilter}
+                    onChange={(e) => {
+                      setRoleFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+                  >
+                    <option value="all">ทุกบทบาท</option>
+                    {[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
+                      const rt = role.role_type || role.name;
+                      const labels: Record<string, string> = {
+                        MANAGEMENT: 'ผู้บริหาร/จัดการ',
+                        EXECUTIVE: 'ผู้บริหารระดับสูง',
+                        FIELD_LEAD: 'หัวหน้าทีมช่าง',
+                        FIELD_TECH: 'ช่างปฏิบัติงาน',
+                      };
+                      return (
+                        <option key={rt} value={rt}>
+                          {labels[rt] || rt}
+                        </option>
+                      );
+                    })}
+                  </Select>
+                </div>
               </div>
-            </div>
+            </Card>
 
             {loading ? (
               <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">

@@ -226,8 +226,31 @@ const Packages: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800">แพ็กเกจ</h1>
             <p className="mt-1 text-slate-600">จัดการแพ็กเกจบริการทั้งหมด</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-48">
+          <Button onClick={() => { setSelectedPackage(null); setModalMode('create'); setIsModalOpen(true); }}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างแพ็กเกจ
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
+              <Input
+                type="search"
+                placeholder="ค้นหารหัสแพ็กเกจ, ชื่อแพ็กเกจ"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div className="w-full sm:w-44 flex-shrink-0">
               <select
                 value={selectedCategoryId}
                 onChange={(e) => {
@@ -242,23 +265,8 @@ const Packages: React.FC = () => {
                 ))}
               </select>
             </div>
-            <div className="w-80">
-              <Input
-                type="search"
-                placeholder="ค้นหารหัสแพ็กเกจ, ชื่อแพ็กเกจ"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
-            <Button onClick={() => { setSelectedPackage(null); setModalMode('create'); setIsModalOpen(true); }}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างแพ็กเกจ
-            </Button>
           </div>
-        </div>
+        </Card>
 
         {loading ? (
           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
@@ -275,25 +283,25 @@ const Packages: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     รหัสแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ชื่อแพ็กเกจ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     หมวดหมู่
                   </th>
@@ -325,7 +333,7 @@ const Packages: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {packages.map((pkg, index) => (
-                  <tr key={pkg.id} className="hover:bg-slate-50">
+                  <tr key={pkg.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>

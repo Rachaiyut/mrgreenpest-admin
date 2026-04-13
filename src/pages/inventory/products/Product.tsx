@@ -283,9 +283,16 @@ const Product: React.FC = () => {
             <h1 className="text-3xl font-bold text-slate-800">สินค้า/บริการ</h1>
             <p className="mt-1 text-slate-600">จัดการสินค้าและบริการ</p>
           </div>
-          <div className="flex items-center gap-4">
-            {/* DF-1/12: wider search + placeholder */}
-            <div className="w-96">
+          <Button onClick={() => { setSelectedProduct(null); setModalMode('create'); setIsModalOpen(true); }}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างสินค้า/บริการ
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-center flex-wrap">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
                 placeholder={selectedType === 'SERVICE' ? 'ค้นหารหัสบริการ, ชื่อบริการ' : 'ค้นหารหัสสินค้า, รหัสบาร์โค้ด, ชื่อสินค้า'}
@@ -294,10 +301,13 @@ const Product: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full pl-10"
               />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            {/* DF-2: type filter (สินค้า/บริการ) */}
-            <div className="w-36">
+            <div className="w-full sm:w-36 flex-shrink-0">
               <select
                 value={selectedType}
                 onChange={(e) => {
@@ -311,8 +321,7 @@ const Product: React.FC = () => {
                 <option value="SERVICE">บริการ</option>
               </select>
             </div>
-            {/* DF-2/13: category filter */}
-            <div className="w-44">
+            <div className="w-full sm:w-44 flex-shrink-0">
               <select
                 value={selectedCategoryId}
                 onChange={(e) => {
@@ -330,7 +339,7 @@ const Product: React.FC = () => {
               </select>
             </div>
             {selectedType === 'PRODUCT' && (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <input
                   type="number"
                   placeholder="ราคาต่ำสุด"
@@ -350,12 +359,8 @@ const Product: React.FC = () => {
                 />
               </div>
             )}
-            <Button onClick={() => { setSelectedProduct(null); setModalMode('create'); setIsModalOpen(true); }}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างสินค้า/บริการ
-            </Button>
           </div>
-        </div>
+        </Card>
 
         {loading ? (
           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
@@ -372,45 +377,45 @@ const Product: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัสสินค้า
                   </th>
                   {selectedType === 'PRODUCT' && (
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     รหัสบาร์โค้ด
                   </th>
                   )}
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ชื่อสินค้า/บริการ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     หมวดหมู่
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ประเภท
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ราคา/หน่วย
                   </th>
@@ -418,13 +423,13 @@ const Product: React.FC = () => {
                   <>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จำนวนคงเหลือ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     สต็อกขั้นต่ำ
                   </th>
@@ -440,7 +445,7 @@ const Product: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {products.map((product, index) => (
-                  <tr key={product.id} className="hover:bg-slate-50">
+                  <tr key={product.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
