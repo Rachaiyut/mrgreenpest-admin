@@ -315,10 +315,10 @@ const Suppliers: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
                       {supplier.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {supplier.type === SupplierType.INDIVIDUAL
-                        ? 'บุคคลธรรมดา'
-                        : 'นิติบุคคล'}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${supplier.type === SupplierType.INDIVIDUAL ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                        {supplier.type === SupplierType.INDIVIDUAL ? 'บุคคลธรรมดา' : 'นิติบุคคล'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {supplier.tax_id || '-'}
@@ -327,7 +327,12 @@ const Suppliers: React.FC = () => {
                       {supplier.contact_name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {supplier.phone}
+                      {(() => {
+                        const raw = (supplier.phone || '').replace(/\D/g, '');
+                        if (raw.length === 10) return `${raw.slice(0,3)}-${raw.slice(3,6)}-${raw.slice(6)}`;
+                        if (raw.length === 9) return `${raw.slice(0,2)}-${raw.slice(2,5)}-${raw.slice(5)}`;
+                        return supplier.phone || '-';
+                      })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {supplier.email}
