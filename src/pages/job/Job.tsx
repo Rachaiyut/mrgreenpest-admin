@@ -1141,14 +1141,14 @@ const Job: React.FC<JobProps> = ({
 
   return (
     <>
-      <div className="relative min-h-screen">
+      <div className="relative min-h-screen flex flex-col">
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
           <p className="mt-4 text-base font-medium text-slate-500">กำลังโหลดข้อมูลภาคสนาม...</p>
         </div>
       )}
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6 flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
@@ -1458,7 +1458,7 @@ const Job: React.FC<JobProps> = ({
         <div className="flex-1 min-h-0 relative">
 
           {activeTab === 'schedule' && view === 'kanban' && (
-            <div className="flex flex-col relative">
+            <div className="flex flex-col relative min-h-[calc(100vh-320px)]">
               {kanbanColumns.length > 0 && (
                 <>
                   <button
@@ -1477,14 +1477,14 @@ const Job: React.FC<JobProps> = ({
               )}
               <div
                 ref={kanbanContainerRef}
-                className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth"
+                className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth flex-1"
                 style={{ scrollbarWidth: 'thin' }}
               >
                 {kanbanColumns.length > 0 ? (
                   kanbanColumns.map((col) => (
                     <div
                       key={col.id}
-                      className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col"
+                      className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col min-h-[calc(100vh-320px)]"
                     >
                       <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60 shrink-0">
                         <div className="flex items-center gap-2 min-w-0">

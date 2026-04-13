@@ -417,7 +417,7 @@ const Assessments: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen flex flex-col">
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
@@ -425,7 +425,7 @@ const Assessments: React.FC = () => {
         </div>
       )}
 
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         {/* Header Section */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -604,13 +604,13 @@ const Assessments: React.FC = () => {
           </div>
         </Card>
 
-        <div className="flex-grow min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col">
           {view === 'kanban' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex-1 min-h-[calc(100vh-380px)]">
               {kanbanColumns.map((col) => (
                 <div
                   key={col.title}
-                  className="bg-slate-100/80 rounded-xl p-4 flex flex-col min-h-[500px]"
+                  className="bg-slate-100/80 rounded-xl p-4 flex flex-col min-h-0 h-full"
                 >
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60">
                     <div className="flex items-center gap-2 min-w-0">
