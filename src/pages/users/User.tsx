@@ -295,21 +295,9 @@ const Users: React.FC<UsersProps> = ({
   // Calculate user counts per role dynamically
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    roles.forEach((r) => (counts[r.role_type || r.name] = 0));
-
-    users.forEach((user) => {
-      const userRoleType =
-        typeof user.role === 'object' && user.role !== null
-          ? (user.role as { role_type: string }).role_type
-          : (user.role_type || '');
-      if (counts[userRoleType] !== undefined) {
-        counts[userRoleType]++;
-      } else {
-        counts[userRoleType] = (counts[userRoleType] || 0) + 1;
-      }
-    });
+    roles.forEach((r) => (counts[r.id] = (r as Record<string, unknown>).user_count as number || 0));
     return counts;
-  }, [roles, users]);
+  }, [roles]);
 
   const userActions = [
     { label: 'ดูรายละเอียด', icon: EyeIcon },
@@ -429,31 +417,37 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ลำดับ
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อ
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                      >
+                        ชื่อเล่น
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         อีเมล
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         โทรศัพท์
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         บทบาท
                       </th>
@@ -464,18 +458,26 @@ const Users: React.FC<UsersProps> = ({
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">
                     {paginatedUsers.map((user, index) => (
-                      <tr key={user.id} className="hover:bg-slate-50">
+                      <tr key={user.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {user.name} ({user.nick_name})
+                          {user.name}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                          {user.nick_name || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {user.email || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {user.phone}
+                          {(() => {
+                            const raw = (user.phone || '').replace(/\D/g, '');
+                            if (raw.length === 10) return `${raw.slice(0,3)}-${raw.slice(3,6)}-${raw.slice(6)}`;
+                            if (raw.length === 9) return `${raw.slice(0,2)}-${raw.slice(2,5)}-${raw.slice(5)}`;
+                            return user.phone || '-';
+                          })()}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           <RoleBadge role={user.role} />
@@ -549,19 +551,19 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อบทบาท
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         รายละเอียด
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         จำนวนผู้ใช้งาน
                       </th>
@@ -599,8 +601,8 @@ const Users: React.FC<UsersProps> = ({
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {role.description || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {roleCounts[role.name] || 0}
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          {roleCounts[role.id] || 0}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
                           <div className="inline-block text-left">
@@ -706,19 +708,19 @@ const Users: React.FC<UsersProps> = ({
                   }}
                   disabled={
                     roleCounts[
-                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                      openDropdownId || ''
                     ] > 0
                   }
                   title={
                     roleCounts[
-                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                      openDropdownId || ''
                     ] > 0
                       ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
                       : 'ลบบทบาท'
                   }
                   className={`flex items-center w-full text-left px-4 py-2 text-sm ${
                     roleCounts[
-                      roles.find((r) => r.id === openDropdownId)?.name || ''
+                      openDropdownId || ''
                     ] > 0
                       ? 'text-slate-400 cursor-not-allowed'
                       : 'text-red-700 hover:bg-red-50'
