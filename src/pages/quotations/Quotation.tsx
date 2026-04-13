@@ -737,33 +737,32 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
                             <div className="hidden md:block">
-                            <Button
-                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${loadingPdfId === q.id
+                            <button
+                              type="button"
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${loadingPdfId === q.id
                                 ? 'bg-slate-100 text-slate-500 cursor-not-allowed'
                                 : 'bg-green-600 hover:bg-green-700 text-white'
                                 }`}
                               disabled={loadingPdfId === q.id}
-                              onClick={(e) => {
+                              onClick={async (e) => {
+                                e.preventDefault();
                                 e.stopPropagation();
-                                if (loadingPdfId === q.id) return;
-                                setSelectedQuotation(q);
+                                if (loadingPdfId) return;
                                 setLoadingPdfId(q.id);
-                                (async () => {
-                                  try {
-                                    const blob = await PrintApi.getById(q.id);
-                                    window.open(window.URL.createObjectURL(blob), '_blank');
-                                  } catch (error) {
-                                    console.error('Error viewing PDF:', error);
-                                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
-                                  } finally {
-                                    setLoadingPdfId(null);
-                                  }
-                                })();
+                                try {
+                                  const blob = await PrintApi.getById(q.id);
+                                  window.open(window.URL.createObjectURL(blob), '_blank');
+                                } catch (error) {
+                                  console.error('Error viewing PDF:', error);
+                                  Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
+                                } finally {
+                                  setLoadingPdfId(null);
+                                }
                               }}
                             >
                               {loadingPdfId === q.id ? <LoadingIcon className="w-4 h-4 animate-spin" /> : <EyeIcon className="w-4 h-4" />}
                               {loadingPdfId === q.id ? 'กำลังโหลด...' : 'ดู PDF'}
-                            </Button>
+                            </button>
                             </div>
                             <Button
                               data-quotation-id={q.id}
