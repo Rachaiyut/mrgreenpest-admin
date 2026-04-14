@@ -276,8 +276,8 @@ const Product: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1 space-y-6 max-w-full">
         <div className="shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">สินค้า/บริการ</h1>
@@ -363,16 +363,16 @@ const Product: React.FC = () => {
         </Card>
 
         {loading ? (
-          <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+          <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden items-center justify-center">
             <div className="flex flex-col items-center justify-center text-slate-500">
               <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
               <p className="text-base font-medium">กำลังโหลดข้อมูลสินค้า...</p>
             </div>
-          </Card>
+          </div>
         ) : (
-        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto w-full flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th
@@ -503,7 +503,7 @@ const Product: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full">
+          <div className="mt-auto border-t border-slate-200">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -512,7 +512,7 @@ const Product: React.FC = () => {
               onItemsPerPageChange={handleItemsPerPageChange}
             />
           </div>
-        </Card>
+        </div>
         )}
       </div>
 
@@ -583,7 +583,7 @@ const Product: React.FC = () => {
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
       />
-    </>
+    </div>
   );
 };
 
