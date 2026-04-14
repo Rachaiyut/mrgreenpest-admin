@@ -550,46 +550,53 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
           </Card>
         </div>
 
-        {/* Filters & Table */}
-        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-          <div className="flex-shrink-0 p-4 border-b border-slate-200">
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-              <div className="w-full sm:w-64 sm:flex-shrink-0">
-                <Input
-                  type="search"
-                  placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
-                <span className="text-slate-400">-</span>
-                <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
-              </div>
-              <div className="w-full sm:w-40">
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(
-                      e.target.value as 'ทั้งหมด' | QuotationStatus
-                    );
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="ทั้งหมด">ทั้งหมด</option>
-                  {Object.values(QuotationStatus).map((status) => (
-                    <option key={status} value={status}>
-                      {statusLabels[status]}
-                    </option>
-                  ))}
-                </Select>
-              </div>
+        {/* Toolbar */}
+        <Card className="!p-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
+            <div className="relative w-full sm:w-64 sm:flex-shrink-0">
+              <Input
+                type="search"
+                placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+              <span className="text-slate-400">-</span>
+              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+            </div>
+            <div className="w-full sm:w-40">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(
+                    e.target.value as 'ทั้งหมด' | QuotationStatus
+                  );
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+              >
+                <option value="ทั้งหมด">ทั้งหมด</option>
+                {Object.values(QuotationStatus).map((status) => (
+                  <option key={status} value={status}>
+                    {statusLabels[status]}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
+        </Card>
+
+        {/* Table */}
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-x-auto flex-1 relative">
             <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50">

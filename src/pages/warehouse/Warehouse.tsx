@@ -426,39 +426,24 @@ const Warehouse: React.FC = () => {
   ];
 
   return (
-    <>
-      {/* 🌟 1. ปรับ Container หลักให้เป็น flex flex-col และกำหนดความสูงขั้นต่ำ (min-h) ให้เต็มจอ */}
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
-        {/* 🌟 2. Header (ให้คงขนาดไว้ด้วย shrink-0) */}
-        <div className="shrink-0 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1 space-y-6 max-w-full">
+        {/* Header */}
+        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">คลังสินค้า</h1>
             <p className="mt-1 text-slate-600">
               จัดการข้อมูลคลังสินค้าและรถบริการของบริษัท
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
-            <div className="w-full sm:w-64">
-              <Input
-                type="search"
-                placeholder="ค้นหา..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full"
-              />
-            </div>
-            <Button onClick={() => setIsAddModalOpen(true)} variant="primary" className="w-full sm:w-auto justify-center shrink-0">
-              <PlusIcon className="h-5 w-5 mr-2" />
-              เพิ่มคลัง/รถบริการ
-            </Button>
-          </div>
+          <Button onClick={() => setIsAddModalOpen(true)} variant="primary" className="shrink-0">
+            <PlusIcon className="h-5 w-5 mr-2" />
+            เพิ่มคลัง/รถบริการ
+          </Button>
         </div>
 
-        {/* 🌟 Statistics Cards (shrink-0) */}
-        <div className="shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Statistics Cards */}
+        <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
             <div className="flex-shrink-0 p-3 rounded-xl bg-white text-blue-600">
               <NewWarehouseIcon className="h-6 w-6" />
@@ -505,11 +490,26 @@ const Warehouse: React.FC = () => {
           </div>
         </div>
 
-        {/* 🌟 3. Content Area (ยืดขยายตามพื้นที่ที่เหลือด้วย flex-1) */}
-        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
+        {/* Toolbar */}
+        <Card className="!p-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="relative w-full sm:w-64 flex-shrink-0">
+              <Input
+                type="search"
+                placeholder="ค้นหา..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             {/* Tabs */}
-            <div className="flex bg-slate-100 p-1 rounded-lg self-start">
+            <div className="flex bg-slate-100 p-1 rounded-lg">
               <button
                 onClick={() => {
                   setActiveTab('all');
@@ -551,61 +551,28 @@ const Warehouse: React.FC = () => {
               </button>
             </div>
           </div>
+        </Card>
 
-          {/* พื้นที่ตาราง ใส่ overflow-auto และ flex-1 เพื่อให้ Scroll ได้แค่ข้างในนี้ */}
+        {/* Table */}
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto w-full flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ลำดับ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    รหัส
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ชื่อคลัง/รถ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ประเภท
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ที่ตั้ง/ทะเบียน
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    จัดการ
-                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">รหัส</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ชื่อคลัง/รถ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ที่ตั้ง/ทะเบียน</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-16 text-center">
-                      <div className="flex flex-col items-center justify-center text-slate-500">
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลคลังสินค้า...</p>
                       </div>
@@ -615,27 +582,16 @@ const Warehouse: React.FC = () => {
                   warehouses.map((warehouse, index) => (
                     <tr
                       key={warehouse.id}
-                      className="hover:bg-slate-50 transition-colors"
+                      className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle"
                     >
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-700">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary">
                         {warehouse.code || warehouse.id.substring(0, 8)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                        <div className="flex items-center">
-                          <div
-                            className={`h-8 w-8 rounded-full flex items-center justify-center mr-3 ${warehouse.type === WarehouseTypeEnum.MAIN ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'}`}
-                          >
-                            {warehouse.type === WarehouseTypeEnum.MAIN ? (
-                              <NewWarehouseIcon className="h-4 w-4" />
-                            ) : (
-                              <TruckIcon className="h-4 w-4" />
-                            )}
-                          </div>
-                          {warehouse.name}
-                        </div>
+                        {warehouse.name}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         <span
@@ -682,13 +638,10 @@ const Warehouse: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan={7}
-                      className="px-6 py-10 text-center text-slate-500"
-                    >
-                      <div className="flex flex-col items-center justify-center">
-                        <NewWarehouseIcon className="h-10 w-10 text-slate-300 mb-2" />
-                        <p>ไม่พบข้อมูลคลังสินค้า</p>
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                        <NewWarehouseIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลคลังสินค้า</p>
                       </div>
                     </td>
                   </tr>
@@ -698,7 +651,7 @@ const Warehouse: React.FC = () => {
           </div>
           
           {/* พื้นที่ Pagination ใช้ mt-auto ดันลงล่าง และ sticky bottom-0 เพื่อให้เกาะขอบล่างเสมอ */}
-          <div className="border-t border-slate-200 bg-slate-50 mt-auto sticky bottom-0 z-20 w-full pb-safe">
+          <div className="mt-auto border-t border-slate-200">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -707,7 +660,7 @@ const Warehouse: React.FC = () => {
               onItemsPerPageChange={handleItemsPerPageChange}
             />
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Dropdown Menu */}
@@ -815,7 +768,7 @@ const Warehouse: React.FC = () => {
         }}
         products={products}
       />
-    </>
+    </div>
   );
 };
 

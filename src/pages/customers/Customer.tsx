@@ -237,79 +237,84 @@ const Customers: React.FC = () => {
   }, [openDropdownId]);
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-6 max-w-full">
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 shrink-0">
-          <div className="shrink-0">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1 space-y-6 max-w-full">
+        <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
+          <div>
             <h1 className="text-3xl font-bold text-slate-800">ลูกค้า</h1>
             <p className="mt-1 text-slate-600">จัดการฐานข้อมูลลูกค้าของคุณ</p>
           </div>
-          <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 w-full xl:w-auto xl:flex-nowrap">
-            <div className="w-full sm:flex-1 xl:w-96">
+          <Button onClick={handleCreateClick} className="shrink-0">
+            <PlusIcon className="h-5 w-5 sm:mr-2" />
+            <span className="hidden sm:inline">สร้างลูกค้า</span>
+            <span className="sm:hidden">สร้าง</span>
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <Card className="!p-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหารหัส, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์"
                 value={searchQuery || ''}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset page on search
+                  setCurrentPage(1);
                 }}
-                className="w-full"
+                className="w-full pl-10"
                 title="ค้นหาด้วย: รหัสลูกค้า, ชื่อ-นามสกุล, ชื่อเล่น, เบอร์โทรศัพท์"
               />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <div className="w-full sm:w-48 shrink-0">
+            <div className="w-full sm:w-48 flex-shrink-0">
               <Select
                 value={typeFilter || ''}
                 onChange={(e) => {
                   setTypeFilter(e.target.value as SupplierType);
                   setCurrentPage(1);
                 }}
-                className="w-full"
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
               >
                 <option value="">ทุกประเภท</option>
                 <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
                 <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
             </div>
-            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
-              <div className="flex items-center rounded-lg bg-slate-200 p-1 shrink-0">
-                <Button
-                  onClick={() => setView('list')}
-                  variant="ghost"
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                  title="มุมมองรายการ"
-                >
-                  <ListBulletIcon className="h-5 w-5" />
-                </Button>
-                <Button
-                  onClick={() => setView('card')}
-                  variant="ghost"
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'card' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
-                  title="มุมมองการ์ด"
-                >
-                  <ViewColumnsIcon className="h-5 w-5" />
-                </Button>
-              </div>
-              <Button onClick={handleCreateClick} className="shrink-0 flex-1 sm:flex-none justify-center">
-                <PlusIcon className="h-5 w-5 sm:mr-2" />
-                 <span className="hidden sm:inline">สร้างลูกค้า</span>
-                 <span className="sm:hidden">สร้าง</span>
+            <div className="ml-auto flex items-center rounded-lg bg-slate-200 p-1 shrink-0">
+              <Button
+                onClick={() => setView('list')}
+                variant="ghost"
+                className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'list' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
+                title="มุมมองรายการ"
+              >
+                <ListBulletIcon className="h-5 w-5" />
+              </Button>
+              <Button
+                onClick={() => setView('card')}
+                variant="ghost"
+                className={`px-3 py-1.5 text-sm font-medium rounded-md h-auto ${view === 'card' ? 'bg-white shadow-sm text-primary' : 'text-slate-600'}`}
+                title="มุมมองการ์ด"
+              >
+                <ViewColumnsIcon className="h-5 w-5" />
               </Button>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* 🌟 Content Area with Loading State */}
         {loading ? (
-           <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm items-center justify-center min-h-[400px]">
+           <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden items-center justify-center min-h-[400px]">
               <div className="flex flex-col items-center justify-center text-slate-500">
                 <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                 <p className="text-base font-medium">กำลังโหลดข้อมูลลูกค้า...</p>
               </div>
-           </Card>
+           </div>
         ) : view === 'list' ? (
-          <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm">
+          <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
             <div className="overflow-auto w-full flex-1 relative">
               <CustomerListView
                 customers={customers}
@@ -318,7 +323,7 @@ const Customers: React.FC = () => {
                 itemsPerPage={itemsPerPage}
               />
             </div>
-            <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full pb-safe">
+            <div className="mt-auto border-t border-slate-200">
               <Pagination
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
@@ -327,7 +332,7 @@ const Customers: React.FC = () => {
                 onItemsPerPageChange={handleItemsPerPageChange}
               />
             </div>
-          </Card>
+          </div>
         ) : (
           <div className="flex flex-col w-full space-y-6 flex-1">
              <div className="flex-1">
@@ -466,7 +471,7 @@ const Customers: React.FC = () => {
         confirmButtonText="ยืนยันการปิดใช้งาน"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
-    </>
+    </div>
   );
 };
 

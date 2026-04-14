@@ -662,8 +662,8 @@ const Assessments: React.FC = () => {
             </div>
           ) : (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="min-w-full">
+              <div className="overflow-x-auto flex-1 relative">
+                <table className="min-w-full border-b border-slate-200">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">

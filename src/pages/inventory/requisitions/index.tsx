@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
 import {
+  DocumentCheckIcon,
   PlusIcon,
   ManageIcon,
   EyeIcon,
@@ -253,8 +254,8 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
   ];
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
@@ -264,8 +265,30 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
               จัดการใบเบิกสินค้าและค่าใช้จ่าย
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างใบเบิก
+          </Button>
+        </div>
+
+        <Card className="!p-4 mb-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
+              <Input
+                type="search"
+                placeholder="ค้นหา (เลขที่)..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <div className="w-full sm:w-64 flex-shrink-0">
               <SearchableSelect
                 options={userOptions}
                 value={requesterId}
@@ -277,27 +300,12 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                 placeholder="ค้นหาตามผู้เบิก..."
               />
             </div>
-            <div className="w-64">
-              <Input
-                type="search"
-                placeholder="ค้นหา (เลขที่)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset page on search
-                }}
-              />
-            </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างใบเบิก
-            </Button>
           </div>
-        </div>
+        </Card>
 
-        <Card className="!p-0 flex-grow min-h-0 flex flex-col">
-          <div className="overflow-auto flex-grow">
-            <table className="min-w-full divide-y divide-slate-200">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-auto flex-1 relative">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -324,7 +332,17 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedRequisitions.map((item, index) => (
+                {paginatedRequisitions.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                        <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
+                        <p className="text-sm mt-1">ลองเปลี่ยนคำค้นหา หรือสร้างใบเบิกใหม่</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedRequisitions.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -377,7 +395,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
               </tbody>
             </table>
           </div>
-          <div className="flex-shrink-0">
+          <div className="mt-auto border-t border-slate-200">
             <Pagination
               currentPage={currentPage}
               itemsPerPage={itemsPerPage}
@@ -386,7 +404,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
               onItemsPerPageChange={handleItemsPerPageChange}
             />
           </div>
-        </Card>
+        </div>
       </div>
 
       {openDropdownId && dropdownPosition && (
@@ -458,7 +476,7 @@ const Requisitions: React.FC<RequisitionsProps> = () => {
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
       />
-    </>
+    </div>
   );
 };
 

@@ -1455,7 +1455,7 @@ const Job: React.FC<JobProps> = ({
         </Card>
 
 
-        <div className="flex-1 min-h-0 relative">
+        <div className="flex-1 min-h-0 relative flex flex-col">
 
           {activeTab === 'schedule' && view === 'kanban' && (
             <div className="flex flex-col relative min-h-[calc(100vh-320px)]">
@@ -1534,25 +1534,29 @@ const Job: React.FC<JobProps> = ({
 
           {activeTab === 'unassigned' && (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="min-w-[800px] w-full">
+              <div className="overflow-x-auto flex-1 relative">
+                <table className="min-w-[800px] w-full border-b border-slate-200">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {unassignedJobs.length > 0 ? (
                       unassignedJobs.map((job, idx) => (
-                        <tr key={job.id} className={`hover:bg-amber-50/30 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                        <tr key={job.id} className={`hover:bg-amber-50/30 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            {(unassignedPage - 1) * unassignedItemsPerPage + idx + 1}
+                          </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
                           </td>
-                           <td className="px-4 py-3 text-sm text-slate-700">
+                          <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer?.primary_phone || '-')}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
@@ -1561,7 +1565,7 @@ const Job: React.FC<JobProps> = ({
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="px-2 py-1 bg-amber-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-4 py-3">
                             <Button
                               variant="primary"
                               className="text-xs py-1.5 px-3"
@@ -1574,8 +1578,9 @@ const Job: React.FC<JobProps> = ({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={4} className="px-6 py-16 text-center">
-                          <div className="flex flex-col items-center justify-center text-slate-400">
+                        <td colSpan={6} className="p-0 border-b-0 h-0">
+                          <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                            <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่มีงานค้างรอจัดคิว</p>
                           </div>
                         </td>
@@ -1606,8 +1611,8 @@ const Job: React.FC<JobProps> = ({
 
           {activeTab === 'schedule' && view === 'list' && (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="min-w-[800px] w-full">
+              <div className="overflow-x-auto">
+                <table className="min-w-[800px] w-full border-b border-slate-200">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -1753,31 +1758,18 @@ const Job: React.FC<JobProps> = ({
 
           {activeTab === 'reports' && (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="min-w-[800px] w-full">
+              <div className="overflow-x-auto flex-1 relative">
+                <table className="min-w-[800px] w-full border-b border-slate-200">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        รหัสลูกค้า
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ลูกค้า
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        วัน
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        เวลา
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        บริการ
-                      </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ช่าง
-                      </th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        จัดการ
-                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">รหัสลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วัน</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลา</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">บริการ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -1808,9 +1800,12 @@ const Job: React.FC<JobProps> = ({
                         return (
                           <tr
                             key={report.id}
-                            className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                            className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                               }`}
                           >
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {(reportCurrentPage - 1) * reportItemsPerPage + idx + 1}
+                            </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600">
                               {reportJob?.customer?.code || '-'}
                             </td>
@@ -1904,10 +1899,11 @@ const Job: React.FC<JobProps> = ({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={7} className="px-6 py-16 text-center">
-                          <p className="text-lg font-medium text-slate-400">
-                            ไม่พบรายงานบริการ
-                          </p>
+                        <td colSpan={8} className="p-0 border-b-0 h-0">
+                          <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                            <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
+                            <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
+                          </div>
                         </td>
                       </tr>
                     )}
@@ -1971,9 +1967,9 @@ const Job: React.FC<JobProps> = ({
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto flex-1 flex flex-col">
                 {scheduleVehicleId && scheduleDate ? (
-                  <table className="min-w-[800px] w-full">
+                  <table className="min-w-[800px] w-full border-b border-slate-200">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-20">
@@ -2057,8 +2053,9 @@ const Job: React.FC<JobProps> = ({
                     </tbody>
                   </table>
                 ) : (
-                  <div className="py-32 text-center text-slate-400">
-                    กรุณาเลือกตารางงาน
+                  <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+                    <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
+                    <p className="text-lg font-medium">กรุณาเลือกตารางงาน</p>
                   </div>
                 )}
               </div>

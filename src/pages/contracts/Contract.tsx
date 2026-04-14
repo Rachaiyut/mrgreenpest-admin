@@ -400,61 +400,63 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         </Card>
       </div>
 
-      {/* Toolbar & Table Area */}
-      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-          <div className="flex-shrink-0 p-4 border-b border-slate-200">
-            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
-            <div className="w-full sm:w-64 relative">
-              <Input
-                type="search"
-                placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10"
+      {/* Toolbar */}
+      <Card className="!p-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative w-full sm:w-80 flex-shrink-0">
+            <Input
+              type="search"
+              placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-10"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
-              <span className="text-slate-400">-</span>
-              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
-            </div>
-
-            <div className="w-full lg:w-48">
-              <Select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatus);
-                  setCurrentPage(1);
-                }}
-                className="w-full"
-              >
-                <option value="ทั้งหมด">สถานะทั้งหมด</option>
-                {Object.values(ContractStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            </div>
+            </svg>
           </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <span className="text-slate-400">-</span>
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+          </div>
+
+          <div className="w-full lg:w-48">
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as 'ทั้งหมด' | ContractStatus);
+                setCurrentPage(1);
+              }}
+              className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+            >
+              <option value="ทั้งหมด">สถานะทั้งหมด</option>
+              {Object.values(ContractStatus).map((status) => (
+                <option key={status} value={status}>
+                  {statusLabels[status]}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-x-auto flex flex-col flex-grow relative">
             <table className="min-w-full border-b border-slate-200">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">

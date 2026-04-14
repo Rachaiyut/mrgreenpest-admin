@@ -52,7 +52,7 @@ const CustomerListView: React.FC<{
   itemsPerPage: number;
 }> = ({ customers, handleDropdownToggle, currentPage, itemsPerPage }) => (
   <div className="overflow-x-auto">
-    <table className="min-w-[1200px] w-full divide-y divide-slate-200">
+    <table className="min-w-[1200px] w-full divide-y divide-slate-200 border-b border-slate-200">
       <thead className="bg-slate-50">
         <tr>
           {TH('ลำดับ')}

@@ -433,8 +433,8 @@ const Issue: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
@@ -444,8 +444,15 @@ const Issue: React.FC = () => {
               ติดตามและจัดการการเบิกสินค้าและอุปกรณ์
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="w-64">
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <PlusIcon className="h-5 w-5" />
+            สร้างใบเบิก
+          </Button>
+        </div>
+
+        <Card className="!p-4 mb-4 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
                 placeholder="ค้นหา (เลขที่, สินค้า, ค่าใช้จ่าย, จำนวนเงิน, วันที่)..."
@@ -454,16 +461,21 @@ const Issue: React.FC = () => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full pl-10"
                 title="ค้นหาด้วย: เลขที่เอกสารเบิก, สินค้า/อุปกรณ์, รายการค่าใช้จ่าย, จำนวนเงินที่เบิก, วันที่เบิก"
               />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48 flex-shrink-0">
               <Select
                 value={creatorFilter}
                 onChange={(e) => {
                   setCreatorFilter(e.target.value);
                   setCurrentPage(1);
                 }}
+                className="w-full"
               >
                 <option value="all">ผู้เบิกทั้งหมด</option>
                 {uniqueCreators.map((creator) => (
@@ -473,12 +485,8 @@ const Issue: React.FC = () => {
                 ))}
               </Select>
             </div>
-            <Button onClick={() => setIsAddModalOpen(true)}>
-              <PlusIcon className="h-5 w-5" />
-              สร้างใบเบิก
-            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* --- Mobile View: Cards --- */}
         <div className="md:hidden space-y-4 flex-grow min-h-0 overflow-y-auto">
@@ -592,9 +600,9 @@ const Issue: React.FC = () => {
         </div>
 
         {/* --- Desktop View: Table --- */}
-        <Card className="!p-0 flex-grow min-h-0 flex-col hidden md:flex relative">
-          <div className="overflow-auto flex-grow flex flex-col">
-            <table className="min-w-full divide-y divide-slate-200">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden hidden md:flex relative">
+          <div className="overflow-auto flex-1 relative">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               {/* เปลี่ยนให้เหมือนเดิม และเพิ่ม border-b เพื่อกันเส้นหาย */}
               <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
@@ -661,9 +669,27 @@ const Issue: React.FC = () => {
                 </tr>
               </thead>
               
-              {!isLoading && paginatedWithdrawals.length > 0 && (
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {paginatedWithdrawals.map((withdrawal, index) => {
+              <tbody className="bg-white divide-y divide-slate-200">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedWithdrawals.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                        <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedWithdrawals.map((withdrawal, index) => {
                     const fromWarehouse = warehouseMap.get(
                       withdrawal.warehouse_id
                     );
@@ -761,30 +787,12 @@ const Issue: React.FC = () => {
                       </tr>
                     );
                   })}
-                </tbody>
-              )}
+              </tbody>
             </table>
-
-            {/* --- Loading State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
-            {isLoading && (
-              <div className="flex-grow flex flex-col items-center justify-center text-slate-500 min-h-[40vh]">
-                <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-                <p className="text-base font-medium">กำลังโหลดข้อมูลการเบิก...</p>
-              </div>
-            )}
-
-            {/* --- Empty State ย้ายออกมาเพื่อจัดกึ่งกลางเช่นกัน --- */}
-            {!isLoading && paginatedWithdrawals.length === 0 && (
-              <div className="flex-grow flex flex-col items-center justify-center text-slate-400 min-h-[40vh]">
-                <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
-                <p className="text-lg font-medium">ไม่พบข้อมูลใบเบิกสินค้า</p>
-                <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
-              </div>
-            )}
           </div>
 
           {!isLoading && totalItems > 0 && (
-            <div className="flex-shrink-0">
+            <div className="mt-auto border-t border-slate-200">
               <Pagination
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
@@ -794,7 +802,7 @@ const Issue: React.FC = () => {
               />
             </div>
           )}
-        </Card>
+        </div>
       </div>
 
       {openDropdownId &&
@@ -875,9 +883,9 @@ const Issue: React.FC = () => {
         users={users}
         warehouses={warehouses}
         products={products}
-        stockMap={stockMap}      
+        stockMap={stockMap}
       />
-    </>
+    </div>
   );
 };
 

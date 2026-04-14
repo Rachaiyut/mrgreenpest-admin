@@ -336,45 +336,63 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
         </Card>
       </div>
 
-      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-        <div className="flex-shrink-0 p-4 border-b border-slate-200">
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
-            <div className="w-full sm:w-64">
-              <Input
-                type="search"
-                placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
-                value={receiptSearchQuery}
-                onChange={(e) => {
-                  setReceiptSearchQuery(e.target.value);
-                  setReceiptPage(1);
-                }}
+      {/* Toolbar */}
+      <Card className="!p-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative w-full sm:w-80 flex-shrink-0">
+            <Input
+              type="search"
+              placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+              value={receiptSearchQuery}
+              onChange={(e) => {
+                setReceiptSearchQuery(e.target.value);
+                setReceiptPage(1);
+              }}
+              className="w-full pl-10"
+            />
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
-              <span className="text-slate-400">-</span>
-              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
-            </div>
-            <div className="w-full sm:w-48">
-              <Select
-                value={receiptPaymentMethodFilter}
-                onChange={(e) => {
-                  setReceiptPaymentMethodFilter(
-                    e.target.value as 'ทั้งหมด' | string
-                  );
-                  setReceiptPage(1);
-                }}
-              >
-                <option value="ทั้งหมด">ทั้งหมด</option>
-                {receiptPaymentMethods.map((m) => (
-                  <option key={m} value={m}>
-                    {getPaymentMethodLabel(m)}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            </svg>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <span className="text-slate-400">-</span>
+            <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+          </div>
+          <div className="w-full sm:w-48">
+            <Select
+              value={receiptPaymentMethodFilter}
+              onChange={(e) => {
+                setReceiptPaymentMethodFilter(
+                  e.target.value as 'ทั้งหมด' | string
+                );
+                setReceiptPage(1);
+              }}
+              className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+            >
+              <option value="ทั้งหมด">ทั้งหมด</option>
+              {receiptPaymentMethods.map((m) => (
+                <option key={m} value={m}>
+                  {getPaymentMethodLabel(m)}
+                </option>
+              ))}
+            </Select>
           </div>
         </div>
+      </Card>
+
+      {/* Table */}
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
         <div className="overflow-x-auto flex-1 relative">
           <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">

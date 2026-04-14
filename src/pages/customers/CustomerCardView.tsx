@@ -35,7 +35,7 @@ const CustomerCardView: React.FC<{
               >
                 {customer.type === CustomerType.CORPORATE
                   ? 'นิติบุคคล'
-                  : 'บุคคล'}
+                  : 'บุคคลธรรมดา'}
               </span>
             </div>
             <div className="relative">
