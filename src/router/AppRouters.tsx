@@ -146,7 +146,7 @@ export const AppRouter = (props: AppRouterProps) => {
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header toggleSidebar={toggleSidebar} onLogout={onLogout} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col">
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               {routes.map((route, index) => (

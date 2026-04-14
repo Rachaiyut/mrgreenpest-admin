@@ -349,11 +349,11 @@ const Users: React.FC<UsersProps> = ({
   }, [openDropdownId]);
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1">
         {view === 'users' && (
           <>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-3xl font-bold text-slate-800">ผู้ใช้งาน</h1>
                 <p className="mt-1 text-slate-600">จัดการบัญชีผู้ใช้ในระบบ</p>
@@ -365,7 +365,7 @@ const Users: React.FC<UsersProps> = ({
             </div>
 
             {/* Toolbar */}
-            <Card className="!p-4 mb-4">
+            <Card className="!p-4 mb-4 flex-shrink-0">
               <div className="flex flex-col sm:flex-row gap-3 items-center">
                 <div className="relative w-full sm:w-80 flex-shrink-0">
                   <Input
@@ -419,106 +419,73 @@ const Users: React.FC<UsersProps> = ({
                 </div>
               </Card>
             ) : (
-            <Card className="!p-0">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        ลำดับ
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        ชื่อ
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        ชื่อเล่น
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        อีเมล
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        โทรศัพท์
-                      </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
-                      >
-                        บทบาท
-                      </th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">จัดการ</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    {paginatedUsers.map((user, index) => (
-                      <tr key={user.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                          {user.name}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {user.nick_name || '-'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {user.email || '-'}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {(() => {
-                            const raw = (user.phone || '').replace(/\D/g, '');
-                            if (raw.length === 10) return `${raw.slice(0,3)}-${raw.slice(3,6)}-${raw.slice(6)}`;
-                            if (raw.length === 9) return `${raw.slice(0,2)}-${raw.slice(2,5)}-${raw.slice(5)}`;
-                            return user.phone || '-';
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          <RoleBadge role={user.role} />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
-                          <div className="inline-block text-left">
-                            <Button
-                              variant="icon"
-                              data-user-id={user.id}
-                              onClick={(e) => handleDropdownToggle(e, user.id)}
-                            >
-                              <span className="sr-only">Open options</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
-                        </td>
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อ</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อเล่น</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">บทบาท</th>
+                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">จัดการ</span></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                      {paginatedUsers.map((user, index) => (
+                        <tr key={user.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                            {user.name}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {user.nick_name || '-'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {user.email || '-'}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {(() => {
+                              const raw = (user.phone || '').replace(/\D/g, '');
+                              if (raw.length === 10) return `${raw.slice(0,3)}-${raw.slice(3,6)}-${raw.slice(6)}`;
+                              if (raw.length === 9) return `${raw.slice(0,2)}-${raw.slice(2,5)}-${raw.slice(5)}`;
+                              return user.phone || '-';
+                            })()}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <RoleBadge role={user.role} />
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
+                            <div className="inline-block text-left">
+                              <Button
+                                variant="icon"
+                                data-user-id={user.id}
+                                onClick={(e) => handleDropdownToggle(e, user.id)}
+                              >
+                                <span className="sr-only">Open options</span>
+                                <ManageIcon className="h-5 w-5" aria-hidden="true" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              <div className="mt-auto border-t border-slate-200">
+                <Pagination
+                  currentPage={currentPage}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={totalItems}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </div>
-              <Pagination
-                currentPage={currentPage}
-                itemsPerPage={itemsPerPage}
-                totalItems={totalItems}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={handleItemsPerPageChange}
-              />
-            </Card>
+            </div>
             )}
           </>
         )}
@@ -817,7 +784,7 @@ const Users: React.FC<UsersProps> = ({
         onClose={() => setIsWalletModalOpen(false)}
         user={selectedUserForWallet}
       />
-    </>
+    </div>
   );
 };
 
