@@ -443,51 +443,51 @@ const Warehouse: React.FC = () => {
         </div>
 
         {/* Statistics Cards */}
-        <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-blue-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-blue-600">
-              <NewWarehouseIcon className="h-6 w-6" />
+        <div className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500 rounded-lg">
+                <NewWarehouseIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-blue-600 font-medium whitespace-nowrap">ทั้งหมด</p>
+                <p className="text-2xl font-bold text-blue-800">{warehouseStats?.total}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-blue-600">ทั้งหมด</p>
-              <h3 className="text-2xl font-bold text-blue-900">
-                {warehouseStats?.total}
-              </h3>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-indigo-500 rounded-lg">
+                <NewWarehouseIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-indigo-600 font-medium whitespace-nowrap">คลังหลัก</p>
+                <p className="text-2xl font-bold text-indigo-800">{warehouseStats?.fixed}</p>
+              </div>
             </div>
-          </div>
-          <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-indigo-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-indigo-600">
-              <NewWarehouseIcon className="h-6 w-6" />
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500 rounded-lg">
+                <TruckIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-amber-600 font-medium whitespace-nowrap">คลังย่อย</p>
+                <p className="text-2xl font-bold text-amber-800">{warehouseStats?.mobile}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-indigo-600">คลังหลัก</p>
-              <h3 className="text-2xl font-bold text-indigo-900">
-                {warehouseStats?.fixed}
-              </h3>
+          </Card>
+          <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 rounded-lg">
+                <NewWarehouseIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm text-emerald-600 font-medium whitespace-nowrap">ใช้งานอยู่</p>
+                <p className="text-2xl font-bold text-emerald-800">{warehouseStats?.active}</p>
+              </div>
             </div>
-          </div>
-          <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-amber-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-amber-600">
-              <TruckIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-amber-600">คลังย่อย</p>
-              <h3 className="text-2xl font-bold text-amber-900">
-                {warehouseStats?.mobile}
-              </h3>
-            </div>
-          </div>
-          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 shadow-sm flex items-center space-x-4 transition-all hover:shadow-md hover:border-emerald-200">
-            <div className="flex-shrink-0 p-3 rounded-xl bg-white text-emerald-600">
-              <NewWarehouseIcon className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-emerald-600">ใช้งานอยู่</p>
-              <h3 className="text-2xl font-bold text-emerald-900">
-                {warehouseStats?.active}
-              </h3>
-            </div>
-          </div>
+          </Card>
         </div>
 
         {/* Toolbar */}
