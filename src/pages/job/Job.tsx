@@ -1341,7 +1341,7 @@ const Job: React.FC<JobProps> = ({
                         setSelectedTechnicianId(newTech);
                         fetchData(filterDate, newTech);
                       }}
-                      className="w-fit text-sm !pr-8"
+                      className="w-40 text-sm"
                     >
                       <option value="all">ช่างทั้งหมด</option>
                       {technicians.map((tech) => (
@@ -1365,6 +1365,29 @@ const Job: React.FC<JobProps> = ({
                           {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
                         </option>
                       ))}
+                    </Select>
+                  </div>
+                )}
+                {activeTab === 'work-schedule' && (
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                    <Select
+                      value={scheduleVehicleId}
+                      onChange={(e) => setScheduleVehicleId(e.target.value)}
+                      className="w-48 bg-white border-slate-300 shadow-sm text-sm h-10"
+                    >
+                      <option value="">เลือกทะเบียนรถ</option>
+                      {warehouses
+                        .filter(
+                          (w) =>
+                            (w as unknown as Record<string, string>).type === 'รถ' ||
+                            (w as unknown as Record<string, string>).type === 'VEHICLE'
+                        )
+                        .map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {(w as unknown as Record<string, string>).license_plate} ({w.name})
+                          </option>
+                        ))}
                     </Select>
                   </div>
                 )}
@@ -1931,42 +1954,6 @@ const Job: React.FC<JobProps> = ({
 
           {activeTab === 'work-schedule' && (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 shrink-0">
-                <div className="flex flex-col md:flex-row gap-4 items-end">
-                  <div className="flex-1 max-w-xs">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      <JobDateIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
-                      วันที่
-                    </label>
-                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
-                  </div>
-                  <div className="flex-1 max-w-sm">
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      <TechnicianIcon className="h-4 w-4 inline-block mr-1.5 text-slate-400" />
-                      ทะเบียนรถ
-                    </label>
-                    <Select
-                      value={scheduleVehicleId}
-                      onChange={(e) => setScheduleVehicleId(e.target.value)}
-                      className="bg-white border-slate-200 shadow-sm w-full"
-                    >
-                      <option value="">เลือกทะเบียนรถ</option>
-                      {warehouses
-                        .filter(
-                          (w) =>
-                            (w as unknown as Record<string, string>).type === 'รถ' ||
-                            (w as unknown as Record<string, string>).type === 'VEHICLE'
-                        )
-                        .map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {(w as unknown as Record<string, string>).license_plate} ({w.name})
-                          </option>
-                        ))}
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
               <div className="overflow-x-auto flex-1 flex flex-col">
                 {scheduleVehicleId && scheduleDate ? (
                   <table className="min-w-[800px] w-full border-b border-slate-200">
