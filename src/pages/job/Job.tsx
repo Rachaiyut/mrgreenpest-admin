@@ -1140,8 +1140,8 @@ const Job: React.FC<JobProps> = ({
   }, [jobs]);
 
   return (
-    <>
-      <div className="relative min-h-screen flex flex-col">
+    <div className="flex-1 flex flex-col">
+      <div className="relative flex flex-col flex-1">
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
@@ -1533,8 +1533,8 @@ const Job: React.FC<JobProps> = ({
           )}
 
           {activeTab === 'unassigned' && (
-            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
-              <div className="overflow-x-auto">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
                 <table className="min-w-[800px] w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
@@ -1585,7 +1585,7 @@ const Job: React.FC<JobProps> = ({
                 </table>
               </div>
               {unassignedTotal > 0 && (
-                <div className="border-t border-slate-200">
+                <div className="mt-auto border-t border-slate-200">
                   <Pagination
                     currentPage={unassignedPage}
                     itemsPerPage={unassignedItemsPerPage}
@@ -1601,12 +1601,12 @@ const Job: React.FC<JobProps> = ({
                   />
                 </div>
               )}
-            </Card>
+            </div>
           )}
 
           {activeTab === 'schedule' && view === 'list' && (
-            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
-              <div className="overflow-x-auto">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
                 <table className="min-w-[800px] w-full">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
@@ -1732,7 +1732,7 @@ const Job: React.FC<JobProps> = ({
                 </table>
               </div>
               {paginatedJobs.length > 0 && (
-                <div className="border-t border-slate-100 bg-white">
+                <div className="mt-auto border-t border-slate-200">
                   <Pagination
                     currentPage={currentPage}
                     totalItems={scheduleJobs.length}
@@ -1742,7 +1742,7 @@ const Job: React.FC<JobProps> = ({
                   />
                 </div>
               )}
-            </Card>
+            </div>
           )}
 
           {activeTab === 'schedule' && view === 'calendar' && (
@@ -1752,8 +1752,8 @@ const Job: React.FC<JobProps> = ({
           )}
 
           {activeTab === 'reports' && (
-            <Card className="!p-0 w-full border border-slate-200 shadow-sm overflow-visible">
-              <div className="overflow-x-auto">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
                 <table className="min-w-[800px] w-full">
                   <thead className="sticky top-0 z-10 bg-white shadow-sm">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
@@ -1915,7 +1915,7 @@ const Job: React.FC<JobProps> = ({
                 </table>
               </div>
               {paginatedReports.length > 0 && (
-                <div className="border-t border-slate-100 bg-white">
+                <div className="mt-auto border-t border-slate-200">
                   <Pagination
                     currentPage={reportCurrentPage}
                     totalItems={reportTotal}
@@ -1930,11 +1930,11 @@ const Job: React.FC<JobProps> = ({
                   />
                 </div>
               )}
-            </Card>
+            </div>
           )}
 
           {activeTab === 'work-schedule' && (
-            <Card className="!p-0 w-full border border-slate-200 shadow-sm">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
               <div className="p-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 shrink-0">
                 <div className="flex flex-col md:flex-row gap-4 items-end">
                   <div className="flex-1 max-w-xs">
@@ -2062,7 +2062,7 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {selectedJob && openDropdownId && dropdownPosition && (
@@ -2175,7 +2175,7 @@ const Job: React.FC<JobProps> = ({
         customers={initialCustomers}
         currentUser={currentUser}
       />
-    </>
+    </div>
   );
 };
 

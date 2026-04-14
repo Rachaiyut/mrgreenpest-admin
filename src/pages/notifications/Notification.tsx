@@ -103,7 +103,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
   }, [data]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="flex-1 flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
       <div>
         <h1 className="text-3xl font-bold text-slate-800">
           การแจ้งเตือนและนัดหมาย
@@ -168,8 +169,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
           </div>
       </div>
 
-      <Card className="!p-0 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+        <div className="overflow-x-auto border-b border-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
@@ -357,17 +358,19 @@ const Notifications: React.FC<NotificationsProps> = () => {
             </tbody>
           </table>
         </div>
-      </Card>
-
       {totalItems > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
-        />
+        <div className="mt-auto border-t border-slate-200">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+          />
+        </div>
       )}
+      </div>
+    </div>
     </div>
   );
 };

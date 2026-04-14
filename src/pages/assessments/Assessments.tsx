@@ -417,7 +417,7 @@ const Assessments: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="flex-1 flex flex-col">
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center rounded-xl">
           <LoadingIcon className="h-10 w-10 animate-spin text-primary" />
@@ -661,8 +661,8 @@ const Assessments: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-              <div className="overflow-x-auto">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
@@ -838,7 +838,7 @@ const Assessments: React.FC = () => {
                 </table>
               </div>
               {paginatedAssessments.length > 0 && (
-                <div className="border-t border-slate-100">
+                <div className="mt-auto border-t border-slate-200">
                   <Pagination
                     currentPage={currentPage}
                     itemsPerPage={itemsPerPage}

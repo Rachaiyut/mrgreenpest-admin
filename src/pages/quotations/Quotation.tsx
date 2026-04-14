@@ -482,8 +482,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   };
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col h-full min-h-[calc(100vh-64px)]">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -551,9 +551,8 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         </div>
 
         {/* Filters & Table */}
-        <Card
-          className="!p-0 flex flex-col flex-grow min-h-0"
-          actions={
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="flex-shrink-0 p-4 border-b border-slate-200">
             <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
               <div className="w-full sm:w-64 sm:flex-shrink-0">
                 <Input
@@ -590,10 +589,9 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 </Select>
               </div>
             </div>
-          }
-        >
-          <div className="overflow-x-auto flex-grow relative">
-            <table className="min-w-[900px] w-full divide-y divide-slate-200">
+          </div>
+          <div className="overflow-x-auto flex-1 relative">
+            <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
@@ -643,17 +641,17 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={13} className="p-0 border-b-0">
-                      <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
+                    <td colSpan={13} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
-                        <p className="text-base font-medium text-slate-500">กำลังดึงข้อมูลใบเสนอราคา...</p>
+                        <p className="text-base font-medium">กำลังดึงข้อมูลใบเสนอราคา...</p>
                       </div>
                     </td>
                   </tr>
                 ) : paginatedQuotations.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="p-0 border-b-0 text-slate-500">
-                      <div className="flex flex-col items-center justify-center w-full h-full min-h-[40vh] py-16">
+                    <td colSpan={13} className="p-0 border-b-0 text-slate-500 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center">
                         <DocumentTextIcon className="h-12 w-12 text-slate-300 mb-3" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบเสนอราคา</p>
                         <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเสนอราคาใหม่</p>
@@ -781,14 +779,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            totalItems={totalItems}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Dropdown Menu */}
@@ -1150,7 +1150,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         confirmButtonText="ยืนยันการลบ"
         confirmButtonClass="bg-danger hover:bg-danger/90"
       />
-    </>
+    </div>
   );
 };
 

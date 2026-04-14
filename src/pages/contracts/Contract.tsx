@@ -307,7 +307,8 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col h-full min-h-[calc(100vh-64px)]">
+    <div className="flex-1 flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -400,10 +401,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       </div>
 
       {/* Toolbar & Table Area */}
-      <Card
-        className="!p-0 flex flex-col flex-grow min-h-0"
-        actions={
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="flex-shrink-0 p-4 border-b border-slate-200">
+            <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1">
             <div className="w-full sm:w-64 relative">
               <Input
                 type="search"
@@ -453,12 +453,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                 ))}
               </Select>
             </div>
+            </div>
           </div>
-        }
-      >
-        <div className="bg-white flex flex-col flex-grow min-h-0 rounded-b-xl overflow-hidden border-t border-slate-100">
           <div className="overflow-x-auto flex flex-col flex-grow relative">
-            <table className="min-w-full">
+            <table className="min-w-full border-b border-slate-200">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
@@ -612,7 +610,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
           {/* Pagination */}
           {totalItems > 0 && (
-            <div className="border-t border-slate-100 mt-auto bg-white">
+            <div className="mt-auto border-t border-slate-200">
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
@@ -622,8 +620,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               />
             </div>
           )}
-        </div>
-      </Card>
+      </div>
 
       {/* Dropdown Menu (Portal) */}
       {openDropdownId && dropdownPosition && selectedContract && (
@@ -821,6 +818,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
         confirmButtonText="ยืนยันยกเลิก"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
+    </div>
     </div>
   );
 };

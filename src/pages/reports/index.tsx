@@ -619,8 +619,8 @@ const Reports: React.FC<ReportsProps> = () => {
   const renderTable = () => {
     if (activeTab === 'สต็อกคงเหลือ') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -680,21 +680,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'รับเข้า') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -754,21 +756,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'เบิกสินค้า') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -838,21 +842,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'โอนย้าย') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -910,21 +916,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'ปรับปรุง Stock') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -978,21 +986,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'คืนสินค้า') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -1050,21 +1060,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'ภาคสนาม') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -1129,21 +1141,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'ใบแจ้งหนี้') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -1197,21 +1211,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'ใบเสร็จรับเงิน') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -1265,21 +1281,23 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
-        </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+        </div>
       );
     }
 
     if (activeTab === 'ลูกค้า') {
       return (
-        <Card className="!p-0">
-          <div className="overflow-x-auto">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -1332,19 +1350,21 @@ const Reports: React.FC<ReportsProps> = () => {
               </tbody>
             </table>
           </div>
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={totalItems}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-          />
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
           <CustomerDetailsModal
             isOpen={isCustDetailsOpen}
             onClose={() => setIsCustDetailsOpen(false)}
             customer={selectedCustomer}
           />
-        </Card>
+        </div>
       );
     }
 
@@ -1352,7 +1372,8 @@ const Reports: React.FC<ReportsProps> = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="flex-1 flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">รายงาน</h1>
@@ -1421,6 +1442,7 @@ const Reports: React.FC<ReportsProps> = () => {
       </div>
 
       {renderTable()}
+    </div>
     </div>
   );
 };

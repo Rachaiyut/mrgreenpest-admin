@@ -121,7 +121,8 @@ const TechnicianPerformancePage: React.FC = () => {
   );
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col">
+    <div className="p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">
@@ -346,8 +347,8 @@ const TechnicianPerformancePage: React.FC = () => {
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+        <div className="overflow-x-auto border-b border-slate-200">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
@@ -499,15 +500,18 @@ const TechnicianPerformancePage: React.FC = () => {
           </table>
         </div>
         {!loading && items.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={items.length}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
-          />
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={items.length}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+            />
+          </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

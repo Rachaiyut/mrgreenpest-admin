@@ -264,7 +264,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="flex-1 flex flex-col">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">ใบแจ้งหนี้</h1>
@@ -340,9 +341,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         </Card>
       </div>
 
-      <Card
-        className="!p-0"
-        actions={
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+        <div className="flex-shrink-0 p-4 border-b border-slate-200">
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
             <div className="w-full sm:w-64">
               <Input
@@ -380,10 +380,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               </Select>
             </div>
           </div>
-        }
-      >
-        <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full divide-y divide-slate-200">
+        </div>
+        <div className="overflow-x-auto flex-1 relative">
+          <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -421,9 +420,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-500">
-                      {/* อย่าลืมตรวจสอบว่าคุณมีการ import LoadingIcon มาใช้ในไฟล์นี้แล้วหรือยัง */}
+                  <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                       <p className="text-base font-medium">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
                     </div>
@@ -431,8 +429,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 </tr>
               ) : paginatedInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-6 py-16 text-center">
-                    <div className="flex flex-col items-center text-slate-400">
+                  <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบแจ้งหนี้</p>
                       <p className="text-sm mt-1">
@@ -532,14 +530,16 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </tbody>
           </table>
         </div>
-        <Pagination
-          currentPage={invoicePage}
-          totalItems={totalInvoiceItems}
-          itemsPerPage={invoiceItemsPerPage}
-          onPageChange={setInvoicePage}
-          onItemsPerPageChange={handleInvoiceItemsPerPageChange}
-        />
-      </Card>
+        <div className="mt-auto border-t border-slate-200">
+          <Pagination
+            currentPage={invoicePage}
+            totalItems={totalInvoiceItems}
+            itemsPerPage={invoiceItemsPerPage}
+            onPageChange={setInvoicePage}
+            onItemsPerPageChange={handleInvoiceItemsPerPageChange}
+          />
+        </div>
+      </div>
 
       {openInvoiceDropdownId && invoiceDropdownPosition && (
         <div
@@ -762,6 +762,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         confirmButtonText="บันทึก"
         confirmButtonClass="bg-primary hover:bg-primary/90"
       />
+    </div>
     </div>
   );
 };

@@ -91,7 +91,8 @@ const ContractExpirationPage: React.FC = () => {
   const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col">
+    <div className="p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">
@@ -269,8 +270,8 @@ const ContractExpirationPage: React.FC = () => {
       )}
 
       {/* Data Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+        <div className="flex-shrink-0 px-5 py-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -294,7 +295,7 @@ const ContractExpirationPage: React.FC = () => {
             </span>
           )}
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto border-b border-slate-200">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
@@ -410,15 +411,18 @@ const ContractExpirationPage: React.FC = () => {
           </table>
         </div>
         {!loading && items.length > 0 && (
-          <Pagination
-            currentPage={currentPage}
-            itemsPerPage={itemsPerPage}
-            totalItems={items.length}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
-          />
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={items.length}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
+            />
+          </div>
         )}
       </div>
+    </div>
     </div>
   );
 };

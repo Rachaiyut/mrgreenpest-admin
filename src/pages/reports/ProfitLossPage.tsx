@@ -63,7 +63,8 @@ const ProfitLossPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="flex-1 flex flex-col">
+    <div className="p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">
@@ -163,11 +164,11 @@ const ProfitLossPage: React.FC = () => {
       {/* Income & Expense Tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Income by Method */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-green-50/50">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="flex-shrink-0 px-5 py-4 border-b border-slate-200 bg-green-50/50">
             <h2 className="text-lg font-semibold text-slate-800">รายได้ตามช่องทาง</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -209,22 +210,24 @@ const ProfitLossPage: React.FC = () => {
             </table>
           </div>
           {incomeByMethod.length > 0 && (
-            <Pagination
-              currentPage={incomeCurrentPage}
-              itemsPerPage={incomeItemsPerPage}
-              totalItems={incomeByMethod.length}
-              onPageChange={setIncomeCurrentPage}
-              onItemsPerPageChange={(size) => { setIncomeItemsPerPage(size); setIncomeCurrentPage(1); }}
-            />
+            <div className="mt-auto border-t border-slate-200">
+              <Pagination
+                currentPage={incomeCurrentPage}
+                itemsPerPage={incomeItemsPerPage}
+                totalItems={incomeByMethod.length}
+                onPageChange={setIncomeCurrentPage}
+                onItemsPerPageChange={(size) => { setIncomeItemsPerPage(size); setIncomeCurrentPage(1); }}
+              />
+            </div>
           )}
         </div>
 
         {/* Expenses by Category */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-200 bg-red-50/50">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="flex-shrink-0 px-5 py-4 border-b border-slate-200 bg-red-50/50">
             <h2 className="text-lg font-semibold text-slate-800">ค่าใช้จ่ายตามหมวดหมู่</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border-b border-slate-200">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -276,13 +279,15 @@ const ProfitLossPage: React.FC = () => {
             </table>
           </div>
           {expenseByCategory.length > 0 && (
-            <Pagination
-              currentPage={expenseCurrentPage}
-              itemsPerPage={expenseItemsPerPage}
-              totalItems={expenseByCategory.length}
-              onPageChange={setExpenseCurrentPage}
-              onItemsPerPageChange={(size) => { setExpenseItemsPerPage(size); setExpenseCurrentPage(1); }}
-            />
+            <div className="mt-auto border-t border-slate-200">
+              <Pagination
+                currentPage={expenseCurrentPage}
+                itemsPerPage={expenseItemsPerPage}
+                totalItems={expenseByCategory.length}
+                onPageChange={setExpenseCurrentPage}
+                onItemsPerPageChange={(size) => { setExpenseItemsPerPage(size); setExpenseCurrentPage(1); }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -312,6 +317,7 @@ const ProfitLossPage: React.FC = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 };
