@@ -37,7 +37,7 @@ const calculateDuration = (createdAt: string): string => {
 };
 
 const TH = (v: string) => (
-  <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
     {v}
   </th>
 );
@@ -64,13 +64,13 @@ const CustomerListView: React.FC<{
           <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-green-50">
             สัญญา
           </th>
-          <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
+          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
             บริการล่าสุด
           </th>
-          <th scope="col" className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
+          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-blue-50">
             บริการถัดไป
           </th>
-          <th scope="col" className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-red-50">
+          <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap bg-red-50">
             ยอดค้างชำระ
           </th>
           {TH('ระยะเวลา')}
@@ -89,7 +89,7 @@ const CustomerListView: React.FC<{
           const expiringContracts = Number(customer.expiring_contracts_count) || 0;
 
           return (
-            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
+            <tr key={customer.id} className="hover:bg-slate-50 cursor-pointer [&>td]:text-center [&>td]:align-middle" onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) handleDropdownToggle(e as React.MouseEvent<HTMLElement>, customer.id); }}>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                 {(currentPage - 1) * itemsPerPage + index + 1}
               </td>

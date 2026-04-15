@@ -42,6 +42,7 @@ import { CategoryApi } from '../../../api/category';
 import { CustomerApi } from '../../../api/customer';
 import { Customer } from '../../../types/entity/customer.interface';
 import { CategoryType, Quotation } from '@/src/types';
+import { QuotationArea } from '@/src/types/entity/quotation.interface';
 
 import { PackageApi } from '../../../api/package';
 import { Package, PackagePrice } from '../../../types/entity/package.interface';
@@ -1163,7 +1164,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       vat_amount: vatAmount,
       include_vat: includeVat,
       items: finalItems,
-      quotation_areas: quotationAreas,
+      quotation_areas: quotationAreas as unknown as QuotationArea[],
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
       service_procedure_template_id: procedureTemplateId || undefined,

@@ -163,20 +163,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 name="citizenId"
                 label={
                   <span className="text-slate-700 font-medium">
-                    รหัสบัตรประชาชน
+                    เลขบัตรประชาชน (Username)
                   </span>
                 }
                 rules={[
                   {
                     required: true,
-                    message: 'กรุณากรอกรหัสบัตรประชาชน',
+                    message: 'กรุณากรอกเลขบัตรประชาชน (Username)',
                   },
                 ]}
                 className="mb-4"
               >
                 <Input
                   prefix={<UserOutlined className="text-slate-400 text-lg" />}
-                  placeholder="ระบุรหัสผู้ใช้งาน"
+                  placeholder="ระบุเลขบัตรประชาชน (Username)"
                   className="rounded-xl py-3 bg-slate-50 border-slate-200 hover:bg-white focus:bg-white transition-all duration-200"
                 />
               </Form.Item>
