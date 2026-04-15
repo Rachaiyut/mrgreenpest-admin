@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef, FC } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, FC } from 'react';
 import Swal from 'sweetalert2';
 import { Card } from '../../components/common/Card';
-import { Button } from '../../components/common/FormControls';
+import { Pagination } from '../../components/common/Pagination';
+import { Button, Input } from '../../components/common/FormControls';
 import { Modal } from '../../components/common/Modal';
 import { SearchableSelect } from '../../components/common/SearchableSelect';
 import {
@@ -59,6 +60,33 @@ const ServiceSchedulePage: FC = () => {
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingPdfId, setLoadingPdfId] = useState<string | null>(null);
+
+  // Pagination & Search
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredSchedules = useMemo(() => {
+    if (!searchQuery.trim()) return schedules;
+    const q = searchQuery.toLowerCase();
+    return schedules.filter(
+      (s) =>
+        s.name?.toLowerCase().includes(q) ||
+        s.package?.name?.toLowerCase().includes(q) ||
+        s.package?.code?.toLowerCase().includes(q)
+    );
+  }, [schedules, searchQuery]);
+
+  const totalItems = filteredSchedules.length;
+  const paginatedSchedules = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredSchedules.slice(start, start + itemsPerPage);
+  }, [filteredSchedules, currentPage, itemsPerPage]);
+
+  const handleItemsPerPageChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+  };
 
   // Dropdown state
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -281,9 +309,10 @@ const ServiceSchedulePage: FC = () => {
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col h-full min-h-[calc(100vh-64px)]">
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">ตารางปฏิบัติงาน</h1>
           <p className="mt-1 text-slate-600">
@@ -298,11 +327,31 @@ const ServiceSchedulePage: FC = () => {
         )}
       </div>
 
+      {/* Toolbar */}
+      <Card className="!p-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
+          <div className="relative w-full sm:w-80 flex-shrink-0">
+            <Input
+              type="search"
+              placeholder="ค้นหาชื่อ, แพ็กเกจ..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-10"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </Card>
+
       {/* Table */}
-      <Card className="!p-0 flex flex-col flex-grow min-h-0">
-        <div className="bg-white flex flex-col flex-grow min-h-0 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto flex flex-col flex-grow relative">
-            <table className="min-w-full">
+      <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+          <div className="overflow-x-auto flex-1 relative">
+            <table className="min-w-full border-b border-slate-200">
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
@@ -317,30 +366,29 @@ const ServiceSchedulePage: FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={7}>
-                      <div className="flex items-center justify-center py-16">
-                        <p className="text-slate-500">กำลังโหลด...</p>
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูล...</p>
                       </div>
                     </td>
                   </tr>
-                ) : schedules.length === 0 ? (
+                ) : paginatedSchedules.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
-                      <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
-                        <div className="text-center">
-                          <DocumentTextIcon className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                          <p className="text-slate-500 text-lg font-medium">ไม่พบข้อมูลตารางปฏิบัติงาน</p>
-                          {canEdit && (
-                            <p className="text-slate-400 text-sm mt-1">กดปุ่ม "สร้างตารางปฏิบัติงาน" เพื่อเริ่มต้น</p>
-                          )}
-                        </div>
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                        <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-lg font-medium">ไม่พบข้อมูลตารางปฏิบัติงาน</p>
+                        {canEdit && (
+                          <p className="text-sm mt-1">กดปุ่ม "สร้างตารางปฏิบัติงาน" เพื่อเริ่มต้น</p>
+                        )}
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  schedules.map((schedule, index) => (
-                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                      <td className="px-4 py-3 text-sm text-slate-700 text-center">{index + 1}</td>
+                  paginatedSchedules.map((schedule, index) => (
+                    <tr key={schedule.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      <td className="px-4 py-3 text-sm text-slate-700">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{schedule.name}</td>
                       <td className="px-4 py-3 text-sm text-slate-600 text-center">
                         {schedule.package ? `${schedule.package.code} - ${schedule.package.name}` : '-'}
@@ -398,8 +446,16 @@ const ServiceSchedulePage: FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      </Card>
+          <div className="mt-auto border-t border-slate-200">
+            <Pagination
+              currentPage={currentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </div>
+      </div>
 
       {/* Dropdown Menu */}
       {openDropdownId && dropdownPosition && (
@@ -694,6 +750,7 @@ const ServiceSchedulePage: FC = () => {
           </div>
         </Modal>
       )}
+      </div>
     </div>
   );
 };
