@@ -109,6 +109,7 @@ const Users: React.FC<UsersProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isRoleDetailsModalOpen, setIsRoleDetailsModalOpen] = useState(false);
@@ -139,10 +140,18 @@ const Users: React.FC<UsersProps> = ({
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (search?: string, role_type?: string, page?: number, limit?: number) => {
     try {
-      const res = await UserApi.getAll();
+      const res = await UserApi.getAll({
+        limit: limit || itemsPerPage,
+        page: page || currentPage,
+        sort_by: 'created_at',
+        sort_order: 'DESC',
+        ...(search ? { search } : {}),
+        ...(role_type && role_type !== 'all' ? { role_type } : {}),
+      });
       setUsers(res.data || []);
+      setTotalItems(res.meta?.total || res.data?.length || 0);
     } catch (error) {
       console.error('Failed to fetch users:', error);
     }
@@ -161,32 +170,16 @@ const Users: React.FC<UsersProps> = ({
     setView(defaultView);
   }, [defaultView]);
 
-  const filteredUsers = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return [...users].reverse().filter((user) => {
-      // Handle role as object or string
-      const userRoleType =
-        typeof user.role === 'object' && user.role !== null
-          ? (user.role as { role_type: string }).role_type
-          : (user.role_type || '');
-      const matchesRole =
-        roleFilter === 'all' ||
-        userRoleType === roleFilter;
-      const matchesSearch =
-        !searchQuery ||
-        (user.citizen_id || '').toLowerCase().includes(lowercasedQuery) ||
-        (user.name || '').toLowerCase().includes(lowercasedQuery) ||
-        (user.nick_name || '').toLowerCase().includes(lowercasedQuery) ||
-        (user.email || '').toLowerCase().includes(lowercasedQuery);
-      return matchesRole && matchesSearch;
-    });
-  }, [users, searchQuery, roleFilter]);
+  useEffect(() => {
+    setCurrentPage(1);
+    fetchUsers(searchQuery || undefined, roleFilter, 1, itemsPerPage);
+  }, [searchQuery, roleFilter]);
 
-  const totalItems = filteredUsers.length;
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  useEffect(() => {
+    fetchUsers(searchQuery || undefined, roleFilter, currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage]);
+
+  const paginatedUsers = users;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);

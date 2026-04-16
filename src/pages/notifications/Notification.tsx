@@ -3,7 +3,7 @@ import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Select, Input } from '../../components/common/FormControls';
 import { formatThaiDate } from '../../utils/date';
-import { MagnifyingGlassIcon, CalendarIcon } from '../../assets/icons/Icons';
+import { MagnifyingGlassIcon, CalendarIcon, LoadingIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
 import { Pagination } from '../../components/common/Pagination';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
@@ -114,62 +114,64 @@ const Notifications: React.FC<NotificationsProps> = () => {
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center w-full">
-          {/* Search Bar */}
-          <div className="relative w-full lg:w-96">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <MagnifyingGlassIcon className="h-5 w-5 text-slate-400" />
-            </div>
-            <input
-              type="text"
+      <Card className="!p-4 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
+            <Input
+              type="search"
               placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full pl-10 pr-3 h-11 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-base shadow-sm transition duration-150 ease-in-out"
+              className="w-full pl-10"
             />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            {/* Type Filter */}
-            <div className="w-full sm:w-40">
-              <Select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value as string)}
-                className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              >
-                <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
-                <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
-                <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
-                <option value="ค้างชำระ">ค้างชำระ</option>
-              </Select>
-            </div>
-
-            {/* Date Range */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
-              <span className="text-slate-400">-</span>
-              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
-            </div>
-
-            {/* Invoice Status */}
-            <div className="w-full sm:w-40">
-              <Select
-                value={invoiceStatus}
-                onChange={(e) => setInvoiceStatus(e.target.value)}
-                className="w-full bg-white border-slate-200 rounded-lg shadow-sm h-11 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              >
-                <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
-                <option value="PAID">ชำระแล้ว</option>
-                <option value="PENDING">รอชำระ</option>
-                <option value="OVERDUE">เกินกำหนด</option>
-                <option value="DRAFT">ร่าง</option>
-                <option value="SENT">ส่งแล้ว</option>
-              </Select>
-            </div>
+          <Select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+            className="w-auto"
+          >
+            <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
+            <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
+            <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
+            <option value="ค้างชำระ">ค้างชำระ</option>
+          </Select>
+          <div className="flex items-center gap-2">
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
+            <span className="text-slate-400">-</span>
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
           </div>
-      </div>
+          <Select
+            value={invoiceStatus}
+            onChange={(e) => setInvoiceStatus(e.target.value)}
+            className="w-auto"
+          >
+            <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
+            <option value="PAID">ชำระแล้ว</option>
+            <option value="PENDING">รอชำระ</option>
+            <option value="OVERDUE">เกินกำหนด</option>
+            <option value="DRAFT">ร่าง</option>
+            <option value="SENT">ส่งแล้ว</option>
+          </Select>
+        </div>
+      </Card>
 
       <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+        {loading ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-500 py-12">
+            <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+            <p className="text-base font-medium">กำลังโหลดข้อมูล...</p>
+          </div>
+        ) : filteredData.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
+            <CalendarIcon className="h-12 w-12 mb-3" />
+            <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลการแจ้งเตือน</p>
+            <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือคำค้นหา</p>
+          </div>
+        ) : (
+        <>
         <div className="overflow-x-auto border-b border-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
@@ -231,26 +233,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {loading ? (
-                <tr>
-                  <td
-                    colSpan={18}
-                    className="px-6 py-10 text-center text-slate-500"
-                  >
-                    กำลังโหลดข้อมูล...
-                  </td>
-                </tr>
-              ) : filteredData.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={18}
-                    className="px-6 py-10 text-center text-slate-500"
-                  >
-                    ไม่พบข้อมูล
-                  </td>
-                </tr>
-              ) : (
-                filteredData.map((row, index) => (
+              {filteredData.map((row, index) => (
                   <tr
                     key={row.contractId}
                     className="hover:bg-slate-50 transition-colors"
@@ -353,12 +336,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       </span>
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
         </div>
-      {totalItems > 0 && (
         <div className="mt-auto border-t border-slate-200">
           <Pagination
             currentPage={currentPage}
@@ -368,7 +349,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
             onItemsPerPageChange={(size) => { setItemsPerPage(size); setCurrentPage(1); }}
           />
         </div>
-      )}
+        </>
+        )}
       </div>
     </div>
     </div>
