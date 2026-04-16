@@ -2,6 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { DailyJobClosure, DailyClosureOverviewItem } from '@/src/types/entity/daily-closure.interface';
 import { DailyClosureApi } from '@/src/api/daily-closure';
+import { JobApi } from '@/src/api/job';
+import { Job } from '@/src/types/entity/job.interface';
+import { JobMainStatus, JobStatusLabel } from '@/src/types/enums/job';
 import {
   EyeIcon,
   CheckCircleIcon,
@@ -18,22 +21,38 @@ import { DailyClosureDetailsModal } from '../../components/features/daily-closur
 import BuddhistDatePicker from '@/src/components/common/BuddhistDatePicker';
 import { formatThaiDate } from '@/src/utils/date';
 
-type ClosureStatus = '' | 'OPEN' | 'CLOSED' | 'NOT_STARTED';
+type JobStatusFilter = '' | JobMainStatus;
 
 const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
   status,
 }) => {
-  const config = {
-    OPEN: {
+  const config: Record<string, { label: string; className: string }> = {
+    PENDING: {
       label: 'เปิดอยู่',
       className: 'bg-amber-100 text-amber-800 border-amber-200',
+    },
+    IN_PROGRESS: {
+      label: 'ระหว่างดำเนินการ',
+      className: 'bg-blue-100 text-blue-800 border-blue-200',
+    },
+    WAITING_CLEAR: {
+      label: 'รอเคลียค่าใช้จ่ายและสารเคมี',
+      className: 'bg-orange-100 text-orange-800 border-orange-200',
+    },
+    COMPLETED: {
+      label: 'แล้วเสร็จ',
+      className: 'bg-green-100 text-green-800 border-green-200',
     },
     CLOSED: {
       label: 'จบงาน',
       className: 'bg-green-100 text-green-800 border-green-200',
     },
+    CANCELLED: {
+      label: 'ยกเลิก',
+      className: 'bg-red-100 text-red-800 border-red-200',
+    },
   };
-  const { label, className } = config[status];
+  const { label, className } = config[status] || config.PENDING;
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}
@@ -53,8 +72,10 @@ const DailyClosure: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState<string | undefined>(undefined);
   const [filterDate, setFilterDate] = useState<Date | null>(today);
-  const [filterStatus, setFilterStatus] = useState<ClosureStatus>('');
+  const [filterStatus, setFilterStatus] = useState<JobStatusFilter>('');
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+
+  const [jobsData, setJobsData] = useState<Job[]>([]);
 
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedClosure, setSelectedClosure] =
@@ -68,40 +89,36 @@ const DailyClosure: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const vehicleScrollRef = useRef<HTMLDivElement>(null);
 
+  const toLocalDate = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const fetchOverview = useCallback(async () => {
     setLoading(true);
     try {
-      const toLocalDate = (d: Date) => {
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-      };
       const dateStr = filterDate ? toLocalDate(filterDate) : toLocalDate(today);
-      const res = await DailyClosureApi.getOverview(dateStr);
-      const allData = res.data || [];
+
+      // Fetch overview (for vehicle cards) and jobs (for table) in parallel
+      const [overviewRes, jobsRes] = await Promise.all([
+        DailyClosureApi.getOverview(dateStr),
+        JobApi.getAll({
+          appointment_date: dateStr,
+          limit: 1000,
+          ...(selectedVehicleId ? { vehicle_id: selectedVehicleId } : {}),
+          ...(filterStatus ? { status: filterStatus } : {}),
+          ...(searchQuery ? { search: searchQuery } : {}),
+        }),
+      ]);
+
+      const allData = overviewRes.data || [];
       setOverviewData(allData);
 
-      // Filter for table
-      let tableData = [...allData];
-
-      if (selectedVehicleId) {
-        tableData = tableData.filter((item) => item.vehicle_id === selectedVehicleId);
-      }
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        tableData = tableData.filter(
-          (item) =>
-            item.vehicle_name.toLowerCase().includes(q) ||
-            item.primary_tech_name.toLowerCase().includes(q) ||
-            item.vehicle_registration.toLowerCase().includes(q)
-        );
-      }
-      if (filterStatus) {
-        tableData = tableData.filter((item) => item.closure_status === filterStatus);
-      }
-
-      setTotalItems(tableData.length);
+      const jobs = jobsRes.data || [];
+      setJobsData(jobs);
+      setTotalItems(jobs.length);
     } catch (error) {
       console.error('Error fetching overview:', error);
     } finally {
@@ -113,25 +130,7 @@ const DailyClosure: React.FC = () => {
     fetchOverview();
   }, [fetchOverview]);
 
-  const filteredByVehicle = (() => {
-    let data = selectedVehicleId
-      ? overviewData.filter((item) => item.vehicle_id === selectedVehicleId)
-      : overviewData;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      data = data.filter((item) =>
-        item.vehicle_name.toLowerCase().includes(q) ||
-        item.primary_tech_name.toLowerCase().includes(q) ||
-        item.vehicle_registration.toLowerCase().includes(q)
-      );
-    }
-    if (filterStatus) {
-      data = data.filter((item) => item.closure_status === filterStatus);
-    }
-    return data;
-  })();
-
-  const paginatedData = filteredByVehicle.slice(
+  const paginatedJobs = jobsData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -257,7 +256,7 @@ const DailyClosure: React.FC = () => {
               {vehicleCards.map((item) => {
                 const isSelected = selectedVehicleId === item.vehicle_id;
                 const isClosed = item.closure_status === 'CLOSED';
-                const isOpen = item.closure_status === 'OPEN';
+                const isOpen = item.closure_status === 'PENDING';
                 const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
 
                 const statusConfig = isClosed
@@ -366,14 +365,15 @@ const DailyClosure: React.FC = () => {
             <Select
               value={filterStatus}
               onChange={(e) => {
-                setFilterStatus(e.target.value as ClosureStatus);
+                setFilterStatus(e.target.value as JobStatusFilter);
                 setCurrentPage(1);
               }}
               className="w-auto"
             >
               <option value="">สถานะทั้งหมด</option>
-              <option value="OPEN">กำลังดำเนินการ</option>
-              <option value="CLOSED">จบงาน</option>
+              {Object.entries(JobStatusLabel).map(([key, label]) => (
+                <option key={key} value={key}>{label}</option>
+              ))}
             </Select>
           </div>
         </Card>
@@ -420,92 +420,76 @@ const DailyClosure: React.FC = () => {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
-                  {paginatedData.length === 0 ? (
+                <tbody className="bg-white divide-y divide-slate-200 border-b border-slate-200">
+                  {paginatedJobs.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={10}
+                        colSpan={8}
                         className="px-4 py-12 text-center text-slate-500"
                       >
                         ไม่พบข้อมูลงานสำหรับวันที่เลือก
                       </td>
                     </tr>
                   ) : (
-                    paginatedData.map((item, index) => {
+                    paginatedJobs.map((job, index) => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
-                      const allComplete = item.total_jobs > 0 && item.incomplete_jobs === 0;
-                      const hasInProgress = (item.in_progress_jobs || 0) > 0;
-                      const allCancelled = item.total_jobs > 0 && (item.cancelled_jobs || 0) >= item.total_jobs;
-                      const derivedStatus = item.closure_status === 'CLOSED'
-                        ? 'CLOSED'
-                        : allCancelled
-                          ? 'CANCELLED'
-                          : allComplete && !item.has_issue_summary
-                            ? 'WAITING_CLEAR'
-                            : allComplete
-                              ? 'COMPLETED'
-                              : hasInProgress
-                                ? 'IN_PROGRESS'
-                                : 'PENDING';
-                      const statusConfig: Record<string, { label: string; className: string }> = {
-                        CLOSED: { label: 'จบงาน', className: 'bg-slate-100 text-slate-800 border-slate-200' },
-                        COMPLETED: { label: 'แล้วเสร็จ', className: 'bg-green-100 text-green-800 border-green-200' },
-                        WAITING_CLEAR: { label: 'รอเคลียค่าใช้จ่ายและสารเคมี', className: 'bg-orange-100 text-orange-800 border-orange-200' },
-                        IN_PROGRESS: { label: 'ระหว่างดำเนินการ', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-                        PENDING: { label: 'รอเข้าดำเนินการ', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-                        CANCELLED: { label: 'ยกเลิก', className: 'bg-red-100 text-red-800 border-red-200' },
+
+                      const statusColorMap: Record<string, string> = {
+                        UNASSIGNED: 'bg-slate-100 text-slate-800 border-slate-200',
+                        PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                        IN_PROGRESS: 'bg-blue-100 text-blue-800 border-blue-200',
+                        WAITING_CLEAR: 'bg-orange-100 text-orange-800 border-orange-200',
+                        COMPLETE: 'bg-green-100 text-green-800 border-green-200',
+                        CANCELLED: 'bg-red-100 text-red-800 border-red-200',
+                        FAILED: 'bg-red-100 text-red-800 border-red-200',
                       };
-                      const badge = statusConfig[derivedStatus] || statusConfig.OPEN;
+
+                      const customerName = job.customer
+                        ? `${job.customer.first_name || ''} ${job.customer.last_name || ''}`.trim()
+                        : '-';
+
+                      const techName = job.primary_technician
+                        ? `${job.primary_technician.first_name || ''} ${job.primary_technician.last_name || ''}`.trim()
+                        : '-';
+
+                      const vehicle = job.vehicle as unknown as Record<string, string> | undefined;
+                      const vehicleName = vehicle?.name || '-';
+                      const vehicleReg = vehicle?.vehicle_registration || '-';
 
                       return (
                         <tr
-                          key={`${item.vehicle_id}::${item.primary_tech_name}`}
+                          key={job.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
                           <td className="px-4 py-3 text-sm text-slate-600 text-center">
                             {rowNumber}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800 text-center">
-                            {filterDate ? formatThaiDate(`${filterDate.getFullYear()}-${String(filterDate.getMonth() + 1).padStart(2, '0')}-${String(filterDate.getDate()).padStart(2, '0')}`) : '-'}
+                            {job.appointment_date ? formatThaiDate(String(job.appointment_date).substring(0, 10)) : '-'}
                           </td>
                           <td className="px-4 py-3 text-sm font-medium text-slate-800 text-center">
-                            {item.vehicle_name}
+                            {vehicleName}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-500 text-center">
-                            {item.vehicle_registration || '-'}
+                            {vehicleReg}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-800 text-center">
-                            {item.primary_tech_name}
+                            {techName}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700 text-center">
-                            {item.customer_names?.length > 0 ? item.customer_names.join(', ') : '-'}
+                            {customerName}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badge.className}`}>
-                                {badge.label}
-                              </span>
-                              {derivedStatus === 'COMPLETED' && item.closure_id && (
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      const res = await DailyClosureApi.getById(item.closure_id!);
-                                      if (res.data) handleCloseRetroactive(res.data);
-                                    } catch { /* ignore */ }
-                                  }}
-                                  className="px-2.5 py-1 text-xs font-semibold rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors"
-                                >
-                                  จบงาน
-                                </button>
-                              )}
-                            </div>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusColorMap[job.status] || statusColorMap.PENDING}`}>
+                              {JobStatusLabel[job.status] || job.status}
+                            </span>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <button
-                              data-closure-id={`${item.vehicle_id}::${item.primary_tech_name}`}
+                              data-closure-id={job.id}
                               onClick={(e) =>
-                                handleDropdownToggle(e, `${item.vehicle_id}::${item.primary_tech_name}`)
+                                handleDropdownToggle(e, job.id)
                               }
                               className="p-1.5 rounded-md hover:bg-slate-100 transition-colors"
                               title="จัดการ"
@@ -549,57 +533,48 @@ const DailyClosure: React.FC = () => {
         >
           <div className="py-1" role="none">
             {(() => {
-              const item = overviewData.find((v) => `${v.vehicle_id}::${v.primary_tech_name}` === openDropdownId);
-              if (!item) return null;
+              const job = jobsData.find((j) => j.id === openDropdownId);
+              if (!job) return null;
+
+              // Find the closure for this job's vehicle
+              const closureItem = overviewData.find((v) => v.vehicle_id === job.vehicle_id);
+
               return (
                 <>
-                  {item.closure_id && (
+                  {closureItem?.closure_id && (
                     <a
                       href="#"
                       onClick={async (e) => {
                         e.preventDefault();
                         try {
-                          const res = await DailyClosureApi.getById(item.closure_id!);
-                          if (res.data) {
-                            // Override with per-tech data
-                            const techClosure = {
-                              ...res.data,
-                              primary_technician: { id: '', first_name: item.primary_tech_name.split(' ')[0], last_name: item.primary_tech_name.split(' ').slice(1).join(' ') },
-                              total_jobs: item.total_jobs,
-                              completed_jobs: item.completed_jobs,
-                              incomplete_jobs: item.incomplete_jobs,
-                            };
-                            handleViewDetails(techClosure);
-                          }
+                          const res = await DailyClosureApi.getById(closureItem.closure_id!);
+                          if (res.data) handleViewDetails(res.data);
                         } catch { /* ignore */ }
                       }}
                       className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
                       role="menuitem"
                     >
                       <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                      <span>ดูรายละเอียด</span>
+                      <span>ดูรายละเอียดสรุปงาน</span>
                     </a>
                   )}
-                  {item.closure_id && item.closure_status === 'OPEN' && (
+                  {closureItem?.closure_id && closureItem.closure_status === 'PENDING' && (
                     <a
                       href="#"
                       onClick={async (e) => {
                         e.preventDefault();
                         try {
-                          const res = await DailyClosureApi.getById(item.closure_id!);
+                          const res = await DailyClosureApi.getById(closureItem.closure_id!);
                           if (res.data) handleCloseRetroactive(res.data);
                         } catch { /* ignore */ }
                       }}
-                className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
-                role="menuitem"
-              >
-                <CheckCircleIcon
-                  className="mr-3 h-5 w-5"
-                  aria-hidden="true"
-                />
-                <span>ปิดย้อนหลัง</span>
-              </a>
-            )}
+                      className="flex items-center w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-100 transition-colors"
+                      role="menuitem"
+                    >
+                      <CheckCircleIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+                      <span>ปิดย้อนหลัง</span>
+                    </a>
+                  )}
                 </>
               );
             })()}

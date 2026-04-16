@@ -95,7 +95,8 @@ const JobCard: React.FC<{
     });
 
     const hasActions =
-      (job.status as unknown as JobStatus) !== JobStatus.Completed;
+      (job.status as unknown as JobStatus) !== JobStatus.Completed &&
+      String(job.api_status || '').toUpperCase() !== 'WAITING_CLEAR';
 
     // Get status color for left border
     const getStatusColor = () => {
@@ -106,6 +107,8 @@ const JobCard: React.FC<{
         return 'border-l-amber-500';
       if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
         return 'border-l-green-500';
+      if (statusUpper === 'WAITING_CLEAR')
+        return 'border-l-orange-500';
       if (statusUpper === 'CANCELLED') return 'border-l-red-500';
       return 'border-l-primary';
     };
@@ -212,6 +215,7 @@ const JobCard: React.FC<{
                 PENDING: 'bg-yellow-100 text-yellow-700',
                 IN_PROGRESS: 'bg-blue-100 text-blue-700',
                 COMPLETE: 'bg-green-100 text-green-700',
+                WAITING_CLEAR: 'bg-orange-100 text-orange-700',
                 CANCELLED: 'bg-red-100 text-red-700',
               };
               const color = colorMap[key] || 'bg-slate-100 text-slate-600';

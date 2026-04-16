@@ -109,7 +109,7 @@ export const DailyClosureDetailsModal: React.FC<
           />
           <InfoRow
             label="สถานะ"
-            value={closure.status === 'OPEN' ? 'เปิดอยู่' : 'ปิดแล้ว'}
+            value={closure.status === 'PENDING' ? 'เปิดอยู่' : 'ปิดแล้ว'}
           />
           {closure.closed_at && (
             <InfoRow

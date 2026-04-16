@@ -193,7 +193,7 @@ const Job: React.FC<JobProps> = ({
                 ? JobStatus.Pending
                 : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
                   ? JobStatus.InProgress
-                  : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE'
+                  : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE' || statusUpper === 'WAITING_CLEAR'
                     ? JobStatus.Completed
                     : statusUpper === 'CANCELLED'
                       ? JobStatus.Cancelled
@@ -515,6 +515,7 @@ const Job: React.FC<JobProps> = ({
     const jobsForKanban = filteredJobs.filter(
       (j) =>
         j.status !== JobMainStatus.COMPLETE &&
+        j.status !== JobMainStatus.WAITING_CLEAR &&
         j.status !== JobMainStatus.CANCELLED
     );
     return serviceVehicles
@@ -565,6 +566,7 @@ const Job: React.FC<JobProps> = ({
       filteredJobs.filter(
         (j) =>
           j.status !== JobMainStatus.COMPLETE &&
+          j.status !== JobMainStatus.WAITING_CLEAR &&
           j.status !== JobMainStatus.CANCELLED
       ),
     [filteredJobs]
@@ -838,7 +840,7 @@ const Job: React.FC<JobProps> = ({
       const total = vehicleJobs.length;
       const completed = vehicleJobs.filter((j) => {
         const status = String(j.status || '').toUpperCase();
-        return status === 'COMPLETED' || status === 'COMPLETE';
+        return status === 'COMPLETED' || status === 'COMPLETE' || status === 'WAITING_CLEAR';
       }).length;
       const incomplete = total - completed;
       setClosureJobStats({ total, completed, incomplete });
@@ -1731,6 +1733,7 @@ const Job: React.FC<JobProps> = ({
                                 PENDING: 'bg-yellow-100 text-yellow-700',
                                 IN_PROGRESS: 'bg-blue-100 text-blue-700',
                                 COMPLETE: 'bg-green-100 text-green-700',
+                                WAITING_CLEAR: 'bg-orange-100 text-orange-700',
                                 CANCELLED: 'bg-red-100 text-red-700',
                               };
                               const color = colorMap[key] || 'bg-slate-100 text-slate-600';
@@ -2018,7 +2021,7 @@ const Job: React.FC<JobProps> = ({
                                 {customer?.primary_phone || '-'}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                {statusUpper === 'COMPLETED' ? '✓' : '-'}
+                                {statusUpper === 'COMPLETED' || statusUpper === 'WAITING_CLEAR' ? '✓' : '-'}
                               </td>
                               <td className="px-4 py-3 text-center">
                                 {job.service_report?.signatures?.customer ? '✓' : '-'}

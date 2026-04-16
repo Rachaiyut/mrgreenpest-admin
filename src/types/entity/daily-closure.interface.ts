@@ -10,7 +10,7 @@ export interface DailyJobClosure extends IBase {
   completed_jobs: number;
   incomplete_jobs: number;
   has_no_stock_issue: boolean;
-  status: 'OPEN' | 'CLOSED';
+  status: 'PENDING' | 'IN_PROGRESS' | 'WAITING_CLEAR' | 'COMPLETED' | 'CLOSED' | 'CANCELLED';
   notes?: string;
   closed_by?: string;
   closed_at?: string;
@@ -70,6 +70,6 @@ export interface DailyClosureOverviewItem {
   cancelled_jobs: number;
   customer_names: string[];
   closure_id: string | null;
-  closure_status: 'OPEN' | 'CLOSED' | 'NOT_STARTED';
+  closure_status: 'PENDING' | 'CLOSED' | 'NOT_STARTED';
   has_issue_summary: boolean;
 }

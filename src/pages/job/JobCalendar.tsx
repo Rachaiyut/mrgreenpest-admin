@@ -94,6 +94,8 @@ const JobCalendar: React.FC<{
       return 'bg-amber-50 text-amber-700 border-l-amber-500';
     if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
       return 'bg-green-50 text-green-700 border-l-green-500';
+    if (statusUpper === 'WAITING_CLEAR')
+      return 'bg-orange-50 text-orange-700 border-l-orange-500';
     if (statusUpper === 'CANCELLED')
       return 'bg-red-50 text-red-600 border-l-red-500';
     if (statusUpper === 'PENDING' || statusUpper === 'PLANNED')

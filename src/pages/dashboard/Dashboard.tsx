@@ -20,6 +20,7 @@ const JOB_STATUS_LABELS: Record<string, string> = {
   PENDING: 'รอดำเนินการ',
   IN_PROGRESS: 'กำลังดำเนินการ',
   COMPLETE: 'เสร็จสิ้น',
+  WAITING_CLEAR: 'รอเคลียค่าใช้จ่ายและสารเคมี',
   CANCELLED: 'ยกเลิก',
 };
 
