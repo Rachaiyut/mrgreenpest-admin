@@ -235,84 +235,48 @@ const DailyClosure: React.FC = () => {
           }
           const vehicleCards = Array.from(vehicleAgg.values());
           return (
-          <div className="max-h-[280px] overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {vehicleCards.map((item) => {
-                const isSelected = selectedVehicleId === item.vehicle_id;
-                const isClosed = item.closure_status === 'CLOSED';
-                const isOpen = item.closure_status === 'PENDING';
-                const progress = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
+          <div className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {vehicleCards.map((item, idx) => {
+              const isSelected = selectedVehicleId === item.vehicle_id;
+              const isClosed = item.closure_status === 'CLOSED';
+              const completionPercent = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
 
-                const statusConfig = isClosed
-                  ? { bg: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600', label: 'จบงาน' }
-                  : { bg: 'bg-amber-400', iconBg: 'bg-amber-50', iconColor: 'text-amber-600', label: 'กำลังดำเนินการ' };
+              const colors = [
+                { bg: 'from-blue-50 to-blue-100', border: 'border-blue-200', icon: 'bg-blue-500', label: 'text-blue-600', value: 'text-blue-700', barBg: 'bg-blue-200/50', bar: 'bg-blue-500' },
+                { bg: 'from-amber-50 to-amber-100', border: 'border-amber-200', icon: 'bg-amber-500', label: 'text-amber-600', value: 'text-amber-700', barBg: 'bg-amber-200/50', bar: 'bg-amber-500' },
+                { bg: 'from-green-50 to-green-100', border: 'border-green-200', icon: 'bg-green-500', label: 'text-green-600', value: 'text-green-700', barBg: 'bg-green-200/50', bar: 'bg-green-500' },
+                { bg: 'from-purple-50 to-purple-100', border: 'border-purple-200', icon: 'bg-purple-500', label: 'text-purple-600', value: 'text-purple-700', barBg: 'bg-purple-200/50', bar: 'bg-purple-500' },
+              ];
+              const c = isClosed
+                ? { bg: 'from-green-50 to-green-100', border: 'border-green-200', icon: 'bg-green-500', label: 'text-green-600', value: 'text-green-700', barBg: 'bg-green-200/50', bar: 'bg-green-500' }
+                : colors[idx % colors.length];
 
-                const completionPercent = item.total_jobs > 0 ? Math.round((item.completed_jobs / item.total_jobs) * 100) : 0;
-
-                return (
-                  <button
-                    key={item.vehicle_id}
-                    onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
-                    className={`group relative rounded-2xl text-left overflow-hidden border-2 ${
-                      isSelected
-                        ? 'shadow-lg bg-white border-green-500'
-                        : 'bg-white hover:shadow-md shadow-sm border-slate-200'
-                    }`}
-                  >
-
-                    <div className="p-4">
-                      {/* Vehicle header */}
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className={`relative p-2.5 rounded-xl ${isClosed ? 'bg-gradient-to-br from-green-50 to-emerald-100' : 'bg-gradient-to-br from-blue-50 to-primary/10'}`}>
-                          <TruckIcon className={`h-5 w-5 ${isClosed ? 'text-green-600' : 'text-primary'}`} />
-                          {isClosed && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-bold text-slate-800 text-sm truncate">{item.vehicle_name}</h3>
-                          {item.vehicle_registration && (
-                            <p className="text-xs text-slate-400 truncate">{item.vehicle_registration}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      <div className="mb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-semibold text-slate-400 uppercase">ความคืบหน้า</span>
-                          <span className="text-xs font-bold text-slate-600">{completionPercent}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              return (
+                <Card
+                  key={item.vehicle_id}
+                  className={`!p-4 cursor-pointer transition-all duration-200 bg-gradient-to-br ${c.bg} ${c.border} ${isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'}`}
+                  onClick={() => { setSelectedVehicleId(isSelected ? null : item.vehicle_id); setCurrentPage(1); }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${c.icon}`}>
+                      <TruckIcon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-xs sm:text-sm font-medium whitespace-nowrap ${c.label}`}>{item.vehicle_name}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className={`flex-1 h-2 rounded-full overflow-hidden ${c.barBg}`}>
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${completionPercent === 100 ? 'bg-gradient-to-r from-green-400 to-emerald-500' : 'bg-gradient-to-r from-primary to-blue-500'}`}
+                            className={`h-full rounded-full transition-all duration-500 ${c.bar}`}
                             style={{ width: `${completionPercent}%` }}
                           />
                         </div>
-                      </div>
-
-                      {/* Stats row */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 text-center py-2 rounded-xl bg-slate-50">
-                          <p className="text-lg font-black text-slate-800">{item.total_jobs}</p>
-                          <p className="text-[9px] font-semibold text-slate-400 uppercase">งาน</p>
-                        </div>
-                        <div className={`flex-1 text-center py-2 rounded-xl ${item.completed_jobs > 0 ? 'bg-green-50' : 'bg-slate-50'}`}>
-                          <p className={`text-lg font-black ${item.completed_jobs > 0 ? 'text-green-600' : 'text-slate-300'}`}>{item.completed_jobs}</p>
-                          <p className="text-[9px] font-semibold text-green-500 uppercase">เสร็จ</p>
-                        </div>
-                        <div className={`flex-1 text-center py-2 rounded-xl ${item.incomplete_jobs > 0 ? 'bg-red-50' : 'bg-slate-50'}`}>
-                          <p className={`text-lg font-black ${item.incomplete_jobs > 0 ? 'text-red-500' : 'text-slate-300'}`}>{item.incomplete_jobs}</p>
-                          <p className={`text-[9px] font-semibold uppercase ${item.incomplete_jobs > 0 ? 'text-red-400' : 'text-slate-300'}`}>ค้าง</p>
-                        </div>
+                        <span className={`text-xs font-bold shrink-0 ${c.value}`}>{completionPercent}%</span>
                       </div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
           );
         })()}
@@ -418,12 +382,12 @@ const DailyClosure: React.FC = () => {
                         (currentPage - 1) * itemsPerPage + index + 1;
 
                       const statusColorMap: Record<string, string> = {
-                        UNASSIGNED: 'bg-slate-100 text-slate-800 border-slate-200',
-                        PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                        IN_PROGRESS: 'bg-blue-100 text-blue-800 border-blue-200',
-                        WAITING_CLEAR: 'bg-orange-100 text-orange-800 border-orange-200',
-                        COMPLETE: 'bg-green-100 text-green-800 border-green-200',
-                        CANCELLED: 'bg-red-100 text-red-800 border-red-200',
+                        UNASSIGNED: 'bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 shadow-sm shadow-slate-200/50',
+                        PENDING: 'bg-gradient-to-r from-amber-100 to-yellow-200 text-amber-800 shadow-sm shadow-amber-200/50',
+                        IN_PROGRESS: 'bg-gradient-to-r from-blue-100 to-sky-200 text-blue-800 shadow-sm shadow-blue-200/50',
+                        WAITING_CLEAR: 'bg-gradient-to-r from-orange-100 to-amber-200 text-orange-800 shadow-sm shadow-orange-200/50',
+                        COMPLETE: 'bg-gradient-to-r from-emerald-100 to-green-200 text-emerald-800 shadow-sm shadow-green-200/50',
+                        CANCELLED: 'bg-gradient-to-r from-red-100 to-rose-200 text-red-800 shadow-sm shadow-red-200/50',
                         FAILED: 'bg-red-100 text-red-800 border-red-200',
                       };
 
@@ -464,7 +428,7 @@ const DailyClosure: React.FC = () => {
                             {customerName}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusColorMap[job.status] || statusColorMap.PENDING}`}>
+                            <span className={`inline-flex items-center px-3 py-1 text-xs font-bold rounded-full ${statusColorMap[job.status] || statusColorMap.PENDING}`}>
                               {JobStatusLabel[job.status] || job.status}
                             </span>
                           </td>
