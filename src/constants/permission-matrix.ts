@@ -23,6 +23,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     groupName: 'ภาพรวมและลูกค้า',
     items: [
       { label: 'Dashboard', module: 'DASHBOARD' },
+      { label: 'การแจ้งเตือนและนัดหมาย', module: 'NOTIFICATION' },
       { label: 'ลูกค้า', module: 'CUSTOMER' },
       { label: 'สัญญา', module: 'CONTRACT' },
       { label: 'การต่ออายุสัญญา', module: 'CONTRACT' },
