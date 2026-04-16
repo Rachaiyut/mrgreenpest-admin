@@ -374,6 +374,14 @@ const DailyClosure: React.FC = () => {
           </div>
         ) : (
           <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+            {paginatedJobs.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
+                <DocumentCheckIcon className="h-12 w-12 mb-3" />
+                <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลงานสำหรับวันที่เลือก</p>
+                <p className="text-sm mt-1">ลองเปลี่ยนวันที่หรือตัวกรองเพื่อค้นหา</p>
+              </div>
+            ) : (
+            <>
             <div className="overflow-x-auto border-b border-slate-200 w-full flex-1 relative">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-slate-50 sticky top-0 z-10">
@@ -405,17 +413,7 @@ const DailyClosure: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200 border-b border-slate-200">
-                  {paginatedJobs.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="px-4 py-12 text-center text-slate-500"
-                      >
-                        ไม่พบข้อมูลงานสำหรับวันที่เลือก
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedJobs.map((job, index) => {
+                  {paginatedJobs.map((job, index) => {
                       const rowNumber =
                         (currentPage - 1) * itemsPerPage + index + 1;
 
@@ -437,9 +435,10 @@ const DailyClosure: React.FC = () => {
                         ? `${job.primary_technician.first_name || ''} ${job.primary_technician.last_name || ''}`.trim()
                         : '-';
 
-                      const vehicle = job.vehicle as unknown as Record<string, string> | undefined;
-                      const vehicleName = vehicle?.name || '-';
-                      const vehicleReg = vehicle?.vehicle_registration || '-';
+                      const vehicle = job.vehicle as unknown as Record<string, unknown> | undefined;
+                      const vehicleName = (vehicle?.name as string) || '-';
+                      const nestedVehicle = vehicle?.vehicle as Record<string, string> | undefined;
+                      const vehicleReg = nestedVehicle?.vehicle_registration || '-';
 
                       return (
                         <tr
@@ -483,8 +482,7 @@ const DailyClosure: React.FC = () => {
                           </td>
                         </tr>
                       );
-                    })
-                  )}
+                    })}
                 </tbody>
               </table>
             </div>
@@ -497,6 +495,8 @@ const DailyClosure: React.FC = () => {
                 onItemsPerPageChange={handleItemsPerPageChange}
               />
             </div>
+            </>
+            )}
           </div>
         )}
       </div>
