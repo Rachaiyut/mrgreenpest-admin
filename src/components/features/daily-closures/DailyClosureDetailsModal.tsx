@@ -126,34 +126,6 @@ export const DailyClosureDetailsModal: React.FC<
         </div>
       </div>
 
-      {/* Team Members */}
-      <div className="mb-6">
-        <h4 className="text-sm font-semibold text-slate-700 mb-3 border-b border-slate-200 pb-2">
-          ทีมช่าง
-        </h4>
-        {closure.members && closure.members.length > 0 ? (
-          <div className="space-y-2">
-            {closure.members.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 p-2 rounded-md bg-slate-50"
-              >
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
-                  {member.user?.first_name?.charAt(0) ?? '?'}
-                </div>
-                <span className="text-sm text-slate-700">
-                  {member.user
-                    ? `${member.user.first_name} ${member.user.last_name}${member.user.nick_name ? ` (${member.user.nick_name})` : ''}`
-                    : '-'}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">ไม่มีข้อมูลทีมช่าง</p>
-        )}
-      </div>
-
       {/* Notes */}
       <div className="mb-6">
         <h4 className="text-sm font-semibold text-slate-700 mb-3 border-b border-slate-200 pb-2">

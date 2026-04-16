@@ -31,25 +31,9 @@ const StatusBadge: React.FC<{ status: DailyJobClosure['status'] }> = ({
       label: 'เปิดอยู่',
       className: 'bg-amber-100 text-amber-800 border-amber-200',
     },
-    IN_PROGRESS: {
-      label: 'ระหว่างดำเนินการ',
-      className: 'bg-blue-100 text-blue-800 border-blue-200',
-    },
-    WAITING_CLEAR: {
-      label: 'รอเคลียค่าใช้จ่ายและสารเคมี',
-      className: 'bg-orange-100 text-orange-800 border-orange-200',
-    },
-    COMPLETED: {
-      label: 'แล้วเสร็จ',
-      className: 'bg-green-100 text-green-800 border-green-200',
-    },
     CLOSED: {
       label: 'จบงาน',
       className: 'bg-green-100 text-green-800 border-green-200',
-    },
-    CANCELLED: {
-      label: 'ยกเลิก',
-      className: 'bg-red-100 text-red-800 border-red-200',
     },
   };
   const { label, className } = config[status] || config.PENDING;

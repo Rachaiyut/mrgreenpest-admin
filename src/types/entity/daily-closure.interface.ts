@@ -10,7 +10,7 @@ export interface DailyJobClosure extends IBase {
   completed_jobs: number;
   incomplete_jobs: number;
   has_no_stock_issue: boolean;
-  status: 'PENDING' | 'IN_PROGRESS' | 'WAITING_CLEAR' | 'COMPLETED' | 'CLOSED' | 'CANCELLED';
+  status: 'PENDING' | 'CLOSED';
   notes?: string;
   closed_by?: string;
   closed_at?: string;
@@ -28,18 +28,6 @@ export interface DailyJobClosure extends IBase {
     nick_name?: string;
   };
   closer?: { id: string; first_name: string; last_name: string };
-  members?: DailyJobClosureMember[];
-}
-
-export interface DailyJobClosureMember extends IBase {
-  daily_job_closure_id: string;
-  user_id: string;
-  user?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    nick_name?: string;
-  };
 }
 
 export interface CreateDailyJobClosurePayload {
@@ -48,7 +36,6 @@ export interface CreateDailyJobClosurePayload {
   primary_tech_id: string;
   day_start_mileage?: number;
   notes?: string;
-  member_ids?: string[];
 }
 
 export interface CloseDailyJobClosurePayload {
