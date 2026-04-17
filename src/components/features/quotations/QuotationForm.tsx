@@ -46,6 +46,7 @@ import { QuotationArea } from '@/src/types/entity/quotation.interface';
 
 import { PackageApi } from '../../../api/package';
 import { Package, PackagePrice } from '../../../types/entity/package.interface';
+import { ContractDuration } from '@/src/types/enums/package';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { formatThaiDate } from '@/src/utils/date';
 import { ServiceProcedureTemplateApi, IServiceProcedureTemplate } from '../../../api/service-procedure-template';
@@ -461,6 +462,51 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
   const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
   const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null);
+
+  const isOneTimePackage = useMemo(() => {
+    if (fetchedPackage?.contract_duration === ContractDuration.ONE_TIME) return true;
+    if (selectedPackageId) {
+      const pkg = fetchedPackages.find((p) => p.id === selectedPackageId);
+      if (pkg?.contract_duration === ContractDuration.ONE_TIME) return true;
+    }
+    return editableAreas.some((a: any) => {
+      const durationFromRelation = a?.packagePriceRelation?.package?.contract_duration;
+      if (durationFromRelation === ContractDuration.ONE_TIME) return true;
+      const pkgId = a?.packagePriceRelation?.package?.id || a?.packagePriceRelation?.package_id;
+      if (pkgId) {
+        const fullPkg = fetchedPackages.find((p) => p.id === pkgId);
+        if (fullPkg?.contract_duration === ContractDuration.ONE_TIME) return true;
+      }
+      if (a?.package_price_id) {
+        const pkg = fetchedPackages.find((p: any) => (p.package_prices || []).some((pp: any) => pp.id === a.package_price_id));
+        if (pkg?.contract_duration === ContractDuration.ONE_TIME) return true;
+      }
+      return false;
+    });
+  }, [editableAreas, fetchedPackages, fetchedPackage, selectedPackageId]);
+
+  useEffect(() => {
+    if (!isOneTimePackage) return;
+    if (paymentCondition !== PaymentMethod.INSTALLMENT) return;
+
+    if (installments.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'แพ็กเกจแบบครั้งเดียว',
+        text: 'มีแพ็กเกจแบบ "ครั้งเดียว" อยู่ในรายการ ไม่สามารถแบ่งงวดได้ ต้องการล้างงวดและสลับเป็นชำระเต็มจำนวนใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setPaymentCondition(PaymentMethod.TRANSFER);
+          setInstallments([]);
+        }
+      });
+    } else {
+      setPaymentCondition(PaymentMethod.TRANSFER);
+    }
+  }, [isOneTimePackage]);
 
   const selectedAssessment = useMemo(() => {
     const assessment =
@@ -1330,6 +1376,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           showPaymentMethodToggle
           paymentMethod={paymentCondition === PaymentMethod.INSTALLMENT ? 'INSTALLMENT' : 'TRANSFER'}
           onPaymentMethodChange={(m) => setPaymentCondition(m === 'INSTALLMENT' ? PaymentMethod.INSTALLMENT : PaymentMethod.TRANSFER)}
+          disableInstallmentOption={isOneTimePackage}
+          disabledReason="แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน"
         />
 
         {!selectedAssessmentId && (

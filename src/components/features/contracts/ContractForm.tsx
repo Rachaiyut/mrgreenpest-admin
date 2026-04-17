@@ -43,6 +43,7 @@ import WorkAreasSection from '../../common/WorkAreasSection';
 import { ServiceScheduleApi } from '../../../api/service-schedule';
 import type { ServiceSchedule } from '../../../api/service-schedule';
 import { Package } from '../../../types/entity/package.interface';
+import { ContractDuration, ContractDurationLabel, calcContractEndDate } from '@/src/types/enums/package';
 
 // ===== Assets =====
 import {
@@ -216,6 +217,61 @@ export const ContractForm: FC<ContractFormProps> = ({
   // Installment Plan
   const [installments, setInstallments] = useState<InstallmentPlan[]>([]);
   const [contractPaymentMethod, setContractPaymentMethod] = useState<'TRANSFER' | 'INSTALLMENT'>('TRANSFER');
+
+  const selectedPackage = useMemo(() => {
+    for (const area of workAreaAreas) {
+      const durationFromRelation = area?.packagePriceRelation?.package;
+      if (durationFromRelation?.contract_duration) return durationFromRelation as Package;
+      const pkgId = area?.packagePriceRelation?.package?.id || area?.packagePriceRelation?.package_id;
+      if (pkgId) {
+        const fullPkg = fetchedPackages.find((p) => p.id === pkgId);
+        if (fullPkg) return fullPkg;
+      }
+      if (area?.package_price_id) {
+        const pkg = fetchedPackages.find((p: any) => (p.package_prices || []).some((pp: any) => pp.id === area.package_price_id));
+        if (pkg) return pkg;
+      }
+    }
+    return null;
+  }, [workAreaAreas, fetchedPackages]);
+
+  const isOneTimePackage = selectedPackage?.contract_duration === ContractDuration.ONE_TIME;
+
+  useEffect(() => {
+    if (!selectedPackage?.contract_duration || !startDate) return;
+    const end = calcContractEndDate(startDate, selectedPackage.contract_duration);
+    const endStr = end.toISOString().substring(0, 10);
+    if (endStr !== endDate) {
+      setEndDate(endStr);
+    }
+    const newLabel = ContractDurationLabel[selectedPackage.contract_duration];
+    if (newLabel !== contractDuration) {
+      setContractDuration(newLabel);
+    }
+  }, [selectedPackage?.contract_duration, startDate]);
+
+  useEffect(() => {
+    if (!isOneTimePackage) return;
+    if (contractPaymentMethod !== 'INSTALLMENT') return;
+
+    if (installments.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'แพ็กเกจแบบครั้งเดียว',
+        text: 'แพ็กเกจนี้เป็นแบบ "ครั้งเดียว" ไม่สามารถแบ่งงวดได้ ต้องการล้างงวดและสลับเป็นชำระเต็มจำนวนใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setContractPaymentMethod('TRANSFER');
+          setInstallments([]);
+        }
+      });
+    } else {
+      setContractPaymentMethod('TRANSFER');
+    }
+  }, [isOneTimePackage]);
 
   // Customer Search
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
@@ -1331,6 +1387,8 @@ export const ContractForm: FC<ContractFormProps> = ({
 
         {/* Payment & Installments - Full Width */}
         <InstallmentSection
+          disableInstallmentOption={isOneTimePackage}
+          disabledReason="แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน"
           installments={installments.map(i => ({
             id: i.id,
             no: i.term,

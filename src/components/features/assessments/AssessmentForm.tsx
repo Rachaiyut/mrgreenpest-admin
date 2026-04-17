@@ -1,3 +1,4 @@
+import Swal from 'sweetalert2';
 import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import { usePermissions } from '@/src/hooks/usePermissions';
 import {
@@ -24,6 +25,7 @@ import {
   AssessmentInstallment,
 } from '@/src/types/entity/app.interface';
 import { Package } from '@/src/types/entity/package.interface';
+import { ContractDuration } from '@/src/types/enums/package';
 import { WorkAreaForm } from './WorkAreaForm';
 import { AsessmentStatus } from '@/src/types/enums/assessment';
 import { AssessmentApi, CategoryApi, CustomerApi, PackageApi, ProductApi } from '@/src/api';
@@ -388,6 +390,36 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const handleInstallmentChange = (index: number, field: keyof AssessmentInstallment, value: any) => {
     setInstallments((prev) => prev.map((inst, i) => (i === index ? { ...inst, [field]: value } : inst)));
   };
+
+  const isOneTimePackage = useMemo(() => {
+    if (!selectedPackageId) return false;
+    const pkg = packages.find((p) => p.id === selectedPackageId);
+    return pkg?.contract_duration === ContractDuration.ONE_TIME;
+  }, [selectedPackageId, packages]);
+
+  useEffect(() => {
+    if (!isOneTimePackage) return;
+    if (paymentCondition !== PaymentMethod.INSTALLMENT) return;
+
+    const hasInstallments = installments.length > 0;
+    if (hasInstallments) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'แพ็กเกจแบบครั้งเดียว',
+        text: 'แพ็กเกจนี้เป็นแบบ "ครั้งเดียว" ไม่สามารถแบ่งงวดได้ ต้องการล้างงวดงานและสลับเป็นชำระเต็มจำนวนใช่หรือไม่?',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          setPaymentCondition(PaymentMethod.TRANSFER);
+          setInstallments([]);
+        }
+      });
+    } else {
+      setPaymentCondition(PaymentMethod.TRANSFER);
+    }
+  }, [isOneTimePackage]);
 
   useEffect(() => {
     if (paymentCondition === PaymentMethod.INSTALLMENT) {
@@ -810,9 +842,9 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                       <input type="radio" name="paymentCondition" value={PaymentMethod.TRANSFER} checked={paymentCondition === PaymentMethod.TRANSFER} onChange={() => setPaymentCondition(PaymentMethod.TRANSFER)} className="w-5 h-5 text-primary border-slate-300 focus:ring-primary" />
                       <div className="ml-3"><span className="block text-sm font-bold text-slate-800">ชำระเต็มจำนวน</span><span className="block text-xs text-slate-500">เงินสด / โอนเงิน / เครดิต</span></div>
                     </label>
-                    <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${paymentCondition === PaymentMethod.INSTALLMENT ? 'border-primary bg-primary/5 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                      <input type="radio" name="paymentCondition" value={PaymentMethod.INSTALLMENT} checked={paymentCondition === PaymentMethod.INSTALLMENT} onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)} className="w-5 h-5 text-primary border-slate-300 focus:ring-primary" />
-                      <div className="ml-3"><span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span><span className="block text-xs text-slate-500">แบ่งจ่ายตามงวดงานที่กำหนด</span></div>
+                    <label className={`relative flex items-center p-4 rounded-xl border-2 transition-all ${isOneTimePackage ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-50' : paymentCondition === PaymentMethod.INSTALLMENT ? 'cursor-pointer border-primary bg-primary/5 shadow-md' : 'cursor-pointer border-slate-200 hover:border-slate-300 bg-white'}`} title={isOneTimePackage ? 'แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน' : ''}>
+                      <input type="radio" name="paymentCondition" value={PaymentMethod.INSTALLMENT} checked={paymentCondition === PaymentMethod.INSTALLMENT} onChange={() => setPaymentCondition(PaymentMethod.INSTALLMENT)} disabled={isOneTimePackage} className="w-5 h-5 text-primary border-slate-300 focus:ring-primary" />
+                      <div className="ml-3"><span className="block text-sm font-bold text-slate-800">แบ่งชำระ (งวดงาน)</span><span className="block text-xs text-slate-500">{isOneTimePackage ? 'ไม่รองรับสำหรับแพ็กเกจครั้งเดียว' : 'แบ่งจ่ายตามงวดงานที่กำหนด'}</span></div>
                     </label>
                   </div>
                   {paymentCondition === PaymentMethod.INSTALLMENT && (

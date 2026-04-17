@@ -14,6 +14,7 @@ import {
   Button,
 } from '../../components/common';
 import { Package, Category, CategoryType, Unit } from '@/src/types';
+import { ContractDurationLabel } from '@/src/types/enums/package';
 import { PackageApi, CategoryApi, Unit as UnitApi } from '@/src/api';
 import {
   LoadingIcon,
@@ -313,6 +314,12 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
+                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase"
+                  >
+                    อายุสัญญา
+                  </th>
+                  <th
+                    scope="col"
                     className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (มีปลวก)
@@ -353,6 +360,9 @@ const Packages: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
                       {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
+                      {pkg.contract_duration ? ContractDurationLabel[pkg.contract_duration] : '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
                       {pkg.package_prices && pkg.package_prices.length > 0

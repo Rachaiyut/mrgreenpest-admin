@@ -1,6 +1,7 @@
 // Interface
 import { IBase, IBaseQuery } from './base.interface';
 import { Category } from './category.interface';
+import { ContractDuration } from '../enums/package';
 
 export interface PackageCondition {
   id: string;
@@ -17,6 +18,7 @@ import { Unit } from './unit.interface';
 export interface Package extends IBase {
   category_id: string;
   visit_limit: number;
+  contract_duration: ContractDuration;
   remark?: string;
   code: string;
   name: string;

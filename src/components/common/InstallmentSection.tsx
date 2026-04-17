@@ -30,6 +30,8 @@ export interface InstallmentSectionProps {
   showTotalAmountInput?: boolean;
   onTotalAmountChange?: (amount: number) => void;
   contractInfo?: { duration: string; startDate: string; endDate: string };
+  disableInstallmentOption?: boolean;
+  disabledReason?: string;
 }
 
 const statusMap: Record<string, { label: string; cls: string }> = {
@@ -44,6 +46,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
   showDueDate = false, showStatus = false,
   includeVat, onIncludeVatChange, vatAmount = 0,
   showTotalAmountInput = false, onTotalAmountChange, contractInfo,
+  disableInstallmentOption = false, disabledReason,
 }) => {
   const totalPct = useMemo(() => installments.reduce((s, i) => s + (Number(i.percentage) || 0), 0), [installments]);
   const totalAmt = useMemo(() => installments.reduce((s, i) => s + (Number(i.amount) || 0), 0), [installments]);
@@ -112,15 +115,22 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
             {[
               { key: 'TRANSFER' as const, title: 'ชำระเต็มจำนวน', desc: 'เงินสด / โอนเงิน / เครดิต', active: !isPay },
               { key: 'INSTALLMENT' as const, title: 'แบ่งชำระ (งวดงาน)', desc: 'แบ่งจ่ายตามงวดงานที่กำหนด', active: isPay },
-            ].map((opt) => (
-              <label key={opt.key} className={`flex items-center gap-4 p-4 cursor-pointer rounded-lg border-2 transition-all ${opt.active ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-                <input type="radio" name="paymentCondition" checked={opt.active} onChange={() => onPaymentMethodChange?.(opt.key)} className="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" disabled={isReadOnly} />
-                <div>
-                  <span className="block text-sm font-bold text-slate-800">{opt.title}</span>
-                  <span className="block text-xs text-slate-500">{opt.desc}</span>
-                </div>
-              </label>
-            ))}
+            ].map((opt) => {
+              const isOptDisabled = isReadOnly || (opt.key === 'INSTALLMENT' && disableInstallmentOption);
+              return (
+                <label
+                  key={opt.key}
+                  title={opt.key === 'INSTALLMENT' && disableInstallmentOption ? (disabledReason || 'ไม่สามารถเลือกแบ่งชำระได้') : ''}
+                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${isOptDisabled && opt.key === 'INSTALLMENT' ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-50' : opt.active ? 'cursor-pointer border-green-500 bg-green-50' : 'cursor-pointer border-slate-200 hover:border-slate-300 bg-white'}`}
+                >
+                  <input type="radio" name="paymentCondition" checked={opt.active} onChange={() => onPaymentMethodChange?.(opt.key)} className="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" disabled={isOptDisabled} />
+                  <div>
+                    <span className="block text-sm font-bold text-slate-800">{opt.title}</span>
+                    <span className="block text-xs text-slate-500">{opt.key === 'INSTALLMENT' && disableInstallmentOption ? (disabledReason || 'ไม่รองรับ') : opt.desc}</span>
+                  </div>
+                </label>
+              );
+            })}
           </div>
         )}
 

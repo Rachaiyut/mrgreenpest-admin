@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 import { PlusIcon, TrashIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
 import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
+import { ContractDuration, ContractDurationLabel } from '@/src/types/enums/package';
 
 interface PackageFormProps {
   mode: 'create' | 'edit';
@@ -25,6 +26,9 @@ const PackageForm: FC<PackageFormProps> = ({
   const [name, setName] = useState(initialValues?.name || '');
   const [categoryId, setCategoryId] = useState(initialValues?.category_id || '');
   const [visitLimit, setVisitLimit] = useState<number>(initialValues?.visit_limit || 0);
+  const [contractDuration, setContractDuration] = useState<ContractDuration>(
+    initialValues?.contract_duration || ContractDuration.ONE_TIME
+  );
   const [remark, setRemark] = useState(initialValues?.remark || '');
   const [conditions, setConditions] = useState<Partial<PackagePrice>[]>([]);
 
@@ -115,6 +119,10 @@ const PackageForm: FC<PackageFormProps> = ({
       Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกหมวดหมู่' });
       return;
     }
+    if (!contractDuration) {
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกอายุสัญญา' });
+      return;
+    }
 
     onSubmit({
       ...initialValues,
@@ -122,6 +130,7 @@ const PackageForm: FC<PackageFormProps> = ({
       name,
       category_id: categoryId,
       visit_limit: visitLimit,
+      contract_duration: contractDuration,
       remark,
       package_prices: conditions.map((c) => ({
         ...(c.id ? { id: c.id } : {}),
@@ -184,6 +193,19 @@ const PackageForm: FC<PackageFormProps> = ({
                 min={1}
                 required
               />
+            </FormField>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <FormField label="อายุสัญญา *">
+              <Select
+                value={contractDuration}
+                onChange={(e) => setContractDuration(e.target.value as ContractDuration)}
+                required
+              >
+                {Object.values(ContractDuration).map((d) => (
+                  <option key={d} value={d}>{ContractDurationLabel[d]}</option>
+                ))}
+              </Select>
             </FormField>
           </div>
           <FormField label="หมายเหตุ">

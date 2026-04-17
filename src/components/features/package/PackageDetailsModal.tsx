@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal } from '../../common';
 import { Package } from '@/src/types';
+import { ContractDurationLabel } from '@/src/types/enums/package';
 import { CurrencyDollarIcon } from '../../../assets/icons/Icons';
 
 interface PackageDetailsModalProps {
@@ -37,8 +38,8 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">ชื่อแพ็กเกจ</span>
               <span className="text-lg font-bold text-slate-800">{pkg.name}</span>
             </div>
-            {/* รหัส + หมวดหมู่ + จำนวนครั้ง */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {/* รหัส + หมวดหมู่ + จำนวนครั้ง + อายุสัญญา */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               <div>
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">รหัสแพ็กเกจ</span>
                 <span className="text-base font-bold text-primary font-mono">{pkg.code || '-'}</span>
@@ -50,6 +51,10 @@ export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
               <div>
                 <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">จำนวนครั้งเข้าบริการ</span>
                 <span className="text-base font-semibold text-slate-800">{pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}</span>
+              </div>
+              <div>
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1">อายุสัญญา</span>
+                <span className="text-base font-semibold text-slate-800">{pkg.contract_duration ? ContractDurationLabel[pkg.contract_duration] : '-'}</span>
               </div>
             </div>
             {pkg.remark && (
