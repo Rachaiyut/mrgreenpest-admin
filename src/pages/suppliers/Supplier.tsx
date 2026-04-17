@@ -208,7 +208,7 @@ const Suppliers: React.FC = () => {
             <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (รหัส, ชื่อ, เลขผู้เสียภาษี)..."
+                placeholder="ค้นหารหัส, ชื่อ, เลขประจำตัวผู้เสียภาษี"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -272,7 +272,7 @@ const Suppliers: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    ประเภท
+                    ประเภทผู้จัดจำหน่าย
                   </th>
                   <th
                     scope="col"
@@ -304,7 +304,11 @@ const Suppliers: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {suppliers.map((supplier, index) => (
+                {suppliers.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-12 text-center text-slate-500">ไม่มีข้อมูล</td>
+                  </tr>
+                ) : suppliers.map((supplier, index) => (
                   <tr key={supplier.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -335,7 +339,7 @@ const Suppliers: React.FC = () => {
                       })()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {supplier.email}
+                      {supplier.email || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div className="inline-block text-left">
@@ -353,6 +357,7 @@ const Suppliers: React.FC = () => {
                   </tr>
                 ))}
               </tbody>
+
             </table>
           </div>
           <div className="mt-auto border-t border-slate-200">

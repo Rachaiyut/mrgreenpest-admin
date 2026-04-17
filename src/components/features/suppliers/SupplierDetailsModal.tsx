@@ -33,26 +33,24 @@ export const SupplierDetailsModal: React.FC<SupplierDetailsModalProps> = ({
         <SectionTitle>รายละเอียดผู้จัดจำหน่าย</SectionTitle>
         <DetailsList cols={2}>
           <DetailsItem label="รหัสผู้จัดจำหน่าย" valueClassName="font-semibold">
-            {supplier.code}
+            {supplier.code || '-'}
           </DetailsItem>
           <DetailsItem label="ชื่อผู้จัดจำหน่าย" valueClassName="font-semibold">
-            {supplier.contact_name}
+            {supplier.name || '-'}
           </DetailsItem>
-          <DetailsItem label="ประเภท">{supplier.type}</DetailsItem>
-          {supplier.tax_id && (
-            <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
-              {supplier.tax_id}
-            </DetailsItem>
-          )}
-          {supplier.contact_name && (
-            <DetailsItem label="ผู้ติดต่อ">{supplier.contact_name}</DetailsItem>
-          )}
-          <DetailsItem label="เบอร์โทรศัพท์">
-            <ul className="space-y-1">
-              <li>{supplier.phone}</li>
-            </ul>
+          <DetailsItem label="ประเภทผู้จัดจำหน่าย">
+            {supplier.type === 'CORPORATE' ? 'นิติบุคคล' : supplier.type === 'INDIVIDUAL' ? 'บุคคลธรรมดา' : supplier.type || '-'}
           </DetailsItem>
-          <DetailsItem label="อีเมล">{supplier.email}</DetailsItem>
+          <DetailsItem label="เลขประจำตัวผู้เสียภาษี">
+            {supplier.tax_id || '-'}
+          </DetailsItem>
+        </DetailsList>
+
+        <SectionTitle>ข้อมูลการติดต่อ</SectionTitle>
+        <DetailsList cols={2}>
+          <DetailsItem label="ผู้ติดต่อ">{supplier.contact_name || '-'}</DetailsItem>
+          <DetailsItem label="เบอร์โทรศัพท์">{supplier.phone || '-'}</DetailsItem>
+          <DetailsItem label="อีเมล">{supplier.email || '-'}</DetailsItem>
         </DetailsList>
       </div>
     </Modal>

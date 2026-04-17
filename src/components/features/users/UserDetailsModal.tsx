@@ -48,7 +48,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title=""
+      title="รายละเอียดผู้ใช้งาน"
       size="lg"
       footer={
         <Button
@@ -59,23 +59,22 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         </Button>
       }
     >
-      <div className="relative">
-        {/* Header Background */}
-        <div className="h-32 bg-gradient-to-r from-primary to-primary-dark rounded-t-lg -mx-6 -mt-6"></div>
-
-        {/* Avatar & Key Info */}
-        <div className="relative px-2">
-          <div className="flex flex-row items-end -mt-12 mb-6 gap-4">
-            <div className="relative p-1 bg-white rounded-full shadow-lg">
-              <img
-                src={user.url}
-                alt={user.name}
-                className="h-24 w-24 rounded-full object-cover"
-              />
+      <div className="space-y-5">
+        {/* ข้อมูลทั่วไป */}
+        <div>
+          <h4 className="text-sm font-bold text-primary border-b border-slate-200 pb-2 mb-3">ข้อมูลทั่วไป</h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div>
+              <span className="text-slate-400">ชื่อ-นามสกุล</span>
+              <p className="font-semibold text-slate-800">{user.name || '-'}</p>
             </div>
-            <div className="mb-3">
-              <h3 className="text-xl font-bold text-slate-800">{user.name}</h3>
-              <p className="text-slate-500 text-sm">
+            <div>
+              <span className="text-slate-400">ชื่อเล่น</span>
+              <p className="font-semibold text-slate-800">{user.nick_name || '-'}</p>
+            </div>
+            <div>
+              <span className="text-slate-400">บทบาท</span>
+              <p className="font-semibold text-primary">
                 {(() => {
                   const role = user.role;
                   const roleName = typeof role === 'object' && role
@@ -85,97 +84,49 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
                 })()}
               </p>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            {/* Personal Info Section */}
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="w-5 h-5 text-primary"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <h4 className="text-md font-bold text-primary">
-                  ข้อมูลส่วนตัว
-                </h4>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs text-slate-500 mb-1 block">
-                    ชื่อเล่น
-                  </label>
-                  <div className="text-slate-800 font-medium text-lg">
-                    {user.nick_name || '-'}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-slate-500 mb-1 block">
-                      เลขบัตรประชาชน (Username)
-                    </label>
-                    <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 flex items-center justify-between">
-                      <span className="font-mono text-slate-700">
-                        {user.citizen_id || '-'}
-                      </span>
-                      {user.citizen_id && <CopyButton text={user.citizen_id} />}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-500 mb-1 block">
-                      เบอร์โทรศัพท์
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-800 font-medium">
-                        {user.phone || '-'}
-                      </span>
-                      {user.phone && <CopyButton text={user.phone} />}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-slate-500 mb-1 block">
-                    อีเมล
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-800">{user.email || '-'}</span>
-                    {user.email && <CopyButton text={user.email} />}
-                  </div>
-                </div>
+              <span className="text-slate-400">เลขบัตรประชาชน</span>
+              <div className="flex items-center gap-1">
+                <p className="font-mono font-semibold text-slate-800">{user.citizen_id || '-'}</p>
+                {user.citizen_id && <CopyButton text={user.citizen_id} />}
               </div>
             </div>
-
-            {/* Financial Section */}
-            {typeof user.creditLimit === 'number' && (
-              <div className="pt-4 border-t border-slate-100">
-                <div className="bg-white rounded-xl flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider mb-1">
-                      วงเงินจำกัดการเบิก
-                    </p>
-                    <p className="text-2xl font-bold text-primary">
-                      ฿
-                      {user.creditLimit.toLocaleString('th-TH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* ข้อมูลการติดต่อ */}
+        <div>
+          <h4 className="text-sm font-bold text-primary border-b border-slate-200 pb-2 mb-3">ข้อมูลการติดต่อ</h4>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div>
+              <span className="text-slate-400">เบอร์โทรศัพท์</span>
+              <div className="flex items-center gap-1">
+                <p className="font-semibold text-slate-800">{user.phone || '-'}</p>
+                {user.phone && <CopyButton text={user.phone} />}
+              </div>
+            </div>
+            <div>
+              <span className="text-slate-400">อีเมล</span>
+              <div className="flex items-center gap-1">
+                <p className="font-semibold text-slate-800">{user.email || '-'}</p>
+                {user.email && <CopyButton text={user.email} />}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* วงเงิน */}
+        {typeof user.creditLimit === 'number' && (
+          <div>
+            <h4 className="text-sm font-bold text-primary border-b border-slate-200 pb-2 mb-3">ข้อมูลการเงิน</h4>
+            <div className="text-sm">
+              <span className="text-slate-400">วงเงินจำกัดการเบิก</span>
+              <p className="text-xl font-bold text-primary">
+                ฿{user.creditLimit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );
