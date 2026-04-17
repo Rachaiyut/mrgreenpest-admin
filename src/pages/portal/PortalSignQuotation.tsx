@@ -74,7 +74,7 @@ const PortalSignQuotation: React.FC = () => {
 
         const doc = docType === 'CONTRACT' ? data.contract : data.quotation;
         setDocument(doc);
-        setSignerName(doc?.customer_name || '');
+        setSignerName((doc?.customer_name || '').replace(/\s*-\s*$/, '').trim());
         setState('ready');
       } catch (err: any) {
         const msg = err?.response?.data?.message || 'ลิงก์ไม่ถูกต้องหรือหมดอายุ';
@@ -128,8 +128,8 @@ const PortalSignQuotation: React.FC = () => {
     signatureRef.current?.clear();
   };
 
-  const formatCurrency = (val: number) =>
-    (val || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatCurrency = (val: number | string | undefined | null) =>
+    Number(val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   // PDF preview URL
   const pdfUrl = isContract
@@ -140,9 +140,9 @@ const PortalSignQuotation: React.FC = () => {
   if (state === 'loading') {
     return (
       <div className="min-h-screen min-h-[100dvh] bg-gray-50 flex items-center justify-center px-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600 mx-auto mb-4" />
-          <p className="text-slate-600 text-sm">กำลังโหลดเอกสาร...</p>
+        <div className="flex flex-col items-center justify-center text-slate-500">
+          <svg className="w-10 h-10 animate-spin mb-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+          <p className="text-base font-medium">กำลังโหลดเอกสาร...</p>
         </div>
       </div>
     );
@@ -211,7 +211,7 @@ const PortalSignQuotation: React.FC = () => {
               </div>
               <div className="flex justify-between sm:block">
                 <span className="text-slate-500">ลูกค้า:</span>
-                <span className="ml-2 font-semibold text-slate-800">{document?.customer_name || '-'}</span>
+                <span className="ml-2 font-semibold text-slate-800">{(document?.customer_name || '-').replace(/\s*-\s*$/, '').trim() || '-'}</span>
               </div>
               <div className="flex justify-between sm:block">
                 <span className="text-slate-500">สถานที่:</span>
@@ -233,8 +233,8 @@ const PortalSignQuotation: React.FC = () => {
           <div className="border border-slate-200 rounded-lg overflow-hidden relative">
             {pdfState === 'loading' && (
               <div className="absolute inset-0 bg-white z-10 flex flex-col items-center justify-center" style={{ minHeight: '300px' }}>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mb-3" />
-                <p className="text-sm text-slate-500">กำลังโหลดเอกสาร...</p>
+                <svg className="w-10 h-10 animate-spin mb-3 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                <p className="text-sm font-medium text-slate-500">กำลังโหลดเอกสาร...</p>
               </div>
             )}
             {pdfState === 'error' && (
