@@ -184,6 +184,24 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState(initialValues?.customer_id || '');
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch specific customer if not found in fetchedCustomers (e.g., head tech where customer is not in top 10)
+  useEffect(() => {
+    if (!selectedCustomerId) return;
+    const exists = fetchedCustomers.some((c) => c.id === selectedCustomerId);
+    if (exists) return;
+    CustomerApi.getCustomerById(selectedCustomerId)
+      .then((res) => {
+        const cust = ((res as unknown as Record<string, unknown>).data || res) as Customer;
+        if (cust?.id) {
+          setFetchedCustomers((prev) => {
+            if (prev.some((c) => c.id === cust.id)) return prev;
+            return [cust, ...prev];
+          });
+        }
+      })
+      .catch((err) => console.error('Error fetching customer by id:', err));
+  }, [selectedCustomerId, fetchedCustomers]);
+
   const handleCustomerSearch = useCallback(
     (query: string) => {
       if (searchTimeoutRef.current) {
