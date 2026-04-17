@@ -53,6 +53,9 @@ import { ServiceProcedureTemplateApi, IServiceProcedureTemplate } from '../../..
 import { ServiceScheduleApi } from '../../../api/service-schedule';
 import type { ServiceSchedule } from '../../../api/service-schedule';
 import { QuotationApi } from '@/src/api/quotation';
+import { JobApi } from '@/src/api/job';
+import { JobMainStatus } from '@/src/types/enums/job';
+import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 
 interface QuotationItem {
   id: string;
@@ -201,6 +204,67 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       })
       .catch((err) => console.error('Error fetching customer by id:', err));
   }, [selectedCustomerId, fetchedCustomers]);
+
+  // Prepend customers from today's active jobs assigned to current user
+  const currentUser = useCurrentUser();
+  useEffect(() => {
+    const userId = currentUser?.id;
+    if (!userId) return;
+
+    const today = new Date();
+    const yyyyMmDd = today.toISOString().substring(0, 10);
+
+    (async () => {
+      try {
+        const res = await JobApi.getAll({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          primary_tech_id: userId,
+          start_date: yyyyMmDd,
+          end_date: yyyyMmDd,
+          limit: 100,
+        } as any);
+        const jobs = (res?.data || []) as Array<Record<string, any>>;
+        const activeJobs = jobs.filter((j) =>
+          [JobMainStatus.PENDING, JobMainStatus.IN_PROGRESS].includes(j.status as JobMainStatus),
+        );
+
+        const customersFromJobs: Customer[] = [];
+        const idsToFetch: string[] = [];
+        for (const j of activeJobs) {
+          if (j.customer && j.customer.id) {
+            customersFromJobs.push(j.customer as Customer);
+          } else if (j.customer_id) {
+            idsToFetch.push(j.customer_id as string);
+          }
+        }
+
+        if (idsToFetch.length > 0) {
+          const fetched = await Promise.all(
+            idsToFetch.map((id) =>
+              CustomerApi.getCustomerById(id)
+                .then((r) => ((r as unknown as Record<string, unknown>).data || r) as Customer)
+                .catch(() => null),
+            ),
+          );
+          fetched.forEach((c) => {
+            if (c && c.id) customersFromJobs.push(c);
+          });
+        }
+
+        if (customersFromJobs.length === 0) return;
+
+        setFetchedCustomers((prev) => {
+          const map = new Map(prev.map((c) => [c.id, c]));
+          customersFromJobs.forEach((c) => {
+            if (!map.has(c.id)) map.set(c.id, c);
+          });
+          return Array.from(map.values());
+        });
+      } catch (err) {
+        console.error('Failed to fetch today jobs for quotation dropdown:', err);
+      }
+    })();
+  }, [currentUser?.id]);
 
   const handleCustomerSearch = useCallback(
     (query: string) => {
@@ -481,6 +545,34 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
   const [fetchedPackage, setFetchedPackage] = useState<Package | null>(null);
 
+  // Auto-select package from selected assessment + fetch it by id if missing from fetchedPackages
+  useEffect(() => {
+    if (!selectedAssessmentId) return;
+    const assessment: any = fullAssessment?.id === selectedAssessmentId
+      ? fullAssessment
+      : fetchedAssessments?.find((a) => a.id === selectedAssessmentId);
+    const pkgId: string | undefined = assessment?.package_id || assessment?.package?.id;
+    if (!pkgId) return;
+    if (selectedPackageId === pkgId) return;
+
+    const already = fetchedPackages.find((p) => p.id === pkgId);
+    if (already) {
+      setSelectedPackageId(pkgId);
+      if (!fetchedPackage || fetchedPackage.id !== pkgId) setFetchedPackage(already);
+      return;
+    }
+
+    PackageApi.getPackageById(pkgId)
+      .then((res) => {
+        const fullPkg = ((res as unknown as Record<string, unknown>).data || res) as Package;
+        if (!fullPkg?.id) return;
+        setFetchedPackages((prev) => (prev.some((p) => p.id === fullPkg.id) ? prev : [fullPkg, ...prev]));
+        setFetchedPackage(fullPkg);
+        setSelectedPackageId(fullPkg.id);
+      })
+      .catch((err) => console.error('Error fetching package by id:', err));
+  }, [selectedAssessmentId, fullAssessment, fetchedAssessments, fetchedPackages]);
+
   const isOneTimePackage = useMemo(() => {
     if (fetchedPackage?.contract_duration === ContractDuration.ONE_TIME) return true;
     if (selectedPackageId) {
@@ -640,12 +732,17 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       const areaWithPkg = source.find((a: any) => a.packagePriceRelation?.package);
       if (((areaWithPkg as unknown as Record<string, unknown>)?.packagePriceRelation as Record<string, unknown>)?.package) {
         const pkg = ((areaWithPkg as unknown as Record<string, Record<string, unknown>>).packagePriceRelation).package;
-        // Fetch full package with package_prices
-        PackageApi.getPackages({ limit: 50 }).then(res => {
-          const fullPkg = (res.data || []).find((p: Package) => p.id === (pkg as Record<string, string>).id);
-          if (fullPkg) {
+        const pkgId = (pkg as Record<string, string>).id;
+        // Fetch full package by id (covers case where package is not in the first 50)
+        PackageApi.getPackageById(pkgId).then((res) => {
+          const fullPkg = ((res as unknown as Record<string, unknown>).data || res) as Package;
+          if (fullPkg?.id) {
             setFetchedPackage(fullPkg);
             setSelectedPackageId(fullPkg.id);
+            setFetchedPackages((prev) => {
+              if (prev.some((p) => p.id === fullPkg.id)) return prev;
+              return [fullPkg, ...prev];
+            });
           }
         }).catch(() => {});
       }
