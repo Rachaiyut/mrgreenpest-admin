@@ -10,6 +10,8 @@ export interface Supplier extends IBase {
   email: string;
   contact_name: string;
   phone: string;
+  phone_2?: string;
+  phone_3?: string;
 }
 
 export interface SupplierQuery extends IBaseQuery {

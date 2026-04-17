@@ -28,7 +28,9 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
         contact_name: (initialValues as unknown as Record<string, string>).contact_name || '',
         email: initialValues.email || '',
       });
-      setPhones([initialValues.phone || '']);
+      const loadedPhones = [initialValues.phone, initialValues.phone_2, initialValues.phone_3]
+        .filter((p): p is string => !!p && p.trim().length > 0);
+      setPhones(loadedPhones.length > 0 ? loadedPhones : ['']);
       setSupplierType(initialValues.type === 'INDIVIDUAL' ? 'บุคคลธรรมดา' : 'นิติบุคคล');
     } else {
       setFormData({});
@@ -59,6 +61,8 @@ export const SupplierForm: React.FC<SupplierFormProps> = ({
       type: (supplierType === 'นิติบุคคล' ? 'CORPORATE' : 'INDIVIDUAL') as SupplierType,
       tax_id: formData.tax_id || undefined,
       phone: phones[0],
+      phone_2: phones[1]?.trim() || undefined,
+      phone_3: phones[2]?.trim() || undefined,
       email: formData.email,
       ...(supplierType === 'นิติบุคคล' ? { contact_name: formData.contact_name } : {}),
     });
