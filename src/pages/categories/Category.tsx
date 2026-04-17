@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
+import Swal from 'sweetalert2';
 
 // Interface
 import { Category } from '@/src/types/entity/category.interface';
@@ -120,8 +121,10 @@ const Categories: React.FC = () => {
         fetchCategories();
         setIsModalOpen(false);
         setSelectedCategory(null);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error saving category:', error);
+        const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'ไม่สามารถบันทึกได้';
+        Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: msg });
       }
     },
     [fetchCategories, modalMode, selectedCategory]
