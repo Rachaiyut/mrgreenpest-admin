@@ -1,5 +1,4 @@
 import React, { useMemo, useState, useEffect, FC } from 'react';
-import Swal from 'sweetalert2';
 import { FormField, Input, Textarea, Select } from '../../common/FormControls';
 import { PlusIcon, TrashIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
 import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
@@ -13,6 +12,21 @@ interface PackageFormProps {
   onSubmit: (data: Partial<Package>) => void | Promise<void>;
   onCancel: () => void;
 }
+
+interface FormErrors {
+  code?: string;
+  categoryId?: string;
+  name?: string;
+  visitLimit?: string;
+}
+
+type PriceField =
+  | 'area_range'
+  | 'unit_id'
+  | 'price_with_termite'
+  | 'min_price_with_termite'
+  | 'price_without_termite'
+  | 'min_price_without_termite';
 
 const PackageForm: FC<PackageFormProps> = ({
   mode,
@@ -31,6 +45,8 @@ const PackageForm: FC<PackageFormProps> = ({
   );
   const [remark, setRemark] = useState(initialValues?.remark || '');
   const [conditions, setConditions] = useState<Partial<PackagePrice>[]>([]);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
     if (initialValues?.package_prices && initialValues.package_prices.length > 0) {
@@ -73,6 +89,25 @@ const PackageForm: FC<PackageFormProps> = ({
     return indices;
   }, [conditions]);
 
+  const isPriceFieldEmpty = (cond: Partial<PackagePrice>, field: PriceField): boolean => {
+    if (field === 'unit_id') return !cond.unit_id;
+    const v = (cond as unknown as Record<string, unknown>)[field];
+    return v === undefined || v === null || v === '' || Number.isNaN(v);
+  };
+
+  const priceFieldHasError = (idx: number, field: PriceField): boolean => {
+    if (!submitted) return false;
+    const cond = conditions[idx];
+    if (isPriceFieldEmpty(cond, field)) return true;
+    if (field === 'min_price_with_termite' || field === 'price_with_termite') {
+      if (invalidIndices.includes(idx)) return true;
+    }
+    if (field === 'min_price_without_termite' || field === 'price_without_termite') {
+      if (invalidIndices.includes(idx)) return true;
+    }
+    return false;
+  };
+
   const handleConditionChange = (index: number, field: string, value: string) => {
     setConditions((prev) => prev.map((c, i) => {
       if (i !== index) return c;
@@ -105,24 +140,33 @@ const PackageForm: FC<PackageFormProps> = ({
     setConditions((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const validate = (): FormErrors => {
+    const errs: FormErrors = {};
+    if (!code.trim()) errs.code = 'กรุณากรอกรหัสแพ็กเกจ';
+    if (!categoryId) errs.categoryId = 'กรุณาเลือกหมวดหมู่';
+    if (!name.trim()) errs.name = 'กรุณากรอกชื่อแพ็กเกจ';
+    if (!visitLimit || visitLimit < 1) errs.visitLimit = 'กรุณากรอกจำนวนครั้งที่เข้าบริการ';
+    return errs;
+  };
+
+  const conditionsIncomplete = useMemo(() => {
+    return conditions.some((c) =>
+      isPriceFieldEmpty(c, 'area_range') ||
+      isPriceFieldEmpty(c, 'unit_id') ||
+      isPriceFieldEmpty(c, 'price_with_termite') ||
+      isPriceFieldEmpty(c, 'min_price_with_termite') ||
+      isPriceFieldEmpty(c, 'price_without_termite') ||
+      isPriceFieldEmpty(c, 'min_price_without_termite')
+    );
+  }, [conditions]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (invalidIndices.length > 0) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'ราคาต่ำสุดต้องไม่สูงกว่าราคาเสนอ' });
-      return;
-    }
-    if (!name.trim()) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุชื่อแพ็กเกจ' });
-      return;
-    }
-    if (!categoryId) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกหมวดหมู่' });
-      return;
-    }
-    if (!contractDuration) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกอายุสัญญา' });
-      return;
-    }
+    setSubmitted(true);
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+    if (invalidIndices.length > 0 || conditionsIncomplete) return;
 
     onSubmit({
       ...initialValues,
@@ -144,8 +188,14 @@ const PackageForm: FC<PackageFormProps> = ({
     });
   };
 
+  const errorText = (msg?: string) =>
+    msg ? <p className="mt-1 text-xs text-red-500">{msg}</p> : null;
+
+  const inputErrCls = (has?: boolean) =>
+    has ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : '';
+
   return (
-    <form id="package-form" onSubmit={handleSubmit} className="space-y-6">
+    <form id="package-form" onSubmit={handleSubmit} noValidate className="space-y-6">
       {/* Section 1: ข้อมูลทั่วไป */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
@@ -159,40 +209,59 @@ const PackageForm: FC<PackageFormProps> = ({
             <FormField label="รหัสแพ็กเกจ *">
               <Input
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  if (errors.code) setErrors((p) => ({ ...p, code: undefined }));
+                }}
                 placeholder="ระบุรหัสแพ็กเกจ"
-                className={mode === 'edit' ? 'bg-slate-50 font-mono' : 'font-mono'}
+                className={`${mode === 'edit' ? 'bg-slate-50 font-mono' : 'font-mono'} ${inputErrCls(!!errors.code)}`}
                 readOnly={mode === 'edit'}
-                required
               />
+              {errorText(errors.code)}
             </FormField>
             <FormField label="หมวดหมู่ *">
-              <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} required>
+              <Select
+                value={categoryId}
+                onChange={(e) => {
+                  setCategoryId(e.target.value);
+                  if (errors.categoryId) setErrors((p) => ({ ...p, categoryId: undefined }));
+                }}
+                className={inputErrCls(!!errors.categoryId)}
+              >
                 <option value="">เลือกหมวดหมู่</option>
                 {availableCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </Select>
+              {errorText(errors.categoryId)}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormField label="ชื่อแพ็กเกจ *">
               <Input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (errors.name) setErrors((p) => ({ ...p, name: undefined }));
+                }}
                 placeholder="เช่น แพ็กเกจกำจัดปลวกรายปี (บ้านเดี่ยว)"
-                required
+                className={inputErrCls(!!errors.name)}
               />
+              {errorText(errors.name)}
             </FormField>
             <FormField label="จำนวนครั้งที่เข้าบริการ *">
               <Input
                 type="number"
                 value={visitLimit || ''}
-                onChange={(e) => setVisitLimit(Number(e.target.value))}
+                onChange={(e) => {
+                  setVisitLimit(Number(e.target.value));
+                  if (errors.visitLimit) setErrors((p) => ({ ...p, visitLimit: undefined }));
+                }}
                 placeholder="เช่น 4"
                 min={1}
-                required
+                className={inputErrCls(!!errors.visitLimit)}
               />
+              {errorText(errors.visitLimit)}
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -200,7 +269,6 @@ const PackageForm: FC<PackageFormProps> = ({
               <Select
                 value={contractDuration}
                 onChange={(e) => setContractDuration(e.target.value as ContractDuration)}
-                required
               >
                 {Object.values(ContractDuration).map((d) => (
                   <option key={d} value={d}>{ContractDurationLabel[d]}</option>
@@ -260,32 +328,32 @@ const PackageForm: FC<PackageFormProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {conditions.map((cond, idx) => {
-                    const hasError = invalidIndices.includes(idx);
+                    const minMaxError = invalidIndices.includes(idx);
                     return (
-                      <tr key={idx} className={hasError ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}>
+                      <tr key={idx} className={minMaxError ? 'bg-red-50/50' : 'hover:bg-slate-50/50'}>
                         <td className="px-4 py-3 text-center">
                           <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">{idx + 1}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className="h-9 w-full" required />
+                          <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'area_range'))}`} />
                         </td>
                         <td className="px-4 py-3">
-                          <Select value={cond.unit_id || ''} onChange={(e) => handleConditionChange(idx, 'unit_id', e.target.value)} className="h-9 w-full" required>
+                          <Select value={cond.unit_id || ''} onChange={(e) => handleConditionChange(idx, 'unit_id', e.target.value)} className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'unit_id'))}`}>
                             <option value="">เลือก</option>
                             {availableUnits.map((u) => (<option key={u.id} value={u.id}>{u.name}</option>))}
                           </Select>
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_with_termite'))}`} style={{ textAlign: 'right' }} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.min_price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_with_termite'))}`} style={{ textAlign: 'right' }} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_without_termite')} placeholder="0.00" step="0.01" className="h-9 w-full" style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_without_termite'))}`} style={{ textAlign: 'right' }} />
                         </td>
                         <td className="px-4 py-3">
-                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${hasError ? 'border-red-300' : ''}`} style={{ textAlign: 'right' }} required />
+                          <Input type="number" value={cond.min_price_without_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'min_price_without_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'min_price_without_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'min_price_without_termite'))}`} style={{ textAlign: 'right' }} />
                         </td>
                         <td className="px-3 py-3 text-center">
                           <button type="button" onClick={() => handleRemoveCondition(idx)} className="p-1.5 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">
@@ -303,6 +371,9 @@ const PackageForm: FC<PackageFormProps> = ({
           {/* Error summary */}
           {invalidIndices.length > 0 && (
             <p className="text-xs text-red-500 text-right">{invalidIndices.length} รายการมีข้อผิดพลาด: ราคาต่ำสุดสูงกว่าราคาเสนอ</p>
+          )}
+          {submitted && conditionsIncomplete && (
+            <p className="text-xs text-red-500 text-right">กรุณากรอกข้อมูลเงื่อนไขราคาให้ครบทุกช่อง</p>
           )}
 
           {/* Add button */}
