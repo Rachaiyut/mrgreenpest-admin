@@ -1116,15 +1116,17 @@ export const ContractForm: FC<ContractFormProps> = ({
 
       areas: finalAreas,
 
-      installments: installments.map((inst) => ({
-        id: inst.id.length < 36 ? undefined : inst.id,
-        installment_no: inst.term,
-        description: inst.description,
-        percentage: inst.percentage,
-        amount: inst.amount,
-        due_date: inst.due_date ? inst.due_date : undefined,
-        status: inst.status,
-      })),
+      installments: contractPaymentMethod === 'INSTALLMENT'
+        ? installments.map((inst) => ({
+            id: inst.id.length < 36 ? undefined : inst.id,
+            installment_no: inst.term,
+            description: inst.description,
+            percentage: inst.percentage,
+            amount: inst.amount,
+            due_date: inst.due_date ? inst.due_date : undefined,
+            status: inst.status,
+          }))
+        : [],
     };
 
     setIsSubmitting(true);
