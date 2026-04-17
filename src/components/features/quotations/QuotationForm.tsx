@@ -1314,6 +1314,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       expires_at: expiresAt,
       status: initialValues?.status || QuotationStatus.DRAFT,
       total: netTotal,
+      
       revision: mode === 'revise' ? (initialValues?.revision || 0) + 1 : initialValues?.revision || 1,
       google_map_link: selectedCustomer.google_map_link || '',
       payment_terms: paymentTerms,
