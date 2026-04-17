@@ -1385,6 +1385,9 @@ export const ContractForm: FC<ContractFormProps> = ({
             return null;
           }}
           isEditing={mode === 'edit'}
+          disabled={!!selectedQuotationId && (mode === 'create' || mode === 'edit')}
+          isReadOnly={!!selectedQuotationId && (mode === 'create' || mode === 'edit')}
+          notice={selectedQuotationId && (mode === 'create' || mode === 'edit') ? 'อ้างอิงจากใบเสนอราคา — ไม่สามารถแก้ไขได้' : undefined}
         />
 
         {/* Payment & Installments - Full Width */}
