@@ -119,7 +119,7 @@ const Packages: React.FC = () => {
     try {
       const res = await PackageApi.getPackageById(pkg.id);
       const fullPkg = (res as unknown as Record<string, unknown>).data || res;
-      setSelectedPackage(fullPkg);
+      setSelectedPackage(fullPkg as Package);
       setModalMode('edit');
       setIsModalOpen(true);
     } catch (error) {
@@ -333,20 +333,20 @@ const Packages: React.FC = () => {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {packages.map((pkg, index) => (
-                  <tr key={pkg.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                  <tr key={pkg.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td
-                      className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
+                      className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer text-center"
                       onClick={() => handleViewDetails(pkg)}
                     >
                       {pkg.code || pkg.id}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
+                    <td className="px-4 py-3 text-sm text-slate-600 text-center">
                       {pkg.name}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {pkg.category?.name ||
                         categoryMap.get(pkg.category_id) ||
                         '-'}
@@ -354,19 +354,17 @@ const Packages: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600 text-center">
                       {pkg.visit_limit ? `${pkg.visit_limit} ครั้ง` : '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
-                      {/* TODO: Handle price range or min price display */}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
                       {pkg.package_prices && pkg.package_prices.length > 0
                         ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-right">
-                      {/* TODO: Handle price range or min price display */}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
                       {pkg.package_prices && pkg.package_prices.length > 0
                         ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                         : 'ตามเงื่อนไข'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                       <div className="inline-block text-left">
                         <Button
                           data-package-id={pkg.id}
