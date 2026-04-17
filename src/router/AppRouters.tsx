@@ -12,6 +12,8 @@ import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import { createRoutes, PAGE_PATH, createNavigationItems } from './index';
 import { getCurrentPageFromPath } from '../utils/route';
 import { Page } from '../types/page';
+import { ErrorBoundary } from '../components/common/ErrorBoundary';
+import { LoadingIcon } from '../assets/icons/Icons';
 
 // Components
 import { Sidebar } from '../components/layout/Sidebar';
@@ -147,21 +149,28 @@ export const AppRouter = (props: AppRouterProps) => {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header toggleSidebar={toggleSidebar} onLogout={onLogout} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto flex flex-col">
-          <Suspense fallback={<div>Loading...</div>}>
-            <Routes>
-              {routes.map((route, index) => (
-                <Route
-                  key={index}
-                  path={route.path}
-                  element={
-                    <ProtectedRoute access={route.access}>
-                      {route.element}
-                    </ProtectedRoute>
-                  }
-                />
-              ))}
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <LoadingIcon className="w-10 h-10 animate-spin text-primary mb-3" />
+                <p className="text-sm text-slate-400">กำลังโหลด...</p>
+              </div>
+            }>
+              <Routes>
+                {routes.map((route, index) => (
+                  <Route
+                    key={index}
+                    path={route.path}
+                    element={
+                      <ProtectedRoute access={route.access}>
+                        {route.element}
+                      </ProtectedRoute>
+                    }
+                  />
+                ))}
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
     </div>
