@@ -598,6 +598,18 @@ export const ContractForm: FC<ContractFormProps> = ({
             if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
             if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
 
+            // Default ระยะเวลาสัญญา/วันสิ้นสุด จาก contract_duration ของแพ็กเกจในใบเสนอราคา
+            const packageDuration: ContractDuration | undefined = (fullQuotationData.quotation_areas || [])
+              .map((a: any) => a?.packagePriceRelation?.package?.contract_duration)
+              .find((d: any): d is ContractDuration => !!d && d in ContractDurationLabel);
+            if (packageDuration) {
+              setContractDuration(ContractDurationLabel[packageDuration]);
+              const baseStart = startDate || new Date().toISOString().substring(0, 10);
+              if (!startDate) setStartDate(baseStart);
+              const computedEnd = calcContractEndDate(baseStart, packageDuration);
+              setEndDate(computedEnd.toISOString().substring(0, 10));
+            }
+
             // 2. Service Types
             const extractedServiceTypes = new Set<string>();
             if (fullQuotationData.service_type) {
