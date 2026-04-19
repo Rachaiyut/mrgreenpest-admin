@@ -238,17 +238,32 @@ export const ContractForm: FC<ContractFormProps> = ({
   const isOneTimePackage = selectedPackage?.contract_duration === ContractDuration.ONE_TIME;
 
   useEffect(() => {
-    if (!selectedPackage?.contract_duration || !startDate) return;
-    const end = calcContractEndDate(startDate, selectedPackage.contract_duration);
+    if (!startDate) return;
+    // ใช้ duration จาก package ถ้ามีและไม่ใช่ ONE_TIME (ข้อมูลเก่า package default ONE_TIME)
+    // ไม่เช่นนั้นแปลงกลับจาก label ของ contractDuration (เช่น "1 ปี" → ONE_YEAR)
+    let effective: ContractDuration | undefined;
+    const pkgDur = selectedPackage?.contract_duration as ContractDuration | undefined;
+    if (pkgDur && pkgDur !== ContractDuration.ONE_TIME && pkgDur in ContractDurationLabel) {
+      effective = pkgDur;
+    } else if (contractDuration) {
+      effective = (Object.keys(ContractDurationLabel) as ContractDuration[])
+        .find((k) => ContractDurationLabel[k] === contractDuration);
+      if (!effective && pkgDur && pkgDur in ContractDurationLabel) effective = pkgDur;
+    } else if (pkgDur && pkgDur in ContractDurationLabel) {
+      effective = pkgDur;
+    }
+    if (!effective) return;
+
+    const end = calcContractEndDate(startDate, effective);
     const endStr = end.toISOString().substring(0, 10);
     if (endStr !== endDate) {
       setEndDate(endStr);
     }
-    const newLabel = ContractDurationLabel[selectedPackage.contract_duration];
+    const newLabel = ContractDurationLabel[effective];
     if (newLabel !== contractDuration) {
       setContractDuration(newLabel);
     }
-  }, [selectedPackage?.contract_duration, startDate]);
+  }, [selectedPackage?.contract_duration, startDate, contractDuration]);
 
   useEffect(() => {
     if (!isOneTimePackage) return;
@@ -598,10 +613,28 @@ export const ContractForm: FC<ContractFormProps> = ({
             if (fullQuotationData.contract_duration) setContractDuration(fullQuotationData.contract_duration);
             if (fullQuotationData.notes) setNotes(fullQuotationData.notes);
 
-            // Default ระยะเวลาสัญญา/วันสิ้นสุด จาก contract_duration ของแพ็กเกจในใบเสนอราคา
-            const packageDuration: ContractDuration | undefined = (fullQuotationData.quotation_areas || [])
-              .map((a: any) => a?.packagePriceRelation?.package?.contract_duration)
-              .find((d: any): d is ContractDuration => !!d && d in ContractDurationLabel);
+            // Default ระยะเวลาสัญญา/วันสิ้นสุด จากแพ็กเกจในใบเสนอราคา (fallback หลายชั้น)
+            const resolvePackageDuration = (): ContractDuration | undefined => {
+              // 1. ดึง enum ตรงๆ จาก packagePriceRelation.package
+              for (const a of fullQuotationData.quotation_areas || []) {
+                const d = a?.packagePriceRelation?.package?.contract_duration as ContractDuration | undefined;
+                if (d && d !== ContractDuration.ONE_TIME && d in ContractDurationLabel) return d;
+              }
+              // 2. ถ้า package เป็น ONE_TIME ทั้งหมด แต่ quotation มี contract_duration label → parse กลับ
+              const label = fullQuotationData.contract_duration as string | undefined;
+              if (label) {
+                const found = (Object.keys(ContractDurationLabel) as ContractDuration[])
+                  .find((k) => ContractDurationLabel[k] === label);
+                if (found) return found;
+              }
+              // 3. last resort — ONE_TIME ถ้ามีจริงๆ
+              for (const a of fullQuotationData.quotation_areas || []) {
+                const d = a?.packagePriceRelation?.package?.contract_duration as ContractDuration | undefined;
+                if (d && d in ContractDurationLabel) return d;
+              }
+              return undefined;
+            };
+            const packageDuration = resolvePackageDuration();
             if (packageDuration) {
               setContractDuration(ContractDurationLabel[packageDuration]);
               const baseStart = startDate || new Date().toISOString().substring(0, 10);
