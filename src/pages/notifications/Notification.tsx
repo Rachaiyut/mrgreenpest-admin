@@ -142,10 +142,12 @@ const Notifications: React.FC<NotificationsProps> = () => {
       lastServiceReportId: item.last_service_report_id || null,
       nextServiceDate: item.next_service_date
         ? new Date(item.next_service_date)
-        : new Date(),
+        : null,
       nextServiceDisplay: item.next_service_date,
       customerAppointmentDate: item.customer_appointment_date || '-',
-      daysRemaining: Number(item.days_remaining) || 0,
+      daysRemaining: item.days_remaining === null || item.days_remaining === undefined
+        ? null
+        : Number(item.days_remaining),
     }));
   }, [data]);
 
@@ -275,7 +277,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
             </thead>
             <tbody className="divide-y divide-slate-200">
               {filteredData.map((row, index) => {
-                const isExpired = row.daysRemaining < 0;
+                const isExpired = row.daysRemaining !== null && row.daysRemaining < 0;
                 const stickyBg = isExpired ? 'bg-red-200' : 'bg-white';
                 const greenBg = isExpired ? 'bg-red-200' : 'bg-green-50/50';
                 const redBg = isExpired ? 'bg-red-200' : 'bg-red-50/50';
@@ -317,15 +319,19 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
                     {/* 🟢 Green Section: Service Info */}
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-bold ${greenBg}`}>
-                      <span
-                        className={
-                          row.daysRemaining < 30
-                            ? 'text-red-600'
-                            : 'text-green-600'
-                        }
-                      >
-                        {row.daysRemaining}
-                      </span>
+                      {row.daysRemaining === null ? (
+                        <span className="text-slate-400">-</span>
+                      ) : (
+                        <span
+                          className={
+                            row.daysRemaining < 30
+                              ? 'text-red-600'
+                              : 'text-green-600'
+                          }
+                        >
+                          {row.daysRemaining}
+                        </span>
+                      )}
                     </td>
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
                       {row.lastServiceDate !== '-' ? (
@@ -352,19 +358,12 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
                       {(() => {
                         const display = row.nextServiceDisplay;
-                        if (display) {
-                          const d = new Date(display);
-                          if (
-                            !isNaN(d.getTime()) &&
-                            String(display).includes('-')
-                          ) {
-                            return formatThaiDate(display);
-                          }
-                          return display;
+                        if (!display) return '-';
+                        const d = new Date(display);
+                        if (!isNaN(d.getTime()) && String(display).includes('-')) {
+                          return formatThaiDate(display);
                         }
-                        return formatThaiDate(
-                          row.nextServiceDate.toISOString()
-                        );
+                        return display;
                       })()}
                     </td>
                     <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
