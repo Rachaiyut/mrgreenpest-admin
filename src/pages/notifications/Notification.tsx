@@ -280,7 +280,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 const isExpired = row.daysRemaining !== null && row.daysRemaining < 0;
                 const stickyBg = isExpired ? 'bg-red-200' : 'bg-white';
                 const greenBg = isExpired ? 'bg-red-200' : 'bg-green-50/50';
-                const redBg = isExpired ? 'bg-red-200' : 'bg-red-50/50';
+                const yellowBg = isExpired ? 'bg-red-200' : 'bg-yellow-50';
                 return (
                   <tr
                     key={row.contractId}
@@ -388,22 +388,22 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
 
                     {/* 🔴 Red Section: Invoice Info */}
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
                       {row.installment}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
                       {row.invoiceAmount > 0
                         ? row.invoiceAmount.toLocaleString()
                         : '-'}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${redBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${yellowBg}`}>
                       {row.invoiceStatus !== '-' ? (
                         <StatusBadge status={row.invoiceStatus} />
                       ) : (
                         '-'
                       )}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${yellowBg}`}>
                       {row.invoiceDueDate !== '-'
                         ? formatThaiDate(row.invoiceDueDate)
                         : '-'}
