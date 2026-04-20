@@ -59,7 +59,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [searchedCustomers, setSearchedCustomers] = useState<Customer[]>([]);
+  const [fetchedSingleCustomer, setFetchedSingleCustomer] = useState<Customer | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingFullInvoice, setIsLoadingFullInvoice] = useState(false);
 
   const [invoiceSchedules, setInvoiceSchedules] = useState<any[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
@@ -128,6 +130,70 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   }, [mode, formData.issuedDate, formData.dueDate]);
 
+  // Edit/Detail mode: fetch full invoice (items, customer_id, totals may be missing from list payload)
+  useEffect(() => {
+    if (mode === 'create' || !initialValues?.id) return;
+    const hasFullData = (initialValues.items && initialValues.items.length > 0) || initialValues.is_ad_hoc;
+    if (hasFullData && initialValues.customer_id) return;
+
+    setIsLoadingFullInvoice(true);
+    InvoiceApi.getById(initialValues.id)
+      .then((res) => {
+        const full = ((res as unknown as Record<string, unknown>).data || res) as Partial<Invoice> & Record<string, any>;
+        if (!full) return;
+
+        setFormData(prev => ({
+          ...prev,
+          customerId: prev.customerId || full.customer_id || '',
+          contractId: prev.contractId || full.contract_id || undefined,
+          quotationId: prev.quotationId || full.quotation_id || '',
+          term: prev.term || full.term || null,
+          selectedScheduleId: prev.selectedScheduleId || full.invoice_schedule_id || null,
+          includeVat: full.include_vat ?? prev.includeVat,
+        }));
+
+        if (full.is_ad_hoc && full.items && full.items.length > 0) {
+          setIsAdhocMode(true);
+          setAdhocData({
+            description: full.items[0].description || '',
+            amount: Number(full.items[0].amount) || 0,
+          });
+        } else if (full.items && full.items.length > 0) {
+          setItems(full.items.map((i: any) => ({
+            id: i.id || crypto.randomUUID(),
+            product_id: i.product_id,
+            description: i.description,
+            quantity: Number(i.quantity),
+            unit: i.unit,
+            unitPrice: Number(i.unit_price),
+            amount: Number(i.amount),
+          })));
+        } else if (full.total && Number(full.total) > 0) {
+          // fallback — no items but has a total (legacy data)
+          setIsAdhocMode(true);
+          setAdhocData({ description: full.notes || 'ใบแจ้งหนี้', amount: Number(full.total) });
+        }
+      })
+      .catch((err) => console.error('Failed to load full invoice:', err))
+      .finally(() => setIsLoadingFullInvoice(false));
+  }, [mode, initialValues?.id]);
+
+  // Fetch customer by id if not in context/search lists
+  useEffect(() => {
+    if (!formData.customerId) return;
+    const foundInContext = customers.find((c) => c.id === formData.customerId);
+    const foundInSearch = searchedCustomers.find((c) => c.id === formData.customerId);
+    if (foundInContext || foundInSearch) return;
+    if (fetchedSingleCustomer?.id === formData.customerId) return;
+
+    CustomerApi.getCustomerById(formData.customerId)
+      .then((res) => {
+        const cust = ((res as unknown as Record<string, unknown>).data || res) as Customer;
+        if (cust) setFetchedSingleCustomer(cust);
+      })
+      .catch((err) => console.error('Failed to fetch customer:', err));
+  }, [formData.customerId, customers, searchedCustomers, fetchedSingleCustomer]);
+
   useEffect(() => {
     const loadMasterData = async () => {
       if (!formData.customerId) {
@@ -194,9 +260,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   }, [items, formData.includeVat, isAdhocMode, adhocData.amount]);
 
-  const selectedCustomer = useMemo(() => 
-    [...customers, ...searchedCustomers].find(c => c.id === formData.customerId), 
-  [customers, searchedCustomers, formData.customerId]);
+  const selectedCustomer = useMemo(() => {
+    const list = [...customers, ...searchedCustomers];
+    if (fetchedSingleCustomer) list.push(fetchedSingleCustomer);
+    return list.find(c => c.id === formData.customerId);
+  }, [customers, searchedCustomers, fetchedSingleCustomer, formData.customerId]);
 
   const selectedContract = useMemo(() => 
     contracts.find(c => c.id === formData.contractId), 
@@ -482,6 +550,27 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
     }
   };
 
+  if (isLoadingFullInvoice) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div className="flex flex-col items-center justify-center py-16 gap-4 bg-slate-50/50 rounded-xl border border-slate-100">
+          <span className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+          <p className="text-sm font-medium text-slate-500">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-20 bg-slate-100 rounded-lg" />
+          <div className="h-20 bg-slate-100 rounded-lg" />
+          <div className="h-20 bg-slate-100 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="h-64 bg-slate-100 rounded-xl" />
+          <div className="h-64 bg-slate-100 rounded-xl" />
+        </div>
+        <div className="h-40 bg-slate-100 rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <form id="invoice-form" onSubmit={submitForm} className="space-y-8">
       {/* Top Header Section */}
@@ -529,11 +618,18 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                   value={formData.customerId}
                   onChange={(val) => setFormData(prev => ({ ...prev, customerId: val }))}
                   onSearchChange={handleCustomerSearch}
-                  options={[...customers, ...searchedCustomers].map((c) => ({
-                    value: c.id,
-                    label: `${c.first_name} ${c.last_name}`,
-                    description: c.primary_phone,
-                  }))}
+                  options={(() => {
+                    const list = [...customers, ...searchedCustomers];
+                    if (fetchedSingleCustomer && !list.some(c => c.id === fetchedSingleCustomer.id)) {
+                      list.push(fetchedSingleCustomer);
+                    }
+                    const unique = list.filter((c, i, arr) => arr.findIndex(x => x.id === c.id) === i);
+                    return unique.map((c) => ({
+                      value: c.id,
+                      label: `${c.first_name} ${c.last_name}`,
+                      description: c.primary_phone,
+                    }));
+                  })()}
                   placeholder="ค้นหาและเลือกลูกค้า..."
                   required
                   className="bg-white h-11"
@@ -789,7 +885,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             </div>
           </div>
 
-        ) : isFullPayment && items.length <= 1 ? null : (
+        ) : isFullPayment && items.length <= 1 && mode === 'create' ? null : (
 
           /* NORMAL ITEMS: รายการสินค้าและบริการ */
           <ItemsSection

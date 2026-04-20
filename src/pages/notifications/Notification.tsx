@@ -221,7 +221,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
           </div>
         ) : (
         <>
-        <div className="overflow-x-auto border-b border-slate-200">
+        <div className="flex-1 overflow-x-auto overflow-y-auto border-b border-slate-200">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
@@ -278,13 +278,20 @@ const Notifications: React.FC<NotificationsProps> = () => {
             <tbody className="divide-y divide-slate-200">
               {filteredData.map((row, index) => {
                 const isExpired = row.daysRemaining !== null && row.daysRemaining < 0;
-                const stickyBg = isExpired ? 'bg-red-200' : 'bg-white';
-                const greenBg = isExpired ? 'bg-red-200' : 'bg-green-50/50';
-                const yellowBg = isExpired ? 'bg-red-200' : 'bg-yellow-50';
+                const cellTransition = 'transition-colors duration-200 ease-out';
+                const stickyBg = isExpired
+                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
+                  : `bg-white group-hover:bg-slate-50 ${cellTransition}`;
+                const greenBg = isExpired
+                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
+                  : `bg-green-50/50 group-hover:bg-green-100/60 ${cellTransition}`;
+                const yellowBg = isExpired
+                  ? `bg-red-200 group-hover:bg-red-300 ${cellTransition}`
+                  : `bg-yellow-50 group-hover:bg-yellow-100 ${cellTransition}`;
                 return (
                   <tr
                     key={row.contractId}
-                    className={`transition-colors ${
+                    className={`group border-b border-slate-200 transition-colors duration-200 ease-out ${
                       isExpired
                         ? 'bg-red-200 hover:bg-red-300'
                         : 'hover:bg-slate-50'
