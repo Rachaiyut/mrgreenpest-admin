@@ -180,13 +180,13 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-0 z-20 bg-slate-50 w-16">
                   ลำดับ
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap sticky left-16 z-20 bg-slate-50">
                   เลขที่สัญญา
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
                   ชื่อ-นามสกุล ลูกค้า
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
                   ที่อยู่/เบอร์โทร
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
@@ -201,28 +201,28 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   วันที่ลูกค้านัดล่วงหน้า
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
                   เริ่มสัญญา
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
                   หมดสัญญา
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
                   ครั้งที่ / ทั้งหมด
                 </th>
-                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
                   ราคา
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   งวดที่
                 </th>
-                <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap bg-red-50">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   จำนวนเงิน (Invoice)
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   สถานะ (Invoice)
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-red-50">
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   กำหนดชำระ
                 </th>
               </tr>
@@ -233,16 +233,16 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     key={row.contractId}
                     className="hover:bg-slate-50 transition-colors"
                   >
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-500 sticky left-0 z-10 bg-white w-16">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 bg-white w-16">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap font-medium text-green-600 sticky left-16 z-10 bg-white">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 bg-white">
                       {row.contractId}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
                       {row.customerName}
                     </td>
-                    <td className="px-3 py-3 text-slate-600 min-w-[300px] md:min-w-[400px]">
+                    <td className="px-3 py-3 text-center align-middle text-slate-600 min-w-[300px] md:min-w-[400px]">
                       <div className="leading-relaxed">
                         {row.address}
                       </div>
@@ -250,7 +250,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
 
                     {/* 🟢 Green Section: Service Info */}
-                    <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-bold bg-green-50/50">
                       <span
                         className={
                           row.daysRemaining <= 7
@@ -261,12 +261,12 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         {row.daysRemaining}
                       </span>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
                       {row.lastServiceDate !== '-'
                         ? formatThaiDate(row.lastServiceDate)
                         : '-'}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
                       {(() => {
                         const display = row.nextServiceDisplay;
                         if (display) {
@@ -284,44 +284,44 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
                       {row.customerAppointmentDate !== '-'
                         ? formatThaiDate(row.customerAppointmentDate)
                         : '-'}
                     </td>
 
-                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
                       {formatThaiDate(row.startDate)}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
                       {formatThaiDate(row.endDate)}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800 bg-green-50/50">
                       {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
                       <span className="text-slate-400 mx-1">/</span>{' '}
                       {row.total_visits || '-'}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-800">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
                       {row.price.toLocaleString()}
                     </td>
 
                     {/* 🔴 Red Section: Invoice Info */}
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-red-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
                       {row.installment}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-right text-slate-600 bg-red-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
                       {row.invoiceAmount > 0
                         ? row.invoiceAmount.toLocaleString()
                         : '-'}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center bg-red-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle bg-red-50/50">
                       {row.invoiceStatus !== '-' ? (
                         <StatusBadge status={row.invoiceStatus} />
                       ) : (
                         '-'
                       )}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-slate-600 bg-red-50/50">
+                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
                       {row.invoiceDueDate !== '-'
                         ? formatThaiDate(row.invoiceDueDate)
                         : '-'}
