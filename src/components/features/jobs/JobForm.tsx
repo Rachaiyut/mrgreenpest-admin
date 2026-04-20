@@ -67,6 +67,7 @@ export interface JobFormProps {
   warehouses: Warehouse[];
   initialContractId?: string;
   initialWorkDateIso?: string;
+  defaultCustomerId?: string;
   contracts?: Contract[];
   jobs: any[];
   users: User[];
@@ -90,6 +91,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   warehouses: initialWarehouses,
   initialContractId,
   initialWorkDateIso,
+  defaultCustomerId,
   currentUserRole
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -551,11 +553,22 @@ export const JobForm: React.FC<JobFormProps> = ({
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [selectedVehicleId, workDate, jobs, jobToEdit]);
 
+  const hasPrefilledRefRef = useRef<string | null>(null);
   useEffect(() => {
-    if (mode === 'add' && initialContractId) {
-      setSelectedReference(initialContractId);
-    }
-  }, [mode, initialContractId]);
+    if (mode !== 'add' || !initialContractId) return;
+    if (packages.length === 0) return;
+    if (hasPrefilledRefRef.current === initialContractId) return;
+    hasPrefilledRefRef.current = initialContractId;
+    handleReferenceChange(initialContractId);
+  }, [mode, initialContractId, packages.length]);
+
+  const hasPrefilledCustomerRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (mode !== 'add' || !defaultCustomerId) return;
+    if (hasPrefilledCustomerRef.current === defaultCustomerId) return;
+    hasPrefilledCustomerRef.current = defaultCustomerId;
+    handleCustomerChange(defaultCustomerId, true);
+  }, [mode, defaultCustomerId]);
 
   useEffect(() => {
     if (mode === 'add' && initialWorkDateIso) {

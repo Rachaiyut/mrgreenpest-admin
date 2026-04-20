@@ -21,6 +21,7 @@ export const JobModal: React.FC<JobModalProps> = ({
   warehouses,
   initialContractId,
   initialWorkDateIso,
+  defaultCustomerId,
   contracts,
   jobs,
   users,
@@ -51,6 +52,7 @@ export const JobModal: React.FC<JobModalProps> = ({
           warehouses={warehouses}
           initialContractId={initialContractId}
           initialWorkDateIso={initialWorkDateIso}
+          defaultCustomerId={defaultCustomerId}
           contracts={contracts}
           jobs={jobs}
           users={users}

@@ -1,6 +1,7 @@
 // ===== React =====
 import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Absolute Types =====
@@ -420,7 +421,33 @@ const Job: React.FC<JobProps> = ({
   const [view, setView] = useState<'list' | 'kanban' | 'calendar'>('kanban');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [createModalDefaults, setCreateModalDefaults] = useState<{
+    customerId?: string;
+    contractRef?: string;
+  }>({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handledOpenParamRef = useRef(false);
+  useEffect(() => {
+    if (handledOpenParamRef.current) return;
+    if (searchParams.get('openCreateModal') !== '1') return;
+    handledOpenParamRef.current = true;
+
+    const customerId = searchParams.get('customerId') || undefined;
+    const contractId = searchParams.get('contractId') || undefined;
+    setCreateModalDefaults({
+      customerId,
+      contractRef: contractId ? `cnt-${contractId}` : undefined,
+    });
+    setIsAddModalOpen(true);
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('openCreateModal');
+    next.delete('customerId');
+    next.delete('contractId');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [jobToCancel, setJobToCancel] = useState<any | null>(null);
@@ -2076,13 +2103,18 @@ const Job: React.FC<JobProps> = ({
 
       <JobModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setCreateModalDefaults({});
+        }}
         mode="add"
         onSubmitJob={handleCreateJob}
         jobs={jobs}
         users={users}
         warehouses={warehouses}
         contracts={contracts}
+        defaultCustomerId={createModalDefaults.customerId}
+        initialContractId={createModalDefaults.contractRef}
         currentUserRole={currentUser.role as Role}
       />
 

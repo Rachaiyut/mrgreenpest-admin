@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Select, Input } from '../../components/common/FormControls';
@@ -13,6 +14,7 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 interface NotificationsProps {}
 
 const Notifications: React.FC<NotificationsProps> = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +55,13 @@ const Notifications: React.FC<NotificationsProps> = () => {
     } finally {
       setPdfLoadingId(null);
     }
+  };
+
+  const handleCreateAppointment = (customerId: string | null, contractUuid: string | null) => {
+    if (!customerId) return;
+    const params = new URLSearchParams({ openCreateModal: '1', customerId });
+    if (contractUuid) params.set('contractId', contractUuid);
+    navigate(`/field-operations?${params.toString()}`);
   };
 
   const handleOpenServiceReportPdf = async (reportId: string) => {
@@ -119,6 +128,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
     return data.map((item) => ({
       contractUuid: item.contract_id,
       contractId: item.contract_code || item.contract_id,
+      customerId: item.customer_id || null,
       customerName: item.customer_name,
       nickname: item.nickname || '-',
       address: item.address,
@@ -315,7 +325,18 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       </button>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
-                      {row.customerName}
+                      {row.customerId ? (
+                        <button
+                          type="button"
+                          onClick={() => handleCreateAppointment(row.customerId, row.contractUuid)}
+                          className="hover:underline hover:text-primary"
+                          title="คลิกเพื่อสร้างนัดหมายให้ลูกค้านี้"
+                        >
+                          {row.customerName}
+                        </button>
+                      ) : (
+                        row.customerName
+                      )}
                     </td>
                     <td className="px-3 py-3 text-center align-middle text-slate-600 min-w-[300px] md:min-w-[400px]">
                       <div className="leading-relaxed">
