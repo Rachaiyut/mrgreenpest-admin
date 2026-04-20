@@ -5,6 +5,7 @@ import { Select, Input } from '../../components/common/FormControls';
 import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon, LoadingIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
+import { ContractApi } from '../../api/contract';
 import { Pagination } from '../../components/common/Pagination';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
@@ -24,6 +25,30 @@ const Notifications: React.FC<NotificationsProps> = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
+
+  const handleOpenContractPdf = async (contractUuid: string) => {
+    if (!contractUuid || pdfLoadingId) return;
+    setPdfLoadingId(contractUuid);
+    try {
+      const blob = await ContractApi.getPdf(contractUuid);
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      console.error('Failed to load contract PDF:', err);
+      alert('ไม่สามารถโหลด PDF สัญญาได้ กรุณาลองใหม่');
+    } finally {
+      setPdfLoadingId(null);
+    }
+  };
 
   // Debounce search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,6 +98,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
   const filteredData = useMemo(() => {
     return data.map((item) => ({
+      contractUuid: item.contract_id,
       contractId: item.contract_code || item.contract_id,
       customerName: item.customer_name,
       nickname: item.nickname || '-',
@@ -237,7 +263,18 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 bg-white">
-                      {row.contractId}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenContractPdf(row.contractUuid)}
+                        disabled={!row.contractUuid || pdfLoadingId === row.contractUuid}
+                        className="inline-flex items-center gap-1.5 hover:underline hover:text-green-700 disabled:opacity-60 disabled:cursor-wait"
+                        title="คลิกเพื่อดูสัญญา PDF"
+                      >
+                        {pdfLoadingId === row.contractUuid && (
+                          <LoadingIcon className="w-4 h-4 animate-spin" />
+                        )}
+                        {row.contractId}
+                      </button>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800">
                       {row.customerName}
