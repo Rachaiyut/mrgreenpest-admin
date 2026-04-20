@@ -15,7 +15,7 @@ import { Product } from '@/src/types/entity/product.interface';
 import { JobStatus } from '@/src/types/enums/job';
 import { formatThaiDate } from '../../../utils/date';
 import { StatusBadge } from '../../common/StatusBadge';
-import { Assessment, Quotation } from '@/src/types';
+import { Quotation } from '@/src/types';
 import { QuotationApi } from '@/src/api';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import {
@@ -100,9 +100,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     pest_other_text?: string;
   }>>({});
   
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState('');
+  const [addDaysSelection, setAddDaysSelection] = useState<string>('');
+  const [customDays, setCustomDays] = useState<string>('');
 
   const [activePestTab, setActivePestTab] = useState<PestType>('termite');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -156,7 +156,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const num = parseInt(text.replace(/[^\d]/g, ''), 10) || 12;
       return text.includes('ปี') ? num * 12 : num;
     };
-    const durationMonths = parseDurationMonths(pkg?.contract_duration);
+    const durationMonths = parseDurationMonths((pkg as unknown as Record<string, string>)?.contract_duration);
     const intervalDays = Math.max(
       1,
       Math.round((durationMonths * 30) / visitsRequired)
@@ -314,6 +314,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             notes: r.work_note || '',
             reasons: nextReasons,
             scheduled_at: r.next_service_schedule,
+            customer_confirmed_at: (r as unknown as Record<string, string>).customer_appointment_date || null,
           },
           // 👇 แก้ไขการโยนค่าให้ตรงกับ Model
           ant: {
@@ -413,6 +414,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             notes: '',
             reasons: [],
             scheduled_at: recommendedNextIso,
+            customer_confirmed_at: null,
           },
           status: JobStatus.Draft,
         };
@@ -431,7 +433,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   if (!isOpen || !job) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
 
     const totalImages = existingImages.length + selectedFiles.length;
@@ -505,6 +507,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       work_note: reportState.notes,
       next_service_schedule: reportState.next_appointment?.scheduled_at,
+      customer_appointment_date: reportState.next_appointment?.customer_confirmed_at || null,
       next_service_purpose: reportState.next_appointment?.reasons?.join(', '),
       is_next_refill:
         reportState.next_appointment?.reasons?.includes('เติมเหยื่อ') ||
@@ -666,7 +669,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       const prevActions = prevTermite.actions || {};
       const prevActionValue = prevActions[action as keyof typeof prevActions];
 
-      let newActionValue;
+      let newActionValue: unknown;
       if (objectActions.includes(action)) {
         newActionValue = {
           ...(typeof prevActionValue === 'object' && prevActionValue !== null
@@ -713,37 +716,34 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
     });
   };
 
-  const handleDateCalculation = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const days = parseInt(e.target.value, 10);
-    if (!isNaN(days) && job) {
-      const currentDate = new Date(job.start_time);
-      currentDate.setDate(currentDate.getDate() + days);
+  const applyAddDaysToScheduled = (days: number) => {
+    if (!Number.isFinite(days) || days <= 0) return;
+    const base = new Date();
+    base.setHours(12, 0, 0, 0);
+    base.setDate(base.getDate() + days);
+    setReportState((prev) => ({
+      ...prev,
+      next_appointment: {
+        ...(prev.next_appointment || { notes: '', reasons: [] }),
+        scheduled_at: base.toISOString(),
+      },
+    }));
+  };
 
-      const thaiDate = currentDate.toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
+  const handleAddDaysSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setAddDaysSelection(value);
+    if (value === 'custom') return;
+    setCustomDays('');
+    const days = parseInt(value, 10);
+    if (!isNaN(days)) applyAddDaysToScheduled(days);
+  };
 
-      const newNote = `ประมาณวันที่ ${thaiDate} (${days} วัน)`;
-
-      setReportState((prev) => ({
-        ...prev,
-        next_appointment: {
-          ...(prev.next_appointment || { notes: '', reasons: [] }),
-          notes: newNote,
-        },
-      }));
-    } else {
-      setReportState((prev) => ({
-        ...prev,
-        next_appointment: {
-          ...(prev.next_appointment || { notes: '', reasons: [] }),
-          notes: '',
-        },
-      }));
-    }
-    e.target.value = '';
+  const handleCustomDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^\d]/g, '');
+    setCustomDays(raw);
+    const days = parseInt(raw, 10);
+    if (!isNaN(days) && days > 0) applyAddDaysToScheduled(days);
   };
 
   const hasExistingReport = !!job?.service_report;
@@ -848,7 +848,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )
                     }
                   />
-                  <span className="text-xs text-slate-500">จุด</span>
+                  <span className="text-xs text-slate-500 w-10 text-left">จุด</span>
                 </div>
               </label>
               <label className="flex items-center justify-between gap-2">
@@ -881,7 +881,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )
                     }
                   />
-                  <span className="text-xs text-slate-500">กล่อง</span>
+                  <span className="text-xs text-slate-500 w-10 text-left">กล่อง</span>
                 </div>
               </label>
               <label className="flex items-center justify-between gap-2">
@@ -918,7 +918,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )
                     }
                   />
-                  <span className="text-xs text-slate-500">กล่อง</span>
+                  <span className="text-xs text-slate-500 w-10 text-left">กล่อง</span>
                 </div>
               </label>
               <label className="flex items-center gap-2">
@@ -1009,7 +1009,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                       )
                     }
                   />
-                  <span className="text-xs text-slate-500">จุด</span>
+                  <span className="text-xs text-slate-500 w-10 text-left">จุด</span>
                 </div>
               </label>
               <label className="flex items-center gap-2">
@@ -1065,8 +1065,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">
               การวางกล่อง (Termite Box)
             </h6>
-            <div className="flex flex-wrap items-end gap-4">
-              <label className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 shrink-0 h-9">
                 <input
                   type="checkbox"
                   checked={!!reportState.termite?.actions?.placeBoxes?.enabled}
@@ -1079,14 +1079,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   }
                   className="rounded text-primary focus:ring-primary"
                 />
-                <span>วางกล่อง</span>
+                <span className="text-sm">วางกล่อง</span>
               </label>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-sm">จำนวน:</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-sm text-slate-600">จำนวน:</span>
                 <input
                   type="number"
                   placeholder="0"
-                  className="w-16 h-8 text-center border rounded"
+                  className="w-16 h-9 text-center text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   value={reportState.termite?.actions?.placeBoxes?.count || ''}
                   onChange={(e) =>
                     handleTermiteActionChange(
@@ -1097,11 +1097,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   }
                 />
               </div>
-              <div className="flex items-center gap-2 flex-1 mb-2">
-                <span className="text-sm">บริเวณ:</span>
-                <Input
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="text-sm text-slate-600 shrink-0">บริเวณ:</span>
+                <input
                   type="text"
-                  className="h-8 flex-1"
+                  className="flex-1 min-w-0 h-9 text-sm px-3 border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                   placeholder="เช่น ใต้ซิงค์, ห้องเก็บของ"
                   value={reportState.termite?.actions?.placeBoxes?.area || ''}
                   onChange={(e) =>
@@ -1567,7 +1567,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               </button>
             ))}
           </div>
-          <div className="p-6 bg-slate-50/50 min-h-[300px]">
+          <div className="p-6 bg-slate-50/50">
             {pestRenderConfig[activePestTab]?.render?.() || <div className="text-slate-400 text-center py-8">เลือก tab ด้านบนเพื่อดูรายละเอียด</div>}
           </div>
         </div>
@@ -1580,7 +1580,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">วันนัดหมาย</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">นัดหมายครั้งต่อไป</label>
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <DatePicker
@@ -1605,13 +1605,72 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   />
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
                 </div>
-                <Select onChange={handleDateCalculation} className="w-1/3 text-sm" defaultValue="">
-                  <option value="" disabled>+ เพิ่มวัน</option>
-                  <option value="30">30 วัน</option>
-                  <option value="60">60 วัน</option>
-                  <option value="90">90 วัน</option>
-                  <option value="180">180 วัน</option>
-                </Select>
+                {addDaysSelection === 'custom' ? (
+                  <div className="w-1/3 relative flex items-center">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={customDays}
+                      onChange={handleCustomDaysChange}
+                      placeholder="ระบุวัน"
+                      autoFocus
+                      className="w-full text-sm pr-16 pl-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary h-10"
+                    />
+                    <span className="absolute right-9 text-xs text-slate-400 pointer-events-none">วัน</span>
+                    <button
+                      type="button"
+                      onClick={() => { setAddDaysSelection(''); setCustomDays(''); }}
+                      className="absolute right-2 w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded"
+                      title="กลับไปเลือกจากรายการ"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <Select value={addDaysSelection} onChange={handleAddDaysSelect} className="w-1/3 text-sm">
+                    <option value="" disabled>+ เพิ่มวัน</option>
+                    <option value="3">3 วัน</option>
+                    <option value="5">5 วัน</option>
+                    <option value="7">7 วัน</option>
+                    <option value="15">15 วัน</option>
+                    <option value="20">20 วัน</option>
+                    <option value="30">30 วัน</option>
+                    <option value="60">60 วัน</option>
+                    <option value="90">90 วัน</option>
+                    <option value="custom">อื่นๆ</option>
+                  </Select>
+                )}
+              </div>
+              <div className="mt-5">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  วันที่ลูกค้านัดหมาย
+                </label>
+                <div className="relative">
+                  <DatePicker
+                    selected={reportState.next_appointment?.customer_confirmed_at ? new Date(reportState.next_appointment.customer_confirmed_at) : null}
+                    onChange={(date: Date | null) =>
+                      setReportState((prev) => ({
+                        ...prev,
+                        next_appointment: {
+                          ...(prev.next_appointment || { notes: '', reasons: [] }),
+                          customer_confirmed_at: date
+                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                            : null,
+                        },
+                      }))
+                    }
+                    minDate={new Date()}
+                    dateFormat="dd/MM/yyyy"
+                    locale="th"
+                    placeholderText="dd/mm/yyyy"
+                    isClearable
+                    portalId="root"
+                    popperClassName="!z-[9999]"
+                    className="w-full pl-10 pr-3 py-2 bg-white border border-emerald-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-400 focus:border-emerald-400 text-sm h-10"
+                    wrapperClassName="w-full"
+                  />
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500 pointer-events-none" />
+                </div>
               </div>
             </div>
             <div>

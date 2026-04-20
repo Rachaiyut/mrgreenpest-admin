@@ -70,6 +70,14 @@ export interface ServiceReport {
   time_out?: string;
   payment_condition?: PaymentMethod;
   payment_installment_count?: number;
+  payment_amount?: number | string;
+  payment_slip_file_id?: string;
+  quotation_file_id?: string;
+  blueprint_file_id?: string;
+  payment_slip_url?: string | null;
+  quotation_url?: string | null;
+  blueprint_url?: string | null;
+  customer_appointment_date?: string | null;
   is_op_station?: boolean;
   is_op_refill?: boolean;
   is_op_chemical?: boolean;
@@ -107,6 +115,7 @@ export interface ServiceReport {
   service_types?: string[];
   service_actions?: string[];
   service_other_text?: string;
+  pest_other_text?: string;
   termite?: PestFormData;
   ant?: PestFormData;
   cockroach?: PestFormData;
@@ -118,6 +127,8 @@ export interface ServiceReport {
     notes: string;
     reasons: string[];
     scheduled_at?: string;
+    /** วันที่ลูกค้านัดหมาย (Confirm) — กรณีลูกค้าระบุวันที่ชัดเจน (YYYY-MM-DD) */
+    customer_confirmed_at?: string | null;
   };
   notes?: string;
   images?: {
