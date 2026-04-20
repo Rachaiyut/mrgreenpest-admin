@@ -274,19 +274,24 @@ const Notifications: React.FC<NotificationsProps> = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {filteredData.map((row, index) => (
+              {filteredData.map((row, index) => {
+                const isExpired = row.daysRemaining < 0;
+                const stickyBg = isExpired ? 'bg-red-200' : 'bg-white';
+                const greenBg = isExpired ? 'bg-red-200' : 'bg-green-50/50';
+                const redBg = isExpired ? 'bg-red-200' : 'bg-red-50/50';
+                return (
                   <tr
                     key={row.contractId}
                     className={`transition-colors ${
-                      row.daysRemaining < 0
-                        ? 'bg-red-50 hover:bg-red-100'
+                      isExpired
+                        ? 'bg-red-200 hover:bg-red-300'
                         : 'hover:bg-slate-50'
                     }`}
                   >
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 w-16 ${row.daysRemaining < 0 ? 'bg-red-50' : 'bg-white'}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 w-16 ${stickyBg}`}>
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 ${row.daysRemaining < 0 ? 'bg-red-50' : 'bg-white'}`}>
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 ${stickyBg}`}>
                       <button
                         type="button"
                         onClick={() => handleOpenContractPdf(row.contractUuid)}
@@ -311,7 +316,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
 
                     {/* 🟢 Green Section: Service Info */}
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-bold bg-green-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-bold ${greenBg}`}>
                       <span
                         className={
                           row.daysRemaining < 30
@@ -322,7 +327,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         {row.daysRemaining}
                       </span>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
                       {row.lastServiceDate !== '-' ? (
                         row.lastServiceReportId ? (
                           <button
@@ -344,7 +349,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         '-'
                       )}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
                       {(() => {
                         const display = row.nextServiceDisplay;
                         if (display) {
@@ -362,7 +367,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                         );
                       })()}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${greenBg}`}>
                       {row.customerAppointmentDate !== '-'
                         ? formatThaiDate(row.customerAppointmentDate)
                         : '-'}
@@ -374,7 +379,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600">
                       {formatThaiDate(row.endDate)}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800 bg-green-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-slate-800 ${greenBg}`}>
                       {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
                       <span className="text-slate-400 mx-1">/</span>{' '}
                       {row.total_visits || '-'}
@@ -384,28 +389,29 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     </td>
 
                     {/* 🔴 Red Section: Invoice Info */}
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
                       {row.installment}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
                       {row.invoiceAmount > 0
                         ? row.invoiceAmount.toLocaleString()
                         : '-'}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle bg-red-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle ${redBg}`}>
                       {row.invoiceStatus !== '-' ? (
                         <StatusBadge status={row.invoiceStatus} />
                       ) : (
                         '-'
                       )}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-red-50/50">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 ${redBg}`}>
                       {row.invoiceDueDate !== '-'
                         ? formatThaiDate(row.invoiceDueDate)
                         : '-'}
                     </td>
                   </tr>
-                ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
