@@ -6,6 +6,7 @@ import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon, LoadingIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
 import { ContractApi } from '../../api/contract';
+import { ServiceReportApi } from '../../api/service-report';
 import { Pagination } from '../../components/common/Pagination';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
@@ -27,24 +28,42 @@ const Notifications: React.FC<NotificationsProps> = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [pdfLoadingId, setPdfLoadingId] = useState<string | null>(null);
 
+  const openBlobInNewTab = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (!win) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
+
   const handleOpenContractPdf = async (contractUuid: string) => {
     if (!contractUuid || pdfLoadingId) return;
-    setPdfLoadingId(contractUuid);
+    setPdfLoadingId(`contract:${contractUuid}`);
     try {
       const blob = await ContractApi.getPdf(contractUuid);
-      const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
-      if (!win) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.target = '_blank';
-        a.rel = 'noopener';
-        a.click();
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      openBlobInNewTab(blob);
     } catch (err) {
       console.error('Failed to load contract PDF:', err);
       alert('ไม่สามารถโหลด PDF สัญญาได้ กรุณาลองใหม่');
+    } finally {
+      setPdfLoadingId(null);
+    }
+  };
+
+  const handleOpenServiceReportPdf = async (reportId: string) => {
+    if (!reportId || pdfLoadingId) return;
+    setPdfLoadingId(`report:${reportId}`);
+    try {
+      const blob = await ServiceReportApi.getServiceReportPdfById(reportId);
+      openBlobInNewTab(blob);
+    } catch (err) {
+      console.error('Failed to load service report PDF:', err);
+      alert('ไม่สามารถโหลด Service Report ได้ กรุณาลองใหม่');
     } finally {
       setPdfLoadingId(null);
     }
@@ -120,6 +139,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
       paidDate: item.paid_date || '-',
       visitNumber: Number(item.visit_number) || 0,
       lastServiceDate: item.last_service_date || '-',
+      lastServiceReportId: item.last_service_report_id || null,
       nextServiceDate: item.next_service_date
         ? new Date(item.next_service_date)
         : new Date(),
@@ -266,11 +286,11 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenContractPdf(row.contractUuid)}
-                        disabled={!row.contractUuid || pdfLoadingId === row.contractUuid}
+                        disabled={!row.contractUuid || pdfLoadingId === `contract:${row.contractUuid}`}
                         className="inline-flex items-center gap-1.5 hover:underline hover:text-green-700 disabled:opacity-60 disabled:cursor-wait"
                         title="คลิกเพื่อดูสัญญา PDF"
                       >
-                        {pdfLoadingId === row.contractUuid && (
+                        {pdfLoadingId === `contract:${row.contractUuid}` && (
                           <LoadingIcon className="w-4 h-4 animate-spin" />
                         )}
                         {row.contractId}
@@ -299,9 +319,26 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       </span>
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
-                      {row.lastServiceDate !== '-'
-                        ? formatThaiDate(row.lastServiceDate)
-                        : '-'}
+                      {row.lastServiceDate !== '-' ? (
+                        row.lastServiceReportId ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenServiceReportPdf(row.lastServiceReportId)}
+                            disabled={pdfLoadingId === `report:${row.lastServiceReportId}`}
+                            className="inline-flex items-center gap-1.5 text-green-600 hover:underline hover:text-green-700 disabled:opacity-60 disabled:cursor-wait"
+                            title="คลิกเพื่อดู Service Report PDF"
+                          >
+                            {pdfLoadingId === `report:${row.lastServiceReportId}` && (
+                              <LoadingIcon className="w-4 h-4 animate-spin" />
+                            )}
+                            {formatThaiDate(row.lastServiceDate)}
+                          </button>
+                        ) : (
+                          formatThaiDate(row.lastServiceDate)
+                        )
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-600 bg-green-50/50">
                       {(() => {
