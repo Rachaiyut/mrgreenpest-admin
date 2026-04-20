@@ -98,6 +98,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
         ? new Date(item.next_service_date)
         : new Date(),
       nextServiceDisplay: item.next_service_date,
+      customerAppointmentDate: item.customer_appointment_date || '-',
       daysRemaining: Number(item.days_remaining) || 0,
     }));
   }, [data]);
@@ -119,7 +120,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
           <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
             <Input
               type="search"
-              placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, ชื่อเล่น, โทร)"
+              placeholder="ค้นหา (สัญญา, รหัส, ชื่อ, โทร)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10"
@@ -185,23 +186,29 @@ const Notifications: React.FC<NotificationsProps> = () => {
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   ชื่อ-นามสกุล ลูกค้า
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  ชื่อเล่น
-                </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 min-w-[300px] md:min-w-[400px]">
                   ที่อยู่/เบอร์โทร
                 </th>
-                <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                  รายละเอียดสัญญา
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                  เหลือ (วัน)
                 </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap">
-                  ระยะเวลา (ปี)
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                  เข้าตรวจล่าสุด
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                  เข้าตรวจครั้งถัดไป
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                  วันที่ลูกค้านัดล่วงหน้า
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   เริ่มสัญญา
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
                   หมดสัญญา
+                </th>
+                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
+                  ครั้งที่ / ทั้งหมด
                 </th>
                 <th className="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
                   ราคา
@@ -213,22 +220,10 @@ const Notifications: React.FC<NotificationsProps> = () => {
                   จำนวนเงิน (Invoice)
                 </th>
                 <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-red-50">
-                  สถานะ Invoice
+                  สถานะ (Invoice)
                 </th>
                 <th className="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap bg-red-50">
                   กำหนดชำระ
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  ครั้งที่ / ทั้งหมด
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เข้าตรวจล่าสุด
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เข้าตรวจถัดไป
-                </th>
-                <th className="px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap bg-green-50">
-                  เหลือ (วัน)
                 </th>
               </tr>
             </thead>
@@ -247,26 +242,64 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className="px-3 py-3 whitespace-nowrap font-medium text-slate-800">
                       {row.customerName}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                      {row.nickname}
-                    </td>
                     <td className="px-3 py-3 text-slate-600 min-w-[300px] md:min-w-[400px]">
                       <div className="leading-relaxed">
                         {row.address}
                       </div>
                       <div className="text-slate-400 mt-1">{row.phone}</div>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-slate-600">
-                      {row.contractDetails}
+
+                    {/* 🟢 Green Section: Service Info */}
+                    <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
+                      <span
+                        className={
+                          row.daysRemaining <= 7
+                            ? 'text-red-600'
+                            : 'text-green-600'
+                        }
+                      >
+                        {row.daysRemaining}
+                      </span>
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600">
-                      {row.durationYears}
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                      {row.lastServiceDate !== '-'
+                        ? formatThaiDate(row.lastServiceDate)
+                        : '-'}
                     </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                      {(() => {
+                        const display = row.nextServiceDisplay;
+                        if (display) {
+                          const d = new Date(display);
+                          if (
+                            !isNaN(d.getTime()) &&
+                            String(display).includes('-')
+                          ) {
+                            return formatThaiDate(display);
+                          }
+                          return display;
+                        }
+                        return formatThaiDate(
+                          row.nextServiceDate.toISOString()
+                        );
+                      })()}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
+                      {row.customerAppointmentDate !== '-'
+                        ? formatThaiDate(row.customerAppointmentDate)
+                        : '-'}
+                    </td>
+
                     <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                       {formatThaiDate(row.startDate)}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-slate-600">
                       {formatThaiDate(row.endDate)}
+                    </td>
+                    <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
+                      {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
+                      <span className="text-slate-400 mx-1">/</span>{' '}
+                      {row.total_visits || '-'}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-800">
                       {row.price.toLocaleString()}
@@ -292,48 +325,6 @@ const Notifications: React.FC<NotificationsProps> = () => {
                       {row.invoiceDueDate !== '-'
                         ? formatThaiDate(row.invoiceDueDate)
                         : '-'}
-                    </td>
-
-                    {/* 🟢 Green Section: Service Info */}
-                    <td className="px-3 py-3 whitespace-nowrap text-center font-medium text-slate-800 bg-green-50/50">
-                      {row.visitNumber > 0 ? row.visitNumber : '-'}{' '}
-                      <span className="text-slate-400 mx-1">/</span>{' '}
-                      {row.total_visits || '-'}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
-                      {row.lastServiceDate !== '-'
-                        ? formatThaiDate(row.lastServiceDate)
-                        : '-'}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center text-slate-600 bg-green-50/50">
-                      {(() => {
-                        const display = row.nextServiceDisplay;
-                        if (display) {
-                          // Check if it's a valid date string (e.g. ISO format or YYYY-MM-DD)
-                          const d = new Date(display);
-                          if (
-                            !isNaN(d.getTime()) &&
-                            String(display).includes('-')
-                          ) {
-                            return formatThaiDate(display);
-                          }
-                          return display;
-                        }
-                        return formatThaiDate(
-                          row.nextServiceDate.toISOString()
-                        );
-                      })()}
-                    </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center font-bold bg-green-50/50">
-                      <span
-                        className={
-                          row.daysRemaining <= 7
-                            ? 'text-red-600'
-                            : 'text-green-600'
-                        }
-                      >
-                        {row.daysRemaining}
-                      </span>
                     </td>
                   </tr>
                 ))}
