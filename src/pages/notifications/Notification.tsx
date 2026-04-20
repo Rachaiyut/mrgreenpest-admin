@@ -277,12 +277,16 @@ const Notifications: React.FC<NotificationsProps> = () => {
               {filteredData.map((row, index) => (
                   <tr
                     key={row.contractId}
-                    className="hover:bg-slate-50 transition-colors"
+                    className={`transition-colors ${
+                      row.daysRemaining < 0
+                        ? 'bg-red-50 hover:bg-red-100'
+                        : 'hover:bg-slate-50'
+                    }`}
                   >
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 bg-white w-16">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle text-slate-500 sticky left-0 z-10 w-16 ${row.daysRemaining < 0 ? 'bg-red-50' : 'bg-white'}`}>
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 bg-white">
+                    <td className={`px-3 py-3 whitespace-nowrap text-center align-middle font-medium text-green-600 sticky left-16 z-10 ${row.daysRemaining < 0 ? 'bg-red-50' : 'bg-white'}`}>
                       <button
                         type="button"
                         onClick={() => handleOpenContractPdf(row.contractUuid)}
@@ -310,7 +314,7 @@ const Notifications: React.FC<NotificationsProps> = () => {
                     <td className="px-3 py-3 whitespace-nowrap text-center align-middle font-bold bg-green-50/50">
                       <span
                         className={
-                          row.daysRemaining <= 7
+                          row.daysRemaining < 30
                             ? 'text-red-600'
                             : 'text-green-600'
                         }
