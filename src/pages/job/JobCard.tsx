@@ -164,6 +164,29 @@ const JobCard: React.FC<{
     };
 
     const handleCheckOut = () => {
+      const reportRaw = job.service_report as unknown as Record<string, unknown> | undefined;
+      const hasReport = !!reportRaw && (
+        !!(reportRaw as { id?: string }).id ||
+        !!((reportRaw as { data?: { id?: string } }).data?.id)
+      );
+
+      if (!hasReport) {
+        Swal.fire({
+          title: 'ยังไม่ได้บันทึกรายงานบริการ',
+          text: 'กรุณาบันทึกรายงานบริการให้เรียบร้อยก่อนเช็คเอาท์เพื่อจบงานนี้',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'เปิดรายงานบริการ',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#10b981',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            onWriteReport(job);
+          }
+        });
+        return;
+      }
+
       Swal.fire({
         title: 'ยืนยันเช็คเอาท์?',
         text: 'คุณต้องการเช็คเอาท์เพื่อจบงานนี้หรือไม่',
