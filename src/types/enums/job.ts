@@ -17,6 +17,8 @@ export enum JobStatus {
 // Backend compatible status
 export enum JobMainStatus {
   UNASSIGNED = 'UNASSIGNED',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  REJECTED = 'REJECTED',
   PENDING = 'PENDING',
   IN_PROGRESS = 'IN_PROGRESS',
   WAITING_CLEAR = 'WAITING_CLEAR',
@@ -27,6 +29,8 @@ export enum JobMainStatus {
 
 export const JobStatusLabel: Record<string, string> = {
   [JobMainStatus.UNASSIGNED]: 'รอจัดคิว',
+  [JobMainStatus.PENDING_APPROVAL]: 'รออนุมัติ',
+  [JobMainStatus.REJECTED]: 'ถูกปฏิเสธ',
   [JobMainStatus.PENDING]: 'รอเข้าดำเนินการ',
   [JobMainStatus.IN_PROGRESS]: 'ระหว่างดำเนินการ',
   [JobMainStatus.WAITING_CLEAR]: 'รอเคลียค่าใช้จ่ายและสารเคมี',

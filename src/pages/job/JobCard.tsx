@@ -1,4 +1,5 @@
 import { isFieldRole } from '@/src/utils/role';
+import { usePermissions } from '@/src/hooks/usePermissions';
 // ===== React =====
 import { useMemo } from "react";
 
@@ -37,6 +38,8 @@ const JobCard: React.FC<{
   onViewDetails: (job: FieldJob) => void;
   onWriteReport: (job: FieldJob) => void;
   onEditJob?: (job: FieldJob) => void;
+  onApprove?: (jobId: string) => Promise<void> | void;
+  onReject?: (jobId: string, reason: string) => Promise<void> | void;
   currentUser: User;
   isAnyJobInProgressForCurrentUser: boolean;
 }> = ({
@@ -46,6 +49,8 @@ const JobCard: React.FC<{
   onViewDetails,
   onWriteReport,
   onEditJob,
+  onApprove,
+  onReject,
   currentUser,
   isAnyJobInProgressForCurrentUser,
 }) => {
@@ -98,11 +103,50 @@ const JobCard: React.FC<{
       (job.status as unknown as JobStatus) !== JobStatus.Completed &&
       String(job.api_status || '').toUpperCase() !== 'WAITING_CLEAR';
 
+    const handleApprove = () => {
+      if (!onApprove) return;
+      Swal.fire({
+        title: 'อนุมัติงานนี้?',
+        text: 'งานจะถูกย้ายเข้าคิวรอเข้าดำเนินการ',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'อนุมัติ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#10b981',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Promise.resolve(onApprove(job.id));
+        }
+      });
+    };
+
+    const handleReject = () => {
+      if (!onReject) return;
+      Swal.fire({
+        title: 'ปฏิเสธงานนี้?',
+        input: 'textarea',
+        inputLabel: 'เหตุผลการปฏิเสธ',
+        inputPlaceholder: 'ระบุเหตุผล...',
+        inputAttributes: { 'aria-label': 'เหตุผลการปฏิเสธ' },
+        showCancelButton: true,
+        confirmButtonText: 'ปฏิเสธ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ef4444',
+        inputValidator: (value) => (!value || !value.trim() ? 'กรุณาระบุเหตุผล' : null),
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          Promise.resolve(onReject(job.id, result.value.trim()));
+        }
+      });
+    };
+
     // Get status color for left border
     const getStatusColor = () => {
       const statusUpper = String(
-        job.status || job.api_status || ''
+        job.api_status || job.status || ''
       ).toUpperCase();
+      if (statusUpper === 'PENDING_APPROVAL' || statusUpper === 'PENDINGAPPROVAL') return 'border-l-orange-500';
+      if (statusUpper === 'REJECTED') return 'border-l-red-500';
       if (statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS')
         return 'border-l-amber-500';
       if (statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE')
@@ -112,6 +156,12 @@ const JobCard: React.FC<{
       if (statusUpper === 'CANCELLED') return 'border-l-red-500';
       return 'border-l-primary';
     };
+
+    const statusUpper = String(job.api_status || job.status || '').toUpperCase();
+    const isPendingApproval = statusUpper === 'PENDING_APPROVAL' || statusUpper === 'PENDINGAPPROVAL';
+    const isRejected = statusUpper === 'REJECTED';
+    const { hasPermission } = usePermissions();
+    const canApprove = hasPermission('APPROVE_OPERATION');
 
     const handleCheckIn = () => {
       // 💡 ตรวจสอบให้ชัวร์ว่าข้อมูลใน job ใช้คำว่า remark หรือ remarks
@@ -350,6 +400,34 @@ const JobCard: React.FC<{
                 <DocumentCheckIcon className="h-4 w-4" />
                 เช็คเอาท์
               </button>
+            )}
+
+            {isPendingApproval && canApprove && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleApprove}
+                  title="อนุมัติงานนี้"
+                  className="flex-1 py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                  style={{ backgroundColor: '#10b981' }}
+                >
+                  <DocumentCheckIcon className="h-4 w-4" />
+                  อนุมัติ
+                </button>
+                <button
+                  onClick={handleReject}
+                  title="ปฏิเสธงานนี้"
+                  className="flex-1 py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
+                  style={{ backgroundColor: '#ef4444' }}
+                >
+                  ปฏิเสธ
+                </button>
+              </div>
+            )}
+
+            {isRejected && job.rejection_reason && (
+              <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                <span className="font-semibold">เหตุผลที่ถูกปฏิเสธ:</span> {job.rejection_reason}
+              </div>
             )}
           </div>
         )}

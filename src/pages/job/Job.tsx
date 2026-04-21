@@ -190,15 +190,19 @@ const Job: React.FC<JobProps> = ({
             const rawStatus = String(job.status || '');
             const statusUpper = rawStatus.toUpperCase();
             const mappedStatus =
-              statusUpper === 'PENDING'
-                ? JobStatus.Pending
-                : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
-                  ? JobStatus.InProgress
-                  : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE' || statusUpper === 'WAITING_CLEAR'
-                    ? JobStatus.Completed
-                    : statusUpper === 'CANCELLED'
-                      ? JobStatus.Cancelled
-                      : JobStatus.Planned;
+              statusUpper === 'PENDING_APPROVAL'
+                ? JobStatus.PendingApproval
+                : statusUpper === 'REJECTED'
+                  ? JobStatus.Rejected
+                  : statusUpper === 'PENDING'
+                    ? JobStatus.Pending
+                    : statusUpper === 'IN_PROGRESS' || statusUpper === 'INPROGRESS'
+                      ? JobStatus.InProgress
+                      : statusUpper === 'COMPLETED' || statusUpper === 'COMPLETE' || statusUpper === 'WAITING_CLEAR'
+                        ? JobStatus.Completed
+                        : statusUpper === 'CANCELLED'
+                          ? JobStatus.Cancelled
+                          : JobStatus.Planned;
 
             const techniciansList = [];
             if (job.primary_technician) {
@@ -403,6 +407,28 @@ const Job: React.FC<JobProps> = ({
       fetchData();
     } catch (error) {
       console.error('Error updating status:', error);
+    }
+  };
+
+  const handleApproveJob = async (jobId: string) => {
+    try {
+      await JobApi.approve(jobId);
+      fetchData();
+      Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถอนุมัติงานได้', 'error');
+    }
+  };
+
+  const handleRejectJob = async (jobId: string, reason: string) => {
+    try {
+      await JobApi.reject(jobId, reason);
+      fetchData();
+      Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถปฏิเสธงานได้', 'error');
     }
   };
 
@@ -1563,6 +1589,8 @@ const Job: React.FC<JobProps> = ({
                               onViewDetails={handleViewDetails}
                               onWriteReport={handleWriteReport}
                               onEditJob={handleEdit}
+                              onApprove={handleApproveJob}
+                              onReject={handleRejectJob}
                               currentUser={currentUser}
                               isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
                             />

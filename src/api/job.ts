@@ -55,6 +55,16 @@ class JobService extends AuthService {
     return res.data;
   }
 
+  async approve(id: string): Promise<Job> {
+    const res = await this.http.post<Job>(`${this.path}/${id}/approve`);
+    return res.data;
+  }
+
+  async reject(id: string, reason: string): Promise<Job> {
+    const res = await this.http.post<Job>(`${this.path}/${id}/reject`, { reason });
+    return res.data;
+  }
+
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }

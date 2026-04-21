@@ -179,6 +179,7 @@ export interface FieldJob {
   endTime?: string;
   work_areas: FieldJobWorkArea[];
   status: JobMainStatus;
+  rejection_reason?: string | null;
   start_date?: Date;
   end_dare?: Date
 
