@@ -115,13 +115,33 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   const [isTechSigning, setIsTechSigning] = useState(false);
 
   const MAX_FILES = 5;
+  const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — ต้องตรงกับ backend STORAGE_MAX_FILE_SIZE
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
+
+      // ตรวจขนาดไฟล์ก่อนเก็บเข้า state
+      const oversize = newFiles.filter((f) => f.size > MAX_FILE_SIZE_BYTES);
+      if (oversize.length > 0) {
+        const listText = oversize
+          .map((f) => `• ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`)
+          .join('<br>');
+        Swal.fire({
+          icon: 'error',
+          title: 'ไฟล์ใหญ่เกินกำหนด',
+          html: `จำกัดไฟล์ละไม่เกิน 10 MB<br><br>ไฟล์ต่อไปนี้เกินขนาด:<br>${listText}`,
+        });
+      }
+      const acceptedBySize = newFiles.filter((f) => f.size <= MAX_FILE_SIZE_BYTES);
+      if (acceptedBySize.length === 0 && e.target) {
+        e.target.value = '';
+        return;
+      }
+
       const totalExisting = existingImages.length;
       setSelectedFiles((prev) => {
-        const combined = [...prev, ...newFiles];
+        const combined = [...prev, ...acceptedBySize];
         const remaining = MAX_FILES - totalExisting;
         if (combined.length > remaining) {
           Swal.fire({ icon: 'warning', title: 'จำกัดจำนวนรูป', text: `อัพโหลดได้สูงสุด ${MAX_FILES} รูป (มีอยู่แล้ว ${totalExisting} รูป)` });
@@ -129,6 +149,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         }
         return combined;
       });
+
+      // เคลียร์ input เพื่อให้ user เลือกไฟล์เดิมได้อีกรอบ
+      if (e.target) e.target.value = '';
     }
   };
 
