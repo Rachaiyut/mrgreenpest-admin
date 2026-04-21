@@ -163,8 +163,11 @@ const JobCard: React.FC<{
     const { hasPermission } = usePermissions();
     const canApprove = hasPermission('APPROVE_OPERATION');
     const canUpdate = hasPermission('UPDATE_OPERATION');
+    // Legacy jobs (สร้างก่อน migration) มี created_by = NULL — ไม่สามารถระบุเจ้าของได้
+    // → ให้ user ที่มี UPDATE_OPERATION แก้ได้ทั้งหมด (กัน edge case UX ค้าง)
+    const isLegacyNoCreator = !job.created_by;
     const isCreator = !!currentUserId && !!job.created_by && job.created_by === currentUserId;
-    const canEditRejected = isRejected && canUpdate && (isCreator || canApprove);
+    const canEditRejected = isRejected && canUpdate && (isCreator || canApprove || isLegacyNoCreator);
 
     const handleCheckIn = () => {
       // 💡 ตรวจสอบให้ชัวร์ว่าข้อมูลใน job ใช้คำว่า remark หรือ remarks
