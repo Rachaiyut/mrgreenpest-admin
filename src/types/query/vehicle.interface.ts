@@ -8,4 +8,5 @@ export interface VehicleJobQuery extends IBaseQuery {
 	appointment_date?: Date
 	search?: string
 	vehicle_id?: string
+	statuses?: string[] | string
 }

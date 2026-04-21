@@ -45,6 +45,7 @@ import { Select, Input, Button } from '../../components/common/FormControls';
 // ===== Local Components =====
 import JobCard from './JobCard';
 import JobCalendar from './JobCalendar';
+import JobKanbanBoard from './JobKanbanBoard';
 
 // ===== API =====
 import {
@@ -350,6 +351,104 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
+  // Fetch approval jobs — เรียก /vehicles/jobs?statuses=PENDING_APPROVAL,REJECTED แบ่งกลุ่มตามรถ
+  const fetchApproval = async (targetDate = filterDate) => {
+    setIsLoading(true);
+    try {
+      const params: any = {
+        statuses: `${JobMainStatus.PENDING_APPROVAL},${JobMainStatus.REJECTED}`,
+      };
+      if (targetDate) params.appointment_date = targetDate;
+
+      const res = await VehicleApi.getVehiclesWithUserJobs(params);
+      const warehousesData: any[] = Array.isArray((res as any)?.data)
+        ? ((res as any).data as any[])
+        : Array.isArray(res)
+          ? (res as any[])
+          : [];
+
+      setApprovalWarehouses(warehousesData);
+
+      const mapped: FieldJob[] = warehousesData.flatMap((warehouse: any) =>
+        (warehouse.jobs || []).map((job: any) => {
+          const customer = job.customer || {};
+          const customerName =
+            customer.first_name || customer.last_name
+              ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
+              : customer.code || '';
+          const address = [
+            customer.address_house_no, customer.address_soi, customer.address_road,
+            customer.sub_district, customer.district, customer.province, customer.postal_code,
+          ].filter(Boolean).join(' ');
+          const rawStatus = String(job.status || '');
+          const statusUpper = rawStatus.toUpperCase();
+          const mappedStatus =
+            statusUpper === 'PENDING_APPROVAL' ? JobStatus.PendingApproval :
+            statusUpper === 'REJECTED' ? JobStatus.Rejected : JobStatus.Planned;
+
+          const techniciansList: any[] = [];
+          if (job.primary_technician) {
+            techniciansList.push({
+              ...job.primary_technician,
+              role_type: 'FIELD_LEAD',
+              name: job.primary_technician.first_name
+                ? `${job.primary_technician.first_name} ${job.primary_technician.last_name || ''}`.trim()
+                : job.primary_technician.name,
+            });
+          }
+          if (Array.isArray(job.job_team_members) && job.job_team_members.length > 0) {
+            const teamMembers = job.job_team_members.filter(
+              (t: any) => t.id !== job.primary_technician?.id,
+            );
+            techniciansList.push(
+              ...teamMembers.map((t: any) => ({
+                ...t,
+                role_type: 'FIELD_TECH',
+                name: t.first_name ? `${t.first_name} ${t.last_name || ''}`.trim() : t.name,
+              })),
+            );
+          }
+
+          return {
+            api_status: rawStatus,
+            id: job.id,
+            code: job.code || '',
+            assessment_id: job.assessment_id || undefined,
+            contract_id: job.contract_id || undefined,
+            customer_id: job.customer_id || customer.id,
+            customer,
+            customerName,
+            address,
+            appointment_date: job.appointment_date,
+            start_time: job.start_date,
+            end_time: job.end_date,
+            actual_start_time: job.actual_start_time,
+            actual_end_time: job.actual_end_time,
+            primary_technician: job.primary_technician || null,
+            technicians: techniciansList,
+            work_areas: [],
+            status: mappedStatus,
+            vehicle_id: warehouse.id,
+            remarks: job.remark,
+            operation_details: job.operation_details,
+            rejection_reason: job.rejection_reason,
+            created_by: job.created_by,
+          } as unknown as FieldJob;
+        }),
+      );
+
+      setApprovalJobs(mapped);
+      const pendingCount = mapped.filter(
+        (j) => String((j as any).api_status || '').toUpperCase() === 'PENDING_APPROVAL',
+      ).length;
+      setApprovalCount(pendingCount);
+    } catch (error) {
+      console.error('Error fetching approval jobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Fetch reports (รายงาน)
   const fetchReports = async (page = reportCurrentPage) => {
     setIsLoading(true);
@@ -368,6 +467,8 @@ const Job: React.FC<JobProps> = ({
   const fetchData = async (targetDate = filterDate, targetTech = selectedTechnicianId) => {
     if (activeTab === 'unassigned') {
       await fetchUnassigned();
+    } else if (activeTab === 'approval') {
+      await fetchApproval();
     } else if (activeTab === 'reports') {
       await fetchReports();
     } else {
@@ -487,7 +588,10 @@ const Job: React.FC<JobProps> = ({
     }
   };
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'work-schedule' | 'unassigned' | 'reports'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'work-schedule' | 'unassigned' | 'approval' | 'reports'>('schedule');
+  const [approvalWarehouses, setApprovalWarehouses] = useState<any[]>([]);
+  const [approvalJobs, setApprovalJobs] = useState<FieldJob[]>([]);
+  const [approvalCount, setApprovalCount] = useState(0);
   const [view, setView] = useState<'list' | 'kanban' | 'calendar'>('kanban');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -1086,6 +1190,13 @@ const Job: React.FC<JobProps> = ({
     JobApi.getUnassignedCount().then((count) => {
       setUnassignedCount(count);
     }).catch(() => {});
+
+    // Fetch approval count (PENDING_APPROVAL) so badge stays fresh
+    JobApi.getAll({ limit: 1, page: 1, status: JobMainStatus.PENDING_APPROVAL } as any)
+      .then((res) => {
+        setApprovalCount((res as any).meta?.total || ((res as any).data || []).length || 0);
+      })
+      .catch(() => {});
   }, [filterDate, selectedTechnicianId]);
 
   // Fetch when tab changes
@@ -1095,6 +1206,8 @@ const Job: React.FC<JobProps> = ({
     } else if (activeTab === 'unassigned') {
       setUnassignedPage(1);
       fetchUnassigned(1, unassignedDateFilter);
+    } else if (activeTab === 'approval') {
+      fetchApproval();
     } else if (activeTab === 'reports') {
       fetchReports();
     }
@@ -1515,7 +1628,7 @@ const Job: React.FC<JobProps> = ({
 
             {/* Tabs + View Toggle */}
             <div className="flex items-center gap-2 flex-shrink-0">
-                {activeTab === 'schedule' && (
+                {(activeTab === 'schedule' || activeTab === 'approval') && (
                   <div className="flex items-center rounded-lg bg-slate-100 p-1">
                     <Button
                       onClick={() => setView('kanban')}
@@ -1535,15 +1648,17 @@ const Job: React.FC<JobProps> = ({
                     >
                       <ListBulletIcon className="h-4 w-4" />
                     </Button>
-                    <Button
-                      onClick={() => setView('calendar')}
-                      variant="ghost"
-                      className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
-                        }`}
-                      title="มุมมองปฏิทิน"
-                    >
-                      <CalendarDaysIcon className="h-4 w-4" />
-                    </Button>
+                    {activeTab === 'schedule' && (
+                      <Button
+                        onClick={() => setView('calendar')}
+                        variant="ghost"
+                        className={`p-2 rounded-md h-auto ${view === 'calendar' ? 'bg-white shadow-sm text-primary' : 'text-slate-500'
+                          }`}
+                        title="มุมมองปฏิทิน"
+                      >
+                        <CalendarDaysIcon className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -1568,6 +1683,21 @@ const Job: React.FC<JobProps> = ({
                       {unassignedCount > 0 && (
                         <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
                           {unassignedCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
+                  {!isFieldRole(authUser?.roleType) && (
+                    <button
+                      onClick={() => setActiveTab('approval')}
+                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'approval' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                    >
+                      รออนุมัติ
+                      {approvalCount > 0 && (
+                        <span className="ml-1.5 bg-orange-100 text-orange-700 py-0.5 px-1.5 rounded-full text-xs">
+                          {approvalCount}
                         </span>
                       )}
                     </button>
@@ -1601,80 +1731,21 @@ const Job: React.FC<JobProps> = ({
         <div className="flex-1 min-h-0 relative flex flex-col">
 
           {activeTab === 'schedule' && view === 'kanban' && (
-            <div className="flex flex-col relative flex-1">
-              {kanbanColumns.length > 0 && (
-                <>
-                  <button
-                    onClick={() => scrollKanban('left')}
-                    className="absolute -left-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
-                  >
-                    <ChevronLeftIcon className="h-5 w-5 text-slate-600" />
-                  </button>
-                  <button
-                    onClick={() => scrollKanban('right')}
-                    className="absolute -right-2 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-white hover:bg-slate-50 rounded-full shadow-lg border border-slate-200 transition-all hover:scale-105"
-                  >
-                    <ChevronRightIcon className="h-5 w-5 text-slate-600" />
-                  </button>
-                </>
-              )}
-              <div
-                ref={kanbanContainerRef}
-                className="flex gap-4 overflow-x-auto pb-4 px-2 scroll-smooth flex-1"
-                style={{ scrollbarWidth: 'thin' }}
-              >
-                {kanbanColumns.length > 0 ? (
-                  kanbanColumns.map((col) => (
-                    <div
-                      key={col.id}
-                      className="bg-slate-100/80 rounded-xl p-4 border border-slate-200 shadow-sm w-80 flex-shrink-0 flex flex-col"
-                    >
-                      <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-200/60 shrink-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                          <h3
-                            className="font-bold text-slate-700 text-sm truncate"
-                            title={col.title}
-                          >
-                            {col.title}
-                          </h3>
-                        </div>
-                        <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-sm font-bold bg-white text-slate-600 shadow-sm border border-slate-200">
-                          {col.jobs.length}
-                        </span>
-                      </div>
-                      <div className="space-y-3">
-                        {col.jobs.length > 0 ? (
-                          col.jobs.map((job) => (
-                            <JobCard
-                              key={job.id}
-                              job={job}
-                              onDropdownToggle={handleDropdownToggle}
-                              onStatusChange={handleStatusChange}
-                              onViewDetails={handleViewDetails}
-                              onWriteReport={handleWriteReport}
-                              onEditJob={handleEdit}
-                              onApprove={handleApproveJob}
-                              onReject={handleRejectJob}
-                              currentUser={currentUser}
-                              isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
-                            />
-                          ))
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                            <p className="text-sm">ไม่มีงาน</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 w-full">
-                    <p className="text-lg font-medium">ไม่พบรถให้บริการ</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <JobKanbanBoard
+              columns={kanbanColumns}
+              emptyBoardText="ไม่พบรถให้บริการ"
+              emptyColumnText="ไม่มีงาน"
+              accentColorClass="bg-primary"
+              onDropdownToggle={handleDropdownToggle}
+              onStatusChange={handleStatusChange}
+              onViewDetails={handleViewDetails}
+              onWriteReport={handleWriteReport}
+              onEditJob={handleEdit}
+              onApprove={handleApproveJob}
+              onReject={handleRejectJob}
+              currentUser={currentUser}
+              isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
+            />
           )}
 
           {activeTab === 'unassigned' && (
@@ -1751,6 +1822,151 @@ const Job: React.FC<JobProps> = ({
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'approval' && view === 'kanban' && (() => {
+            const approvalColumns = approvalWarehouses
+              .filter((w: any) => w.type === WarehouseType.VEHICLE)
+              .map((vehicle: any) => {
+                const license =
+                  vehicle?.license_plate ||
+                  vehicle?.vehicle?.vehicle_registration ||
+                  vehicle?.vehicle_registration;
+                return {
+                  id: vehicle.id,
+                  title: license ? `${vehicle.name} (${license})` : vehicle.name,
+                  jobs: approvalJobs.filter((j) => j.vehicle_id === vehicle.id),
+                };
+              })
+              .filter((v) => v.id && v.jobs.length > 0);
+
+            return (
+              <JobKanbanBoard
+                columns={approvalColumns}
+                emptyBoardText="ไม่มีงานรออนุมัติ / ถูกปฏิเสธ"
+                emptyColumnText="ไม่มีงาน"
+                accentColorClass="bg-orange-500"
+                onDropdownToggle={handleDropdownToggle}
+                onStatusChange={handleStatusChange}
+                onViewDetails={handleViewDetails}
+                onWriteReport={handleWriteReport}
+                onEditJob={handleEdit}
+                onApprove={handleApproveJob}
+                onReject={handleRejectJob}
+                currentUser={currentUser}
+                isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
+              />
+            );
+          })()}
+
+          {activeTab === 'approval' && view === 'list' && (
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto flex-1 relative">
+                <table className="min-w-[800px] w-full border-b border-slate-200">
+                  <thead className="bg-white">
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {approvalJobs.length > 0 ? (
+                      approvalJobs.map((job, idx) => {
+                        const statusUpper = String(job.api_status || '').toUpperCase();
+                        const isPA = statusUpper === 'PENDING_APPROVAL';
+                        const statusLabel = isPA ? 'รออนุมัติ' : 'ถูกปฏิเสธ';
+                        const statusClass = isPA
+                          ? 'bg-orange-100 text-orange-700'
+                          : 'bg-red-100 text-red-700';
+                        return (
+                          <tr
+                            key={job.id}
+                            className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                          >
+                            <td className="px-4 py-3 text-sm text-slate-700">{idx + 1}</td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              <p className="text-sm font-semibold text-slate-800">
+                                {job.customerName || '-'}
+                              </p>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {formatThaiDate(job.start_time)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {job.technicians?.map((t) => t.name).join(', ') || 'ยังไม่มอบหมาย'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`px-2 py-1 text-xs font-bold rounded-full ${statusClass}`}>
+                                {statusLabel}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  className="text-xs py-1.5 px-3"
+                                  onClick={() => handleViewDetails(job)}
+                                >
+                                  ดูรายละเอียด
+                                </Button>
+                                {isPA && hasPermission('APPROVE_OPERATION') && (
+                                  <>
+                                    <Button
+                                      variant="primary"
+                                      className="text-xs py-1.5 px-3 bg-green-500 hover:bg-green-600"
+                                      onClick={() => handleApproveJob(job.id)}
+                                    >
+                                      อนุมัติ
+                                    </Button>
+                                    <Button
+                                      variant="primary"
+                                      className="text-xs py-1.5 px-3 bg-red-500 hover:bg-red-600"
+                                      onClick={() =>
+                                        Swal.fire({
+                                          title: 'ปฏิเสธงานนี้?',
+                                          input: 'textarea',
+                                          inputLabel: 'เหตุผลการปฏิเสธ',
+                                          inputPlaceholder: 'ระบุเหตุผล...',
+                                          showCancelButton: true,
+                                          confirmButtonText: 'ปฏิเสธ',
+                                          cancelButtonText: 'ยกเลิก',
+                                          confirmButtonColor: '#ef4444',
+                                          inputValidator: (value) =>
+                                            !value || !value.trim() ? 'กรุณาระบุเหตุผล' : null,
+                                        }).then((r) => {
+                                          if (r.isConfirmed && r.value) {
+                                            handleRejectJob(job.id, r.value.trim());
+                                          }
+                                        })
+                                      }
+                                    >
+                                      ปฏิเสธ
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-0 border-b-0 h-0">
+                          <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
+                            <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
+                            <p className="text-lg font-medium">ไม่มีงานรออนุมัติ / ถูกปฏิเสธ</p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
