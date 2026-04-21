@@ -180,6 +180,7 @@ export interface FieldJob {
   work_areas: FieldJobWorkArea[];
   status: JobMainStatus;
   rejection_reason?: string | null;
+  created_by?: string | null;
   start_date?: Date;
   end_dare?: Date
 
@@ -189,4 +190,18 @@ export interface FieldJob {
   team_member?: TeamMember[];
   vehicle?: Vehicle;
   service_report?: ServiceReport;
+}
+
+export interface JobRejectionHistoryEntry {
+  id: string;
+  job_id: string;
+  reason: string;
+  rejected_by?: string | null;
+  created_at: string;
+  rejected_by_user?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    nick_name?: string;
+  } | null;
 }

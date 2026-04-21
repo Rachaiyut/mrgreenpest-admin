@@ -4,6 +4,7 @@ import {
 } from '@/src/types/entity/base.interface';
 import { AuthService } from './auth';
 import { Job } from '../types/entity/job.interface';
+import { JobRejectionHistoryEntry } from '../types/entity/service-report.interface';
 
 class JobService extends AuthService {
   protected path = '/jobs';
@@ -63,6 +64,13 @@ class JobService extends AuthService {
   async reject(id: string, reason: string): Promise<Job> {
     const res = await this.http.post<Job>(`${this.path}/${id}/reject`, { reason });
     return res.data;
+  }
+
+  async getRejectionHistory(id: string): Promise<JobRejectionHistoryEntry[]> {
+    const res = await this.http.get<{ data: JobRejectionHistoryEntry[] }>(
+      `${this.path}/${id}/rejection-history`,
+    );
+    return res.data?.data || [];
   }
 
   async delete(id: string): Promise<void> {

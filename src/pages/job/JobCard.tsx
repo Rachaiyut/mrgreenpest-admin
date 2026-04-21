@@ -162,6 +162,9 @@ const JobCard: React.FC<{
     const isRejected = statusUpper === 'REJECTED';
     const { hasPermission } = usePermissions();
     const canApprove = hasPermission('APPROVE_OPERATION');
+    const canUpdate = hasPermission('UPDATE_OPERATION');
+    const isCreator = !!currentUserId && !!job.created_by && job.created_by === currentUserId;
+    const canEditRejected = isRejected && canUpdate && (isCreator || canApprove);
 
     const handleCheckIn = () => {
       // 💡 ตรวจสอบให้ชัวร์ว่าข้อมูลใน job ใช้คำว่า remark หรือ remarks
@@ -285,6 +288,8 @@ const JobCard: React.FC<{
               const label = JobStatusLabel[key] || key;
               const colorMap: Record<string, string> = {
                 UNASSIGNED: 'bg-amber-100 text-amber-700',
+                PENDING_APPROVAL: 'bg-orange-100 text-orange-700',
+                REJECTED: 'bg-red-100 text-red-700',
                 PENDING: 'bg-yellow-100 text-yellow-700',
                 IN_PROGRESS: 'bg-blue-100 text-blue-700',
                 COMPLETE: 'bg-green-100 text-green-700',
@@ -355,15 +360,15 @@ const JobCard: React.FC<{
               ดูรายละเอียด
             </Button>
 
-            {job.assessment_id && onEditJob && isLeadTechOrTech && (
+            {onEditJob && ((job.assessment_id && isLeadTechOrTech) || canEditRejected) && (
               <button
                 onClick={() => onEditJob(job)}
-                title="แก้ไขงานและใบประเมิน"
+                title={isRejected ? 'แก้ไขแล้วส่งอนุมัติใหม่' : 'แก้ไขงานและใบประเมิน'}
                 className="w-full py-2 text-sm font-semibold rounded-lg shadow-sm flex items-center justify-center gap-1.5 text-white"
                 style={{ backgroundColor: '#3b82f6' }}
               >
                 <PencilIcon className="h-4 w-4" />
-                แก้ไขงานและใบประเมิน
+                {isRejected ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงานและใบประเมิน'}
               </button>
             )}
 

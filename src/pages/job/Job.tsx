@@ -25,6 +25,7 @@ import { isFieldRole, isManagementRole, isExecutiveRole } from '../../utils/role
 
 // ===== Hooks =====
 import { useCurrentUser } from '../../hooks/useCurrentUser';
+import { usePermissions } from '../../hooks/usePermissions';
 
 // ===== Components (Features) =====
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
@@ -112,6 +113,7 @@ const Job: React.FC<JobProps> = ({
 }) => {
   const authUser = useCurrentUser();
   const currentUser = authUser as unknown as User;
+  const { hasPermission } = usePermissions();
 
   // Local state
   const [jobs, setJobs] = useState<FieldJob[]>(initialJobs || []);
@@ -270,6 +272,8 @@ const Job: React.FC<JobProps> = ({
               service_report: job.service_report || reportsData.find((r) => r.job_id === job.id),
               remarks: job.remark,
               operation_details: job.operation_details,
+              rejection_reason: job.rejection_reason,
+              created_by: job.created_by,
               invoice_id: job.invoice_id,
               invoice: job.invoice,
             } as unknown as FieldJob;
@@ -328,6 +332,8 @@ const Job: React.FC<JobProps> = ({
             vehicle_id: null,
             remarks: job.remark,
             operation_details: job.operation_details,
+            rejection_reason: job.rejection_reason,
+            created_by: job.created_by,
             invoice_id: job.invoice_id,
             invoice: job.invoice,
           } as unknown as FieldJob;
@@ -429,6 +435,44 @@ const Job: React.FC<JobProps> = ({
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถปฏิเสธงานได้', 'error');
+    }
+  };
+
+  const handleViewRejectionHistory = async (jobId: string) => {
+    try {
+      const history = await JobApi.getRejectionHistory(jobId);
+      if (!history.length) {
+        Swal.fire('ไม่มีประวัติ', 'ยังไม่มีประวัติการปฏิเสธสำหรับงานนี้', 'info');
+        return;
+      }
+      const rows = history
+        .map((h) => {
+          const who = h.rejected_by_user
+            ? [h.rejected_by_user.first_name, h.rejected_by_user.last_name].filter(Boolean).join(' ') ||
+              h.rejected_by_user.nick_name ||
+              '-'
+            : '-';
+          const when = h.created_at ? new Date(h.created_at).toLocaleString('th-TH') : '-';
+          const escaped = (h.reason || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+          return `
+            <div class="text-left border border-slate-200 rounded-lg p-3 mb-2 bg-slate-50">
+              <div class="flex justify-between text-xs text-slate-500 mb-1">
+                <span>โดย: ${who}</span>
+                <span>${when}</span>
+              </div>
+              <div class="text-sm text-slate-800">${escaped}</div>
+            </div>`;
+        })
+        .join('');
+      Swal.fire({
+        title: 'ประวัติการปฏิเสธ',
+        html: `<div class="max-h-80 overflow-y-auto">${rows}</div>`,
+        width: 600,
+        confirmButtonText: 'ปิด',
+      });
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถโหลดประวัติได้', 'error');
     }
   };
 
@@ -1106,13 +1150,26 @@ const Job: React.FC<JobProps> = ({
         { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(selectedJob) },
       ];
 
+    const isRejectedStatus = status === JobStatus.Rejected;
+    const isCreatorOfSelected =
+      !!currentUser?.id && !!(selectedJob as FieldJob).created_by &&
+      (selectedJob as FieldJob).created_by === currentUser.id;
+    const canEditRejectedDropdown =
+      isRejectedStatus && hasPermission('UPDATE_OPERATION') &&
+      (isCreatorOfSelected || hasPermission('APPROVE_OPERATION'));
+
     if (
       status === JobStatus.Planned ||
       status === JobStatus.Pending ||
       status === JobStatus.InProgress ||
-      status === JobStatus.Paused
+      status === JobStatus.Paused ||
+      canEditRejectedDropdown
     ) {
-      actions.push({ label: 'แก้ไขงานและใบประเมิน', icon: PencilIcon, onClick: () => handleEdit(selectedJob) });
+      actions.push({
+        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงานและใบประเมิน',
+        icon: PencilIcon,
+        onClick: () => handleEdit(selectedJob),
+      });
     }
 
     if (
@@ -1138,6 +1195,14 @@ const Job: React.FC<JobProps> = ({
         icon: XCircleIcon,
         onClick: () => handleCancel(selectedJob),
         isDanger: true,
+      });
+    }
+
+    if (status === JobStatus.Rejected || status === JobStatus.PendingApproval) {
+      actions.push({
+        label: 'ดูประวัติการปฏิเสธ',
+        icon: ClipboardDocumentListIcon,
+        onClick: () => handleViewRejectionHistory(selectedJob.id),
       });
     }
 
