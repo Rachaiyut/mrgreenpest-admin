@@ -2,6 +2,7 @@
 import Swal from 'sweetalert2';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import imageCompression from 'browser-image-compression';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Absolute Types =====
@@ -886,18 +887,36 @@ const Job: React.FC<JobProps> = ({
     paymentSlip?: File | null,
   ) => {
     try {
-      let job = jobs.find((j) => j.id === jobId);
-      if (!job) {
-        // Fallback: job might come from report tab
-        job = jobForReport as FieldJob;
-        if (!job || job.id !== jobId) return;
-      }
+      // ใช้ jobForReport (ซึ่งเพิ่งโหลด service_report สดมาใน handleWriteReport) เป็นหลัก
+      // กัน stale service_report จาก jobs state ที่ endpoint /vehicles/jobs อาจไม่ได้ populate
+      let job =
+        (jobForReport && (jobForReport as FieldJob).id === jobId
+          ? (jobForReport as FieldJob)
+          : undefined) || jobs.find((j) => j.id === jobId);
+      if (!job) return;
 
       let paymentSlipFileId: string | undefined;
 
+      // Compress image ก่อน upload เพื่อลดขนาด + เวลา
+      const compressOptions = {
+        maxSizeMB: 1.5,          // target ≤ 1.5MB
+        maxWidthOrHeight: 1920,  // limit dimensions
+        useWebWorker: true,
+        initialQuality: 0.8,
+      };
+      const compressIfImage = async (file: File): Promise<File> => {
+        if (!file.type.startsWith('image/')) return file;
+        try {
+          return await imageCompression(file, compressOptions);
+        } catch {
+          return file; // fallback ถ้า compress ล้ม
+        }
+      };
+
       if (paymentSlip) {
+        const compressedSlip = await compressIfImage(paymentSlip);
         const uploadedSlip = await StorageApi.upload({
-          file: paymentSlip,
+          file: compressedSlip,
           path: `jobs/${jobId}/payment-slips`,
           provider: 'local',
           type: 'image',
@@ -929,16 +948,24 @@ const Job: React.FC<JobProps> = ({
         reportId = createdObj?.data?.id || (created as unknown as Record<string, string>)?.id;
       }
 
-      // Upload blueprint images via entity_type
+      // Compress รูปพร้อมกัน + ส่ง multiple upload request เดียว (ลด HTTP overhead)
       if (files && files.length > 0 && reportId) {
-        for (const file of files) {
-          await StorageApi.upload({
-            file,
+        try {
+          const compressedFiles = await Promise.all(files.map(compressIfImage));
+          await StorageApi.uploadMultiple({
+            files: compressedFiles,
             path: `service-reports/${reportId}/blueprints`,
             entity_type: 'service_report_blueprint',
             entity_id: reportId,
             type: 'image',
             visibility: 'private',
+          });
+        } catch (err) {
+          console.error('Failed to upload blueprint images:', err);
+          Swal.fire({
+            icon: 'warning',
+            title: 'อัปโหลดรูปไม่สำเร็จ',
+            text: 'บันทึกรายงานแล้ว แต่อัปโหลดรูปล้มเหลว — กรุณาแก้ไขรายงานและแนบรูปอีกครั้ง',
           });
         }
       }
