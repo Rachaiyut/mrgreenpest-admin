@@ -15,6 +15,7 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
 import { useCurrentUser } from '../../../hooks/useCurrentUser';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 // ===== Components =====
 import { IssueSummaryModal } from '../../../components/features/inventory/issue-summary/IssueSummaryModal';
@@ -64,6 +65,11 @@ const getStatusBadge = (status?: string) => {
 
 const IssueSummaryPage: React.FC = () => {
   const currentUser = useCurrentUser();
+  const { hasPermission } = usePermissions();
+  const canApproveStock =
+    hasPermission('APPROVE_ISSUE_SUMMARY') ||
+    hasPermission('APPROVE_STOCK_ISSUE_SUMMARY');
+  const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
   const isTechRole = isFieldRole(currentUser?.roleType);
 
   const {
@@ -159,6 +165,8 @@ const IssueSummaryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [openDropdownCategory, setOpenDropdownCategory] = useState<'STOCK' | 'EXPENSE' | null>(null);
+  const [openDropdownApprovalStatus, setOpenDropdownApprovalStatus] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
     left: number;
@@ -220,12 +228,7 @@ const IssueSummaryPage: React.FC = () => {
       );
     }
 
-    // Filter by tab
-    if (activeTab === 'stock') {
-      filtered = filtered.filter((s) => s.items && s.items.length > 0);
-    } else if (activeTab === 'expense') {
-      filtered = filtered.filter((s) => s.expense_items && s.expense_items.length > 0);
-    }
+    // Tab filter: keep all summaries (tab-based row-level filter applied later in flatten step)
 
     // Filter by creator
     if (creatorFilter !== 'all') {
@@ -269,10 +272,48 @@ const IssueSummaryPage: React.FC = () => {
     }
 
     return filtered;
-  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, activeTab, productMap, isTechRole, currentUser?.id]);
+  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap, isTechRole, currentUser?.id]);
 
-  const totalItems = filteredSummaries.length;
-  const paginatedSummaries = filteredSummaries.slice(
+  // Option B — flatten แต่ละใบเบิกเป็นหลายแถวตาม approval category
+  // - ไม่มี approval records → 1 แถว (category = null)
+  // - มี approval records → 1 แถวต่อ 1 record (STOCK / EXPENSE แยก)
+  type SummaryRow = {
+    summary: StockIssueSummaryType;
+    category: 'STOCK' | 'EXPENSE' | null;
+    approvalStatus?: string | null;
+  };
+
+  const flattenedRows: SummaryRow[] = useMemo(() => {
+    const rows: SummaryRow[] = [];
+    for (const s of filteredSummaries) {
+      const approvals = (s as any).approvals as Array<{ category: 'STOCK' | 'EXPENSE'; status: string }> | undefined;
+      if (!approvals || approvals.length === 0) {
+        rows.push({ summary: s, category: null });
+      } else {
+        for (const a of approvals) {
+          rows.push({ summary: s, category: a.category, approvalStatus: a.status });
+        }
+      }
+    }
+
+    // Filter ตาม tab (row-level)
+    if (activeTab === 'stock') {
+      return rows.filter((r) =>
+        r.category === 'STOCK' ||
+        (r.category === null && (r.summary.items?.length || 0) > 0),
+      );
+    }
+    if (activeTab === 'expense') {
+      return rows.filter((r) =>
+        r.category === 'EXPENSE' ||
+        (r.category === null && (r.summary.expense_items?.length || 0) > 0),
+      );
+    }
+    return rows;
+  }, [filteredSummaries, activeTab]);
+
+  const totalItems = flattenedRows.length;
+  const paginatedRows = flattenedRows.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -287,6 +328,65 @@ const IssueSummaryPage: React.FC = () => {
     setIsDetailsModalOpen(true);
   };
 
+  const handleRowApprove = async (
+    summaryId: string,
+    category: 'STOCK' | 'EXPENSE',
+  ) => {
+    const title = category === 'STOCK' ? 'อนุมัติเบิกสินค้า?' : 'อนุมัติค่าใช้จ่าย?';
+    const confirm = await Swal.fire({
+      title,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!confirm.isConfirmed) return;
+    try {
+      await StockIssueSummaryApi.approve(summaryId, {
+        status: 'APPROVED',
+        category,
+      });
+      Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
+      await fetchData(['stockIssueSummaries']);
+    } catch (error) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
+    }
+  };
+
+  const handleRowReject = async (
+    summaryId: string,
+    category: 'STOCK' | 'EXPENSE',
+  ) => {
+    const title = category === 'STOCK' ? 'ปฏิเสธเบิกสินค้า?' : 'ปฏิเสธค่าใช้จ่าย?';
+    const r = await Swal.fire({
+      title,
+      text: 'การปฏิเสธจะยกเลิกใบเบิกทั้งใบ',
+      input: 'textarea',
+      inputLabel: 'เหตุผลการปฏิเสธ',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ปฏิเสธ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+    try {
+      await StockIssueSummaryApi.approve(summaryId, {
+        status: 'REJECTED',
+        category,
+        remark: r.value.trim(),
+      });
+      Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1500, showConfirmButton: false });
+      await fetchData(['stockIssueSummaries']);
+    } catch (error) {
+      const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
+    }
+  };
+
   const handleEditSummary = (summary: StockIssueSummaryType) => {
     setSelectedSummary(summary);
     setModalMode('edit'); setIsModalOpen(true);
@@ -295,14 +395,20 @@ const IssueSummaryPage: React.FC = () => {
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
-    summaryId: string
+    summaryId: string,
+    category?: 'STOCK' | 'EXPENSE' | null,
+    approvalStatus?: string | null,
   ) => {
     event.stopPropagation();
-    if (openDropdownId === summaryId) {
+    if (openDropdownId === summaryId && openDropdownCategory === (category ?? null)) {
       setOpenDropdownId(null);
+      setOpenDropdownCategory(null);
+      setOpenDropdownApprovalStatus(null);
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setOpenDropdownId(summaryId);
+      setOpenDropdownCategory(category ?? null);
+      setOpenDropdownApprovalStatus(approvalStatus ?? null);
       setDropdownPosition({
         top: buttonRect.bottom + window.scrollY,
         left: buttonRect.right + window.scrollX,
@@ -348,8 +454,38 @@ const IssueSummaryPage: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const getActionItems = (summary: StockIssueSummaryType) => {
+  const getActionItems = (
+    summary: StockIssueSummaryType,
+    category?: 'STOCK' | 'EXPENSE' | null,
+    approvalStatus?: string | null,
+  ) => {
+    const canApproveThisRow =
+      approvalStatus === 'PENDING' &&
+      ((category === 'STOCK' && canApproveStock) ||
+        (category === 'EXPENSE' && canApproveExpense));
+
+    // ช่าง (LEAD_TECH/TECH) เห็นได้แค่ "ดูรายละเอียด" ไม่ให้แก้/เปลี่ยนสถานะ/ลบ
     const actions = [
+      ...(canApproveThisRow
+        ? [
+            {
+              label: 'อนุมัติ',
+              icon: CheckCircleIcon,
+              color: 'text-green-600',
+              hoverBg: 'hover:bg-green-50',
+              onClick: () =>
+                handleRowApprove(summary.id as string, category as 'STOCK' | 'EXPENSE'),
+            },
+            {
+              label: 'ปฏิเสธ',
+              icon: TrashIcon,
+              color: 'text-red-600',
+              hoverBg: 'hover:bg-red-50',
+              onClick: () =>
+                handleRowReject(summary.id as string, category as 'STOCK' | 'EXPENSE'),
+            },
+          ]
+        : []),
       {
         label: 'ดูรายละเอียด',
         icon: EyeIcon,
@@ -357,35 +493,43 @@ const IssueSummaryPage: React.FC = () => {
         hoverBg: 'hover:bg-slate-50',
         onClick: () => handleViewDetails(summary),
       },
-      {
-        label: 'แก้ไข',
-        icon: PencilIcon,
-        color: 'text-blue-600',
-        hoverBg: 'hover:bg-blue-50',
-        onClick: () => handleEditSummary(summary),
-      },
-      ...(summary.status !== 'COMPLETED' ? [{
-        label: 'เปลี่ยนสถานะ',
-        icon: CheckCircleIcon,
-        color: 'text-slate-700',
-        hoverBg: 'hover:bg-slate-50',
-        onClick: () => handleStatusClick(summary),
-      }] : []),
-      {
-        label: 'ลบ',
-        icon: TrashIcon,
-        color: 'text-red-600',
-        hoverBg: 'hover:bg-red-50',
-        onClick: () => handleDelete(summary.id),
-      },
+      ...(!isTechRole
+        ? [
+            {
+              label: 'แก้ไข',
+              icon: PencilIcon,
+              color: 'text-blue-600',
+              hoverBg: 'hover:bg-blue-50',
+              onClick: () => handleEditSummary(summary),
+            },
+            ...(summary.status !== 'COMPLETED'
+              ? [
+                  {
+                    label: 'เปลี่ยนสถานะ',
+                    icon: CheckCircleIcon,
+                    color: 'text-slate-700',
+                    hoverBg: 'hover:bg-slate-50',
+                    onClick: () => handleStatusClick(summary),
+                  },
+                ]
+              : []),
+            {
+              label: 'ลบ',
+              icon: TrashIcon,
+              color: 'text-red-600',
+              hoverBg: 'hover:bg-red-50',
+              onClick: () => handleDelete(summary.id),
+            },
+          ]
+        : []),
     ];
 
     return actions;
   };
 
   return (
-    <>
-      <div className="p-4 sm:p-6 lg:p-8 flex flex-col min-h-[calc(100vh-64px)] space-y-4 max-w-full">
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="p-4 sm:p-6 lg:p-8 flex flex-col flex-1 min-h-0 gap-4 max-w-full">
         {/* --- Header: Title + Create Button --- */}
         <div className="flex items-center justify-between">
           <div>
@@ -483,59 +627,130 @@ const IssueSummaryPage: React.FC = () => {
         </Card>
 
         {/* --- Desktop View: Table --- */}
-        <Card className="!p-0 w-full flex flex-col overflow-hidden border border-slate-200 flex-1 shadow-sm relative">
-          <div className="overflow-auto w-full flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200">
+        <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden relative min-h-0">
+          <div className="overflow-auto flex-1 relative min-h-0">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
               <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-16">ลำดับ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่เบิก</th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                    {activeTab === 'expense' ? 'รายการค่าใช้จ่าย' : activeTab === 'stock' ? 'รายการสินค้า' : 'จำนวนรายการ'}
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                    {activeTab === 'expense' ? 'ยอดค่าใช้จ่าย' : activeTab === 'stock' ? 'มูลค่าสินค้า' : 'จำนวนเงินที่เบิก'}
-                  </th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
+                  {activeTab !== 'expense' && (
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้าที่เบิกเกิน</th>
+                  )}
+                  {activeTab !== 'stock' && (
+                    <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนเงินที่เบิก</th>
+                  )}
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
                 </tr>
               </thead>
               
-              {!isLoading && paginatedSummaries.length > 0 && (
+              {!isLoading && paginatedRows.length > 0 && (
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {paginatedSummaries.map((summary, index) => {
+                  {paginatedRows.map((row, index) => {
+                    const summary = row.summary;
                     const warehouse = warehouseMap.get(summary.warehouse_id);
-                    
+
                     const stockCount = summary.items?.length || 0;
                     const expenseCount = summary.expense_items?.length || 0;
 
-                    // --- คำนวณมูลค่าสินค้ารวม ---
-                    const totalGoodsAmount =
-                      summary.items?.reduce((sum, item) => {
-                        const product = productMap.get(item.product_id);
-                        return (
-                          sum + (product ? product.price * item.quantity : 0)
-                        );
-                      }, 0) || 0;
+                    // รวมจำนวนสินค้าที่เบิก (quantity) แทนการคำนวณมูลค่า
+                    const totalGoodsQuantity =
+                      summary.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) || 0;
 
-                    // --- คำนวณมูลค่าค่าใช้จ่ายรวม ---
                     const totalExpenseAmount =
-                      summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
+                      summary.expense_items?.reduce(
+                        (sum: number, exp: UserExpense) => sum + Number(exp.amount || 0),
+                        0,
+                      ) || 0;
 
-                    // --- แสดงตาม tab ---
-                    const displayCount = activeTab === 'stock' ? stockCount : activeTab === 'expense' ? expenseCount : stockCount + expenseCount;
-                    const displayAmount = activeTab === 'stock' ? totalGoodsAmount : activeTab === 'expense' ? totalExpenseAmount : totalGoodsAmount + totalExpenseAmount;
+                    // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่ระบุ
+                    const showStockOnly = row.category === 'STOCK';
+                    const showExpenseOnly = row.category === 'EXPENSE';
 
-                    const requesterName = summary.requester_id
-                      ? userMap.get(summary.requester_id) || '-'
-                      : '-';
-                    
-                    const statusBadge = getStatusBadge(summary.status);
+                    const displayCount = showStockOnly
+                      ? stockCount
+                      : showExpenseOnly
+                        ? expenseCount
+                        : activeTab === 'stock'
+                          ? stockCount
+                          : activeTab === 'expense'
+                            ? expenseCount
+                            : stockCount + expenseCount;
+
+                    const _displayAmount = showStockOnly
+                      ? totalGoodsQuantity
+                      : showExpenseOnly
+                        ? totalExpenseAmount
+                        : activeTab === 'stock'
+                          ? totalGoodsQuantity
+                          : activeTab === 'expense'
+                            ? totalExpenseAmount
+                            : totalExpenseAmount;
+                    void _displayAmount;
+
+                    // Prefer nested requester from backend → fallback to userMap → '-'
+                    const nestedRequester = (summary as any).requester;
+                    const nestedRequesterName = nestedRequester
+                      ? [nestedRequester.first_name, nestedRequester.last_name].filter(Boolean).join(' ').trim() ||
+                        nestedRequester.nick_name ||
+                        ''
+                      : '';
+                    const requesterName = nestedRequesterName ||
+                      (summary.requester_id ? userMap.get(summary.requester_id) || '-' : '-');
+
+                    // Status badge: ถ้า row แยกตาม category → ใช้สถานะของ approval นั้น
+                    let badgeStatusText = '';
+                    let badgeStatusClass = 'bg-slate-100 text-slate-700 border-slate-200';
+                    if (row.category && row.approvalStatus) {
+                      const apMap: Record<string, { text: string; className: string }> = {
+                        PENDING: { text: 'รออนุมัติ', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+                        APPROVED: { text: 'อนุมัติแล้ว', className: 'bg-green-100 text-green-700 border-green-200' },
+                        REJECTED: { text: 'ถูกปฏิเสธ', className: 'bg-red-100 text-red-700 border-red-200' },
+                        VERIFIED: { text: 'ตรวจสอบแล้ว', className: 'bg-blue-100 text-blue-700 border-blue-200' },
+                      };
+                      const meta = apMap[row.approvalStatus] || { text: row.approvalStatus, className: 'bg-slate-100 text-slate-700 border-slate-200' };
+                      badgeStatusText = meta.text;
+                      badgeStatusClass = meta.className;
+                    } else {
+                      const b = getStatusBadge(summary.status);
+                      badgeStatusText = b.text;
+                      badgeStatusClass = b.className;
+                    }
+
+                    // ประเภท (column ใหม่ ก่อนสถานะ)
+                    const typeText =
+                      row.category === 'STOCK'
+                        ? 'สินค้า/สารเคมี'
+                        : row.category === 'EXPENSE'
+                          ? 'ค่าใช้จ่าย'
+                          : '-';
+                    const typeClass =
+                      row.category === 'STOCK'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : row.category === 'EXPENSE'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200';
+
+                    // แยก stock / expense value ต่อ column
+                    // - category=STOCK → ใส่ที่ column มูลค่าสินค้า เท่านั้น
+                    // - category=EXPENSE → ใส่ที่ column จำนวนเงินที่เบิก เท่านั้น
+                    // - ไม่มี category (ใบไม่เกิน limit) → ใส่ทั้ง 2 column ตามค่าจริง
+                    const showStockCell = !row.category || row.category === 'STOCK';
+                    const showExpenseCell = !row.category || row.category === 'EXPENSE';
+
+                    const fmtMoney = (v: number) =>
+                      `฿${v.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`;
 
                     return (
-                      <tr key={summary.id} className="hover:bg-slate-50">
+                      <tr key={`${summary.id}-${row.category || 'all'}`} className="hover:bg-slate-50">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
@@ -549,12 +764,20 @@ const IssueSummaryPage: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {displayCount}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                          ฿{displayAmount.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
+                        {activeTab !== 'expense' && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                            {showStockCell ? (
+                              <span>{totalGoodsQuantity.toLocaleString('th-TH')} <span className="text-xs text-slate-500">ชิ้น</span></span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        )}
+                        {activeTab !== 'stock' && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                            {showExpenseCell ? fmtMoney(totalExpenseAmount) : <span className="text-slate-300">—</span>}
+                          </td>
+                        )}
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {warehouse?.name || '-'}
                         </td>
@@ -562,26 +785,31 @@ const IssueSummaryPage: React.FC = () => {
                           {requesterName}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${statusBadge.className}`}>
-                            {statusBadge.text}
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${typeClass}`}>
+                            {typeText}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${badgeStatusClass}`}>
+                            {badgeStatusText}
                           </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
-                          <div className="inline-block text-left">
-                            <Button
-                              variant="icon"
-                              data-summary-id={summary.id}
-                              onClick={(e) =>
-                                handleDropdownToggle(e, summary.id)
-                              }
-                            >
-                              <span className="sr-only">จัดการ</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
+                          <Button
+                            variant="icon"
+                            data-summary-id={summary.id}
+                            onClick={(e) =>
+                              handleDropdownToggle(
+                                e,
+                                summary.id,
+                                row.category,
+                                row.approvalStatus || null,
+                              )
+                            }
+                          >
+                            <span className="sr-only">จัดการ</span>
+                            <ManageIcon className="h-5 w-5" aria-hidden="true" />
+                          </Button>
                         </td>
                       </tr>
                     );
@@ -599,7 +827,7 @@ const IssueSummaryPage: React.FC = () => {
             )}
 
             {/* --- Empty State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
-            {!isLoading && paginatedSummaries.length === 0 && (
+            {!isLoading && paginatedRows.length === 0 && (
               <div className="flex-grow flex flex-col items-center justify-center text-slate-400 min-h-[40vh]">
                 <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
                 <p className="text-lg font-medium">ไม่พบข้อมูลสรุปการเบิก</p>
@@ -609,7 +837,7 @@ const IssueSummaryPage: React.FC = () => {
           </div>
 
           {!isLoading && totalItems > 0 && (
-            <div className="border-t border-slate-200 bg-white mt-auto sticky bottom-0 z-20 w-full">
+            <div className="mt-auto border-t border-slate-200">
               <Pagination
                 currentPage={currentPage}
                 itemsPerPage={itemsPerPage}
@@ -619,7 +847,7 @@ const IssueSummaryPage: React.FC = () => {
               />
             </div>
           )}
-        </Card>
+        </div>
       </div>
 
       {openDropdownId &&
@@ -644,7 +872,7 @@ const IssueSummaryPage: React.FC = () => {
                 );
                 if (!summary) return null;
 
-                return getActionItems(summary).map((action, index) => (
+                return getActionItems(summary, openDropdownCategory, openDropdownApprovalStatus).map((action, index) => (
                   <button
                     key={index}
                     onClick={(e) => {
@@ -713,7 +941,7 @@ const IssueSummaryPage: React.FC = () => {
           </div>
         }
       />
-    </>
+    </div>
   );
 };
 

@@ -244,11 +244,10 @@ export const EditRoleModal: FC<EditRoleModalProps> = ({
                             const perm = permissions.find(
                               (p) => p.name === permName
                             );
-                            // Some actions might not apply to some modules (e.g. APPROVE only for some)
-                            // Ideally we check if perm exists. If not, maybe show disabled or empty.
-                            // But since we mapped modules that mostly support CRUD, we'll assume it exists if in DB.
-
-                            const isAvailable = !!perm;
+                            // skipActions: force action column to be unavailable (gray) for this row
+                            // ใช้กรณี parent row ที่อยากปิด action บางตัว (ย้ายไป sub-row แทน)
+                            const isSkipped = item.skipActions?.includes(actionCol.action);
+                            const isAvailable = !!perm && !isSkipped;
                             const isChecked = perm
                               ? selectedPermissionIds.has(perm.id)
                               : false;

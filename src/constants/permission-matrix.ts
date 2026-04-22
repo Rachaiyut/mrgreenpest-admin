@@ -11,6 +11,9 @@ export const PERMISSION_ACTIONS = [
 export interface PermissionRow {
   label: string;
   module: string; // Maps to suffix in permission name (e.g. 'SALES' -> READ_SALES)
+  // Actions ที่ไม่ต้องการให้แสดง checkbox (จะเป็นเทากดไม่ได้) — ใช้กรณี parent row ที่อยากปิด action บางตัว
+  // เช่น ISSUE_SUMMARY row ปิด APPROVE เพราะย้ายไปใช้ sub-row 2 หมวดแทน
+  skipActions?: string[];
 }
 
 export interface PermissionGroup {
@@ -68,6 +71,18 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       {
         label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         module: 'ISSUE_SUMMARY',
+        // ปิด APPROVE + NOTIFY ที่ parent row — ย้ายไปอยู่ใน sub-row 2 หมวดแทน (STOCK + EXPENSE)
+        skipActions: ['APPROVE', 'NOTIFY'],
+      },
+      {
+        // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_SUMMARY
+        label: '└ อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
+        module: 'STOCK_ISSUE_SUMMARY',
+      },
+      {
+        // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_SUMMARY (SUPERADMIN เท่านั้น)
+        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต (เฉพาะหัวหน้าผู้ดูแลระบบ)',
+        module: 'EXPENSE_ISSUE_SUMMARY',
       },
       { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },
       { label: 'ปรับปรุง Stock', module: 'ADJUSTMENT_NOTE' },

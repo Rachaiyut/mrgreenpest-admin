@@ -35,6 +35,18 @@ class StockIssueSummaryService extends AuthService {
     return res.data;
   }
 
+  async approve(
+    id: string,
+    payload: {
+      status: 'APPROVED' | 'REJECTED';
+      remark?: string;
+      category?: 'STOCK' | 'EXPENSE';
+    },
+  ): Promise<StockIssueSummary> {
+    const res = await this.http.patch<StockIssueSummary>(`${this.path}/${id}/approve`, payload);
+    return res.data;
+  }
+
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
