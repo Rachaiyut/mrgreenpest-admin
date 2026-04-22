@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { Button, Input } from '../../common/FormControls';
 import DatePicker from '../../common/BuddhistDatePicker';
@@ -43,14 +44,35 @@ export const DailyClosureCloseModal: React.FC<DailyClosureCloseModalProps> = ({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Option C: อนุญาตให้ปิดงานได้แม้ยังมีใบเบิกรออนุมัติ (warning เท่านั้น)
   const canSubmit = (() => {
-    if (hasPendingStockIssue) return false;
     if (!hasStockIssueSummary && !hasNoStockIssue) return false;
     return true;
   })();
 
+  const confirmSubmit = async () => {
+    if (hasPendingStockIssue) {
+      const r = await Swal.fire({
+        icon: 'warning',
+        title: 'มีใบเบิกรออนุมัติ',
+        html:
+          'ยังมีใบเบิกที่รอการอนุมัติจากหัวหน้าผู้ดูแลระบบ/ผู้ดูแลระบบ<br/>' +
+          'ระบบจะตัดสต็อกเมื่อได้รับอนุมัติครบเท่านั้น<br/><br/>' +
+          'ต้องการยืนยันจบงานต่อไหม?',
+        showCancelButton: true,
+        confirmButtonText: 'จบงานต่อ',
+        cancelButtonText: 'รอดำเนินการ',
+        confirmButtonColor: '#10b981',
+      });
+      if (!r.isConfirmed) return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit || isSubmitting) return;
+    const confirmed = await confirmSubmit();
+    if (!confirmed) return;
     setIsSubmitting(true);
     try {
       const payload: CloseDailyJobClosurePayload = {
@@ -251,7 +273,7 @@ export const DailyClosureCloseModal: React.FC<DailyClosureCloseModalProps> = ({
             </div>
             <div>
               <p className="text-sm font-semibold text-amber-800">มีใบเบิกรออนุมัติ</p>
-              <p className="text-xs text-amber-600 mt-0.5">สามารถปิดย้อนหลังได้เมื่อได้รับอนุมัติ</p>
+              <p className="text-xs text-amber-600 mt-0.5">จบงานได้ตอนนี้ — หัวหน้าผู้ดูแลระบบจะอนุมัติภายหลัง</p>
             </div>
           </div>
         )}
