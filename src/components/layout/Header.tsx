@@ -1,5 +1,5 @@
 import React from 'react';
-import { MenuIcon, ChevronDownIcon } from '@/src/assets/icons/Icons';
+import { MenuIcon } from '@/src/assets/icons/Icons';
 import { Button } from '../common/FormControls';
 import { useCurrentUser } from '@/src/hooks/useCurrentUser';
 import { NotificationMenu } from './NotificationMenu';
@@ -46,7 +46,6 @@ export const Header: React.FC<HeaderProps> = ({ toggleSidebar, onLogout }) => {
                     {currentUser.firstName + ' ' + (currentUser.lastName || '')}
                   </span>
                 </div>
-                <ChevronDownIcon className="hidden sm:block h-4 w-4 text-slate-500" />
               </Button>
               {/* Dropdown menu can be added here */}
             </div>
