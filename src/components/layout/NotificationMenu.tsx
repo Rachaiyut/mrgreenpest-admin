@@ -168,7 +168,7 @@ export const NotificationMenu: React.FC = () => {
                             <span className="h-2 w-2 rounded-full bg-blue-500 mt-1.5"></span>
                           )}
                         </div>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                        <p className="text-xs text-slate-500 mt-1 whitespace-pre-wrap break-words">
                           {notification.message}
                         </p>
                         <span className="text-[10px] text-slate-400 mt-2">

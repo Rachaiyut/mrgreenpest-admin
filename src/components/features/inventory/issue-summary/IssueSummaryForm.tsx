@@ -130,6 +130,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
+  const vehicleSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ==========================================
   // Logic: User & Role
@@ -193,9 +194,15 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
   // ==========================================
   // 2. DATA FETCHING & LOGIC
   // ==========================================
-  const fetchWarehouses = useCallback(async () => {
+  const fetchWarehouses = useCallback(async (search?: string) => {
     try {
-      const res = await WarehouseApi.getWarehousesWithItems();
+      // Filter เฉพาะประเภท VEHICLE + รองรับ search จาก dropdown
+      const res = await WarehouseApi.getWarehousesWithItems({
+        type: WarehouseType.VEHICLE,
+        limit: 10,
+        page: 1,
+        ...(search && search.trim() ? { search: search.trim() } : {}),
+      } as any);
       if (res && res.data) {
         const allWarehouses = res.data;
         const newStockMap = new Map<string, Map<string, number>>();
@@ -508,6 +515,9 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
         recipient_id: recipientId || undefined,
         purpose: isEditMode ? undefined : 'เบิกสินค้า/อุปกรณ์',
         notes: notes || undefined,
+        // ส่ง notes เป็น over_limit_reason เมื่อเกินลิมิต (backend require field นี้)
+        over_limit_reason:
+          (isOverLimit || isAnyItemOverLimit) && notes.trim() ? notes.trim() : undefined,
         status: finalStatus,
         items: items as IssueItemSummaryType[],
         expenses: validExpenses.map((item) => ({
@@ -628,6 +638,11 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   options={vehicleWarehouseOptions}
                   value={warehouseId}
                   onChange={(v) => { setWarehouseId(v); if (v) setFormErrors((prev) => ({ ...prev, warehouseId: '' })); }}
+                  onSearchChange={(q) => {
+                    // Debounce backend search (300ms)
+                    if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
+                    vehicleSearchTimerRef.current = setTimeout(() => fetchWarehouses(q), 300);
+                  }}
                   placeholder="เลือกรถบริการ..."
                   required
                   className={formErrors.warehouseId ? 'border-red-500' : ''}

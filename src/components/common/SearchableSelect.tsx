@@ -160,9 +160,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           <div
             ref={wrapperRef}
             style={dropdownStyle}
-            className="max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none text-sm"
+            className="max-h-60 overflow-auto rounded-md bg-white text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none text-sm"
           >
-            <div className="sticky top-0 bg-white px-2 py-1.5 border-b border-gray-100">
+            <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-slate-200">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                   <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />

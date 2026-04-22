@@ -17,6 +17,7 @@ export interface WarehouseQuery extends IBaseQuery {
   code?: string;
   name?: string;
   type?: WarehouseType;
+  types?: string[] | string;
 }
 export interface WithdrawalLimit {
   product_id: string;
@@ -216,6 +217,24 @@ export interface IssueItemSummary extends IBase {
   unit: string;
 }
 
+export interface ApprovalHistoryEntry {
+  id: string;
+  document_id: string;
+  document_type: string;
+  category: 'STOCK' | 'EXPENSE';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'VERIFIED';
+  approved_by?: string | null;
+  approved_at?: string | null;
+  remark?: string | null;
+  created_at?: string;
+  approver?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    nick_name?: string;
+  } | null;
+}
+
 export interface StockIssueSummary extends IBase {
   warehouse_id: string;
   notes?: string;
@@ -224,9 +243,19 @@ export interface StockIssueSummary extends IBase {
   requester_id?: string;
   created_by?: string;
   issue_date?: string;
+  is_over_limit?: boolean;
+  is_expense_over_limit?: boolean;
+  over_limit_reason?: string | null;
   items?: IssueItemSummary[];
   expense_item?: UserExpense[];
   expense_items?: UserExpense[];
+  approvals?: ApprovalHistoryEntry[];
+  requester?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    nick_name?: string;
+  } | null;
 }
 
 export interface ExpenseItem {

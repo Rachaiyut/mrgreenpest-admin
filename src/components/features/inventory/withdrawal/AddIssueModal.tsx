@@ -98,6 +98,8 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   const [localStockMap, setLocalStockMap] = useState<Map<string, Map<string, number>>>(new Map());
 
   const goodsFormRef = useRef<HTMLFormElement>(null);
+  const sourceSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vehicleSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
 
@@ -149,38 +151,60 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   // ==========================================
   // 🌟 Logic: ดึงข้อมูลคลังสินค้า & เซ็ตค่าเริ่มต้น
   // ==========================================
-  const fetchWarehouses = useCallback(async () => {
-    try {
-      const res = await WarehouseApi.getWarehousesWithItems();
-      if (res && res.data) {
-        const allWarehouses = res.data;
-        const newStockMap = new Map<string, Map<string, number>>();
-
-        allWarehouses.forEach((w: any) => {
-          const warehouseStock = new Map<string, number>();
-          const stockItems = Array.isArray(w.stock) ? w.stock : Array.isArray(w.stock_balances) ? w.stock_balances : [];
-
-          stockItems.forEach((s: any) => {
-            const productId = s.product_id || s.product?.id;
-            const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
-            if (productId && !isNaN(quantity)) warehouseStock.set(productId, quantity);
-          });
-          newStockMap.set(w.id, warehouseStock);
+  const mergeStockMap = (allWarehouses: any[]) => {
+    setLocalStockMap((prev) => {
+      const merged = new Map(prev);
+      allWarehouses.forEach((w: any) => {
+        const warehouseStock = new Map<string, number>();
+        const stockItems = Array.isArray(w.stock) ? w.stock : Array.isArray(w.stock_balances) ? w.stock_balances : [];
+        stockItems.forEach((s: any) => {
+          const productId = s.product_id || s.product?.id;
+          const quantity = typeof s.quantity === 'string' ? parseFloat(s.quantity) : Number(s.quantity);
+          if (productId && !isNaN(quantity)) warehouseStock.set(productId, quantity);
         });
-        setLocalStockMap(newStockMap);
+        merged.set(w.id, warehouseStock);
+      });
+      return merged;
+    });
+  };
 
-        setSourceWarehouseOptions(allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.MAIN || w.type === InventoryWarehouseType.SUB)
-          .map((w: any) => ({ value: w.id, label: w.name })));
-
-        setVehicleWarehouseOptions(allWarehouses
-          .filter((w: any) => w.type === InventoryWarehouseType.VEHICLE)
-          .map((w: any) => ({ value: w.id, label: w.name })));
+  const fetchSourceWarehouses = useCallback(async (search?: string) => {
+    try {
+      const res = await WarehouseApi.getWarehousesWithItems({
+        type: InventoryWarehouseType.MAIN,
+        limit: 10,
+        page: 1,
+        ...(search && search.trim() ? { search: search.trim() } : {}),
+      } as any);
+      if (res && res.data) {
+        mergeStockMap(res.data);
+        setSourceWarehouseOptions(res.data.map((w: any) => ({ value: w.id, label: w.name })));
       }
     } catch (error) {
-      console.error('Failed to fetch warehouses', error);
+      console.error('Failed to fetch source warehouses', error);
     }
   }, []);
+
+  const fetchVehicleWarehouses = useCallback(async (search?: string) => {
+    try {
+      const res = await WarehouseApi.getWarehousesWithItems({
+        type: InventoryWarehouseType.VEHICLE,
+        limit: 10,
+        page: 1,
+        ...(search && search.trim() ? { search: search.trim() } : {}),
+      } as any);
+      if (res && res.data) {
+        mergeStockMap(res.data);
+        setVehicleWarehouseOptions(res.data.map((w: any) => ({ value: w.id, label: w.name })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch vehicle warehouses', error);
+    }
+  }, []);
+
+  const fetchWarehouses = useCallback(async () => {
+    await Promise.all([fetchSourceWarehouses(), fetchVehicleWarehouses()]);
+  }, [fetchSourceWarehouses, fetchVehicleWarehouses]);
 
   const effectiveStockMap = useMemo(() => localStockMap.size > 0 ? localStockMap : stockMap, [stockMap, localStockMap]);
   const sourceWarehouse = useMemo(() => warehouses.find((w) => w.id === fromWarehouseId), [fromWarehouseId, warehouses]);
@@ -420,22 +444,30 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                 <div className="flex-1 w-full relative z-50">
                   {/* นำ * ออกแล้ว */}
                   <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง)</label>
-                  <SearchableSelect 
-                    value={fromWarehouseId} 
-                    onChange={(v) => { setFromWarehouseId(v); setErrors((prev: any) => ({ ...prev, fromWarehouseId: undefined })); }} 
-                    options={sourceWarehouseOptions} 
-                    placeholder="เลือกคลังสินค้า" 
+                  <SearchableSelect
+                    value={fromWarehouseId}
+                    onChange={(v) => { setFromWarehouseId(v); setErrors((prev: any) => ({ ...prev, fromWarehouseId: undefined })); }}
+                    onSearchChange={(q) => {
+                      if (sourceSearchTimerRef.current) clearTimeout(sourceSearchTimerRef.current);
+                      sourceSearchTimerRef.current = setTimeout(() => fetchSourceWarehouses(q), 300);
+                    }}
+                    options={sourceWarehouseOptions}
+                    placeholder="เลือกคลังสินค้า"
                   />
                   {errors.fromWarehouseId && <p className="text-red-500 text-xs mt-1">{errors.fromWarehouseId}</p>}
                 </div>
                 <div className="pt-6 hidden md:block"><ArrowRightIcon className="w-5 h-5 text-slate-400" /></div>
                 <div className="flex-1 w-full relative z-40">
                   <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ไปยังคลัง/รถ (ปลายทาง)</label>
-                  <SearchableSelect 
-                    value={toWarehouseId} 
-                    onChange={setToWarehouseId} 
-                    options={vehicleWarehouseOptions} 
-                    placeholder="เลือกรถบริการ (ถ้ามี)" 
+                  <SearchableSelect
+                    value={toWarehouseId}
+                    onChange={setToWarehouseId}
+                    onSearchChange={(q) => {
+                      if (vehicleSearchTimerRef.current) clearTimeout(vehicleSearchTimerRef.current);
+                      vehicleSearchTimerRef.current = setTimeout(() => fetchVehicleWarehouses(q), 300);
+                    }}
+                    options={vehicleWarehouseOptions}
+                    placeholder="เลือกรถบริการ (ถ้ามี)"
                   />
                 </div>
               </div>

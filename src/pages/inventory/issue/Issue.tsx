@@ -608,19 +608,19 @@ const Issue: React.FC = () => {
                 <tr>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
                   >
                     ลำดับ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     เลขที่เอกสารเบิก
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     วันที่เบิก
                   </th>
@@ -632,37 +632,37 @@ const Issue: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จำนวนเงินที่เบิก
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
                   >
                     อ้างอิง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้สร้าง
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     ผู้เบิก/ผู้รับเงิน
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     สถานะ
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
                     จัดการ
                   </th>
@@ -718,7 +718,7 @@ const Issue: React.FC = () => {
                       : '-';
 
                     return (
-                      <tr key={withdrawal.id} className="hover:bg-slate-50">
+                      <tr key={withdrawal.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
@@ -733,10 +733,10 @@ const Issue: React.FC = () => {
                             ? formatThaiDate(withdrawal.created_at)
                             : '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center lg:table-cell hidden">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
                           {totalItemsCount}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           ฿
                           {totalAmount.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
@@ -767,8 +767,8 @@ const Issue: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap">
                           <StatusBadge status={withdrawal.status} />
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="inline-block text-left">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                          <div className="inline-block">
                             <Button
                               variant="icon"
                               data-withdrawal-id={withdrawal.id}
