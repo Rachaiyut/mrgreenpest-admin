@@ -68,7 +68,22 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       { label: 'ผู้จัดจำหน่าย', module: 'SUPPLIER' },
       { label: 'หน่วยนับ', module: 'UNIT' },
       { label: 'รับเข้า', module: 'RECEIVE_NOTE' },
-      { label: 'เบิกสินค้าเข้าคลังย่อย', module: 'ISSUE_NOTE' },
+      {
+        label: 'เบิกสินค้าเข้าคลังย่อย',
+        module: 'ISSUE_NOTE',
+        // ปิด APPROVE + NOTIFY ที่ parent row — ย้ายไปอยู่ใน sub-row 2 หมวดแทน (STOCK + EXPENSE)
+        skipActions: ['APPROVE', 'NOTIFY'],
+      },
+      {
+        // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_NOTE / NOTIFY_STOCK_ISSUE_NOTE
+        label: '└ อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
+        module: 'STOCK_ISSUE_NOTE',
+      },
+      {
+        // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_NOTE / NOTIFY_EXPENSE_ISSUE_NOTE
+        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต',
+        module: 'EXPENSE_ISSUE_NOTE',
+      },
       {
         label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         module: 'ISSUE_SUMMARY',

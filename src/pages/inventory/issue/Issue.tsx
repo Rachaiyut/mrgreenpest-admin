@@ -34,6 +34,7 @@ import { Card } from '../../../components/common/Card';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
+import { usePermissions } from '../../../hooks/usePermissions';
 
 // ===== API =====
 import {
@@ -65,6 +66,7 @@ import {
 
 const Issue: React.FC = () => {
   const { handlers } = useData();
+  const { hasPermission } = usePermissions();
 
   // --- เพิ่ม State สำหรับ Loading ---
   const [isLoading, setIsLoading] = useState(true);
@@ -309,25 +311,32 @@ const Issue: React.FC = () => {
   };
 
   const handleConfirmApproval = async (withdrawalId: string, remarks: string) => {
-    const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);
-    if (withdrawalToUpdate) {
-      await onUpdateWithdrawal({
-        ...withdrawalToUpdate,
-        expenses: (withdrawalToUpdate.expenses || []).map((exp: any) => ({
-          ...exp,
-          type: exp.type || 'INCOME',
-        })),
-        status:
-          approvalAction === 'approve'
-            ? WithdrawalStatus.APPROVED
-            : WithdrawalStatus.REJECTED,
-        notes: remarks,
-        updated_by: 'ผู้ดูแลระบบ',
+    try {
+      // ใช้ endpoint ใหม่ที่ route ไปยัง approvals table (flow เดียวกับ issue_summary)
+      await IssueNoteApi.approve(withdrawalId, {
+        status: approvalAction === 'approve' ? 'APPROVED' : 'REJECTED',
+        remark: remarks,
       });
+      await fetchAllData();
+      Swal.fire({
+        icon: 'success',
+        title: approvalAction === 'approve' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      Swal.fire(
+        'เกิดข้อผิดพลาด',
+        errMsg || 'ไม่สามารถอนุมัติใบเบิกได้',
+        'error',
+      );
+    } finally {
+      setIsApprovalModalOpen(false);
+      setApprovalAction(null);
+      setSelectedWithdrawal(null);
     }
-    setIsApprovalModalOpen(false);
-    setApprovalAction(null);
-    setSelectedWithdrawal(null);
   };
 
   const handleCancel = async (withdrawalId: string) => {
@@ -404,29 +413,36 @@ const Issue: React.FC = () => {
       withdrawal.status === WithdrawalStatus.PENDING ||
       withdrawal.status === Status.PendingApproval
     ) {
-      actions.push(
-        {
-          label: 'อนุมัติ',
-          icon: DocumentCheckIcon,
-          color: 'text-green-600',
-          hoverBg: 'hover:bg-green-50',
-          onClick: () => handleApprovalAction('approve'),
-        },
-        {
-          label: 'ไม่อนุมัติ',
-          icon: XCircleIcon,
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-          onClick: () => handleApprovalAction('reject'),
-        },
-        {
-          label: 'ยกเลิก',
-          icon: TrashIcon,
-          color: 'text-red-600',
-          hoverBg: 'hover:bg-red-50',
-          onClick: () => handleCancel(withdrawal.id),
-        }
-      );
+      const canApprove =
+        hasPermission('APPROVE_STOCK_ISSUE_NOTE') ||
+        hasPermission('APPROVE_EXPENSE_ISSUE_NOTE');
+
+      if (canApprove) {
+        actions.push(
+          {
+            label: 'อนุมัติ',
+            icon: DocumentCheckIcon,
+            color: 'text-green-600',
+            hoverBg: 'hover:bg-green-50',
+            onClick: () => handleApprovalAction('approve'),
+          },
+          {
+            label: 'ไม่อนุมัติ',
+            icon: XCircleIcon,
+            color: 'text-red-600',
+            hoverBg: 'hover:bg-red-50',
+            onClick: () => handleApprovalAction('reject'),
+          },
+        );
+      }
+
+      actions.push({
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        color: 'text-red-600',
+        hoverBg: 'hover:bg-red-50',
+        onClick: () => handleCancel(withdrawal.id),
+      });
     }
 
     return actions;

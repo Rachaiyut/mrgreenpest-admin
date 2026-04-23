@@ -33,6 +33,18 @@ class IssueNoteService extends AuthService {
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async approve(
+    id: string,
+    dto: {
+      status: 'APPROVED' | 'REJECTED';
+      remark?: string;
+      category?: 'STOCK' | 'EXPENSE';
+    },
+  ): Promise<Withdrawal> {
+    const res = await this.http.patch<Withdrawal>(`${this.path}/${id}/approve`, dto);
+    return res.data;
+  }
 }
 
 export const IssueNoteApi = new IssueNoteService();
