@@ -80,6 +80,7 @@ import {
   ViewColumnsIcon,
   XCircleIcon,
   CheckCircleIcon,
+  TrashIcon,
 } from '../../assets/icons/Icons';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import dayjs from 'dayjs';
@@ -878,6 +879,41 @@ const Job: React.FC<JobProps> = ({
     setOpenDropdownId(null);
   };
 
+  const handleDelete = async (job: FieldJob) => {
+    setOpenDropdownId(null);
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการลบงาน?',
+      html:
+        '<div style="text-align:left; line-height:1.7; font-size:0.95rem; max-width:420px; margin:0 auto;">' +
+        '<p style="margin:0 0 12px; color:#dc2626; font-weight:600; text-align:center;">' +
+        'การลบนี้ไม่สามารถกู้คืนได้' +
+        '</p>' +
+        '<div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:10px 14px; border-radius:6px; color:#78350f;">' +
+        '<div style="margin-bottom:6px;"><strong>ผลกระทบ</strong></div>' +
+        '<ul style="margin:0; padding-left:18px;">' +
+        '<li>งานและข้อมูลทีมจะถูกลบออกจากระบบ</li>' +
+        '<li>ใบประเมินที่อ้างอิงจะถูกคืนสถานะเป็น <strong style="white-space:nowrap">แบบร่าง</strong> อัตโนมัติ</li>' +
+        '</ul>' +
+        '</div>' +
+        '</div>',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการลบ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await JobApi.delete(job.id);
+      Swal.fire({ icon: 'success', title: 'ลบงานแล้ว', timer: 1500, showConfirmButton: false });
+      fetchData();
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถลบงานได้', 'error');
+    }
+  };
+
   const handleReportSubmit = async (
     jobId: string,
     reportData: ServiceReport,
@@ -1343,6 +1379,15 @@ const Job: React.FC<JobProps> = ({
         label: 'ดูประวัติการปฏิเสธ',
         icon: ClipboardDocumentListIcon,
         onClick: () => handleViewRejectionHistory(selectedJob.id),
+      });
+    }
+
+    if (status === JobStatus.Pending && hasPermission('DELETE_OPERATION')) {
+      actions.push({
+        label: 'ลบงาน',
+        icon: TrashIcon,
+        onClick: () => handleDelete(selectedJob),
+        isDanger: true,
       });
     }
 

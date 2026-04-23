@@ -4,6 +4,7 @@ export const PERMISSION_ACTIONS = [
   { label: 'สร้าง', action: 'CREATE' },
   { label: 'แก้ไข', action: 'UPDATE' },
   { label: 'ยกเลิก', action: 'CANCEL' },
+  { label: 'ลบ', action: 'DELETE' },
   { label: 'อนุมัติ', action: 'APPROVE' },
   { label: 'แจ้งเตือน', action: 'NOTIFY' },
 ];
