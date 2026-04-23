@@ -27,6 +27,7 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
 import { RoleApi, Role } from '../../api/role';
 import { UserApi } from '../../api/user';
+import Swal from 'sweetalert2';
 
 const ROLE_NAME_MAPPING: Record<string, string> = {};
 
@@ -121,6 +122,8 @@ const Users: React.FC<UsersProps> = ({
   const [roleToEditId, setRoleToEditId] = useState<string | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
   const [isDeleteRoleModalOpen, setIsDeleteRoleModalOpen] = useState(false);
+  const [roleCurrentPage, setRoleCurrentPage] = useState(1);
+  const [roleItemsPerPage, setRoleItemsPerPage] = useState(10);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -270,9 +273,21 @@ const Users: React.FC<UsersProps> = ({
     if (roleToDelete) {
       try {
         await RoleApi.delete(roleToDelete.id);
-        fetchRoles(); // Refresh
+        await fetchRoles();
+        Swal.fire({
+          icon: 'success',
+          title: 'ลบบทบาทแล้ว',
+          timer: 1500,
+          showConfirmButton: false,
+        });
       } catch (error) {
-        console.error('Failed to delete role', error);
+        const errMsg = (error as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message;
+        Swal.fire(
+          'ไม่สามารถลบบทบาทได้',
+          errMsg || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+          'error',
+        );
       }
     }
     setIsDeleteRoleModalOpen(false);
@@ -520,13 +535,19 @@ const Users: React.FC<UsersProps> = ({
                     <tr>
                       <th
                         scope="col"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap w-16"
+                      >
+                        ลำดับ
+                      </th>
+                      <th
+                        scope="col"
                         className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
                       >
                         ชื่อบทบาท
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                       >
                         รายละเอียด
                       </th>
@@ -545,15 +566,23 @@ const Users: React.FC<UsersProps> = ({
                     {roles.length === 0 && (
                       <tr>
                         <td
-                          colSpan={4}
+                          colSpan={5}
                           className="px-6 py-10 text-center text-slate-500"
                         >
                           ไม่พบข้อมูลบทบาทใระบบ
                         </td>
                       </tr>
                     )}
-                    {roles.map((role) => (
+                    {roles
+                      .slice(
+                        (roleCurrentPage - 1) * roleItemsPerPage,
+                        roleCurrentPage * roleItemsPerPage,
+                      )
+                      .map((role, idx) => (
                       <tr key={role.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                          {(roleCurrentPage - 1) * roleItemsPerPage + idx + 1}
+                        </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           <div className="text-sm font-medium text-slate-900">
                             {(() => {
@@ -567,7 +596,7 @@ const Users: React.FC<UsersProps> = ({
                             })()}
                           </div>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        <td className="px-4 py-3 text-sm text-slate-700 max-w-xl break-words whitespace-normal">
                           {role.description || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
@@ -593,6 +622,18 @@ const Users: React.FC<UsersProps> = ({
                     ))}
                   </tbody>
                 </table>
+              </div>
+              <div className="border-t border-slate-200">
+                <Pagination
+                  currentPage={roleCurrentPage}
+                  itemsPerPage={roleItemsPerPage}
+                  totalItems={roles.length}
+                  onPageChange={setRoleCurrentPage}
+                  onItemsPerPageChange={(size) => {
+                    setRoleItemsPerPage(size);
+                    setRoleCurrentPage(1);
+                  }}
+                />
               </div>
             </Card>
             )}
@@ -670,36 +711,35 @@ const Users: React.FC<UsersProps> = ({
                   <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
                   <span>แก้ไข</span>
                 </a>
-                <Button
-                  onClick={() => {
-                    const role = roles.find((r) => r.id === openDropdownId);
-                    if (role) handleDeleteRole(role);
-                  }}
-                  disabled={
-                    roleCounts[
-                      openDropdownId || ''
-                    ] > 0
-                  }
-                  title={
-                    roleCounts[
-                      openDropdownId || ''
-                    ] > 0
-                      ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
-                      : 'ลบบทบาท'
-                  }
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${
-                    roleCounts[
-                      openDropdownId || ''
-                    ] > 0
-                      ? 'text-slate-400 cursor-not-allowed'
-                      : 'text-red-700 hover:bg-red-50'
-                  }`}
-                  role="menuitem"
-                  variant="ghost"
-                >
-                  <TrashIcon className="mr-3 h-5 w-5" aria-hidden="true" />
-                  <span>ลบ</span>
-                </Button>
+                {(() => {
+                  const hasUsers = roleCounts[openDropdownId || ''] > 0;
+                  return (
+                    <a
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (hasUsers) return;
+                        const role = roles.find((r) => r.id === openDropdownId);
+                        if (role) handleDeleteRole(role);
+                      }}
+                      aria-disabled={hasUsers}
+                      title={
+                        hasUsers
+                          ? 'ไม่สามารถลบบทบาทที่มีผู้ใช้งานได้'
+                          : 'ลบบทบาท'
+                      }
+                      className={`flex items-center w-full text-left px-4 py-2 text-sm ${
+                        hasUsers
+                          ? 'text-slate-400 cursor-not-allowed pointer-events-none'
+                          : 'text-red-700 hover:bg-red-50'
+                      }`}
+                      role="menuitem"
+                    >
+                      <TrashIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+                      <span>ลบ</span>
+                    </a>
+                  );
+                })()}
               </>
             )}
           </div>

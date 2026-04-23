@@ -16,6 +16,7 @@ interface RoleFormProps {
   selectedPermissionIds: Set<string>;
   isLoading: boolean;
   readOnly?: boolean;
+  errors?: { name?: string; roleType?: string };
   onRoleNameChange: (value: string) => void;
   onRoleTypeChange: (value: string) => void;
   onDescriptionChange: (value: string) => void;
@@ -32,6 +33,7 @@ export const RoleForm: FC<RoleFormProps> = ({
   selectedPermissionIds,
   isLoading,
   readOnly = false,
+  errors = {},
   onRoleNameChange,
   onRoleTypeChange,
   onDescriptionChange,
@@ -48,12 +50,15 @@ export const RoleForm: FC<RoleFormProps> = ({
           <Input
             id="role-name"
             type="text"
-            required
             disabled={readOnly}
             value={roleName}
             onChange={(e) => onRoleNameChange(e.target.value)}
             placeholder="เช่น ผู้จัดการฝ่ายขาย"
+            className={errors.name ? 'border-red-500 focus:ring-red-500' : ''}
           />
+          {errors.name && (
+            <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+          )}
         </div>
         <div>
           <label htmlFor="role-type" className="block text-sm font-medium text-slate-700 mb-1">
@@ -61,11 +66,14 @@ export const RoleForm: FC<RoleFormProps> = ({
           </label>
           <select
             id="role-type"
-            required
             disabled={readOnly}
             value={roleType}
             onChange={(e) => onRoleTypeChange(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:bg-slate-50 disabled:text-slate-500"
+            className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 disabled:bg-slate-50 disabled:text-slate-500 ${
+              errors.roleType
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-slate-300 focus:ring-primary'
+            }`}
           >
             <option value="">เลือกประเภท</option>
             <option value="MANAGEMENT">ผู้บริหาร/จัดการ</option>
@@ -73,6 +81,9 @@ export const RoleForm: FC<RoleFormProps> = ({
             <option value="FIELD_LEAD">หัวหน้าทีมช่าง</option>
             <option value="FIELD_TECH">ช่างปฏิบัติงาน</option>
           </select>
+          {errors.roleType && (
+            <p className="mt-1 text-xs text-red-600">{errors.roleType}</p>
+          )}
         </div>
       </div>
       <div>

@@ -28,6 +28,7 @@ export const RoleModal: FC<RoleModalProps> = ({
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; roleType?: string }>({});
 
   useEffect(() => {
     if (isOpen) {
@@ -45,6 +46,7 @@ export const RoleModal: FC<RoleModalProps> = ({
     setRoleType('');
     setDescription('');
     setSelectedPermissionIds(new Set());
+    setErrors({});
   };
 
   const fetchPermissions = async () => {
@@ -100,20 +102,27 @@ export const RoleModal: FC<RoleModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    const nextErrors: { name?: string; roleType?: string } = {};
+    if (!roleName.trim()) nextErrors.name = 'กรุณากรอกชื่อบทบาท';
+    if (!roleType) nextErrors.roleType = 'กรุณาเลือกประเภทบทบาท';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setIsSaving(true);
     try {
       let savedRole: Role;
 
       if (mode === 'create') {
         savedRole = await RoleApi.create({
-          name: roleName,
+          name: roleName.trim(),
           role_type: roleType,
           description,
           status: true,
         } as Record<string, unknown>);
       } else {
         savedRole = await RoleApi.update(roleId!, {
-          name: roleName,
+          name: roleName.trim(),
           role_type: roleType,
           description,
         } as Record<string, unknown>);
@@ -126,7 +135,13 @@ export const RoleModal: FC<RoleModalProps> = ({
       onSuccess?.(savedRole);
       onClose();
     } catch (error) {
-      console.error(`Failed to ${mode} role`, error);
+      const errData = (error as { response?: { data?: { message?: string; code?: string } } })
+        ?.response?.data;
+      if (errData?.code === 'DUPLICATE_ROLE_NAME') {
+        setErrors({ name: errData.message || 'ชื่อบทบาทนี้ถูกใช้งานแล้ว' });
+      } else {
+        console.error(`Failed to ${mode} role`, error);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -144,7 +159,12 @@ export const RoleModal: FC<RoleModalProps> = ({
       size="5xl"
       footer={
         <div className="flex gap-2 justify-end w-full">
-          <Button type="button" onClick={onClose} variant="ghost" className="bg-slate-100 text-slate-700 hover:bg-slate-200">
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="ghost"
+            className="bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+          >
             ยกเลิก
           </Button>
           <Button type="submit" form={formId} variant="primary" disabled={isSaving}>
@@ -161,8 +181,15 @@ export const RoleModal: FC<RoleModalProps> = ({
         permissions={permissions}
         selectedPermissionIds={selectedPermissionIds}
         isLoading={isLoading}
-        onRoleNameChange={setRoleName}
-        onRoleTypeChange={setRoleType}
+        errors={errors}
+        onRoleNameChange={(v) => {
+          setRoleName(v);
+          if (errors.name) setErrors((prev) => ({ ...prev, name: undefined }));
+        }}
+        onRoleTypeChange={(v) => {
+          setRoleType(v);
+          if (errors.roleType) setErrors((prev) => ({ ...prev, roleType: undefined }));
+        }}
         onDescriptionChange={setDescription}
         onTogglePermission={handleTogglePermission}
         onSubmit={handleSubmit}
