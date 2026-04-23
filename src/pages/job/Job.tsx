@@ -23,6 +23,7 @@ import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
 import { Warehouse } from '../../types/entity/inventory.interface';
 import { isFieldRole, isManagementRole, isExecutiveRole } from '../../utils/role';
+import { Role } from '../../types/enums/role';
 
 // ===== Hooks =====
 import { useCurrentUser } from '../../hooks/useCurrentUser';
@@ -485,7 +486,35 @@ const Job: React.FC<JobProps> = ({
       fetchData();
       setIsAddModalOpen(false);
     } catch (error) {
+      const errData = (error as { response?: { data?: { message?: unknown; code?: string } } })
+        ?.response?.data;
+      const errMsg = typeof errData?.message === 'object'
+        ? (errData.message as { message?: string; code?: string })
+        : { message: errData?.message as string | undefined, code: errData?.code };
+
+      if (errMsg?.code === 'DUPLICATE_ASSESSMENT_JOB') {
+        const result = await Swal.fire({
+          icon: 'info',
+          title: 'ใบประเมินนี้มีงานอยู่แล้ว',
+          html:
+            '<div style="line-height:1.7; font-size:0.95rem;">' +
+            'ระบบพบว่าใบประเมินนี้ถูกสร้างงานไปแล้ว<br/>' +
+            'กรุณาไปที่แท็บ <strong>"จัดคิว"</strong> เพื่อจัดคิวงานเดิมแทน' +
+            '</div>',
+          showCancelButton: true,
+          confirmButtonText: 'ไปที่แท็บจัดคิว',
+          cancelButtonText: 'ปิด',
+          reverseButtons: true,
+        });
+        if (result.isConfirmed) {
+          setIsAddModalOpen(false);
+          setActiveTab('unassigned');
+        }
+        return;
+      }
+
       console.error('Error creating job:', error);
+      Swal.fire('เกิดข้อผิดพลาด', errMsg?.message || 'ไม่สามารถสร้างงานได้', 'error');
     }
   };
 
