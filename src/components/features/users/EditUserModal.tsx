@@ -260,9 +260,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       id="first_name"
                       name="first_name"
                       type="text"
+                      placeholder="กรอกชื่อผู้ใช้งาน"
                       value={formData.first_name || ''}
                       onChange={handleChange}
-                      className="h-11"
+                      className={`h-11 ${errors.first_name ? 'border-red-500 focus:ring-red-500' : ''}`}
                       disabled={isUploading}
                     />
                     {errors.first_name && (
@@ -276,9 +277,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       id="last_name"
                       name="last_name"
                       type="text"
+                      placeholder="กรอกนามสกุล"
                       value={formData.last_name || ''}
                       onChange={handleChange}
-                      className="h-11"
+                      className={`h-11 ${errors.last_name ? 'border-red-500 focus:ring-red-500' : ''}`}
                       disabled={isUploading}
                     />
                     {errors.last_name && (
@@ -295,9 +297,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       id="nickname"
                       name="nickname"
                       type="text"
+                      placeholder="กรอกชื่อเล่น"
                       value={formData.nickname || ''}
                       onChange={handleChange}
-                      className="h-11"
+                      className={`h-11 ${errors.nickname ? 'border-red-500 focus:ring-red-500' : ''}`}
                       disabled={isUploading}
                     />
                     {errors.nickname && (
@@ -311,9 +314,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       id="phone"
                       name="phone"
                       type="tel"
+                      placeholder="กรอกเบอร์โทรศัพท์"
                       value={formData.phone || ''}
                       onChange={handleChange}
-                      className="h-11"
+                      className={`h-11 ${errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
                       disabled={isUploading}
                     />
                     {errors.phone && (
@@ -336,9 +340,10 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       id="email"
                       name="email"
                       type="email"
+                      placeholder="กรอกอีเมล"
                       value={formData.email || ''}
                       onChange={handleChange}
-                      className="h-11"
+                      className={`h-11 ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                       disabled={isUploading}
                     />
                     {errors.email && (
@@ -387,7 +392,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                             setErrors(prev => { const { confirmPassword: _, ...rest } = prev; return rest; });
                           }
                         }}
-                        placeholder="เว้นว่างถ้าไม่ต้องการเปลี่ยน"
+                        placeholder="กรอกรหัสผ่าน (เว้นว่างถ้าไม่ต้องการเปลี่ยน)"
                       />
                       <button
                         type="button"

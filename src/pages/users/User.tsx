@@ -15,6 +15,7 @@ import {
   TrashIcon,
   WalletIcon,
   LoadingIcon,
+  DocumentCheckIcon,
 } from '../../assets/icons/Icons';
 import { RoleModal } from '../../components/features/users/RoleModal';
 import { AddUserModal } from '../../components/features/users/AddUserModal';
@@ -378,7 +379,7 @@ const Users: React.FC<UsersProps> = ({
                 <div className="relative w-full sm:w-80 flex-shrink-0">
                   <Input
                     type="search"
-                    placeholder="ค้นหาชื่อ, อีเมล, โทรศัพท์"
+                    placeholder="ค้นหาชื่อ-นามสกุล, อีเมล, โทรศัพท์"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -399,7 +400,7 @@ const Users: React.FC<UsersProps> = ({
                     }}
                     className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
                   >
-                    <option value="all">ทุกบทบาท</option>
+                    <option value="all">ทุกประเภทบทบาท</option>
                     {[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
                       const rt = role.role_type || role.name;
                       const labels: Record<string, string> = {
@@ -427,13 +428,13 @@ const Users: React.FC<UsersProps> = ({
                 </div>
               </Card>
             ) : (
-            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden relative">
+              <div className="overflow-x-auto border-b border-slate-200 flex-1">
                   <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อ</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อ - นามสกุล</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อเล่น</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>
@@ -442,6 +443,17 @@ const Users: React.FC<UsersProps> = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
+                      {paginatedUsers.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="p-0 border-b-0 h-0">
+                            <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                              <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
+                              <p className="text-lg font-medium">ไม่พบข้อมูลผู้ใช้งาน</p>
+                              <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างผู้ใช้งานใหม่</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                       {paginatedUsers.map((user, index) => (
                         <tr key={user.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
@@ -528,8 +540,8 @@ const Users: React.FC<UsersProps> = ({
                 </div>
               </Card>
             ) : (
-            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto border-b border-slate-200">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden relative">
+              <div className="overflow-x-auto border-b border-slate-200 flex-1">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
@@ -565,11 +577,12 @@ const Users: React.FC<UsersProps> = ({
                   <tbody className="bg-white divide-y divide-slate-200">
                     {roles.length === 0 && (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="px-6 py-10 text-center text-slate-500"
-                        >
-                          ไม่พบข้อมูลบทบาทใระบบ
+                        <td colSpan={5} className="p-0 border-b-0 h-0">
+                          <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                            <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
+                            <p className="text-lg font-medium">ไม่พบข้อมูลบทบาทในระบบ</p>
+                            <p className="text-sm mt-1">ลองสร้างบทบาทใหม่เพื่อใช้งาน</p>
+                          </div>
                         </td>
                       </tr>
                     )}
