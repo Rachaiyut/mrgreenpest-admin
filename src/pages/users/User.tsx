@@ -304,7 +304,7 @@ const Users: React.FC<UsersProps> = ({
   // Calculate user counts per role dynamically
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    roles.forEach((r) => (counts[r.id] = (r as Record<string, unknown>).user_count as number || 0));
+    roles.forEach((r) => (counts[r.id] = (r as unknown as Record<string, unknown>).user_count as number || 0));
     return counts;
   }, [roles]);
 
@@ -455,7 +455,7 @@ const Users: React.FC<UsersProps> = ({
                         </tr>
                       )}
                       {paginatedUsers.map((user, index) => (
-                        <tr key={user.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
+                        <tr key={user.id} className="hover:bg-slate-50 border-b border-slate-200 [&>td]:text-center [&>td]:align-middle">
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
@@ -594,7 +594,7 @@ const Users: React.FC<UsersProps> = ({
                       .map((role, idx) => (
                       <tr
                         key={role.id}
-                        className="hover:bg-slate-50 [&>td]:align-middle [&>td]:text-center"
+                        className="hover:bg-slate-50 border-b border-slate-200 [&>td]:align-middle [&>td]:text-center"
                       >
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(roleCurrentPage - 1) * roleItemsPerPage + idx + 1}

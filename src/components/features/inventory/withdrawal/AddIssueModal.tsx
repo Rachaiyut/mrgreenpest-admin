@@ -91,6 +91,31 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
 
   // Data state
   const [destinationLimits, setDestinationLimits] = useState<Map<string, number>>(new Map());
+
+  // Fetch vehicle warehouse's withdrawal_limits when toWarehouseId changes
+  useEffect(() => {
+    if (!toWarehouseId) {
+      setDestinationLimits(new Map());
+      return;
+    }
+    WarehouseApi.getWarehouseById(toWarehouseId)
+      .then((warehouse) => {
+        const limits = new Map<string, number>();
+        if (warehouse && Array.isArray(warehouse.withdrawal_limits)) {
+          warehouse.withdrawal_limits.forEach((limit: { product_id?: string; max_quantity?: number }) => {
+            if (limit.product_id) {
+              limits.set(limit.product_id, Number(limit.max_quantity ?? 0));
+            }
+          });
+        }
+        setDestinationLimits(limits);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch destination warehouse limits', err);
+        setDestinationLimits(new Map());
+      });
+  }, [toWarehouseId]);
+
   const [sourceWarehouseOptions, setSourceWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [vehicleWarehouseOptions, setVehicleWarehouseOptions] = useState<{ value: string; label: string }[]>([]);
   const [fetchedRequester, setFetchedRequester] = useState<User | null>(null);
@@ -382,11 +407,6 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
           <div className="flex w-full justify-between items-center">
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
-              {(isOverLimit || isAnyItemOverLimit) && (
-                <span className="flex items-center gap-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-md border border-amber-200 text-sm font-medium">
-                  ⚠️ ยอดรวมหรือจำนวนสินค้าเกินที่กำหนด (ต้องได้รับการอนุมัติ)
-                </span>
-              )}
             </div>
             <div className="flex gap-3">
               <Button 
@@ -575,7 +595,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                       <div className="col-span-1">รหัส</div>
                       <div className="col-span-3">สินค้า</div>
                       <div className="col-span-2 text-center">คงเหลือ</div>
-                      <div className="col-span-2 text-center text-blue-600">LIMIT รถ</div>
+                      <div className="col-span-2 text-center text-blue-600">จำกัดเบิกของรถ</div>
                       <div className="col-span-3 text-center">จำนวน</div>
                       <div className="col-span-1 text-center"></div>
                     </div>
@@ -619,7 +639,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                               </span>
                             </div>
 
-                            {/* LIMIT รถ */}
+                            {/* จำกัดเบิกของรถ */}
                             <div className="col-span-2 text-center">
                               <span className="text-base font-bold text-blue-600">
                                 {limit !== undefined ? limit.toLocaleString() : '-'}
@@ -627,7 +647,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                             </div>
 
                             {/* จำนวน */}
-                            <div className="col-span-3 flex items-center justify-center relative">
+                            <div className="col-span-3 flex items-center justify-center">
                               <div className="relative flex items-center w-full max-w-[130px]">
                                 <Input
                                   type="number"
@@ -644,16 +664,6 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                                   {unitName}
                                 </span>
                               </div>
-                              {isOverStock && (
-                                <span className="text-xs font-bold absolute -bottom-5 whitespace-nowrap text-red-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-3.5 h-3.5" /> เกินสต๊อก
-                                </span>
-                              )}
-                              {!isOverStock && isOverLimitObj && (
-                                <span className="text-xs font-bold absolute -bottom-5 whitespace-nowrap text-amber-500 flex items-center gap-1">
-                                  <XCircleIcon className="w-3.5 h-3.5" /> เกินโควต้า
-                                </span>
-                              )}
                             </div>
 
                             {/* ลบ */}
@@ -667,6 +677,38 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                               </button>
                             </div>
                           </div>
+
+                          {/* Warnings — แสดงเป็น alert bar ด้านล่างของ item card */}
+                          {hasWarning && (
+                            <div className="mt-3 flex flex-col gap-1.5">
+                              {isOverStock && (
+                                <div className="flex items-center gap-2 bg-gradient-to-r from-red-50 to-red-50/50 border-l-4 border-red-500 px-3 py-2 rounded-r-md">
+                                  <div className="flex-shrink-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                    <XCircleIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="flex-1 text-xs">
+                                    <span className="font-bold text-red-700">เกินสต๊อก</span>
+                                    <span className="text-slate-600 ml-1.5">
+                                      ของในคลังเหลือ <span className="font-bold text-red-700">{available.toLocaleString()}</span> {unitName}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                              {isOverLimitObj && (
+                                <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-amber-50/50 border-l-4 border-amber-500 px-3 py-2 rounded-r-md">
+                                  <div className="flex-shrink-0 bg-amber-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                                    <XCircleIcon className="w-3.5 h-3.5" />
+                                  </div>
+                                  <div className="flex-1 text-xs">
+                                    <span className="font-bold text-amber-700">เกินโควต้าของรถ</span>
+                                    <span className="text-slate-600 ml-1.5">
+                                      รถเบิกได้สูงสุด <span className="font-bold text-amber-700">{limit?.toLocaleString()}</span> {unitName}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
