@@ -107,11 +107,11 @@ export const RoleForm: FC<RoleFormProps> = ({
         {isLoading ? (
           <div className="text-center py-4 text-slate-500">กำลังโหลดข้อมูล...</div>
         ) : (
-          <div className="overflow-x-auto border border-slate-200 rounded-lg max-h-[60vh]">
+          <div className="border border-slate-200 rounded-lg">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
-              <thead className="bg-slate-50 sticky top-0 z-20 shadow-sm">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider sticky left-0 bg-slate-50 z-20 w-64 border-r border-slate-200">
+                  <th className="px-4 py-3 text-left font-medium text-slate-600 uppercase tracking-wider bg-slate-50 w-64 border-r border-slate-200">
                     สิทธิ์การใช้งาน
                   </th>
                   {PERMISSION_ACTIONS.map((action) => (
@@ -127,14 +127,14 @@ export const RoleForm: FC<RoleFormProps> = ({
                     <tr>
                       <td
                         colSpan={PERMISSION_ACTIONS.length + 1}
-                        className="px-4 py-2 bg-slate-100 font-semibold text-slate-800 sticky left-0 z-10 border-r border-slate-200"
+                        className="px-4 py-2 bg-slate-100 font-semibold text-slate-800 border-r border-slate-200"
                       >
                         {group.groupName}
                       </td>
                     </tr>
                     {group.items.map((item) => (
                       <tr key={item.label} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
+                        <td className="px-4 py-3 font-medium text-slate-800 bg-white border-r border-slate-100">
                           {item.label}
                         </td>
                         {PERMISSION_ACTIONS.map((actionCol) => {

@@ -528,8 +528,8 @@ const Users: React.FC<UsersProps> = ({
                 </div>
               </Card>
             ) : (
-            <Card className="!p-0">
-              <div className="overflow-x-auto">
+            <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
+              <div className="overflow-x-auto border-b border-slate-200">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
@@ -579,51 +579,50 @@ const Users: React.FC<UsersProps> = ({
                         roleCurrentPage * roleItemsPerPage,
                       )
                       .map((role, idx) => (
-                      <tr key={role.id} className="hover:bg-slate-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                      <tr
+                        key={role.id}
+                        className="hover:bg-slate-50 [&>td]:align-middle [&>td]:text-center"
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(roleCurrentPage - 1) * roleItemsPerPage + idx + 1}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          <div className="text-sm font-medium text-slate-900">
-                            {(() => {
-                              const rName = role.name;
-                              const safeName =
-                                typeof rName === 'string' ? rName : 'Unknown';
-                              return (
-                                ROLE_NAME_MAPPING[safeName.toLowerCase()] ||
-                                safeName
-                              );
-                            })()}
-                          </div>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                          {(() => {
+                            const rName = role.name;
+                            const safeName =
+                              typeof rName === 'string' ? rName : 'Unknown';
+                            return (
+                              ROLE_NAME_MAPPING[safeName.toLowerCase()] ||
+                              safeName
+                            );
+                          })()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 max-w-xl break-words whitespace-normal">
+                        <td className="px-4 py-3 text-sm text-slate-700 max-w-xl break-words whitespace-normal !text-left">
                           {role.description || '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {roleCounts[role.id] || 0}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
-                          <div className="inline-block text-left">
-                            <Button
-                              data-role-id={role.id}
-                              onClick={(e) => handleDropdownToggle(e, role.id)}
-                              variant="icon"
-                              title="ตัวเลือก"
-                            >
-                              <span className="sr-only">Open options</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-sm font-medium">
+                          <Button
+                            data-role-id={role.id}
+                            onClick={(e) => handleDropdownToggle(e, role.id)}
+                            variant="icon"
+                            title="ตัวเลือก"
+                          >
+                            <span className="sr-only">Open options</span>
+                            <ManageIcon
+                              className="h-5 w-5"
+                              aria-hidden="true"
+                            />
+                          </Button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="border-t border-slate-200">
+              <div className="mt-auto border-t border-slate-200">
                 <Pagination
                   currentPage={roleCurrentPage}
                   itemsPerPage={roleItemsPerPage}
@@ -635,7 +634,7 @@ const Users: React.FC<UsersProps> = ({
                   }}
                 />
               </div>
-            </Card>
+            </div>
             )}
           </>
         )}
