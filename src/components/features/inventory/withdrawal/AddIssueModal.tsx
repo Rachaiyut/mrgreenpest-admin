@@ -1,4 +1,3 @@
-import { isFieldRole } from '@/src/utils/role';
 /**
  * @file AddWithDrawModal.tsx
  * @description Modal component for creating a new goods withdrawal.
@@ -38,6 +37,7 @@ import {
 } from '@/src/types/enums/inventory';
 import { UserApi } from '../../../../api/user';
 import { WarehouseApi } from '../../../../api/warehouse';
+import { isFieldRole } from '@/src/utils/role';
 
 interface AddStockIssueToVehicleModalProps {
   isOpen: boolean;
@@ -133,6 +133,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
   // ==========================================
   const loggedInUser = useMemo(() => {
     let role = '';
+    let roleType = '';
     let id = currentUser?.id || '';
     let name = currentUser ? `${currentUser.first_name} ${currentUser.last_name}` : 'ผู้เบิก (ตัวฉันเอง)';
 
@@ -142,21 +143,21 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
         const parsed = JSON.parse(raw);
         const rawRole = parsed?.role || parsed?.role_name || parsed?.role_code || parsed?.role_id || '';
         role = String(rawRole).toUpperCase().trim();
+        const rawRoleType = parsed?.roleType || parsed?.role_type || '';
+        roleType = String(rawRoleType).toUpperCase().trim();
         id = parsed?.id || parsed?.user_id || id;
-        if (parsed?.first_name) {
-          name = `${parsed.first_name} ${parsed.last_name || ''}`.trim();
+        if (parsed?.firstName || parsed?.first_name) {
+          const first = parsed.firstName || parsed.first_name;
+          const last = parsed.lastName || parsed.last_name || '';
+          name = `${first} ${last}`.trim();
         }
       }
     } catch (e) {
       console.error("Localstorage parsing error", e);
     }
 
-    return { id: String(id), role, name };
+    return { id: String(id), role, roleType, name };
   }, [currentUser]);
-
-  const isLockedRole = useMemo(() => {
-    return isFieldRole(loggedInUser.roleType);
-  }, [loggedInUser.role]);
 
   const userOptions = useMemo(() => {
     return users.map((u) => ({
@@ -165,13 +166,40 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
     }));
   }, [users]);
 
-  const requesterOptions = useMemo(() => {
-    if (isLockedRole) {
-      const myOption = userOptions.find((opt) => opt.value === loggedInUser.id);
-      return myOption ? [myOption] : [{ value: loggedInUser.id, label: loggedInUser.name }];
+  // field role (FIELD_LEAD / FIELD_TECH) → ล็อกช่อง "ผู้เบิก" ไม่ให้เลือกคนอื่น
+  const isRequesterLocked = useMemo(
+    () => isFieldRole(loggedInUser.roleType),
+    [loggedInUser.roleType],
+  );
+
+  // ใส่ชื่อตัวเองเข้า option เสมอ (กัน users prop โหลดไม่ทัน)
+  const ensureSelfOption = (opts: { value: string; label: string }[]) => {
+    const hasMe = opts.some((opt) => opt.value === loggedInUser.id);
+    if (!hasMe && loggedInUser.id) {
+      return [{ value: loggedInUser.id, label: loggedInUser.name }, ...opts];
     }
-    return userOptions;
-  }, [userOptions, isLockedRole, loggedInUser]);
+    return opts;
+  };
+
+  // Requester: field role → เฉพาะตัวเอง (ล็อก), อื่น → ทั้งหมด
+  const requesterOptions = useMemo(() => {
+    if (isRequesterLocked && loggedInUser.id) {
+      const myOption = userOptions.find((opt) => opt.value === loggedInUser.id);
+      return [myOption ?? { value: loggedInUser.id, label: loggedInUser.name }];
+    }
+    return ensureSelfOption(userOptions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userOptions, isRequesterLocked, loggedInUser]);
+
+  // Recipient: field role → เฉพาะตัวเอง (ล็อก), อื่น → ทั้งหมด (ใช้กฎเดียวกับ Requester)
+  const recipientOptions = useMemo(() => {
+    if (isRequesterLocked && loggedInUser.id) {
+      const myOption = userOptions.find((opt) => opt.value === loggedInUser.id);
+      return [myOption ?? { value: loggedInUser.id, label: loggedInUser.name }];
+    }
+    return ensureSelfOption(userOptions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userOptions, isRequesterLocked, loggedInUser]);
 
   // ==========================================
   // 🌟 Logic: ดึงข้อมูลคลังสินค้า & เซ็ตค่าเริ่มต้น
@@ -251,11 +279,25 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
       setFromWarehouseId('');
       setToWarehouseId('');
       setRequesterId(loggedInUser.id);
-      setRecipientId(loggedInUser.id);
+      setRecipientId(enableExpense ? loggedInUser.id : '');
       setIsSubmitting(false);
       fetchWarehouses();
     }
   }, [isOpen, loggedInUser.id, fetchWarehouses]);
+
+  // Sync recipientId กับ checkbox "การเงิน & ค่าใช้จ่าย"
+  //  - ติ๊ก → auto-fill ตัวเอง (ถ้าว่าง)
+  //  - ยกเลิกติ๊ก → เคลียร์ออก ไม่ส่ง recipient_id ไป backend
+  useEffect(() => {
+    if (!isOpen) return;
+    if (enableExpense) {
+      if (!recipientId) setRecipientId(loggedInUser.id);
+    } else {
+      if (recipientId) setRecipientId('');
+      setExpenseItems([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enableExpense, isOpen, loggedInUser.id]);
 
   // ==========================================
   // 🌟 Logic: จัดการ Form Actions & Wallet
@@ -487,7 +529,7 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
                       vehicleSearchTimerRef.current = setTimeout(() => fetchVehicleWarehouses(q), 300);
                     }}
                     options={vehicleWarehouseOptions}
-                    placeholder="เลือกรถบริการ (ถ้ามี)"
+                    placeholder="เลือกรถบริการไปที่"
                   />
                 </div>
               </div>
@@ -503,26 +545,33 @@ export const AddStockIssueToVehicleModal: React.FC<AddStockIssueToVehicleModalPr
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex-1 w-full relative z-40">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้เบิก (Requester) <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้เบิก <span className="text-red-500">*</span></label>
                   <SearchableSelect
                     value={requesterId}
                     onChange={(v) => {
-                      if (isLockedRole) return;
+                      if (isRequesterLocked) return;
                       setRequesterId(v);
                       setErrors((prev: any) => ({ ...prev, requesterId: undefined }));
                     }}
                     options={requesterOptions}
                     placeholder="ค้นหาชื่อผู้เบิก"
+                    disabled={isRequesterLocked}
                   />
                   {errors.requesterId && <p className="text-red-500 text-xs mt-1">{errors.requesterId}</p>}
                 </div>
                <div className="flex-1 w-full relative z-30">
-                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">ผู้รับเงิน (Recipient)</label>
-                  <SearchableSelect 
-                    value={recipientId} 
-                    onChange={setRecipientId} 
-                    options={userOptions} 
-                    placeholder="ค้นหาชื่อผู้รับเงิน" 
+                  <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">
+                    ผู้รับเงิน
+                  </label>
+                  <SearchableSelect
+                    value={recipientId}
+                    onChange={(v) => {
+                      if (isRequesterLocked) return;
+                      setRecipientId(v);
+                    }}
+                    options={recipientOptions}
+                    placeholder={enableExpense ? 'ค้นหาชื่อผู้รับเงิน' : ''}
+                    disabled={!enableExpense || isRequesterLocked}
                   />
                 </div>
               </div>

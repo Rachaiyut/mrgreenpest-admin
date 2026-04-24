@@ -438,7 +438,7 @@ export const EditStockIssueToVehicleModal: React.FC<EditWithdrawalModalProps> = 
                     options={vehicleWarehouseOptions}
                     value={toWarehouseId}
                     onChange={setToWarehouseId}
-                    placeholder="เลือกรถบริการ (ถ้ามี)"
+                    placeholder="เลือกรถบริการ"
                     className="w-full bg-white shadow-sm border-slate-200"
                   />
                 </div>

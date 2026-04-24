@@ -78,12 +78,19 @@ export const NotificationMenu: React.FC = () => {
     close();
 
     // Navigate based on type
-    if (notification.related_entity_type === 'WITHDRAWAL') {
-      navigate(`/inventory/withdrawals`);
+    // Note: sub-item paths register as top-level in createRoutes (no parent prefix)
+    if (notification.related_entity_type === 'ISSUE_NOTE') {
+      navigate(`/withdraw-vehicle`);
+    } else if (notification.related_entity_type === 'ISSUE_SUMMARY') {
+      navigate(`/withdrawals`);
+    } else if (notification.related_entity_type === 'WITHDRAWAL') {
+      navigate(`/withdraw-vehicle`);
     } else if (notification.related_entity_type === 'ASSESSMENT') {
       navigate(`/assessments`);
     } else if (notification.related_entity_type === 'QUOTATION') {
       navigate(`/quotations`);
+    } else if (notification.related_entity_type === 'JOB') {
+      navigate(`/field-operations`);
     }
   };
 

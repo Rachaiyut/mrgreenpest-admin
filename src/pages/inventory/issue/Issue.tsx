@@ -662,13 +662,13 @@ const Issue: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    ผู้สร้าง
+                    ผู้เบิก/ผู้รับเงิน
                   </th>
                   <th
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
-                    ผู้เบิก/ผู้รับเงิน
+                    ผู้สร้าง
                   </th>
                   <th
                     scope="col"
@@ -766,19 +766,26 @@ const Issue: React.FC = () => {
                           รายการ
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {(() => {
-                            const creatorName =
-                              userMap.get(withdrawal.created_by) ||
-                              withdrawal.created_by;
-                            return creatorName === '[object Object]'
-                              ? 'Unknown'
-                              : creatorName;
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {recipientName === '[object Object]'
                             ? 'Unknown'
                             : recipientName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                          {(() => {
+                            const creator = (withdrawal as WithdrawalType & {
+                              creator?: { first_name?: string; last_name?: string; nick_name?: string };
+                            }).creator;
+                            if (creator?.first_name) {
+                              return `${creator.first_name} ${creator.last_name || ''}`.trim();
+                            }
+                            const fromMap = userMap.get(withdrawal.created_by);
+                            if (fromMap && fromMap !== '[object Object]') return fromMap;
+                            // fallback: ถ้ายังไม่เจอและเป็น UUID → แสดง 'ไม่ระบุ'
+                            const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
+                              withdrawal.created_by || '',
+                            );
+                            return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                          })()}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <StatusBadge status={withdrawal.status} />
