@@ -1,11 +1,14 @@
 // ===== React / External =====
 import Swal from 'sweetalert2';
-import React, {
+import {
+  FC,
+  Fragment,
+  MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
-  useMemo, 
-  useRef, 
-  useState 
+  useMemo,
+  useRef,
+  useState,
 } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -64,9 +67,11 @@ import {
   UserIcon,
   XCircleIcon,
   LoadingIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
 } from '../../../assets/icons/Icons';
 
-const Issue: React.FC = () => {
+const Issue: FC = () => {
   const { handlers } = useData();
   const { hasPermission } = usePermissions();
   const authUser = useCurrentUser();
@@ -214,6 +219,16 @@ const Issue: React.FC = () => {
   const [categoryTab, setCategoryTab] = useState<'all' | 'stock' | 'expense'>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   // Debounce searchQuery → searchDebounced (triggers server fetch via fetchAllData dep)
   useEffect(() => {
@@ -348,7 +363,7 @@ const Issue: React.FC = () => {
   };
 
   const handleDropdownToggle = (
-    event: React.MouseEvent<HTMLButtonElement>,
+    event: ReactMouseEvent<HTMLButtonElement>,
     withdrawalId: string
   ) => {
     event.stopPropagation();
@@ -898,81 +913,248 @@ const Issue: React.FC = () => {
                         ? userMap.get(withdrawal.recipient_id) || '-'
                         : '-';
 
+                    const isAllTab = categoryTab === 'all';
+                    const isExpanded = isAllTab && expandedKeys.has(withdrawal.id);
+                    const hasItems = (withdrawal.items?.length || 0) > 0;
+                    const hasExpenses = (withdrawal.expenses?.length || 0) > 0;
+                    const colSpan =
+                      6 +
+                      (categoryTab !== 'expense' ? 1 : 0) +
+                      (categoryTab !== 'stock' ? 2 : 0);
+                    const fmtMoney = (v: number) =>
+                      `฿${v.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`;
+
                     return (
-                      <tr key={withdrawal.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
-                          {(currentPage - 1) * itemsPerPage + index + 1}
-                        </td>
-                        <td
-                          className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
-                          onClick={() => handleViewDetails(withdrawal)}
+                      <Fragment key={withdrawal.id}>
+                        <tr
+                          className={`hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle ${isAllTab ? 'cursor-pointer' : ''}`}
+                          onClick={isAllTab ? () => toggleExpanded(withdrawal.id) : undefined}
                         >
-                          {withdrawal.code}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {withdrawal.created_at
-                            ? formatThaiDate(withdrawal.created_at)
-                            : '-'}
-                        </td>
-                        {categoryTab !== 'expense' && (
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
-                            {totalItemsCount}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
+                            {isAllTab ? (
+                              <div className="inline-flex items-center gap-1">
+                                {isExpanded ? (
+                                  <ChevronDownIcon className="h-4 w-4 text-slate-400" />
+                                ) : (
+                                  <ChevronRightIcon className="h-4 w-4 text-slate-400" />
+                                )}
+                                <span>{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                              </div>
+                            ) : (
+                              <span>{(currentPage - 1) * itemsPerPage + index + 1}</span>
+                            )}
                           </td>
-                        )}
-                        {categoryTab !== 'stock' && (
+                          <td
+                            className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(withdrawal);
+                            }}
+                          >
+                            {withdrawal.code}
+                          </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            ฿
-                            {totalAmount.toLocaleString('th-TH', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
+                            {withdrawal.created_at
+                              ? formatThaiDate(withdrawal.created_at)
+                              : '-'}
                           </td>
-                        )}
-                        {categoryTab !== 'stock' && (
+                          {categoryTab !== 'expense' && (
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
+                              {totalItemsCount}
+                            </td>
+                          )}
+                          {categoryTab !== 'stock' && (
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                              ฿
+                              {totalAmount.toLocaleString('th-TH', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </td>
+                          )}
+                          {categoryTab !== 'stock' && (
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                              {recipientName === '[object Object]'
+                                ? 'Unknown'
+                                : recipientName}
+                            </td>
+                          )}
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            {recipientName === '[object Object]'
-                              ? 'Unknown'
-                              : recipientName}
-                          </td>
-                        )}
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {(() => {
-                            const creator = (withdrawal as WithdrawalType & {
-                              creator?: { first_name?: string; last_name?: string; nick_name?: string };
-                            }).creator;
-                            if (creator?.first_name) {
-                              return `${creator.first_name} ${creator.last_name || ''}`.trim();
-                            }
-                            const fromMap = userMap.get(withdrawal.created_by);
-                            if (fromMap && fromMap !== '[object Object]') return fromMap;
-                            // fallback: ถ้ายังไม่เจอและเป็น UUID → แสดง 'ไม่ระบุ'
-                            const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
-                              withdrawal.created_by || '',
-                            );
-                            return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
-                          })()}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <StatusBadge status={withdrawal.status} />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                          <div className="inline-block">
-                            <Button
-                              variant="icon"
-                              data-withdrawal-id={withdrawal.id}
-                              onClick={(e) =>
-                                handleDropdownToggle(e, withdrawal.id)
+                            {(() => {
+                              const creator = (withdrawal as WithdrawalType & {
+                                creator?: { first_name?: string; last_name?: string; nick_name?: string };
+                              }).creator;
+                              if (creator?.first_name) {
+                                return `${creator.first_name} ${creator.last_name || ''}`.trim();
                               }
-                            >
-                              <span className="sr-only">จัดการ</span>
-                              <ManageIcon
-                                className="h-5 w-5"
-                                aria-hidden="true"
-                              />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
+                              const fromMap = userMap.get(withdrawal.created_by);
+                              if (fromMap && fromMap !== '[object Object]') return fromMap;
+                              const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
+                                withdrawal.created_by || '',
+                              );
+                              return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                            })()}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <StatusBadge status={withdrawal.status} />
+                          </td>
+                          <td
+                            className="px-4 py-3 whitespace-nowrap text-sm font-medium"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="inline-block">
+                              <Button
+                                variant="icon"
+                                data-withdrawal-id={withdrawal.id}
+                                onClick={(e) =>
+                                  handleDropdownToggle(e, withdrawal.id)
+                                }
+                              >
+                                <span className="sr-only">จัดการ</span>
+                                <ManageIcon
+                                  className="h-5 w-5"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr className="bg-gradient-to-b from-slate-50 to-slate-100/60">
+                            <td colSpan={colSpan} className="px-6 py-5 border-t border-b border-slate-200">
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                                {/* รายการสินค้า */}
+                                <div className="rounded-xl border border-emerald-100 bg-white shadow-sm overflow-hidden">
+                                  <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-50 to-emerald-50/40 border-b border-emerald-100">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="h-8 w-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                        <TruckIcon className="h-4 w-4" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-slate-800">รายการสินค้า/สารเคมี</h4>
+                                        <p className="text-xs text-slate-500">ทั้งหมด {withdrawal.items?.length || 0} รายการ</p>
+                                      </div>
+                                    </div>
+                                    {hasItems && (
+                                      <div className="text-right">
+                                        <div className="text-xs text-slate-500">รวมจำนวน</div>
+                                        <div className="text-sm font-semibold text-emerald-700">
+                                          {(withdrawal.items || []).reduce((s, it) => s + Number(it.quantity || 0), 0).toLocaleString('th-TH')}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {hasItems ? (
+                                    <div className="overflow-x-auto">
+                                      <table className="min-w-full text-sm text-center">
+                                        <thead>
+                                          <tr className="text-sm font-semibold text-slate-700 bg-slate-100 border-b border-slate-200">
+                                            <th className="px-4 py-2.5 w-12">ลำดับ</th>
+                                            <th className="px-4 py-2.5">รหัสสินค้า</th>
+                                            <th className="px-4 py-2.5">ชื่อสินค้า</th>
+                                            <th className="px-4 py-2.5 w-24">จำนวน</th>
+                                            <th className="px-4 py-2.5 w-24">หน่วย</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                          {withdrawal.items!.map((item, i) => {
+                                            const product = productMap.get(item.product_id);
+                                            const unitText = (() => {
+                                              const u = product?.unit as { name?: string } | string | undefined;
+                                              if (typeof u === 'string') return u;
+                                              if (u && typeof u === 'object' && u.name) return u.name;
+                                              return (item as { unit?: string }).unit || '-';
+                                            })();
+                                            return (
+                                              <tr
+                                                key={item.id || `${withdrawal.id}-item-${i}`}
+                                                className="hover:bg-emerald-50/40 transition-colors"
+                                              >
+                                                <td className="px-4 py-2.5 text-slate-500 tabular-nums">{i + 1}</td>
+                                                <td className="px-4 py-2.5 text-slate-500 font-mono text-xs">
+                                                  {product?.code || (item as { product_code?: string }).product_code || '-'}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-slate-700">
+                                                  {product?.name || (item as { product_name?: string }).product_name || item.product_id}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums">
+                                                  {Number(item.quantity || 0).toLocaleString('th-TH')}
+                                                </td>
+                                                <td className="px-4 py-2.5 text-slate-500">{unitText}</td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 py-8 text-center text-sm text-slate-400 italic">
+                                      ไม่มีรายการสินค้า
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* รายการค่าใช้จ่าย */}
+                                <div className="rounded-xl border border-amber-100 bg-white shadow-sm overflow-hidden">
+                                  <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-amber-50 to-amber-50/40 border-b border-amber-100">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="h-8 w-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                                        <CurrencyDollarIcon className="h-4 w-4" />
+                                      </div>
+                                      <div>
+                                        <h4 className="text-sm font-semibold text-slate-800">รายการค่าใช้จ่าย</h4>
+                                        <p className="text-xs text-slate-500">ทั้งหมด {withdrawal.expenses?.length || 0} รายการ</p>
+                                      </div>
+                                    </div>
+                                    {hasExpenses && (
+                                      <div className="text-right">
+                                        <div className="text-xs text-slate-500">รวมจำนวนเงิน</div>
+                                        <div className="text-sm font-semibold text-amber-700">
+                                          {fmtMoney((withdrawal.expenses || []).reduce((s, e) => s + Number(e.amount || 0), 0))}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {hasExpenses ? (
+                                    <div className="overflow-x-auto">
+                                      <table className="min-w-full text-sm text-center">
+                                        <thead>
+                                          <tr className="text-sm font-semibold text-slate-700 bg-slate-100 border-b border-slate-200">
+                                            <th className="px-4 py-2.5 w-12">ลำดับ</th>
+                                            <th className="px-4 py-2.5">รายละเอียด</th>
+                                            <th className="px-4 py-2.5 w-36">จำนวนเงิน</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                          {withdrawal.expenses!.map((exp, i) => (
+                                            <tr
+                                              key={(exp as { id?: string }).id || `${withdrawal.id}-exp-${i}`}
+                                              className="hover:bg-amber-50/40 transition-colors"
+                                            >
+                                              <td className="px-4 py-2.5 text-slate-500 tabular-nums">{i + 1}</td>
+                                              <td className="px-4 py-2.5 text-slate-700">{exp.description || '-'}</td>
+                                              <td className="px-4 py-2.5 text-slate-800 font-medium tabular-nums">
+                                                {fmtMoney(Number(exp.amount || 0))}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  ) : (
+                                    <div className="px-4 py-8 text-center text-sm text-slate-400 italic">
+                                      ไม่มีรายการค่าใช้จ่าย
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
               </tbody>
