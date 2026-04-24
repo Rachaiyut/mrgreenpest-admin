@@ -1,7 +1,7 @@
 import { isFieldRole } from '@/src/utils/role';
 // ===== React / External =====
 import Swal from 'sweetalert2';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 // ===== Types =====
@@ -28,6 +28,9 @@ import { Pagination } from '../../../components/common/Pagination';
 // ===== Utils =====
 import { formatThaiDate } from '../../../utils/date';
 import { StockIssueSummaryApi } from '../../../api/stock-issue-summary';
+import { UserApi } from '../../../api/user';
+import { SearchableSelect } from '../../../components/common/SearchableSelect';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Assets =====
 import {
@@ -73,7 +76,6 @@ const IssueSummaryPage: React.FC = () => {
   const isTechRole = isFieldRole(currentUser?.roleType);
 
   const {
-    stockIssueSummaries,
     users,
     warehouses,
     products,
@@ -85,24 +87,32 @@ const IssueSummaryPage: React.FC = () => {
   // --- State สำหรับ Loading ---
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch stock issue summaries on mount
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        await fetchData(['stockIssueSummaries', 'warehouses', 'users']);
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-      } finally {
-        setIsLoading(false);
+  // --- Local list state (server-side driven) ---
+  const [stockIssueSummaries, setStockIssueSummaries] = useState<StockIssueSummaryType[]>([]);
+  const [totalItemsServer, setTotalItemsServer] = useState(0);
+
+  // ผู้ใช้ที่ fetch มาเพิ่มตอน search ใน dropdown ผู้เบิก
+  const [extraUsers, setExtraUsers] = useState<typeof users>([]);
+  const creatorSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchCreators = useCallback(async (query: string) => {
+    try {
+      const q = (query || '').trim();
+      if (!q) {
+        setExtraUsers([]);
+        return;
       }
-    };
-    loadData();
+      const res = await UserApi.getAll({ search: q, limit: 10, page: 1 });
+      if (res?.data) setExtraUsers(res.data);
+    } catch (e) {
+      console.error('Failed to search creators', e);
+    }
   }, []);
 
   const onCreateStockIssueSummary = async (data: Omit<StockIssueSummaryType, 'id'>) => {
     try {
       await handlers.stockIssueSummaries.create(data);
+      await fetchList();
     } catch (error: any) {
       console.error('Failed to create stock issue summary', error);
       if (
@@ -120,6 +130,7 @@ const IssueSummaryPage: React.FC = () => {
   const onUpdateStockIssueSummary = async (updatedItem: StockIssueSummaryType) => {
     try {
       await handlers.stockIssueSummaries.update(updatedItem);
+      await fetchList();
     } catch (error) {
       console.error('Failed to update stock issue summary', error);
     }
@@ -130,6 +141,7 @@ const IssueSummaryPage: React.FC = () => {
       const summary = stockIssueSummaries.find((s) => s.id === summaryId);
       if (!summary) return;
       await handlers.stockIssueSummaries.update({ ...summary, status: newStatus } as StockIssueSummaryType);
+      await fetchList();
     } catch (error) {
       console.error('Failed to update status', error);
     }
@@ -147,7 +159,7 @@ const IssueSummaryPage: React.FC = () => {
     try {
       await StockIssueSummaryApi.updateStatus(selectedSummary.id, targetStatus);
       // Refresh list
-      fetchData(['stockIssueSummaries']);
+      await fetchList();
     } catch (error) {
       console.error('Failed to update status', error);
     }
@@ -157,6 +169,7 @@ const IssueSummaryPage: React.FC = () => {
   const onDeleteStockIssueSummary = async (id: string) => {
     try {
       await handlers.stockIssueSummaries.delete(id);
+      await fetchList();
     } catch (error) {
       console.error('Failed to delete stock issue summary', error);
     }
@@ -164,6 +177,8 @@ const IssueSummaryPage: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [openDropdownCategory, setOpenDropdownCategory] = useState<'STOCK' | 'EXPENSE' | null>(null);
   const [openDropdownApprovalStatus, setOpenDropdownApprovalStatus] = useState<string | null>(null);
@@ -183,15 +198,56 @@ const IssueSummaryPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'stock' | 'expense'>('all');
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [targetStatus, setTargetStatus] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // --- Server-side list fetch (page / limit / search) ---
+  const fetchList = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await StockIssueSummaryApi.getAll({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+      });
+      if (res?.data) setStockIssueSummaries(res.data);
+      if (res?.meta?.total !== undefined) {
+        setTotalItemsServer(res.meta.total);
+      } else if (res?.data) {
+        setTotalItemsServer(res.data.length);
+      }
+    } catch (e) {
+      console.error('Failed to fetch stock issue summaries', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchDebounced]);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  // Load warehouses / users once
+  useEffect(() => {
+    fetchData(['warehouses', 'users']).catch((e) => console.error(e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Debounce searchQuery → searchDebounced (triggers server fetch)
+  useEffect(() => {
+    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w])),
     [warehouses]
-  );
-
-  const productMap = useMemo(
-    () => new Map(products.map((p) => [p.id, p])),
-    [products]
   );
 
   const userMap = useMemo(
@@ -215,6 +271,22 @@ const IssueSummaryPage: React.FC = () => {
     () => [...new Set(stockIssueSummaries.map((s) => s.created_by).filter(Boolean))],
     [stockIssueSummaries]
   );
+
+  // Creator dropdown options: users prop + extraUsers (backend search) + creator จาก summaries
+  const creatorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const u of [...users, ...extraUsers]) {
+      if (map.has(u.id)) continue;
+      const label = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+      map.set(u.id, label || u.id);
+    }
+    for (const id of uniqueCreators) {
+      if (!id || map.has(id)) continue;
+      const fromMap = userMap.get(id);
+      map.set(id, (fromMap && fromMap !== '[object Object]') ? fromMap : `${id.substring(0, 8)}...`);
+    }
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [users, extraUsers, uniqueCreators, userMap]);
 
   const filteredSummaries = useMemo(() => {
     let filtered = [...stockIssueSummaries].sort((a, b) => {
@@ -240,39 +312,19 @@ const IssueSummaryPage: React.FC = () => {
       filtered = filtered.filter((s) => s.status === statusFilter);
     }
 
-    // Filter by search query
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (lowercasedQuery) {
-      filtered = filtered.filter((summary) => {
-        const totalGoodsAmount =
-          summary.items?.reduce((sum, item) => {
-            const product = productMap.get(item.product_id);
-            return sum + (product ? product.price * item.quantity : 0);
-          }, 0) || 0;
-        
-        const totalExpenseAmount = 
-          summary.expense_items?.reduce((sum: number, exp: UserExpense) => sum + Number(exp.amount || 0), 0) || 0;
-        
-        const totalAmount = totalGoodsAmount + totalExpenseAmount;
-
-        const productNames = (summary.items || [])
-          .map((item) => item.product_name || productMap.get(item.product_id)?.name || '')
-          .join(' ')
-          .toLowerCase();
-
-        return (
-          (summary.id || '').toLowerCase().includes(lowercasedQuery) ||
-          productNames.includes(lowercasedQuery) ||
-          totalAmount.toString().includes(lowercasedQuery) ||
-          (summary.created_at &&
-            formatThaiDate(summary.created_at).includes(lowercasedQuery)) ||
-          (summary.notes || '').toLowerCase().includes(lowercasedQuery)
-        );
+    if (startDate || endDate) {
+      const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity;
+      const endMs = endDate ? new Date(`${endDate}T23:59:59.999`).getTime() : Infinity;
+      filtered = filtered.filter((s) => {
+        const dateStr = s.issue_date || s.created_at;
+        if (!dateStr) return false;
+        const t = new Date(dateStr).getTime();
+        return t >= startMs && t <= endMs;
       });
     }
 
     return filtered;
-  }, [stockIssueSummaries, searchQuery, creatorFilter, statusFilter, productMap, isTechRole, currentUser?.id]);
+  }, [stockIssueSummaries, creatorFilter, statusFilter, isTechRole, currentUser?.id, startDate, endDate]);
 
   // Option B — flatten แต่ละใบเบิกเป็นหลายแถวตาม approval category
   // - ไม่มี approval records → 1 แถว (category = null)
@@ -318,11 +370,19 @@ const IssueSummaryPage: React.FC = () => {
     return rows;
   }, [filteredSummaries, activeTab]);
 
-  const totalItems = flattenedRows.length;
-  const paginatedRows = flattenedRows.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Server paginates already when no extra client filters are active.
+  // When user applies creator / status / tab / date filter → paginate the filtered rows client-side.
+  const hasClientFilter = !!(
+    creatorFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    activeTab !== 'all' ||
+    startDate ||
+    endDate
   );
+  const totalItems = hasClientFilter ? flattenedRows.length : totalItemsServer;
+  const paginatedRows = hasClientFilter
+    ? flattenedRows.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : flattenedRows;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -557,10 +617,10 @@ const IssueSummaryPage: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
-              <div className="relative w-full sm:w-56">
+              <div className="relative w-full sm:w-72">
                 <Input
                   type="search"
-                  placeholder="ค้นหา (เลขที่, สินค้า, จำนวนเงิน)..."
+                  placeholder="ค้นหาเลขที่เอกสารเบิก"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -577,21 +637,26 @@ const IssueSummaryPage: React.FC = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
-              <Select
-                value={creatorFilter}
-                onChange={(e) => {
-                  setCreatorFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-fit text-sm !pr-8"
-              >
-                <option value="all">ผู้เบิกทั้งหมด</option>
-                {uniqueCreators.map((creator) => (
-                  <option key={creator} value={creator}>
-                    {userMap.get(creator) || creator}
-                  </option>
-                ))}
-              </Select>
+              {!isTechRole && (
+                <div className="w-40 flex-shrink-0">
+                  <SearchableSelect
+                    value={creatorFilter === 'all' ? '' : creatorFilter}
+                    onChange={(v) => {
+                      setCreatorFilter(v || 'all');
+                      setCurrentPage(1);
+                    }}
+                    onSearchChange={(q) => {
+                      if (creatorSearchTimerRef.current) clearTimeout(creatorSearchTimerRef.current);
+                      creatorSearchTimerRef.current = setTimeout(() => searchCreators(q), 300);
+                    }}
+                    options={[
+                      { value: '', label: 'ผู้เบิกทั้งหมด' },
+                      ...creatorOptions,
+                    ]}
+                    placeholder="ผู้เบิกทั้งหมด"
+                  />
+                </div>
+              )}
               <Select
                 value={statusFilter}
                 onChange={(e) => {
@@ -607,6 +672,35 @@ const IssueSummaryPage: React.FC = () => {
                 <option value="COMPLETED">เสร็จสิ้น</option>
                 <option value="CANCELLED">ยกเลิก</option>
               </Select>
+              <div className="flex items-center gap-2">
+                <DatePicker
+                  selected={startDate ? new Date(startDate) : null}
+                  onChange={(date: Date | null) => {
+                    setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                    setCurrentPage(1);
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="เริ่มต้น"
+                  isClearable
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  wrapperClassName="w-32 sm:w-36"
+                />
+                <span className="text-slate-400">-</span>
+                <DatePicker
+                  selected={endDate ? new Date(endDate) : null}
+                  onChange={(date: Date | null) => {
+                    setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                    setCurrentPage(1);
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="สิ้นสุด"
+                  isClearable
+                  className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  wrapperClassName="w-32 sm:w-36"
+                />
+              </div>
             </div>
 
             {/* Tabs (ขวาสุด — pill style เหมือนหน้า Job) */}

@@ -46,11 +46,17 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const updateDropdownPosition = useCallback(() => {
     if (triggerRef.current && isOpen) {
       const rect = triggerRef.current.getBoundingClientRect();
+      // ถ้า trigger แคบกว่า 280 → ขยาย dropdown ให้กว้างขึ้นเพื่อแสดงชื่อเต็ม
+      // แต่ไม่เกินขอบหน้าจอด้านขวา
+      const minWidth = 280;
+      const desiredWidth = Math.max(rect.width, minWidth);
+      const maxAllowed = window.innerWidth - rect.left - 8;
+      const width = Math.min(desiredWidth, maxAllowed);
       setDropdownStyle({
         position: 'fixed',
         top: rect.bottom + 4,
         left: rect.left,
-        width: rect.width,
+        width,
         zIndex: 9999,
       });
     }
@@ -191,9 +197,11 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     setIsOpen(false);
                   }}
                 >
-                  <span className="block break-words">{option.label}</span>
+                  <span className="block truncate" title={option.label}>
+                    {option.label}
+                  </span>
                   {option.description && (
-                    <span className="block break-words text-xs text-slate-500">
+                    <span className="block truncate text-xs text-slate-500" title={option.description}>
                       {option.description}
                     </span>
                   )}

@@ -29,10 +29,14 @@ import { WithdrawalModal } from '../../../components/features/inventory/withdraw
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/withdrawal/WithdrawalDetailsModal';
 
 import { Card } from '../../../components/common/Card';
-import { Input, Select, Button } from '../../../components/common/FormControls';
+import { Input, Button, Select } from '../../../components/common/FormControls';
+import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useCurrentUser } from '../../../hooks/useCurrentUser';
+import { isFieldRole } from '../../../utils/role';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== API =====
 import {
@@ -65,15 +69,40 @@ import {
 const Issue: React.FC = () => {
   const { handlers } = useData();
   const { hasPermission } = usePermissions();
+  const authUser = useCurrentUser();
+  const isTechRole = isFieldRole(authUser?.roleType);
 
   // --- เพิ่ม State สำหรับ Loading ---
   const [isLoading, setIsLoading] = useState(true);
 
   const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
+  const [extraUsers, setExtraUsers] = useState<UserType[]>([]);
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
   const [customers, setCustomers] = useState<CustomerType[]>([]);
   const [products, setProducts] = useState<ProductType[]>([]);
+  const [totalItemsServer, setTotalItemsServer] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const creatorSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Search users on backend when typing in creator dropdown
+  const searchCreators = useCallback(async (search: string) => {
+    try {
+      const q = (search || '').trim();
+      if (!q) {
+        setExtraUsers([]);
+        return;
+      }
+      const res = await UserApi.getAll({ search: q, limit: 10, page: 1 });
+      if (res?.data) setExtraUsers(res.data);
+    } catch (e) {
+      console.error('Failed to search creators', e);
+    }
+  }, []);
 
   // 1. แยก fetchAllData ออกมาไว้ข้างนอก และใช้ useCallback เพื่อให้เรียกซ้ำได้
   const fetchAllData = useCallback(async () => {
@@ -86,14 +115,24 @@ const Issue: React.FC = () => {
         customersRes,
         productsRes,
       ] = await Promise.all([
-        IssueNoteApi.getAll(),
+        IssueNoteApi.getAll({
+          page: currentPage,
+          limit: itemsPerPage,
+          ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+          ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+        }),
         UserApi.getAll(),
-        WarehouseApi.getWarehouses(), 
+        WarehouseApi.getWarehouses(),
         CustomerApi.getCustomers(),
-        ProductApi.getProducts(), 
+        ProductApi.getProducts(),
       ]);
 
       if (withdrawalsRes?.data) setWithdrawals(withdrawalsRes.data);
+      if (withdrawalsRes?.meta?.total !== undefined) {
+        setTotalItemsServer(withdrawalsRes.meta.total);
+      } else if (withdrawalsRes?.data) {
+        setTotalItemsServer(withdrawalsRes.data.length);
+      }
       if (usersRes?.data) setUsers(usersRes.data);
       if (warehousesRes?.data) setWarehouses(warehousesRes.data);
       if (customersRes?.data) setCustomers(customersRes.data);
@@ -104,7 +143,8 @@ const Issue: React.FC = () => {
     } finally {
       setIsLoading(false); // หยุดหมุน
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, itemsPerPage, searchDebounced, statusFilter]);
 
   // 2. เรียกใช้ fetchAllData ตอนโหลดหน้าครั้งแรก
   useEffect(() => {
@@ -158,8 +198,6 @@ const Issue: React.FC = () => {
   const stockMap = useMemo(() => new Map<string, Map<string, number>>(), []);
   const currentUser = users.length > 0 ? users[0] : null;
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
     top: number;
@@ -174,6 +212,20 @@ const Issue: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
   const [categoryTab, setCategoryTab] = useState<'all' | 'stock' | 'expense'>('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Debounce searchQuery → searchDebounced (triggers server fetch via fetchAllData dep)
+  useEffect(() => {
+    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w])),
@@ -202,10 +254,40 @@ const Issue: React.FC = () => {
     [users]
   );
 
-  const uniqueCreators = useMemo(
-    () => [...new Set(withdrawals.map((w) => w.created_by))],
-    [withdrawals]
-  );
+  // Build creator filter options:
+  // 1. users prop (default 10 คน)
+  // 2. extraUsers (ผลลัพธ์จาก backend search)
+  // 3. creator จาก withdrawals (กันกรณีไม่อยู่ใน users ทั้ง 2 set)
+  const creatorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+
+    // จาก users prop + extraUsers (รวมกัน dedup by id)
+    for (const u of [...users, ...extraUsers]) {
+      if (map.has(u.id)) continue;
+      const label = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+      map.set(u.id, label || u.id);
+    }
+
+    // จาก creator association ของ withdrawals
+    for (const w of withdrawals) {
+      const id = w.created_by;
+      if (!id || map.has(id)) continue;
+      const c = (w as WithdrawalType & {
+        creator?: { first_name?: string; last_name?: string; nick_name?: string };
+      }).creator;
+      let label = '';
+      if (c?.first_name) {
+        label = `${c.first_name} ${c.last_name || ''}`.trim();
+      } else {
+        const fromMap = userMap.get(id);
+        if (fromMap && fromMap !== '[object Object]') label = fromMap;
+      }
+      if (!label) label = `${id.substring(0, 8)}...`;
+      map.set(id, label);
+    }
+
+    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+  }, [users, extraUsers, withdrawals, userMap]);
 
   const filteredIssues = useMemo(() => {
     let filtered = [...withdrawals].sort((a, b) => {
@@ -223,51 +305,31 @@ const Issue: React.FC = () => {
       filtered = filtered.filter((w) => (w.expenses?.length || 0) > 0);
     }
 
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (lowercasedQuery) {
-      filtered = filtered.filter((withdrawal) => {
-        const totalGoodsAmount =
-          withdrawal.items?.reduce((sum, item) => {
-            const product = productMap.get(item.product_id);
-            return sum + (product ? product.price * item.quantity : 0);
-          }, 0) || 0;
-        const totalExpenseAmount =
-          withdrawal.expenses?.reduce(
-            (sum, exp) => sum + Number(exp.amount),
-            0
-          ) || 0;
-        const totalAmount = totalGoodsAmount + totalExpenseAmount;
-
-        const productNames = (withdrawal.items || [])
-          .map((item) => productMap.get(item.product_id)?.name || '')
-          .join(' ')
-          .toLowerCase();
-
-        const expenseDescriptions = (
-          withdrawal.expenses?.map((exp) => exp.description) || []
-        )
-          .join(' ')
-          .toLowerCase();
-
-        return (
-          (withdrawal.id || '').toLowerCase().includes(lowercasedQuery) ||
-          productNames.includes(lowercasedQuery) ||
-          expenseDescriptions.includes(lowercasedQuery) ||
-          totalAmount.toString().includes(lowercasedQuery) ||
-          (withdrawal.created_at &&
-            formatThaiDate(withdrawal.created_at).includes(lowercasedQuery))
-        );
+    if (startDate || endDate) {
+      const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity;
+      const endMs = endDate ? new Date(`${endDate}T23:59:59.999`).getTime() : Infinity;
+      filtered = filtered.filter((w) => {
+        if (!w.created_at) return false;
+        const t = new Date(w.created_at).getTime();
+        return t >= startMs && t <= endMs;
       });
     }
 
     return filtered;
-  }, [withdrawals, searchQuery, creatorFilter, categoryTab, productMap]);
+  }, [withdrawals, creatorFilter, categoryTab, startDate, endDate]);
 
-  const totalItems = filteredIssues.length;
-  const paginatedWithdrawals = filteredIssues.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // search ยิงที่ server แล้ว → ไม่ต้องนับเป็น client filter
+  // client filter คือ: creator / category tab / date range
+  const hasClientFilter = !!(
+    creatorFilter !== 'all' ||
+    categoryTab !== 'all' ||
+    startDate ||
+    endDate
   );
+  const totalItems = hasClientFilter ? filteredIssues.length : totalItemsServer;
+  const paginatedWithdrawals = hasClientFilter
+    ? filteredIssues.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : filteredIssues;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -489,38 +551,91 @@ const Issue: React.FC = () => {
 
         <Card className="!p-4 mb-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-80 flex-shrink-0">
+            <div className="relative w-full sm:w-72 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, สินค้า, ค่าใช้จ่าย, จำนวนเงิน, วันที่)..."
+                placeholder="ค้นหาเลขที่เอกสารเบิก"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full pl-10"
-                title="ค้นหาด้วย: เลขที่เอกสารเบิก, สินค้า/อุปกรณ์, รายการค่าใช้จ่าย, จำนวนเงินที่เบิก, วันที่เบิก"
+                title="ค้นหาด้วยเลขที่เอกสารเบิก"
               />
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div className="w-full sm:w-48 flex-shrink-0">
-              <Select
-                value={creatorFilter}
-                onChange={(e) => {
-                  setCreatorFilter(e.target.value);
+            {!isTechRole && (
+              <div className="w-full sm:w-48 flex-shrink-0">
+                <SearchableSelect
+                  value={creatorFilter === 'all' ? '' : creatorFilter}
+                  onChange={(v) => {
+                    setCreatorFilter(v || 'all');
+                    setCurrentPage(1);
+                  }}
+                  onSearchChange={(q) => {
+                    if (creatorSearchTimerRef.current) clearTimeout(creatorSearchTimerRef.current);
+                    creatorSearchTimerRef.current = setTimeout(() => {
+                      searchCreators(q);
+                    }, 300);
+                  }}
+                  options={[
+                    { value: '', label: 'ผู้เบิกทั้งหมด' },
+                    ...creatorOptions,
+                  ]}
+                  placeholder="ผู้เบิกทั้งหมด"
+                />
+              </div>
+            )}
+
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-fit text-sm !pr-8"
+            >
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="DRAFT">ฉบับร่าง</option>
+              <option value="PENDING">รออนุมัติ</option>
+              <option value="APPROVED">อนุมัติแล้ว</option>
+              <option value="PARTIALLY_APPROVED">อนุมัติบางส่วน</option>
+              <option value="REJECTED">ไม่อนุมัติ</option>
+              <option value="COMPLETED">เสร็จสิ้น</option>
+              <option value="CANCELLED">ยกเลิก</option>
+            </Select>
+
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(date: Date | null) => {
+                  setStartDate(date ? date.toISOString().substring(0, 10) : '');
                   setCurrentPage(1);
                 }}
-                className="w-full"
-              >
-                <option value="all">ผู้เบิกทั้งหมด</option>
-                {uniqueCreators.map((creator) => (
-                  <option key={creator} value={creator}>
-                    {creator}
-                  </option>
-                ))}
-              </Select>
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="เริ่มต้น"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
+              <span className="text-slate-400">-</span>
+              <DatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(date: Date | null) => {
+                  setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="สิ้นสุด"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
             </div>
 
             {/* Category Tabs — กรองตามประเภทรายการ */}
@@ -757,12 +872,6 @@ const Issue: React.FC = () => {
                     </td>
                   </tr>
                 ) : paginatedWithdrawals.map((withdrawal, index) => {
-                    const fromWarehouse = warehouseMap.get(
-                      withdrawal.warehouse_id
-                    );
-                    const toWarehouse = withdrawal.to_warehouse_id
-                      ? warehouseMap.get(withdrawal.to_warehouse_id)
-                      : null;
                     const totalItemsCount =
                       (withdrawal.items?.length || 0) +
                       (withdrawal.expenses?.length || 0);
