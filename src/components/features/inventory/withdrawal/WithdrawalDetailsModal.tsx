@@ -36,7 +36,19 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     [products]
   );
   const userMap = useMemo(
-    () => new Map(users.map((u) => [u.id, u.name])),
+    () =>
+      new Map(
+        users.map((u) => {
+          let name = u.name;
+          if (typeof name !== 'string' || name === '[object Object]') {
+            name =
+              `${u.first_name || ''} ${u.last_name || ''}`.trim() ||
+              u.nick_name ||
+              'Unknown';
+          }
+          return [u.id, name];
+        })
+      ),
     [users]
   );
 
@@ -72,7 +84,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบเบิก: ${withdrawal.id || 'N/A'}`}
+      title={`รายละเอียดใบเบิก: ${withdrawal.code || withdrawal.id || 'N/A'}`}
       size="4xl"
       footer={
         <div className="flex w-full justify-between items-center">
@@ -101,7 +113,7 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
             <div>
               <dt className="font-medium text-slate-500">เลขที่ใบเบิก</dt>
               <dd className="mt-1 text-slate-900 font-semibold">
-                {withdrawal.id}
+                {withdrawal.code || '-'}
               </dd>
             </div>
             <div>
@@ -148,11 +160,38 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
               </dd>
             </div>
             <div>
+              <dt className="font-medium text-slate-500">ผู้เบิก</dt>
+              <dd className="mt-1 text-slate-900">
+                {withdrawal.requester_id
+                  ? userMap.get(withdrawal.requester_id) || '-'
+                  : '-'}
+              </dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-500">ผู้รับเงิน</dt>
+              <dd className="mt-1 text-slate-900">
+                {withdrawal.recipient_id
+                  ? userMap.get(withdrawal.recipient_id) || '-'
+                  : '-'}
+              </dd>
+            </div>
+            <div>
               <dt className="font-medium text-slate-500">ผู้สร้าง</dt>
               <dd className="mt-1 text-slate-900">
-                {withdrawal.created_by
-                  ? userMap.get(withdrawal.created_by) || withdrawal.created_by
-                  : '-'}
+                {(() => {
+                  const creator = (withdrawal as Withdrawal & {
+                    creator?: { first_name?: string; last_name?: string; nick_name?: string };
+                  }).creator;
+                  if (creator?.first_name) {
+                    return `${creator.first_name} ${creator.last_name || ''}`.trim();
+                  }
+                  const fromMap = withdrawal.created_by ? userMap.get(withdrawal.created_by) : null;
+                  if (fromMap) return fromMap;
+                  const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
+                    withdrawal.created_by || '',
+                  );
+                  return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                })()}
               </dd>
             </div>
             {/* 
@@ -210,10 +249,12 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
                           {index + 1}
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                          <div>{product?.name || item.product_id}</div>
-                          <div className="text-xs text-slate-500">
-                            {product?.id}
-                          </div>
+                          <div>{product?.name || 'ไม่พบสินค้า'}</div>
+                          {product?.code && (
+                            <div className="text-xs text-slate-500 font-mono">
+                              {product.code}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
                           {item.quantity}

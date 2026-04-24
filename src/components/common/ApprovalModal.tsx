@@ -38,8 +38,8 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
     onConfirm(item.id, remarks);
   };
 
-  const title = action === 'approve' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการปฏิเสธ';
-  const buttonText = action === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ';
+  const title = action === 'approve' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการไม่อนุมัติ';
+  const buttonText = action === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ';
   const buttonClass =
     action === 'approve'
       ? 'bg-primary hover:bg-primary/90'
@@ -73,14 +73,21 @@ export const ApprovalModal: React.FC<ApprovalModalProps> = ({
       }
     >
       <form id="approval-form" onSubmit={handleSubmit}>
-        <FormField label="หมายเหตุ (ถ้ามี)" htmlFor="remarks">
-          <Textarea
-            id="remarks"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            placeholder="ระบุเหตุผลการอนุมัติหรือปฏิเสธ..."
-          />
-        </FormField>
+        {action === 'reject' ? (
+          <FormField label="เหตุผลการไม่อนุมัติ" htmlFor="remarks">
+            <Textarea
+              id="remarks"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              placeholder="ระบุเหตุผลการไม่อนุมัติ..."
+            />
+          </FormField>
+        ) : (
+          <p className="text-sm text-slate-600">
+            ยืนยันการอนุมัติใบเบิก{' '}
+            <span className="font-semibold text-slate-900">{item.code || item.id}</span> ใช่หรือไม่?
+          </p>
+        )}
       </form>
     </Modal>
   );

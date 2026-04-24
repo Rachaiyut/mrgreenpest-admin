@@ -1,5 +1,6 @@
 import {
   IBaseQuery,
+  IBaseResponse,
   IBaseResponseArray,
 } from '@/src/types/entity/base.interface';
 import { Withdrawal } from '@/src/types/entity/inventory.interface';
@@ -16,18 +17,18 @@ class IssueNoteService extends AuthService {
   }
 
   async getById(id: string): Promise<Withdrawal> {
-    const res = await this.http.get<Withdrawal>(`${this.path}/${id}`);
-    return res.data;
+    const res = await this.http.get<IBaseResponse<Withdrawal>>(`${this.path}/${id}`);
+    return res.data.data;
   }
 
   async create(data: Omit<Withdrawal, 'id'>): Promise<Withdrawal> {
-    const res = await this.http.post<Withdrawal>(this.path, data);
-    return res.data;
+    const res = await this.http.post<IBaseResponse<Withdrawal>>(this.path, data);
+    return res.data.data;
   }
 
   async update(id: string, data: Partial<Withdrawal>): Promise<Withdrawal> {
-    const res = await this.http.patch<Withdrawal>(`${this.path}/${id}`, data);
-    return res.data;
+    const res = await this.http.patch<IBaseResponse<Withdrawal>>(`${this.path}/${id}`, data);
+    return res.data.data;
   }
 
   async delete(id: string): Promise<void> {
@@ -42,8 +43,8 @@ class IssueNoteService extends AuthService {
       category?: 'STOCK' | 'EXPENSE';
     },
   ): Promise<Withdrawal> {
-    const res = await this.http.patch<Withdrawal>(`${this.path}/${id}/approve`, dto);
-    return res.data;
+    const res = await this.http.patch<IBaseResponse<Withdrawal>>(`${this.path}/${id}/approve`, dto);
+    return res.data.data;
   }
 }
 

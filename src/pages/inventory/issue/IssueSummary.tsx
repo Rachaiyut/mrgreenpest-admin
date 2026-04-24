@@ -287,12 +287,18 @@ const IssueSummaryPage: React.FC = () => {
     const rows: SummaryRow[] = [];
     for (const s of filteredSummaries) {
       const approvals = (s as any).approvals as Array<{ category: 'STOCK' | 'EXPENSE'; status: string }> | undefined;
-      if (!approvals || approvals.length === 0) {
-        rows.push({ summary: s, category: null });
-      } else {
+      if (approvals && approvals.length > 0) {
+        // มีรายการรออนุมัติ → แยกแถวต่อ approval (category + status)
         for (const a of approvals) {
           rows.push({ summary: s, category: a.category, approvalStatus: a.status });
         }
+      } else {
+        // ไม่มี approval → infer category จากเนื้อหาของใบเบิก
+        const hasStock = (s.items?.length || 0) > 0;
+        const hasExpense = (s.expense_items?.length || 0) > 0;
+        if (hasStock) rows.push({ summary: s, category: 'STOCK' });
+        if (hasExpense) rows.push({ summary: s, category: 'EXPENSE' });
+        if (!hasStock && !hasExpense) rows.push({ summary: s, category: null });
       }
     }
 
@@ -359,15 +365,15 @@ const IssueSummaryPage: React.FC = () => {
     summaryId: string,
     category: 'STOCK' | 'EXPENSE',
   ) => {
-    const title = category === 'STOCK' ? 'ปฏิเสธเบิกสินค้า?' : 'ปฏิเสธค่าใช้จ่าย?';
+    const title = category === 'STOCK' ? 'ไม่อนุมัติเบิกสินค้า?' : 'ไม่อนุมัติค่าใช้จ่าย?';
     const r = await Swal.fire({
       title,
-      text: 'การปฏิเสธจะยกเลิกใบเบิกทั้งใบ',
+      text: 'การไม่อนุมัติจะยกเลิกใบเบิกทั้งใบ',
       input: 'textarea',
-      inputLabel: 'เหตุผลการปฏิเสธ',
+      inputLabel: 'เหตุผลการไม่อนุมัติ',
       inputPlaceholder: 'ระบุเหตุผล...',
       showCancelButton: true,
-      confirmButtonText: 'ปฏิเสธ',
+      confirmButtonText: 'ไม่อนุมัติ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
       inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
@@ -379,11 +385,11 @@ const IssueSummaryPage: React.FC = () => {
         category,
         remark: r.value.trim(),
       });
-      Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'ไม่อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
       await fetchData(['stockIssueSummaries']);
     } catch (error) {
       const msg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถดำเนินการได้', 'error');
     }
   };
 
@@ -477,7 +483,7 @@ const IssueSummaryPage: React.FC = () => {
                 handleRowApprove(summary.id as string, category as 'STOCK' | 'EXPENSE'),
             },
             {
-              label: 'ปฏิเสธ',
+              label: 'ไม่อนุมัติ',
               icon: TrashIcon,
               color: 'text-red-600',
               hoverBg: 'hover:bg-red-50',
@@ -710,7 +716,7 @@ const IssueSummaryPage: React.FC = () => {
                       const apMap: Record<string, { text: string; className: string }> = {
                         PENDING: { text: 'รออนุมัติ', className: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
                         APPROVED: { text: 'อนุมัติแล้ว', className: 'bg-green-100 text-green-700 border-green-200' },
-                        REJECTED: { text: 'ถูกปฏิเสธ', className: 'bg-red-100 text-red-700 border-red-200' },
+                        REJECTED: { text: 'ไม่อนุมัติ', className: 'bg-red-100 text-red-700 border-red-200' },
                         VERIFIED: { text: 'ตรวจสอบแล้ว', className: 'bg-blue-100 text-blue-700 border-blue-200' },
                       };
                       const meta = apMap[row.approvalStatus] || { text: row.approvalStatus, className: 'bg-slate-100 text-slate-700 border-slate-200' };

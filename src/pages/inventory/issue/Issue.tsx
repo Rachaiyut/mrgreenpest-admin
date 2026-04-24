@@ -25,11 +25,9 @@ import { WithdrawalStatus } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
-import { AddStockIssueToVehicleModal } from '../../../components/features/inventory/withdrawal/AddIssueModal';
-import { EditStockIssueToVehicleModal } from '../../../components/features/inventory/withdrawal/EditStockIssueToVehicleModal';
+import { WithdrawalModal } from '../../../components/features/inventory/withdrawal/WithdrawalModal';
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/withdrawal/WithdrawalDetailsModal';
 
-import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Card } from '../../../components/common/Card';
 import { Input, Select, Button } from '../../../components/common/FormControls';
 import { Pagination } from '../../../components/common/Pagination';
@@ -171,14 +169,11 @@ const Issue: React.FC = () => {
   const [selectedWithdrawal, setSelectedWithdrawal] =
     useState<WithdrawalType | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<
-    'approve' | 'reject' | null
-  >(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [creatorFilter, setCreatorFilter] = useState('all');
+  const [categoryTab, setCategoryTab] = useState<'all' | 'stock' | 'expense'>('all');
 
   const warehouseMap = useMemo(
     () => new Map(warehouses.map((w) => [w.id, w])),
@@ -221,6 +216,13 @@ const Issue: React.FC = () => {
       filtered = filtered.filter((w) => w.created_by === creatorFilter);
     }
 
+    // Category tab filter — แยกตามประเภทที่เบิก
+    if (categoryTab === 'stock') {
+      filtered = filtered.filter((w) => (w.items?.length || 0) > 0);
+    } else if (categoryTab === 'expense') {
+      filtered = filtered.filter((w) => (w.expenses?.length || 0) > 0);
+    }
+
     const lowercasedQuery = searchQuery.toLowerCase().trim();
     if (lowercasedQuery) {
       filtered = filtered.filter((withdrawal) => {
@@ -259,7 +261,7 @@ const Issue: React.FC = () => {
     }
 
     return filtered;
-  }, [withdrawals, searchQuery, creatorFilter, productMap]);
+  }, [withdrawals, searchQuery, creatorFilter, categoryTab, productMap]);
 
   const totalItems = filteredIssues.length;
   const paginatedWithdrawals = filteredIssues.slice(
@@ -300,42 +302,60 @@ const Issue: React.FC = () => {
     }
   };
 
-  const handleApprovalAction = (action: 'approve' | 'reject') => {
+  const handleApprovalAction = async (action: 'approve' | 'reject') => {
     const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
-    if (withdrawal) {
-      setSelectedWithdrawal(withdrawal);
-      setApprovalAction(action);
-      setIsApprovalModalOpen(true);
-      setOpenDropdownId(null);
+    if (!withdrawal) return;
+    setOpenDropdownId(null);
+
+    if (action === 'approve') {
+      const r = await Swal.fire({
+        icon: 'question',
+        title: 'ยืนยันการอนุมัติ',
+        html: `ยืนยันการอนุมัติใบเบิก <strong>${withdrawal.code || withdrawal.id}</strong> ใช่หรือไม่?`,
+        showCancelButton: true,
+        confirmButtonText: 'อนุมัติ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#10b981',
+      });
+      if (!r.isConfirmed) return;
+      await submitApproval(withdrawal.id, 'APPROVED', '');
+    } else {
+      const r = await Swal.fire({
+        icon: 'warning',
+        title: 'ยืนยันการไม่อนุมัติ',
+        html: `ไม่อนุมัติใบเบิก <strong>${withdrawal.code || withdrawal.id}</strong>`,
+        input: 'textarea',
+        inputLabel: 'เหตุผลการไม่อนุมัติ',
+        inputPlaceholder: 'ระบุเหตุผล...',
+        showCancelButton: true,
+        confirmButtonText: 'ไม่อนุมัติ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ef4444',
+        inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      });
+      if (!r.isConfirmed || !r.value) return;
+      await submitApproval(withdrawal.id, 'REJECTED', r.value.trim());
     }
   };
 
-  const handleConfirmApproval = async (withdrawalId: string, remarks: string) => {
+  const submitApproval = async (
+    withdrawalId: string,
+    status: 'APPROVED' | 'REJECTED',
+    remarks: string,
+  ) => {
     try {
-      // ใช้ endpoint ใหม่ที่ route ไปยัง approvals table (flow เดียวกับ issue_summary)
-      await IssueNoteApi.approve(withdrawalId, {
-        status: approvalAction === 'approve' ? 'APPROVED' : 'REJECTED',
-        remark: remarks,
-      });
+      await IssueNoteApi.approve(withdrawalId, { status, remark: remarks });
       await fetchAllData();
       Swal.fire({
         icon: 'success',
-        title: approvalAction === 'approve' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว',
+        title: status === 'APPROVED' ? 'อนุมัติแล้ว' : 'ไม่อนุมัติแล้ว',
         timer: 1500,
         showConfirmButton: false,
       });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })
         ?.response?.data?.message;
-      Swal.fire(
-        'เกิดข้อผิดพลาด',
-        errMsg || 'ไม่สามารถอนุมัติใบเบิกได้',
-        'error',
-      );
-    } finally {
-      setIsApprovalModalOpen(false);
-      setApprovalAction(null);
-      setSelectedWithdrawal(null);
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถดำเนินการได้', 'error');
     }
   };
 
@@ -356,10 +376,10 @@ const Issue: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isDetailsModalOpen || isApprovalModalOpen) {
+    if (isDetailsModalOpen) {
       setOpenDropdownId(null);
     }
-  }, [isDetailsModalOpen, isApprovalModalOpen]);
+  }, [isDetailsModalOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -397,6 +417,7 @@ const Issue: React.FC = () => {
 
     if (
       withdrawal.status === WithdrawalStatus.DRAFT ||
+      withdrawal.status === WithdrawalStatus.PENDING ||
       withdrawal.status === Status.Draft ||
       withdrawal.status === Status.PendingApproval
     ) {
@@ -501,6 +522,31 @@ const Issue: React.FC = () => {
                 ))}
               </Select>
             </div>
+
+            {/* Category Tabs — กรองตามประเภทรายการ */}
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 ml-auto">
+              {[
+                { value: 'all', label: 'ทั้งหมด' },
+                { value: 'stock', label: 'สินค้า/สารเคมี' },
+                { value: 'expense', label: 'ค่าใช้จ่าย' },
+              ].map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => {
+                    setCategoryTab(t.value as 'all' | 'stock' | 'expense');
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-colors whitespace-nowrap ${
+                    categoryTab === t.value
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
           </div>
         </Card>
 
@@ -534,9 +580,14 @@ const Issue: React.FC = () => {
                     0
                   ) || 0;
                 const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                const recipientName = withdrawal.recipient_id
-                  ? userMap.get(withdrawal.recipient_id)
-                  : '-';
+                const recipientObj = (withdrawal as WithdrawalType & {
+                  recipient?: { first_name?: string; last_name?: string; nick_name?: string };
+                }).recipient;
+                const recipientName = recipientObj?.first_name
+                  ? `${recipientObj.first_name} ${recipientObj.last_name || ''}`.trim()
+                  : withdrawal.recipient_id
+                    ? userMap.get(withdrawal.recipient_id)
+                    : '-';
 
                 return (
                   <Card key={withdrawal.id} className="p-4">
@@ -596,7 +647,7 @@ const Issue: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <UserIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
-                        <span>ผู้เบิก/ผู้รับเงิน: {recipientName}</span>
+                        <span>ผู้รับเงิน: {recipientName}</span>
                       </div>
                     </div>
                   </Card>
@@ -640,30 +691,30 @@ const Issue: React.FC = () => {
                   >
                     วันที่เบิก
                   </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase lg:table-cell hidden whitespace-nowrap"
-                  >
-                    จำนวนรายการ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    จำนวนเงินที่เบิก
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider xl:table-cell hidden whitespace-nowrap"
-                  >
-                    อ้างอิง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ผู้เบิก/ผู้รับเงิน
-                  </th>
+                  {categoryTab !== 'expense' && (
+                    <th
+                      scope="col"
+                      className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase lg:table-cell hidden whitespace-nowrap"
+                    >
+                      จำนวนรายการ
+                    </th>
+                  )}
+                  {categoryTab !== 'stock' && (
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      จำนวนเงินที่เบิก
+                    </th>
+                  )}
+                  {categoryTab !== 'stock' && (
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      ผู้รับเงิน
+                    </th>
+                  )}
                   <th
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
@@ -729,9 +780,14 @@ const Issue: React.FC = () => {
                         0
                       ) || 0;
                     const totalAmount = totalGoodsAmount + totalExpenseAmount;
-                    const recipientName = withdrawal.recipient_id
-                      ? userMap.get(withdrawal.recipient_id) || '-'
-                      : '-';
+                    const recipientObj = (withdrawal as WithdrawalType & {
+                      recipient?: { first_name?: string; last_name?: string; nick_name?: string };
+                    }).recipient;
+                    const recipientName = recipientObj?.first_name
+                      ? `${recipientObj.first_name} ${recipientObj.last_name || ''}`.trim()
+                      : withdrawal.recipient_id
+                        ? userMap.get(withdrawal.recipient_id) || '-'
+                        : '-';
 
                     return (
                       <tr key={withdrawal.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
@@ -749,27 +805,27 @@ const Issue: React.FC = () => {
                             ? formatThaiDate(withdrawal.created_at)
                             : '-'}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
-                          {totalItemsCount}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          ฿
-                          {totalAmount.toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 xl:table-cell hidden">
-                          {Array.isArray(withdrawal.reference_ids)
-                            ? withdrawal.reference_ids.length
-                            : 0}{' '}
-                          รายการ
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                          {recipientName === '[object Object]'
-                            ? 'Unknown'
-                            : recipientName}
-                        </td>
+                        {categoryTab !== 'expense' && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 lg:table-cell hidden">
+                            {totalItemsCount}
+                          </td>
+                        )}
+                        {categoryTab !== 'stock' && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            ฿
+                            {totalAmount.toLocaleString('th-TH', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </td>
+                        )}
+                        {categoryTab !== 'stock' && (
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            {recipientName === '[object Object]'
+                              ? 'Unknown'
+                              : recipientName}
+                          </td>
+                        )}
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                           {(() => {
                             const creator = (withdrawal as WithdrawalType & {
@@ -870,22 +926,19 @@ const Issue: React.FC = () => {
           document.body
         )}
 
-      <AddStockIssueToVehicleModal
+      <WithdrawalModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onCreateWithdrawal={onCreateWithdrawal}
+        mode="create"
+        onSubmit={async (payload) => {
+          await onCreateWithdrawal(payload as Omit<WithdrawalType, 'id'>);
+          setIsAddModalOpen(false);
+        }}
         users={users}
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
         currentUser={users[0]}
-      />
-      <ApprovalModal
-        isOpen={isApprovalModalOpen}
-        onClose={() => setIsApprovalModalOpen(false)}
-        action={approvalAction}
-        item={selectedWithdrawal as never}
-        onConfirm={handleConfirmApproval}
       />
       <WithdrawalDetailsModal
         isOpen={isDetailsModalOpen}
@@ -895,18 +948,28 @@ const Issue: React.FC = () => {
         products={products}
         users={users}
       />
-      <EditStockIssueToVehicleModal
+      <WithdrawalModal
         isOpen={isEditModalOpen}
         onClose={() => {
           setIsEditModalOpen(false);
           setSelectedWithdrawal(null);
-        } }
-        onUpdateWithdrawal={onUpdateWithdrawal}
-        withdrawal={selectedWithdrawal}
+        }}
+        mode="edit"
+        initialValues={selectedWithdrawal}
+        onSubmit={async (payload) => {
+          if (!selectedWithdrawal) return;
+          await onUpdateWithdrawal({
+            ...selectedWithdrawal,
+            ...payload,
+          } as WithdrawalType);
+          setIsEditModalOpen(false);
+          setSelectedWithdrawal(null);
+        }}
         users={users}
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
+        currentUser={users[0]}
       />
     </div>
   );
