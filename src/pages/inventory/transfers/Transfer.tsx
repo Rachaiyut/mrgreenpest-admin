@@ -247,27 +247,31 @@ const Transfers: React.FC = () => {
       label: 'ดูรายละเอียด',
       icon: EyeIcon,
       handler: handleViewDetails,
-      isDanger: false,
+      color: 'text-slate-700',
+      hoverBg: 'hover:bg-slate-50',
     },
     {
       label: 'อนุมัติ',
       icon: CheckCircleIcon,
       handler: handleApprove,
-      isDanger: false,
+      color: 'text-emerald-600',
+      hoverBg: 'hover:bg-emerald-50',
       show: (t: TransferType) => t.status === TransferStatus.PENDING,
     },
     {
       label: 'แก้ไข',
       icon: PencilIcon,
       handler: handleEdit,
-      isDanger: false,
+      color: 'text-blue-600',
+      hoverBg: 'hover:bg-blue-50',
       show: (t: TransferType) => t.status === TransferStatus.PENDING,
     },
     {
       label: 'ลบ',
       icon: TrashIcon,
       handler: handleDelete,
-      isDanger: true,
+      color: 'text-red-600',
+      hoverBg: 'hover:bg-red-50',
       show: (t: TransferType) => t.status === TransferStatus.PENDING,
     },
   ];
@@ -457,7 +461,7 @@ const Transfers: React.FC = () => {
                     }
                     setOpenDropdownId(null);
                   }}
-                  className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                  className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
                   role="menuitem"
                 >
                   <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />

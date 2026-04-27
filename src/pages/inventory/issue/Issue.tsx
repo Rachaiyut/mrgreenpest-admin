@@ -429,12 +429,12 @@ const Issue: FC = () => {
                 <!-- Summary text -->
                 <div style="text-align:center; font-size:14px; color:#475569; margin-bottom:16px; line-height:1.8;">
                   <div>เลขที่ใบเบิก: <strong style="color:#0f172a;">${escape(withdrawal.code || withdrawal.id)}</strong></div>
-                  <div>ยอดเงินที่จะตัด: <strong style="color:#dc2626; font-size:16px;">${fmtMoney(totalExpense)}</strong></div>
+                  <div>ยอดเบิกจ่าย: <strong style="color:#dc2626; font-size:16px;">${fmtMoney(totalExpense)}</strong></div>
                 </div>
 
                 <!-- Account select -->
                 <label style="display:block; text-align:left; font-size:13px; font-weight:600; color:#334155; margin-bottom:6px;">
-                  บัญชีที่จะตัดเงิน <span style="color:#dc2626;">*</span>
+                  เลือกบัญชี <span style="color:#dc2626;">*</span>
                 </label>
                 <select id="swal-account-select" class="swal2-select" style="display:block; width:100%; margin:0; font-size:14px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#0f172a; height:auto; appearance:auto; -webkit-appearance:auto; -moz-appearance:auto; cursor:pointer; transition:border-color .15s, box-shadow .15s;">
                   <option value="" style="color:#94a3b8;">กรุณาเลือกบัญชี</option>
@@ -500,12 +500,12 @@ const Issue: FC = () => {
                           <span style="color:#0f172a; font-weight:600;">${fmtMoney(bal)}</span>
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-top:6px;">
-                          <span style="color:#64748b;">ยอดที่จะตัด</span>
+                          <span style="color:#64748b;">ยอดเบิกจ่าย</span>
                           <span style="color:#dc2626; font-weight:600;">− ${fmtMoney(totalExpense)}</span>
                         </div>
                       </div>
                       <div style="padding:10px 16px; background:#ecfdf5; border-top:1px solid #a7f3d0; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:13px; font-weight:600; color:#0f172a;">คงเหลือหลังตัด</span>
+                        <span style="font-size:13px; font-weight:600; color:#0f172a;">ยอดคงเหลือหลังทำรายการ</span>
                         <span style="font-size:18px; font-weight:700; color:#047857;">${fmtMoney(after)}</span>
                       </div>
                     </div>

@@ -256,19 +256,50 @@ const StockAdjustment: React.FC = () => {
       label: string;
       icon: typeof EyeIcon;
       onClick: () => void;
-      isDanger?: boolean;
+      color: string;
+      hoverBg: string;
     }> = [
-      { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(adj) },
+      {
+        label: 'ดูรายละเอียด',
+        icon: EyeIcon,
+        onClick: () => handleViewDetails(adj),
+        color: 'text-slate-700',
+        hoverBg: 'hover:bg-slate-50',
+      },
     ];
     const status = (adj as { status?: string }).status;
     if (status === 'PENDING') {
       items.push(
-        { label: 'อนุมัติ', icon: DocumentCheckIcon, onClick: () => onApproveAdjustment(adj) },
-        { label: 'ปฏิเสธ', icon: XCircleIcon, onClick: () => onRejectAdjustment(adj), isDanger: true },
-        { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(adj) },
+        {
+          label: 'อนุมัติ',
+          icon: DocumentCheckIcon,
+          onClick: () => onApproveAdjustment(adj),
+          color: 'text-emerald-600',
+          hoverBg: 'hover:bg-emerald-50',
+        },
+        {
+          label: 'ปฏิเสธ',
+          icon: XCircleIcon,
+          onClick: () => onRejectAdjustment(adj),
+          color: 'text-red-600',
+          hoverBg: 'hover:bg-red-50',
+        },
+        {
+          label: 'แก้ไข',
+          icon: PencilIcon,
+          onClick: () => handleEdit(adj),
+          color: 'text-blue-600',
+          hoverBg: 'hover:bg-blue-50',
+        },
       );
     }
-    items.push({ label: 'ลบ', icon: TrashIcon, onClick: () => handleDelete(adj), isDanger: true });
+    items.push({
+      label: 'ลบ',
+      icon: TrashIcon,
+      onClick: () => handleDelete(adj),
+      color: 'text-red-600',
+      hoverBg: 'hover:bg-red-50',
+    });
     return items;
   };
 
@@ -438,7 +469,7 @@ const StockAdjustment: React.FC = () => {
                   e.preventDefault();
                   action.onClick();
                 }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                className={`flex items-center w-full text-left px-4 py-2 text-sm transition-colors ${action.color} ${action.hoverBg}`}
                 role="menuitem"
               >
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
