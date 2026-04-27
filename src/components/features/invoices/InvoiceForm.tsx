@@ -17,6 +17,7 @@ import { InvoiceStatus } from '../../../types/enums/invoice';
 import { ContractStatus } from '../../../types/enums/contract';
 import { Quotation } from '@/src/types';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
+import { formatPhoneNumber } from '../../../utils/format';
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'ร่าง',
@@ -552,27 +553,19 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   if (isLoadingFullInvoice) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="flex flex-col items-center justify-center py-16 gap-4 bg-slate-50/50 rounded-xl border border-slate-100">
-          <span className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
-          <p className="text-sm font-medium text-slate-500">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-20 bg-slate-100 rounded-lg" />
-          <div className="h-20 bg-slate-100 rounded-lg" />
-          <div className="h-20 bg-slate-100 rounded-lg" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="h-64 bg-slate-100 rounded-xl" />
-          <div className="h-64 bg-slate-100 rounded-xl" />
-        </div>
-        <div className="h-40 bg-slate-100 rounded-xl" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <span className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></span>
+        <p className="text-sm font-medium text-slate-500">กำลังโหลดข้อมูลใบแจ้งหนี้...</p>
       </div>
     );
   }
 
   return (
     <form id="invoice-form" onSubmit={submitForm} className="space-y-8">
+      <fieldset
+        disabled={mode === 'detail'}
+        className={`space-y-8 border-0 p-0 m-0 min-w-0 ${mode === 'detail' ? '[&_*]:pointer-events-none' : ''}`}
+      >
       {/* Top Header Section */}
       <div className="bg-slate-50/50 p-6 rounded-xl border border-slate-100">
         <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center mb-6 border-b border-slate-200 pb-6">
@@ -587,19 +580,39 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <FormField label="เลขที่ใบแจ้งหนี้">
-             <Input
+        <div className={`grid grid-cols-1 ${mode === 'create' ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
+          {mode !== 'create' && (
+            <FormField label="เลขที่ใบแจ้งหนี้">
+              <Input
                 value={formData.code || "ระบบจะสร้างเลขที่อัตโนมัติ"}
                 disabled
-                className="font-mono bg-slate-100 text-slate-500 text-lg font-bold tracking-wide border-slate-300 h-11"
+                className="bg-slate-100 text-slate-500 cursor-not-allowed border-slate-300 text-sm h-11"
               />
-          </FormField>
+            </FormField>
+          )}
           <FormField label="วันที่ออกเอกสาร *">
-            <DatePicker selected={formData.issuedDate ? new Date(formData.issuedDate) : null} onChange={(date: Date | null) => setFormData(prev => ({ ...prev, issuedDate: date ? date.toISOString().substring(0, 10) : '' }))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11" wrapperClassName="w-full" />
+            <DatePicker
+              selected={formData.issuedDate ? new Date(formData.issuedDate) : null}
+              onChange={(date: Date | null) => setFormData(prev => ({ ...prev, issuedDate: date ? date.toISOString().substring(0, 10) : '' }))}
+              dateFormat="dd/MM/yyyy"
+              locale="th"
+              placeholderText="dd/mm/yyyy"
+              maxDate={formData.dueDate ? new Date(formData.dueDate) : undefined}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11"
+              wrapperClassName="w-full"
+            />
           </FormField>
           <FormField label="วันครบกำหนดชำระ *">
-            <DatePicker selected={formData.dueDate ? new Date(formData.dueDate) : null} onChange={(date: Date | null) => setFormData(prev => ({ ...prev, dueDate: date ? date.toISOString().substring(0, 10) : '' }))} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11" wrapperClassName="w-full" />
+            <DatePicker
+              selected={formData.dueDate ? new Date(formData.dueDate) : null}
+              onChange={(date: Date | null) => setFormData(prev => ({ ...prev, dueDate: date ? date.toISOString().substring(0, 10) : '' }))}
+              dateFormat="dd/MM/yyyy"
+              locale="th"
+              placeholderText="dd/mm/yyyy"
+              minDate={formData.issuedDate ? new Date(formData.issuedDate) : undefined}
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-11"
+              wrapperClassName="w-full"
+            />
           </FormField>
         </div>
       </div>
@@ -630,7 +643,8 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       description: c.primary_phone,
                     }));
                   })()}
-                  placeholder="ค้นหาและเลือกลูกค้า..."
+                  placeholder="เลือกลูกค้า"
+                  searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
                   required
                   className="bg-white h-11"
                 />
@@ -644,7 +658,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       <div className="space-y-3">
                         <div className="flex justify-between items-center py-1">
                           <span className="font-medium text-slate-500 flex items-center gap-2"><span className="w-8">โทร</span></span>
-                          <span className="text-slate-800 font-medium bg-white px-2 py-0.5 rounded border border-slate-200">{c.primary_phone || '-'}</span>
+                          <span className="text-slate-800 font-medium">{c.primary_phone ? formatPhoneNumber(c.primary_phone) : '-'}</span>
                         </div>
                         <div className="flex justify-between items-center py-1">
                           <span className="font-medium text-slate-500 flex items-center gap-2"><span className="w-8">อีเมล</span></span>
@@ -684,7 +698,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                     value: c.id,
                     label: `${c.code} - ${c.customer_name}`,
                   }))}
-                  placeholder="-- เลือกสัญญา (ถ้ามี) --"
+                  placeholder="เลือกสัญญา (ถ้ามี)"
                   className="bg-white h-11"
                 />
               </FormField>
@@ -700,7 +714,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       label: q.code || `QT-${q.id.slice(0, 8)}`,
                       description: `${q.customer_name} - ${Number(q.total).toLocaleString()} บาท`,
                     }))}
-                  placeholder="-- เลือกใบเสนอราคา (ถ้ามี) --"
+                  placeholder="เลือกใบเสนอราคา (ถ้ามี)"
                   className="bg-white h-11"
                 />
               </FormField>
@@ -950,6 +964,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
         </div>
 
       </div>
+      </fieldset>
     </form>
   );
 };

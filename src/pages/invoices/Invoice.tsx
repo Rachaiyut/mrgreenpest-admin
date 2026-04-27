@@ -25,7 +25,6 @@ import { Invoice } from '../../types';
 import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '../../types/enums/invoice';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
-import { Modal } from '../../components/common/Modal';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
@@ -347,7 +346,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <div className="relative w-full sm:w-80 flex-shrink-0">
             <Input
               type="search"
-              placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+              placeholder="ค้นหาเลขที่ใบแจ้งหนี้, ชื่อลูกค้า"
               value={invoiceSearchQuery}
               onChange={(e) => {
                 setInvoiceSearchQuery(e.target.value);
@@ -370,9 +369,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             </svg>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DatePicker selected={invoiceStartDate ? new Date(invoiceStartDate) : null} onChange={(date: Date | null) => setInvoiceStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={invoiceStartDate ? new Date(invoiceStartDate) : null} onChange={(date: Date | null) => setInvoiceStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             <span className="text-slate-400">-</span>
-            <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
           </div>
           <div className="w-full sm:w-48">
             <Select
@@ -384,7 +383,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               }}
               className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
             >
-              <option value="ทั้งหมด">ทั้งหมด</option>
+              <option value="ทั้งหมด">สถานะทั้งหมด</option>
               <option value="DRAFT">ร่าง</option>
               <option value="PENDING">รอชำระ</option>
               <option value="SENT">ส่งแล้ว</option>
@@ -416,19 +415,19 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   ครั้งที่
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  ลูกค้า
+                  ชื่อลูกค้า
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  เบอร์โทร
+                  เบอร์โทรศัพท์
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  วันครบกำหนด
-                </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  สถานะ
+                  ครบกำหนดชำระ
                 </th>
                 <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  สถานะ
                 </th>
                 <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
@@ -467,7 +466,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm text-primary hover:underline cursor-pointer"
                         onClick={() => {
                           setSelectedInvoice(i);
                           setIsInvoiceModalOpen(true);
@@ -494,15 +493,15 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(i.due_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
-                      </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         ฿
                         {Number(i.total).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2 whitespace-nowrap">
@@ -616,7 +615,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
               onClick={() => handleDeleteInvoice(selectedInvoice!)}
             >
-              <TrashIcon className="w-4 h-4 text-red-500" /> ลบ
+              <TrashIcon className="w-4 h-4 text-red-500" /> ยกเลิก
             </button>
           </div>
         </div>
@@ -656,81 +655,21 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         isOpen={isInvoiceDeleteModalOpen}
         onClose={() => setIsInvoiceDeleteModalOpen(false)}
         onConfirm={confirmDeleteInvoice}
-        title="ยืนยันการลบใบแจ้งหนี้"
-        message={`คุณต้องการลบใบแจ้งหนี้ ${invoiceToDelete?.id} ใช่หรือไม่?`}
-        confirmButtonText="ลบใบแจ้งหนี้"
+        title="ยืนยันการยกเลิกใบแจ้งหนี้"
+        message={`คุณต้องการยกเลิกใบแจ้งหนี้ ${invoiceToDelete?.code || invoiceToDelete?.id} ใช่หรือไม่?`}
+        confirmButtonText="ยกเลิกใบแจ้งหนี้"
         confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
-      <Modal
+      <InvoiceModal
         isOpen={isInvoiceModalOpen}
         onClose={() => setIsInvoiceModalOpen(false)}
-        title={
-          selectedInvoice
-            ? `รายละเอียดใบแจ้งหนี้ ${selectedInvoice.id} `
-            : 'รายละเอียดใบแจ้งหนี้'
-        }
-      >
-        {selectedInvoice && (
-          <div className="space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-slate-600">ลูกค้า</div>
-                <div className="text-sm text-slate-800">
-                  {selectedInvoice.customer_name}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">เบอร์โทรศัพท์</div>
-                <div className="text-sm text-slate-800">
-                  {(() => {
-                    const customer = customers?.find(
-                      (c) => c.id === selectedInvoice.customer_id
-                    );
-                    return customer?.primary_phone
-                      ? formatPhoneNumber(customer.primary_phone)
-                      : '-';
-                  })()}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">อ้างอิงใบเสนอราคา</div>
-                <div className="text-sm text-slate-800">
-                  {selectedInvoice.quotation_id || '-'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">วันที่ออก</div>
-                <div className="text-sm text-slate-800">
-                  {formatThaiDate(selectedInvoice.issued_at)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">วันครบกำหนด</div>
-                <div className="text-sm text-slate-800">
-                  {formatThaiDate(selectedInvoice.due_at)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">สถานะ</div>
-                <div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[selectedInvoice.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[selectedInvoice.status as InvoiceStatus] || selectedInvoice.status}</span>
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-slate-600">ยอดรวม</div>
-                <div className="text-sm text-slate-800">
-                  ฿
-                  {selectedInvoice.total.toLocaleString('th-TH', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+        mode="detail"
+        initialValues={selectedInvoice}
+        onSubmit={async () => {
+          // detail mode: read-only, ไม่มีการบันทึก
+        }}
+      />
 
       {/* Status Update Modal */}
       <ConfirmationModal
