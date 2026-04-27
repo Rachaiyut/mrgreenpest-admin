@@ -101,6 +101,7 @@ const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 const DailyClosure = React.lazy(() => import('../pages/daily-closures/DailyClosure'));
 const ServiceSchedulePage = React.lazy(() => import('../pages/service-schedules/ServiceSchedule'));
 const ServiceDetailPage = React.lazy(() => import('../pages/service-schedules/ServiceDetail'));
+const Account = React.lazy(() => import('../pages/accounts/Account'));
 
 // Report Pages
 const ArAgingPage = React.lazy(() => import('../pages/reports/ArAgingPage'));
@@ -249,6 +250,25 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
     ],
   },
 
+  // Cash System (ระบบเงินสดภายใน)
+  {
+    name: 'ระบบเงินสดภายใน',
+    path: 'cash-system',
+    icon: CurrencyDollarIcon,
+    access: null,
+    group: 'cash-system',
+    component: Account,
+    subItems: [
+      {
+        name: 'บัญชี',
+        path: 'accounts',
+        icon: DocumentTextIcon,
+        access: 'ACCESS_ACCOUNT',
+        component: Account,
+      },
+    ],
+  },
+
   // Inventory Groups
   {
     name: 'คลังสินค้า',
@@ -290,11 +310,6 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: NewWarehouseIcon,
         access: 'ACCESS_ADJUSTMENT_NOTE',
         component: StockAdjustment,
-        getProps: (data) => ({
-          onCreateAdjustment: data.handlers.stockAdjustments.create,
-          onUpdateAdjustment: data.handlers.stockAdjustments.update,
-          onDeleteAdjustment: data.handlers.stockAdjustments.delete,
-        }),
       },
       {
         name: 'เบิกสินค้าคืนผู้จำหน่าย',

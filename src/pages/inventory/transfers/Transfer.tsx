@@ -311,63 +311,18 @@ const Transfers: React.FC = () => {
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    ลำดับ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    เลขที่เอกสารโอนย้าย
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    วันที่โอนย้าย
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    คลังต้นทาง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    คลังปลายทาง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    จำนวนสินค้า
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    เหตุผล
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase whitespace-nowrap"
-                  >
-                    สถานะ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
-                  >
-                    จัดการ
-                  </th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารโอนย้าย</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่โอนย้าย</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังต้นทาง</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังปลายทาง</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้า</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เหตุผล</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -405,7 +360,7 @@ const Transfers: React.FC = () => {
                     ) || 0;
 
                   return (
-                    <tr key={transfer.id} className="hover:bg-slate-50">
+                    <tr key={transfer.id} className="hover:bg-slate-50 [&>td]:align-middle">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </td>
@@ -424,17 +379,17 @@ const Transfers: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {toWarehouse || '-'}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {totalQuantity}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 truncate max-w-sm">
+                      <td className="px-4 py-3 text-sm text-slate-700 max-w-sm truncate">
                         {transfer.remark}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={transfer.status} />
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="inline-block text-left">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="inline-block">
                           <Button
                             data-transfer-id={transfer.id}
                             onClick={(e) =>

@@ -30,11 +30,26 @@ export const StockAdjustmentDetailsModal: React.FC<
 
   if (!isOpen || !adjustment) return null;
 
+  const code =
+    (adjustment as { adjustment_code?: string }).adjustment_code || adjustment.id;
+  const warehouseName =
+    (adjustment as { warehouse?: { name?: string } }).warehouse?.name ||
+    warehouseMap.get(adjustment.warehouse_id) ||
+    '-';
+  const creator = (adjustment as {
+    created_by_user?: { first_name?: string; last_name?: string; nick_name?: string };
+  }).created_by_user;
+  const creatorName = (() => {
+    if (!creator) return 'ไม่ระบุ';
+    const fullName = `${creator.first_name || ''} ${creator.last_name || ''}`.trim();
+    return fullName || creator.nick_name || 'ไม่ระบุ';
+  })();
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบปรับปรุง Stock: ${adjustment.id}`}
+      title={`รายละเอียดใบปรับปรุง Stock: ${code}`}
       size="5xl"
       footer={
         <Button variant="primary" type="button" onClick={onClose}>
@@ -43,94 +58,107 @@ export const StockAdjustmentDetailsModal: React.FC<
       }
     >
       <div className="space-y-6">
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h4 className="text-base font-semibold text-slate-800 mb-3 pb-2 border-b border-slate-200">
             ข้อมูลใบปรับปรุง
           </h4>
-          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-6 text-sm">
+          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4 text-sm">
             <div>
-              <dt className="font-medium text-slate-500">เลขที่เอกสาร</dt>
-              <dd className="mt-1 text-slate-900 font-semibold">
-                {adjustment.id}
-              </dd>
+              <dt className="text-xs font-medium text-slate-500">เลขที่เอกสาร</dt>
+              <dd className="mt-1 text-slate-900 font-semibold">{code}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-500">วันที่</dt>
+              <dt className="text-xs font-medium text-slate-500">วันที่</dt>
               <dd className="mt-1 text-slate-900">
                 {formatThaiDate(adjustment.created_at)}
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-500">สถานะ</dt>
+              <dt className="text-xs font-medium text-slate-500">สถานะ</dt>
               <dd className="mt-1 text-slate-900">{adjustment.status}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-500">คลังสินค้า</dt>
-              <dd className="mt-1 text-slate-900">
-                {warehouseMap.get(adjustment.warehouse_id)}
-              </dd>
+              <dt className="text-xs font-medium text-slate-500">คลังสินค้า</dt>
+              <dd className="mt-1 text-slate-900">{warehouseName}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">ผู้สร้าง</dt>
+              <dd className="mt-1 text-slate-900">{creatorName}</dd>
             </div>
           </dl>
-        </div>
+          <div className="mt-4 text-sm">
+            <dt className="text-xs font-medium text-slate-500">เหตุผลหลัก</dt>
+            <dd className="mt-1 text-slate-900 whitespace-pre-wrap">
+              {adjustment.reason || '-'}
+            </dd>
+          </div>
+        </section>
 
-        <div>
-          <h4 className="text-base font-semibold text-slate-800 mb-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h4 className="text-base font-semibold text-slate-800 mb-3 pb-2 border-b border-slate-200">
             รายละเอียดการปรับปรุงสินค้า
           </h4>
           <div className="overflow-hidden border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
-            <table className="min-w-full divide-y divide-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-center">
               <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase w-16">
+                    ลำดับ
+                  </th>
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
+                    รหัสสินค้า
+                  </th>
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     สินค้า
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     จำนวนเดิม
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     จำนวนใหม่
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     ผลต่าง
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     หน่วย
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">
-                    เหตุผล
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {adjustment.items.map((item) => {
+                {adjustment.items.map((item, i) => {
                   const product = productMap.get(item.product_id);
-                  const difference = item.qty_adjustment;
+                  const difference = Number(item.qty_adjustment || 0);
+                  const unitText = (() => {
+                    const u = product?.unit as { name?: string } | string | undefined;
+                    if (typeof u === 'string') return u;
+                    if (u && typeof u === 'object' && u.name) return u.name;
+                    return '-';
+                  })();
                   return (
-                    <tr key={item.product_id}>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900">
-                          {product?.name || 'N/A'}
-                        </p>
-                        <p className="text-xs text-slate-600">
-                          {product?.id || '-'}
-                        </p>
+                    <tr key={item.product_id || i} className="[&>td]:align-middle">
+                      <td className="px-4 py-3 text-sm text-slate-500">
+                        {i + 1}
                       </td>
-                      <td className="px-4 py-3 text-center text-slate-700">
+                      <td className="px-4 py-3 text-sm text-slate-700">
+                        {product?.code || '-'}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900">
+                        {product?.name || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">
                         {item.qty_before}
                       </td>
-                      <td className="px-4 py-3 text-center font-semibold text-slate-800">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
                         {item.qty_after}
                       </td>
                       <td
-                        className={`px-4 py-3 text-center font-semibold ${difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-slate-700'}`}
+                        className={`px-4 py-3 font-semibold ${difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-slate-700'}`}
                       >
                         {difference > 0 ? `+${difference}` : difference}
                       </td>
-                      <td className="px-4 py-3 text-center text-slate-700">
-                        {product?.unit?.name || '-'}
-                      </td>
                       <td className="px-4 py-3 text-slate-700">
-                        {item.reason || '-'}
+                        {unitText}
                       </td>
                     </tr>
                   );
@@ -138,7 +166,7 @@ export const StockAdjustmentDetailsModal: React.FC<
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </div>
     </Modal>
   );

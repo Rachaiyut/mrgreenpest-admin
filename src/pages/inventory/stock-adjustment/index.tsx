@@ -1,47 +1,42 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
+import Swal from 'sweetalert2';
 import { Card } from '../../../components/common/Card';
 import { Pagination } from '../../../components/common/Pagination';
 import {
   DocumentCheckIcon,
+  LoadingIcon,
   PlusIcon,
   ManageIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
+  XCircleIcon,
 } from '../../../assets/icons/Icons';
 import { Button } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
-import { AddStockAdjustmentModal } from '../../../components/features/inventory/adjustment/AddAdjustmentModal';
-import {
-  StockAdjustment as StockAdjustmentType,
-  Warehouse as WarehouseType,
-  Product,
-} from '@/src/types/entity/app.interface';
+import { AdjustmentModal } from '../../../components/features/inventory/adjustment/AdjustmentModal';
+import { StockAdjustment as StockAdjustmentType } from '@/src/types/entity/app.interface';
 import { StockAdjustmentDetailsModal } from '../../../components/features/inventory/adjustment/StockAdjustmentDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
-import { EditStockAdjustmentModal } from '../../../components/features/inventory/adjustment/EditStockAdjustmentModal';
 import { Input } from '../../../components/common/FormControls';
+import { StatusBadge } from '../../../components/common/StatusBadge';
 
 import { useData } from '../../../contexts/DataContext';
+import { StockAdjustmentApi } from '../../../api/stock-adjustment';
 
-// FIX: Define props interface
-interface StockAdjustmentProps {
-  onCreateAdjustment: (data: Omit<StockAdjustmentType, 'id'>) => void;
-  onUpdateAdjustment: (updatedItem: StockAdjustmentType) => void;
-  onDeleteAdjustment: (id: string) => void;
-}
-
-const StockAdjustment: React.FC<StockAdjustmentProps> = ({
-  onCreateAdjustment,
-  onUpdateAdjustment,
-  onDeleteAdjustment,
-}) => {
+const StockAdjustment: React.FC = () => {
+  // ดึงเฉพาะ master data ที่ใช้ใน modal — list ของใบ adjustment fetch เองในหน้านี้
   const {
-    stockAdjustments: adjustments,
     warehouses,
     products,
     warehouseStocks: stockMap,
   } = useData();
+
+  const [adjustments, setAdjustments] = useState<StockAdjustmentType[]>([]);
+  const [totalItemsServer, setTotalItemsServer] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -63,37 +58,81 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
     useState<StockAdjustmentType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const warehouseMap = useMemo(
-    () => new Map(warehouses.map((w) => [w.id, w.name])),
-    [warehouses]
-  );
 
-  const reversedAdjustments = useMemo(
-    () => [...adjustments].reverse(),
-    [adjustments]
-  );
-
-  const filteredAdjustments = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (!lowercasedQuery) {
-      return reversedAdjustments;
+  // Server-side fetch (page / limit / search)
+  const fetchList = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await StockAdjustmentApi.getAll({
+        page: currentPage,
+        limit: itemsPerPage,
+        ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+      });
+      if (res?.data) setAdjustments(res.data);
+      if (res?.meta?.total !== undefined) {
+        setTotalItemsServer(res.meta.total);
+      } else if (res?.data) {
+        setTotalItemsServer(res.data.length);
+      }
+    } catch (err) {
+      console.error('Failed to fetch stock adjustments', err);
+    } finally {
+      setIsLoading(false);
     }
+  }, [currentPage, itemsPerPage, searchDebounced]);
 
-    return reversedAdjustments.filter((adjustment) => {
-      const adjustmentDate = formatThaiDate(adjustment.created_at);
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
 
-      return (
-        adjustment.id.toLowerCase().includes(lowercasedQuery) ||
-        adjustmentDate.includes(lowercasedQuery)
-      );
-    });
-  }, [reversedAdjustments, searchQuery]);
+  // Debounce searchQuery → searchDebounced
+  useEffect(() => {
+    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    };
+  }, [searchQuery]);
 
-  const totalItems = filteredAdjustments.length;
-  const paginatedAdjustments = filteredAdjustments.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // CRUD handlers — เรียก API ตรง + refresh list
+  const onCreateAdjustment = async (data: any) => {
+    try {
+      await StockAdjustmentApi.create(data);
+      Swal.fire({ icon: 'success', title: 'สร้างใบปรับปรุงแล้ว', timer: 1200, showConfirmButton: false });
+      await fetchList();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถสร้างใบปรับปรุงได้', 'error');
+    }
+  };
+
+  const onUpdateAdjustment = async (data: any) => {
+    try {
+      await StockAdjustmentApi.update(data.id, data);
+      Swal.fire({ icon: 'success', title: 'บันทึกการแก้ไข', timer: 1200, showConfirmButton: false });
+      await fetchList();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถแก้ไขได้', 'error');
+    }
+  };
+
+  const onDeleteAdjustment = async (id: string) => {
+    try {
+      await StockAdjustmentApi.delete(id);
+      Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1200, showConfirmButton: false });
+      await fetchList();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถลบได้', 'error');
+    }
+  };
+
+  const totalItems = totalItemsServer;
+  const paginatedAdjustments = adjustments;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -164,11 +203,74 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
     };
   }, [openDropdownId]);
 
-  const actions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon },
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
-  ];
+  const onApproveAdjustment = async (adj: StockAdjustmentType) => {
+    setOpenDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันการอนุมัติ',
+      html: `อนุมัติใบปรับปรุง <strong>${(adj as { adjustment_code?: string }).adjustment_code || adj.id}</strong>?<br/><span class="text-xs text-slate-500">ระบบจะปรับ stock ตามรายการที่ระบุ</span>`,
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await StockAdjustmentApi.approve(adj.id);
+      Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1200, showConfirmButton: false });
+      await fetchList();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
+    }
+  };
+
+  const onRejectAdjustment = async (adj: StockAdjustmentType) => {
+    setOpenDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการปฏิเสธ',
+      html: `ปฏิเสธใบปรับปรุง <strong>${(adj as { adjustment_code?: string }).adjustment_code || adj.id}</strong>?`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลการปฏิเสธ',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ปฏิเสธ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+    try {
+      await StockAdjustmentApi.reject(adj.id, r.value.trim());
+      Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1200, showConfirmButton: false });
+      await fetchList();
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
+    }
+  };
+
+  const getActionItems = (adj: StockAdjustmentType) => {
+    const items: Array<{
+      label: string;
+      icon: typeof EyeIcon;
+      onClick: () => void;
+      isDanger?: boolean;
+    }> = [
+      { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(adj) },
+    ];
+    const status = (adj as { status?: string }).status;
+    if (status === 'PENDING') {
+      items.push(
+        { label: 'อนุมัติ', icon: DocumentCheckIcon, onClick: () => onApproveAdjustment(adj) },
+        { label: 'ปฏิเสธ', icon: XCircleIcon, onClick: () => onRejectAdjustment(adj), isDanger: true },
+        { label: 'แก้ไข', icon: PencilIcon, onClick: () => handleEdit(adj) },
+      );
+    }
+    items.push({ label: 'ลบ', icon: TrashIcon, onClick: () => handleDelete(adj), isDanger: true });
+    return items;
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -211,58 +313,30 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
 
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-auto flex-1 relative">
-            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 border-b border-slate-200 text-center">
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    ลำดับ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    เลขที่เอกสาร
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    วันที่
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    คลัง
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-2.5 text-center text-sm font-medium text-slate-600 uppercase"
-                  >
-                    จำนวนรายการ
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    ผู้คืนสินค้า
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider"
-                  >
-                    เหตุผลหลัก
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">จัดการ</span>
-                  </th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {paginatedAdjustments.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
+                        <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
+                        <p className="text-base font-medium">กำลังโหลดข้อมูล...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedAdjustments.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
@@ -273,7 +347,7 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                     </td>
                   </tr>
                 ) : paginatedAdjustments.map((adj, index) => (
-                  <tr key={adj.id} className="hover:bg-slate-50">
+                  <tr key={adj.id} className="hover:bg-slate-50 [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
@@ -281,25 +355,36 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                       className="px-4 py-3 whitespace-nowrap text-sm font-medium text-primary hover:underline cursor-pointer"
                       onClick={() => handleViewDetails(adj)}
                     >
-                      {adj.id}
+                      {(adj as { adjustment_code?: string }).adjustment_code || adj.id}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {formatThaiDate(adj.created_at)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {warehouseMap.get(adj.warehouse_id) || '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
-                      {adj.items.length}
+                      {(adj as { warehouse?: { name?: string } }).warehouse?.name || '-'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {adj.created_by}
+                      {adj.items.length}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 truncate max-w-sm">
-                      {adj.reason}
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <StatusBadge status={adj.status || 'PENDING'} />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="inline-block text-left">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                      {(() => {
+                        const creator = (adj as {
+                          created_by_user?: {
+                            first_name?: string;
+                            last_name?: string;
+                            nick_name?: string;
+                          };
+                        }).created_by_user;
+                        if (!creator) return 'ไม่ระบุ';
+                        const fullName = `${creator.first_name || ''} ${creator.last_name || ''}`.trim();
+                        return fullName || creator.nick_name || 'ไม่ระบุ';
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                      <div className="inline-block">
                         <Button
                           data-adjustment-id={adj.id}
                           onClick={(e) => handleDropdownToggle(e, adj.id)}
@@ -342,29 +427,16 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
+            {(() => {
+              const adjustment = adjustments.find((adj) => adj.id === openDropdownId);
+              if (!adjustment) return null;
+              return getActionItems(adjustment).map((action) => (
               <a
                 key={action.label}
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  const adjustment = adjustments.find(
-                    (adj) => adj.id === openDropdownId
-                  );
-                  if (!adjustment) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-
-                  if (action.label === 'ดูรายละเอียด') {
-                    handleViewDetails(adjustment);
-                  } else if (action.label === 'แก้ไข') {
-                    handleEdit(adjustment);
-                  } else if (action.label === 'ลบ') {
-                    handleDelete(adjustment);
-                  } else {
-                    setOpenDropdownId(null);
-                  }
+                  action.onClick();
                 }}
                 className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
                 role="menuitem"
@@ -372,31 +444,29 @@ const StockAdjustment: React.FC<StockAdjustmentProps> = ({
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
                 <span>{action.label}</span>
               </a>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       )}
 
-      <AddStockAdjustmentModal
+      <AdjustmentModal
         isOpen={isAddModalOpen}
+        mode="create"
         onClose={() => setIsAddModalOpen(false)}
-        onCreateAdjustment={onCreateAdjustment}
-        adjustments={adjustments}
+        onSubmit={onCreateAdjustment}
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
       />
-      <EditStockAdjustmentModal
+      <AdjustmentModal
         isOpen={isEditModalOpen}
+        mode="edit"
+        initialValues={adjustmentToEdit}
         onClose={() => setIsEditModalOpen(false)}
-        adjustment={adjustmentToEdit}
-        onUpdateAdjustment={onUpdateAdjustment}
+        onSubmit={onUpdateAdjustment}
         warehouses={warehouses}
-        products={products.map((p) => ({
-          ...p,
-          quantity: 0,
-          warehouse_id: '',
-        }))}
+        products={products}
         stockMap={stockMap}
       />
       <StockAdjustmentDetailsModal

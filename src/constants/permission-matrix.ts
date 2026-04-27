@@ -59,6 +59,12 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     ],
   },
   {
+    groupName: 'ระบบเงินสดภายใน',
+    items: [
+      { label: 'บัญชี', module: 'ACCOUNT' },
+    ],
+  },
+  {
     groupName: 'กลุ่ม คลังสินค้า',
     items: [
       { label: 'หมวดหมู่', module: 'CATEGORY' },

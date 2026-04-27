@@ -23,15 +23,10 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
   products,
   onApprove,
 }) => {
-  const warehouseMap = useMemo(() => {
-    return warehouses.reduce(
-      (acc, wh) => {
-        acc[wh.id] = wh.name;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-  }, [warehouses]);
+  const warehouseMap = useMemo(
+    () => new Map(warehouses.map((w) => [w.id, w.name])),
+    [warehouses]
+  );
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -39,6 +34,15 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
   );
 
   if (!isOpen || !transfer) return null;
+
+  const fromWarehouse =
+    warehouseMap.get(transfer.from_warehouse_id) ||
+    (transfer as unknown as Record<string, Record<string, string>>).from_warehouse?.name ||
+    '-';
+  const toWarehouse =
+    warehouseMap.get(transfer.to_warehouse_id) ||
+    (transfer as unknown as Record<string, Record<string, string>>).to_warehouse?.name ||
+    '-';
 
   const totalQuantity =
     transfer.items?.reduce(
@@ -50,133 +54,91 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="รายละเอียดใบโอนย้าย"
-      size="4xl"
+      title={`รายละเอียดใบโอนย้าย: ${transfer.code || transfer.id}`}
+      size="5xl"
       footer={
-        <div className="flex justify-between items-center w-full">
-          <div className="text-sm text-slate-500">
-            {/* Last updated or other info if available */}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" type="button" onClick={onClose}>
-              ปิด
+        <div className="flex justify-end gap-2 w-full">
+          <Button variant="outline" type="button" onClick={onClose}>
+            ปิด
+          </Button>
+          {transfer.status === TransferStatus.PENDING && onApprove && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                onApprove(transfer);
+                onClose();
+              }}
+            >
+              อนุมัติ
             </Button>
-            {transfer.status === TransferStatus.PENDING && onApprove && (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  onApprove(transfer);
-                  onClose();
-                }}
-              >
-                อนุมัติ
-              </Button>
-            )}
-          </div>
+          )}
         </div>
       }
     >
       <div className="space-y-6">
-        {/* Document Header Info */}
-        <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 pb-4 border-b border-slate-100">
+        {/* Section 1: ข้อมูลใบโอนย้าย */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h4 className="text-base font-semibold text-slate-800 mb-3 pb-2 border-b border-slate-200">
+            ข้อมูลใบโอนย้าย
+          </h4>
+          <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4 text-sm">
             <div>
-              <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                ใบโอนย้ายสินค้า
-                <span className="text-sm font-normal text-slate-500 px-2 py-0.5 bg-slate-100 rounded-full">
-                  {transfer.code}
-                </span>
-              </h4>
-              <p className="text-sm text-slate-500 mt-1">
-                สร้างเมื่อ: {formatThaiDate(transfer.created_at)}
-              </p>
+              <dt className="text-xs font-medium text-slate-500">เลขที่เอกสาร</dt>
+              <dd className="mt-1 text-slate-900 font-semibold">
+                {transfer.code || transfer.id}
+              </dd>
             </div>
-            <div className="flex items-center gap-3">
-              <StatusBadge status={transfer.status} />
+            <div>
+              <dt className="text-xs font-medium text-slate-500">วันที่</dt>
+              <dd className="mt-1 text-slate-900">
+                {formatThaiDate(transfer.created_at)}
+              </dd>
             </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">สถานะ</dt>
+              <dd className="mt-1">
+                <StatusBadge status={transfer.status} />
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">คลังต้นทาง</dt>
+              <dd className="mt-1 text-slate-900">{fromWarehouse}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">คลังปลายทาง</dt>
+              <dd className="mt-1 text-slate-900">{toWarehouse}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 text-sm">
+            <dt className="text-xs font-medium text-slate-500">เหตุผล / หมายเหตุ</dt>
+            <dd className="mt-1 text-slate-900 whitespace-pre-wrap">
+              {transfer.remark || '-'}
+            </dd>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-            {/* Source Warehouse */}
-            <div className="bg-amber-50 p-3 rounded border border-amber-100">
-              <p className="text-xs text-amber-600 mb-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                ต้นทาง (Source)
-              </p>
-              <p className="font-semibold text-amber-900 text-lg">
-                {warehouseMap[transfer.from_warehouse_id] ||
-                  (transfer as unknown as Record<string, Record<string, string>>).from_warehouse?.name ||
-                  '-'}
-              </p>
-            </div>
-
-            {/* Destination Warehouse */}
-            <div className="bg-blue-50 p-3 rounded border border-blue-100">
-              <p className="text-xs text-blue-600 mb-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                ปลายทาง (Destination)
-              </p>
-              <p className="font-semibold text-blue-900 text-lg">
-                {warehouseMap[transfer.to_warehouse_id] ||
-                  (transfer as unknown as Record<string, Record<string, string>>).to_warehouse?.name ||
-                  '-'}
-              </p>
-            </div>
-          </div>
-
-          {transfer.remark && (
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-xs text-slate-500 mb-1">
-                หมายเหตุ / เหตุผลการโอนย้าย
-              </p>
-              <p className="text-slate-700 italic">"{transfer.remark}"</p>
-            </div>
-          )}
-        </div>
-
-        {/* Items Table */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <h4 className="font-bold text-slate-700 flex items-center gap-2">
-              รายการสินค้า
-              <span className="bg-white text-slate-600 text-xs px-2 py-0.5 rounded-full border border-slate-200 shadow-sm">
-                {transfer.items?.length || 0} รายการ
-              </span>
-            </h4>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+        {/* Section 2: รายการสินค้า */}
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h4 className="text-base font-semibold text-slate-800 mb-3 pb-2 border-b border-slate-200">
+            รายการสินค้า
+          </h4>
+          <div className="overflow-hidden border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-center">
+              <thead className="bg-slate-50 sticky top-0">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16"
-                  >
-                    #
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase w-16">
+                    ลำดับ
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
-                  >
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     รหัสสินค้า
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
-                  >
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     ชื่อสินค้า
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase w-32"
-                  >
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     จำนวน
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-right text-sm font-semibold text-slate-600 uppercase w-24"
-                  >
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase">
                     หน่วย
                   </th>
                 </tr>
@@ -188,83 +150,57 @@ export const TransferDetailsModal: React.FC<TransferDetailsModalProps> = ({
                       item.product_id || (item as unknown as Record<string, string>).productId;
                     const product = productMap.get(productId);
                     const qty = Number(item.qty || item.quantity || 0);
+                    const unitText = (() => {
+                      const u = product?.unit as { name?: string } | string | undefined;
+                      if (typeof u === 'string') return u;
+                      if (u && typeof u === 'object' && u.name) return u.name;
+                      return '-';
+                    })();
                     return (
                       <tr
                         key={`${transfer.id}-${productId}-${index}`}
-                        className="hover:bg-slate-50 transition-colors"
+                        className="hover:bg-slate-50 [&>td]:align-middle"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-center font-medium">
+                        <td className="px-4 py-3 text-sm text-slate-500">
                           {index + 1}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-600">
-                          <div>{product?.code || 'N/A'}</div>
-                          {product?.barcode && (
-                            <div className="text-xs text-slate-400">
-                              {product.barcode}
-                            </div>
-                          )}
+                        <td className="px-4 py-3 text-sm text-slate-700">
+                          {product?.code || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-slate-900">
                           {product?.name || 'ไม่พบสินค้า'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 text-right font-bold">
-                          {qty.toLocaleString()}
+                        <td className="px-4 py-3 font-semibold text-slate-800">
+                          {qty.toLocaleString('th-TH')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 text-right">
-                          {typeof product?.unit === 'object'
-                            ? product.unit.name
-                            : product?.unit || '-'}
-                        </td>
+                        <td className="px-4 py-3 text-slate-700">{unitText}</td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td
-                      colSpan={5}
-                      className="text-center py-12 text-slate-500 bg-slate-50/50"
-                    >
-                      <div className="flex flex-col items-center justify-center">
-                        <svg
-                          className="w-12 h-12 text-slate-300 mb-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                          />
-                        </svg>
-                        <p className="font-medium">
-                          ไม่มีรายการสินค้าในใบโอนย้ายนี้
-                        </p>
-                      </div>
+                    <td colSpan={5} className="text-center py-10 text-slate-400">
+                      ไม่มีรายการสินค้าในใบโอนย้ายนี้
                     </td>
                   </tr>
                 )}
               </tbody>
-              <tfoot className="bg-slate-50 font-semibold text-slate-700 border-t-2 border-slate-200">
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-4 text-right uppercase text-xs tracking-wider"
-                  >
-                    รวมจำนวนทั้งสิ้น
-                  </td>
-                  <td className="px-6 py-4 text-right text-blue-700 text-lg font-bold">
-                    {totalQuantity.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-right text-slate-500">
-                    รายการ
-                  </td>
-                </tr>
-              </tfoot>
+              {transfer.items && transfer.items.length > 0 && (
+                <tfoot className="bg-slate-50 font-semibold text-slate-700 border-t-2 border-slate-200">
+                  <tr>
+                    <td colSpan={3} className="px-4 py-3 text-right uppercase text-xs tracking-wider">
+                      รวมจำนวนทั้งสิ้น
+                    </td>
+                    <td className="px-4 py-3 text-blue-700 text-base font-bold">
+                      {totalQuantity.toLocaleString('th-TH')}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 text-xs">รายการ</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
-        </div>
+        </section>
       </div>
     </Modal>
   );

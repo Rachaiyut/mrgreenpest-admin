@@ -9,22 +9,23 @@ import {
   Textarea,
   Button,
 } from '../../../common/FormControls';
-
 import { PlusIcon, TrashIcon } from '../../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 import {
   Product,
   StockAdjustment as StockAdjustmentType,
-  Status,
   Warehouse as WarehouseType,
 } from '@/src/types/entity/app.interface';
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
 
-interface AddStockAdjustmentModalProps {
+type Mode = 'create' | 'edit';
+
+interface AdjustmentModalProps {
   isOpen: boolean;
+  mode: Mode;
+  initialValues?: StockAdjustmentType | null;
   onClose: () => void;
-  onCreateAdjustment: (adjustment: Omit<StockAdjustmentType, 'id'>) => void;
-  adjustments: StockAdjustmentType[];
+  onSubmit: (payload: any) => void | Promise<void>;
   warehouses: WarehouseType[];
   products: Product[];
   stockMap: Record<string, Record<string, number>>;
@@ -35,16 +36,14 @@ interface AdjustmentItem {
   productId: string;
   originalQuantity: number;
   adjustedQuantity: number | '';
-  reason: string;
 }
 
-export const AddStockAdjustmentModal: React.FC<
-  AddStockAdjustmentModalProps
-> = ({
+export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
   isOpen,
+  mode,
+  initialValues,
   onClose,
-  onCreateAdjustment,
-  adjustments,
+  onSubmit,
   warehouses,
   products,
   stockMap,
@@ -52,6 +51,7 @@ export const AddStockAdjustmentModal: React.FC<
   const [items, setItems] = useState<AdjustmentItem[]>([]);
   const [warehouseId, setWarehouseId] = useState('');
   const [mainReason, setMainReason] = useState('');
+  const [adjustmentDate, setAdjustmentDate] = useState<Date>(new Date());
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   const productMap = useMemo(
@@ -63,43 +63,50 @@ export const AddStockAdjustmentModal: React.FC<
     [warehouseId, warehouses]
   );
 
-  const generatedId = useMemo(() => {
-    if (!isOpen) return '';
-    const thaiYearLastTwoDigits = (new Date().getFullYear() + 543)
-      .toString()
-      .slice(-2);
-    const prefix = `SA${thaiYearLastTwoDigits}`;
-    const adjustmentsThisYear = adjustments.filter((adj) =>
-      adj.id.startsWith(prefix)
-    );
-    const maxId = adjustmentsThisYear.reduce((max, adj) => {
-      const num = parseInt(adj.id.slice(4), 10);
-      return num > max ? num : max;
-    }, 0);
-    const newIdNumber = maxId + 1;
-    return `${prefix}${String(newIdNumber).padStart(4, '0')}`;
-  }, [isOpen, adjustments]);
-
   const isFormValid = useMemo(() => {
     return (
       warehouseId &&
       mainReason.trim() &&
       items.length > 0 &&
       items.every(
-        (item) =>
-          typeof item.adjustedQuantity === 'number' &&
-          item.adjustedQuantity >= 0
+        (it) =>
+          typeof it.adjustedQuantity === 'number' && it.adjustedQuantity >= 0
       )
     );
   }, [warehouseId, mainReason, items]);
 
+  // Reset / hydrate ตามโหมด
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+    if (mode === 'create') {
       setItems([]);
       setWarehouseId('');
       setMainReason('');
+      setAdjustmentDate(new Date());
+      return;
     }
-  }, [isOpen]);
+    // mode === 'edit'
+    if (initialValues) {
+      setWarehouseId(initialValues.warehouse_id || '');
+      setMainReason(initialValues.reason || '');
+      setAdjustmentDate(
+        initialValues.created_at ? new Date(initialValues.created_at) : new Date(),
+      );
+      const hydrated: AdjustmentItem[] = (initialValues.items || []).map(
+        (it: any, idx: number) => {
+          const before = Number(it.qty_before ?? 0);
+          const adj = Number(it.qty_adjustment ?? 0);
+          return {
+            id: Date.now() + idx,
+            productId: it.product_id,
+            originalQuantity: before,
+            adjustedQuantity: before + adj,
+          };
+        },
+      );
+      setItems(hydrated);
+    }
+  }, [isOpen, mode, initialValues]);
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: AdjustmentItem[] = productIds.map((pid) => {
@@ -109,7 +116,6 @@ export const AddStockAdjustmentModal: React.FC<
         productId: pid,
         originalQuantity: current,
         adjustedQuantity: '',
-        reason: '',
       };
     });
     setItems((prev) => [...prev, ...newItems]);
@@ -122,17 +128,17 @@ export const AddStockAdjustmentModal: React.FC<
   const handleItemChange = (
     id: number,
     field: keyof AdjustmentItem,
-    value: string | number
+    value: string | number,
   ) => {
     const newItems = items.map((item) => {
       if (item.id === id) {
-        const updatedItem = { ...item };
+        const updated = { ...item };
         if (field === 'adjustedQuantity') {
-          updatedItem[field] = value === '' ? '' : Number(value);
+          updated[field] = value === '' ? '' : Number(value);
         } else {
-          (updatedItem as Record<string, unknown>)[field] = value;
+          (updated as Record<string, unknown>)[field] = value;
         }
-        return updatedItem;
+        return updated;
       }
       return item;
     });
@@ -142,22 +148,44 @@ export const AddStockAdjustmentModal: React.FC<
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isFormValid) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลัง, เหตุผลหลัก, และมีสินค้าอย่างน้อย 1 รายการพร้อมจำนวนที่ปรับปรุง' });
+      Swal.fire({
+        icon: 'warning',
+        title: 'กรุณาตรวจสอบ',
+        text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลัง, เหตุผลหลัก, และมีสินค้าอย่างน้อย 1 รายการพร้อมจำนวนที่ปรับปรุง',
+      });
       return;
     }
-    const newAdjustment: Omit<StockAdjustmentType, 'id'> = {
+
+    const adjustmentItems = items
+      .map((item) => {
+        const diff = Number(item.adjustedQuantity) - Number(item.originalQuantity);
+        return {
+          product_id: item.productId,
+          adjustment_type: diff >= 0 ? 'INCREASE' : 'DECREASE',
+          quantity: Math.abs(diff),
+        };
+      })
+      .filter((it) => it.quantity > 0);
+
+    if (adjustmentItems.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'ไม่มีรายการปรับปรุง',
+        text: 'จำนวนที่ปรับปรุงต้องต่างจากจำนวนปัจจุบันอย่างน้อย 1 รายการ',
+      });
+      return;
+    }
+
+    const payload: any = {
       warehouse_id: warehouseId,
       reason: mainReason,
-      created_by: 'ผู้ดูแลระบบ',
-      items: items.map((item) => ({
-        product_id: item.productId,
-        qty_before: item.originalQuantity,
-        qty_adjustment: Number(item.adjustedQuantity),
-        reason: item.reason,
-      })),
-      status: Status.Completed,
+      items: adjustmentItems,
     };
-    onCreateAdjustment(newAdjustment);
+    if (mode === 'edit' && initialValues?.id) {
+      payload.id = initialValues.id;
+    }
+
+    onSubmit(payload);
     onClose();
   };
 
@@ -166,53 +194,61 @@ export const AddStockAdjustmentModal: React.FC<
     const whId = selectedWarehouse.id;
     return products.filter((p) => (stockMap[whId]?.[p.id] ?? 0) >= 0);
   }, [selectedWarehouse, products, stockMap]);
+
   const existingProductIds = useMemo(
     () => items.map((item) => item.productId),
     [items]
   );
+
+  const code = (initialValues as { adjustment_code?: string })?.adjustment_code;
+  const title =
+    mode === 'create'
+      ? 'สร้างใบปรับปรุง Stock'
+      : `แก้ไขใบปรับปรุง Stock${code ? ` — ${code}` : ''}`;
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="สร้างใบปรับปรุง Stock"
+        title={title}
         size="5xl"
         footer={
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end w-full">
             <Button variant="outline" type="button" onClick={onClose}>
               ยกเลิก
             </Button>
-            <Button variant="primary" type="submit" form="add-adjustment-form">
+            <Button variant="primary" type="submit" form="adjustment-form">
               บันทึก
             </Button>
           </div>
         }
       >
-        <form
-          id="add-adjustment-form"
-          onSubmit={handleSubmit}
-          className="space-y-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="เลขที่เอกสาร" htmlFor="adjustment-id">
-              <Input
-                id="adjustment-id"
-                type="text"
-                value={generatedId}
-                readOnly
-                className="bg-slate-100"
-              />
-            </FormField>
+        <form id="adjustment-form" onSubmit={handleSubmit} className="space-y-6">
+          <div
+            className={`grid grid-cols-1 ${mode === 'edit' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}
+          >
+            {mode === 'edit' && code && (
+              <FormField label="เลขที่เอกสาร" htmlFor="adjustment-id">
+                <Input
+                  id="adjustment-id"
+                  type="text"
+                  value={code}
+                  readOnly
+                  className="bg-slate-100"
+                />
+              </FormField>
+            )}
             <FormField label="วันที่" htmlFor="adjustment-date">
               <DatePicker
-                selected={new Date()}
-                onChange={() => {}}
+                selected={adjustmentDate}
+                onChange={(d: Date | null) => d && setAdjustmentDate(d)}
                 dateFormat="dd/MM/yyyy"
                 locale="th"
                 placeholderText="dd/mm/yyyy"
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                 wrapperClassName="w-full"
+                disabled={mode === 'edit'}
                 required
               />
             </FormField>
@@ -221,6 +257,7 @@ export const AddStockAdjustmentModal: React.FC<
                 id="warehouse"
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(e.target.value)}
+                disabled={mode === 'edit'}
                 required
               >
                 <option value="">-- เลือกคลัง --</option>
@@ -236,6 +273,7 @@ export const AddStockAdjustmentModal: React.FC<
               </Select>
             </FormField>
           </div>
+
           <FormField label="เหตุผลหลักในการปรับปรุง" htmlFor="main-reason">
             <Textarea
               id="main-reason"
@@ -247,9 +285,7 @@ export const AddStockAdjustmentModal: React.FC<
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-base font-semibold text-slate-800">
-                รายการปรับปรุง
-              </h4>
+              <h4 className="text-base font-semibold text-slate-800">รายการปรับปรุง</h4>
               <Button
                 variant="primary"
                 type="button"
@@ -266,30 +302,15 @@ export const AddStockAdjustmentModal: React.FC<
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      ลำดับ
-                    </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      รหัสสินค้า
-                    </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      สินค้า
-                    </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
-                      จำนวนปัจจุบัน
-                    </th>
+                    <th className="p-2 text-center font-medium text-slate-600">ลำดับ</th>
+                    <th className="p-2 text-left font-medium text-slate-600">รหัสสินค้า</th>
+                    <th className="p-2 text-left font-medium text-slate-600">สินค้า</th>
+                    <th className="p-2 text-center font-medium text-slate-600">จำนวนปัจจุบัน</th>
                     <th className="p-2 text-center font-medium text-slate-600">
                       จำนวนที่ปรับปรุง<span className="text-red-500">*</span>
                     </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
-                      ผลต่าง
-                    </th>
-                    <th className="p-2 text-center font-medium text-slate-600">
-                      หน่วย
-                    </th>
-                    <th className="p-2 text-left font-medium text-slate-600">
-                      เหตุผล
-                    </th>
+                    <th className="p-2 text-center font-medium text-slate-600">ผลต่าง</th>
+                    <th className="p-2 text-center font-medium text-slate-600">หน่วย</th>
                     <th className="p-2"></th>
                   </tr>
                 </thead>
@@ -306,56 +327,40 @@ export const AddStockAdjustmentModal: React.FC<
                           key={item.id}
                           className="border-b border-slate-200 last:border-b-0"
                         >
-                          <td className="p-2 align-middle text-center text-slate-700">
-                            {index + 1}
-                          </td>
-                          <td className="p-2 align-middle text-slate-700">
-                            {product?.id || '-'}
-                          </td>
-                          <td className="p-2 align-middle font-medium text-slate-800">
-                            {product?.name || 'N/A'}
-                          </td>
-                          <td className="p-2 align-middle text-center text-slate-700">
-                            {item.originalQuantity}
-                          </td>
+                          <td className="p-2 align-middle text-center text-slate-700">{index + 1}</td>
+                          <td className="p-2 align-middle text-slate-700">{product?.code || '-'}</td>
+                          <td className="p-2 align-middle font-medium text-slate-800">{product?.name || 'N/A'}</td>
+                          <td className="p-2 align-middle text-center text-slate-700">{item.originalQuantity}</td>
                           <td className="p-2 align-middle">
                             <Input
                               type="number"
                               value={item.adjustedQuantity}
                               onChange={(e) =>
-                                handleItemChange(
-                                  item.id,
-                                  'adjustedQuantity',
-                                  e.target.value
-                                )
+                                handleItemChange(item.id, 'adjustedQuantity', e.target.value)
                               }
-                              className="w-28 h-10 mx-auto"
+                              className="!w-14 !px-2 h-9 mx-auto text-center text-sm"
                               min="0"
                               required
                             />
                           </td>
                           <td
-                            className={`p-2 align-middle text-center font-semibold ${difference > 0 ? 'text-green-600' : difference < 0 ? 'text-red-600' : 'text-slate-700'}`}
+                            className={`p-2 align-middle text-center font-semibold ${
+                              difference > 0
+                                ? 'text-green-600'
+                                : difference < 0
+                                  ? 'text-red-600'
+                                  : 'text-slate-700'
+                            }`}
                           >
                             {difference > 0 ? `+${difference}` : difference}
                           </td>
                           <td className="p-2 align-middle text-center text-slate-700">
-                            {product?.unit?.name || '-'}
-                          </td>
-                          <td className="p-2 align-middle">
-                            <Input
-                              type="text"
-                              value={item.reason}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  item.id,
-                                  'reason',
-                                  e.target.value
-                                )
-                              }
-                              className="w-full h-10"
-                              placeholder="เช่น สินค้าเสีย, นับพลาด"
-                            />
+                            {(() => {
+                              const u = product?.unit as { name?: string } | string | undefined;
+                              if (typeof u === 'string') return u;
+                              if (u && typeof u === 'object' && u.name) return u.name;
+                              return '-';
+                            })()}
                           </td>
                           <td className="p-2 text-center align-middle">
                             <Button
@@ -372,10 +377,7 @@ export const AddStockAdjustmentModal: React.FC<
                     })
                   ) : (
                     <tr>
-                      <td
-                        colSpan={9}
-                        className="text-center py-10 text-slate-500"
-                      >
+                      <td colSpan={8} className="text-center py-10 text-slate-500">
                         ยังไม่มีรายการสินค้า
                       </td>
                     </tr>
@@ -386,6 +388,7 @@ export const AddStockAdjustmentModal: React.FC<
           </div>
         </form>
       </Modal>
+
       <ProductSelectionModal
         isOpen={isProductModalOpen}
         onClose={() => setIsProductModalOpen(false)}

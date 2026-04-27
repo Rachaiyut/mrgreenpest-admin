@@ -333,7 +333,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setTransfers([]);
     }
     if (shouldFetch('stockAdjustments')) {
-      setStockAdjustments([]);
+      // หน้า ปรับปรุง Stock fetch list เองแล้ว (StockAdjustmentApi)
+      // คง resource key ไว้เพื่อ backward-compat แต่ไม่ดึงข้อมูลที่นี่
     }
     if (shouldFetch('productReturns')) {
       promises.push(
@@ -355,8 +356,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
             const stockMap: { [key: string]: { [key: string]: number } } = {};
             data.forEach((wh: any) => {
               stockMap[wh.id] = {};
-              (wh.items || []).forEach((item: any) => {
-                stockMap[wh.id][item.productId] = item.quantity;
+              // ลองหา field ที่เก็บ stock balances ในทุก naming convention ที่เป็นไปได้
+              const balances =
+                wh.stock ||
+                wh.stocks ||
+                wh.stockBalances ||
+                wh.stock_balances ||
+                wh.stocks_balances ||
+                wh.items ||
+                [];
+              balances.forEach((b: any) => {
+                const pid = b.product_id || b.productId;
+                const qty = Number(b.quantity || 0);
+                if (pid) stockMap[wh.id][pid] = qty;
               });
             });
             setWarehouseStocks(stockMap);
@@ -554,12 +566,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       stockAdjustments: {
         create: async (data: any) => {
           await StockAdjustmentApi.create(data);
+          fetchData(['stockAdjustments', 'warehouseStocks']);
         },
         update: async (data: any) => {
           await StockAdjustmentApi.update(data.id, data);
+          fetchData(['stockAdjustments', 'warehouseStocks']);
         },
         delete: async (id: string) => {
           await StockAdjustmentApi.delete(id);
+          fetchData(['stockAdjustments', 'warehouseStocks']);
         },
       },
       productReturns: {

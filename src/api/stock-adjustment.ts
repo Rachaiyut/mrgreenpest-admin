@@ -42,6 +42,19 @@ class StockAdjustmentService extends AuthService {
   async delete(id: string): Promise<void> {
     await this.http.delete(`${this.path}/${id}`);
   }
+
+  async approve(id: string): Promise<StockAdjustment> {
+    const res = await this.http.post<StockAdjustment>(`${this.path}/${id}/approve`, {});
+    return res.data;
+  }
+
+  async reject(id: string, remark?: string): Promise<StockAdjustment> {
+    const res = await this.http.post<StockAdjustment>(
+      `${this.path}/${id}/reject`,
+      { remark },
+    );
+    return res.data;
+  }
 }
 
 export const StockAdjustmentApi = new StockAdjustmentService();

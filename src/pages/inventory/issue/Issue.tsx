@@ -48,6 +48,7 @@ import {
   UserApi,
   WarehouseApi,
   IssueNoteApi,
+  AccountApi,
 } from '../../../api';
 
 // ===== Utils =====
@@ -385,6 +386,199 @@ const Issue: FC = () => {
     setOpenDropdownId(null);
 
     if (action === 'approve') {
+      const hasExpense = (withdrawal.expenses?.length || 0) > 0;
+      const totalExpense = (withdrawal.expenses || []).reduce(
+        (s, e) => s + Number(e.amount || 0),
+        0,
+      );
+
+      // ใบเบิกมีค่าใช้จ่าย → ต้องเลือกบัญชีก่อน
+      if (hasExpense) {
+        let accountId: string | null = null;
+        try {
+          const accountsRes = await AccountApi.getAll({ limit: 10, page: 1 });
+          const accounts = (accountsRes?.data || []).filter((a) => a.is_active);
+          if (accounts.length === 0) {
+            const totalAll = accountsRes?.data?.length || 0;
+            await Swal.fire({
+              icon: 'warning',
+              title: 'ไม่มีบัญชีให้เลือก',
+              text:
+                totalAll === 0
+                  ? 'กรุณาสร้างบัญชีอย่างน้อย 1 บัญชีก่อนอนุมัติใบเบิกที่มีค่าใช้จ่าย'
+                  : 'บัญชีทั้งหมดถูกปิดการใช้งาน — กรุณาเปิดใช้งานหรือสร้างบัญชีใหม่',
+            });
+            return;
+          }
+          const fmtMoney = (v: number) =>
+            `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          const escape = (s: string) =>
+            s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+          const optionsHtml = accounts
+            .map(
+              (a) =>
+                `<option value="${a.id}" data-bal="${Number(a.current_balance || 0)}" data-name="${escape(a.account_name)}" data-bank="${escape(a.bank_name)}" data-num="${escape(a.account_number)}">${escape(a.account_name)} (${escape(a.bank_name)})</option>`,
+            )
+            .join('');
+          const r = await Swal.fire({
+            icon: 'question',
+            title: 'ยืนยันการอนุมัติ',
+            width: 640,
+            html: `
+              <div style="max-width:520px; margin:0 auto;">
+                <!-- Summary text -->
+                <div style="text-align:center; font-size:14px; color:#475569; margin-bottom:16px; line-height:1.8;">
+                  <div>เลขที่ใบเบิก: <strong style="color:#0f172a;">${escape(withdrawal.code || withdrawal.id)}</strong></div>
+                  <div>ยอดเงินที่จะตัด: <strong style="color:#dc2626; font-size:16px;">${fmtMoney(totalExpense)}</strong></div>
+                </div>
+
+                <!-- Account select -->
+                <label style="display:block; text-align:left; font-size:13px; font-weight:600; color:#334155; margin-bottom:6px;">
+                  บัญชีที่จะตัดเงิน <span style="color:#dc2626;">*</span>
+                </label>
+                <select id="swal-account-select" class="swal2-select" style="display:block; width:100%; margin:0; font-size:14px; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#0f172a; height:auto; appearance:auto; -webkit-appearance:auto; -moz-appearance:auto; cursor:pointer; transition:border-color .15s, box-shadow .15s;">
+                  <option value="" style="color:#94a3b8;">กรุณาเลือกบัญชี</option>
+                  ${optionsHtml}
+                </select>
+
+                <!-- Info area -->
+                <div id="swal-account-info" style="margin-top:14px; min-height:130px;">
+                  <div style="text-align:center; padding:24px 12px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; color:#94a3b8; font-size:13px; display:flex; flex-direction:column; align-items:center; gap:6px;">
+                    <span style="font-size:24px; line-height:1;">📊</span>
+                    <span>เลือกบัญชีจากด้านบน เพื่อดูยอดคงเหลือและสรุปการตัดเงิน</span>
+                  </div>
+                </div>
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'อนุมัติ',
+            cancelButtonText: 'ยกเลิก',
+            confirmButtonColor: '#10b981',
+            didOpen: () => {
+              const sel = document.getElementById('swal-account-select') as HTMLSelectElement | null;
+              const info = document.getElementById('swal-account-info');
+              if (!sel || !info) return;
+              sel.addEventListener('focus', () => {
+                sel.style.borderColor = '#10b981';
+                sel.style.boxShadow = '0 0 0 3px rgba(16,185,129,.15)';
+              });
+              sel.addEventListener('blur', () => {
+                sel.style.borderColor = '#cbd5e1';
+                sel.style.boxShadow = 'none';
+              });
+              const update = () => {
+                const opt = sel.selectedOptions[0];
+                if (!opt?.value) {
+                  info.innerHTML = '';
+                  return;
+                }
+                const bal = Number(opt.dataset.bal || '0');
+                const after = bal - totalExpense;
+                const isOk = after >= 0;
+
+                if (isOk) {
+                  // ✅ สถานะ "ผ่าน" — card สะอาด สี soft green ที่ footer
+                  info.innerHTML = `
+                    <div style="background:#fff; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; box-shadow:0 1px 2px rgba(15,23,42,0.04);">
+                      <div style="padding:12px 16px; background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left;">
+                        <div style="font-size:13px;">
+                          <span style="color:#64748b;">ชื่อบัญชี:</span>
+                          <span style="color:#0f172a; font-weight:600; margin-left:6px;">${escape(opt.dataset.name || '')}</span>
+                        </div>
+                        <div style="font-size:13px; margin-top:4px;">
+                          <span style="color:#64748b;">ธนาคาร:</span>
+                          <span style="color:#0f172a; font-weight:600; margin-left:6px;">${escape(opt.dataset.bank || '')}</span>
+                        </div>
+                        <div style="font-size:13px; margin-top:4px;">
+                          <span style="color:#64748b;">เลขที่บัญชี:</span>
+                          <span style="color:#0f172a; font-weight:600; margin-left:6px;">${escape(opt.dataset.num || '')}</span>
+                        </div>
+                      </div>
+                      <div style="padding:12px 16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+                          <span style="color:#64748b;">ยอดคงเหลือปัจจุบัน</span>
+                          <span style="color:#0f172a; font-weight:600;">${fmtMoney(bal)}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-top:6px;">
+                          <span style="color:#64748b;">ยอดที่จะตัด</span>
+                          <span style="color:#dc2626; font-weight:600;">− ${fmtMoney(totalExpense)}</span>
+                        </div>
+                      </div>
+                      <div style="padding:10px 16px; background:#ecfdf5; border-top:1px solid #a7f3d0; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:13px; font-weight:600; color:#0f172a;">คงเหลือหลังตัด</span>
+                        <span style="font-size:18px; font-weight:700; color:#047857;">${fmtMoney(after)}</span>
+                      </div>
+                    </div>
+                  `;
+                  return;
+                }
+
+                // ❌ สถานะ "ไม่ผ่าน" — redesign ใหม่หมด: เน้น warning, math breakdown
+                info.innerHTML = `
+                  <div style="background:#fff; border:2px solid #ef4444; border-radius:12px; overflow:hidden; box-shadow:0 4px 12px rgba(239,68,68,0.12);">
+                    <!-- Banner -->
+                    <div style="background:linear-gradient(90deg,#fef2f2 0%,#fee2e2 100%); padding:14px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid #fecaca;">
+                      <div style="flex-shrink:0; width:36px; height:36px; border-radius:50%; background:#dc2626; display:flex; align-items:center; justify-content:center;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                          <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+                        </svg>
+                      </div>
+                      <div style="flex:1; text-align:left; min-width:0;">
+                        <div style="font-size:15px; font-weight:700; color:#991b1b;">ยอดเงินไม่เพียงพอ</div>
+                        <div style="font-size:12px; color:#7f1d1d; margin-top:1px;">${escape(opt.dataset.name || '')} · ${escape(opt.dataset.bank || '')}</div>
+                      </div>
+                    </div>
+
+                    <!-- Math breakdown -->
+                    <div style="padding:14px 16px; background:#fff;">
+                      <div style="display:grid; grid-template-columns:1fr auto 1fr auto 1fr; align-items:center; gap:6px;">
+                        <div style="text-align:center;">
+                          <div style="font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.04em;">คงเหลือ</div>
+                          <div style="font-size:14px; font-weight:600; color:#0f172a; margin-top:2px;">${fmtMoney(bal)}</div>
+                        </div>
+                        <div style="font-size:18px; color:#94a3b8; font-weight:300;">−</div>
+                        <div style="text-align:center;">
+                          <div style="font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.04em;">ตัด</div>
+                          <div style="font-size:14px; font-weight:600; color:#0f172a; margin-top:2px;">${fmtMoney(totalExpense)}</div>
+                        </div>
+                        <div style="font-size:18px; color:#94a3b8; font-weight:300;">=</div>
+                        <div style="text-align:center; padding:6px; background:#fef2f2; border-radius:6px;">
+                          <div style="font-size:10px; color:#dc2626; text-transform:uppercase; letter-spacing:.04em; font-weight:600;">ขาด</div>
+                          <div style="font-size:15px; font-weight:800; color:#dc2626; margin-top:2px;">${fmtMoney(Math.abs(after))}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Action hint -->
+                    <div style="padding:10px 16px; background:#fef2f2; border-top:1px solid #fecaca; font-size:12px; color:#7f1d1d; text-align:center;">
+                      💡 กรุณาเลือกบัญชีอื่นที่มียอดเพียงพอ หรือเติมเงินเข้าบัญชีก่อนอนุมัติ
+                    </div>
+                  </div>
+                `;
+              };
+              sel.addEventListener('change', update);
+            },
+            preConfirm: () => {
+              const sel = (document.getElementById('swal-account-select') as HTMLSelectElement | null)?.value;
+              if (!sel) {
+                Swal.showValidationMessage('กรุณาเลือกบัญชี');
+                return false;
+              }
+              return sel;
+            },
+          });
+          if (!r.isConfirmed || !r.value) return;
+          accountId = r.value as string;
+        } catch (err) {
+          console.error('Failed to load accounts', err);
+          await Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดบัญชีได้', 'error');
+          return;
+        }
+        await submitApproval(withdrawal.id, 'APPROVED', '', accountId || undefined);
+        return;
+      }
+
+      // ใบเบิกไม่มีค่าใช้จ่าย → confirm ปกติ ไม่ต้องเลือกบัญชี
       const r = await Swal.fire({
         icon: 'question',
         title: 'ยืนยันการอนุมัติ',
@@ -419,9 +613,14 @@ const Issue: FC = () => {
     withdrawalId: string,
     status: 'APPROVED' | 'REJECTED',
     remarks: string,
+    accountId?: string,
   ) => {
     try {
-      await IssueNoteApi.approve(withdrawalId, { status, remark: remarks });
+      await IssueNoteApi.approve(withdrawalId, {
+        status,
+        remark: remarks,
+        ...(accountId ? { account_id: accountId } : {}),
+      });
       await fetchAllData();
       Swal.fire({
         icon: 'success',

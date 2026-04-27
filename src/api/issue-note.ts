@@ -41,6 +41,7 @@ class IssueNoteService extends AuthService {
       status: 'APPROVED' | 'REJECTED';
       remark?: string;
       category?: 'STOCK' | 'EXPENSE';
+      account_id?: string;
     },
   ): Promise<Withdrawal> {
     const res = await this.http.patch<IBaseResponse<Withdrawal>>(`${this.path}/${id}/approve`, dto);

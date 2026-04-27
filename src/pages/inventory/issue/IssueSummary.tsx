@@ -918,17 +918,17 @@ const IssueSummaryPage: React.FC = () => {
               )}
             </table>
 
-            {/* --- Loading State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
+            {/* --- Loading State — overlay กึ่งกลางตาราง --- */}
             {isLoading && (
-              <div className="flex-grow flex flex-col items-center justify-center text-slate-500 min-h-[40vh]">
+              <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500 bg-white/70">
                 <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                 <p className="text-base font-medium">กำลังโหลดข้อมูลสรุปการเบิก...</p>
               </div>
             )}
 
-            {/* --- Empty State ย้ายออกมาเพื่อจัดกึ่งกลาง --- */}
+            {/* --- Empty State — overlay กึ่งกลางตาราง --- */}
             {!isLoading && paginatedRows.length === 0 && (
-              <div className="flex-grow flex flex-col items-center justify-center text-slate-400 min-h-[40vh]">
+              <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                 <DocumentCheckIcon className="h-12 w-12 mb-3 opacity-50" />
                 <p className="text-lg font-medium">ไม่พบข้อมูลสรุปการเบิก</p>
                 <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างใบเบิกใหม่</p>
