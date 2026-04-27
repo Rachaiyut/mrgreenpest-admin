@@ -313,8 +313,23 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                     value={warehouseId}
                     onChange={(v) => {
                       setWarehouseId(v);
-                      setItems([]);
                       if (v) setWarehouseError('');
+
+                      // Auto-seed: เมื่อเลือกคลังในโหมด "สร้าง" → ดึงสินค้าในคลังมาเป็น default
+                      if (mode === 'create' && v) {
+                        const stocks = stockMap[v] || {};
+                        const seedRows: AdjustmentItem[] = Object.entries(stocks)
+                          .filter(([, qty]) => Number(qty) > 0)
+                          .map(([productId, qty], idx) => ({
+                            id: Date.now() + idx,
+                            productId,
+                            originalQuantity: Number(qty),
+                            adjustedQuantity: '',
+                          }));
+                        setItems(seedRows);
+                      } else {
+                        setItems([]);
+                      }
                     }}
                     placeholder="เลือกคลังสินค้า"
                     disabled={isEditMode || isViewMode}
@@ -386,12 +401,13 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                     <th className="px-4 py-3 font-semibold text-slate-600 w-16">ลำดับ</th>
                     <th className="px-4 py-3 font-semibold text-slate-600">รหัสสินค้า</th>
                     <th className="px-4 py-3 font-semibold text-slate-600">ชื่อสินค้า</th>
-                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">จำนวนปัจจุบัน</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">สต็อกปัจจุบัน</th>
                     <th className="px-4 py-3 font-semibold text-slate-600 w-32">
-                      จำนวนที่ปรับปรุง <span className="text-red-500">*</span>
+                      จำนวนที่นับได้ <span className="text-red-500">*</span>
                     </th>
                     <th className="px-4 py-3 font-semibold text-slate-600 w-24">ผลต่าง</th>
-                    <th className="px-4 py-3 font-semibold text-slate-600">หน่วยนับ</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">สต็อกหลังปรับปรุง</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600">หน่วย</th>
                     <th className="px-4 py-3 w-16"></th>
                   </tr>
                 </thead>
@@ -423,14 +439,14 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                                 {item.adjustedQuantity}
                               </span>
                             ) : (
-                              <div className="flex justify-center">
+                              <div className="flex justify-end">
                                 <Input
                                   type="number"
                                   value={item.adjustedQuantity}
                                   onChange={(e) =>
                                     handleItemChange(item.id, 'adjustedQuantity', e.target.value)
                                   }
-                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                  className="!text-right !w-24 font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
                                   min="0"
                                   required
                                 />
@@ -447,6 +463,11 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                             }`}
                           >
                             {difference > 0 ? `+${difference}` : difference}
+                          </td>
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            {typeof item.adjustedQuantity === 'number'
+                              ? item.adjustedQuantity
+                              : '-'}
                           </td>
                           <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {(() => {
@@ -474,7 +495,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                   ) : (
                     <tr>
                       <td
-                        colSpan={8}
+                        colSpan={9}
                         className="px-6 py-12 text-center text-slate-400 bg-slate-50/50"
                       >
                         <div className="flex flex-col items-center justify-center gap-2">

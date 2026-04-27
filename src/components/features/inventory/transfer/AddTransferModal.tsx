@@ -87,16 +87,30 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
         .then((res: any) => {
           const stocks = (res.data || res) as unknown[];
           const map: Record<string, number> = {};
+          const seedRows: LineItem[] = [];
           if (Array.isArray(stocks)) {
-            stocks.forEach((s: any) => {
+            stocks.forEach((s: any, idx: number) => {
               // Backend now returns product_id in attributes, but also check s.product.id as fallback
               const productId = s.product_id || s.product?.id;
               if (productId) {
-                map[productId] = Number(s.quantity);
+                const qty = Number(s.quantity);
+                map[productId] = qty;
+                if (qty > 0) {
+                  seedRows.push({
+                    id: Date.now() + idx,
+                    productId,
+                    quantity: 1,
+                  });
+                }
               }
             });
           }
           setFetchedStock(map);
+
+          // Auto-seed items จากสินค้าในคลัง (เฉพาะตอนสร้างใหม่ และยังไม่มี items)
+          if (!isEditMode && !isViewMode && items.length === 0 && seedRows.length > 0) {
+            setItems(seedRows);
+          }
         })
         .catch((err) => {
           console.error('Failed to fetch stock balances:', err);
@@ -108,7 +122,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
     } else {
       setFetchedStock({});
     }
-  }, [fromWarehouseId]);
+  }, [fromWarehouseId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const productsInWarehouse = useMemo(() => {
     if (!fromWarehouse) return [];
@@ -516,7 +530,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantity}</span>
                             ) : (
-                              <div className="flex justify-center">
+                              <div className="flex justify-end">
                                 <Input
                                   type="number"
                                   value={item.quantity}
@@ -533,7 +547,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                                       validatedQuantity
                                     );
                                   }}
-                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                  className="!text-right !w-24 font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
                                   min="1"
                                   max={currentStock}
                                   required

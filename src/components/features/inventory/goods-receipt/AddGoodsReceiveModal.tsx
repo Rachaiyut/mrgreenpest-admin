@@ -5,6 +5,7 @@ import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== API =====
 import { SupplierApi } from '@/src/api/supplier';
+import { WarehouseApi } from '@/src/api/warehouse';
 
 // ===== Types / Enums =====
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
@@ -336,9 +337,39 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                 >
                   <SearchableSelect
                     value={selectedWarehouseId}
-                    onChange={(v) => {
+                    onChange={async (v) => {
                       setSelectedWarehouseId(v);
                       if (v) setWarehouseError('');
+
+                      // Auto-populate items จากสินค้าในคลัง (เฉพาะตอนสร้างใหม่ และยังไม่มี items)
+                      if (
+                        v &&
+                        !isEditMode &&
+                        !isViewMode &&
+                        items.length === 0
+                      ) {
+                        try {
+                          const res: any = await WarehouseApi.getStockBalances(v);
+                          const stocks = (res?.data || res || []) as any[];
+                          if (Array.isArray(stocks) && stocks.length > 0) {
+                            const seeded: LineItem[] = stocks
+                              .map((s: any, idx: number) => {
+                                const productId = s.product_id || s.product?.id;
+                                if (!productId) return null;
+                                return {
+                                  id: Date.now() + idx,
+                                  productId,
+                                  quantityOrdered: 1,
+                                  quantityReceived: 1,
+                                };
+                              })
+                              .filter((it): it is LineItem => it !== null);
+                            setItems(seeded);
+                          }
+                        } catch (err) {
+                          console.error('Failed to fetch stock balances', err);
+                        }
+                      }
                     }}
                     placeholder="เลือกคลังปลายทาง"
                     name="warehouse"
@@ -466,7 +497,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantityOrdered}</span>
                             ) : (
-                              <div className="flex justify-center">
+                              <div className="flex justify-end">
                                 <Input
                                   type="number"
                                   min="1"
@@ -478,7 +509,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                                       parseInt(e.target.value) || 0
                                     )
                                   }
-                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                  className="!text-right !w-24 font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
                                 />
                               </div>
                             )}
@@ -487,7 +518,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                             {isViewMode ? (
                               <span className="text-slate-700 font-medium">{item.quantityReceived}</span>
                             ) : (
-                              <div className="flex justify-center">
+                              <div className="flex justify-end">
                                 <Input
                                   type="number"
                                   min="0"
@@ -499,7 +530,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                                       parseInt(e.target.value) || 0
                                     )
                                   }
-                                  className={`text-center font-bold border-2 w-20 ${
+                                  className={`!text-right !w-24 font-bold border-2 ${
                                     item.quantityReceived !== item.quantityOrdered
                                       ? 'border-amber-200 bg-amber-50 text-amber-700'
                                       : 'border-green-200 bg-green-50 text-green-700'

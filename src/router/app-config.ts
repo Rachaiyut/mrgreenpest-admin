@@ -317,11 +317,6 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: NewWarehouseIcon,
         access: 'ACCESS_RETURN_NOTE',
         component: ReturnToSupplier,
-        getProps: (data) => ({
-          onCreateReturn: data.handlers.returnToSuppliers.create,
-          onUpdateReturn: data.handlers.returnToSuppliers.update,
-          onDeleteReturn: data.handlers.returnToSuppliers.delete,
-        }),
       },
     ],
   },

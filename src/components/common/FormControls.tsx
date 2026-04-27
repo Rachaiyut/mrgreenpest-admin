@@ -104,7 +104,7 @@ export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
       onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
       className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${
         props.type === 'search' ? 'pl-10' : ''
-      }`}
+      } ${props.className || ''}`}
     />
   );
 };
