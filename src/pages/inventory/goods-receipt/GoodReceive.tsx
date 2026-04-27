@@ -101,10 +101,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const [supplierFilter, setSupplierFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [totalItems, setTotalItems] = useState(0);
+
   const fetchGoodReceives = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await GoodsReceiptApi.getAll({
+        page: currentPage,
+        limit: itemsPerPage,
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
         ...(startDate ? { start_date: startDate } : {}),
         ...(endDate ? { end_date: endDate } : {}),
@@ -114,13 +118,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       });
       if (response && response.data) {
         setReceipts(response.data);
+        setTotalItems(response.meta?.total ?? response.data.length);
       }
     } catch (error) {
       console.error('Failed to fetch goods receipts', error);
     } finally {
       setIsLoading(false);
     }
-  }, [searchDebounced, startDate, endDate, warehouseFilter, supplierFilter, statusFilter]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate, warehouseFilter, supplierFilter, statusFilter]);
 
   // Debounce searchQuery → searchDebounced (300ms) → trigger refetch
   useEffect(() => {
@@ -205,14 +210,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     }, {} as Record<string, string>);
   }, [suppliers]);
 
-  // Search ส่งไป API แล้ว — ไม่ต้องกรอง client side
-  const filteredReceipts = sortedReceipts;
-  
-  const totalItems = filteredReceipts.length;
-  const paginatedReceipts = filteredReceipts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Pagination ทำที่ API แล้ว — ไม่ต้อง slice ฝั่ง client
+  const paginatedReceipts = sortedReceipts;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);

@@ -49,7 +49,7 @@ export const StockAdjustmentDetailsModal: React.FC<
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`รายละเอียดใบปรับปรุง Stock: ${code}`}
+      title={`รายละเอียดใบปรับปรุงสต็อก: ${code}`}
       size="5xl"
       footer={
         <Button variant="primary" type="button" onClick={onClose}>

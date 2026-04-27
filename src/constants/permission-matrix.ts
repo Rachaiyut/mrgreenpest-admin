@@ -107,7 +107,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
         module: 'EXPENSE_ISSUE_SUMMARY',
       },
       { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },
-      { label: 'ปรับปรุง Stock', module: 'ADJUSTMENT_NOTE' },
+      { label: 'ปรับปรุงสต็อก', module: 'ADJUSTMENT_NOTE' },
       { label: 'คืนสินค้า', module: 'RETURN_NOTE' },
       { label: 'จำกัดการเบิก', module: 'WAREHOUSE' },
     ],

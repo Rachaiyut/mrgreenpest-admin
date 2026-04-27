@@ -12,13 +12,13 @@ import {
   TrashIcon,
   XCircleIcon,
 } from '../../../assets/icons/Icons';
-import { Button } from '../../../components/common/FormControls';
+import { Button, Select } from '../../../components/common/FormControls';
 import { formatThaiDate } from '../../../utils/date';
 import { AdjustmentModal } from '../../../components/features/inventory/adjustment/AdjustmentModal';
 import { StockAdjustment as StockAdjustmentType } from '@/src/types/entity/app.interface';
-import { StockAdjustmentDetailsModal } from '../../../components/features/inventory/adjustment/StockAdjustmentDetailsModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Input } from '../../../components/common/FormControls';
+import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 
 import { useData } from '../../../contexts/DataContext';
@@ -39,12 +39,14 @@ const StockAdjustment: React.FC = () => {
   const [searchDebounced, setSearchDebounced] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [warehouseFilter, setWarehouseFilter] = useState('all');
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [adjustmentToEdit, setAdjustmentToEdit] =
     useState<StockAdjustmentType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -53,9 +55,6 @@ const StockAdjustment: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedAdjustment, setSelectedAdjustment] =
-    useState<StockAdjustmentType | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [adjustmentToDelete, setAdjustmentToDelete] =
     useState<StockAdjustmentType | null>(null);
@@ -72,6 +71,8 @@ const StockAdjustment: React.FC = () => {
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
         ...(startDate ? { start_date: startDate } : {}),
         ...(endDate ? { end_date: endDate } : {}),
+        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+        ...(warehouseFilter !== 'all' ? { warehouse_id: warehouseFilter } : {}),
       });
       if (res?.data) setAdjustments(res.data);
       if (res?.meta?.total !== undefined) {
@@ -84,7 +85,7 @@ const StockAdjustment: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate, statusFilter, warehouseFilter]);
 
   useEffect(() => {
     fetchList();
@@ -145,14 +146,16 @@ const StockAdjustment: React.FC = () => {
   };
 
   const handleViewDetails = (adjustment: StockAdjustmentType) => {
-    setSelectedAdjustment(adjustment);
-    setIsDetailsModalOpen(true);
+    setAdjustmentToEdit(adjustment);
+    setIsViewMode(true);
+    setIsAddModalOpen(true);
     setOpenDropdownId(null);
   };
 
   const handleEdit = (adjustment: StockAdjustmentType) => {
     setAdjustmentToEdit(adjustment);
-    setIsEditModalOpen(true);
+    setIsViewMode(false);
+    setIsAddModalOpen(true);
     setOpenDropdownId(null);
   };
 
@@ -283,28 +286,32 @@ const StockAdjustment: React.FC = () => {
           hoverBg: 'hover:bg-emerald-50',
         },
         {
-          label: 'ปฏิเสธ',
+          label: 'ไม่อนุมัติ',
           icon: XCircleIcon,
           onClick: () => onRejectAdjustment(adj),
           color: 'text-red-600',
           hoverBg: 'hover:bg-red-50',
         },
-        {
-          label: 'แก้ไข',
-          icon: PencilIcon,
-          onClick: () => handleEdit(adj),
-          color: 'text-blue-600',
-          hoverBg: 'hover:bg-blue-50',
-        },
       );
     }
-    items.push({
-      label: 'ลบ',
-      icon: TrashIcon,
-      onClick: () => handleDelete(adj),
-      color: 'text-red-600',
-      hoverBg: 'hover:bg-red-50',
-    });
+    if (status === 'DRAFT') {
+      items.push({
+        label: 'แก้ไข',
+        icon: PencilIcon,
+        onClick: () => handleEdit(adj),
+        color: 'text-blue-600',
+        hoverBg: 'hover:bg-blue-50',
+      });
+    }
+    if (status === 'DRAFT' || status === 'PENDING') {
+      items.push({
+        label: 'ยกเลิก',
+        icon: TrashIcon,
+        onClick: () => handleDelete(adj),
+        color: 'text-red-600',
+        hoverBg: 'hover:bg-red-50',
+      });
+    }
     return items;
   };
 
@@ -314,37 +321,70 @@ const StockAdjustment: React.FC = () => {
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-800">
-              ปรับปรุง Stock
+              ปรับปรุงสต็อก
             </h1>
             <p className="mt-1 text-slate-600">
               จัดการและติดตามการปรับปรุงสต็อกสินค้า
             </p>
           </div>
-          <Button onClick={() => setIsAddModalOpen(true)}>
+          <Button onClick={() => {
+            setAdjustmentToEdit(null);
+            setIsViewMode(false);
+            setIsAddModalOpen(true);
+          }}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบปรับปรุง Stock
+            สร้างใบปรับปรุงสต็อก
           </Button>
         </div>
 
         <Card className="!p-4 mb-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-80 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center justify-start">
+            <div className="relative w-full sm:w-80 sm:flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, วันที่)..."
+                placeholder="ค้นหาเลขที่เอกสารปรับปรุง"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full pl-10"
-                title="ค้นหาด้วย: เลขที่เอกสาร, วันที่ปรับปรุง"
+                title="ค้นหาด้วย: เลขที่เอกสารปรับปรุง"
               />
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-48 sm:flex-shrink-0">
+              <SearchableSelect
+                value={warehouseFilter === 'all' ? '' : warehouseFilter}
+                onChange={(v) => {
+                  setWarehouseFilter(v || 'all');
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: '', label: 'คลังทั้งหมด' },
+                  ...warehouses.map((wh) => ({ value: wh.id, label: wh.name })),
+                ]}
+                placeholder="คลังทั้งหมด"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-fit text-sm !pr-8"
+            >
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="DRAFT">ฉบับร่าง</option>
+              <option value="PENDING">รออนุมัติ</option>
+              <option value="APPROVED">อนุมัติแล้ว</option>
+              <option value="REJECTED">ไม่อนุมัติ</option>
+              <option value="CANCELLED">ยกเลิก</option>
+            </Select>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}
                 onChange={(date: Date | null) => {
@@ -356,9 +396,9 @@ const StockAdjustment: React.FC = () => {
                 placeholderText="เริ่มต้น"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:flex-none sm:w-36"
               />
-              <span className="text-slate-400">-</span>
+              <span className="text-slate-400 shrink-0">-</span>
               <DatePicker
                 selected={endDate ? new Date(endDate) : null}
                 onChange={(date: Date | null) => {
@@ -370,7 +410,7 @@ const StockAdjustment: React.FC = () => {
                 placeholderText="สิ้นสุด"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:flex-none sm:w-36"
               />
             </div>
           </div>
@@ -382,7 +422,7 @@ const StockAdjustment: React.FC = () => {
               <thead className="bg-slate-50 sticky top-0 z-10">
                 <tr>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ลำดับ</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสาร</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เลขที่เอกสารปรับปรุง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">วันที่</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนรายการ</th>
@@ -406,7 +446,7 @@ const StockAdjustment: React.FC = () => {
                     <td colSpan={8} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
-                        <p className="text-lg font-medium">ไม่พบข้อมูลการปรับปรุง Stock</p>
+                        <p className="text-lg font-medium">ไม่พบข้อมูลการปรับปรุงสต็อก</p>
                         <p className="text-sm mt-1">ลองเปลี่ยนคำค้นหา หรือสร้างใบปรับปรุงใหม่</p>
                       </div>
                     </td>
@@ -517,29 +557,18 @@ const StockAdjustment: React.FC = () => {
 
       <AdjustmentModal
         isOpen={isAddModalOpen}
-        mode="create"
-        onClose={() => setIsAddModalOpen(false)}
-        onSubmit={onCreateAdjustment}
-        warehouses={warehouses}
-        products={products}
-        stockMap={stockMap}
-      />
-      <AdjustmentModal
-        isOpen={isEditModalOpen}
-        mode="edit"
+        mode={adjustmentToEdit ? 'edit' : 'create'}
         initialValues={adjustmentToEdit}
-        onClose={() => setIsEditModalOpen(false)}
-        onSubmit={onUpdateAdjustment}
+        viewOnly={isViewMode}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setAdjustmentToEdit(null);
+          setIsViewMode(false);
+        }}
+        onSubmit={adjustmentToEdit ? onUpdateAdjustment : onCreateAdjustment}
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
-      />
-      <StockAdjustmentDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => setIsDetailsModalOpen(false)}
-        adjustment={selectedAdjustment}
-        warehouses={warehouses}
-        products={products}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../../common/Modal';
+import { FormField, Input, Textarea, Button } from '../../../common/FormControls';
+import { SearchableSelect } from '../../../common/SearchableSelect';
 import {
-  FormField,
-  Input,
-  Select,
-  Textarea,
-  Button,
-} from '../../../common/FormControls';
-import { PlusIcon, TrashIcon } from '../../../../assets/icons/Icons';
+  PlusIcon,
+  TrashIcon,
+  DocumentTextIcon,
+  PackageIcon,
+} from '../../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 import {
   Product,
@@ -24,6 +24,7 @@ interface AdjustmentModalProps {
   isOpen: boolean;
   mode: Mode;
   initialValues?: StockAdjustmentType | null;
+  viewOnly?: boolean;
   onClose: () => void;
   onSubmit: (payload: any) => void | Promise<void>;
   warehouses: WarehouseType[];
@@ -42,17 +43,24 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
   isOpen,
   mode,
   initialValues,
+  viewOnly = false,
   onClose,
   onSubmit,
   warehouses,
   products,
   stockMap,
 }) => {
+  const isEditMode = mode === 'edit' && !viewOnly;
+  const isViewMode = viewOnly;
+
   const [items, setItems] = useState<AdjustmentItem[]>([]);
   const [warehouseId, setWarehouseId] = useState('');
   const [mainReason, setMainReason] = useState('');
   const [adjustmentDate, setAdjustmentDate] = useState<Date>(new Date());
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+
+  const [warehouseError, setWarehouseError] = useState('');
+  const [reasonError, setReasonError] = useState('');
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -63,30 +71,13 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
     [warehouseId, warehouses]
   );
 
-  const isFormValid = useMemo(() => {
-    return (
-      warehouseId &&
-      mainReason.trim() &&
-      items.length > 0 &&
-      items.every(
-        (it) =>
-          typeof it.adjustedQuantity === 'number' && it.adjustedQuantity >= 0
-      )
-    );
-  }, [warehouseId, mainReason, items]);
-
-  // Reset / hydrate ตามโหมด
+  // Reset / hydrate
   useEffect(() => {
     if (!isOpen) return;
-    if (mode === 'create') {
-      setItems([]);
-      setWarehouseId('');
-      setMainReason('');
-      setAdjustmentDate(new Date());
-      return;
-    }
-    // mode === 'edit'
-    if (initialValues) {
+    setWarehouseError('');
+    setReasonError('');
+
+    if (mode === 'edit' && initialValues) {
       setWarehouseId(initialValues.warehouse_id || '');
       setMainReason(initialValues.reason || '');
       setAdjustmentDate(
@@ -105,6 +96,11 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
         },
       );
       setItems(hydrated);
+    } else {
+      setItems([]);
+      setWarehouseId('');
+      setMainReason('');
+      setAdjustmentDate(new Date());
     }
   }, [isOpen, mode, initialValues]);
 
@@ -145,17 +141,24 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
     setItems(newItems);
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isFormValid) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'กรุณาตรวจสอบ',
-        text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลัง, เหตุผลหลัก, และมีสินค้าอย่างน้อย 1 รายการพร้อมจำนวนที่ปรับปรุง',
-      });
-      return;
+  const validateRequired = (opts: { requireReason: boolean }) => {
+    let ok = true;
+    if (!warehouseId) {
+      setWarehouseError('กรุณาเลือกคลังสินค้า');
+      ok = false;
+    } else {
+      setWarehouseError('');
     }
+    if (opts.requireReason && !mainReason.trim()) {
+      setReasonError('กรุณากรอกเหตุผลในการปรับปรุง');
+      ok = false;
+    } else {
+      setReasonError('');
+    }
+    return ok;
+  };
 
+  const buildPayload = (status: 'DRAFT' | 'PENDING') => {
     const adjustmentItems = items
       .map((item) => {
         const diff = Number(item.adjustedQuantity) - Number(item.originalQuantity);
@@ -167,26 +170,47 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
       })
       .filter((it) => it.quantity > 0);
 
-    if (adjustmentItems.length === 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'ไม่มีรายการปรับปรุง',
-        text: 'จำนวนที่ปรับปรุงต้องต่างจากจำนวนปัจจุบันอย่างน้อย 1 รายการ',
-      });
-      return;
-    }
-
     const payload: any = {
       warehouse_id: warehouseId,
       reason: mainReason,
+      status,
       items: adjustmentItems,
     };
     if (mode === 'edit' && initialValues?.id) {
       payload.id = initialValues.id;
     }
+    return payload;
+  };
 
-    onSubmit(payload);
+  const submitWithStatus = (status: 'DRAFT' | 'PENDING') => {
+    const requireReason = status === 'PENDING';
+    if (!validateRequired({ requireReason })) return;
+
+    if (status === 'PENDING') {
+      const adjustmentItems = items
+        .map((item) => Number(item.adjustedQuantity) - Number(item.originalQuantity))
+        .filter((diff) => diff !== 0);
+      if (adjustmentItems.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีรายการปรับปรุง',
+          text: 'จำนวนที่ปรับปรุงต้องต่างจากจำนวนปัจจุบันอย่างน้อย 1 รายการ',
+        });
+        return;
+      }
+    }
+
+    onSubmit(buildPayload(status));
     onClose();
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    submitWithStatus('PENDING');
+  };
+
+  const handleSaveDraft = () => {
+    submitWithStatus('DRAFT');
   };
 
   const productsInWarehouse = useMemo(() => {
@@ -201,10 +225,11 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
   );
 
   const code = (initialValues as { adjustment_code?: string })?.adjustment_code;
-  const title =
-    mode === 'create'
-      ? 'สร้างใบปรับปรุง Stock'
-      : `แก้ไขใบปรับปรุง Stock${code ? ` — ${code}` : ''}`;
+  const title = isViewMode
+    ? 'รายละเอียดใบปรับปรุงสต็อก'
+    : isEditMode
+      ? 'แก้ไขใบปรับปรุงสต็อก'
+      : 'สร้างใบปรับปรุงสต็อก';
 
   return (
     <>
@@ -216,105 +241,161 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
         footer={
           <div className="flex gap-2 justify-end w-full">
             <Button variant="outline" type="button" onClick={onClose}>
-              ยกเลิก
+              {isViewMode ? 'ปิด' : 'ยกเลิก'}
             </Button>
-            <Button variant="primary" type="submit" form="adjustment-form">
-              บันทึก
-            </Button>
+            {!isViewMode && (
+              <>
+                <Button variant="secondary" type="button" onClick={handleSaveDraft}>
+                  บันทึกฉบับร่าง
+                </Button>
+                <Button variant="primary" type="submit" form="adjustment-form">
+                  ส่งเพื่ออนุมัติ
+                </Button>
+              </>
+            )}
           </div>
         }
       >
         <form id="adjustment-form" onSubmit={handleSubmit} className="space-y-6">
-          <div
-            className={`grid grid-cols-1 ${mode === 'edit' ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-4`}
-          >
-            {mode === 'edit' && code && (
-              <FormField label="เลขที่เอกสาร" htmlFor="adjustment-id">
-                <Input
-                  id="adjustment-id"
-                  type="text"
-                  value={code}
-                  readOnly
-                  className="bg-slate-100"
+          {/* Document Information Section */}
+          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <DocumentTextIcon className="w-4 h-4 text-slate-500" />
+              ข้อมูลเอกสาร
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <FormField label="วันที่" htmlFor="adjustment-date">
+                <DatePicker
+                  selected={adjustmentDate}
+                  onChange={(d: Date | null) => d && setAdjustmentDate(d)}
+                  dateFormat="dd/MM/yyyy"
+                  locale="th"
+                  placeholderText="dd/mm/yyyy"
+                  disabled={isEditMode || isViewMode}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  wrapperClassName="w-full"
+                  required
                 />
               </FormField>
-            )}
-            <FormField label="วันที่" htmlFor="adjustment-date">
-              <DatePicker
-                selected={adjustmentDate}
-                onChange={(d: Date | null) => d && setAdjustmentDate(d)}
-                dateFormat="dd/MM/yyyy"
-                locale="th"
-                placeholderText="dd/mm/yyyy"
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-full"
-                disabled={mode === 'edit'}
-                required
-              />
-            </FormField>
-            <FormField label="คลังสินค้า" htmlFor="warehouse">
-              <Select
-                id="warehouse"
-                value={warehouseId}
-                onChange={(e) => setWarehouseId(e.target.value)}
-                disabled={mode === 'edit'}
-                required
-              >
-                <option value="">-- เลือกคลัง --</option>
-                {warehouses.map((wh) => (
-                  <option key={wh.id} value={wh.id}>
-                    {wh.name}
-                    {wh.type === WarehouseTypeEnum.VEHICLE &&
-                    wh.vehicle?.vehicle_registration
-                      ? ` (${wh.vehicle.vehicle_registration})`
-                      : ''}
-                  </option>
-                ))}
-              </Select>
-            </FormField>
+              {(isEditMode || isViewMode) && code && (
+                <FormField label="เลขที่เอกสารปรับปรุง" htmlFor="adjustment-code">
+                  <Input
+                    id="adjustment-code"
+                    type="text"
+                    value={code}
+                    disabled
+                    className="bg-slate-100 text-slate-500 cursor-not-allowed"
+                  />
+                </FormField>
+              )}
+              <FormField label="ผู้ทำรายการ" htmlFor="created-by">
+                <Input
+                  id="created-by"
+                  type="text"
+                  value="ผู้ดูแลระบบ"
+                  readOnly
+                  className="bg-white text-slate-500 cursor-not-allowed"
+                />
+              </FormField>
+            </div>
           </div>
 
-          <FormField label="เหตุผลหลักในการปรับปรุง" htmlFor="main-reason">
-            <Textarea
-              id="main-reason"
-              value={mainReason}
-              onChange={(e) => setMainReason(e.target.value)}
-              required
-            />
-          </FormField>
-
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="text-base font-semibold text-slate-800">รายการปรับปรุง</h4>
-              <Button
-                variant="primary"
-                type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                disabled={!warehouseId}
-                title={!warehouseId ? 'กรุณาเลือกคลังก่อน' : 'เพิ่มสินค้า'}
-                className="text-sm"
-              >
-                <PlusIcon className="h-5 w-5" />
-                เพิ่มสินค้า
-              </Button>
+          {/* Warehouse + Reason Section */}
+          <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 uppercase tracking-wider flex items-center gap-2">
+              <PackageIcon className="w-4 h-4 text-slate-500" />
+              ข้อมูลการปรับปรุง
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+              <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
+                <FormField label="คลังสินค้า" htmlFor="warehouse">
+                  <SearchableSelect
+                    value={warehouseId}
+                    onChange={(v) => {
+                      setWarehouseId(v);
+                      setItems([]);
+                      if (v) setWarehouseError('');
+                    }}
+                    placeholder="เลือกคลังสินค้า"
+                    disabled={isEditMode || isViewMode}
+                    options={warehouses.map((wh) => ({
+                      value: wh.id,
+                      label: `${wh.name}${wh.type === WarehouseTypeEnum.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
+                    }))}
+                  />
+                  {warehouseError && (
+                    <p className="mt-1 text-xs text-red-600">{warehouseError}</p>
+                  )}
+                </FormField>
+              </div>
             </div>
-            <div className="overflow-x-auto border border-slate-200 rounded-md">
-              <table className="min-w-full text-sm">
-                <thead className="bg-slate-50">
+            <div className="mt-4">
+              <FormField label="เหตุผลในการปรับปรุง" htmlFor="main-reason">
+                <Textarea
+                  id="main-reason"
+                  value={mainReason}
+                  onChange={(e) => {
+                    setMainReason(e.target.value);
+                    if (e.target.value.trim()) setReasonError('');
+                  }}
+                  rows={2}
+                  disabled={isViewMode}
+                  className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
+                  placeholder="ระบุเหตุผลการปรับปรุง..."
+                />
+                {reasonError && (
+                  <p className="mt-1 text-xs text-red-600">{reasonError}</p>
+                )}
+              </FormField>
+            </div>
+          </div>
+
+          {/* Items Section */}
+          <div className="mt-6">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <PackageIcon className="w-5 h-5 text-slate-500" />
+                รายการปรับปรุง
+                <span className="text-xs font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                  {items.length} รายการ
+                </span>
+              </h4>
+              {!isViewMode && (
+                <Button
+                  variant="primary"
+                  type="button"
+                  onClick={() => setIsProductModalOpen(true)}
+                  disabled={!warehouseId}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
+                    !warehouseId
+                      ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
+                      : 'bg-primary hover:bg-primary/90 text-white'
+                  }`}
+                  title={!warehouseId ? 'กรุณาเลือกคลังก่อนเพิ่มสินค้า' : 'เพิ่มสินค้า'}
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>เพิ่มสินค้า</span>
+                </Button>
+              )}
+            </div>
+
+            <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
+              <table className="min-w-full text-sm text-center">
+                <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="p-2 text-center font-medium text-slate-600">ลำดับ</th>
-                    <th className="p-2 text-left font-medium text-slate-600">รหัสสินค้า</th>
-                    <th className="p-2 text-left font-medium text-slate-600">สินค้า</th>
-                    <th className="p-2 text-center font-medium text-slate-600">จำนวนปัจจุบัน</th>
-                    <th className="p-2 text-center font-medium text-slate-600">
-                      จำนวนที่ปรับปรุง<span className="text-red-500">*</span>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-16">ลำดับ</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600">รหัสสินค้า</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600">ชื่อสินค้า</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">จำนวนปัจจุบัน</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">
+                      จำนวนที่ปรับปรุง <span className="text-red-500">*</span>
                     </th>
-                    <th className="p-2 text-center font-medium text-slate-600">ผลต่าง</th>
-                    <th className="p-2 text-center font-medium text-slate-600">หน่วย</th>
-                    <th className="p-2"></th>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-24">ผลต่าง</th>
+                    <th className="px-4 py-3 font-semibold text-slate-600">หน่วยนับ</th>
+                    <th className="px-4 py-3 w-16"></th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100 bg-white">
                   {items.length > 0 ? (
                     items.map((item, index) => {
                       const product = productMap.get(item.productId);
@@ -323,28 +404,41 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                           ? item.adjustedQuantity - item.originalQuantity
                           : 0;
                       return (
-                        <tr
-                          key={item.id}
-                          className="border-b border-slate-200 last:border-b-0"
-                        >
-                          <td className="p-2 align-middle text-center text-slate-700">{index + 1}</td>
-                          <td className="p-2 align-middle text-slate-700">{product?.code || '-'}</td>
-                          <td className="p-2 align-middle font-medium text-slate-800">{product?.name || 'N/A'}</td>
-                          <td className="p-2 align-middle text-center text-slate-700">{item.originalQuantity}</td>
-                          <td className="p-2 align-middle">
-                            <Input
-                              type="number"
-                              value={item.adjustedQuantity}
-                              onChange={(e) =>
-                                handleItemChange(item.id, 'adjustedQuantity', e.target.value)
-                              }
-                              className="!w-14 !px-2 h-9 mx-auto text-center text-sm"
-                              min="0"
-                              required
-                            />
+                        <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            {product?.code || '-'}
+                          </td>
+                          <td className="px-4 py-3 align-middle text-slate-800 font-medium">
+                            {product?.name || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
+                            {item.originalQuantity}
+                          </td>
+                          <td className="px-4 py-3 align-middle">
+                            {isViewMode ? (
+                              <span className="text-slate-700 font-medium">
+                                {item.adjustedQuantity}
+                              </span>
+                            ) : (
+                              <div className="flex justify-center">
+                                <Input
+                                  type="number"
+                                  value={item.adjustedQuantity}
+                                  onChange={(e) =>
+                                    handleItemChange(item.id, 'adjustedQuantity', e.target.value)
+                                  }
+                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                  min="0"
+                                  required
+                                />
+                              </div>
+                            )}
                           </td>
                           <td
-                            className={`p-2 align-middle text-center font-semibold ${
+                            className={`px-4 py-3 align-middle font-semibold ${
                               difference > 0
                                 ? 'text-green-600'
                                 : difference < 0
@@ -354,7 +448,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                           >
                             {difference > 0 ? `+${difference}` : difference}
                           </td>
-                          <td className="p-2 align-middle text-center text-slate-700">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {(() => {
                               const u = product?.unit as { name?: string } | string | undefined;
                               if (typeof u === 'string') return u;
@@ -362,23 +456,38 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                               return '-';
                             })()}
                           </td>
-                          <td className="p-2 text-center align-middle">
-                            <Button
-                              variant="ghost"
-                              type="button"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="text-red-500 hover:text-red-700"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </Button>
+                          <td className="px-4 py-3 align-middle">
+                            {!isViewMode && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="text-red-500 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
+                                title="ลบรายการ"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
                     })
                   ) : (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-slate-500">
-                        ยังไม่มีรายการสินค้า
+                      <td
+                        colSpan={8}
+                        className="px-6 py-12 text-center text-slate-400 bg-slate-50/50"
+                      >
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <div className="p-3 bg-slate-100 rounded-full">
+                            <PlusIcon className="h-6 w-6 text-slate-400" />
+                          </div>
+                          <p className="font-medium">ยังไม่มีรายการสินค้า</p>
+                          {!isViewMode && (
+                            <p className="text-sm">
+                              กรุณาเลือกคลังและกดปุ่ม "เพิ่มสินค้า" เพื่อเริ่มรายการ
+                            </p>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )}

@@ -26,7 +26,7 @@ type ReportTab =
   | 'รับเข้า'
   | 'เบิกสินค้า'
   | 'โอนย้าย'
-  | 'ปรับปรุง Stock'
+  | 'ปรับปรุงสต็อก'
   | 'คืนสินค้า'
   | 'ภาคสนาม'
   | 'ใบแจ้งหนี้'
@@ -325,7 +325,7 @@ const Reports: React.FC<ReportsProps> = () => {
           withinDateRange(filterRows(tfRows, ['id', 'from', 'to'])),
           { from: true, to: true }
         );
-      case 'ปรับปรุง Stock':
+      case 'ปรับปรุงสต็อก':
         return applyWarehouseFilter(
           withinDateRange(filterRows(saRows, ['id', 'warehouse'])),
           { warehouse: true }
@@ -364,7 +364,7 @@ const Reports: React.FC<ReportsProps> = () => {
     'รับเข้า',
     'เบิกสินค้า',
     'โอนย้าย',
-    'ปรับปรุง Stock',
+    'ปรับปรุงสต็อก',
     'คืนสินค้า',
     'ภาคสนาม',
     'ใบแจ้งหนี้',
@@ -514,7 +514,7 @@ const Reports: React.FC<ReportsProps> = () => {
           r.totalQty,
         ]);
         break;
-      case 'ปรับปรุง Stock':
+      case 'ปรับปรุงสต็อก':
         headers = [
           'เลขที่ปรับปรุง',
           'คลัง',
@@ -929,7 +929,7 @@ const Reports: React.FC<ReportsProps> = () => {
       );
     }
 
-    if (activeTab === 'ปรับปรุง Stock') {
+    if (activeTab === 'ปรับปรุงสต็อก') {
       return (
         <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
           <div className="overflow-x-auto border-b border-slate-200">

@@ -333,7 +333,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
       setTransfers([]);
     }
     if (shouldFetch('stockAdjustments')) {
-      // หน้า ปรับปรุง Stock fetch list เองแล้ว (StockAdjustmentApi)
+      // หน้า ปรับปรุงสต็อก fetch list เองแล้ว (StockAdjustmentApi)
       // คง resource key ไว้เพื่อ backward-compat แต่ไม่ดึงข้อมูลที่นี่
     }
     if (shouldFetch('productReturns')) {

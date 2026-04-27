@@ -305,7 +305,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         component: Transfer,
       },
       {
-        name: 'ปรับปรุง Stock',
+        name: 'ปรับปรุงสต็อก',
         path: 'stock-adjustment',
         icon: NewWarehouseIcon,
         access: 'ACCESS_ADJUSTMENT_NOTE',

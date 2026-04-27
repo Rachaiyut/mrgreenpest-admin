@@ -106,10 +106,14 @@ const Transfers: React.FC = () => {
   const [toWarehouseFilter, setToWarehouseFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
+  const [totalItems, setTotalItems] = useState(0);
+
   const fetchTransfers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await TransferApi.getAll({
+        page: currentPage,
+        limit: itemsPerPage,
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
         ...(startDate ? { start_date: startDate } : {}),
         ...(endDate ? { end_date: endDate } : {}),
@@ -118,12 +122,13 @@ const Transfers: React.FC = () => {
         ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
       });
       setTransfers(res.data || []);
+      setTotalItems(res.meta?.total ?? (res.data?.length ?? 0));
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchDebounced, startDate, endDate, fromWarehouseFilter, toWarehouseFilter, statusFilter]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate, fromWarehouseFilter, toWarehouseFilter, statusFilter]);
 
   useEffect(() => {
     fetchTransfers();
@@ -148,7 +153,23 @@ const Transfers: React.FC = () => {
       setIsAddModalOpen(false);
     } catch (error) {
       console.error('Failed to create transfer:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create transfer' });
+      const apiData = (error as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> } } })?.response?.data;
+      const apiMsg = Array.isArray(apiData?.message)
+        ? apiData?.message.join(', ')
+        : apiData?.message
+        || (apiData?.errors ? Object.values(apiData.errors).join(', ') : '');
+
+      // Backend ส่ง "Insufficient stock for ..." มาตอน stock ไม่พอ
+      const isInsufficientStock = typeof apiMsg === 'string' && /insufficient stock/i.test(apiMsg);
+
+      Swal.fire({
+        icon: 'error',
+        title: isInsufficientStock ? 'ไม่สามารถสร้างการโอนย้ายได้' : 'เกิดข้อผิดพลาด',
+        text: isInsufficientStock
+          ? 'เนื่องจากจำนวนคงเหลือในคลังเท่ากับ 0'
+          : apiMsg || 'ไม่สามารถสร้างการโอนย้ายได้',
+        confirmButtonText: 'ตกลง',
+      });
     }
   };
 
@@ -166,19 +187,8 @@ const Transfers: React.FC = () => {
     [warehouses]
   );
 
-  // Search + date filter ส่งไป API แล้ว — ไม่กรอง client side, แค่จัดเรียง
-  const filteredTransfers = useMemo(
-    () => [...transfers].sort((a, b) =>
-      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
-    ),
-    [transfers],
-  );
-
-  const totalItems = filteredTransfers.length;
-  const paginatedTransfers = filteredTransfers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Pagination ทำที่ API แล้ว — ใช้ผลที่ได้ตรงๆ
+  const paginatedTransfers = transfers;
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
