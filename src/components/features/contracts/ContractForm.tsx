@@ -1264,6 +1264,12 @@ export const ContractForm: FC<ContractFormProps> = ({
         </div>
       )}
     <form id="contract-form" onSubmit={handleSubmit} className="space-y-6">
+      <fieldset
+        disabled={mode === 'detail'}
+        className={`space-y-6 border-0 p-0 m-0 min-w-0 ${
+          mode === 'detail' ? '[&_*]:pointer-events-none' : ''
+        }`}
+      >
       {mode === 'renew' && initialValues && (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-start gap-3">
@@ -1288,7 +1294,10 @@ export const ContractForm: FC<ContractFormProps> = ({
             title="ข้อมูลทั่วไป"
           />
 
-          <div className="space-y-4">
+          <fieldset
+            disabled={mode === 'edit'}
+            className={`space-y-4 border-0 p-0 m-0 min-w-0 ${mode === 'edit' ? '[&_*]:pointer-events-none' : ''}`}
+          >
             {mode !== 'create' && (
               <div>
                 <FormField label="เลขที่สัญญา" htmlFor="code">
@@ -1344,7 +1353,8 @@ export const ContractForm: FC<ContractFormProps> = ({
                 value={selectedCustomerId}
                 onChange={setSelectedCustomerId}
                 onSearchChange={handleCustomerSearch}
-                placeholder="ค้นหาลูกค้า..."
+                placeholder="เลือกลูกค้า"
+                searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
               />
             </FormField>
 
@@ -1366,7 +1376,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
               </FormField>
             </div>
-          </div>
+          </fieldset>
         </div>
 
         {/* Right Column: Address Information */}
@@ -1376,7 +1386,10 @@ export const ContractForm: FC<ContractFormProps> = ({
             title="ข้อมูลที่อยู่"
           />
 
-          <div className="space-y-4">
+          <fieldset
+            disabled={mode === 'edit'}
+            className={`space-y-4 border-0 p-0 m-0 min-w-0 ${mode === 'edit' ? '[&_*]:pointer-events-none' : ''}`}
+          >
             <FormField label="สถานที่ให้บริการ" htmlFor="location">
               <Textarea
                 id="location"
@@ -1406,7 +1419,7 @@ export const ContractForm: FC<ContractFormProps> = ({
                 </span>
               )}
             </div>
-          </div>
+          </fieldset>
         </div>
 
         <WorkAreasSection
@@ -1434,6 +1447,24 @@ export const ContractForm: FC<ContractFormProps> = ({
           isReadOnly={!!selectedQuotationId && (mode === 'create' || mode === 'edit')}
           notice={selectedQuotationId && (mode === 'create' || mode === 'edit') ? 'อ้างอิงจากใบเสนอราคา — ไม่สามารถแก้ไขได้' : undefined}
         />
+
+        {/* Notes + Price Summary */}
+        {/* เอกสารแนบ */}
+        {mode !== 'detail' && (
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายสัญญา</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField label="ตารางเข้าปฏิบัติงาน">
+                <SearchableSelect
+                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
+                  value={scheduleId}
+                  onChange={(val) => setScheduleId(val)}
+                  placeholder="เลือกตารางปฏิบัติงาน..."
+                />
+              </FormField>
+            </div>
+          </div>
+        )}
 
         {/* Payment & Installments - Full Width */}
         <InstallmentSection
@@ -1487,24 +1518,6 @@ export const ContractForm: FC<ContractFormProps> = ({
             endDate: endDate,
           }}
         />
-
-        {/* Notes + Price Summary */}
-        {/* เอกสารแนบ */}
-        {mode !== 'detail' && (
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <h3 className="text-base font-semibold text-slate-800 mb-4">เอกสารแนบท้ายสัญญา</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label="ตารางเข้าปฏิบัติงาน">
-                <SearchableSelect
-                  options={[{ value: '', label: 'ไม่แนบ' }, ...schedules.map((s) => ({ value: s.id, label: s.name }))]}
-                  value={scheduleId}
-                  onChange={(val) => setScheduleId(val)}
-                  placeholder="เลือกตารางปฏิบัติงาน..."
-                />
-              </FormField>
-            </div>
-          </div>
-        )}
 
         <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
           <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -1562,6 +1575,7 @@ export const ContractForm: FC<ContractFormProps> = ({
           </div>
         </div>
       </div>
+      </fieldset>
     </form>
     </div>
   );

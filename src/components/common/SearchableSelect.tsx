@@ -14,6 +14,7 @@ interface SearchableSelectProps {
   onChange: (value: string) => void;
   onSearchChange?: (value: string) => void;
   placeholder?: string;
+  searchPlaceholder?: string;
   label?: string;
   required?: boolean;
   name?: string;
@@ -27,6 +28,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
   onChange,
   onSearchChange,
   placeholder = 'Select...',
+  searchPlaceholder = 'ค้นหา...',
   label,
   required = false,
   name,
@@ -166,9 +168,9 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           <div
             ref={wrapperRef}
             style={dropdownStyle}
-            className="max-h-60 overflow-auto rounded-md bg-white text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none text-sm"
+            className="rounded-md bg-white text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none text-sm flex flex-col max-h-60 overflow-hidden"
           >
-            <div className="sticky top-0 z-10 bg-white px-2 py-2 border-b border-slate-200">
+            <div className="flex-shrink-0 bg-white px-2 py-2 border-b border-slate-200">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
                   <MagnifyingGlassIcon className="h-4 w-4 text-slate-400" />
@@ -176,7 +178,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 <input
                   type="text"
                   className="block w-full rounded-md border-0 py-1.5 pl-8 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm leading-6"
-                  placeholder="ค้นหา..."
+                  placeholder={searchPlaceholder}
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
@@ -187,6 +189,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 />
               </div>
             </div>
+            <div className="flex-1 overflow-auto">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <div
@@ -212,6 +215,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 ไม่พบข้อมูล
               </div>
             )}
+            </div>
           </div>,
           document.body
         )}

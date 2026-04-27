@@ -302,7 +302,14 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       fetchContractsData();
     } catch (error) {
       console.error('Failed to save contract:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' });
+      const apiData = (error as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> | string } } })?.response?.data;
+      const apiMsg = Array.isArray(apiData?.message)
+        ? apiData?.message.join(', ')
+        : apiData?.message
+        || (typeof apiData?.errors === 'string' ? apiData.errors : '')
+        || (apiData?.errors && typeof apiData.errors === 'object' ? Object.values(apiData.errors).join(', ') : '')
+        || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: apiMsg });
     }
   };
 
@@ -403,10 +410,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       {/* Toolbar */}
       <Card className="!p-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="relative w-full sm:w-80 flex-shrink-0">
+          <div className="relative w-full sm:w-72 flex-shrink-0">
             <Input
               type="search"
-              placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+              placeholder="ค้นหาเลขที่สัญญา, ชื่อลูกค้า"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -430,9 +437,9 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
             <span className="text-slate-400">-</span>
-            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
           </div>
 
           <div className="w-full lg:w-48">
@@ -463,14 +470,14 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เลขที่สัญญา</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ประเภทบริการ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ระยะเวลา</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อายุสัญญา</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันเริ่มต้น</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันสิ้นสุด</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">อ้างอิงตารางงาน</th>
+                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">ยอดรวม</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">มูลค่า</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                 </tr>
@@ -521,6 +528,13 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                             : <span className="text-slate-400">-</span>
                           }
                         </td>
+                        <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
+                          ฿
+                          {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                             c.status === ContractStatus.ACTIVE ? 'bg-green-100 text-green-700' :
@@ -533,13 +547,6 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           }`}>
                             {statusLabels[c.status] || c.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
-                          ฿
-                          {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <TruncateText text={((c as unknown as Record<string, Record<string, string>>).creator) ? `${((c as unknown as Record<string, Record<string, string>>).creator).first_name} ${((c as unknown as Record<string, Record<string, string>>).creator).last_name || ''}`.trim() : '-'} maxWidth={140} />
@@ -557,8 +564,37 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                                 (async () => {
                                   try {
                                     const blob = await ContractApi.getPdf(c.id);
-                                    const url = window.URL.createObjectURL(blob);
-                                    window.open(url, '_blank');
+                                    // Build filename: <เลขที่สัญญา>_<ชื่อ>_<นามสกุล>.pdf
+                                    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                                    const firstName = (c.customer?.first_name || '').trim();
+                                    const lastName = c.customer?.last_name && c.customer.last_name !== '-' ? c.customer.last_name.trim() : '';
+                                    const parts: string[] = [];
+                                    if (firstName || lastName) {
+                                      if (firstName) parts.push(safe(firstName));
+                                      if (lastName) parts.push(safe(lastName));
+                                    } else {
+                                      const cn = (c.customer_name || '').replace(/\s*-\s*$/, '').trim();
+                                      if (cn) cn.split(/\s+/).forEach((p) => parts.push(safe(p)));
+                                      else parts.push('ลูกค้า');
+                                    }
+                                    const filename = [safe(c.code || c.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                                    // ใช้ blob ใหม่ที่ตั้งชื่อไว้ → set <a download> เพื่อให้ tab title และ "Save as" ใช้ชื่อนี้
+                                    const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                                    const url = window.URL.createObjectURL(namedFile);
+
+                                    // เปิดในแท็บใหม่ — ส่วนใหญ่ของ browser PDF viewer จะใช้ filename จาก File
+                                    const win = window.open(url, '_blank');
+                                    if (!win) {
+                                      // popup ถูกบล็อก → fallback ดาวน์โหลดเลย
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = filename;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                    }
+                                    setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                                   } catch (error) {
                                     console.error('Error viewing PDF:', error);
                                     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
@@ -729,15 +765,24 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
       )}
 
       <ContractModal
-        isOpen={isCreateModalOpen || isEditModalOpen || isRenewModalOpen}
+        isOpen={isCreateModalOpen || isEditModalOpen || isRenewModalOpen || isDetailsModalOpen}
         onClose={() => {
           setIsCreateModalOpen(false);
           setIsEditModalOpen(false);
-          setIsRenewModalOpen(false)
+          setIsRenewModalOpen(false);
+          setIsDetailsModalOpen(false);
           setSelectedContract(null);
         }}
-        mode={isRenewModalOpen ? 'renew' : isEditModalOpen ? 'edit' : 'create'}
-        initialValues={selectedContract} 
+        mode={
+          isDetailsModalOpen
+            ? 'detail'
+            : isRenewModalOpen
+            ? 'renew'
+            : isEditModalOpen
+            ? 'edit'
+            : 'create'
+        }
+        initialValues={selectedContract}
         onSubmit={handleSubmitContract}
       />
     
