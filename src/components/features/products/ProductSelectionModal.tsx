@@ -30,17 +30,15 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSearchTerm('');
+      // เคลียร์ selection ตอนเปิดใหม่ — แต่ไม่ reset searchTerm/fetchedProducts
+      // เพื่อให้ debounce useEffect ด้านล่างจัดการ fetch เพียงครั้งเดียว ไม่ flicker
       setSelectedIds(new Set());
-      setFetchedProducts([]);
-      if (!disableFetch) {
-        handleSearch('');
-      }
+      setSearchTerm('');
     }
   }, [isOpen]);
 
   const handleSearch = async (term: string) => {
-    if (disableFetch) return; // Should not happen if logic is correct, but safety check
+    if (disableFetch) return;
 
     setIsLoading(true);
     try {
@@ -56,22 +54,21 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
   };
 
   useEffect(() => {
+    if (!isOpen || disableFetch) return;
     const delayDebounceFn = setTimeout(() => {
-      if (isOpen && !disableFetch) {
-        handleSearch(searchTerm);
-      }
-    }, 500);
+      handleSearch(searchTerm);
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, isOpen, disableFetch]);
 
   const availableProducts = useMemo(() => {
-    let source = products;
+    let source: Product[];
 
-    // If fetching is enabled, use fetched products.
-    // If disabled, use passed 'products' and filter locally by searchTerm.
+    // If fetching is enabled, ใช้ fetchedProducts ตรงๆ — ไม่ fallback ไปที่ products prop
+    // (กันการกระพริบระหว่าง products prop ↔ fetched)
     if (!disableFetch) {
-      source = fetchedProducts.length > 0 ? fetchedProducts : products;
+      source = fetchedProducts;
     } else if (searchTerm) {
       const lowerTerm = searchTerm.toLowerCase();
       source = products.filter(
@@ -80,6 +77,8 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
           (p.code && p.code.toLowerCase().includes(lowerTerm)) ||
           (p.id && p.id.toLowerCase().includes(lowerTerm))
       );
+    } else {
+      source = products;
     }
 
     return source.filter((p) => !existingProductIds.includes(p.id));
@@ -154,12 +153,6 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                   scope="col"
                   className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
                 >
-                  Code
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
-                >
                   ชื่อสินค้า
                 </th>
                 {stockMap && (
@@ -187,7 +180,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-slate-500">
+                  <td colSpan={5} className="text-center py-10 text-slate-500">
                     กำลังโหลดข้อมูล...
                   </td>
                 </tr>
@@ -207,9 +200,6 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       />
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {product.code}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
                       {product.code}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">

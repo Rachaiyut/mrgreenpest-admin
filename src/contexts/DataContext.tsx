@@ -528,11 +528,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
           fetchData(['goodsReceipts']);
         },
         update: async (data: any) => {
-          // Check if it's a status update (Approve/Reject)
-          if (data.status === 'RECEIVED' || data.status === 'CANCELLED') {
-            await GoodsReceiptApi.updateStatus(data.id, data);
+          // Check if it's a status update (Approve/Reject/Cancel)
+          if (
+            data.status === 'RECEIVED' ||
+            data.status === 'REJECTED' ||
+            data.status === 'CANCELLED'
+          ) {
+            await GoodsReceiptApi.updateStatus(data.id, {
+              status: data.status,
+              ...(data.remarks ? { remarks: data.remarks } : {}),
+            });
           } else {
-            await GoodsReceiptApi.update(data.id, data);
+            const payload: Record<string, unknown> = {
+              status: data.status,
+              warehouse_id: data.warehouse_id,
+              supplier_id: data.supplier_id,
+              receipt_no: data.receipt_no,
+              items: data.items,
+            };
+            await GoodsReceiptApi.update(data.id, payload);
           }
           fetchData(['goodsReceipts']);
         },

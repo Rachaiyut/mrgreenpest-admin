@@ -1,7 +1,10 @@
 // ===== React =====
 import type { FC, FormEvent, MouseEvent } from 'react';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
+
+// ===== API =====
+import { SupplierApi } from '@/src/api/supplier';
 
 // ===== Types / Enums =====
 import { WarehouseType as WarehouseTypeEnum } from '@/src/types/enums/inventory';
@@ -10,7 +13,6 @@ import {
   Product as ProductType,
   Supplier as SupplierType,
   Warehouse as WarehouseType,
-  Status,
 } from '@/src/types/entity/app.interface';
 
 // ===== Components =====
@@ -32,6 +34,8 @@ interface AddGoodsReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateReceipt: (receipt: Omit<GoodsReceiveType, 'id'>) => void;
+  onUpdateReceipt?: (receipt: GoodsReceiveType) => void;
+  editingReceipt?: GoodsReceiveType | null;
   receipts: GoodsReceiveType[];
   warehouses: WarehouseType[];
   suppliers: SupplierType[];
@@ -49,15 +53,38 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   isOpen,
   onClose,
   onCreateReceipt,
+  onUpdateReceipt,
+  editingReceipt,
   warehouses,
   suppliers,
   products,
 }) => {
+  const isEditMode = !!editingReceipt;
   const [items, setItems] = useState<LineItem[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [referenceId, setReferenceId] = useState('');
+  const [warehouseError, setWarehouseError] = useState('');
+  const [supplierError, setSupplierError] = useState('');
+  const [receiptNoError, setReceiptNoError] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [extraSuppliers, setExtraSuppliers] = useState<SupplierType[]>([]);
+  const supplierSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+
+  const searchSuppliers = useCallback(async (query: string) => {
+    try {
+      const q = (query || '').trim();
+      if (!q) {
+        setExtraSuppliers([]);
+        return;
+      }
+      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1 });
+      if (res?.data) setExtraSuppliers(res.data as SupplierType[]);
+    } catch (e) {
+      console.error('Failed to search suppliers', e);
+    }
+  }, []);
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -65,12 +92,37 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   );
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    setWarehouseError('');
+    setSupplierError('');
+    setReceiptNoError('');
+
+    if (editingReceipt) {
+      setSelectedWarehouseId(editingReceipt.warehouse_id || '');
+      setSelectedSupplierId(editingReceipt.supplier_id || '');
+      setReferenceId(editingReceipt.receipt_no || '');
+      const sourceItems = (editingReceipt.items || []) as Array<{
+        id?: string;
+        product_id: string;
+        qty_received?: number;
+        qty_ordered?: number;
+      }>;
+      setItems(
+        sourceItems.map((it, idx) => ({
+          id: Date.now() + idx,
+          productId: it.product_id,
+          quantityOrdered: it.qty_ordered ?? it.qty_received ?? 1,
+          quantityReceived: it.qty_received ?? 1,
+        })),
+      );
+    } else {
       setItems([]);
       setSelectedWarehouseId('');
       setSelectedSupplierId('');
+      setReferenceId('');
     }
-  }, [isOpen]);
+  }, [isOpen, editingReceipt]);
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: LineItem[] = productIds.map((pid) => ({
@@ -96,8 +148,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
     );
   };
 
-  const createReceiptObject = (status: Status, formData: FormData) => {
-    // Map items to backend DTO format (snake_case)
+  const buildPayload = (status: 'DRAFT' | 'PENDING', formData: FormData) => {
     const receiptItems = items.map((item) => ({
       product_id: item.productId,
       qty_ordered: item.quantityOrdered,
@@ -108,22 +159,57 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
       receipt_no: (formData.get('reference-id') as string) || undefined,
       supplier_id: selectedSupplierId || undefined,
       warehouse_id: selectedWarehouseId,
+      status,
       items: receiptItems,
     };
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    onCreateReceipt(createReceiptObject(Status.PendingApproval, formData));
+  const validateRequired = () => {
+    let ok = true;
+    if (!selectedWarehouseId) {
+      setWarehouseError('กรุณาเลือกคลังปลายทาง');
+      ok = false;
+    } else {
+      setWarehouseError('');
+    }
+    if (!selectedSupplierId) {
+      setSupplierError('กรุณาเลือกผู้จัดจำหน่าย');
+      ok = false;
+    } else {
+      setSupplierError('');
+    }
+    if (referenceId.length > 10) {
+      setReceiptNoError('เลขที่อ้างอิงเอกสารต้องไม่เกิน 10 ตัวอักษร');
+      ok = false;
+    } else {
+      setReceiptNoError('');
+    }
+    return ok;
+  };
+
+  const submitWithStatus = (status: 'DRAFT' | 'PENDING', formData: FormData) => {
+    if (!validateRequired()) return;
+
+    const payload = buildPayload(status, formData);
+    if (isEditMode && editingReceipt && onUpdateReceipt) {
+      onUpdateReceipt({
+        ...editingReceipt,
+        ...payload,
+      } as unknown as GoodsReceiveType);
+    } else {
+      onCreateReceipt(payload as unknown as Omit<GoodsReceiveType, 'id'>);
+    }
     onClose();
   };
 
-  const handleSaveDraft = (e: MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    submitWithStatus('PENDING', new FormData(e.currentTarget));
+  };
+
+  const handleSaveDraft = (_e: MouseEvent<HTMLButtonElement>) => {
     if (!formRef.current) return;
-    const formData = new FormData(formRef.current);
-    onCreateReceipt(createReceiptObject(Status.Draft, formData));
-    onClose();
+    submitWithStatus('DRAFT', new FormData(formRef.current));
   };
 
   const existingProductIds = useMemo(
@@ -136,7 +222,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="สร้างใบรับสินค้าเข้า"
+        title={isEditMode ? 'แก้ไขใบรับสินค้าเข้า' : 'สร้างใบรับสินค้าเข้า'}
         size="5xl"
         footer={
           <div className="flex gap-2">
@@ -184,7 +270,18 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   type="text"
                   placeholder="เช่น PO-12345"
                   className="bg-white"
+                  maxLength={10}
+                  value={referenceId}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setReferenceId(v);
+                    if (v.length <= 10) setReceiptNoError('');
+                    else setReceiptNoError('เลขที่อ้างอิงเอกสารต้องไม่เกิน 10 ตัวอักษร');
+                  }}
                 />
+                {receiptNoError && (
+                  <p className="mt-1 text-xs text-red-600">{receiptNoError}</p>
+                )}
               </FormField>
               <FormField label="ผู้ทำรับ" htmlFor="created-by">
                 <Input
@@ -208,35 +305,52 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
                 <FormField
-                  label="รับเข้าคลัง (Destination)"
+                  label="รับเข้าคลัง"
                   htmlFor="warehouse"
                 >
                   <SearchableSelect
                     value={selectedWarehouseId}
-                    onChange={setSelectedWarehouseId}
-                    placeholder="-- เลือกคลังปลายทาง --"
-                    required
+                    onChange={(v) => {
+                      setSelectedWarehouseId(v);
+                      if (v) setWarehouseError('');
+                    }}
+                    placeholder="เลือกคลังปลายทาง"
                     name="warehouse"
                     options={warehouses.map((wh) => ({
                       value: wh.id,
                       label: `${wh.name}${wh.type === WarehouseTypeEnum.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
                     }))}
                   />
+                  {warehouseError && (
+                    <p className="mt-1 text-xs text-red-600">{warehouseError}</p>
+                  )}
                 </FormField>
               </div>
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
-                <FormField label="ผู้จัดจำหน่าย (Source)" htmlFor="supplier">
+                <FormField label="ผู้จัดจำหน่าย" htmlFor="supplier">
                   <SearchableSelect
                     value={selectedSupplierId}
-                    onChange={setSelectedSupplierId}
-                    placeholder="-- เลือกผู้จัดจำหน่าย --"
+                    onChange={(v) => {
+                      setSelectedSupplierId(v);
+                      if (v) setSupplierError('');
+                    }}
+                    onSearchChange={(q) => {
+                      if (supplierSearchTimerRef.current) clearTimeout(supplierSearchTimerRef.current);
+                      supplierSearchTimerRef.current = setTimeout(() => searchSuppliers(q), 300);
+                    }}
+                    placeholder="เลือกผู้จัดจำหน่าย"
                     name="supplier"
-                    required
-                    options={suppliers.map((s) => ({
-                      value: s.id,
-                      label: s.name,
-                    }))}
+                    options={(() => {
+                      const map = new Map<string, string>();
+                      for (const s of [...suppliers, ...extraSuppliers]) {
+                        if (!map.has(s.id)) map.set(s.id, s.name);
+                      }
+                      return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
+                    })()}
                   />
+                  {supplierError && (
+                    <p className="mt-1 text-xs text-red-600">{supplierError}</p>
+                  )}
                 </FormField>
               </div>
             </div>
@@ -274,28 +388,28 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-sm text-center">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-16">
-                      #
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-16">
+                      ลำดับ
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    <th className="px-4 py-3 font-semibold text-slate-600">
                       รหัสสินค้า
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    <th className="px-4 py-3 font-semibold text-slate-600">
                       สินค้า
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">
                       สั่งซื้อ <span className="text-red-500">*</span>
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">
                       รับจริง <span className="text-red-500">*</span>
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600">
+                    <th className="px-4 py-3 font-semibold text-slate-600">
                       หน่วย
                     </th>
-                    <th className="px-4 py-3 text-center w-16"></th>
+                    <th className="px-4 py-3 w-16"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -309,53 +423,57 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                           key={item.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-center align-middle text-slate-500 font-medium">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-mono text-xs">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {product?.code || '-'}
                           </td>
                           <td className="px-4 py-3 align-middle text-slate-800 font-medium">
                             {product?.name || 'Unknown Product'}
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <Input
-                              type="number"
-                              min="1"
-                              value={item.quantityOrdered}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  item.id,
-                                  'quantityOrdered',
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
-                              className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
-                            />
+                            <div className="flex justify-center">
+                              <Input
+                                type="number"
+                                min="1"
+                                value={item.quantityOrdered}
+                                onChange={(e) =>
+                                  handleItemChange(
+                                    item.id,
+                                    'quantityOrdered',
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                              />
+                            </div>
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <Input
-                              type="number"
-                              min="0"
-                              value={item.quantityReceived}
-                              onChange={(e) =>
-                                handleItemChange(
-                                  item.id,
-                                  'quantityReceived',
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
-                              className={`text-center font-bold border-2 ${
-                                item.quantityReceived !== item.quantityOrdered
-                                  ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                  : 'border-green-200 bg-green-50 text-green-700'
-                              }`}
-                            />
+                            <div className="flex justify-center">
+                              <Input
+                                type="number"
+                                min="0"
+                                value={item.quantityReceived}
+                                onChange={(e) =>
+                                  handleItemChange(
+                                    item.id,
+                                    'quantityReceived',
+                                    parseInt(e.target.value) || 0
+                                  )
+                                }
+                                className={`text-center font-bold border-2 w-20 ${
+                                  item.quantityReceived !== item.quantityOrdered
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                    : 'border-green-200 bg-green-50 text-green-700'
+                                }`}
+                              />
+                            </div>
                           </td>
-                          <td className="px-4 py-3 align-middle text-right text-slate-600">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {product?.unit?.name || 'หน่วย'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-center">
+                          <td className="px-4 py-3 align-middle">
                             <button
                               type="button"
                               onClick={() => handleRemoveItem(item.id)}

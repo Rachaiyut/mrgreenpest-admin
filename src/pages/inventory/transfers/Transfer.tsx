@@ -1,6 +1,6 @@
 // ===== React =====
 import Swal from 'sweetalert2';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 // ===== Types =====
 import {
@@ -14,6 +14,7 @@ import { TransferStatus } from '@/src/types/enums/inventory';
 
 // ===== API =====
 import { TransferApi } from '@/src/api/transfer';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 // ===== Context =====
 import { useData } from '../../../contexts/DataContext';
@@ -85,22 +86,42 @@ const Transfers: React.FC = () => {
     null
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
-  const fetchTransfers = async () => {
+  const fetchTransfers = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await TransferApi.getAll();
+      const res = await TransferApi.getAll({
+        ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
+      });
       setTransfers(res.data || []);
     } catch (error) {
       console.error('Failed to fetch transfers:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchDebounced, startDate, endDate]);
 
   useEffect(() => {
     fetchTransfers();
-  }, []);
+  }, [fetchTransfers]);
+
+  // Debounce searchQuery → searchDebounced (300ms)
+  useEffect(() => {
+    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const handleCreateTransfer = async (data: any) => {
     try {
@@ -146,20 +167,13 @@ const Transfers: React.FC = () => {
     [warehouses]
   );
 
-  const filteredTransfers = useMemo(() => {
-    const reversed = [...transfers].reverse();
-    if (!searchQuery.trim()) {
-      return reversed;
-    }
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    return reversed.filter(
-      (transfer) =>
-        (transfer.code || transfer.id)
-          .toLowerCase()
-          .includes(lowercasedQuery) ||
-        formatThaiDate(transfer.created_at).includes(lowercasedQuery)
-    );
-  }, [transfers, searchQuery]);
+  // Search + date filter ส่งไป API แล้ว — ไม่กรอง client side, แค่จัดเรียง
+  const filteredTransfers = useMemo(
+    () => [...transfers].sort((a, b) =>
+      new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+    ),
+    [transfers],
+  );
 
   const totalItems = filteredTransfers.length;
   const paginatedTransfers = filteredTransfers.slice(
@@ -236,9 +250,23 @@ const Transfers: React.FC = () => {
     };
   }, [openDropdownId]);
 
-  const handleApprove = (transfer: TransferType) => {
-    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการอนุมัติการโอนย้ายนี้?')) {
-      handleUpdateTransfer({ ...transfer, status: TransferStatus.COMPLETED });
+  const handleApprove = async (transfer: TransferType) => {
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันการอนุมัติ',
+      html: `อนุมัติใบโอนย้าย <strong>${transfer.code || transfer.id}</strong> ใช่หรือไม่?<br/><span class="text-xs text-slate-500">ระบบจะดำเนินการโอนย้ายสินค้าระหว่างคลังตามรายการ</span>`,
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await handleUpdateTransfer({ ...transfer, status: TransferStatus.COMPLETED });
+      Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
     }
   };
 
@@ -310,6 +338,35 @@ const Transfers: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(date: Date | null) => {
+                  setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="เริ่มต้น"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
+              <span className="text-slate-400">-</span>
+              <DatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(date: Date | null) => {
+                  setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="สิ้นสุด"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
+            </div>
           </div>
         </Card>
 
@@ -326,13 +383,14 @@ const Transfers: React.FC = () => {
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้า</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เหตุผล</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="p-0 border-b-0 h-0">
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลการโอนย้าย...</p>
@@ -341,7 +399,7 @@ const Transfers: React.FC = () => {
                   </tr>
                 ) : paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-0 border-b-0 h-0">
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลการโอนย้าย</p>
@@ -391,6 +449,14 @@ const Transfers: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={transfer.status} />
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        {(() => {
+                          const u = (transfer as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
+                          if (!u) return 'ไม่ระบุ';
+                          const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                          return full || u.nick_name || 'ไม่ระบุ';
+                        })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                         <div className="inline-block">

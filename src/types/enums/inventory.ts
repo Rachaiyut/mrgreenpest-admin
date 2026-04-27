@@ -53,6 +53,9 @@ export enum GoodsReceiptStatus {
   APPROVED = 'APPROVED',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
+  RECEIVED = 'RECEIVED',
+  PARTIAL = 'PARTIAL',
+  REJECTED = 'REJECTED',
 }
 
 export enum IssueSummaryStatus {

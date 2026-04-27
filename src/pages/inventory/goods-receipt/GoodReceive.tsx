@@ -15,9 +15,9 @@ import {
 } from '@/src/types/entity/app.interface';
 
 // ===== Components =====
-import { ApprovalModal } from '../../../components/common/ApprovalModal';
 import { Card } from '../../../components/common/Card';
-import { Input, Button } from '../../../components/common/FormControls';
+import { Input, Button, Select } from '../../../components/common/FormControls';
+import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import { AddGoodsReceiptModal } from '../../../components/features/inventory/goods-receipt/AddGoodsReceiveModal';
@@ -28,15 +28,20 @@ import { formatThaiDate } from '../../../utils/date';
 
 // ===== API =====
 import { GoodsReceiptApi } from '../../../api/goods-receipt';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { ProductApi } from '../../../api/product';
 import { SupplierApi } from '../../../api/supplier';
 import { WarehouseApi } from '../../../api/warehouse';
+
+// ===== Libs =====
+import Swal from 'sweetalert2';
 
 // ===== Assets =====
 import {
   DocumentCheckIcon,
   EyeIcon,
   ManageIcon,
+  PencilIcon,
   PlusIcon,
   TrashIcon,
   XCircleIcon,
@@ -57,6 +62,22 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 }) => {
   const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [extraSuppliers, setExtraSuppliers] = useState<any[]>([]);
+  const supplierSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const searchSuppliers = useCallback(async (query: string) => {
+    try {
+      const q = (query || '').trim();
+      if (!q) {
+        setExtraSuppliers([]);
+        return;
+      }
+      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1 });
+      if (res?.data) setExtraSuppliers(res.data);
+    } catch (e) {
+      console.error('Failed to search suppliers', e);
+    }
+  }, []);
   const [products, setProducts] = useState<any[]>([]);
 
   const [receipts, setReceipts] = useState<GoodsReceiveType[]>([]);
@@ -64,8 +85,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
-  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
+  const [editingReceipt, setEditingReceipt] = useState<GoodsReceiveType | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<GoodsReceiveType | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; } | null>(null);
@@ -74,11 +94,25 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
+  const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [warehouseFilter, setWarehouseFilter] = useState('all');
+  const [supplierFilter, setSupplierFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchGoodReceives = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await GoodsReceiptApi.getAll();
+      const response = await GoodsReceiptApi.getAll({
+        ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
+        ...(warehouseFilter !== 'all' ? { warehouse_id: warehouseFilter } : {}),
+        ...(supplierFilter !== 'all' ? { supplier_id: supplierFilter } : {}),
+        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+      });
       if (response && response.data) {
         setReceipts(response.data);
       }
@@ -87,7 +121,19 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [searchDebounced, startDate, endDate, warehouseFilter, supplierFilter, statusFilter]);
+
+  // Debounce searchQuery → searchDebounced (300ms) → trigger refetch
+  useEffect(() => {
+    if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchDebounced(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => {
+      if (searchDebounceTimerRef.current) clearTimeout(searchDebounceTimerRef.current);
+    };
+  }, [searchQuery]);
 
   // 🟢 3. ดึงข้อมูลครั้งแรกเมื่อเปิดหน้า
   useEffect(() => {
@@ -98,9 +144,9 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     const fetchInitialData = async () => {
       try {
         const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
-          WarehouseApi.getWarehouses(),
-          SupplierApi.getSuppliers({}),
-          ProductApi.getProducts(),
+          WarehouseApi.getWarehouses({ limit: 1000 }),
+          SupplierApi.getSuppliers({ limit: 1000 }),
+          ProductApi.getProducts({ limit: 1000 }),
         ]);
         setWarehouses(warehousesRes.data || []);
         setSuppliers(suppliersRes.data || []);
@@ -160,23 +206,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     }, {} as Record<string, string>);
   }, [suppliers]);
 
-  const filteredReceipts = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase().trim();
-    if (!lowercasedQuery) return sortedReceipts; 
-
-    return sortedReceipts.filter((receipt) => { 
-      const supplierName = (receipt.supplier_id && supplierMap[receipt.supplier_id]) || '';
-      const receiptDate = formatThaiDate(receipt.created_at);
-
-      return (
-        (receipt.code && receipt.code.toLowerCase().includes(lowercasedQuery)) ||
-        (receipt.receipt_no && receipt.receipt_no.toLowerCase().includes(lowercasedQuery)) ||
-        supplierName.toLowerCase().includes(lowercasedQuery) ||
-        receiptDate.includes(lowercasedQuery) ||
-        (receipt.status && receipt.status.toLowerCase().includes(lowercasedQuery))
-      );
-    });
-  }, [sortedReceipts, searchQuery, supplierMap]);
+  // Search ส่งไป API แล้ว — ไม่ต้องกรอง client side
+  const filteredReceipts = sortedReceipts;
   
   const totalItems = filteredReceipts.length;
   const paginatedReceipts = filteredReceipts.slice(
@@ -212,24 +243,76 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
     }
   };
 
-  const handleApprovalAction = (action: 'approve' | 'reject') => {
-    setApprovalAction(action);
-    setIsApprovalModalOpen(true);
+  const handleApprovalAction = async (action: 'approve' | 'reject') => {
+    const target = selectedReceipt;
     setOpenDropdownId(null);
-  };
+    if (!target) return;
 
-  const handleConfirmApproval = (receiptId: string, remarks: string) => {
-    const receiptToUpdate = receipts.find((r) => r.id === receiptId);
-    if (receiptToUpdate) {
-      handleUpdate({
-        ...receiptToUpdate,
-        status: approvalAction === 'approve' ? 'RECEIVED' : 'CANCELLED',
-        remarks: remarks,
-      } as GoodsReceiveType);
+    if (action === 'reject') {
+      const r = await Swal.fire({
+        icon: 'warning',
+        title: 'ยืนยันการไม่อนุมัติ',
+        html: `ไม่อนุมัติใบรับเข้า <strong>${target.code || target.id}</strong>`,
+        input: 'textarea',
+        inputLabel: 'เหตุผลการไม่อนุมัติ',
+        inputPlaceholder: 'ระบุเหตุผล...',
+        showCancelButton: true,
+        confirmButtonText: 'ไม่อนุมัติ',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#ef4444',
+        inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      });
+      if (!r.isConfirmed || !r.value) return;
+
+      try {
+        await handleUpdate({
+          ...target,
+          status: 'REJECTED',
+          remarks: r.value.trim(),
+        } as GoodsReceiveType);
+        Swal.fire({
+          icon: 'success',
+          title: 'ไม่อนุมัติแล้ว',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } catch (error) {
+        const errMsg = (error as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message;
+        Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถดำเนินการได้', 'error');
+      }
+      setSelectedReceipt(null);
+      return;
     }
-    setIsApprovalModalOpen(false);
-    setOpenDropdownId(null);
-    setApprovalAction(null);
+
+    // approve
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันการอนุมัติ',
+      html: `อนุมัติใบรับเข้า <strong>${target.code || target.id}</strong> ใช่หรือไม่?<br/><span class="text-xs text-slate-500">ระบบจะดำเนินการรับสินค้าเข้าคลังตามรายการ</span>`,
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+
+    try {
+      await handleUpdate({
+        ...target,
+        status: 'RECEIVED',
+      } as GoodsReceiveType);
+      Swal.fire({
+        icon: 'success',
+        title: 'อนุมัติแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถอนุมัติได้', 'error');
+    }
     setSelectedReceipt(null);
   };
 
@@ -310,6 +393,26 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       );
     }
 
+    if (selectedReceipt.status === 'DRAFT' || selectedReceipt.status === Status.Draft) {
+      actions.push(
+        <a
+          key="edit"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            setEditingReceipt(selectedReceipt);
+            setIsAddModalOpen(true);
+            setOpenDropdownId(null);
+          }}
+          className="flex items-center w-full text-left px-4 py-2.5 text-sm text-blue-600 hover:bg-blue-50 transition-colors"
+          role="menuitem"
+        >
+          <PencilIcon className="mr-3 h-5 w-5 text-blue-500" aria-hidden="true" />
+          <span>แก้ไข</span>
+        </a>
+      );
+    }
+
     if (selectedReceipt.status === Status.Draft || selectedReceipt.status === Status.PendingApproval) {
       actions.push(
         <>
@@ -354,18 +457,99 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
             <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, อ้างอิง, ผู้ขาย)..."
+                placeholder="ค้นหาเลขที่ใบรับเข้า, เลขที่อ้างอิง"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full pl-10"
-                title="ค้นหาด้วย: เลขที่เอกสาร, เลขที่อ้างอิง, ผู้จัดจำหน่าย, วันที่, สถานะ"
+                title="ค้นหาด้วย: เลขที่ใบรับเข้า, เลขที่อ้างอิง"
               />
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+            </div>
+            <div className="w-40 flex-shrink-0">
+              <SearchableSelect
+                value={warehouseFilter === 'all' ? '' : warehouseFilter}
+                onChange={(v) => {
+                  setWarehouseFilter(v || 'all');
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: '', label: 'คลังทั้งหมด' },
+                  ...warehouses.map((wh) => ({ value: wh.id, label: wh.name })),
+                ]}
+                placeholder="คลังทั้งหมด"
+              />
+            </div>
+            <div className="w-48 flex-shrink-0">
+              <SearchableSelect
+                value={supplierFilter === 'all' ? '' : supplierFilter}
+                onChange={(v) => {
+                  setSupplierFilter(v || 'all');
+                  setCurrentPage(1);
+                }}
+                onSearchChange={(q) => {
+                  if (supplierSearchTimerRef.current) clearTimeout(supplierSearchTimerRef.current);
+                  supplierSearchTimerRef.current = setTimeout(() => searchSuppliers(q), 300);
+                }}
+                options={(() => {
+                  const map = new Map<string, string>();
+                  for (const s of [...suppliers, ...extraSuppliers]) {
+                    if (!map.has(s.id)) map.set(s.id, s.name);
+                  }
+                  return [
+                    { value: '', label: 'ผู้จัดจำหน่ายทั้งหมด' },
+                    ...Array.from(map.entries()).map(([value, label]) => ({ value, label })),
+                  ];
+                })()}
+                placeholder="ผู้จัดจำหน่ายทั้งหมด"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-fit text-sm !pr-8"
+            >
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="DRAFT">ฉบับร่าง</option>
+              <option value="PENDING">รออนุมัติ</option>
+              <option value="RECEIVED">อนุมัติแล้ว</option>
+              <option value="CANCELLED">ยกเลิก</option>
+            </Select>
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(date: Date | null) => {
+                  setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="เริ่มต้น"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
+              <span className="text-slate-400">-</span>
+              <DatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(date: Date | null) => {
+                  setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="สิ้นสุด"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
             </div>
           </div>
         </Card>
@@ -382,13 +566,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                   <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้จัดจำหน่าย</th>
                   <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
+                  <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
                   <th className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="p-0 border-b-0 h-0">
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลใบรับเข้า...</p>
@@ -418,6 +603,14 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={receipt.status} />
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                        {(() => {
+                          const u = (receipt as { created_by_user?: { first_name?: string; last_name?: string; nick_name?: string } }).created_by_user;
+                          if (!u) return 'ไม่ระบุ';
+                          const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
+                          return full || u.nick_name || 'ไม่ระบุ';
+                        })()}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                         <div className="inline-block">
                           <Button data-receipt-id={receipt.id} onClick={(e) => handleDropdownToggle(e, receipt.id)} variant="icon" title="ตัวเลือก">
@@ -430,7 +623,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="p-0 border-b-0 h-0">
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบรับเข้า</p>
@@ -479,8 +672,13 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       {isAddModalOpen && (
         <AddGoodsReceiptModal
           isOpen={isAddModalOpen}
-          onClose={() => setIsAddModalOpen(false)}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setEditingReceipt(null);
+          }}
           onCreateReceipt={handleCreate}
+          onUpdateReceipt={handleUpdate}
+          editingReceipt={editingReceipt}
           receipts={receipts}
           warehouses={warehouses}
           suppliers={suppliers}
@@ -493,13 +691,6 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         receipt={selectedReceipt}
         warehouses={warehouses}
         products={products}
-      />
-      <ApprovalModal
-        isOpen={isApprovalModalOpen}
-        onClose={() => setIsApprovalModalOpen(false)}
-        action={approvalAction}
-        item={selectedReceipt as never}
-        onConfirm={handleConfirmApproval}
       />
     </div>
   );

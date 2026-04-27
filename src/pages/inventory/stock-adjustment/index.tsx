@@ -23,6 +23,7 @@ import { StatusBadge } from '../../../components/common/StatusBadge';
 
 import { useData } from '../../../contexts/DataContext';
 import { StockAdjustmentApi } from '../../../api/stock-adjustment';
+import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 const StockAdjustment: React.FC = () => {
   // ดึงเฉพาะ master data ที่ใช้ใน modal — list ของใบ adjustment fetch เองในหน้านี้
@@ -36,6 +37,8 @@ const StockAdjustment: React.FC = () => {
   const [totalItemsServer, setTotalItemsServer] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchDebounced, setSearchDebounced] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,7 +62,7 @@ const StockAdjustment: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
 
-  // Server-side fetch (page / limit / search)
+  // Server-side fetch (page / limit / search / date range)
   const fetchList = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -67,6 +70,8 @@ const StockAdjustment: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
       if (res?.data) setAdjustments(res.data);
       if (res?.meta?.total !== undefined) {
@@ -79,7 +84,7 @@ const StockAdjustment: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchDebounced]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate]);
 
   useEffect(() => {
     fetchList();
@@ -338,6 +343,35 @@ const StockAdjustment: React.FC = () => {
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
+            </div>
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={startDate ? new Date(startDate) : null}
+                onChange={(date: Date | null) => {
+                  setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="เริ่มต้น"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
+              <span className="text-slate-400">-</span>
+              <DatePicker
+                selected={endDate ? new Date(endDate) : null}
+                onChange={(date: Date | null) => {
+                  setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                  setCurrentPage(1);
+                }}
+                dateFormat="dd/MM/yyyy"
+                locale="th"
+                placeholderText="สิ้นสุด"
+                isClearable
+                className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                wrapperClassName="w-32 sm:w-36"
+              />
             </div>
           </div>
         </Card>
