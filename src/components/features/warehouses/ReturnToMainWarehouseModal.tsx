@@ -260,7 +260,7 @@ export const ReturnToMainWarehouseModal: React.FC<
           qty: item.quantity,
         })),
         remark: fullRemark,
-        status: TransferStatus.COMPLETED,
+        status: TransferStatus.APPROVED,
         // created_at: returnDate // Assuming backend supports date override if needed, otherwise it uses current timestamp
       });
       message.success('คืนสินค้าเรียบร้อยแล้ว');

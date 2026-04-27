@@ -36,6 +36,7 @@ interface AddGoodsReceiptModalProps {
   onCreateReceipt: (receipt: Omit<GoodsReceiveType, 'id'>) => void;
   onUpdateReceipt?: (receipt: GoodsReceiveType) => void;
   editingReceipt?: GoodsReceiveType | null;
+  viewOnly?: boolean;
   receipts: GoodsReceiveType[];
   warehouses: WarehouseType[];
   suppliers: SupplierType[];
@@ -55,11 +56,13 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
   onCreateReceipt,
   onUpdateReceipt,
   editingReceipt,
+  viewOnly = false,
   warehouses,
   suppliers,
   products,
 }) => {
-  const isEditMode = !!editingReceipt;
+  const isEditMode = !!editingReceipt && !viewOnly;
+  const isViewMode = viewOnly && !!editingReceipt;
   const [items, setItems] = useState<LineItem[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -222,19 +225,29 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={isEditMode ? 'แก้ไขใบรับสินค้าเข้า' : 'สร้างใบรับสินค้าเข้า'}
+        title={
+          isViewMode
+            ? 'รายละเอียดใบรับสินค้าเข้า'
+            : isEditMode
+            ? 'แก้ไขใบรับสินค้าเข้า'
+            : 'สร้างใบรับสินค้าเข้า'
+        }
         size="5xl"
         footer={
           <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={onClose}>
-              ยกเลิก
+              {isViewMode ? 'ปิด' : 'ยกเลิก'}
             </Button>
-            <Button variant="secondary" type="button" onClick={handleSaveDraft}>
-              บันทึกฉบับร่าง
-            </Button>
-            <Button variant="primary" type="submit" form="add-receipt-form">
-              ส่งเพื่ออนุมัติ
-            </Button>
+            {!isViewMode && (
+              <>
+                <Button variant="secondary" type="button" onClick={handleSaveDraft}>
+                  บันทึกฉบับร่าง
+                </Button>
+                <Button variant="primary" type="submit" form="add-receipt-form">
+                  ส่งเพื่ออนุมัติ
+                </Button>
+              </>
+            )}
           </div>
         }
       >
@@ -258,7 +271,8 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   dateFormat="dd/MM/yyyy"
                   locale="th"
                   placeholderText="dd/mm/yyyy"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  disabled={isViewMode}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   wrapperClassName="w-full"
                   required
                 />
@@ -269,8 +283,9 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   id="reference-id"
                   type="text"
                   placeholder="เช่น PO-12345"
-                  className="bg-white"
+                  className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   maxLength={10}
+                  disabled={isViewMode}
                   value={referenceId}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -293,6 +308,17 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   className="bg-white text-slate-500 cursor-not-allowed"
                 />
               </FormField>
+              {(isEditMode || isViewMode) && editingReceipt?.code && (
+                <FormField label="เลขที่เอกสารใบรับเข้า" htmlFor="receipt-code">
+                  <Input
+                    id="receipt-code"
+                    type="text"
+                    value={editingReceipt.code}
+                    disabled
+                    className="bg-slate-100 text-slate-500 cursor-not-allowed"
+                  />
+                </FormField>
+              )}
             </div>
           </div>
 
@@ -316,6 +342,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                     }}
                     placeholder="เลือกคลังปลายทาง"
                     name="warehouse"
+                    disabled={isViewMode}
                     options={warehouses.map((wh) => ({
                       value: wh.id,
                       label: `${wh.name}${wh.type === WarehouseTypeEnum.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
@@ -340,6 +367,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                     }}
                     placeholder="เลือกผู้จัดจำหน่าย"
                     name="supplier"
+                    disabled={isViewMode}
                     options={(() => {
                       const map = new Map<string, string>();
                       for (const s of [...suppliers, ...extraSuppliers]) {
@@ -366,25 +394,27 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                   {items.length} รายการ
                 </span>
               </h4>
-              <Button
-                variant="primary"
-                type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                disabled={!selectedWarehouseId}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
-                  !selectedWarehouseId
-                    ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
-                    : 'bg-primary hover:bg-primary/90 text-white'
-                }`}
-                title={
-                  !selectedWarehouseId
-                    ? 'กรุณาเลือกคลังก่อนเพิ่มสินค้า'
-                    : 'เพิ่มสินค้า'
-                }
-              >
-                <PlusIcon className="h-5 w-5" />
-                <span>เพิ่มสินค้า</span>
-              </Button>
+              {!isViewMode && (
+                <Button
+                  variant="primary"
+                  type="button"
+                  onClick={() => setIsProductModalOpen(true)}
+                  disabled={!selectedWarehouseId}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
+                    !selectedWarehouseId
+                      ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
+                      : 'bg-primary hover:bg-primary/90 text-white'
+                  }`}
+                  title={
+                    !selectedWarehouseId
+                      ? 'กรุณาเลือกคลังก่อนเพิ่มสินค้า'
+                      : 'เพิ่มสินค้า'
+                  }
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>เพิ่มสินค้า</span>
+                </Button>
+              )}
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
@@ -433,55 +463,65 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
                             {product?.name || 'Unknown Product'}
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <div className="flex justify-center">
-                              <Input
-                                type="number"
-                                min="1"
-                                value={item.quantityOrdered}
-                                onChange={(e) =>
-                                  handleItemChange(
-                                    item.id,
-                                    'quantityOrdered',
-                                    parseInt(e.target.value) || 0
-                                  )
-                                }
-                                className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
-                              />
-                            </div>
+                            {isViewMode ? (
+                              <span className="text-slate-700 font-medium">{item.quantityOrdered}</span>
+                            ) : (
+                              <div className="flex justify-center">
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={item.quantityOrdered}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      'quantityOrdered',
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                />
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <div className="flex justify-center">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={item.quantityReceived}
-                                onChange={(e) =>
-                                  handleItemChange(
-                                    item.id,
-                                    'quantityReceived',
-                                    parseInt(e.target.value) || 0
-                                  )
-                                }
-                                className={`text-center font-bold border-2 w-20 ${
-                                  item.quantityReceived !== item.quantityOrdered
-                                    ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                    : 'border-green-200 bg-green-50 text-green-700'
-                                }`}
-                              />
-                            </div>
+                            {isViewMode ? (
+                              <span className="text-slate-700 font-medium">{item.quantityReceived}</span>
+                            ) : (
+                              <div className="flex justify-center">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={item.quantityReceived}
+                                  onChange={(e) =>
+                                    handleItemChange(
+                                      item.id,
+                                      'quantityReceived',
+                                      parseInt(e.target.value) || 0
+                                    )
+                                  }
+                                  className={`text-center font-bold border-2 w-20 ${
+                                    item.quantityReceived !== item.quantityOrdered
+                                      ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                      : 'border-green-200 bg-green-50 text-green-700'
+                                  }`}
+                                />
+                              </div>
+                            )}
                           </td>
                           <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {product?.unit?.name || 'หน่วย'}
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
-                              title="ลบรายการ"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                            {!isViewMode && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="text-red-500 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
+                                title="ลบรายการ"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );

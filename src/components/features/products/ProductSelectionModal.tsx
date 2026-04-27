@@ -130,12 +130,22 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
       }
     >
       <div className="space-y-4">
-        <Input
-          type="search"
-          placeholder="ค้นหาด้วยชื่อ หรือ รหัสสินค้า..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="relative">
+          <Input
+            type="search"
+            placeholder="ค้นหาด้วยชื่อ หรือ รหัสสินค้า..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {isLoading && (
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg className="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+            </div>
+          )}
+        </div>
         <div className="border border-slate-200 rounded-lg max-h-96 overflow-y-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50 sticky top-0">
@@ -177,53 +187,50 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-slate-200">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-500">
-                    กำลังโหลดข้อมูล...
+            <tbody className={`bg-white divide-y divide-slate-200 transition-opacity ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
+              {availableProducts.map((product) => (
+                <tr
+                  key={product.id}
+                  className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
+                  onClick={() => handleToggleSelection(product.id)}
+                >
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(product.id)}
+                      readOnly
+                      className="pointer-events-none"
+                    />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
+                    {product.code}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600">
+                    {product.name}
+                  </td>
+                  {stockMap && (
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 text-right font-medium">
+                      {stockMap.get(product.id) || 0}
+                    </td>
+                  )}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    {product.unit?.name || '-'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
+                    ฿{product.cost_price}
                   </td>
                 </tr>
-              ) : (
-                availableProducts.map((product) => (
-                  <tr
-                    key={product.id}
-                    className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
-                    onClick={() => handleToggleSelection(product.id)}
-                  >
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(product.id)}
-                        readOnly
-                        className="pointer-events-none"
-                      />
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
-                      {product.code}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">
-                      {product.name}
-                    </td>
-                    {stockMap && (
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 text-right font-medium">
-                        {stockMap.get(product.id) || 0}
-                      </td>
-                    )}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      {product.unit?.name || '-'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                      ฿{product.cost_price}
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
           {!isLoading && availableProducts.length === 0 && (
             <div className="text-center py-10 text-slate-500">
               ไม่พบสินค้าที่ตรงกัน
+            </div>
+          )}
+          {isLoading && availableProducts.length === 0 && (
+            <div className="text-center py-10 text-slate-500">
+              กำลังโหลดข้อมูล...
             </div>
           )}
         </div>

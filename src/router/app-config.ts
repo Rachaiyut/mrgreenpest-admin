@@ -286,7 +286,7 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         component: Warehouse,
       },
       {
-        name: 'รับเข้า',
+        name: 'รับสินค้าเข้า',
         path: 'goods-receipt',
         icon: NewWarehouseIcon,
         access: 'ACCESS_RECEIVE_NOTE',

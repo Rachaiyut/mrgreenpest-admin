@@ -27,6 +27,9 @@ interface AddTransferModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateTransfer: (transfer: Omit<TransferType, 'id'>) => void;
+  onUpdateTransfer?: (transfer: TransferType) => void;
+  editingTransfer?: TransferType | null;
+  viewOnly?: boolean;
   transfers: TransferType[];
   warehouses: Warehouse[];
   products: Product[];
@@ -43,15 +46,23 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
   isOpen,
   onClose,
   onCreateTransfer,
+  onUpdateTransfer,
+  editingTransfer,
+  viewOnly = false,
   transfers,
   warehouses,
   products,
   stockMap,
 }) => {
+  const isEditMode = !!editingTransfer && !viewOnly;
+  const isViewMode = viewOnly && !!editingTransfer;
   const [items, setItems] = useState<LineItem[]>([]);
   const [fromWarehouseId, setFromWarehouseId] = useState('');
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [reason, setReason] = useState('');
+  const [fromWarehouseError, setFromWarehouseError] = useState('');
+  const [toWarehouseError, setToWarehouseError] = useState('');
+  const [reasonError, setReasonError] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
   const [fetchedStock, setFetchedStock] = useState<Record<string, number>>({});
@@ -139,14 +150,41 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
   }, [fromWarehouseId, toWarehouseId, reason, items]);
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    setFromWarehouseError('');
+    setToWarehouseError('');
+    setReasonError('');
+
+    if (editingTransfer) {
+      setFromWarehouseId(editingTransfer.from_warehouse_id || '');
+      setToWarehouseId(editingTransfer.to_warehouse_id || '');
+      setReason(editingTransfer.remark || '');
+      const td = (editingTransfer as { transfer_date?: string }).transfer_date
+        || editingTransfer.created_at
+        || new Date().toISOString();
+      setTransferDate(new Date(td).toISOString().substring(0, 10));
+      const sourceItems = (editingTransfer.items || []) as Array<{
+        id?: string;
+        product_id: string;
+        qty?: number;
+        quantity?: number;
+      }>;
+      setItems(
+        sourceItems.map((it, idx) => ({
+          id: Date.now() + idx,
+          productId: it.product_id,
+          quantity: Number(it.qty ?? it.quantity ?? 1),
+        })),
+      );
+    } else {
       setItems([]);
       setFromWarehouseId('');
       setToWarehouseId('');
       setReason('');
       setTransferDate(new Date().toISOString().substring(0, 10));
     }
-  }, [isOpen]);
+  }, [isOpen, editingTransfer]);
 
   const handleAddProducts = (productIds: string[]) => {
     const newItems: LineItem[] = productIds.map((pid) => ({
@@ -171,24 +209,67 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
     );
   };
 
+  const buildPayload = (status: 'DRAFT' | 'PENDING') => ({
+    from_warehouse_id: fromWarehouseId,
+    to_warehouse_id: toWarehouseId,
+    remark: reason,
+    transfer_date: transferDate,
+    status,
+    items: items.map((item) => ({
+      product_id: item.productId,
+      qty: Number(item.quantity),
+    })),
+  });
+
+  const validateRequired = (opts: { requireReason: boolean }) => {
+    let ok = true;
+    if (!fromWarehouseId) {
+      setFromWarehouseError('กรุณาเลือกคลังต้นทาง');
+      ok = false;
+    } else {
+      setFromWarehouseError('');
+    }
+    if (!toWarehouseId) {
+      setToWarehouseError('กรุณาเลือกคลังปลายทาง');
+      ok = false;
+    } else {
+      setToWarehouseError('');
+    }
+    if (opts.requireReason && !reason.trim()) {
+      setReasonError('กรุณากรอกเหตุผลในการโอนย้าย');
+      ok = false;
+    } else {
+      setReasonError('');
+    }
+    return ok;
+  };
+
+  const submitWithStatus = (status: 'DRAFT' | 'PENDING') => {
+    const payload = buildPayload(status);
+    if (isEditMode && editingTransfer && onUpdateTransfer) {
+      onUpdateTransfer({
+        ...editingTransfer,
+        ...payload,
+      } as unknown as TransferType);
+    } else {
+      onCreateTransfer(payload as unknown as Omit<TransferType, 'id'>);
+    }
+    onClose();
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!isFormValid) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องมีคลังต้นทาง, คลังปลายทาง, เหตุผล และมีสินค้าอย่างน้อย 1 รายการที่จำนวนมากกว่า 0' });
+    if (!validateRequired({ requireReason: true })) return;
+    if (items.length === 0 || items.some((item) => item.quantity <= 0)) {
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'ต้องมีสินค้าอย่างน้อย 1 รายการที่จำนวนมากกว่า 0' });
       return;
     }
-    const newTransfer: any = {
-      from_warehouse_id: fromWarehouseId,
-      to_warehouse_id: toWarehouseId,
-      remark: reason,
-      transfer_date: transferDate,
-      items: items.map((item) => ({
-        product_id: item.productId,
-        qty: Number(item.quantity),
-      })),
-    };
-    onCreateTransfer(newTransfer);
-    onClose();
+    submitWithStatus('PENDING');
+  };
+
+  const handleSaveDraft = () => {
+    if (!validateRequired({ requireReason: false })) return;
+    submitWithStatus('DRAFT');
   };
 
   const existingProductIds = useMemo(
@@ -201,16 +282,29 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="สร้างใบโอนย้ายสินค้า"
+        title={
+          isViewMode
+            ? 'รายละเอียดใบโอนย้ายสินค้า'
+            : isEditMode
+            ? 'แก้ไขใบโอนย้ายสินค้า'
+            : 'สร้างใบโอนย้ายสินค้า'
+        }
         size="4xl"
         footer={
           <div className="flex gap-2">
             <Button variant="outline" type="button" onClick={onClose}>
-              ยกเลิก
+              {isViewMode ? 'ปิด' : 'ยกเลิก'}
             </Button>
-            <Button variant="primary" type="submit" form="add-transfer-form">
-              บันทึก
-            </Button>
+            {!isViewMode && (
+              <>
+                <Button variant="secondary" type="button" onClick={handleSaveDraft}>
+                  บันทึกฉบับร่าง
+                </Button>
+                <Button variant="primary" type="submit" form="add-transfer-form">
+                  ส่งเพื่ออนุมัติ
+                </Button>
+              </>
+            )}
           </div>
         }
       >
@@ -233,11 +327,23 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                   dateFormat="dd/MM/yyyy"
                   locale="th"
                   placeholderText="dd/mm/yyyy"
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  disabled={isViewMode}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   wrapperClassName="w-full"
                   required
                 />
               </FormField>
+              {(isEditMode || isViewMode) && editingTransfer?.code && (
+                <FormField label="เลขที่เอกสารโอนย้าย" htmlFor="transfer-code">
+                  <Input
+                    id="transfer-code"
+                    type="text"
+                    value={editingTransfer.code}
+                    disabled
+                    className="bg-slate-100 text-slate-500 cursor-not-allowed"
+                  />
+                </FormField>
+              )}
             </div>
           </div>
 
@@ -249,35 +355,42 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
-                <FormField label="คลังต้นทาง (Source)" htmlFor="from-warehouse">
+                <FormField label="คลังต้นทาง " htmlFor="from-warehouse">
                   <SearchableSelect
-                    required
                     value={fromWarehouseId}
                     onChange={(newFromId) => {
                       setFromWarehouseId(newFromId);
                       setItems([]);
+                      if (newFromId) setFromWarehouseError('');
                       if (newFromId && newFromId === toWarehouseId) {
                         setToWarehouseId('');
                       }
                     }}
-                    placeholder="-- เลือกคลังต้นทาง --"
+                    placeholder="เลือกคลังต้นทาง"
+                    disabled={isViewMode}
                     options={warehouses.map((wh) => ({
                       value: wh.id,
                       label: `${wh.name}${wh.type === WarehouseType.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
                     }))}
                   />
+                  {fromWarehouseError && (
+                    <p className="mt-1 text-xs text-red-600">{fromWarehouseError}</p>
+                  )}
                 </FormField>
               </div>
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
                 <FormField
-                  label="คลังปลายทาง (Destination)"
+                  label="คลังปลายทาง "
                   htmlFor="to-warehouse"
                 >
                   <SearchableSelect
-                    required
                     value={toWarehouseId}
-                    onChange={setToWarehouseId}
-                    placeholder="-- เลือกคลังปลายทาง --"
+                    onChange={(v) => {
+                      setToWarehouseId(v);
+                      if (v) setToWarehouseError('');
+                    }}
+                    placeholder="เลือกคลังปลายทาง"
+                    disabled={isViewMode}
                     options={warehouses
                       .filter((wh) => wh.id !== fromWarehouseId)
                       .map((wh) => ({
@@ -285,6 +398,9 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                         label: `${wh.name}${wh.type === WarehouseType.VEHICLE && wh.vehicle?.vehicle_registration ? ` (${wh.vehicle.vehicle_registration})` : ''}`,
                       }))}
                   />
+                  {toWarehouseError && (
+                    <p className="mt-1 text-xs text-red-600">{toWarehouseError}</p>
+                  )}
                 </FormField>
               </div>
             </div>
@@ -293,12 +409,18 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                 <Textarea
                   id="reason"
                   value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    setReason(e.target.value);
+                    if (e.target.value.trim()) setReasonError('');
+                  }}
                   rows={2}
-                  className="bg-white"
+                  disabled={isViewMode}
+                  className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   placeholder="ระบุสาเหตุการโอนย้าย..."
                 />
+                {reasonError && (
+                  <p className="mt-1 text-xs text-red-600">{reasonError}</p>
+                )}
               </FormField>
             </div>
           </div>
@@ -312,48 +434,50 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                   {items.length} รายการ
                 </span>
               </h4>
-              <Button
-                variant="primary"
-                type="button"
-                onClick={() => setIsProductModalOpen(true)}
-                disabled={!fromWarehouseId}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
-                  !fromWarehouseId
-                    ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
-                    : 'bg-primary hover:bg-primary/90 text-white'
-                }`}
-                title={
-                  !fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : 'เพิ่มสินค้า'
-                }
-              >
-                <PlusIcon className="h-5 w-5" />
-                <span>เพิ่มสินค้า</span>
-              </Button>
+              {!isViewMode && (
+                <Button
+                  variant="primary"
+                  type="button"
+                  onClick={() => setIsProductModalOpen(true)}
+                  disabled={!fromWarehouseId}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-sm transition-all ${
+                    !fromWarehouseId
+                      ? 'opacity-50 cursor-not-allowed bg-slate-300 text-slate-500'
+                      : 'bg-primary hover:bg-primary/90 text-white'
+                  }`}
+                  title={
+                    !fromWarehouseId ? 'กรุณาเลือกคลังต้นทางก่อน' : 'เพิ่มสินค้า'
+                  }
+                >
+                  <PlusIcon className="h-5 w-5" />
+                  <span>เพิ่มสินค้า</span>
+                </Button>
+              )}
             </div>
 
             <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-sm text-center">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-16">
-                      #
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-16">
+                      ลำดับ
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
+                    <th className="px-4 py-3 font-semibold text-slate-600">
                       รหัสสินค้า
                     </th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600">
-                      สินค้า
+                    <th className="px-4 py-3 font-semibold text-slate-600">
+                      ชื่อสินค้า
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">
                       คงคลัง
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 w-32">
-                      จำนวนโอน <span className="text-red-500">*</span>
+                    <th className="px-4 py-3 font-semibold text-slate-600 w-32">
+                      จำนวนโอนย้าย <span className="text-red-500">*</span>
                     </th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600">
-                      หน่วย
+                    <th className="px-4 py-3 font-semibold text-slate-600">
+                      หน่วยนับ
                     </th>
-                    <th className="px-4 py-3 text-center w-16"></th>
+                    <th className="px-4 py-3 w-16"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
@@ -368,16 +492,16 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                           key={item.id}
                           className="hover:bg-slate-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-center align-middle text-slate-500 font-medium">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {index + 1}
                           </td>
-                          <td className="px-4 py-3 align-middle text-slate-700 font-mono text-xs">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {product?.code || '-'}
                           </td>
                           <td className="px-4 py-3 align-middle text-slate-800 font-medium">
                             {product?.name || 'Unknown Product'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-center">
+                          <td className="px-4 py-3 align-middle">
                             <span
                               className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                                 currentStock > 0
@@ -389,42 +513,50 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                             </span>
                           </td>
                           <td className="px-4 py-3 align-middle">
-                            <Input
-                              type="number"
-                              value={item.quantity}
-                              onChange={(e) => {
-                                const newQuantity =
-                                  parseInt(e.target.value, 10) || 0;
-                                const validatedQuantity = Math.min(
-                                  newQuantity,
-                                  currentStock
-                                );
-                                handleItemChange(
-                                  item.id,
-                                  'quantity',
-                                  validatedQuantity
-                                );
-                              }}
-                              className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100"
-                              min="1"
-                              max={currentStock}
-                              required
-                            />
+                            {isViewMode ? (
+                              <span className="text-slate-700 font-medium">{item.quantity}</span>
+                            ) : (
+                              <div className="flex justify-center">
+                                <Input
+                                  type="number"
+                                  value={item.quantity}
+                                  onChange={(e) => {
+                                    const newQuantity =
+                                      parseInt(e.target.value, 10) || 0;
+                                    const validatedQuantity = Math.min(
+                                      newQuantity,
+                                      currentStock
+                                    );
+                                    handleItemChange(
+                                      item.id,
+                                      'quantity',
+                                      validatedQuantity
+                                    );
+                                  }}
+                                  className="text-center font-medium border-slate-200 focus:border-blue-500 focus:ring-blue-100 w-20"
+                                  min="1"
+                                  max={currentStock}
+                                  required
+                                />
+                              </div>
+                            )}
                           </td>
-                          <td className="px-4 py-3 align-middle text-right text-slate-600">
+                          <td className="px-4 py-3 align-middle text-slate-700 font-medium">
                             {typeof product?.unit === 'object'
                               ? product.unit.name
                               : product?.unit || 'หน่วย'}
                           </td>
-                          <td className="px-4 py-3 align-middle text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
-                              title="ลบรายการ"
-                            >
-                              <TrashIcon className="h-5 w-5" />
-                            </button>
+                          <td className="px-4 py-3 align-middle">
+                            {!isViewMode && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveItem(item.id)}
+                                className="text-red-500 hover:text-red-600 transition-colors p-1 rounded-md hover:bg-red-50"
+                                title="ลบรายการ"
+                              >
+                                <TrashIcon className="h-5 w-5" />
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );

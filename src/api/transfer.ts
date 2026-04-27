@@ -37,10 +37,10 @@ class TransferService extends AuthService {
     return res.data.data;
   }
 
-  async updateStatus(id: string, status: string): Promise<Transfer> {
+  async updateStatus(id: string, status: string, remark?: string): Promise<Transfer> {
     const res = await this.http.patch<IBaseResponse<Transfer>>(
       `${this.path}/${id}/status`,
-      { status }
+      { status, ...(remark ? { remark } : {}) }
     );
     return res.data.data;
   }

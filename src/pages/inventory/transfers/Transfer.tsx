@@ -14,19 +14,17 @@ import { TransferStatus } from '@/src/types/enums/inventory';
 
 // ===== API =====
 import { TransferApi } from '@/src/api/transfer';
+import { WarehouseApi } from '@/src/api/warehouse';
+import { ProductApi } from '@/src/api/product';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
-
-// ===== Context =====
-import { useData } from '../../../contexts/DataContext';
 
 // ===== Components =====
 import { AddTransferModal } from '../../../components/features/inventory/transfer/AddTransferModal';
-import { EditTransferModal } from '../../../components/features/inventory/transfer/EditTransferModal';
-import { TransferDetailsModal } from '../../../components/features/inventory/transfer/TransferDetailsModal';
 
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Card } from '../../../components/common/Card';
-import { Input, Button } from '../../../components/common/FormControls';
+import { Input, Button, Select } from '../../../components/common/FormControls';
+import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 
@@ -43,10 +41,28 @@ import {
   PencilIcon,
   PlusIcon,
   TrashIcon,
+  XCircleIcon,
 } from '../../../assets/icons/Icons';
 
 const Transfers: React.FC = () => {
-  const { warehouses, products } = useData();
+  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [whRes, prodRes] = await Promise.all([
+          WarehouseApi.getWarehouses({ limit: 1000 }),
+          ProductApi.getProducts({ limit: 1000 }),
+        ]);
+        setWarehouses(whRes.data || []);
+        setProducts(prodRes.data || []);
+      } catch (err) {
+        console.error('Failed to fetch warehouses/products', err);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const stockMap = useMemo(() => {
     const map: Record<string, Record<string, number>> = {};
@@ -72,15 +88,11 @@ const Transfers: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [selectedTransfer, setSelectedTransfer] = useState<TransferType | null>(
-    null
-  );
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [transferToEdit, setTransferToEdit] = useState<TransferType | null>(
     null
   );
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [transferToDelete, setTransferToDelete] = useState<TransferType | null>(
     null
@@ -90,6 +102,9 @@ const Transfers: React.FC = () => {
   const searchDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [fromWarehouseFilter, setFromWarehouseFilter] = useState('all');
+  const [toWarehouseFilter, setToWarehouseFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchTransfers = useCallback(async () => {
     try {
@@ -98,6 +113,9 @@ const Transfers: React.FC = () => {
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
         ...(startDate ? { start_date: startDate } : {}),
         ...(endDate ? { end_date: endDate } : {}),
+        ...(fromWarehouseFilter !== 'all' ? { from_warehouse_id: fromWarehouseFilter } : {}),
+        ...(toWarehouseFilter !== 'all' ? { to_warehouse_id: toWarehouseFilter } : {}),
+        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
       });
       setTransfers(res.data || []);
     } catch (error) {
@@ -105,7 +123,7 @@ const Transfers: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchDebounced, startDate, endDate]);
+  }, [searchDebounced, startDate, endDate, fromWarehouseFilter, toWarehouseFilter, statusFilter]);
 
   useEffect(() => {
     fetchTransfers();
@@ -131,25 +149,6 @@ const Transfers: React.FC = () => {
     } catch (error) {
       console.error('Failed to create transfer:', error);
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to create transfer' });
-    }
-  };
-
-  const handleUpdateTransfer = async (updatedItem: TransferType) => {
-    try {
-      if (updatedItem.status) {
-        if (updatedItem.code) {
-          await TransferApi.updateStatus(updatedItem.code, updatedItem.status);
-          await fetchTransfers();
-          setIsEditModalOpen(false);
-          return;
-        }
-      }
-
-      Swal.fire({ icon: 'info', title: 'แจ้งเตือน', text: 'Update transfer details not supported by API yet. Only Status update is supported.' });
-      setIsEditModalOpen(false);
-    } catch (error) {
-      console.error('Failed to update transfer:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to update transfer' });
     }
   };
 
@@ -187,21 +186,73 @@ const Transfers: React.FC = () => {
   };
 
   const handleViewDetails = (transfer: TransferType) => {
-    setSelectedTransfer(transfer);
-    setIsDetailsModalOpen(true);
+    setTransferToEdit(transfer);
+    setIsViewMode(true);
+    setIsAddModalOpen(true);
     setOpenDropdownId(null);
   };
 
   const handleEdit = (transfer: TransferType) => {
     setTransferToEdit(transfer);
-    setIsEditModalOpen(true);
+    setIsViewMode(false);
+    setIsAddModalOpen(true);
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (transfer: TransferType) => {
-    setTransferToDelete(transfer);
-    setIsDeleteModalOpen(true);
+  const handleSaveTransferEdit = async (updated: TransferType) => {
+    if (!updated.id) {
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบรหัสเอกสาร', 'error');
+      return;
+    }
+    try {
+      await TransferApi.update(updated.id, updated as Partial<TransferType>);
+      await fetchTransfers();
+      Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      const data = (err as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> } } })?.response?.data;
+      const msg = Array.isArray(data?.message)
+        ? data?.message.join(', ')
+        : data?.message
+        || (data?.errors ? Object.values(data.errors).join(', ') : '')
+        || 'ไม่สามารถบันทึกการแก้ไขได้';
+      Swal.fire('เกิดข้อผิดพลาด', msg, 'error');
+    }
+  };
+
+  const handleCancel = async (transfer: TransferType) => {
     setOpenDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิก',
+      html: `ยกเลิกใบโอนย้าย <strong>${transfer.code || transfer.id}</strong>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลการยกเลิก',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ยกเลิกใบนี้',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+    const target = transfer.id || transfer.code;
+    if (!target) {
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบรหัสเอกสาร', 'error');
+      return;
+    }
+    try {
+      await TransferApi.updateStatus(target, TransferStatus.CANCELLED, r.value.trim());
+      await fetchTransfers();
+      Swal.fire({ icon: 'success', title: 'ยกเลิกแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      const data = (err as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> } } })?.response?.data;
+      const msg = Array.isArray(data?.message)
+        ? data?.message.join(', ')
+        : data?.message
+        || (data?.errors ? Object.values(data.errors).join(', ') : '')
+        || 'ไม่สามารถยกเลิกได้';
+      Swal.fire('เกิดข้อผิดพลาด', msg, 'error');
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -250,6 +301,41 @@ const Transfers: React.FC = () => {
     };
   }, [openDropdownId]);
 
+  const handleReject = async (transfer: TransferType) => {
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการไม่อนุมัติ',
+      html: `ไม่อนุมัติใบโอนย้าย <strong>${transfer.code || transfer.id}</strong>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลการไม่อนุมัติ',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ไม่อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+    const target = transfer.id || transfer.code;
+    if (!target) {
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบรหัสเอกสาร', 'error');
+      return;
+    }
+    try {
+      await TransferApi.updateStatus(target, TransferStatus.REJECTED, r.value.trim());
+      await fetchTransfers();
+      Swal.fire({ icon: 'success', title: 'ไม่อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
+    } catch (err) {
+      const data = (err as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> } } })?.response?.data;
+      const msg = Array.isArray(data?.message)
+        ? data?.message.join(', ')
+        : data?.message
+        || (data?.errors ? Object.values(data.errors).join(', ') : '')
+        || 'ไม่สามารถดำเนินการได้';
+      Swal.fire('เกิดข้อผิดพลาด', msg, 'error');
+    }
+  };
+
   const handleApprove = async (transfer: TransferType) => {
     const r = await Swal.fire({
       icon: 'question',
@@ -261,12 +347,23 @@ const Transfers: React.FC = () => {
       confirmButtonColor: '#10b981',
     });
     if (!r.isConfirmed) return;
+    const target = transfer.id || transfer.code;
+    if (!target) {
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบรหัสเอกสาร', 'error');
+      return;
+    }
     try {
-      await handleUpdateTransfer({ ...transfer, status: TransferStatus.COMPLETED });
+      await TransferApi.updateStatus(target, TransferStatus.APPROVED);
+      await fetchTransfers();
       Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1200, showConfirmButton: false });
     } catch (err) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
+      const data = (err as { response?: { data?: { message?: string | string[]; errors?: Record<string, string> } } })?.response?.data;
+      const msg = Array.isArray(data?.message)
+        ? data?.message.join(', ')
+        : data?.message
+        || (data?.errors ? Object.values(data.errors).join(', ') : '')
+        || 'ไม่สามารถอนุมัติได้';
+      Swal.fire('เกิดข้อผิดพลาด', msg, 'error');
     }
   };
 
@@ -292,15 +389,24 @@ const Transfers: React.FC = () => {
       handler: handleEdit,
       color: 'text-blue-600',
       hoverBg: 'hover:bg-blue-50',
-      show: (t: TransferType) => t.status === TransferStatus.PENDING,
+      show: (t: TransferType) => t.status === TransferStatus.DRAFT,
     },
     {
-      label: 'ลบ',
-      icon: TrashIcon,
-      handler: handleDelete,
+      label: 'ไม่อนุมัติ',
+      icon: XCircleIcon,
+      handler: handleReject,
       color: 'text-red-600',
       hoverBg: 'hover:bg-red-50',
       show: (t: TransferType) => t.status === TransferStatus.PENDING,
+    },
+    {
+      label: 'ยกเลิก',
+      icon: TrashIcon,
+      handler: handleCancel,
+      color: 'text-red-600',
+      hoverBg: 'hover:bg-red-50',
+      show: (t: TransferType) =>
+        t.status === TransferStatus.DRAFT || t.status === TransferStatus.PENDING,
     },
   ];
 
@@ -321,24 +427,67 @@ const Transfers: React.FC = () => {
         </div>
 
         <Card className="!p-4 mb-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-center">
-            <div className="relative w-full sm:w-80 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:items-center">
+            <div className="relative w-full sm:w-80 sm:flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, วันที่)..."
+                placeholder="ค้นหาเลขที่เอกสารโอนย้าย"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
                 className="w-full pl-10"
-                title="ค้นหาด้วย: เลขที่เอกสารโอนย้าย, วันที่โอนย้าย"
+                title="ค้นหาด้วย: เลขที่เอกสารโอนย้าย"
               />
               <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="w-full sm:w-48 sm:flex-shrink-0">
+              <SearchableSelect
+                value={fromWarehouseFilter === 'all' ? '' : fromWarehouseFilter}
+                onChange={(v) => {
+                  setFromWarehouseFilter(v || 'all');
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: '', label: 'คลังต้นทางทั้งหมด' },
+                  ...warehouses.map((wh) => ({ value: wh.id, label: wh.name })),
+                ]}
+                placeholder="คลังต้นทางทั้งหมด"
+              />
+            </div>
+            <div className="w-full sm:w-48 sm:flex-shrink-0">
+              <SearchableSelect
+                value={toWarehouseFilter === 'all' ? '' : toWarehouseFilter}
+                onChange={(v) => {
+                  setToWarehouseFilter(v || 'all');
+                  setCurrentPage(1);
+                }}
+                options={[
+                  { value: '', label: 'คลังปลายทางทั้งหมด' },
+                  ...warehouses.map((wh) => ({ value: wh.id, label: wh.name })),
+                ]}
+                placeholder="คลังปลายทางทั้งหมด"
+              />
+            </div>
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-fit text-sm !pr-8"
+            >
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="DRAFT">ฉบับร่าง</option>
+              <option value="PENDING">รออนุมัติ</option>
+              <option value="APPROVED">อนุมัติแล้ว</option>
+              <option value="REJECTED">ไม่อนุมัติ</option>
+              <option value="CANCELLED">ยกเลิก</option>
+            </Select>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}
                 onChange={(date: Date | null) => {
@@ -350,7 +499,7 @@ const Transfers: React.FC = () => {
                 placeholderText="เริ่มต้น"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:flex-none sm:w-36"
               />
               <span className="text-slate-400">-</span>
               <DatePicker
@@ -364,7 +513,7 @@ const Transfers: React.FC = () => {
                 placeholderText="สิ้นสุด"
                 isClearable
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                wrapperClassName="w-32 sm:w-36"
+                wrapperClassName="flex-1 sm:flex-none sm:w-36"
               />
             </div>
           </div>
@@ -381,7 +530,6 @@ const Transfers: React.FC = () => {
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังต้นทาง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลังปลายทาง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จำนวนสินค้า</th>
-                  <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เหตุผล</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้สร้าง</th>
                   <th scope="col" className="px-4 py-3 text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">จัดการ</th>
@@ -390,7 +538,7 @@ const Transfers: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูลการโอนย้าย...</p>
@@ -399,7 +547,7 @@ const Transfers: React.FC = () => {
                   </tr>
                 ) : paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentCheckIcon className="w-12 h-12 text-slate-300 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลการโอนย้าย</p>
@@ -443,9 +591,6 @@ const Transfers: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {totalQuantity}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 max-w-sm truncate">
-                        {transfer.remark}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <StatusBadge status={transfer.status} />
@@ -539,34 +684,19 @@ const Transfers: React.FC = () => {
       )}
       <AddTransferModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setTransferToEdit(null);
+          setIsViewMode(false);
+        }}
         onCreateTransfer={handleCreateTransfer}
+        onUpdateTransfer={handleSaveTransferEdit}
+        editingTransfer={transferToEdit}
+        viewOnly={isViewMode}
         transfers={transfers}
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
-      />
-      <EditTransferModal
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false);
-          setTransferToEdit(null);
-        }}
-        transfer={transferToEdit}
-        onUpdateTransfer={handleUpdateTransfer}
-        warehouses={warehouses}
-        products={products}
-      />
-      <TransferDetailsModal
-        isOpen={isDetailsModalOpen}
-        onClose={() => {
-          setIsDetailsModalOpen(false);
-          setSelectedTransfer(null);
-        }}
-        transfer={selectedTransfer}
-        warehouses={warehouses}
-        products={products}
-        onApprove={handleApprove}
       />
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

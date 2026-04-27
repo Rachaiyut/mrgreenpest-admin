@@ -42,8 +42,8 @@ export enum StockAdjustmentStatus {
 export enum TransferStatus {
   DRAFT = 'DRAFT',
   PENDING = 'PENDING',
-  IN_TRANSIT = 'IN_TRANSIT',
-  COMPLETED = 'COMPLETED',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
   CANCELLED = 'CANCELLED',
 }
 
