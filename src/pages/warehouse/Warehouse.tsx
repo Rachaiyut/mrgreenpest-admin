@@ -53,6 +53,7 @@ const Warehouse: React.FC = () => {
   // State
   const [typeFilter, setTypeFilter] = useState<'all' | 'main' | 'sub'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'INACTIVE'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -112,8 +113,15 @@ const Warehouse: React.FC = () => {
 
       if (searchQuery) query.search = searchQuery;
 
-      if (typeFilter === 'main') query.type = WarehouseTypeEnum.MAIN;
-      if (typeFilter === 'sub') query.type = WarehouseTypeEnum.SUB;
+      // Tab filter (คลังสินค้า / รถบริการ) — overrides type dropdown when active
+      if (activeTab === 'warehouse') {
+        query.type = WarehouseTypeEnum.MAIN;
+      } else if (activeTab === 'vehicle') {
+        query.type = WarehouseTypeEnum.VEHICLE;
+      } else {
+        if (typeFilter === 'main') query.type = WarehouseTypeEnum.MAIN;
+        if (typeFilter === 'sub') query.type = WarehouseTypeEnum.SUB;
+      }
 
       if (statusFilter !== 'all') query.status = statusFilter;
 
@@ -125,7 +133,7 @@ const Warehouse: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, typeFilter, statusFilter]);
+  }, [currentPage, itemsPerPage, searchQuery, typeFilter, statusFilter, activeTab]);
 
   const fetchProducts = useCallback(async () => {
     try {
@@ -582,7 +590,8 @@ const Warehouse: React.FC = () => {
 
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 min-w-0">
             <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
@@ -622,6 +631,50 @@ const Warehouse: React.FC = () => {
               <option value="ACTIVE">ใช้งาน</option>
               <option value="INACTIVE">ไม่ใช้งาน</option>
             </Select>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex bg-slate-100 p-1 rounded-lg flex-shrink-0">
+              <button
+                onClick={() => {
+                  setActiveTab('all');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
+                  activeTab === 'all'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                ทั้งหมด
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('warehouse');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
+                  activeTab === 'warehouse'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                คลังสินค้า
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('vehicle');
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
+                  activeTab === 'vehicle'
+                    ? 'bg-white text-slate-800 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                รถบริการ
+              </button>
+            </div>
           </div>
         </Card>
 
