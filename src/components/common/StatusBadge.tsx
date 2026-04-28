@@ -29,7 +29,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   FOLLOW_UP:          { label: 'ติดตาม',           color: 'bg-purple-100 text-purple-700' },
 
   // ===== สัญญา =====
-  ACTIVE:             { label: 'กำลังดำเนินการ',    color: 'bg-green-100 text-green-700' },
+  ACTIVE:             { label: 'ใช้งาน',            color: 'bg-green-100 text-green-700' },
 
   // ===== ใบแจ้งหนี้ =====
   SENT:               { label: 'ส่งแล้ว',           color: 'bg-indigo-100 text-indigo-700' },
