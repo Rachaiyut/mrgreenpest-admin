@@ -103,7 +103,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       },
       {
         // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_SUMMARY (SUPERADMIN เท่านั้น)
-        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต (เฉพาะหัวหน้าผู้ดูแลระบบ)',
+        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต',
         module: 'EXPENSE_ISSUE_SUMMARY',
       },
       { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },
