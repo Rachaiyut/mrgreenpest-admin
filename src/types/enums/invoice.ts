@@ -8,6 +8,7 @@ export enum InvoiceStatus {
   CANCELLED = 'CANCELLED',
   CARRIED_OVER = 'CARRIED_OVER',
   PENDING_REVIEW = 'PENDING_REVIEW',
+  PENDING_ACCOUNTING_REVIEW = 'PENDING_ACCOUNTING_REVIEW',
 }
 
 export const InvoiceStatusLabel: Record<InvoiceStatus, string> = {
@@ -20,6 +21,7 @@ export const InvoiceStatusLabel: Record<InvoiceStatus, string> = {
   [InvoiceStatus.CANCELLED]: 'ยกเลิก',
   [InvoiceStatus.CARRIED_OVER]: 'ยกยอด',
   [InvoiceStatus.PENDING_REVIEW]: 'รอตรวจสอบ',
+  [InvoiceStatus.PENDING_ACCOUNTING_REVIEW]: 'รอบัญชีอนุมัติ',
 };
 
 export const InvoiceStatusColor: Record<InvoiceStatus, string> = {
@@ -32,4 +34,5 @@ export const InvoiceStatusColor: Record<InvoiceStatus, string> = {
   [InvoiceStatus.CANCELLED]: 'bg-red-100 text-red-700',
   [InvoiceStatus.CARRIED_OVER]: 'bg-zinc-100 text-zinc-600',
   [InvoiceStatus.PENDING_REVIEW]: 'bg-purple-100 text-purple-700',
+  [InvoiceStatus.PENDING_ACCOUNTING_REVIEW]: 'bg-orange-100 text-orange-700',
 };

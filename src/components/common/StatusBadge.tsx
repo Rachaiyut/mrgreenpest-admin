@@ -38,6 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   OVERDUE:            { label: 'เกินกำหนด',         color: 'bg-rose-100 text-rose-700' },
   CARRIED_OVER:       { label: 'ทบยอดแล้ว',        color: 'bg-zinc-100 text-zinc-600' },
   PENDING_REVIEW:     { label: 'รอตรวจสอบ',        color: 'bg-purple-100 text-purple-700' },
+  PENDING_ACCOUNTING_REVIEW: { label: 'รอบัญชีอนุมัติ', color: 'bg-orange-100 text-orange-700' },
 
   // ===== ใบเสร็จ =====
   ISSUED:             { label: 'ออกแล้ว',           color: 'bg-green-100 text-green-700' },
