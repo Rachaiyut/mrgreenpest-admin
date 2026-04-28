@@ -402,10 +402,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบแจ้งหนี้
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -414,22 +414,22 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครั้งที่
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ชื่อลูกค้า
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทรศัพท์
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครบกำหนดชำระ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   สถานะ
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
                 </th>
               </tr>
@@ -461,12 +461,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   const customer =
                     i.customer || customers?.find((c) => c.id === i.customer_id);
                   return (
-                    <tr key={i.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={i.id} className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm font-bold text-primary cursor-pointer"
                         onClick={() => {
                           setSelectedInvoice(i);
                           setIsInvoiceModalOpen(true);
@@ -484,8 +484,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{(i as unknown as Record<string, number>).billing_count}</span>
                         ) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                        <TruncateText text={customer ? `${customer.first_name} ${customer.last_name || ''}`.trim() : i.customer_name || 'Unknown'} maxWidth={150} />
+                      <td className="px-4 py-3 text-sm font-semibold text-slate-800 whitespace-nowrap">
+                        {customer
+                          ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
+                          : i.customer_name || 'Unknown'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone)}
@@ -503,8 +505,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <Button
                             variant="primary"
                             className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"

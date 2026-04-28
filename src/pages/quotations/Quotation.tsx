@@ -681,7 +681,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
-                          className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer text-center"
+                          className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer text-center"
                           onClick={() => {
                             setSelectedQuotation(q);
                             setModalMode('detail');

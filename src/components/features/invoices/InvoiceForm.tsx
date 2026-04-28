@@ -780,7 +780,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         />
                       </td>
                       <td className="px-4 py-4 text-sm font-medium text-slate-900">
-                        {inst.is_pay_all ? '⭐ รวบยอด' : `งวดที่ ${inst.term}`}
+                        {inst.is_pay_all ? 'รวบยอด' : `งวดที่ ${inst.term}`}
                       </td>
                       <td className={`px-4 py-4 text-sm ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
                         {inst.description}
