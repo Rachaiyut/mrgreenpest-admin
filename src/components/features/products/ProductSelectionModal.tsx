@@ -155,43 +155,49 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
+                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
+                >
+                  ลำดับ
+                </th>
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
                   รหัสสินค้า
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
+                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
                   ชื่อสินค้า
                 </th>
                 {stockMap && (
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                   >
                     คงเหลือ
                   </th>
                 )}
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase"
+                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
                   หน่วย
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase"
+                  className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase"
                 >
                   ราคา
                 </th>
               </tr>
             </thead>
             <tbody className={`bg-white divide-y divide-slate-200 transition-opacity ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
-              {availableProducts.map((product) => (
+              {availableProducts.map((product, index) => (
                 <tr
                   key={product.id}
-                  className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
+                  className={`cursor-pointer hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
                   onClick={() => handleToggleSelection(product.id)}
                 >
                   <td className="px-4 py-3">
@@ -202,6 +208,9 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       className="pointer-events-none"
                     />
                   </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                    {index + 1}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                     {product.code}
                   </td>
@@ -209,14 +218,14 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     {product.name}
                   </td>
                   {stockMap && (
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 text-right font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900 font-medium">
                       {stockMap.get(product.id) || 0}
                     </td>
                   )}
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     {product.unit?.name || '-'}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                     ฿{product.cost_price}
                   </td>
                 </tr>

@@ -530,7 +530,10 @@ const IssueSummaryPage: React.FC = () => {
       ((category === 'STOCK' && canApproveStock) ||
         (category === 'EXPENSE' && canApproveExpense));
 
+    const isDraft = summary.status === 'DRAFT';
+
     // ช่าง (LEAD_TECH/TECH) เห็นได้แค่ "ดูรายละเอียด" ไม่ให้แก้/เปลี่ยนสถานะ/ลบ
+    // แก้ไข / เปลี่ยนสถานะ / ลบ — เปิดให้ทำเฉพาะใบที่สถานะเป็น DRAFT (ฉบับร่าง)
     const actions = [
       ...(canApproveThisRow
         ? [
@@ -559,7 +562,7 @@ const IssueSummaryPage: React.FC = () => {
         hoverBg: 'hover:bg-slate-50',
         onClick: () => handleViewDetails(summary),
       },
-      ...(!isTechRole
+      ...(!isTechRole && isDraft
         ? [
             {
               label: 'แก้ไข',
@@ -568,17 +571,13 @@ const IssueSummaryPage: React.FC = () => {
               hoverBg: 'hover:bg-blue-50',
               onClick: () => handleEditSummary(summary),
             },
-            ...(summary.status !== 'COMPLETED'
-              ? [
-                  {
-                    label: 'เปลี่ยนสถานะ',
-                    icon: CheckCircleIcon,
-                    color: 'text-slate-700',
-                    hoverBg: 'hover:bg-slate-50',
-                    onClick: () => handleStatusClick(summary),
-                  },
-                ]
-              : []),
+            {
+              label: 'เปลี่ยนสถานะ',
+              icon: CheckCircleIcon,
+              color: 'text-slate-700',
+              hoverBg: 'hover:bg-slate-50',
+              onClick: () => handleStatusClick(summary),
+            },
             {
               label: 'ลบ',
               icon: TrashIcon,
