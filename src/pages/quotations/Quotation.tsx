@@ -1,5 +1,7 @@
 import { isFieldRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
+import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -259,13 +261,30 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleApprove = async () => {
-    if (!selectedQuotation) return;
-    setOpenDropdownId(null);
+  const approveQuotationWithDetails = async (quotation: Quotation) => {
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === (quotation as any).customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const total = Number((quotation as any).total || (quotation as any).grand_total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const issueDate = (quotation as any).issue_date
+      ? new Date((quotation as any).issue_date).toLocaleDateString('th-TH')
+      : '-';
+
     const result = await Swal.fire({
-      title: 'ยืนยันอนุมัติ',
-      text: `อนุมัติใบเสนอราคา ${selectedQuotation.code} ?`,
+      title: 'ยืนยันอนุมัติใบเสนอราคา',
       icon: 'question',
+      width: 560,
+      html: renderApprovalDetails([
+        { label: 'เลขที่ใบเสนอราคา', value: quotation.code || null },
+        { label: 'ลูกค้า', value: customerName },
+        { label: 'วันที่ออก', value: issueDate },
+        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+      ]),
       showCancelButton: true,
       confirmButtonColor: '#16a34a',
       confirmButtonText: 'อนุมัติ',
@@ -273,7 +292,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     });
     if (result.isConfirmed) {
       try {
-        await QuotationApi.approve(selectedQuotation.id);
+        await QuotationApi.approve(quotation.id);
         Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
         fetchQuotations();
       } catch (error) {
@@ -282,6 +301,31 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       }
     }
   };
+
+  const handleApprove = async () => {
+    if (!selectedQuotation) return;
+    setOpenDropdownId(null);
+    await approveQuotationWithDetails(selectedQuotation);
+  };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Quotation | undefined = quotations.find((q) => q.id === focusId);
+    if (!target) {
+      try {
+        target = await QuotationApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบเสนอราคา', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status !== QuotationStatus.PENDING_APPROVAL) {
+      Swal.fire('ใบเสนอราคาไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      return;
+    }
+    approveQuotationWithDetails(target);
+  });
 
   const handleRevise = () => {
     if (selectedQuotation) {

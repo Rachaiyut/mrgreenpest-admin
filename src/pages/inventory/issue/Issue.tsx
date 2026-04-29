@@ -38,6 +38,8 @@ import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import { usePermissions } from '../../../hooks/usePermissions';
 import { useCurrentUser } from '../../../hooks/useCurrentUser';
+import { useNotificationFocus } from '../../../hooks/useNotificationFocus';
+import { renderApprovalDetails, renderItemList, joinName, pickName } from '../../../utils/approvalSwal';
 import { isFieldRole } from '../../../utils/role';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
@@ -380,8 +382,9 @@ const Issue: FC = () => {
     }
   };
 
-  const handleApprovalAction = async (action: 'approve' | 'reject') => {
-    const withdrawal = withdrawals.find((w) => w.id === openDropdownId);
+  const handleApprovalAction = async (action: 'approve' | 'reject', overrideId?: string) => {
+    const targetId = overrideId ?? openDropdownId;
+    const withdrawal = withdrawals.find((w) => w.id === targetId);
     if (!withdrawal) return;
     setOpenDropdownId(null);
 
@@ -579,10 +582,42 @@ const Issue: FC = () => {
       }
 
       // ใบเบิกไม่มีค่าใช้จ่าย → confirm ปกติ ไม่ต้องเลือกบัญชี
+      const wAny: any = withdrawal;
+      const requester = wAny.requester
+        ? pickName(
+            joinName(wAny.requester.first_name, wAny.requester.last_name),
+            wAny.requester.nick_name,
+          ) || '-'
+        : (() => {
+            const u = users?.find((x: any) => x.id === wAny.created_by);
+            return u
+              ? pickName(joinName(u.first_name, u.last_name), u.nick_name) || '-'
+              : '-';
+          })();
+      const warehouseName =
+        warehouses?.find((w: any) => w.id === wAny.warehouse_id)?.name || '-';
+      const items = wAny.items || [];
+
+      const html =
+        renderApprovalDetails([
+          { label: 'เลขที่ใบเบิก', value: withdrawal.code || null },
+          { label: 'ผู้เบิก', value: requester },
+          { label: 'คลัง', value: warehouseName },
+          { label: 'จำนวนรายการ', value: items.length ? `${items.length} รายการ` : null },
+        ]) +
+        renderItemList(
+          items.map((it: any) => ({
+            name: it.product?.name || it.name || '-',
+            right: `${Number(it.quantity || 0)} ชิ้น`,
+            rightColor: '#64748b',
+          })),
+        );
+
       const r = await Swal.fire({
         icon: 'question',
-        title: 'ยืนยันการอนุมัติ',
-        html: `ยืนยันการอนุมัติใบเบิก <strong>${withdrawal.code || withdrawal.id}</strong> ใช่หรือไม่?`,
+        title: 'ยืนยันการอนุมัติใบเบิก',
+        width: 560,
+        html,
         showCancelButton: true,
         confirmButtonText: 'อนุมัติ',
         cancelButtonText: 'ยกเลิก',
@@ -634,6 +669,31 @@ const Issue: FC = () => {
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถดำเนินการได้', 'error');
     }
   };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: any = withdrawals.find((w) => w.id === focusId);
+    if (!target) {
+      try {
+        target = await IssueNoteApi.getById(focusId);
+        // inject into local state so handleApprovalAction can find it
+        setWithdrawals((prev) => {
+          if (prev.some((w) => w.id === target.id)) return prev;
+          return [target, ...prev];
+        });
+      } catch {
+        Swal.fire('ไม่พบใบเบิก', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status !== WithdrawalStatus.PENDING) {
+      Swal.fire('ใบเบิกไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      return;
+    }
+    // give React a tick to update state if we just injected the record
+    setTimeout(() => handleApprovalAction('approve', focusId), 0);
+  });
 
   const handleCancel = async (withdrawalId: string) => {
     const withdrawalToUpdate = withdrawals.find((w) => w.id === withdrawalId);

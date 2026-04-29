@@ -30,6 +30,8 @@ import { InvoiceApi } from '../../api/invoice';
 import { AccountApi } from '../../api/account';
 import { Account } from '@/src/types/entity/account.interface';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useNotificationFocus } from '../../hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '../../utils/approvalSwal';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
 
 interface InvoicesPageProps {
@@ -291,20 +293,34 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === invoice.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const issueDate = invoice.issued_at
+      ? new Date(invoice.issued_at).toLocaleDateString('th-TH')
+      : '-';
+    const dueDate = invoice.due_at
+      ? new Date(invoice.due_at).toLocaleDateString('th-TH')
+      : '-';
+
+    const detailsHtml = renderApprovalDetails([
+      { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
+      { label: 'ลูกค้า', value: customerName },
+      { label: 'วันที่ออก', value: issueDate },
+      { label: 'ครบกำหนด', value: dueDate },
+      { label: 'ยอดรวม', value: `฿${amount}`, accent: 'money' },
+    ]);
 
     const r = await Swal.fire({
       icon: 'question',
       title: 'ตรวจสอบรายรับ',
-      width: 640,
+      width: 560,
       html: `
-        <div style="max-width:520px; margin:0 auto;">
-          <div style="text-align:center; font-size:14px; color:#475569; margin-bottom:16px; line-height:1.8;">
-            <div>ใบแจ้งหนี้: <strong style="color:#0f172a;">${invoice.code || ''}</strong></div>
-            <div>ยอดรวม: <strong style="color:#10b981; font-size:16px;">฿${amount}</strong></div>
-          </div>
-          <div style="font-size:13px; color:#64748b; text-align:center; margin-bottom:8px; line-height:1.6;">
-            เลือกบัญชีที่ลูกค้าโอนเงินเข้าหรือรับเงินสด
-          </div>
+        ${detailsHtml}
+        <div style="font-size:13px; color:#64748b; text-align:center; margin-top:14px; line-height:1.6;">
+          เลือกบัญชีที่ลูกค้าโอนเงินเข้าหรือรับเงินสด
         </div>
       `,
       input: 'select',
@@ -336,14 +352,27 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
 
   const handleAccountingApprove = async (invoice: Invoice) => {
     setOpenInvoiceDropdownId(null);
+    const amountStr = Number(invoice.total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === invoice.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
     const r = await Swal.fire({
       icon: 'question',
       title: 'ยืนยันอนุมัติรายรับ',
+      width: 560,
       html: `
-        <div class="text-sm text-slate-600">
-          ยืนยันอนุมัติใบแจ้งหนี้
-          <span class="block mt-1 text-base font-semibold text-slate-800">${invoice.code}</span>
-          <span class="block mt-2">ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ</span>
+        ${renderApprovalDetails([
+          { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
+          { label: 'ลูกค้า', value: customerName },
+          { label: 'ยอดรวม', value: `฿${amountStr}`, accent: 'money' },
+        ])}
+        <div style="margin-top:12px;font-size:13px;color:#64748b;text-align:center;">
+          ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ
         </div>
       `,
       showCancelButton: true,
@@ -396,6 +425,27 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
     }
   };
+
+  // Auto-open approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Invoice | undefined = invoices.find((inv) => inv.id === focusId);
+    if (!target) {
+      try {
+        target = await InvoiceApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบแจ้งหนี้', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status === InvoiceStatus.PENDING_REVIEW) {
+      handleAdminApprove(target);
+    } else if (target.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW) {
+      handleAccountingApprove(target);
+    } else {
+      Swal.fire('ใบแจ้งหนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+    }
+  });
 
   return (
     <div className="flex-1 flex flex-col">

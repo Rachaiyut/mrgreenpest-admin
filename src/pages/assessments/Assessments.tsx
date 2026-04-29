@@ -1,5 +1,7 @@
 import { isFieldRole, isManagementRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
+import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useLocation } from 'react-router-dom';
@@ -293,6 +295,66 @@ const Assessments: React.FC = () => {
       console.error('Error cancelling assessment:', error);
     }
   };
+
+  const approveAssessmentWithDetails = async (assessment: Assessment) => {
+    const aAny: any = assessment;
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === aAny.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const total = Number(aAny.total || aAny.grand_total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const date = aAny.assessment_date
+      ? new Date(aAny.assessment_date).toLocaleDateString('th-TH')
+      : '-';
+
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันอนุมัติใบประเมิน',
+      width: 560,
+      html: renderApprovalDetails([
+        { label: 'เลขที่ใบประเมิน', value: aAny.code || null },
+        { label: 'ลูกค้า', value: customerName },
+        { label: 'วันที่ประเมิน', value: date },
+        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+      ]),
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await AssessmentApi.approveById(assessment.id, { status: 'APPROVED' } as unknown as AssessmentAction);
+      Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
+      fetchData();
+    } catch (error) {
+      console.error('Approve assessment error:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอนุมัติได้', 'error');
+    }
+  };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Assessment | undefined = assessments.find((a) => a.id === focusId);
+    if (!target) {
+      try {
+        target = await AssessmentApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบประเมิน', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status !== AsessmentStatus.PENDING) {
+      Swal.fire('ใบประเมินไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      return;
+    }
+    approveAssessmentWithDetails(target);
+  });
 
   const handleViewDetails = (assessment: Assessment) => {
     setSelectedAssessment(assessment);

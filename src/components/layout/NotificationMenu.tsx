@@ -77,20 +77,39 @@ export const NotificationMenu: React.FC = () => {
 
     close();
 
-    // Navigate based on type
+    // Navigate based on type — append focus query param so the target page
+    // can auto-open the relevant approval modal for that record.
     // Note: sub-item paths register as top-level in createRoutes (no parent prefix)
+    const focusId = notification.related_entity_id;
+    const inferCategory = (type: string): string | null => {
+      if (type.includes('STOCK')) return 'STOCK';
+      if (type.includes('EXPENSE')) return 'EXPENSE';
+      return null;
+    };
+    const buildPath = (path: string) => {
+      if (!focusId) return path;
+      const params = new URLSearchParams();
+      params.set('focus', focusId);
+      params.set('action', 'approve');
+      const cat = inferCategory(notification.type || '');
+      if (cat) params.set('category', cat);
+      return `${path}?${params.toString()}`;
+    };
+
     if (notification.related_entity_type === 'ISSUE_NOTE') {
-      navigate(`/withdraw-vehicle`);
+      navigate(buildPath('/withdraw-vehicle'));
     } else if (notification.related_entity_type === 'ISSUE_SUMMARY') {
-      navigate(`/withdrawals`);
+      navigate(buildPath('/withdrawals'));
     } else if (notification.related_entity_type === 'WITHDRAWAL') {
-      navigate(`/withdraw-vehicle`);
+      navigate(buildPath('/withdraw-vehicle'));
     } else if (notification.related_entity_type === 'ASSESSMENT') {
-      navigate(`/assessments`);
+      navigate(buildPath('/assessments'));
     } else if (notification.related_entity_type === 'QUOTATION') {
-      navigate(`/quotations`);
+      navigate(buildPath('/quotations'));
     } else if (notification.related_entity_type === 'JOB') {
-      navigate(`/field-operations`);
+      navigate(buildPath('/field-operations'));
+    } else if (notification.related_entity_type === 'INVOICE') {
+      navigate(buildPath('/invoice'));
     }
   };
 

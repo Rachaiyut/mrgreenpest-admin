@@ -16,6 +16,8 @@ import { WarehouseType } from '@/src/types/enums/inventory';
 import { useData } from '../../../contexts/DataContext';
 import { useCurrentUser } from '../../../hooks/useCurrentUser';
 import { usePermissions } from '../../../hooks/usePermissions';
+import { useNotificationFocus } from '../../../hooks/useNotificationFocus';
+import { renderApprovalDetails, renderItemList, joinName, pickName } from '../../../utils/approvalSwal';
 
 // ===== Components =====
 import { IssueSummaryModal } from '../../../components/features/inventory/issue-summary/IssueSummaryModal';
@@ -411,10 +413,71 @@ const IssueSummaryPage: React.FC = () => {
     summaryId: string,
     category: 'STOCK' | 'EXPENSE',
   ) => {
-    const title = category === 'STOCK' ? 'อนุมัติเบิกสินค้า?' : 'อนุมัติค่าใช้จ่าย?';
+    const summary = stockIssueSummaries.find((s) => s.id === summaryId);
+    const title = category === 'STOCK' ? 'อนุมัติเบิกสินค้า/สารเคมี?' : 'อนุมัติค่าใช้จ่าย?';
+
+    const requesterName = (() => {
+      const r: any = (summary as any)?.requester;
+      if (r) return pickName(joinName(r.first_name, r.last_name), r.nick_name) || '-';
+      const u = users?.find((x: any) => x.id === summary?.created_by);
+      if (u) return pickName(joinName(u.first_name, u.last_name), u.nick_name) || '-';
+      return '-';
+    })();
+    const warehouseName =
+      warehouses?.find((w: any) => w.id === summary?.warehouse_id)?.name || '-';
+    const code = (summary as any)?.code || null;
+    const fmt = (v: number) =>
+      `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    let html = '';
+    if (category === 'STOCK') {
+      const items = summary?.items || [];
+      const totalQty = items.reduce((s, it: any) => s + Number(it.quantity || 0), 0);
+      html = renderApprovalDetails(
+        [
+          { label: 'เลขที่ใบเบิก', value: code },
+          { label: 'ผู้เบิก', value: requesterName },
+          { label: 'คลัง', value: warehouseName },
+          { label: 'จำนวนรายการ', value: `${items.length} รายการ (${totalQty} ชิ้น)` },
+        ],
+        summary?.over_limit_reason,
+        'เหตุผลเกินลิมิต',
+      );
+      html += renderItemList(
+        items.map((it: any) => ({
+          name: it.product?.name || it.name || it.product_id || '-',
+          right: `${Number(it.quantity || 0)} ชิ้น`,
+          rightColor: '#64748b',
+        })),
+      );
+    } else {
+      const expenses = (summary?.expense_items || []) as any[];
+      const totalAmount = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      html = renderApprovalDetails(
+        [
+          { label: 'เลขที่ใบเบิก', value: code },
+          { label: 'ผู้เบิก', value: requesterName },
+          { label: 'คลัง', value: warehouseName },
+          { label: 'จำนวนรายการ', value: `${expenses.length} รายการ` },
+          { label: 'ยอดรวม', value: fmt(totalAmount), accent: 'money' },
+        ],
+        summary?.over_limit_reason,
+        'เหตุผลเกินลิมิต',
+      );
+      html += renderItemList(
+        expenses.map((e: any) => ({
+          name: e.description || e.note || '-',
+          right: fmt(Number(e.amount || 0)),
+          rightColor: '#10b981',
+        })),
+      );
+    }
+
     const confirm = await Swal.fire({
       title,
+      html,
       icon: 'question',
+      width: 560,
       showCancelButton: true,
       confirmButtonText: 'อนุมัติ',
       cancelButtonText: 'ยกเลิก',
@@ -465,6 +528,27 @@ const IssueSummaryPage: React.FC = () => {
       Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถดำเนินการได้', 'error');
     }
   };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId, extra) => {
+    let target: any = stockIssueSummaries.find((s) => s.id === focusId);
+    if (!target) {
+      try {
+        target = await StockIssueSummaryApi.getById(focusId);
+        setStockIssueSummaries((prev) => {
+          if (prev.some((s) => s.id === target.id)) return prev;
+          return [target, ...prev];
+        });
+      } catch {
+        Swal.fire('ไม่พบใบเบิก', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    const cat = (extra.get('category') || '').toUpperCase();
+    const category: 'STOCK' | 'EXPENSE' = cat === 'EXPENSE' ? 'EXPENSE' : 'STOCK';
+    setTimeout(() => handleRowApprove(focusId, category), 0);
+  });
 
   const handleEditSummary = (summary: StockIssueSummaryType) => {
     setSelectedSummary(summary);

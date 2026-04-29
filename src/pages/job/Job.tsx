@@ -28,6 +28,10 @@ import { Role } from '../../types/enums/role';
 // ===== Hooks =====
 import { useCurrentUser } from '../../hooks/useCurrentUser';
 import { usePermissions } from '../../hooks/usePermissions';
+import { useNotificationFocus } from '../../hooks/useNotificationFocus';
+
+// ===== Utils =====
+import { renderApprovalDetails, joinName, pickName } from '../../utils/approvalSwal';
 
 // ===== Components (Features) =====
 import { CancelJobModal } from '../../components/features/jobs/CancelJobModal';
@@ -571,6 +575,74 @@ const Job: React.FC<JobProps> = ({
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถปฏิเสธงานได้', 'error');
     }
   };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: any = jobs.find((j) => j.id === focusId);
+    if (!target) {
+      try {
+        const res: any = await JobApi.getById(focusId);
+        // API client wraps responses in { status, success, data, timestamp }
+        target = res?.data && !res?.id ? res.data : res;
+      } catch {
+        Swal.fire('ไม่พบข้อมูลงาน', 'งานนี้อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+
+    // Local list maps status into the legacy JobStatus enum ('PendingApproval'),
+    // while the API returns 'PENDING_APPROVAL'. Use api_status when present, then
+    // normalize so both shapes pass the gate.
+    const rawStatus = String(target.api_status || target.status || '');
+    const normalized = rawStatus.toUpperCase().replace(/_/g, '');
+    if (normalized !== 'PENDINGAPPROVAL') {
+      Swal.fire('งานนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${rawStatus}`, 'info');
+      return;
+    }
+
+    const tAny: any = target;
+    const customerName =
+      pickName(
+        joinName(tAny.customer?.first_name, tAny.customer?.last_name),
+        tAny.customer?.nickname,
+        tAny.customer?.code,
+      ) || '-';
+    const tech = tAny.primary_technician
+      ? pickName(
+          joinName(tAny.primary_technician.first_name, tAny.primary_technician.last_name),
+          tAny.primary_technician.nick_name,
+        ) || '-'
+      : '-';
+    const appointmentDate = tAny.appointment_date
+      ? new Date(tAny.appointment_date).toLocaleDateString('th-TH', { dateStyle: 'medium' })
+      : null;
+    const appointmentTime = tAny.appointment_date
+      ? new Date(tAny.appointment_date).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      : null;
+    const code = tAny.code || null;
+
+    const rows: import('../../utils/approvalSwal').DetailRow[] = [];
+    if (code) rows.push({ label: 'เลขที่งาน', value: code });
+    rows.push({ label: 'ลูกค้า', value: customerName });
+    rows.push({ label: 'ช่างหลัก', value: tech });
+    rows.push({ label: 'นัดหมาย', value: appointmentDate });
+    rows.push({ label: 'เวลานัดหมาย', value: appointmentTime });
+
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'อนุมัติงานภาคสนาม?',
+      width: 520,
+      html: renderApprovalDetails(rows, tAny.remark),
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (r.isConfirmed) {
+      handleApproveJob(focusId);
+    }
+  });
 
   const handleViewRejectionHistory = async (jobId: string) => {
     try {
