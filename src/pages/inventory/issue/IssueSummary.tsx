@@ -339,18 +339,31 @@ const IssueSummaryPage: React.FC = () => {
     const rows: SummaryRow[] = [];
     for (const s of filteredSummaries) {
       const approvals = (s as any).approvals as Array<{ category: 'STOCK' | 'EXPENSE'; status: string }> | undefined;
-      if (approvals && approvals.length > 0) {
-        // มีรายการรออนุมัติ → แยกแถวต่อ approval (category + status)
-        for (const a of approvals) {
-          rows.push({ summary: s, category: a.category, approvalStatus: a.status });
-        }
-      } else {
-        // ไม่มี approval → infer category จากเนื้อหาของใบเบิก
-        const hasStock = (s.items?.length || 0) > 0;
-        const hasExpense = (s.expense_items?.length || 0) > 0;
-        if (hasStock) rows.push({ summary: s, category: 'STOCK' });
-        if (hasExpense) rows.push({ summary: s, category: 'EXPENSE' });
-        if (!hasStock && !hasExpense) rows.push({ summary: s, category: null });
+
+      // Map approvals by category so we can attach approvalStatus to the right row
+      const approvalByCategory = new Map<'STOCK' | 'EXPENSE', { status: string }>();
+      for (const a of approvals || []) {
+        approvalByCategory.set(a.category, a);
+      }
+
+      const hasStock = (s.items?.length || 0) > 0;
+      const hasExpense = (s.expense_items?.length || 0) > 0;
+
+      // Always render one row per category present on the summary — regardless
+      // of whether that category exceeded a limit. Rows for categories that did
+      // exceed get the matching approvalStatus (PENDING / APPROVED / REJECTED);
+      // ones that didn't exceed have no approvalStatus and follow the parent
+      // summary's status badge.
+      if (hasStock) {
+        const a = approvalByCategory.get('STOCK');
+        rows.push({ summary: s, category: 'STOCK', approvalStatus: a?.status ?? null });
+      }
+      if (hasExpense) {
+        const a = approvalByCategory.get('EXPENSE');
+        rows.push({ summary: s, category: 'EXPENSE', approvalStatus: a?.status ?? null });
+      }
+      if (!hasStock && !hasExpense) {
+        rows.push({ summary: s, category: null });
       }
     }
 
