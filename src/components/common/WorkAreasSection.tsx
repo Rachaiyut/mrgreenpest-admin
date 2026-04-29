@@ -19,6 +19,7 @@ export interface WorkAreasSectionProps {
   notice?: string;
   sortByCreatedAt?: boolean;
   disabled?: boolean;
+  errors?: Record<string, string>;
 }
 
 const WorkAreasSection: FC<WorkAreasSectionProps> = ({
@@ -35,6 +36,7 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
   notice,
   sortByCreatedAt = false,
   disabled = false,
+  errors = {},
 }) => {
   const handleAreaChange = (index: number, updated: any) => {
     onAreasChange(areas.map((a, idx) => idx === index ? updated : a));
@@ -96,8 +98,7 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
             key={area.id || originalIndex}
             area={area}
             index={originalIndex}
-            // @ts-ignore
-            errors={{}}
+            errors={errors}
             onAreaChange={handleAreaChange}
             onClearArea={handleClearArea}
             onRemoveArea={handleRemoveArea}
