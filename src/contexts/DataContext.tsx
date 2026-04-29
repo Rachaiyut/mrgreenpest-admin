@@ -240,7 +240,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
 
     if (shouldFetch('users')) {
       promises.push(
-        safeFetch(() => UserApi.getAll({ limit: 10 })).then((data: any) =>
+        safeFetch(() => UserApi.getAll({ limit: 100 })).then((data: any) =>
           setUsers(data)
         )
       );

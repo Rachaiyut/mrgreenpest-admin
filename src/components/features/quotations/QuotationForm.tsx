@@ -1379,7 +1379,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </p>
         </div>
       )}
-    <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
+    <form
+      id="quotation-form"
+      onSubmit={handleSubmit}
+      className={`space-y-6 ${isReadOnly ? 'pointer-events-none select-none' : ''}`}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />

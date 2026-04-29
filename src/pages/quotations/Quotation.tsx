@@ -800,7 +800,34 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 setLoadingPdfId(q.id);
                                 try {
                                   const blob = await PrintApi.getById(q.id);
-                                  window.open(window.URL.createObjectURL(blob), '_blank');
+                                  // Build filename: <เลขที่ใบเสนอราคา>_<ชื่อ>_<นามสกุล>.pdf
+                                  const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                                  const customer = customers?.find((c) => c.id === (q as any).customer_id);
+                                  const firstName = (customer?.first_name || '').trim();
+                                  const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
+                                  const parts: string[] = [];
+                                  if (firstName || lastName) {
+                                    if (firstName) parts.push(safe(firstName));
+                                    if (lastName) parts.push(safe(lastName));
+                                  } else {
+                                    const cn = ((q as any).customer_name || '').replace(/\s*-\s*$/, '').trim();
+                                    if (cn) cn.split(/\s+/).forEach((p: string) => parts.push(safe(p)));
+                                    else parts.push('ลูกค้า');
+                                  }
+                                  const filename = [safe(q.code || q.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                                  const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                                  const url = window.URL.createObjectURL(namedFile);
+                                  const win = window.open(url, '_blank');
+                                  if (!win) {
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                  }
+                                  setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                                 } catch (error) {
                                   console.error('Error viewing PDF:', error);
                                   Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
@@ -863,7 +890,33 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 (async () => {
                   try {
                     const blob = await PrintApi.getById(selectedQuotation.id);
-                    window.open(window.URL.createObjectURL(blob), '_blank');
+                    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                    const customer = customers?.find((c) => c.id === (selectedQuotation as any).customer_id);
+                    const firstName = (customer?.first_name || '').trim();
+                    const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
+                    const parts: string[] = [];
+                    if (firstName || lastName) {
+                      if (firstName) parts.push(safe(firstName));
+                      if (lastName) parts.push(safe(lastName));
+                    } else {
+                      const cn = ((selectedQuotation as any).customer_name || '').replace(/\s*-\s*$/, '').trim();
+                      if (cn) cn.split(/\s+/).forEach((p: string) => parts.push(safe(p)));
+                      else parts.push('ลูกค้า');
+                    }
+                    const filename = [safe(selectedQuotation.code || selectedQuotation.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                    const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(namedFile);
+                    const win = window.open(url, '_blank');
+                    if (!win) {
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }
+                    setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                   } catch (error) {
                     console.error('Error viewing PDF:', error);
                     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });

@@ -47,6 +47,7 @@ import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { JobStatusLabel } from '@/src/types/enums/job';
 import { Select, Input, Button } from '../../components/common/FormControls';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 // ===== Local Components =====
 import JobCard from './JobCard';
@@ -302,7 +303,12 @@ const Job: React.FC<JobProps> = ({
   const fetchUnassigned = async (page = unassignedPage, date = unassignedDateFilter, search = unassignedSearch) => {
     setIsLoading(true);
     try {
-      const params: any = { limit: unassignedItemsPerPage, page };
+      const params: any = {
+        limit: unassignedItemsPerPage,
+        page,
+        sort_by: 'appointment_date',
+        sort_order: 'ASC',
+      };
       if (date) params.appointment_date = date;
       if (search) params.search = search;
       const unassignedJobsRes = await JobApi.getAllUnassigned(params);
@@ -462,7 +468,12 @@ const Job: React.FC<JobProps> = ({
   const fetchReports = async (page = reportCurrentPage) => {
     setIsLoading(true);
     try {
-      const reportsRes = await ServiceReportApi.getAll({ limit: reportItemsPerPage, page });
+      const params: Record<string, unknown> = { limit: reportItemsPerPage, page };
+      // Field roles see only their own reports
+      if (isFieldRole(authUser?.roleType) && authUser?.id) {
+        params.technician_id = authUser.id;
+      }
+      const reportsRes = await ServiceReportApi.getAll(params);
       setReports(reportsRes.data || []);
       setReportTotal(reportsRes.meta?.total || (reportsRes.data || []).length);
     } catch (error) {
@@ -728,6 +739,10 @@ const Job: React.FC<JobProps> = ({
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isReportReadOnly, setIsReportReadOnly] = useState(false);
+  const [openReportDropdownId, setOpenReportDropdownId] = useState<string | null>(null);
+  const [workScheduleCurrentPage, setWorkScheduleCurrentPage] = useState(1);
+  const [workScheduleItemsPerPage, setWorkScheduleItemsPerPage] = useState(10);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [jobToCancel, setJobToCancel] = useState<any | null>(null);
 
@@ -782,7 +797,7 @@ const Job: React.FC<JobProps> = ({
         const rt = typeof user.role === 'object' && user.role !== null
             ? (user.role as { role_type: string }).role_type
             : (user as any).roleType;
-        return rt === 'FIELD_TECH';
+        return rt === 'FIELD_TECH' || rt === 'FIELD_LEAD';
       }),
     [users]
   );
@@ -824,6 +839,11 @@ const Job: React.FC<JobProps> = ({
         j.status !== JobMainStatus.WAITING_CLEAR &&
         j.status !== JobMainStatus.CANCELLED
     );
+    const sortByStartAsc = (a: FieldJob, b: FieldJob) => {
+      const aRaw = (a as any).start_date || (a as any).start_time || 0;
+      const bRaw = (b as any).start_date || (b as any).start_time || 0;
+      return new Date(aRaw).getTime() - new Date(bRaw).getTime();
+    };
     return serviceVehicles
       .filter((vehicle) => selectedVehicleId === 'all' || vehicle.id === selectedVehicleId)
       .map((vehicle) => {
@@ -834,7 +854,9 @@ const Job: React.FC<JobProps> = ({
         return {
           title: license ? `${vehicle.name} (${license})` : vehicle.name,
           id: vehicle.id,
-          jobs: jobsForKanban.filter((j) => j.vehicle_id === vehicle.id),
+          jobs: jobsForKanban
+            .filter((j) => j.vehicle_id === vehicle.id)
+            .sort(sortByStartAsc),
         };
       })
       .filter((v) => v.id);
@@ -886,14 +908,21 @@ const Job: React.FC<JobProps> = ({
 
   const scheduledJobsForTable = useMemo(() => {
     if (!scheduleVehicleId || !scheduleDate) return [];
+    const isLead = authUser?.roleType === 'FIELD_LEAD';
     return jobs
       .filter(
         (job) =>
           job.vehicle_id === scheduleVehicleId &&
-          new Date(job.start_time).toISOString().substring(0, 10) === scheduleDate
+          new Date(job.start_time).toISOString().substring(0, 10) === scheduleDate,
       )
+      .filter((job) => {
+        if (!isLead) return true;
+        // FIELD_LEAD: show only jobs they are leading
+        const lead = (job as any).primary_technician;
+        return lead && authUser?.id && lead.id === authUser.id;
+      })
       .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
-  }, [jobs, scheduleVehicleId, scheduleDate]);
+  }, [jobs, scheduleVehicleId, scheduleDate, authUser?.roleType, authUser?.id]);
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -974,6 +1003,11 @@ const Job: React.FC<JobProps> = ({
       job.status === JobMainStatus.COMPLETE ? JobStatus.Completed : JobStatus.Draft
     );
     setIsReportModalOpen(true);
+  };
+
+  const handleViewReport = async (job: FieldJob) => {
+    setIsReportReadOnly(true);
+    await handleWriteReport(job);
   };
 
   const handleCancel = (job: FieldJob) => {
@@ -1741,39 +1775,54 @@ const Job: React.FC<JobProps> = ({
                       className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                       wrapperClassName="w-full sm:w-auto"
                     />
-                    <Select
-                      id="technician-filter"
-                      value={selectedTechnicianId}
-                      onChange={(e) => {
-                        const newTech = e.target.value;
-                        setSelectedTechnicianId(newTech);
-                        fetchData(filterDate, newTech);
-                      }}
-                      className="w-40 text-sm"
-                    >
-                      <option value="all">ช่างทั้งหมด</option>
-                      {technicians.map((tech) => (
-                        <option key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </option>
-                      ))}
-                    </Select>
-                    <Select
-                      id="vehicle-filter"
-                      value={selectedVehicleId}
-                      onChange={(e) => {
-                        setSelectedVehicleId(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, e.target.value);
-                      }}
-                      className="w-fit text-sm !pr-8"
-                    >
-                      <option value="all">รถทั้งหมด</option>
-                      {allVehicles.map((v: any) => (
-                        <option key={v.id} value={v.warehouse_id || v.id}>
-                          {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
-                        </option>
-                      ))}
-                    </Select>
+                    <div className="w-40">
+                      <SearchableSelect
+                        value={selectedTechnicianId}
+                        onChange={(newTech) => {
+                          setSelectedTechnicianId(newTech || 'all');
+                          fetchData(filterDate, newTech || 'all');
+                        }}
+                        placeholder="ช่างทั้งหมด"
+                        searchPlaceholder="ค้นหาช่าง..."
+                        options={[
+                          { value: 'all', label: 'ช่างทั้งหมด' },
+                          ...technicians.map((tech: any) => {
+                            const fullName = [tech.first_name, tech.last_name]
+                              .filter((p: string | undefined) => p && p !== '-')
+                              .join(' ')
+                              .trim();
+                            return {
+                              value: tech.id,
+                              label: fullName || tech.name || tech.nick_name || tech.id,
+                            };
+                          }),
+                        ]}
+                      />
+                    </div>
+                    <div className="w-40">
+                      <SearchableSelect
+                        value={selectedVehicleId || 'all'}
+                        onChange={(newId) => {
+                          const next = newId || 'all';
+                          setSelectedVehicleId(next);
+                          fetchSchedule(filterDate, selectedTechnicianId, searchQuery, next);
+                        }}
+                        placeholder="รถทั้งหมด"
+                        searchPlaceholder="ค้นหารถ..."
+                        options={[
+                          { value: 'all', label: 'รถทั้งหมด' },
+                          ...allVehicles.map((v: any) => ({
+                            value: v.warehouse_id || v.id,
+                            label:
+                              v.license_plate ||
+                              v.vehicle_registration ||
+                              v.vehicle?.vehicle_registration ||
+                              v.name ||
+                              v.id,
+                          })),
+                        ]}
+                      />
+                    </div>
                     <Select
                       id="status-filter"
                       value={selectedStatusFilter}
@@ -1956,7 +2005,7 @@ const Job: React.FC<JobProps> = ({
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ที่อยู่</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ที่อยู่</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่นัดหมาย</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
@@ -1970,13 +2019,17 @@ const Job: React.FC<JobProps> = ({
                             {(unassignedPage - 1) * unassignedItemsPerPage + idx + 1}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <p className="text-sm font-semibold text-slate-800">{job.customer?.first_name || '-'} {job.customer?.last_name || '-'}</p>
+                            <p className="text-sm font-semibold text-slate-800">
+                              {joinName(job.customer?.first_name, job.customer?.last_name) ||
+                                (job.customer as any)?.nickname ||
+                                '-'}
+                            </p>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer?.primary_phone || '-')}</span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-700 !text-left max-w-[280px]">
-                            <span className="text-sm text-slate-700 line-clamp-2">{job.address || '-'}</span>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            <span className="text-sm text-slate-700 whitespace-normal break-words">{job.address || '-'}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatThaiDate(job.start_time)}</span>
@@ -2039,7 +2092,13 @@ const Job: React.FC<JobProps> = ({
                 return {
                   id: vehicle.id,
                   title: license ? `${vehicle.name} (${license})` : vehicle.name,
-                  jobs: approvalJobs.filter((j) => j.vehicle_id === vehicle.id),
+                  jobs: approvalJobs
+                    .filter((j) => j.vehicle_id === vehicle.id)
+                    .sort((a, b) => {
+                      const aRaw = (a as any).start_date || (a as any).start_time || 0;
+                      const bRaw = (b as any).start_date || (b as any).start_time || 0;
+                      return new Date(aRaw).getTime() - new Date(bRaw).getTime();
+                    }),
                 };
               })
               .filter((v) => v.id && v.jobs.length > 0);
@@ -2179,22 +2238,31 @@ const Job: React.FC<JobProps> = ({
                 <table className="min-w-[800px] w-full border-b border-slate-200">
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        ลูกค้า/สถานที่
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ลำดับ
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                        วัน-เวลา
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        ลูกค้า
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        สถานที่
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        วันที่นัดหมาย
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                        เวลานัดหมาย
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         บริการ
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         ช่าง
                       </th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         สถานะ
                       </th>
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                         จัดการ
                       </th>
                     </tr>
@@ -2204,64 +2272,65 @@ const Job: React.FC<JobProps> = ({
                       paginatedJobs.map((job, idx) => (
                         <tr
                           key={job.id}
-                          className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
+                          className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
                             }`}
                         >
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <div className="flex items-start gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-primary font-bold text-sm">
-                                  {job.customerName?.charAt(0).toUpperCase() || '-'}
-                                </span>
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-semibold text-slate-800 truncate">
-                                  {job.customerName || '-'}
-                                </p>
-                                <p
-                                  className="text-xs text-slate-500 truncate max-w-[200px]"
-                                  title={job.address}
-                                >
-                                  {job.address || '-'}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-blue-50 rounded-md">
-                                <JobDateIcon className="h-4 w-4 text-blue-500" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-slate-800">
-                                  {formatThaiDate(job.start_time)}
-                                </p>
-                                <p className="text-xs text-slate-500">
-                                  {new Date(job.start_time).toLocaleTimeString('th-TH', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                  {' - '}
-                                  {new Date(job.end_time).toLocaleTimeString('th-TH', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
-                                </p>
-                              </div>
-                            </div>
+                            {(currentPage - 1) * itemsPerPage + idx + 1}
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <span className="text-sm text-slate-600">
-                              {(job.work_areas || []).map((wa) => wa.service_package).join(', ') || '-'}
+                            <span className="text-sm font-semibold text-slate-800">
+                              {job.customerName || '-'}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
-                            <div className="flex items-center gap-2">
-                              <TechnicianIcon className="h-4 w-4 text-slate-400" />
-                              <span className="text-sm text-slate-600 truncate max-w-[120px]">
-                                {(job.technicians || []).map((t) => t.nick_name || t.name).join(', ') || '-'}
-                              </span>
-                            </div>
+                            <span className="text-sm text-slate-600 whitespace-normal break-words">
+                              {job.address || '-'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <span className="text-sm font-medium text-slate-800">
+                              {formatThaiDate(job.start_time)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <span className="text-sm text-slate-600">
+                              {new Date(job.start_time).toLocaleTimeString('th-TH', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                              {' - '}
+                              {new Date(job.end_time).toLocaleTimeString('th-TH', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            <span className="text-sm text-slate-600 whitespace-normal break-words">
+                              {(() => {
+                                const packages = (job.work_areas || [])
+                                  .map((wa) => wa.service_package)
+                                  .filter(Boolean)
+                                  .join(', ');
+                                if (packages) return packages;
+                                const detail = (job as unknown as Record<string, string>).operation_details;
+                                return detail?.trim() || '-';
+                              })()}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700">
+                            <span className="text-sm text-slate-600 truncate max-w-[200px] inline-block">
+                              {(() => {
+                                const lead: any = (job as any).primary_technician;
+                                if (!lead) return '-';
+                                const full = [lead.first_name, lead.last_name]
+                                  .map((p) => (typeof p === 'string' ? p.trim() : ''))
+                                  .filter((p) => p && p !== '-')
+                                  .join(' ');
+                                return full || lead.nick_name || '-';
+                              })()}
+                            </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(() => {
@@ -2279,21 +2348,23 @@ const Job: React.FC<JobProps> = ({
                               return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>{label}</span>;
                             })()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                            <Button
-                              data-job-id={job.id}
-                              onClick={(e) => handleDropdownToggle(e, job.id)}
-                              variant="ghost"
-                              className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                            >
-                              <ManageIcon className="h-5 w-5" />
-                            </Button>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                            <div className="flex items-center justify-center">
+                              <Button
+                                data-job-id={job.id}
+                                onClick={(e) => handleDropdownToggle(e, job.id)}
+                                variant="ghost"
+                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                              >
+                                <ManageIcon className="h-5 w-5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="px-6 py-16 text-center">
+                        <td colSpan={9} className="px-6 py-16 text-center">
                           <p className="text-lg font-medium text-slate-400">ไม่พบข้อมูลงาน</p>
                         </td>
                       </tr>
@@ -2386,78 +2457,125 @@ const Job: React.FC<JobProps> = ({
                                 : '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap justify-center gap-1">
                                 {serviceTypes.length > 0 ? (
-                                  serviceTypes.slice(0, 3).map((type, i) => (
-                                    <span
-                                      key={i}
-                                      className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600"
-                                    >
-                                      {type}
-                                    </span>
-                                  ))
+                                  serviceTypes.slice(0, 3).map((type, i) => {
+                                    const styleByType: Record<string, string> = {
+                                      'ปลวก': 'bg-amber-100 text-amber-700 border border-amber-200',
+                                      'มด,แมลงสาบ': 'bg-rose-100 text-rose-700 border border-rose-200',
+                                      'หนู': 'bg-stone-100 text-stone-700 border border-stone-200',
+                                      'ยุง': 'bg-sky-100 text-sky-700 border border-sky-200',
+                                    };
+                                    const cls =
+                                      styleByType[type] ||
+                                      'bg-violet-100 text-violet-700 border border-violet-200';
+                                    return (
+                                      <span
+                                        key={i}
+                                        className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cls}`}
+                                      >
+                                        {type}
+                                      </span>
+                                    );
+                                  })
                                 ) : (
                                   <span className="text-sm text-slate-400">-</span>
                                 )}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
-                              <span className="text-sm text-slate-600 truncate max-w-[150px] block">
+                              <span className="text-sm text-slate-600 truncate max-w-[150px] inline-block">
                                 {techNames.length > 0
                                   ? techNames.join(', ')
                                   : rData.technician_sign_name || '-'}
                               </span>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                <Button
-                                  onClick={() => handleViewPdf(report.id)}
-                                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
-                                  disabled={loadingPdfId === report.id}
-                                >
-                                  {loadingPdfId === report.id ? (
-                                    <span className="flex items-center gap-2">
-                                      <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
-                                      <span>กำลังโหลด...</span>
-                                    </span>
-                                  ) : (
-                                    <span className="flex items-center gap-2">
-                                      <EyeIcon className="w-3.5 h-3.5 shrink-0" />
-                                      <span>ดู PDF</span>
-                                    </span>
-                                  )}
-                                </Button>
-                                <Button
-                                  onClick={() => {
-                                    const reportJob = rData.job;
-                                    const techList: any[] = [];
-                                    if (reportJob?.primary_technician) {
-                                      techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
-                                    }
-                                    if (reportJob?.job_team_members) {
-                                      reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
-                                        techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
-                                      });
-                                    }
-                                    const targetJob = job || {
-                                      id: report.job_id,
-                                      customer_id: report.customer_id,
-                                      customerName: report.customer_name || '-',
-                                      service_report: report,
-                                      technicians: techList,
-                                      work_areas: [],
-                                      status: report.status,
-                                      assessment_id: reportJob?.assessment_id,
-                                      contract_id: reportJob?.contract_id,
-                                    } as unknown as FieldJob;
-                                    handleWriteReport(targetJob);
-                                  }}
-                                  variant="ghost"
-                                  className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                                >
-                                  <ManageIcon className="h-5 w-5" />
-                                </Button>
-                              </div>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                              {(() => {
+                                const reportJob = rData.job;
+                                const buildTargetJob = () => {
+                                  const techList: any[] = [];
+                                  if (reportJob?.primary_technician) {
+                                    techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
+                                  }
+                                  if (reportJob?.job_team_members) {
+                                    reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
+                                      techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
+                                    });
+                                  }
+                                  return job || {
+                                    id: report.job_id,
+                                    customer_id: report.customer_id,
+                                    customerName: report.customer_name || '-',
+                                    service_report: report,
+                                    technicians: techList,
+                                    work_areas: [],
+                                    status: report.status,
+                                    assessment_id: reportJob?.assessment_id,
+                                    contract_id: reportJob?.contract_id,
+                                  } as unknown as FieldJob;
+                                };
+                                return (
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      onClick={() => handleViewPdf(report.id)}
+                                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
+                                      disabled={loadingPdfId === report.id}
+                                    >
+                                      {loadingPdfId === report.id ? (
+                                        <span className="flex items-center gap-2">
+                                          <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
+                                          <span>กำลังโหลด...</span>
+                                        </span>
+                                      ) : (
+                                        <span className="flex items-center gap-2">
+                                          <EyeIcon className="w-3.5 h-3.5 shrink-0" />
+                                          <span>ดู PDF</span>
+                                        </span>
+                                      )}
+                                    </Button>
+                                    <div className="relative">
+                                      <Button
+                                        onClick={() => setOpenReportDropdownId((prev) => prev === report.id ? null : report.id)}
+                                        variant="ghost"
+                                        className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                                        title="ตัวเลือก"
+                                      >
+                                        <ManageIcon className="h-5 w-5" />
+                                      </Button>
+                                      {openReportDropdownId === report.id && (
+                                        <>
+                                          <div className="fixed inset-0 z-40" onClick={() => setOpenReportDropdownId(null)} />
+                                          <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 overflow-hidden py-2" role="menu">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setOpenReportDropdownId(null);
+                                                handleViewReport(buildTargetJob());
+                                              }}
+                                              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
+                                            >
+                                              <EyeIcon className="w-4 h-4 text-blue-500" />
+                                              <span>ดูรายละเอียด</span>
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setOpenReportDropdownId(null);
+                                                handleWriteReport(buildTargetJob());
+                                              }}
+                                              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50"
+                                            >
+                                              <PencilIcon className="w-4 h-4 text-amber-500" />
+                                              <span>แก้ไขรายงาน</span>
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </td>
                           </tr>
                         );
@@ -2496,86 +2614,130 @@ const Job: React.FC<JobProps> = ({
 
           {activeTab === 'work-schedule' && (
             <div className="flex-1 flex flex-col rounded-lg shadow-sm border border-slate-200 bg-white overflow-hidden">
-              <div className="overflow-x-auto flex-1 flex flex-col">
+              <div className="overflow-x-auto flex-1 flex flex-col relative">
                 {scheduleVehicleId && scheduleDate ? (
-                  <table className="min-w-[800px] w-full border-b border-slate-200">
+                  <table className="min-w-[1000px] w-full border-b border-slate-200">
                     <thead className="bg-slate-50 border-b border-slate-100">
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-20">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">
+                          ลำดับ
+                        </th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">
                           เวลา
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                          ลูกค้า
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                          ชื่อลูกค้า
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                          สถานที่
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                          ที่อยู่
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">
-                          เบอร์โทร
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">
+                          เบอร์โทรศัพท์
                         </th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">
                           เข้าบริการ
                         </th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
-                          ลายเซ็น
-                        </th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">
                           เก็บเงิน
                         </th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                          หมายเหตุ
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                          สาเหตุ
+                        </th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">
+                          ช่าง
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
                       {scheduledJobsForTable.length > 0 ? (
-                        scheduledJobsForTable.map((job, idx) => {
+                        scheduledJobsForTable
+                          .slice(
+                            (workScheduleCurrentPage - 1) * workScheduleItemsPerPage,
+                            workScheduleCurrentPage * workScheduleItemsPerPage,
+                          )
+                          .map((job, idx) => {
                           const customer = customerMap.get(job.customer_id);
                           const statusUpper = String(job.status || '').toUpperCase();
+                          const isEntered =
+                            statusUpper === 'COMPLETED' ||
+                            statusUpper === 'COMPLETE' ||
+                            statusUpper === 'WAITING_CLEAR' ||
+                            statusUpper === 'IN_PROGRESS';
+                          const isFailed = statusUpper === 'FAILED' || statusUpper === 'CANCELLED';
+                          const invoiceTotal = (job as any).invoice?.total || (job as any).invoice?.grand_total;
+                          const reason = (job as any).rejection_reason || (job as any).failure_reason;
+                          const lead: any = (job as any).primary_technician;
+                          const leadName = lead
+                            ? joinName(lead.first_name, lead.last_name) || lead.nick_name || '-'
+                            : '-';
+                          const startTime = new Date(job.start_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                          const endTime = new Date(job.end_time).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                           return (
                             <tr
                               key={job.id}
-                              className={`hover:bg-slate-50/50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'
-                                }`}
+                              className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                             >
+                              <td className="px-4 py-3 text-sm text-slate-700">
+                                {(workScheduleCurrentPage - 1) * workScheduleItemsPerPage + idx + 1}
+                              </td>
                               <td className="px-4 py-3 whitespace-nowrap">
-                                <span className="text-sm font-semibold">
-                                  {new Date(job.start_time).toLocaleTimeString('th-TH', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
+                                <span className="text-sm font-semibold text-slate-800">
+                                  {startTime} - {endTime}
                                 </span>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm font-semibold">
+                                <span className="text-sm font-semibold text-slate-800">
                                   {job.customerName || '-'}
-                                </p>
+                                </span>
                               </td>
                               <td className="px-4 py-3">
-                                <p className="text-sm text-slate-500 truncate max-w-[200px]">
+                                <span className="text-sm text-slate-600 whitespace-normal break-words">
                                   {job.address || '-'}
-                                </p>
+                                </span>
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                {customer?.primary_phone || '-'}
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
+                                {customer?.primary_phone ? formatPhoneNumber(customer.primary_phone) : '-'}
                               </td>
-                              <td className="px-4 py-3 text-center">
-                                {statusUpper === 'COMPLETED' || statusUpper === 'WAITING_CLEAR' ? '✓' : '-'}
+                              <td className="px-4 py-3">
+                                {isEntered ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                    เข้าได้
+                                  </span>
+                                ) : isFailed ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                    เข้าไม่ได้
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-slate-400">-</span>
+                                )}
                               </td>
-                              <td className="px-4 py-3 text-center">
-                                {job.service_report?.signatures?.customer ? '✓' : '-'}
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {invoiceTotal ? (
+                                  <span className="text-sm font-semibold text-emerald-600">
+                                    ฿{Number(invoiceTotal).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </span>
+                                ) : (
+                                  <span className="text-sm text-slate-400">-</span>
+                                )}
                               </td>
-                              <td className="px-4 py-3 text-center">-</td>
                               <td className="px-4 py-3 text-sm text-slate-700">
-                                {job.remarks || '-'}
+                                <span className="whitespace-normal break-words">
+                                  {isFailed ? (reason || '-') : '-'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-700">
+                                <span className="text-sm text-slate-600">{leadName}</span>
                               </td>
                             </tr>
                           );
                         })
                       ) : (
                         <tr>
-                          <td colSpan={8} className="px-6 py-16 text-center text-slate-400">
-                            ไม่มีงานในวันนี้
+                          <td colSpan={9} className="p-0 border-b-0 h-0">
+                            <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                              <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
+                              <p className="text-lg font-medium">ไม่มีงานในวันนี้</p>
+                            </div>
                           </td>
                         </tr>
                       )}
@@ -2588,6 +2750,20 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
               </div>
+              {scheduleVehicleId && scheduleDate && scheduledJobsForTable.length > 0 && (
+                <div className="mt-auto border-t border-slate-200">
+                  <Pagination
+                    currentPage={workScheduleCurrentPage}
+                    totalItems={scheduledJobsForTable.length}
+                    itemsPerPage={workScheduleItemsPerPage}
+                    onPageChange={setWorkScheduleCurrentPage}
+                    onItemsPerPageChange={(size) => {
+                      setWorkScheduleItemsPerPage(size);
+                      setWorkScheduleCurrentPage(1);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -2666,6 +2842,7 @@ const Job: React.FC<JobProps> = ({
         onClose={() => {
           setIsReportModalOpen(false);
           setJobForReport(null);
+          setIsReportReadOnly(false);
         }}
         job={jobForReport}
         finalStatus={reportFinalStatus}
@@ -2674,6 +2851,7 @@ const Job: React.FC<JobProps> = ({
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}
+        readOnly={isReportReadOnly}
       />
 
       <DailyClosureCloseModal

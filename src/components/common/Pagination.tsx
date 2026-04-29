@@ -133,52 +133,50 @@ export const Pagination: React.FC<PaginationProps> = ({
           )}
         </div>
         <div>
-          {totalPages > 1 && (
-            <nav
-              className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-              aria-label="Pagination"
+          <nav
+            className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            aria-label="Pagination"
+          >
+            <button
+              onClick={handlePrevious}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <button
-                onClick={handlePrevious}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Previous</span>
-                <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
-              {getPageNumbers().map((page, index) =>
-                typeof page === 'number' ? (
-                  <button
-                    key={`${page}-${index}`}
-                    onClick={() => onPageChange(page)}
-                    aria-current={currentPage === page ? 'page' : undefined}
-                    className={`relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium ${
-                      currentPage === page
-                        ? 'z-10 bg-primary/10 border-primary text-primary'
-                        : 'bg-white text-slate-500 hover:bg-slate-50'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ) : (
-                  <span
-                    key={`ellipsis-${index}`}
-                    className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700"
-                  >
-                    {page}
-                  </span>
-                )
-              )}
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-              >
-                <span className="sr-only">Next</span>
-                <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
-              </button>
-            </nav>
-          )}
+              <span className="sr-only">Previous</span>
+              <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+            {getPageNumbers().map((page, index) =>
+              typeof page === 'number' ? (
+                <button
+                  key={`${page}-${index}`}
+                  onClick={() => onPageChange(page)}
+                  aria-current={currentPage === page ? 'page' : undefined}
+                  className={`relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium ${
+                    currentPage === page
+                      ? 'z-10 bg-primary/10 border-primary text-primary'
+                      : 'bg-white text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ) : (
+                <span
+                  key={`ellipsis-${index}`}
+                  className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700"
+                >
+                  {page}
+                </span>
+              )
+            )}
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="sr-only">Next</span>
+              <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </nav>
         </div>
       </div>
     </div>
