@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavigationItem } from '@/src/types/nav';
 import { useUserRole } from './useUserRole';
 import { createNavigationItems } from '../router/index';
@@ -6,6 +6,13 @@ import { createNavigationItems } from '../router/index';
 export const useNavigation = () => {
   const userRole = useUserRole();
   const navigationItems = useMemo(() => createNavigationItems(), []);
+  const [permTick, setPermTick] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setPermTick((t) => t + 1);
+    window.addEventListener('permissions-updated', handler);
+    return () => window.removeEventListener('permissions-updated', handler);
+  }, []);
 
   const filteredNavigationItems = useMemo(() => {
     if (!userRole) return [];
@@ -67,7 +74,8 @@ export const useNavigation = () => {
 
       return acc;
     }, []);
-  }, [userRole, navigationItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole, navigationItems, permTick]);
 
   return filteredNavigationItems;
 };

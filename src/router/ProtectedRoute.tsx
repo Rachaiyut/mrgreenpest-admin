@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { usePermissions } from '../hooks/usePermissions';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -6,22 +7,17 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ children, access }: ProtectedRouteProps) => {
-  const permissionsRaw = localStorage.getItem('permissions');
-  const permissions =
-    permissionsRaw && permissionsRaw !== 'undefined'
-      ? JSON.parse(permissionsRaw)
-      : [];
+  const { hasPermission } = usePermissions();
 
   if (!access) {
-    // If no access prop is provided, allow access
     return children;
   }
 
-  if (permissions.includes(access)) {
+  if (hasPermission(access)) {
     return children;
-  } else {
-    return <Navigate to="/dashboard" replace />;
   }
+
+  return <Navigate to="/dashboard" replace />;
 };
 
 export default ProtectedRoute;
