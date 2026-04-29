@@ -82,12 +82,12 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       },
       {
         // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_NOTE / NOTIFY_STOCK_ISSUE_NOTE
-        label: '└ อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
+        label: '- อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
         module: 'STOCK_ISSUE_NOTE',
       },
       {
         // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_NOTE / NOTIFY_EXPENSE_ISSUE_NOTE
-        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต',
+        label: '- อนุมัติค่าใช้จ่ายเกินลิมิต',
         module: 'EXPENSE_ISSUE_NOTE',
       },
       {
@@ -98,12 +98,12 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       },
       {
         // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_SUMMARY
-        label: '└ อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
+        label: '- อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
         module: 'STOCK_ISSUE_SUMMARY',
       },
       {
         // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_SUMMARY (SUPERADMIN เท่านั้น)
-        label: '└ อนุมัติค่าใช้จ่ายเกินลิมิต',
+        label: '- อนุมัติค่าใช้จ่ายเกินลิมิต',
         module: 'EXPENSE_ISSUE_SUMMARY',
       },
       { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },

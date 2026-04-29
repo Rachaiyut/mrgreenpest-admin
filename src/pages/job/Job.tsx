@@ -1850,21 +1850,29 @@ const Job: React.FC<JobProps> = ({
         <div className="flex-1 min-h-0 relative flex flex-col">
 
           {activeTab === 'schedule' && view === 'kanban' && (
-            <JobKanbanBoard
-              columns={kanbanColumns}
-              emptyBoardText="ไม่พบรถให้บริการ"
-              emptyColumnText="ไม่มีงาน"
-              accentColorClass="bg-primary"
-              onDropdownToggle={handleDropdownToggle}
-              onStatusChange={handleStatusChange}
-              onViewDetails={handleViewDetails}
-              onWriteReport={handleWriteReport}
-              onEditJob={handleEdit}
-              onApprove={handleApproveJob}
-              onReject={handleRejectJob}
-              currentUser={currentUser}
-              isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
-            />
+            hasPermission('READ_OPERATION') ? (
+              <JobKanbanBoard
+                columns={kanbanColumns}
+                emptyBoardText="ไม่พบรถให้บริการ"
+                emptyColumnText="ไม่มีงาน"
+                accentColorClass="bg-primary"
+                onDropdownToggle={handleDropdownToggle}
+                onStatusChange={handleStatusChange}
+                onViewDetails={handleViewDetails}
+                onWriteReport={handleWriteReport}
+                onEditJob={handleEdit}
+                onApprove={handleApproveJob}
+                onReject={handleRejectJob}
+                currentUser={currentUser}
+                isAnyJobInProgressForCurrentUser={isAnyJobInProgressForCurrentUser}
+              />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-slate-400 bg-white rounded-lg shadow-sm border border-slate-200 p-12">
+                <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
+                <p className="text-lg font-medium">คุณไม่มีสิทธิ์เข้าถึงข้อมูลงานภาคสนาม</p>
+                <p className="text-sm mt-1">ติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์ดูภาคสนาม</p>
+              </div>
+            )
           )}
 
           {activeTab === 'unassigned' && (

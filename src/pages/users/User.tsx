@@ -167,10 +167,6 @@ const Users: React.FC<UsersProps> = ({
   }, []);
 
   useEffect(() => {
-    console.log('Roles Data:', roles);
-  }, [roles]);
-
-  useEffect(() => {
     setView(defaultView);
   }, [defaultView]);
 
