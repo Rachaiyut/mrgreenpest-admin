@@ -72,7 +72,9 @@ const IssueSummaryPage: React.FC = () => {
   const canApproveStock =
     hasPermission('APPROVE_ISSUE_SUMMARY') ||
     hasPermission('APPROVE_STOCK_ISSUE_SUMMARY');
-  const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
+  const canApproveExpense =
+    hasPermission('APPROVE_ISSUE_SUMMARY') ||
+    hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
   const isTechRole = isFieldRole(currentUser?.roleType);
 
   const {
@@ -209,6 +211,8 @@ const IssueSummaryPage: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
       if (res?.data) setStockIssueSummaries(res.data);
       if (res?.meta?.total !== undefined) {
@@ -221,7 +225,7 @@ const IssueSummaryPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchDebounced]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate]);
 
   useEffect(() => {
     fetchList();
@@ -312,19 +316,8 @@ const IssueSummaryPage: React.FC = () => {
       filtered = filtered.filter((s) => s.status === statusFilter);
     }
 
-    if (startDate || endDate) {
-      const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity;
-      const endMs = endDate ? new Date(`${endDate}T23:59:59.999`).getTime() : Infinity;
-      filtered = filtered.filter((s) => {
-        const dateStr = s.issue_date || s.created_at;
-        if (!dateStr) return false;
-        const t = new Date(dateStr).getTime();
-        return t >= startMs && t <= endMs;
-      });
-    }
-
     return filtered;
-  }, [stockIssueSummaries, creatorFilter, statusFilter, isTechRole, currentUser?.id, startDate, endDate]);
+  }, [stockIssueSummaries, creatorFilter, statusFilter, isTechRole, currentUser?.id]);
 
   // Option B — flatten แต่ละใบเบิกเป็นหลายแถวตาม approval category
   // - ไม่มี approval records → 1 แถว (category = null)
@@ -375,9 +368,7 @@ const IssueSummaryPage: React.FC = () => {
   const hasClientFilter = !!(
     creatorFilter !== 'all' ||
     statusFilter !== 'all' ||
-    activeTab !== 'all' ||
-    startDate ||
-    endDate
+    activeTab !== 'all'
   );
   const totalItems = hasClientFilter ? flattenedRows.length : totalItemsServer;
   const paginatedRows = hasClientFilter
@@ -676,7 +667,7 @@ const IssueSummaryPage: React.FC = () => {
                 <DatePicker
                   selected={startDate ? new Date(startDate) : null}
                   onChange={(date: Date | null) => {
-                    setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                    setStartDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
                     setCurrentPage(1);
                   }}
                   dateFormat="dd/MM/yyyy"
@@ -690,7 +681,7 @@ const IssueSummaryPage: React.FC = () => {
                 <DatePicker
                   selected={endDate ? new Date(endDate) : null}
                   onChange={(date: Date | null) => {
-                    setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                    setEndDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
                     setCurrentPage(1);
                   }}
                   dateFormat="dd/MM/yyyy"

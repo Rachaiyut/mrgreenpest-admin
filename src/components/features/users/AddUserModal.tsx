@@ -172,7 +172,15 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
       title="สร้างผู้ใช้งานใหม่"
       size="5xl"
       footer={
-        <div className="flex justify-end py-2">
+        <div className="flex justify-end gap-3 py-2">
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="secondary"
+            className="h-16 px-5 rounded-lg text-lg font-medium min-w-[110px]"
+          >
+            ยกเลิก
+          </Button>
           <Button
             type="submit"
             form="add-user-form"
@@ -400,7 +408,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                       >
-                        {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                        {showPassword ? <EyeIcon className="w-5 h-5" /> : <EyeSlashIcon className="w-5 h-5" />}
                       </button>
                     </div>
                     {errors['user-password'] && (

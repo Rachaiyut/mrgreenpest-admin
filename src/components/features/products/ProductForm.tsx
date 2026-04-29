@@ -109,6 +109,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         fda_number: formData.fda_number || '',
         min_stock: Number(formData.min_stock) || 0,
         unit_id: formData.unit_id,
+        remark: formData.remark || '',
       }, CategoryType.PRODUCT, imageFile);
     } else {
       onSubmit({
@@ -123,16 +124,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
   return (
     <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
       {/* Type toggle */}
-      <div className={`grid gap-6 ${isProduct ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
-        {/* Image — large for product, compact for service */}
-        <div className={isProduct ? 'md:col-span-1' : ''}>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+        {/* Image */}
+        <div className="md:col-span-1">
           <FormField label="รูปภาพ">
-            <div className={`mt-1 flex justify-center border-2 border-slate-300 border-dashed rounded-md ${isProduct ? 'px-6 pt-5 pb-6' : 'px-4 py-3'}`}>
-              <div className={`text-center ${isProduct ? 'space-y-1' : 'flex items-center gap-3'}`}>
+            <div className="mt-1 flex justify-center border-2 border-slate-300 border-dashed rounded-md px-6 pt-5 pb-6">
+              <div className="text-center space-y-1">
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Preview" className={`object-cover rounded-md ${isProduct ? 'mx-auto h-32 w-32' : 'h-10 w-10'}`} />
+                  <img src={imagePreview} alt="Preview" className="object-cover rounded-md mx-auto h-32 w-32" />
                 ) : (
-                  <PhotoIcon className={`text-slate-400 ${isProduct ? 'mx-auto h-12 w-12' : 'h-8 w-8 flex-shrink-0'}`} />
+                  <PhotoIcon className="text-slate-400 mx-auto h-12 w-12" />
                 )}
                 <div>
                   <label
@@ -157,30 +158,23 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </div>
 
         {/* Type + Code/Barcode */}
-        <div className={`space-y-4 ${isProduct ? 'md:col-span-2' : ''}`}>
+        <div className="space-y-4 md:col-span-2">
           <FormField label="ประเภท">
-            {mode === 'create' ? (
-              <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-                <label className="relative flex-1 cursor-pointer">
-                  <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.PRODUCT} onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">สินค้า</span>
-                </label>
-                <label className="relative flex-1 cursor-pointer">
-                  <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.SERVICE} onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
-                  <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บริการ</span>
-                </label>
-              </div>
-            ) : (
-              <div className="flex rounded-lg bg-slate-100 p-1 w-full">
-                <span className={`block flex-1 text-center py-1.5 px-3 rounded-md text-sm font-medium ${isProduct ? 'bg-primary text-white shadow-sm' : 'text-slate-800'}`}>สินค้า</span>
-                <span className={`block flex-1 text-center py-1.5 px-3 rounded-md text-sm font-medium ${!isProduct ? 'bg-primary text-white shadow-sm' : 'text-slate-800'}`}>บริการ</span>
-              </div>
-            )}
+            <div className="flex rounded-lg bg-slate-100 p-1 w-full">
+              <label className="relative flex-1 cursor-pointer">
+                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.PRODUCT} onChange={() => { setSelectedType(CategoryType.PRODUCT); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+                <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">สินค้า</span>
+              </label>
+              <label className="relative flex-1 cursor-pointer">
+                <input type="radio" className="sr-only peer" checked={selectedType === CategoryType.SERVICE} onChange={() => { setSelectedType(CategoryType.SERVICE); setFormData((prev) => ({ ...prev, category_id: '' })); }} />
+                <span className="block w-full text-center py-1.5 px-3 rounded-md text-sm font-medium text-slate-800 peer-checked:bg-primary peer-checked:text-white peer-checked:shadow-sm transition-colors">บริการ</span>
+              </label>
+            </div>
           </FormField>
 
           {mode === 'edit' && (
             <FormField label={isProduct ? 'รหัสสินค้า' : 'รหัสบริการ'} htmlFor="code">
-              <Input name="code" type="text" value={formData.code || ''} disabled className="bg-slate-50 font-mono" />
+              <Input name="code" type="text" value={formData.code || ''} disabled className="font-mono" />
             </FormField>
           )}
 

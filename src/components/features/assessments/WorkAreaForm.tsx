@@ -163,6 +163,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     );
   }, [activePackage, area.area_size, sortedConditions]);
 
+  const effectiveMinPrice = useMemo(() => {
+    if (!selectedCondition) return 0;
+    if (area.package_type === PackageType.WITH_TERMITE) {
+      return selectedCondition.min_price_with_termite;
+    }
+    return selectedCondition.min_price_without_termite;
+  }, [selectedCondition, area.package_type]);
+
   const renderPriceSection = () => {
     if (!activePackage) {
       return (
@@ -203,10 +211,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               {selectedCondition && (
                 <div className="text-xs text-slate-500 mt-1">
                   สามารถปรับราคาเองได้ (ขั้นต่ำ ฿
-                  {Math.min(
-                    selectedCondition.min_price_with_termite,
-                    selectedCondition.min_price_without_termite
-                  ).toLocaleString('th-TH')}
+                  {effectiveMinPrice.toLocaleString('th-TH')}
                   )
                 </div>
               )}
@@ -244,13 +249,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 <div className="flex items-center justify-end mt-2 text-xs text-red-600 font-medium">
                   <p>
                     ⚠️ ต่ำกว่าเกณฑ์ (ส่วนต่าง ฿
-                    {(() => {
-                      const minPrice = Math.min(
-                        selectedCondition.min_price_with_termite,
-                        selectedCondition.min_price_without_termite
-                      );
-                      return minPrice - (area.package_price || 0);
-                    })().toLocaleString('th-TH')}
+                    {(effectiveMinPrice - (area.package_price || 0)).toLocaleString('th-TH')}
                     )
                   </p>
                   {onApprove && (
@@ -317,13 +316,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     if (!selectedCondition || typeof area.package_price !== 'number')
       return false;
 
-    const minPrice = Math.min(
-      selectedCondition.min_price_with_termite,
-      selectedCondition.min_price_without_termite
-    );
-
-    return area.package_price < minPrice;
-  }, [selectedCondition, area.package_price]);
+    return area.package_price < effectiveMinPrice;
+  }, [selectedCondition, area.package_price, effectiveMinPrice]);
 
   useEffect(() => {
     const itemsCost = (area.items || []).reduce(

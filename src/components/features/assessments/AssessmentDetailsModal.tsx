@@ -278,10 +278,10 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                   href={data.google_map_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                  className="flex items-center gap-2 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"
                 >
-                  <GoogleMapIcon className="h-4 w-4 shrink-0" />
-                  เปิดแผนที่นำทาง
+                  <GoogleMapIcon className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium underline truncate">{data.google_map_link}</span>
                 </a>
               </div>
             )}

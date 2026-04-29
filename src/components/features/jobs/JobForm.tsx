@@ -57,6 +57,7 @@ import {
   PlusIcon,
   PhotoIcon,
   TrashIcon,
+  GoogleMapIcon,
 } from '../../../assets/icons/Icons';
 
 export interface JobFormProps {
@@ -437,7 +438,7 @@ export const JobForm: React.FC<JobFormProps> = ({
   const filteredVehicles = useMemo(() => {
     return vehicleWarehouses.map((v) => ({
       value: v.id,
-      label: `${v.name} (${(v as unknown as Record<string, string>).license_plate || '-'})`,
+      label: `${v.name} (${v.vehicle?.vehicle_registration || '-'})`,
     }));
   }, [vehicleWarehouses]);
 
@@ -470,9 +471,17 @@ export const JobForm: React.FC<JobFormProps> = ({
   }, [customers, selectedCustomerId, selectedCustomerData, fetchedContracts]);
 
   const availableInvoices = useMemo(() => {
-    if (fetchedInvoices.length > 0) return fetchedInvoices;
-    return [];
-  }, [fetchedInvoices]);
+    if (fetchedInvoices.length === 0) return [];
+    const usedInvoiceIds = new Set(
+      jobs
+        .filter((job: any) => {
+          if (mode === 'edit' && jobToEdit && job.id === jobToEdit.id) return false;
+          return !!job.invoice_id;
+        })
+        .map((job: any) => String(job.invoice_id))
+    );
+    return fetchedInvoices.filter((inv) => !usedInvoiceIds.has(String(inv.id)));
+  }, [fetchedInvoices, jobs, mode, jobToEdit]);
 
   const filteredInvoices = useMemo(() => {
     const refs = availableInvoices.map((inv) => ({ value: String(inv.id), label: `ใบแจ้งหนี้: ${inv.code}` }));
@@ -545,11 +554,17 @@ export const JobForm: React.FC<JobFormProps> = ({
           job.vehicle_id === selectedVehicleId &&
           new Date(job.start_time).toISOString().substring(0, 10) === workDate
       )
-      .map((job) => ({
-        start: new Date(job.start_time).toTimeString().substring(0, 5),
-        end: new Date(job.end_time).toTimeString().substring(0, 5),
-        customer: job.customer_name || job.customerName,
-      }))
+      .map((job) => {
+        const tech = job.primary_technician;
+        const techName = tech
+          ? `${tech.first_name || ''} ${tech.last_name || ''}`.trim() || '-'
+          : '-';
+        return {
+          start: new Date(job.start_time).toTimeString().substring(0, 5),
+          end: new Date(job.end_time).toTimeString().substring(0, 5),
+          customer: techName,
+        };
+      })
       .sort((a, b) => a.start.localeCompare(b.start));
   }, [selectedVehicleId, workDate, jobs, jobToEdit]);
 
@@ -1055,7 +1070,7 @@ export const JobForm: React.FC<JobFormProps> = ({
         </div>
       )}
 
-      <form id="job-form" onSubmit={handleSubmit} className={`space-y-6 flex-1 ${isLoadingData ? 'hidden' : ''}`}>
+      <form id="job-form" onSubmit={handleSubmit} noValidate className={`space-y-6 flex-1 ${isLoadingData ? 'hidden' : ''}`}>
         {/* STEP 0: Customer & Schedule */}
         <div className={currentStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1064,7 +1079,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
               </h3>
               <div className="space-y-6 flex-1 flex flex-col">
-                <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={handleCustomerChange} onSearchChange={setCustomerSearch} placeholder="เลือกลูกค้า" searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์" required />
+                <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={handleCustomerChange} onSearchChange={setCustomerSearch} placeholder="เลือกลูกค้า" searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์" required disabled={mode === 'edit'} />
                 {selectedCustomerData ? (
                   <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
                     <div className="flex items-start justify-between">
@@ -1084,6 +1099,12 @@ export const JobForm: React.FC<JobFormProps> = ({
                         <MapPinIcon className="w-4 h-4 text-slate-400 mt-0.5" />
                         <span className="leading-relaxed">{[selectedCustomerData.address_house_no, selectedCustomerData.sub_district, selectedCustomerData.district, selectedCustomerData.province, selectedCustomerData.postal_code].filter(Boolean).join(' ') || '-'}</span>
                       </div>
+                      {selectedCustomerData.google_map_link && (
+                        <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
+                          <GoogleMapIcon className="w-4 h-4 text-slate-400 shrink-0" />
+                          <a href={selectedCustomerData.google_map_link} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline truncate">เปิดแผนที่นำทาง</a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1108,13 +1129,14 @@ export const JobForm: React.FC<JobFormProps> = ({
                         id="work-date"
                         selected={workDate ? new Date(workDate) : null}
                         onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }}
-                        minDate={new Date()}
+                        minDate={mode === 'add' ? new Date() : undefined}
+                        disabled={mode === 'edit'}
                         required
                         wrapperClassName="w-full"
                         placeholderText="dd/mm/yyyy"
                         dateFormat="dd/MM/yyyy"
                         locale="th"
-                        className="w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm"
+                        className={`w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
                       />
                       <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
                     </div>
@@ -1284,7 +1306,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                             onSelectPackage={(pkgId) => {
                               handleAreaChange(index, { package_id: pkgId });
                             }}
-                            isEditing={mode === 'edit'}
+                            isEditing={mode === 'edit' && String(jobToEdit?.api_status || '').toUpperCase() !== 'UNASSIGNED'}
                           />
                         </div>
                       ))}
@@ -1298,13 +1320,11 @@ export const JobForm: React.FC<JobFormProps> = ({
                       )}
                     </div>
 
-                    {(!selectedReference || mode === 'edit') && (
-                      <div className="flex justify-center mt-4">
-                        <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
-                          <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex justify-center mt-4">
+                      <button type="button" onClick={handleAddArea} className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium">
+                        <PlusIcon className="h-5 w-5" />เพิ่มพื้นที่ให้บริการ
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div className="text-center p-8 text-slate-400 bg-white rounded-lg border border-dashed border-slate-300">

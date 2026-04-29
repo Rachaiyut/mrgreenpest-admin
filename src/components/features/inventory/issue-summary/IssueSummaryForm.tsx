@@ -958,6 +958,7 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                       <div className="relative flex items-center max-w-[150px]">
                         <input
                           type="number"
+                          step="any"
                           value={item.amount}
                           onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
                           placeholder="0.00"

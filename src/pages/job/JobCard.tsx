@@ -23,6 +23,7 @@ import {
   ManageIcon,
   MapPinIcon,
   PencilIcon,
+  PhoneIcon,
   PlayIcon,
   TechnicianIcon,
 } from "@/src/assets/icons/Icons";
@@ -307,6 +308,12 @@ const JobCard: React.FC<{
 
         {/* Info */}
         <div className="px-4 pb-3 space-y-2">
+          {job.customer?.primary_phone && (
+            <div className="flex items-center gap-2.5 text-sm">
+              <PhoneIcon className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <span className="text-slate-600">{job.customer.primary_phone}</span>
+            </div>
+          )}
           <div className="flex items-start gap-2.5 text-sm">
             <MapPinIcon className="h-4 w-4 text-slate-400 flex-shrink-0 mt-0.5" />
             <span className="text-slate-600 line-clamp-2 leading-snug">

@@ -102,9 +102,9 @@ export const Input: FC<InputHTMLAttributes<HTMLInputElement>> = (props) => {
       onChange={handleChange}
       onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
       onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
-      className={`w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${
-        props.type === 'search' ? 'pl-10' : ''
-      } ${props.className || ''}`}
+      className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 ${
+        props.disabled ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-900 border-slate-300'
+      } ${props.type === 'search' ? 'pl-10' : ''} ${props.className || ''}`}
     />
   );
 };

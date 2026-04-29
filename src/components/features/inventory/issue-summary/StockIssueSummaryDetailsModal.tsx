@@ -35,7 +35,9 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
   const canApproveStock =
     hasPermission('APPROVE_ISSUE_SUMMARY') ||
     hasPermission('APPROVE_STOCK_ISSUE_SUMMARY');
-  const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
+  const canApproveExpense =
+    hasPermission('APPROVE_ISSUE_SUMMARY') ||
+    hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
   const [submitting, setSubmitting] = useState(false);
 
   const warehouseMap = useMemo(

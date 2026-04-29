@@ -164,7 +164,15 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
       title={`แก้ไขผู้ใช้งาน: ${user.name}`}
       size="5xl"
       footer={
-        <div className="flex justify-end py-2">
+        <div className="flex justify-end gap-3 py-2">
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="secondary"
+            className="h-16 px-5 rounded-lg text-lg font-medium min-w-[110px]"
+          >
+            ยกเลิก
+          </Button>
           <Button
             type="submit"
             form="edit-user-form"
@@ -248,8 +256,9 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                       name="citizen_id"
                       type="text"
                       value={formData.citizen_id || ''}
-                      readOnly
-                      className="bg-slate-100 h-11"
+                      onChange={handleChange}
+                      maxLength={13}
+                      className="h-11"
                     />
                   </FormField>
                 </div>
@@ -399,7 +408,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                       >
-                        {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                        {showPassword ? <EyeIcon className="w-5 h-5" /> : <EyeSlashIcon className="w-5 h-5" />}
                       </button>
                     </div>
                   </FormField>
@@ -425,7 +434,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                       >
-                        {showConfirmPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                        {showConfirmPassword ? <EyeIcon className="w-5 h-5" /> : <EyeSlashIcon className="w-5 h-5" />}
                       </button>
                     </div>
                     {errors.confirmPassword && (

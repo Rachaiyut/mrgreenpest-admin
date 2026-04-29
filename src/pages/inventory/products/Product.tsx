@@ -98,10 +98,10 @@ const Product: React.FC = () => {
         const services = (response.data || []).map((s: any) => ({
           ...s,
           barcode: '',
-          price: s.price || 0,
-          cost_price: s.cost_price || 0,
+          price: s.price ?? 0,
+          cost_price: s.cost_price ?? 0,
           min_stock: 0,
-          category: s.category || { name: '-', type: CategoryType.SERVICE },
+          category: { ...(s.category || { name: '-' }), type: CategoryType.SERVICE },
           _type: 'SERVICE',
         }));
         setProducts(services);

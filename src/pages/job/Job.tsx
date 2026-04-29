@@ -342,6 +342,11 @@ const Job: React.FC<JobProps> = ({
             created_by: job.created_by,
             invoice_id: job.invoice_id,
             invoice: job.invoice,
+            google_map_link: customer.google_map_link || job.google_map_link || '',
+            zone: customer.service_area || job.zone || '',
+            group: customer.service_group || job.group || '',
+            road_line: customer.road_line || job.road_line || '',
+            sequence: customer.sequence_no || job.sequence || '',
           } as unknown as FieldJob;
         });
 
@@ -904,10 +909,36 @@ const Job: React.FC<JobProps> = ({
     setIsReportModalOpen(true);
   };
 
-  const handleCancel = (job: FieldJob) => {
-    setJobToCancel(job);
-    setIsCancelModalOpen(true);
+  const handleCancel = async (job: FieldJob) => {
     setOpenDropdownId(null);
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการยกเลิกงาน?',
+      text: 'กรุณาระบุเหตุผลในการยกเลิก',
+      input: 'textarea',
+      inputAttributes: { rows: '2', style: 'resize:none; font-size:14px;' },
+      inputPlaceholder: 'ระบุเหตุผล เช่น ลูกค้าขอเลื่อน',
+      width: 400,
+      inputValidator: (value) => {
+        if (!value) return 'กรุณาระบุเหตุผลในการยกเลิก';
+      },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการยกเลิก',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!result.isConfirmed) return;
+    try {
+      await JobApi.update(job.id, {
+        status: JobMainStatus.CANCELLED,
+        remarks: result.value,
+      } as Record<string, unknown>);
+      Swal.fire({ icon: 'success', title: 'ยกเลิกงานแล้ว', timer: 1500, showConfirmButton: false });
+      fetchData();
+    } catch (error) {
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถยกเลิกงานได้', 'error');
+    }
   };
 
   const handleDelete = async (job: FieldJob) => {
@@ -915,24 +946,11 @@ const Job: React.FC<JobProps> = ({
     const result = await Swal.fire({
       icon: 'warning',
       title: 'ยืนยันการลบงาน?',
-      html:
-        '<div style="text-align:left; line-height:1.7; font-size:0.95rem; max-width:420px; margin:0 auto;">' +
-        '<p style="margin:0 0 12px; color:#dc2626; font-weight:600; text-align:center;">' +
-        'การลบนี้ไม่สามารถกู้คืนได้' +
-        '</p>' +
-        '<div style="background:#fef3c7; border-left:4px solid #f59e0b; padding:10px 14px; border-radius:6px; color:#78350f;">' +
-        '<div style="margin-bottom:6px;"><strong>ผลกระทบ</strong></div>' +
-        '<ul style="margin:0; padding-left:18px;">' +
-        '<li>งานและข้อมูลทีมจะถูกลบออกจากระบบ</li>' +
-        '<li>ใบประเมินที่อ้างอิงจะถูกคืนสถานะเป็น <strong style="white-space:nowrap">แบบร่าง</strong> อัตโนมัติ</li>' +
-        '</ul>' +
-        '</div>' +
-        '</div>',
+      text: 'คุณต้องการลบงานนี้หรือไม่ การลบนี้ไม่สามารถกู้คืนได้',
       showCancelButton: true,
       confirmButtonText: 'ยืนยันการลบ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#dc2626',
-      reverseButtons: true,
     });
     if (!result.isConfirmed) return;
     try {
@@ -1320,6 +1338,14 @@ const Job: React.FC<JobProps> = ({
   }, [unassignedItemsPerPage]);
 
   useEffect(() => {
+    if (activeTab !== 'unassigned') return;
+    const timeoutId = setTimeout(() => {
+      fetchUnassigned(1, unassignedDateFilter, unassignedSearch);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [unassignedSearch]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (!openDropdownId) return;
       if (dropdownRef.current && dropdownRef.current.contains(event.target as Node)) return;
@@ -1595,7 +1621,6 @@ const Job: React.FC<JobProps> = ({
                       if (activeTab === 'unassigned') {
                         setUnassignedSearch(e.target.value);
                         setUnassignedPage(1);
-                        fetchUnassigned(1, unassignedDateFilter, e.target.value);
                       } else {
                         setSearchQuery(e.target.value);
                         fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
@@ -1619,56 +1644,62 @@ const Job: React.FC<JobProps> = ({
                 </div>
                 {activeTab === 'unassigned' && (
                   <div className="flex items-center gap-2">
-                    <DatePicker
-                      selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
-                      onChange={(date: Date | null) => {
-                        if (date) {
-                          const yyyy = date.getFullYear();
-                          const mm = String(date.getMonth() + 1).padStart(2, '0');
-                          const dd = String(date.getDate()).padStart(2, '0');
-                          const formatted = `${yyyy}-${mm}-${dd}`;
-                          setUnassignedDateFilter(formatted);
-                          setUnassignedPage(1);
-                          fetchUnassigned(1, formatted);
-                        } else {
-                          setUnassignedDateFilter('');
-                          setUnassignedPage(1);
-                          fetchUnassigned(1, '');
-                        }
-                      }}
-                      placeholderText="เลือกวันที่"
-                      dateFormat="dd/MM/yyyy"
-                      locale="th"
-                      isClearable
-                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                      wrapperClassName="w-full sm:w-auto"
-                    />
+                    <div className="relative w-full sm:w-auto">
+                      <DatePicker
+                        selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
+                        onChange={(date: Date | null) => {
+                          if (date) {
+                            const yyyy = date.getFullYear();
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            const formatted = `${yyyy}-${mm}-${dd}`;
+                            setUnassignedDateFilter(formatted);
+                            setUnassignedPage(1);
+                            fetchUnassigned(1, formatted, unassignedSearch);
+                          } else {
+                            setUnassignedDateFilter('');
+                            setUnassignedPage(1);
+                            fetchUnassigned(1, '', unassignedSearch);
+                          }
+                        }}
+                        placeholderText="เลือกวันที่นัดหมาย"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        isClearable
+                        className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                        wrapperClassName="w-full sm:w-auto"
+                      />
+                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                   </div>
                 )}
                 {activeTab === 'schedule' && (
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <DatePicker
-                      selected={filterDate ? new Date(filterDate) : null}
-                      onChange={(date: Date | null) => {
-                        if (date) {
-                          const yyyy = date.getFullYear();
-                          const mm = String(date.getMonth() + 1).padStart(2, '0');
-                          const dd = String(date.getDate()).padStart(2, '0');
-                          const formattedDate = `${yyyy}-${mm}-${dd}`;
-                          setFilterDate(formattedDate);
-                          fetchData(formattedDate, selectedTechnicianId);
-                        } else {
-                          setFilterDate('');
-                          fetchData('', selectedTechnicianId);
-                        }
-                      }}
-                      placeholderText="เลือกวันที่"
-                      dateFormat="dd/MM/yyyy"
-                      locale="th"
-                      isClearable
-                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                      wrapperClassName="w-full sm:w-auto"
-                    />
+                    <div className="relative">
+                      <DatePicker
+                        selected={filterDate ? new Date(filterDate) : null}
+                        onChange={(date: Date | null) => {
+                          if (date) {
+                            const yyyy = date.getFullYear();
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            const formattedDate = `${yyyy}-${mm}-${dd}`;
+                            setFilterDate(formattedDate);
+                            fetchData(formattedDate, selectedTechnicianId);
+                          } else {
+                            setFilterDate('');
+                            fetchData('', selectedTechnicianId);
+                          }
+                        }}
+                        placeholderText="เลือกวันที่"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        isClearable
+                        className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                        wrapperClassName="w-full sm:w-auto"
+                      />
+                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                     <Select
                       id="technician-filter"
                       value={selectedTechnicianId}
@@ -1722,7 +1753,10 @@ const Job: React.FC<JobProps> = ({
                 )}
                 {activeTab === 'work-schedule' && (
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                    <div className="relative">
+                      <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
                     <Select
                       value={scheduleVehicleId}
                       onChange={(e) => setScheduleVehicleId(e.target.value)}
@@ -2574,12 +2608,6 @@ const Job: React.FC<JobProps> = ({
         warehouses={warehouses}
       />
 
-      <CancelJobModal
-        isOpen={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
-        job={jobToCancel}
-        onConfirm={handleConfirmCancel}
-      />
 
       <ServiceReportModal
         isOpen={isReportModalOpen}

@@ -445,12 +445,29 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
       setReportState(initialReport);
 
-      // Load existing blueprint images
+      // Load existing blueprint images — resolve signed URLs for entries that have id but no url
       const r = job.service_report as unknown as Record<string, unknown>;
       const reportData = (r?.data || r) as Record<string, unknown>;
-      const images = (reportData?.operation_images || []) as { id: string; url: string }[];
-      setExistingImages(images);
+      const rawImages = (reportData?.operation_images || []) as { id: string; url: string }[];
       setSelectedFiles([]);
+
+      (async () => {
+        const { StorageApi } = await import('@/src/api/storage');
+        const resolved: { id: string; url: string }[] = [];
+        for (const img of rawImages) {
+          if (img.url) {
+            resolved.push(img);
+          } else if (img.id) {
+            try {
+              const result = await StorageApi.getSignedUrl(img.id);
+              if (result?.url) resolved.push({ id: img.id, url: result.url });
+            } catch {
+              // skip images that can't be resolved
+            }
+          }
+        }
+        setExistingImages(resolved);
+      })();
     }
   }, [isOpen, job, recommendedNextIso]);
 
