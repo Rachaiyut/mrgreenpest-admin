@@ -396,6 +396,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [hasInitializedAreas, setHasInitializedAreas] = useState(false);
   // Editable area prices - track per-area price overrides by index
   const [editableAreaPrices, setEditableAreaPrices] = useState<Record<number, number>>({});
+  const [areaErrors, setAreaErrors] = useState<Record<string, string>>({});
   const [includeVat, setIncludeVat] = useState(initialValues?.include_vat ?? true);
   const vatRate = 0.07;
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
@@ -1233,11 +1234,20 @@ export const QuotationForm: FC<QuotationFormProps> = ({
 
     // Validate areas
     if (editableAreas.length > 0) {
+      const newAreaErrors: Record<string, string> = {};
+      let hasAreaError = false;
       for (let i = 0; i < editableAreas.length; i++) {
         const area = editableAreas[i];
-        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุชื่อพื้นที่ ${i + 1}` }); return; }
-        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); return; }
+        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุชื่อพื้นที่ ${i + 1}` }); setAreaErrors(newAreaErrors); return; }
+        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); setAreaErrors(newAreaErrors); return; }
+        if (!area.package_price_id) { newAreaErrors[`area_${i}_package`] = 'กรุณาเลือกแพ็คเกจ'; hasAreaError = true; }
       }
+      if (hasAreaError) {
+        setAreaErrors(newAreaErrors);
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาเลือกแพ็คเกจในทุกพื้นที่' });
+        return;
+      }
+      setAreaErrors({});
     }
 
     const hasValidItems = items.some((item) => item.description && item.amount > 0);
@@ -1381,7 +1391,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                 onChange={setSelectedCustomerId}
                 onSearchChange={handleCustomerSearch}
                 options={fetchedCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}`, description: c.primary_phone }))}
-                placeholder="ค้นหาลูกค้า..."
+                placeholder="เลือกลูกค้า"
+                searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
                 disabled={isReadOnly}
               />
             </div>
@@ -1470,6 +1481,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           notice={mode === 'create' && selectedAssessmentId ? 'ข้อมูลพื้นที่จากใบประเมิน (แก้ไขไม่ได้)' : undefined}
           sortByCreatedAt
           disabled={mode === 'create' && !!selectedAssessmentId}
+          errors={areaErrors}
         />
 
         <InstallmentSection

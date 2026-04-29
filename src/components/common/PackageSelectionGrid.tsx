@@ -10,6 +10,7 @@ interface PackageSelectionGridProps {
   area: any;
   unitName: string;
   selectedUnitId?: string;
+  error?: string;
   onSelectPackage?: (pkgId: string) => void;
   onPackageCardClick: (pkgId: string) => void;
   onPriceOptionChange: (price: number, type: PackageType, conditionId: string, pkgId: string) => void;
@@ -23,6 +24,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
   area,
   unitName,
   selectedUnitId,
+  error,
   onSelectPackage,
   onPackageCardClick,
   onPriceOptionChange,
@@ -34,13 +36,19 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
       <label className="block text-sm font-medium text-slate-700 mb-1">
         แพ็คเก็จ <span className="text-red-500">*</span>
       </label>
-      <div className="mb-4 animate-fadeIn">
+      <div className={`mb-4 animate-fadeIn rounded-lg ${error ? 'border-2 border-red-400 bg-red-50/30 p-2' : ''}`}>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
           {packages
             .filter((pkg) => {
-              // แสดงเฉพาะ packages ที่มี conditions ของ unit ที่เลือก
-              if (!selectedUnitId) return true;
-              return (pkg.package_prices || []).some((p: any) => p.unit_id === selectedUnitId);
+              const prices = pkg.package_prices || [];
+              if (selectedUnitId && !prices.some((p: any) => p.unit_id === selectedUnitId)) return false;
+              if (areaSize && areaSize > 0) {
+                const unitPrices = selectedUnitId
+                  ? prices.filter((p: any) => p.unit_id === selectedUnitId)
+                  : prices;
+                return unitPrices.some((c) => c.area_range >= areaSize);
+              }
+              return true;
             })
             .map((pkg) => {
             const conditions = [...(pkg.package_prices || [])]
@@ -131,6 +139,9 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
             );
           })}
         </div>
+        {error && (
+          <p className="text-red-500 text-xs mt-2">{error}</p>
+        )}
       </div>
     </>
   );

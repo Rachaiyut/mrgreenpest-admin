@@ -136,14 +136,25 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     return prices.sort((a, b) => a.area_range - b.area_range);
   }, [activePackage, selectedUnitId]);
 
-  // Filter packages by selected measurement type unit
+  // Filter packages by selected measurement type unit AND area size
   const filteredPackages = useMemo(() => {
-    if (!selectedUnitId) return availablePackages;
-    return availablePackages.filter((pkg: Package) => {
-      const prices = pkg.package_prices || [];
-      return prices.some((p: PackagePrice) => p.unit_id === selectedUnitId);
-    });
-  }, [availablePackages, selectedUnitId]);
+    let result = availablePackages;
+    if (selectedUnitId) {
+      result = result.filter((pkg: Package) => {
+        const prices = pkg.package_prices || [];
+        return prices.some((p: PackagePrice) => p.unit_id === selectedUnitId);
+      });
+    }
+    if (area.area_size && area.area_size > 0) {
+      result = result.filter((pkg: Package) => {
+        const prices = selectedUnitId
+          ? (pkg.package_prices || []).filter((p: PackagePrice) => p.unit_id === selectedUnitId)
+          : (pkg.package_prices || []);
+        return prices.some((p: PackagePrice) => p.area_range >= area.area_size!);
+      });
+    }
+    return result;
+  }, [availablePackages, selectedUnitId, area.area_size]);
 
   const selectedCondition = useMemo(() => {
     if (!activePackage || !area.area_size) return null;
@@ -729,7 +740,6 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     </span>
                   </label>
                 </div>
-
                 {measurementType === 'sqm' && (
                   <div className="space-y-2">
                     <PackageSelectionGrid
@@ -740,6 +750,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       area={area}
                       unitName={selectedUnitName}
                       selectedUnitId={selectedUnitId}
+                      error={errors?.[`area_${index}_package`]}
                       onSelectPackage={onSelectPackage}
                       onPackageCardClick={(pkgId) => {
                         if (activePackageId !== pkgId) {
@@ -822,6 +833,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       area={area}
                       unitName="เมตร"
                       selectedUnitId={selectedUnitId}
+                      error={errors?.[`area_${index}_package`]}
                       onSelectPackage={onSelectPackage}
                       onPackageCardClick={(pkgId) => {
                         if (activePackageId !== pkgId) {

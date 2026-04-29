@@ -294,6 +294,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       if (updatedArea.building_type) delete newErrs[`area_${index}_building_type`];
       if (updatedArea.service_system) delete newErrs[`area_${index}_service_system`];
       if (updatedArea.category_services?.length) delete newErrs[`area_${index}_category_services`];
+      if (updatedArea.package_price_id) delete newErrs[`area_${index}_package`];
       return newErrs;
     });
   };
@@ -466,6 +467,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         if (!area.building_type) { newErrors[`area_${index}_building_type`] = 'กรุณาระบุประเภทสิ่งปลูกสร้าง'; isValid = false; }
         if (!area.service_system) { newErrors[`area_${index}_service_system`] = 'กรุณาระบุระบบใช้บริการ'; isValid = false; }
         if (!area.category_services || area.category_services.length === 0) { newErrors[`area_${index}_category_services`] = 'กรุณาระบุประเภทบริการ'; isValid = false; }
+        if (!area.package_price_id) { newErrors[`area_${index}_package`] = 'กรุณาเลือกแพ็คเกจ'; isValid = false; }
       });
       setErrors(newErrors);
       return isValid;
@@ -673,6 +675,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                       }))}
                       value={formData.customer_id || ''}
                       onChange={handleCustomerSelect}
+                      placeholder="เลือกลูกค้า"
+                      searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์"
                     />
                     {errors.customer_id && <p className="text-red-500 text-xs mt-1 font-medium">{errors.customer_id}</p>}
                   </div>

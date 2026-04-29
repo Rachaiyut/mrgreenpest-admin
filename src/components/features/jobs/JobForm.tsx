@@ -1064,7 +1064,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                 <div className="p-2 bg-primary/10 rounded-lg text-primary"><UserIcon className="w-5 h-5" /></div>ข้อมูลลูกค้า
               </h3>
               <div className="space-y-6 flex-1 flex flex-col">
-                <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={handleCustomerChange} onSearchChange={setCustomerSearch} placeholder="พิมพ์ชื่อ, เบอร์โทร หรือที่อยู่..." required />
+                <SearchableSelect label="ค้นหาลูกค้า" options={filteredCustomers.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''}`, description: c.primary_phone || '' }))} value={selectedCustomerId} onChange={handleCustomerChange} onSearchChange={setCustomerSearch} placeholder="เลือกลูกค้า" searchPlaceholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์" required />
                 {selectedCustomerData ? (
                   <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-5 transition-all flex-1">
                     <div className="flex items-start justify-between">
@@ -1408,7 +1408,7 @@ export const JobForm: React.FC<JobFormProps> = ({
               </Button>
             ) : (
               <Button type="submit" variant="primary" disabled={!steps[currentStep].isValid || !!timeConflictError || isSubmitting} className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl">
-                {isSubmitting ? 'กำลังบันทึก...' : mode === 'edit' ? 'บันทึกการแก้ไข' : 'บันทึกงาน'}
+                {isSubmitting ? 'กำลังบันทึก...' : mode === 'edit' ? 'บันทึกการแก้ไข' : 'สร้างนัดหมาย'}
                 {!isSubmitting && <CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />}
               </Button>
             )}

@@ -139,10 +139,11 @@ const Job: React.FC<JobProps> = ({
   // Filter States
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('all');
   const [filterDate, setFilterDate] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
 
 
   // Fetch schedule (นัดหมาย + ตารางงาน)
-  const fetchSchedule = async (targetDate = filterDate, targetTech = selectedTechnicianId, search = searchQuery, vehicleId = selectedVehicleId) => {
+  const fetchSchedule = async (targetDate = filterDate, targetTech = selectedTechnicianId, search = searchQuery, vehicleId = selectedVehicleId, statusFilter = selectedStatusFilter) => {
     setIsLoading(true);
     try {
       const params: any = {};
@@ -150,6 +151,7 @@ const Job: React.FC<JobProps> = ({
       if (search?.trim()) params.search = search.trim();
       if (vehicleId && vehicleId !== 'all') params.vehicle_id = vehicleId;
       if (targetTech !== 'all') params.technician_id = targetTech;
+      if (statusFilter && statusFilter !== 'all') params.statuses = statusFilter;
 
       const warehousesRes = await VehicleApi.getVehiclesWithUserJobs(params);
 
@@ -1700,6 +1702,22 @@ const Job: React.FC<JobProps> = ({
                         </option>
                       ))}
                     </Select>
+                    <Select
+                      id="status-filter"
+                      value={selectedStatusFilter}
+                      onChange={(e) => {
+                        setSelectedStatusFilter(e.target.value);
+                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, e.target.value);
+                      }}
+                      className="w-fit text-sm !pr-8"
+                    >
+                      <option value="all">สถานะทั้งหมด</option>
+                      {Object.values(JobMainStatus).map((status) => (
+                        <option key={status} value={status}>
+                          {JobStatusLabel[status] || status}
+                        </option>
+                      ))}
+                    </Select>
                   </div>
                 )}
                 {activeTab === 'work-schedule' && (
@@ -1856,9 +1874,10 @@ const Job: React.FC<JobProps> = ({
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เบอร์โทรศัพท์</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider">ที่อยู่</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่นัดหมาย</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
                     </tr>
@@ -1875,6 +1894,9 @@ const Job: React.FC<JobProps> = ({
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatPhoneNumber(job.customer?.primary_phone || '-')}</span>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-700 !text-left max-w-[280px]">
+                            <span className="text-sm text-slate-700 line-clamp-2">{job.address || '-'}</span>
                           </td>
                           <td className="px-4 py-3 text-sm text-slate-700">
                             <span className="text-sm text-slate-700">{formatThaiDate(job.start_time)}</span>
@@ -1895,7 +1917,7 @@ const Job: React.FC<JobProps> = ({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-0 border-b-0 h-0">
+                        <td colSpan={7} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่มีงานค้างรอจัดคิว</p>
