@@ -158,6 +158,9 @@ const Warehouse: React.FC = () => {
       fetchWarehousesStats();
     } catch (error) {
       console.error('Failed to create warehouse:', error);
+      const msg = (error as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถสร้างคลังสินค้าได้', 'error');
     }
   };
 
