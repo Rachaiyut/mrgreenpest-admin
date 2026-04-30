@@ -849,17 +849,35 @@ const Assessments: React.FC = () => {
                                   try {
                                     if (assessment.id) {
                                       setLoadingPdfId(assessment.id);
-                                      const blob =
-                                        await AssessmentApi.exportPdf(
-                                          assessment.id
-                                        );
-                                      const url =
-                                        window.URL.createObjectURL(blob);
-                                      window.open(url, '_blank');
-                                      setTimeout(
-                                        () => window.URL.revokeObjectURL(url),
-                                        100
-                                      );
+                                      const blob = await AssessmentApi.exportPdf(assessment.id);
+
+                                      // Build filename: <รหัสใบประเมิน>_<ชื่อ>_<นามสกุล>.pdf
+                                      const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                                      const c = (assessment as any).customer ||
+                                        customers?.find((x) => x.id === (assessment as any).customer_id);
+                                      const firstName = (c?.first_name || '').trim();
+                                      const lastName = c?.last_name && c.last_name !== '-' ? c.last_name.trim() : '';
+                                      const parts: string[] = [];
+                                      if (firstName || lastName) {
+                                        if (firstName) parts.push(safe(firstName));
+                                        if (lastName) parts.push(safe(lastName));
+                                      } else {
+                                        parts.push('ลูกค้า');
+                                      }
+                                      const filename = [safe((assessment as any).code || assessment.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                                      const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                                      const url = window.URL.createObjectURL(namedFile);
+                                      const win = window.open(url, '_blank');
+                                      if (!win) {
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = filename;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                      }
+                                      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                                     }
                                   } catch (error) {
                                     console.error('Error fetching PDF:', error);

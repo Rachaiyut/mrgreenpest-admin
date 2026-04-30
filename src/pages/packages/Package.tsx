@@ -320,13 +320,13 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (ไม่มีปลวก)
                   </th>
