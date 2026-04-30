@@ -411,7 +411,7 @@ const Issue: FC = () => {
             return;
           }
           const fmtMoney = (v: number) =>
-            `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
           const escape = (s: string) =>
             s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
           const optionsHtml = accounts
@@ -955,11 +955,10 @@ const Issue: FC = () => {
                       <div className="flex items-center">
                         <CurrencyDollarIcon className="h-4 w-4 mr-2.5 text-slate-400 flex-shrink-0" />
                         <span className="font-semibold text-slate-800">
-                          ฿
                           {totalAmount.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })}{' '}บาท
                         </span>
                       </div>
                       <div className="flex items-center">
@@ -1121,10 +1120,10 @@ const Issue: FC = () => {
                       (categoryTab !== 'expense' ? 1 : 0) +
                       (categoryTab !== 'stock' ? 2 : 0);
                     const fmtMoney = (v: number) =>
-                      `฿${v.toLocaleString('th-TH', {
+                      `${v.toLocaleString('th-TH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
-                      })}`;
+                      })} บาท`;
 
                     return (
                       <Fragment key={withdrawal.id}>
@@ -1167,11 +1166,10 @@ const Issue: FC = () => {
                           )}
                           {categoryTab !== 'stock' && (
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              ฿
                               {totalAmount.toLocaleString('th-TH', {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                              })}
+                              })}{' '}บาท
                             </td>
                           )}
                           {categoryTab !== 'stock' && (

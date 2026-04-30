@@ -310,10 +310,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <div>
               <p className="text-sm text-emerald-600 font-medium">รับวันนี้</p>
               <p className="text-lg font-bold text-emerald-800">
-                ฿
                 {receiptStats.todayAmount.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
-                })}
+                })}{' '}บาท
               </p>
             </div>
           </div>
@@ -326,10 +325,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <div>
               <p className="text-sm text-purple-600 font-medium">รับทั้งหมด</p>
               <p className="text-lg font-bold text-purple-800">
-                ฿
                 {receiptStats.totalAmount.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
-                })}
+                })}{' '}บาท
               </p>
             </div>
           </div>
@@ -482,11 +480,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         {getPaymentMethodLabel(r.payment_method)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
-                        ฿
                         {r.amount.toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        })}
+                        })}{' '}บาท
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
@@ -712,8 +709,8 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <option value="">-- เลือกใบแจ้งหนี้ (ถ้ามี) --</option>
                       {(invoices || []).map((i) => (
                         <option key={i.id} value={i.id}>
-                          {i.code || i.id} — {i.customer_name} (฿
-                          {(i.total || 0).toLocaleString()})
+                          {i.code || i.id} — {i.customer_name} (
+                          {(i.total || 0).toLocaleString()} บาท)
                         </option>
                       ))}
                     </Select>
@@ -812,9 +809,6 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       จำนวนเงินที่ได้รับ (Amount Received)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
-                        ฿
-                      </span>
                       <Input
                         type="number"
                         value={String(receiptFormAmount)}
@@ -823,9 +817,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         }
                         step="0.01"
                         min="0"
-                        className="w-full pl-8 text-lg font-bold text-slate-800"
+                        className="w-full pr-16 text-lg font-bold text-slate-800"
                         disabled={!!receiptFormInvoiceId}
                       />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                        บาท
+                      </span>
                     </div>
                   </div>
 
@@ -894,7 +891,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               <div>
                 <div className="text-sm text-slate-600">ยอดเงิน</div>
                 <div className="text-sm text-slate-800">
-                  ฿{selectedReceipt.amount.toLocaleString()}
+                  {selectedReceipt.amount.toLocaleString()} บาท
                 </div>
               </div>
               {selectedReceipt.invoice_id && (

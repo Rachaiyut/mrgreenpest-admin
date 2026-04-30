@@ -122,7 +122,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
             <div className="text-sm">
               <span className="text-slate-400">วงเงินจำกัดการเบิก</span>
               <p className="text-xl font-bold text-primary">
-                ฿{user.creditLimit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {user.creditLimit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
               </p>
             </div>
           </div>

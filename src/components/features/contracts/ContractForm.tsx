@@ -565,7 +565,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     const options = quotations.map((q) => ({
       value: q.id,
       label: `${q.code || `QT-${q.id.slice(0, 8)}`} - ${q.customer_name}`,
-      description: `฿${Number(q.total).toLocaleString('th-TH')}`,
+      description: `${Number(q.total).toLocaleString('th-TH')} บาท`,
     }));
 
     // Add currently selected fullQuotation if not in the list
@@ -575,7 +575,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         options.unshift({
           value: fullQuotation.id,
           label: `${fullQuotation.code || `QT-${fullQuotation.id.slice(0, 8)}`} - ${fullQuotation.customer_name}`,
-          description: `฿${Number(fullQuotation.total).toLocaleString('th-TH')}`,
+          description: `${Number(fullQuotation.total).toLocaleString('th-TH')} บาท`,
         });
       }
     }

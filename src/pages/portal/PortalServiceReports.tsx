@@ -113,7 +113,7 @@ const PortalServiceReports: React.FC = () => {
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{paymentLabel}</span>
                       )}
                       <span className="text-base font-semibold text-slate-800">
-                        {item.payment_amount ? `฿${Number(item.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '-'}
+                        {item.payment_amount ? `${Number(item.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท` : '-'}
                       </span>
                     </div>
                     <PdfButton id={item.id} />
@@ -154,7 +154,7 @@ const PortalServiceReports: React.FC = () => {
                           ) : <span className="text-xs text-slate-400">-</span>}
                         </td>
                         <td className="px-6 py-4 text-sm text-right font-medium text-slate-800">
-                          {item.payment_amount ? `฿${Number(item.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '-'}
+                          {item.payment_amount ? `${Number(item.payment_amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท` : '-'}
                         </td>
                         <td className="px-6 py-4 text-center"><PdfButton id={item.id} /></td>
                       </tr>

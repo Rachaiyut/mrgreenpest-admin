@@ -95,7 +95,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
           <div className="text-right">
             <p className="text-xs text-slate-500">ยอดคงเหลือปัจจุบัน</p>
             <p className="text-lg font-bold text-slate-800 tabular-nums">
-              ฿{Number(account.current_balance || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              {Number(account.current_balance || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
           <p className="text-slate-600">
             ยอดคงเหลือหลังรายการนี้จะเป็น:{' '}
             <span className="font-bold text-emerald-700 tabular-nums">
-              ฿{previewBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              {previewBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
             </span>
           </p>
         </div>

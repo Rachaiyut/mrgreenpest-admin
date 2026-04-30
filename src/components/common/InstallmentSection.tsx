@@ -121,9 +121,9 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                 <label
                   key={opt.key}
                   title={opt.key === 'INSTALLMENT' && disableInstallmentOption ? (disabledReason || 'ไม่สามารถเลือกแบ่งชำระได้') : ''}
-                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${isOptDisabled && opt.key === 'INSTALLMENT' ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-50' : opt.active ? 'cursor-pointer border-green-500 bg-green-50' : 'cursor-pointer border-slate-200 hover:border-slate-300 bg-white'}`}
+                  className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all ${isOptDisabled ? (opt.active ? 'cursor-not-allowed opacity-60 border-primary bg-primary/5' : 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-50') : opt.active ? 'cursor-pointer border-green-500 bg-green-50' : 'cursor-pointer border-slate-200 hover:border-slate-300 bg-white'}`}
                 >
-                  <input type="radio" name="paymentCondition" checked={opt.active} onChange={() => onPaymentMethodChange?.(opt.key)} className="w-4 h-4 text-green-600 border-slate-300 focus:ring-green-500" disabled={isOptDisabled} />
+                  <input type="radio" name="paymentCondition" checked={opt.active} onChange={() => onPaymentMethodChange?.(opt.key)} className={`w-4 h-4 ${isOptDisabled ? 'text-slate-400 border-slate-200 cursor-not-allowed' : 'text-green-600 border-slate-300 focus:ring-green-500'}`} disabled={isOptDisabled} />
                   <div>
                     <span className="block text-sm font-bold text-slate-800">{opt.title}</span>
                     <span className="block text-xs text-slate-500">{opt.key === 'INSTALLMENT' && disableInstallmentOption ? (disabledReason || 'ไม่รองรับ') : opt.desc}</span>
@@ -140,14 +140,14 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {showTotalAmountInput && (
                 <FormField label="มูลค่ารวมสุทธิ (บาท)">
-                  <Input type="number" value={totalAmount} onChange={(e) => onTotalAmountChange?.(Number(e.target.value))} className="text-right font-bold text-lg text-green-700 bg-white" disabled={isReadOnly} />
+                  <Input type="number" value={totalAmount} onChange={(e) => onTotalAmountChange?.(Number(e.target.value))} className={`text-right font-bold text-lg ${isReadOnly ? '' : 'text-green-700 bg-white'}`} disabled={isReadOnly} />
                 </FormField>
               )}
               {includeVat !== undefined && onIncludeVatChange && (
                 <div className="flex items-end">
                   <div className="flex-1 bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-                    <label className="flex items-center gap-2 cursor-pointer text-sm text-slate-700">
-                      <input type="checkbox" checked={includeVat} onChange={(e) => onIncludeVatChange(e.target.checked)} className="rounded border-slate-300 text-green-600 focus:ring-green-500 h-4 w-4" disabled={isReadOnly} />
+                    <label className={`flex items-center gap-2 text-sm ${isReadOnly ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer text-slate-700'}`}>
+                      <input type="checkbox" checked={includeVat} onChange={(e) => onIncludeVatChange(e.target.checked)} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600 focus:ring-green-500'}`} disabled={isReadOnly} />
                       รวม VAT 7%
                     </label>
                     {includeVat && <span className="font-semibold text-slate-800 text-sm">{vatAmount.toLocaleString()} บาท</span>}
@@ -202,11 +202,11 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                       </div>
                       <div className={showDueDate ? 'col-span-4 sm:col-span-1' : 'col-span-6 sm:col-span-2'}>
                         <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">% สัดส่วน</label>
-                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className={`h-10 text-right font-mono ${last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} min={0} max={100} />
+                        <Input type="number" value={inst.percentage !== undefined && inst.percentage !== null ? inst.percentage : ''} onChange={(e) => handleChange(idx, 'percentage', e.target.value)} className={`h-10 text-right font-mono ${!isReadOnly && last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} min={0} max={100} />
                       </div>
                       <div className={showDueDate ? 'col-span-8 sm:col-span-3' : 'col-span-6 sm:col-span-3'}>
                         <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">จำนวนเงิน (บาท)</label>
-                        <Input type="number" value={inst.amount ?? 0} onChange={(e) => handleChange(idx, 'amount', e.target.value)} className={`h-10 font-mono ${last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} style={{ textAlign: 'right' }} />
+                        <Input type="number" value={inst.amount ?? 0} onChange={(e) => handleChange(idx, 'amount', e.target.value)} className={`h-10 font-mono ${!isReadOnly && last ? 'bg-slate-50 text-slate-400' : ''}`} disabled={isReadOnly || last} style={{ textAlign: 'right' }} />
                       </div>
                       {showDueDate && (
                         <div className="col-span-12 sm:col-span-2">
@@ -227,7 +227,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                   ยอดรวม {installments.length} งวด <span className={`font-bold ${pctOk ? 'text-green-600' : 'text-red-600'}`}>({totalPct.toFixed(0)}%)</span>
                 </span>
                 <span className={`text-xl font-bold tracking-tight ${amtOk ? 'text-green-700' : 'text-red-700'}`}>
-                  ฿{totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                  {totalAmt.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
                 </span>
               </div>
               {(!amtOk || !pctOk) && (

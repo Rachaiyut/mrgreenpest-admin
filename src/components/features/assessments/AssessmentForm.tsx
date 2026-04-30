@@ -927,8 +927,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                   <div className="p-4 border-b bg-slate-50 rounded-t-xl"><h3 className="font-bold text-slate-800">สรุปรายการ</h3></div>
                   <div className="p-4 space-y-4">
                     <div className="flex justify-between text-sm"><span className="text-slate-500">จำนวนพื้นที่บริการ</span><span className="font-medium">{workAreas.length} แห่ง</span></div>
-                    <div className="space-y-2">{workAreas.map((area, idx) => (<div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100"><span className="truncate max-w-[150px]">{area.area_name}</span><span>฿{Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>))}</div>
-                    <div className="pt-4 border-t flex justify-between items-end"><span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span><span className="text-2xl font-bold text-primary">฿{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span></div>
+                    <div className="space-y-2">{workAreas.map((area, idx) => (<div key={idx} className="flex justify-between text-xs text-slate-500 pl-2 border-l-2 border-slate-100"><span className="truncate max-w-[150px]">{area.area_name}</span><span>{Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span></div>))}</div>
+                    <div className="pt-4 border-t flex justify-between items-end"><span className="font-semibold text-slate-700">ยอดรวมสุทธิ</span><span className="text-2xl font-bold text-primary">{totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</span></div>
                   </div>
                 </div>
               </div>

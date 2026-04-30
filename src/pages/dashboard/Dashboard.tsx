@@ -212,7 +212,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
           <h3 className="text-base font-semibold text-slate-800 mb-4">เปรียบเทียบเดือนนี้ vs เดือนก่อน</h3>
           <div className="space-y-3">
             {comparison && [
-              { label: 'รายได้', data: comparison.revenue, prefix: '฿' },
+              { label: 'รายได้', data: comparison.revenue, suffix: ' บาท' },
               { label: 'งานทั้งหมด', data: comparison.jobs },
               { label: 'งานเสร็จสิ้น', data: comparison.completed_jobs },
               { label: 'ลูกค้าใหม่', data: comparison.new_customers },
@@ -222,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 <span className="text-sm text-slate-600">{item.label}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-slate-800">
-                    {item.prefix === '฿' ? fmt(item.data.current) : fmtInt(item.data.current)}
+                    {item.suffix === ' บาท' ? fmt(item.data.current) : fmtInt(item.data.current)}
                   </span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     item.data.change > 0 ? 'bg-green-50 text-green-600' :

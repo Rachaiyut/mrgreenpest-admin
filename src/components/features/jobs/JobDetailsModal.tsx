@@ -95,7 +95,7 @@ const WorkAreaDetails: FC<{ area: AssessmentWorkArea }> = ({ area }) => {
           {area.area_name}
         </h5>
         <span className="text-sm font-bold text-primary">
-          ฿{Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+          {Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
         </span>
       </div>
 
@@ -135,7 +135,7 @@ const WorkAreaDetails: FC<{ area: AssessmentWorkArea }> = ({ area }) => {
           />
           <DetailItem
             label="ราคาบริการหลัก"
-            value={`฿${basePrice.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+            value={`${basePrice.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`}
           />
         </dl>
 
@@ -505,7 +505,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                     <tr>
                       <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
                       <td className="px-4 py-2 text-right text-sm font-bold text-primary">
-                        ฿{Number(assessmentData.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+                        {Number(assessmentData.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
                       </td>
                     </tr>
                   </tfoot>
@@ -521,7 +521,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-slate-600">ยอดรวมทั้งหมดสุทธิ</span>
               <span className="text-xl font-bold text-primary">
-                ฿{Number(assessmentData.total_price).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+                {Number(assessmentData.total_price).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
               </span>
             </div>
           </div>

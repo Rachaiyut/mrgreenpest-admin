@@ -220,7 +220,7 @@ const PortalSignQuotation: React.FC = () => {
               <div className="flex justify-between sm:block">
                 <span className="text-slate-500">{isContract ? 'มูลค่า:' : 'ยอดรวม:'}</span>
                 <span className="ml-2 font-bold text-green-700">
-                  ฿{formatCurrency(isContract ? document?.total_amount : document?.total)}
+                  {formatCurrency(isContract ? document?.total_amount : document?.total)} บาท
                 </span>
               </div>
             </div>

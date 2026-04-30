@@ -14,6 +14,7 @@ interface PackageSelectionGridProps {
   onSelectPackage?: (pkgId: string) => void;
   onPackageCardClick: (pkgId: string) => void;
   onPriceOptionChange: (price: number, type: PackageType, conditionId: string, pkgId: string) => void;
+  readOnly?: boolean;
 }
 
 const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
@@ -28,6 +29,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
   onSelectPackage,
   onPackageCardClick,
   onPriceOptionChange,
+  readOnly = false,
 }) => {
   if (!areaSize || areaSize <= 0 || packages.length === 0) return null;
 
@@ -72,14 +74,16 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                 key={pkg.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => onPackageCardClick(pkg.id)}
-                className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full cursor-pointer ${
-                  isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                  : isOtherPackageLocked ? 'border-slate-200 bg-slate-50/50 opacity-60 hover:opacity-100 hover:border-primary hover:bg-primary/5'
-                  : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
+                onClick={() => !readOnly && onPackageCardClick(pkg.id)}
+                className={`group relative flex flex-col items-start p-3 rounded-lg border-2 transition-all text-left w-full ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${
+                  readOnly
+                    ? (isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary opacity-60' : 'border-slate-200 bg-slate-50 opacity-50')
+                    : isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                    : isOtherPackageLocked ? 'border-slate-200 bg-slate-50/50 opacity-60 hover:opacity-100 hover:border-primary hover:bg-primary/5'
+                    : 'border-slate-200 hover:border-primary hover:bg-primary/5 bg-white'
                 }`}
               >
-                <div className={`font-semibold ${isSelected ? 'text-primary' : 'text-slate-800'} group-hover:text-primary`}>
+                <div className={`font-semibold ${readOnly ? (isSelected ? 'text-primary' : 'text-slate-400') : isSelected ? 'text-primary' : 'text-slate-800'} ${readOnly ? '' : 'group-hover:text-primary'}`}>
                   {pkg.name}
                 </div>
                 {fit ? (
@@ -91,39 +95,45 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                       {/* มีปลวก */}
                       <label
                         onClick={(e) => {
+                          if (readOnly) return;
                           e.stopPropagation();
                           if (!isSelected && onSelectPackage) onSelectPackage(pkg.id);
                           onPriceOptionChange(fit.price_with_termite, PackageType.WITH_TERMITE, fit.id, pkg.id);
                         }}
-                        className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full ${
-                          isWithTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-300 hover:border-slate-400'
+                        className={`p-2 border rounded-md ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} transition-all flex flex-col items-start justify-center w-full ${
+                          readOnly
+                            ? (isWithTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-slate-50 border-slate-200')
+                            : isWithTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-300 hover:border-slate-400'
                         }`}
                       >
-                        <div className="text-[10px] text-slate-500">มีปลวก</div>
+                        <div className={`text-[10px] ${readOnly && !isWithTermiteSelected ? 'text-slate-300' : 'text-slate-500'}`}>มีปลวก</div>
                         <div className="flex items-center mt-1">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithTermiteSelected ? 'border-green-600' : 'border-slate-400'}`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_with_termite.toLocaleString()}</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{fit.price_with_termite.toLocaleString()} บาท</div>
                         </div>
                       </label>
                       {/* ไม่มีปลวก */}
                       <label
                         onClick={(e) => {
+                          if (readOnly) return;
                           e.stopPropagation();
                           if (!isSelected && onSelectPackage) onSelectPackage(pkg.id);
                           onPriceOptionChange(fit.price_without_termite, PackageType.WITHOUT_TERMITE, fit.id, pkg.id);
                         }}
-                        className={`p-2 border rounded-md cursor-pointer transition-all flex flex-col items-start justify-center w-full ${
-                          isWithoutTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-300 hover:border-slate-400'
+                        className={`p-2 border rounded-md ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} transition-all flex flex-col items-start justify-center w-full ${
+                          readOnly
+                            ? (isWithoutTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-slate-50 border-slate-200')
+                            : isWithoutTermiteSelected ? 'bg-green-50 border-green-500' : 'bg-white border-slate-300 hover:border-slate-400'
                         }`}
                       >
-                        <div className="text-[10px] text-slate-500">ไม่มีปลวก</div>
+                        <div className={`text-[10px] ${readOnly && !isWithoutTermiteSelected ? 'text-slate-300' : 'text-slate-500'}`}>ไม่มีปลวก</div>
                         <div className="flex items-center mt-1">
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithoutTermiteSelected ? 'border-green-600' : 'border-slate-400'}`}>
+                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${isWithoutTermiteSelected ? 'border-green-600' : (readOnly ? 'border-slate-300' : 'border-slate-400')}`}>
                             {isWithoutTermiteSelected && <div className="w-1.5 h-1.5 rounded-full bg-green-600"></div>}
                           </div>
-                          <div className="font-semibold text-sm text-slate-800 ml-2">฿{fit.price_without_termite.toLocaleString()}</div>
+                          <div className="font-semibold text-sm text-slate-800 ml-2">{fit.price_without_termite.toLocaleString()} บาท</div>
                         </div>
                       </label>
                     </div>

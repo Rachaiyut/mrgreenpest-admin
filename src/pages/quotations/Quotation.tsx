@@ -543,7 +543,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-purple-600 font-medium truncate">มูลค่ารวม</p>
                 <p className="text-base sm:text-xl font-bold text-purple-800 truncate">
-                  ฿{stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                  {stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })} บาท
                 </p>
               </div>
             </div>
@@ -734,11 +734,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           />
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
-                          ฿
                           {(Number(q.total) || 0).toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })}{' บาท'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {((q as unknown as Record<string, Record<string, string>>).creator)

@@ -788,7 +788,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const hasExistingReport = !!job?.service_report;
   const title = readOnly
-    ? 'รายงานบริการ'
+    ? 'รายละเอียดใบรายงานบริการ'
     : finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
       : hasExistingReport
@@ -1483,7 +1483,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <form
         id="service-report-form"
         onSubmit={handleSubmit}
-        className={`space-y-6 ${readOnly ? 'pointer-events-none opacity-80' : ''}`}
+        className={`space-y-6 ${readOnly ? 'pointer-events-none [&_input]:!bg-slate-100 [&_input]:!text-slate-400 [&_input]:!border-slate-300 [&_input[type=checkbox]]:!bg-slate-300 [&_input[type=checkbox]]:!border-slate-300 [&_input[type=checkbox]]:!text-slate-400 [&_textarea]:!bg-slate-100 [&_textarea]:!text-slate-400 [&_textarea]:!border-slate-300 [&_select]:!bg-slate-100 [&_select]:!text-slate-400 [&_select]:!border-slate-300 [&_button]:!bg-slate-100 [&_button]:!text-slate-400 [&_button]:!border-slate-300 [&_label]:!text-slate-400 [&_[ring-1]]:!bg-slate-100 [&_[ring-1]]:!text-slate-400 [&_.relative>div[class*=ring]]:!bg-slate-100 [&_.relative>div[class*=ring]]:!text-slate-400 [&_span]:!text-slate-400 [&_h3]:!text-slate-400 [&_h6]:!text-slate-400 [&_p]:!text-slate-400' : ''}`}
       >
         {/* Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

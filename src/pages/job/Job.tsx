@@ -667,6 +667,8 @@ const Job: React.FC<JobProps> = ({
   const [jobToEdit, setJobToEdit] = useState<any | null>(null);
   const [jobForReport, setJobForReport] = useState<any | null>(null);
   const [reportFinalStatus, setReportFinalStatus] = useState<JobStatus>(JobStatus.Completed);
+  const [reportReadOnly, setReportReadOnly] = useState(false);
+  const [isReportTabDropdown, setIsReportTabDropdown] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1272,10 +1274,13 @@ const Job: React.FC<JobProps> = ({
     if (openDropdownId === jobId) {
       setOpenDropdownId(null);
       setSelectedJob(null);
+
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setSelectedJob(jobs.find((j) => j.id === jobId) || null);
       setOpenDropdownId(jobId);
+      setIsReportTabDropdown(false);
+
 
       const threshold = 220;
       const isBottom = buttonRect.bottom > window.innerHeight - threshold;
@@ -1352,12 +1357,14 @@ const Job: React.FC<JobProps> = ({
       if ((event.target as HTMLElement).closest('button[data-job-id]')) return;
       setOpenDropdownId(null);
       setSelectedJob(null);
+
     };
 
     const handleScroll = () => {
       if (openDropdownId) {
         setOpenDropdownId(null);
         setSelectedJob(null);
+  
       }
     };
 
@@ -1380,7 +1387,18 @@ const Job: React.FC<JobProps> = ({
       onClick: () => void;
       isDanger?: boolean;
     }[] = [
-        { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(selectedJob) },
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => {
+            if (isReportTabDropdown) {
+              setReportReadOnly(true);
+              handleWriteReport(selectedJob);
+            } else {
+              handleViewDetails(selectedJob);
+            }
+          },
+        },
       ];
 
     const isRejectedStatus = status === JobStatus.Rejected;
@@ -1412,9 +1430,12 @@ const Job: React.FC<JobProps> = ({
       (status as unknown as string) === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'แก้ไขใบรายงานบริการ',
+        label: 'แก้ไข',
         icon: DocumentCheckIcon,
-        onClick: () => handleWriteReport(selectedJob),
+        onClick: () => {
+          setReportReadOnly(false);
+          handleWriteReport(selectedJob);
+        },
       });
     }
 
@@ -2283,9 +2304,10 @@ const Job: React.FC<JobProps> = ({
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">รหัสลูกค้า</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วัน</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลา</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่บันทึกรายงาน</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลาเช็คอิน</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลาเช็คเอ้าท์</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">บริการ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
@@ -2335,9 +2357,10 @@ const Job: React.FC<JobProps> = ({
                               {formatThaiDate(reportDate)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                              {report.time_in && report.time_out
-                                ? `${report.time_in} - ${report.time_out}`
-                                : '-'}
+                              {report.time_in || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                              {report.time_out || '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap gap-1">
@@ -2382,7 +2405,9 @@ const Job: React.FC<JobProps> = ({
                                   )}
                                 </Button>
                                 <Button
-                                  onClick={() => {
+                                  data-job-id={report.job_id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     const reportJob = rData.job;
                                     const techList: any[] = [];
                                     if (reportJob?.primary_technician) {
@@ -2404,7 +2429,20 @@ const Job: React.FC<JobProps> = ({
                                       assessment_id: reportJob?.assessment_id,
                                       contract_id: reportJob?.contract_id,
                                     } as unknown as FieldJob;
-                                    handleWriteReport(targetJob);
+
+                                    const jId = targetJob.id;
+                                    if (openDropdownId === jId) {
+                                      setOpenDropdownId(null);
+                                      setSelectedJob(null);
+                                    } else {
+                                      const buttonRect = e.currentTarget.getBoundingClientRect();
+                                      setSelectedJob(targetJob as any);
+                                      setOpenDropdownId(jId);
+                                      setIsReportTabDropdown(true);
+                                      const threshold = 220;
+                                      const isBottom = buttonRect.bottom > window.innerHeight - threshold;
+                                      setDropdownPosition({ top: buttonRect.bottom, left: buttonRect.right, isBottom });
+                                    }
                                   }}
                                   variant="ghost"
                                   className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
@@ -2418,7 +2456,7 @@ const Job: React.FC<JobProps> = ({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={8} className="p-0 border-b-0 h-0">
+                        <td colSpan={9} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
@@ -2614,6 +2652,7 @@ const Job: React.FC<JobProps> = ({
         onClose={() => {
           setIsReportModalOpen(false);
           setJobForReport(null);
+          setReportReadOnly(false);
         }}
         job={jobForReport}
         finalStatus={reportFinalStatus}
@@ -2622,6 +2661,7 @@ const Job: React.FC<JobProps> = ({
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}
+        readOnly={reportReadOnly}
       />
 
       <DailyClosureCloseModal

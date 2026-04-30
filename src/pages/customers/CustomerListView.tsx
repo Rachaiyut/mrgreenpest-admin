@@ -135,7 +135,7 @@ const CustomerListView: React.FC<{
               <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium bg-red-50/50">
                 {outstandingAmount > 0 ? (
                   <span className="text-red-600">
-                    ฿{outstandingAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                    {outstandingAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
                   </span>
                 ) : (
                   <span className="text-green-600">-</span>

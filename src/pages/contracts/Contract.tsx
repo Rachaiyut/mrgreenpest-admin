@@ -394,13 +394,12 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               <p className="text-sm text-purple-600 font-medium">มูลค่ารวม</p>
               <p
                 className="text-xl font-bold text-purple-800 truncate"
-                title={`฿${stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+                title={`${stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`}
               >
-                ฿
                 {stats.totalValue.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
-                })}
+                })}{' บาท'}
               </p>
             </div>
           </div>
@@ -529,11 +528,10 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
                           }
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-800 text-right font-semibold">
-                          ฿
                           {(Number(c.total_amount) || 0).toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })}{' บาท'}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${

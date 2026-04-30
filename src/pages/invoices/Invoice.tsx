@@ -330,10 +330,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <div>
               <p className="text-sm text-purple-600 font-medium">ยอดค้างชำระ</p>
               <p className="text-lg font-bold text-purple-800">
-                ฿
                 {invoiceStats.pendingValue.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
-                })}
+                })}{' '}บาท
               </p>
             </div>
           </div>
@@ -494,11 +493,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         {formatThaiDate(i.due_at)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
-                        ฿
                         {Number(i.total).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        })}
+                        })}{' '}บาท
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>

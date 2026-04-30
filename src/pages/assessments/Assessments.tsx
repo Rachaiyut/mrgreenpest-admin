@@ -42,7 +42,6 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { AssessmentModal } from '@/src/components/features/assessments/AssessmentModal'; // 🔴 นำเข้า AssessmentModal ที่รวมแล้ว
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
-import { ConfirmationModal } from '@/src/components/common';
 import {
   AssessmentApi,
   CustomerApi,
@@ -83,9 +82,6 @@ const Assessments: React.FC = () => {
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [assessmentToDelete, setAssessmentToDelete] =
-    useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDate, setFilterDate] = useState<string>(() => {
     const now = new Date();
@@ -286,12 +282,17 @@ const Assessments: React.FC = () => {
     }
   };
 
-  const handleDeleteAssessment = async (assessmentId: string) => {
+  const handleDeleteAssessment = async (assessmentId: string, reason?: string) => {
     try {
-      await AssessmentApi.update(assessmentId, { status: 'CANCELLED' } as Partial<Assessment>);
+      await AssessmentApi.update(assessmentId, {
+        status: 'CANCELLED',
+        ...(reason ? { cancel_reason: reason } : {}),
+      } as Partial<Assessment>);
+      Swal.fire({ icon: 'success', title: 'ยกเลิกใบประเมินแล้ว', timer: 1500, showConfirmButton: false });
       fetchData();
     } catch (error) {
-      console.error('Error cancelling assessment:', error);
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถยกเลิกใบประเมินได้', 'error');
     }
   };
 
@@ -307,18 +308,20 @@ const Assessments: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (assessment: Assessment) => {
-    setAssessmentToDelete(assessment);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (assessment: Assessment) => {
     setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (assessmentToDelete) {
-      await handleDeleteAssessment(assessmentToDelete.id);
-    }
-    setIsDeleteModalOpen(false);
-    setAssessmentToDelete(null);
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการลบ',
+      html: `คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมิน <b>${assessment.code || assessment.id}</b> นี้?<br/><br/><small style="color:#94a3b8;">หมายเหตุ: การกระทำนี้ไม่สามารถย้อนกลับได้</small>`,
+      width: 400,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการลบ',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!result.isConfirmed) return;
+    await handleDeleteAssessment(assessment.id);
   };
 
   const handleDropdownToggle = (
@@ -369,6 +372,7 @@ const Assessments: React.FC = () => {
     if (!selectedAssessment) return null;
 
     const isPending = String(selectedAssessment.status).toUpperCase() === 'PENDING';
+    const isCancelled = String(selectedAssessment.status).toUpperCase() === 'CANCELLED';
     const canApprove = hasPermission('APPROVE_ASSESSMENT');
 
     const actions: {
@@ -383,6 +387,23 @@ const Assessments: React.FC = () => {
           onClick: () => handleViewDetails(selectedAssessment),
         },
       ];
+
+    if (isCancelled) return actions.map((action) => (
+      <a
+        key={action.label}
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          action.onClick();
+          setOpenDropdownId(null);
+        }}
+        className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+        role="menuitem"
+      >
+        <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+        <span>{action.label}</span>
+      </a>
+    ));
 
     if (!isPending || canApprove) {
       actions.push({
@@ -764,11 +785,10 @@ const Assessments: React.FC = () => {
                             <StatusBadge status={assessment.status} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
-                            ฿
-                            {assessment.total_price.toLocaleString('th-TH', {
+                            {Number(assessment.total_price || 0).toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
-                            })}
+                            })} บาท
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(() => { const creator = (assessment as unknown as Record<string, Record<string, string>>).creator; return creator ? `${creator.first_name} ${creator.last_name || ''}`.trim() : '-'; })()}
@@ -828,19 +848,6 @@ const Assessments: React.FC = () => {
                       );
                     })}
                   </tbody>
-                  {paginatedAssessments.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-t-2 border-slate-300">
-                        <td colSpan={8} className="px-4 py-3 text-right text-sm font-semibold text-slate-700">
-                          ยอดรวมทั้งหมด
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-slate-900">
-                          ฿{paginatedAssessments.reduce((sum, a) => sum + (a.total_price || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
-                  )}
                 </table>
               </div>
               {paginatedAssessments.length > 0 && (
@@ -898,30 +905,11 @@ const Assessments: React.FC = () => {
           assessment={selectedAssessment}
           products={products}
           customers={customers}
+          packages={packages}
+          categories={categories}
         />
       )}
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <div className="text-slate-600">
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินนี้?
-            <br />
-            {assessmentToDelete && (
-              <span className="font-semibold text-slate-800 mt-2 block">
-                รหัส: {assessmentToDelete.code || assessmentToDelete.id}
-              </span>
-            )}
-            <br />
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </div>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
-      />
     </div>
   );
 };

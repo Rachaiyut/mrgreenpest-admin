@@ -10,7 +10,7 @@ interface PackageDetailsModalProps {
   pkg: Package | null;
 }
 
-const fmt = (n: number) => `฿${Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}`;
+const fmt = (n: number) => `${Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท`;
 
 export const PackageDetailsModal: React.FC<PackageDetailsModalProps> = ({
   isOpen,

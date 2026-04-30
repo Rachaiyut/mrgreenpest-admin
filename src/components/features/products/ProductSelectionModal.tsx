@@ -136,7 +136,17 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
             placeholder="ค้นหารหัสสินค้า, ชื่อสินค้า"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
           />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+          </svg>
           {isLoading && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
               <svg className="animate-spin h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none">
@@ -223,7 +233,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                     {product.unit?.name || '-'}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
-                    ฿{product.cost_price}
+                    {Number(product.cost_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                   </td>
                 </tr>
               ))}

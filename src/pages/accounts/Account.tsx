@@ -22,7 +22,7 @@ import { AccountTransactionModal } from '../../components/features/accounts/Acco
 import { AccountTransactionHistoryModal } from '../../components/features/accounts/AccountTransactionHistoryModal';
 
 const fmtMoney = (v: number) =>
-  `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
 
 const ACCOUNT_TYPE_LABEL: Record<string, string> = {
   SAVINGS: 'ออมทรัพย์',

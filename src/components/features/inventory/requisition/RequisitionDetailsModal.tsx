@@ -50,10 +50,9 @@ export const RequisitionDetailsModal: React.FC<
               <>
                 ยอดรวมทั้งหมด:{' '}
                 <span className="text-primary">
-                  ฿
                   {totalAmount.toLocaleString('th-TH', {
                     minimumFractionDigits: 2,
-                  })}
+                  })}{' '}บาท
                 </span>
               </>
             )}

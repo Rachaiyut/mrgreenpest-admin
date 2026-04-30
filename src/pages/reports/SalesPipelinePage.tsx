@@ -300,13 +300,13 @@ const SalesPipelinePage: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่ารวม</span>
                     <span className="font-medium text-slate-700">
-                      {formatNumber(data.quotations.total_value)} ฿
+                      {formatNumber(data.quotations.total_value)} บาท
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่าเซ็น</span>
                     <span className="font-medium text-emerald-600">
-                      {formatNumber(data.quotations.signed_value)} ฿
+                      {formatNumber(data.quotations.signed_value)} บาท
                     </span>
                   </div>
                 </div>
@@ -368,13 +368,13 @@ const SalesPipelinePage: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่ารวม</span>
                     <span className="font-medium text-slate-700">
-                      {formatNumber(data.contracts.total_value)} ฿
+                      {formatNumber(data.contracts.total_value)} บาท
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่าใช้งาน</span>
                     <span className="font-medium text-emerald-600">
-                      {formatNumber(data.contracts.active_value)} ฿
+                      {formatNumber(data.contracts.active_value)} บาท
                     </span>
                   </div>
                 </div>
@@ -448,7 +448,7 @@ const SalesPipelinePage: React.FC = () => {
                       เซ็นสำเร็จ
                     </th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                      มูลค่า (฿)
+                      มูลค่า (บาท)
                     </th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                       Conversion Rate (%)

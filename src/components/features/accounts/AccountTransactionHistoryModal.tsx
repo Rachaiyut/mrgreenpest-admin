@@ -19,7 +19,7 @@ interface Props {
 }
 
 const fmtMoney = (v: number) =>
-  `฿${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${Number(v || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
 
 const TYPE_META: Record<
   AccountTransactionType,

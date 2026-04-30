@@ -1559,7 +1559,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
+              <label className={`flex items-center gap-2 ${isReadOnly ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer text-slate-600'}`}><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600'}`} />ภาษีมูลค่ารวม 7% (VAT)</label>
               <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
             </div>
             <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>

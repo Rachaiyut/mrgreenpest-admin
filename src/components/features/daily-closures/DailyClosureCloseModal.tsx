@@ -228,7 +228,7 @@ export const DailyClosureCloseModal: React.FC<DailyClosureCloseModalProps> = ({
                           {summary.expenses.map((exp, idx) => (
                             <tr key={idx} className="border-b border-slate-50 last:border-0">
                               <td className="py-2 text-slate-700">{exp.description || '-'}</td>
-                              <td className="py-2 text-right font-semibold text-slate-800 tabular-nums">{exp.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} ฿</td>
+                              <td className="py-2 text-right font-semibold text-slate-800 tabular-nums">{exp.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</td>
                             </tr>
                           ))}
                         </tbody>

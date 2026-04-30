@@ -859,10 +859,10 @@ const IssueSummaryPage: React.FC = () => {
                     const showExpenseCell = !row.category || row.category === 'EXPENSE';
 
                     const fmtMoney = (v: number) =>
-                      `฿${v.toLocaleString('th-TH', {
+                      `${v.toLocaleString('th-TH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
-                      })}`;
+                      })} บาท`;
 
                     return (
                       <tr key={`${summary.id}-${row.category || 'all'}`} className="hover:bg-slate-50">

@@ -1255,7 +1255,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                                 งวดที่ {item.term}
                               </td>
                               <td className={`px-4 py-3 text-sm font-semibold ${isSelected ? 'text-primary' : 'text-primary/70'}`}>{item.invoice?.code || <span className="text-slate-300">—</span>}</td>
-                              <td className="px-4 py-3 text-sm text-right font-semibold text-slate-800">฿{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</td>
+                              <td className="px-4 py-3 text-sm text-right font-semibold text-slate-800">{item.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท</td>
                               <td className="px-4 py-3 text-right"><span className={`text-xs font-medium px-2.5 py-1 rounded-full border inline-block ${cfg.color}`}>{cfg.label}</span></td>
                             </tr>
                           );
@@ -1388,19 +1388,19 @@ export const JobForm: React.FC<JobFormProps> = ({
                   placeholder="ค้นหาช่างเพิ่มเติม..." 
                   value={additionalTechSearch} 
                   onChange={(e) => setAdditionalTechSearch(e.target.value)} 
-                  className="bg-slate-50 border-slate-200 focus:bg-white transition-all" 
+                  className={`transition-all ${isDisableTeamEdit ? '' : 'bg-slate-50 border-slate-200 focus:bg-white'}`}
                   disabled={isDisableTeamEdit}
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                 {additionalTechnicians.map((tech) => (
-                  <label key={tech.id} className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 group ${selectedTechnicianIds.includes(tech.id) ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'}`}>
+                  <label key={tech.id} className={`relative flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 group ${isDisableTeamEdit ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${selectedTechnicianIds.includes(tech.id) ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20' : `bg-white border-slate-200 ${isDisableTeamEdit ? '' : 'hover:border-slate-300 hover:shadow-md'}`}`}>
                     <div className="pt-1">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedTechnicianIds.includes(tech.id)} 
-                        onChange={() => handleTechnicianToggle(tech.id)} 
-                        className="w-5 h-5 text-primary rounded border-slate-300 focus:ring-primary transition-colors cursor-pointer" 
+                      <input
+                        type="checkbox"
+                        checked={selectedTechnicianIds.includes(tech.id)}
+                        onChange={() => handleTechnicianToggle(tech.id)}
+                        className={`w-5 h-5 rounded transition-colors ${isDisableTeamEdit ? 'border-slate-200 text-slate-400 cursor-not-allowed' : 'text-primary border-slate-300 focus:ring-primary cursor-pointer'}`}
                         disabled={isDisableTeamEdit}
                       />
                     </div>

@@ -791,7 +791,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         </td>
                       )}
                       <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">
-                        ฿{Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </td>
                     </tr>
                   ))}
@@ -892,7 +892,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       placeholder="0.00"
                       required
                     />
-                    <div className="absolute right-4 top-2.5 text-slate-400 font-bold">฿</div>
+                    <div className="absolute right-4 top-2.5 text-slate-400 font-bold">บาท</div>
                   </div>
                 </FormField>
               </div>

@@ -892,7 +892,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
               >
                 <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-                    <span className="bg-emerald-100 text-emerald-700 p-1 rounded-md text-xs px-2 border border-emerald-200 font-black">฿</span>
+                    <span className="bg-emerald-100 text-emerald-700 p-1 rounded-md text-xs px-2 border border-emerald-200 font-black">บาท</span>
                     การเงิน & ค่าใช้จ่าย
                   </h3>
                   <Button
