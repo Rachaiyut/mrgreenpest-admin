@@ -233,7 +233,7 @@ const IssueSummaryPage: React.FC = () => {
 
   // Load warehouses / users once
   useEffect(() => {
-    fetchData(['warehouses', 'users']).catch((e) => console.error(e));
+    fetchData(['warehouses', 'users', 'jobs']).catch((e) => console.error(e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -269,6 +269,28 @@ const IssueSummaryPage: React.FC = () => {
         })
       ),
     [users]
+  );
+
+  const jobMap = useMemo(
+    () =>
+      new Map(
+        jobs.map((j) => {
+          const jExt = j as unknown as Record<string, unknown>;
+          const c = jExt.customer as Record<string, string> | undefined;
+          const customerName = c
+            ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+            : '';
+          const workDate = (jExt.start_date || jExt.appointment_date || j.created_at) as string;
+          const formattedDate = workDate
+            ? new Date(workDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '';
+          const label = customerName
+            ? `${customerName}${formattedDate ? ` (${formattedDate})` : ''}`
+            : formattedDate || j.id.substring(0, 8);
+          return [j.id, label];
+        })
+      ),
+    [jobs]
   );
 
   const uniqueCreators = useMemo(
@@ -734,6 +756,8 @@ const IssueSummaryPage: React.FC = () => {
                   )}
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เอกสารอ้างอิง</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">หมายเหตุ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
@@ -874,6 +898,24 @@ const IssueSummaryPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {requesterName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[200px]">
+                          {summary.job_id ? (
+                            <span className="truncate block" title={jobMap.get(summary.job_id) || summary.job_id}>
+                              {jobMap.get(summary.job_id) || `#${summary.job_id.substring(0, 8)}`}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[180px]">
+                          {summary.notes ? (
+                            <span className="truncate block" title={summary.notes}>
+                              {summary.notes}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${typeClass}`}>

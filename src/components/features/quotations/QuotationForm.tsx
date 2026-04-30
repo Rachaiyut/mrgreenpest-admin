@@ -1359,16 +1359,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     </div>
   );
 
-  const getBuildingTypeName = (type: string) => {
-    const t = (type || '').toUpperCase();
-    if (t === 'HOUSE') return 'บ้าน';
-    if (t === 'OFFICE') return 'ออฟฟิศ';
-    if (t === 'CONDO') return 'คอนโด';
-    if (t === 'TOWNHOUSE') return 'ทาวน์โฮม/ทาวน์เฮาส์';
-    if (t === 'FACTORY') return 'โรงงาน';
-    if (t === 'RESTAURANT') return 'ร้านอาหาร';
-    return type || '-';
-  };
 
   return (
     <div className="flex flex-col relative">

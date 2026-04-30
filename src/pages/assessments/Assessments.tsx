@@ -52,6 +52,7 @@ import {
 } from '@/src/api';
 import { CategoryType, Role } from '@/src/types';
 import { useCurrentUser } from '@/src/hooks';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 
 const Assessments: React.FC = () => {
@@ -538,7 +539,7 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* DatePicker กรองวันที่ */}
-              <div className="w-full sm:w-48 flex-shrink-0">
+              <div className="w-full sm:w-48 flex-shrink-0 relative">
                  <DatePicker
                     selected={filterDate ? new Date(filterDate) : null}
                     onChange={(date: Date | null) => {
@@ -557,9 +558,10 @@ const Assessments: React.FC = () => {
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     isClearable
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                     wrapperClassName="w-full"
                   />
+                  <CalendarDaysIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
               </div>
 
               {/* Dropdown สถานะ */}
@@ -703,22 +705,13 @@ const Assessments: React.FC = () => {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {paginatedAssessments.map((assessment, index) => {
-                      const buildingTypeMap: Record<string, string> = {
-                        'OFFICE': 'สำนักงาน',
-                        'HOUSE': 'บ้านพักอาศัย',
-                        'FACTORY': 'โรงงาน',
-                        'CONDO': 'คอนโดมิเนียม',
-                        'TOWNHOUSE': 'ทาวน์เฮ้าส์',
-                        'SHOPHOUSE': 'อาคารพาณิชย์',
-                        'OTHER': 'อื่นๆ',
-                      };
                       const allBuildingTypes = [
                         ...new Set(
                           assessment.assessment_areas
                             .map((area) => {
                               const bt = area.building_type as string;
                               if (bt === 'OTHER' && area.building_type_other) return area.building_type_other;
-                              return buildingTypeMap[bt] || bt;
+                              return BUILDING_TYPE_LABELS[bt] || bt;
                             })
                             .filter(Boolean)
                         ),
@@ -835,6 +828,19 @@ const Assessments: React.FC = () => {
                       );
                     })}
                   </tbody>
+                  {paginatedAssessments.length > 0 && (
+                    <tfoot>
+                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-t-2 border-slate-300">
+                        <td colSpan={8} className="px-4 py-3 text-right text-sm font-semibold text-slate-700">
+                          ยอดรวมทั้งหมด
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-slate-900">
+                          ฿{paginatedAssessments.reduce((sum, a) => sum + (a.total_price || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </div>
               {paginatedAssessments.length > 0 && (

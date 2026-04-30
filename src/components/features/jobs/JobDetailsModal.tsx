@@ -8,6 +8,7 @@ import React, {
   cloneElement,
 } from 'react';
 import { Modal } from '../../common/Modal';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import { FieldJob } from '@/src/types/entity/service-report.interface';
 import { Assessment, AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
@@ -67,15 +68,7 @@ const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({
   </div>
 );
 
-const BUILDING_TYPE_MAP: Record<string, string> = {
-  OFFICE: 'สำนักงาน',
-  HOUSE: 'บ้านพักอาศัย',
-  FACTORY: 'โรงงาน',
-  CONDO: 'คอนโดมิเนียม',
-  TOWNHOUSE: 'ทาวน์เฮ้าส์',
-  SHOPHOUSE: 'อาคารพาณิชย์',
-  OTHER: 'อื่นๆ',
-};
+const BUILDING_TYPE_MAP = BUILDING_TYPE_LABELS;
 
 const SERVICE_SYSTEM_MAP: Record<string, string> = {
   CHEMICAL: 'สารเคมี',

@@ -133,7 +133,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
         <div className="relative">
           <Input
             type="search"
-            placeholder="ค้นหาด้วยชื่อ หรือ รหัสสินค้า..."
+            placeholder="ค้นหารหัสสินค้า, ชื่อสินค้า"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -152,6 +152,9 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               <tr>
                 <th scope="col" className="w-12 px-4 py-3">
                   <span className="sr-only">Select</span>
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16">
+                  ลำดับ
                 </th>
                 <th
                   scope="col"
@@ -188,7 +191,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               </tr>
             </thead>
             <tbody className={`bg-white divide-y divide-slate-200 transition-opacity ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
-              {availableProducts.map((product) => (
+              {availableProducts.map((product, index) => (
                 <tr
                   key={product.id}
                   className={`cursor-pointer hover:bg-slate-50 ${selectedIds.has(product.id) ? 'bg-primary/10' : ''}`}
@@ -201,6 +204,9 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
                       readOnly
                       className="pointer-events-none"
                     />
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
+                    {index + 1}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-slate-900">
                     {product.code}

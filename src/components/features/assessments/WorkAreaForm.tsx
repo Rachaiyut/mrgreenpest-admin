@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, FC, ChangeEvent } from 'react';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import { FormField, Input, Select } from '../../common/FormControls';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import {
@@ -58,6 +59,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   const prevAreaSizeRef = useRef(area.area_size);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAreaSizeFocused, setIsAreaSizeFocused] = useState(false);
   const [selectedStandardPrice, setSelectedStandardPrice] = useState<
     number | undefined
   >(area.package_price);
@@ -598,9 +600,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     required
                   >
                     <option value="">เลือกประเภท</option>
-                    <option value="OFFICE">ออฟฟิศ</option>
-                    <option value="HOUSE">บ้าน</option>
-                    <option value="OTHER">อื่นๆ</option>
+                    {Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
                   </Select>
                   {errors?.[`area_${index}_building_type`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_building_type`]}</p>
@@ -658,44 +660,42 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               <div className="bg-white p-3 rounded-lg border border-slate-200">
                 <FormField label="ประเภทบริการ *">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                    {categories.map((cat) => (
-                      <label
-                        key={cat.id}
-                        className="flex items-center space-x-2"
-                      >
-                        <input
-                          type="checkbox"
-                          className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}
-                          checked={(area.category_services || []).some(
-                            (s) => s.category_id === cat.id
-                          )}
-                          onChange={() => handleServiceTypeChange(cat.id)}
-                        />
-                        <span className="text-slate-700">{cat.name}</span>
-                      </label>
-                    ))}
+                    {categories.map((cat) => {
+                      const isOther = cat.name === 'อื่นๆ';
+                      const isChecked = (area.category_services || []).some(
+                        (s) => s.category_id === cat.id
+                      );
+                      return (
+                        <div key={cat.id} className={isOther ? 'col-span-2 md:col-span-2' : ''}>
+                          <div className="flex items-center gap-2">
+                            <label className="flex items-center space-x-2 shrink-0">
+                              <input
+                                type="checkbox"
+                                className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}
+                                checked={isChecked}
+                                onChange={() => handleServiceTypeChange(cat.id)}
+                              />
+                              <span className="text-slate-700">{cat.name}</span>
+                            </label>
+                            {isOther && isChecked && (
+                              <input
+                                type="text"
+                                placeholder="ระบุประเภทบริการอื่นๆ..."
+                                value={(area as Record<string, unknown>).category_other as string || ''}
+                                onChange={(e) =>
+                                  onAreaChange(index, { ...area, category_other: e.target.value } as typeof area)
+                                }
+                                className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </FormField>
                 {errors?.[`area_${index}_category_services`] && (
                   <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_category_services`]}</p>
-                )}
-                {(area.category_services || []).some(
-                  (s) => {
-                    const cat = categories.find((c) => c.id === s.category_id);
-                    return cat?.name === 'อื่นๆ';
-                  }
-                ) && (
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="ระบุประเภทบริการอื่นๆ..."
-                      value={(area as Record<string, unknown>).category_other as string || ''}
-                      onChange={(e) =>
-                        onAreaChange(index, { ...area, category_other: e.target.value } as typeof area)
-                      }
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900"
-                    />
-                  </div>
                 )}
               </div>
 
@@ -803,9 +803,17 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     <div className="relative mb-3">
                       <Input
                         name="area_size"
-                        type="number"
-                        value={area.area_size || ''}
-                        onChange={handleFieldChange}
+                        type="text"
+                        inputMode="decimal"
+                        value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/,/g, '');
+                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+                            onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
+                          }
+                        }}
+                        onFocus={() => setIsAreaSizeFocused(true)}
+                        onBlur={() => setIsAreaSizeFocused(false)}
                         placeholder={`ระบุขนาดพื้นที่ (${selectedUnitName})`}
                         required
                       />
@@ -858,7 +866,22 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       <p className="text-xs text-slate-500 mb-2">หรือระบุขนาดเอง:</p>
                     )}
                     <div className="relative mb-3">
-                      <Input name="area_size" type="number" value={area.area_size || ''} onChange={handleFieldChange} placeholder="ระบุขนาดพื้นที่ (เมตร)" required />
+                      <Input
+                        name="area_size"
+                        type="text"
+                        inputMode="decimal"
+                        value={isAreaSizeFocused ? (area.area_size ?? '') : (area.area_size ? Number(area.area_size).toLocaleString('th-TH') : '')}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/,/g, '');
+                          if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+                            onAreaChange(index, { ...area, area_size: raw === '' ? undefined : parseFloat(raw) });
+                          }
+                        }}
+                        onFocus={() => setIsAreaSizeFocused(true)}
+                        onBlur={() => setIsAreaSizeFocused(false)}
+                        placeholder="ระบุขนาดพื้นที่ (เมตร)"
+                        required
+                      />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                         <span className="text-gray-500 sm:text-sm">เมตร</span>
                       </div>
@@ -1025,54 +1048,118 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
           </div>
         )}
         {/* รูปภาพพื้นที่ */}
-        <div className="border border-slate-200 p-2 rounded-lg bg-white mb-4 mx-2">
-          <h3 className="font-semibold text-slate-800 mb-2">รูปภาพพื้นที่</h3>
-          {(area as unknown as Record<string, string>).site_image_url || (area as unknown as Record<string, string>).siteImagePreview ? (
-            <div className="p-2">
-              <div className="relative inline-block">
-                <img
-                  src={(area as unknown as Record<string, string>).siteImagePreview || (area as unknown as Record<string, string>).site_image_url}
-                  alt={area.area_name}
-                  className="max-h-48 rounded-lg border border-slate-200 object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => onAreaChange(index, {
-                    ...area,
-                    site_image_id: null,
-                    siteImageFile: null,
-                    siteImagePreview: null,
-                    site_image_url: null,
-                  } as Partial<AssessmentWorkArea>)}
-                  className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow hover:bg-red-600"
-                  title="ลบรูป"
-                >
-                  <TrashIcon className="w-3.5 h-3.5" />
-                </button>
+        <div className="border border-slate-200 p-3 rounded-lg bg-white mb-4 mx-4">
+          <h3 className="font-semibold text-slate-800 mb-2">รูปภาพพื้นที่ <span className="text-xs font-normal text-slate-400">(สูงสุด 5 รูป)</span></h3>
+          {(() => {
+            const areaAny = area as unknown as Record<string, any>;
+            const existingUrls: string[] = Array.isArray(areaAny.site_image_urls) ? areaAny.site_image_urls : (areaAny.site_image_url ? [areaAny.site_image_url] : []);
+            const existingIds: string[] = Array.isArray(areaAny.site_image_ids) ? areaAny.site_image_ids : (areaAny.site_image_id ? [areaAny.site_image_id] : []);
+            const previewUrls: string[] = Array.isArray(areaAny.siteImagePreviews) ? areaAny.siteImagePreviews : (areaAny.siteImagePreview ? [areaAny.siteImagePreview] : []);
+            const files: File[] = Array.isArray(areaAny.siteImageFiles) ? areaAny.siteImageFiles : (areaAny.siteImageFile ? [areaAny.siteImageFile] : []);
+            const allImages = [
+              ...existingUrls.map((url, i) => ({ src: url, type: 'existing' as const, id: existingIds[i] || null, idx: i })),
+              ...previewUrls.map((url, i) => ({ src: url, type: 'new' as const, id: null, idx: i })),
+            ];
+            const totalCount = allImages.length;
+            const canAddMore = totalCount < 5;
+
+            if (totalCount === 0) {
+              return (
+                <label className="block border-2 border-dashed border-slate-200 rounded-lg p-6 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
+                  <svg className="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+                  <span className="text-sm text-primary font-medium">เลือกรูปภาพ</span>
+                  <p className="text-xs text-slate-400 mt-0.5">PNG, JPG (ไม่เกิน 5MB)</p>
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      const selectedFiles = Array.from(e.target.files || []);
+                      const filesToAdd = selectedFiles.slice(0, 5);
+                      if (filesToAdd.length === 0) return;
+                      const newPreviews = filesToAdd.map(f => URL.createObjectURL(f));
+                      onAreaChange(index, {
+                        ...area,
+                        siteImageFiles: filesToAdd,
+                        siteImagePreviews: newPreviews,
+                      } as Partial<AssessmentWorkArea>);
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {allImages.map((img, imgIdx) => (
+                  <div key={`${img.type}-${imgIdx}`} className="relative group aspect-square">
+                    <img
+                      src={img.src}
+                      alt={`${area.area_name} ${imgIdx + 1}`}
+                      className="w-full h-full rounded-lg border border-slate-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (img.type === 'existing') {
+                          const newUrls = existingUrls.filter((_, i) => i !== img.idx);
+                          const newIds = existingIds.filter((_, i) => i !== img.idx);
+                          onAreaChange(index, {
+                            ...area,
+                            site_image_urls: newUrls,
+                            site_image_ids: newIds,
+                            site_image_url: newUrls[0] || null,
+                            site_image_id: newIds[0] || null,
+                          } as Partial<AssessmentWorkArea>);
+                        } else {
+                          const newPreviews = previewUrls.filter((_, i) => i !== img.idx);
+                          const newFiles = files.filter((_, i) => i !== img.idx);
+                          onAreaChange(index, {
+                            ...area,
+                            siteImagePreviews: newPreviews,
+                            siteImageFiles: newFiles,
+                            siteImagePreview: newPreviews[0] || null,
+                            siteImageFile: newFiles[0] || null,
+                          } as Partial<AssessmentWorkArea>);
+                        }
+                      }}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="ลบรูป"
+                    >
+                      <TrashIcon className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {canAddMore && (
+                  <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-lg bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
+                    <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
+                    <span className="text-xs text-primary font-medium mt-1">เพิ่มรูป</span>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg"
+                      multiple
+                      className="sr-only"
+                      onChange={(e) => {
+                        const selectedFiles = Array.from(e.target.files || []);
+                        const remaining = 5 - totalCount;
+                        const filesToAdd = selectedFiles.slice(0, remaining);
+                        if (filesToAdd.length === 0) return;
+                        const newPreviews = filesToAdd.map(f => URL.createObjectURL(f));
+                        onAreaChange(index, {
+                          ...area,
+                          siteImageFiles: [...files, ...filesToAdd],
+                          siteImagePreviews: [...previewUrls, ...newPreviews],
+                        } as Partial<AssessmentWorkArea>);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                )}
               </div>
-            </div>
-          ) : (
-            <label className="block border-2 border-dashed border-slate-200 rounded-lg p-6 text-center bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
-              <svg className="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
-              <span className="text-sm text-primary font-medium">เลือกรูปภาพ</span>
-              <p className="text-xs text-slate-400 mt-0.5">PNG, JPG (ไม่เกิน 5MB)</p>
-              <input
-                type="file"
-                accept="image/png, image/jpeg"
-                className="sr-only"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    onAreaChange(index, {
-                      ...area,
-                      siteImageFile: file,
-                      siteImagePreview: URL.createObjectURL(file),
-                    } as Partial<AssessmentWorkArea>);
-                  }
-                }}
-              />
-            </label>
-          )}
+            );
+          })()}
         </div>
 
         <div className="text-right font-semibold text-slate-800 pt-2 pb-3 border-t mx-2">

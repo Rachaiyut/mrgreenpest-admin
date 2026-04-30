@@ -1,5 +1,6 @@
 import { FC, ReactNode, ReactElement, cloneElement, useEffect, useState } from 'react';
 import { Modal } from '../../common/Modal';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import {
   Assessment,
   AssessmentWorkArea,
@@ -59,15 +60,7 @@ const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({ icon, title }) 
   </div>
 );
 
-const BUILDING_TYPE_MAP: Record<string, string> = {
-  OFFICE: 'สำนักงาน',
-  HOUSE: 'บ้านพักอาศัย',
-  FACTORY: 'โรงงาน',
-  CONDO: 'คอนโดมิเนียม',
-  TOWNHOUSE: 'ทาวน์เฮ้าส์',
-  SHOPHOUSE: 'อาคารพาณิชย์',
-  OTHER: 'อื่นๆ',
-};
+const BUILDING_TYPE_MAP = BUILDING_TYPE_LABELS;
 
 const SERVICE_SYSTEM_MAP: Record<string, string> = {
   CHEMICAL: 'สารเคมี',
@@ -214,10 +207,11 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
     : '-';
   const customerCode = customer?.code || '-';
 
-  const createdByUser = users.find((u: any) => u.id === data.created_by);
+  const creator = (data as unknown as Record<string, Record<string, string>>).creator;
+  const createdByUser = creator || users.find((u: any) => u.id === data.created_by);
   const createdByName = createdByUser
     ? `${createdByUser.first_name || ''} ${createdByUser.last_name || ''}`.trim()
-    : data.created_by || '-';
+    : '-';
 
   const paymentLabel =
     data.payment_condition === PaymentMethod.INSTALLMENT
