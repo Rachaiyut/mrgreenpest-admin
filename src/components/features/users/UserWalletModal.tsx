@@ -159,13 +159,16 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
                   id="limit-amount"
                   type="number"
                   value={limitAmount}
-                  onChange={(e) =>
-                    setLimitAmount(
-                      e.target.value === '' ? '' : Number(e.target.value)
-                    )
-                  }
-                  min="0"
-                  step="0.01"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') { setLimitAmount(''); return; }
+                    const num = Number(val);
+                    if (num > 99999) return;
+                    setLimitAmount(num);
+                  }}
+                  min="1"
+                  max="99999"
+                  step="1"
                   required
                 />
               </FormField>

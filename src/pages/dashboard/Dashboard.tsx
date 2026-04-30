@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardApi, DashboardData } from '../../api/dashboard';
 import { DailyClosureApi } from '../../api/daily-closure';
+import { StockIssueSummaryApi } from '../../api/stock-issue-summary';
+import { StockIssueSummary } from '../../types/entity/inventory.interface';
 import { DailyJobClosure } from '../../types/entity/daily-closure.interface';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { LoadingIcon } from '../../assets/icons/Icons';
@@ -47,6 +49,11 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [openClosures, setOpenClosures] = useState<DailyJobClosure[]>([]);
+  const [withdrawalStats, setWithdrawalStats] = useState<{
+    total: number;
+    pending: number;
+    totalExpense: number;
+  }>({ total: 0, pending: 0, totalExpense: 0 });
 
   useEffect(() => {
     setLoading(true);
@@ -61,6 +68,18 @@ const Dashboard: React.FC<DashboardProps> = () => {
     DailyClosureApi.getAll({ closure_date: today, status: 'OPEN', limit: 50 })
       .then((res) => setOpenClosures(res.data || []))
       .catch(() => setOpenClosures([]));
+
+    StockIssueSummaryApi.getAll({ limit: 999 })
+      .then((res) => {
+        const items: StockIssueSummary[] = res?.data || [];
+        const pending = items.filter((s) => s.status === 'PENDING').length;
+        const totalExpense = items.reduce((sum, s) => {
+          const expenses = s.expense_items || s.expense_item || [];
+          return sum + expenses.reduce((acc, e) => acc + (Number(e.amount) || 0), 0);
+        }, 0);
+        setWithdrawalStats({ total: items.length, pending, totalExpense });
+      })
+      .catch(() => setWithdrawalStats({ total: 0, pending: 0, totalExpense: 0 }));
   }, []);
 
   if (loading || !data) {
@@ -296,7 +315,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       </div>
 
       {/* Row 4: Alerts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Overdue Invoices */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">ใบแจ้งหนี้ค้างชำระ</h3>
@@ -368,6 +387,28 @@ const Dashboard: React.FC<DashboardProps> = () => {
           ) : (
             <div className="h-32 flex items-center justify-center text-green-500 text-sm">สต็อกปกติทั้งหมด</div>
           )}
+        </div>
+
+        {/* Withdrawal Summary */}
+        <div
+          onClick={() => navigate('/inventory/issue-summaries')}
+          className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm cursor-pointer hover:border-blue-300 transition-colors"
+        >
+          <h3 className="text-base font-semibold text-slate-800 mb-3">สรุปการเบิก</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <span className="text-sm text-slate-600">ใบเบิกทั้งหมด</span>
+              <span className="text-lg font-bold text-blue-700">{fmtInt(withdrawalStats.total)}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+              <span className="text-sm text-slate-600">รออนุมัติ</span>
+              <span className="text-lg font-bold text-amber-700">{fmtInt(withdrawalStats.pending)}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <span className="text-sm text-slate-600">ค่าใช้จ่ายรวม</span>
+              <span className="text-lg font-bold text-green-700">{fmt(withdrawalStats.totalExpense)} บาท</span>
+            </div>
+          </div>
         </div>
       </div>
 

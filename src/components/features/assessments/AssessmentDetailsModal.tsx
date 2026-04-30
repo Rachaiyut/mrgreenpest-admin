@@ -1,5 +1,6 @@
 import { FC, ReactNode, ReactElement, cloneElement, useEffect, useState } from 'react';
 import { Modal } from '../../common/Modal';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import {
   Assessment,
   AssessmentWorkArea,
@@ -59,15 +60,7 @@ const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({ icon, title }) 
   </div>
 );
 
-const BUILDING_TYPE_MAP: Record<string, string> = {
-  OFFICE: 'สำนักงาน',
-  HOUSE: 'บ้านพักอาศัย',
-  FACTORY: 'โรงงาน',
-  CONDO: 'คอนโดมิเนียม',
-  TOWNHOUSE: 'ทาวน์เฮ้าส์',
-  SHOPHOUSE: 'อาคารพาณิชย์',
-  OTHER: 'อื่นๆ',
-};
+const BUILDING_TYPE_MAP = BUILDING_TYPE_LABELS;
 
 const SERVICE_SYSTEM_MAP: Record<string, string> = {
   CHEMICAL: 'สารเคมี',
@@ -214,10 +207,11 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
     : '-';
   const customerCode = customer?.code || '-';
 
-  const createdByUser = users.find((u: any) => u.id === data.created_by);
+  const creator = (data as unknown as Record<string, Record<string, string>>).creator;
+  const createdByUser = creator || users.find((u: any) => u.id === data.created_by);
   const createdByName = createdByUser
     ? `${createdByUser.first_name || ''} ${createdByUser.last_name || ''}`.trim()
-    : data.created_by || '-';
+    : '-';
 
   const paymentLabel =
     data.payment_condition === PaymentMethod.INSTALLMENT
@@ -278,10 +272,10 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
                   href={data.google_map_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                  className="flex items-center gap-2 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"
                 >
-                  <GoogleMapIcon className="h-4 w-4 shrink-0" />
-                  เปิดแผนที่นำทาง
+                  <GoogleMapIcon className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium underline truncate">{data.google_map_link}</span>
                 </a>
               </div>
             )}

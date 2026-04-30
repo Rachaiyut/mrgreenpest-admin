@@ -30,7 +30,11 @@ export const JobModal: React.FC<JobModalProps> = ({
   // สร้าง Title อัตโนมัติแบบเดียวกับ Contract
   const getTitle = () => {
     if (mode === 'add') return 'สร้างงานภาคสนามใหม่';
-    if (mode === 'edit') return `แก้ไขงาน: ${jobToEdit?.customer_name || jobToEdit?.customerName || 'ลูกค้าไม่ระบุ'}`;
+    if (mode === 'edit') {
+      const name = jobToEdit?.customer_name || jobToEdit?.customerName || 'ลูกค้าไม่ระบุ';
+      const isUnassigned = String(jobToEdit?.api_status || '').toUpperCase() === 'UNASSIGNED';
+      return isUnassigned ? `จัดคิว: ${name}` : `แก้ไขงาน: ${name}`;
+    }
     return 'รายละเอียดงานภาคสนาม';
   };
 

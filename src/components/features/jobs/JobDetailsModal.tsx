@@ -1,15 +1,20 @@
 import React, {
   useMemo,
+  useEffect,
+  useState,
   FC,
   ReactNode,
   ReactElement,
   cloneElement,
 } from 'react';
 import { Modal } from '../../common/Modal';
+import { BUILDING_TYPE_LABELS } from '@/src/constants';
 import { FieldJob } from '@/src/types/entity/service-report.interface';
-import { Assessment } from '@/src/types/entity/assessment.interface';
+import { Assessment, AssessmentWorkArea } from '@/src/types/entity/assessment.interface';
 import { Warehouse } from '@/src/types/entity/inventory.interface';
 import { JobStatusLabel } from '@/src/types/enums/job';
+import { InvoiceStatusLabel, InvoiceStatusColor } from '@/src/types/enums/invoice';
+import { PaymentMethod, ServiceSystem } from '@/src/types';
 import {
   GoogleMapIcon,
   DocumentTextIcon,
@@ -18,8 +23,11 @@ import {
   TechnicianIcon,
   HomeIcon,
   TruckIcon,
+  ClipboardDocumentListIcon,
+  CreditCardIcon,
 } from '../../../assets/icons/Icons';
 import { formatThaiDate } from '../../../utils/date';
+import { AssessmentApi } from '@/src/api';
 
 interface JobDetailsModalProps {
   isOpen: boolean;
@@ -60,6 +68,133 @@ const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({
   </div>
 );
 
+const BUILDING_TYPE_MAP = BUILDING_TYPE_LABELS;
+
+const SERVICE_SYSTEM_MAP: Record<string, string> = {
+  CHEMICAL: 'สารเคมี',
+  PREY: 'เหยื่อ',
+  OTHER: 'อื่นๆ',
+};
+
+const WorkAreaDetails: FC<{ area: AssessmentWorkArea }> = ({ area }) => {
+  const itemsTotal =
+    area.items?.reduce((sum, item) => {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.product_price) || 0;
+      const total = Number(item.total_price) || qty * price;
+      return sum + total;
+    }, 0) || 0;
+
+  const basePrice = (Number(area.total_price) || 0) - itemsTotal;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex justify-between items-center">
+        <h5 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+          <span className="w-1.5 h-5 bg-primary rounded-full shrink-0"></span>
+          {area.area_name}
+        </h5>
+        <span className="text-sm font-bold text-primary">
+          ฿{Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+        </span>
+      </div>
+
+      <div className="p-4">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <DetailItem
+            label="ประเภทสิ่งปลูกสร้าง"
+            value={
+              area.building_type === 'OTHER' && area.building_type_other
+                ? area.building_type_other
+                : BUILDING_TYPE_MAP[area.building_type] || area.building_type || '-'
+            }
+          />
+          <DetailItem
+            label={`พื้นที่ (${(area as unknown as Record<string, string>).measurement_unit === 'meter' ? 'เมตร' : 'ตร.ม.'})`}
+            value={area.area_size || '-'}
+          />
+          <DetailItem
+            label="ระบบที่ใช้"
+            value={
+              area.service_system ? (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    area.service_system === ServiceSystem.CHEMICAL
+                      ? 'bg-orange-100 text-orange-700'
+                      : area.service_system === ServiceSystem.OTHER
+                        ? 'bg-slate-100 text-slate-700'
+                        : 'bg-green-100 text-green-700'
+                  }`}
+                >
+                  {area.service_system === 'OTHER' && area.service_system_other
+                    ? area.service_system_other
+                    : SERVICE_SYSTEM_MAP[area.service_system || ''] || area.service_system}
+                </span>
+              ) : '-'
+            }
+          />
+          <DetailItem
+            label="ราคาบริการหลัก"
+            value={`฿${basePrice.toLocaleString('th-TH', { minimumFractionDigits: 2 })}`}
+          />
+        </dl>
+
+        {area.category_services && area.category_services.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">ประเภทบริการ</p>
+            <div className="flex flex-wrap gap-1.5">
+              {area.category_services.map((cat, idx) => (
+                <span key={idx} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                  {cat.category?.name || cat.name || cat.category_id}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {area.items && area.items.length > 0 && (
+          <div className="mt-4">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              สินค้า/บริการเพิ่มเติม
+            </p>
+            <div className="overflow-x-auto border border-slate-100 rounded-lg">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500">
+                    <th className="px-3 py-2 text-left text-xs font-medium">รายการ</th>
+                    <th className="px-3 py-2 text-center text-xs font-medium">จำนวน</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">ราคา/หน่วย</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">รวม</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {area.items.map((item, index) => {
+                    const quantity = item.quantity || 0;
+                    const price = item.product_price || 0;
+                    const total = Number(item.total_price) || quantity * price;
+                    return (
+                      <tr key={index} className="hover:bg-slate-50/50">
+                        <td className="px-3 py-2 text-slate-700">{item.product_name || '-'}</td>
+                        <td className="px-3 py-2 text-center text-slate-600">{quantity}</td>
+                        <td className="px-3 py-2 text-right text-slate-600">
+                          {price.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium text-slate-800">
+                          {total.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export const JobDetailsModal: FC<JobDetailsModalProps> = ({
   isOpen,
   onClose,
@@ -67,6 +202,20 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
   assessment,
   warehouses,
 }) => {
+  const [fullAssessment, setFullAssessment] = useState<Assessment | null>(null);
+
+  useEffect(() => {
+    if (isOpen && assessment?.id) {
+      AssessmentApi.getById(assessment.id).then((data: any) => {
+        setFullAssessment(data.data || data);
+      }).catch(() => {});
+    } else {
+      setFullAssessment(null);
+    }
+  }, [isOpen, assessment?.id]);
+
+  const assessmentData = fullAssessment || assessment;
+
   const vehicle = useMemo(() => {
     if (!job?.vehicle_id) return null;
     return warehouses.find((w) => w.id === job.vehicle_id);
@@ -101,6 +250,10 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
     }
   })();
 
+  const paymentLabel = assessmentData?.payment_condition === PaymentMethod.INSTALLMENT
+    ? 'แบ่งชำระ (งวดงาน)'
+    : 'ชำระเต็มจำนวน';
+
   return (
     <Modal
       isOpen={isOpen}
@@ -129,9 +282,25 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                 return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorMap[key] || 'bg-slate-100 text-slate-600'}`}>{label}</span>;
               })()} />
               <DetailItem label="ลูกค้า" value={customerName} />
+              <DetailItem label="เบอร์โทรศัพท์" value={job.customer?.primary_phone || '-'} />
               <DetailItem label="รหัสลูกค้า" value={<span className="text-green-600 font-bold">{customerCode}</span>} />
               <DetailItem label="วันที่ปฏิบัติงาน" value={formatThaiDate(job.start_time)} />
               <DetailItem label="เวลา" value={timeRange} />
+              {assessmentData && (
+                <>
+                  <DetailItem label="วันที่นัดหมาย (ประเมิน)" value={formatThaiDate(assessmentData.appointment_date?.toString())} />
+                  <DetailItem label="การชำระเงิน" value={paymentLabel} />
+                </>
+              )}
+              <DetailItem label="สถานะการชำระเงิน" value={(() => {
+                if (job.invoice) {
+                  const status = job.invoice.status;
+                  const label = InvoiceStatusLabel[status] || status || '-';
+                  const color = InvoiceStatusColor[status] || 'bg-slate-100 text-slate-600';
+                  return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>{label}</span>;
+                }
+                return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">ค้างชำระ</span>;
+              })()} />
               {(job as unknown as Record<string, string>).reference_code && (
                 <DetailItem label="อ้างอิง" value={(job as unknown as Record<string, string>).reference_code} fullWidth />
               )}
@@ -142,26 +311,37 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
-              <DetailItem label="ที่อยู่" value={job.address} fullWidth />
-              <DetailItem label="เขต (พื้นที่บริการ)" value={job.zone || job.customer?.service_area || '-'} />
-              <DetailItem label="กลุ่มบริการ" value={job.group || job.customer?.service_group || '-'} />
-              <DetailItem label="สายถนนที่" value={job.road_line || job.customer?.road_line || '-'} />
-              <DetailItem label="ลำดับที่" value={job.sequence || job.customer?.sequence_no || '-'} />
+              <DetailItem label="ที่อยู่" value={job.address || assessmentData?.address} fullWidth />
+              <DetailItem label="แขวง/ตำบล" value={assessmentData?.sub_district || job.customer?.sub_district || '-'} />
+              <DetailItem label="เขต/อำเภอ" value={assessmentData?.district || job.customer?.district || '-'} />
+              <DetailItem label="จังหวัด" value={assessmentData?.province || job.customer?.province || '-'} />
+              <DetailItem label="รหัสไปรษณีย์" value={assessmentData?.zipcode || job.customer?.postal_code || '-'} />
             </dl>
-            {job.google_map_link && (
+            {(job.google_map_link || assessmentData?.google_map_link) && (
               <div className="mt-4 pt-3 border-t border-slate-100">
                 <a
-                  href={job.google_map_link}
+                  href={job.google_map_link || assessmentData?.google_map_link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+                  className="flex items-center gap-2 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"
                 >
-                  <GoogleMapIcon className="h-4 w-4 shrink-0" />
-                  เปิดแผนที่นำทาง
+                  <GoogleMapIcon className="h-4 w-4 text-primary shrink-0" />
+                  <span className="font-medium underline truncate">{job.google_map_link || assessmentData?.google_map_link}</span>
                 </a>
               </div>
             )}
           </div>
+        </div>
+
+        {/* Route/Zone Info (from assessment or job) */}
+        <div className="rounded-xl border border-slate-200 p-5">
+          <SectionHeader icon={<MapPinIcon />} title="กลุ่มเส้นทาง/พื้นที่บริการ" />
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <DetailItem label="เขต (พื้นที่บริการ)" value={assessmentData?.zone || job.zone || job.customer?.service_area || '-'} />
+            <DetailItem label="กลุ่มบริการ" value={assessmentData?.route_group || job.group || job.customer?.service_group || '-'} />
+            <DetailItem label="สายถนนที่" value={assessmentData?.road_line || job.road_line || job.customer?.road_line || '-'} />
+            <DetailItem label="ลำดับที่" value={assessmentData?.sequence || job.sequence || job.customer?.sequence_no || '-'} />
+          </dl>
         </div>
 
         {/* Team & Vehicle Section */}
@@ -247,50 +427,106 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
           </div>
         </div>
 
-        {/* รายละเอียดงาน */}
-        {job.operation_details && (
+        {/* รายละเอียดงาน + หมายเหตุ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="รายละเอียดงาน" />
             <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-slate-700 whitespace-pre-wrap">
-              {job.operation_details}
+              {job.operation_details || '-'}
+            </div>
+          </div>
+          <div className="rounded-xl border border-slate-200 p-5">
+            <SectionHeader icon={<ClipboardDocumentListIcon />} title="หมายเหตุ หรือข้อควรระวัง" />
+            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-sm text-slate-700 whitespace-pre-wrap">
+              {job.remarks || '-'}
+            </div>
+          </div>
+        </div>
+
+        {/* Assessment Work Areas (detailed) */}
+        {assessmentData?.assessment_areas && assessmentData.assessment_areas.length > 0 && (
+          <div className="rounded-xl border border-slate-200 p-5">
+            <SectionHeader icon={<ClipboardDocumentListIcon />} title="รายละเอียดพื้นที่ประเมิน" />
+            <div className="space-y-3">
+              {assessmentData.assessment_areas.map((area, index) => (
+                <WorkAreaDetails key={index} area={area} />
+              ))}
             </div>
           </div>
         )}
 
-        {/* หมายเหตุ / พื้นที่ */}
-        {((job.work_areas && job.work_areas.length > 0) || job.remarks) && (
+        {/* Fallback: basic work_areas from job (when no assessment) */}
+        {!assessmentData?.assessment_areas?.length && job.work_areas && job.work_areas.length > 0 && (
           <div className="rounded-xl border border-slate-200 p-5">
-            <SectionHeader icon={<MapPinIcon />} title="หมายเหตุ หรือข้อควรระวัง" />
-
-            {job.remarks && (
-              <div className="mb-4">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">หมายเหตุ</p>
-                <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-sm text-slate-700 whitespace-pre-wrap">
-                  {job.remarks}
+            <SectionHeader icon={<ClipboardDocumentListIcon />} title="พื้นที่และบริการ" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {job.work_areas.map((area, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50"
+                >
+                  <span className="text-sm font-medium text-slate-800">{area.name}</span>
+                  <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
+                    {area.service_package}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            {job.work_areas && job.work_areas.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">พื้นที่และบริการ</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {job.work_areas.map((area, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-3 rounded-lg border border-slate-100 bg-slate-50/50"
-                    >
-                      <span className="text-sm font-medium text-slate-800">{area.name}</span>
-                      <span className="text-xs font-medium px-2 py-1 bg-white border border-slate-200 rounded text-slate-600">
-                        {area.service_package}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Installments (from assessment) */}
+        {assessmentData?.payment_condition === PaymentMethod.INSTALLMENT &&
+          assessmentData.installments &&
+          assessmentData.installments.length > 0 && (
+            <div className="rounded-xl border border-slate-200 p-5">
+              <SectionHeader icon={<CreditCardIcon />} title="รายละเอียดงวดชำระ" />
+              <div className="overflow-x-auto border border-slate-100 rounded-lg">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500">
+                      <th className="px-4 py-2.5 text-center text-xs font-medium w-16">งวดที่</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-medium">รายละเอียด</th>
+                      <th className="px-4 py-2.5 text-right text-xs font-medium w-32">จำนวนเงิน</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {assessmentData.installments.map((inst, idx) => (
+                      <tr key={inst.id || idx}>
+                        <td className="px-4 py-2 text-center font-medium text-slate-700">{inst.installment_no}</td>
+                        <td className="px-4 py-2 text-slate-600">{inst.note || '-'}</td>
+                        <td className="px-4 py-2 text-right font-medium text-slate-800">
+                          {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50">
+                    <tr>
+                      <td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td>
+                      <td className="px-4 py-2 text-right text-sm font-bold text-primary">
+                        ฿{Number(assessmentData.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+
+        {/* Total price summary (from assessment) */}
+        {assessmentData && assessmentData.total_price > 0 && assessmentData.payment_condition !== PaymentMethod.INSTALLMENT && (
+          <div className="rounded-xl border border-slate-200 p-5">
+            <SectionHeader icon={<CreditCardIcon />} title="สรุปค่าบริการ" />
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-slate-600">ยอดรวมทั้งหมดสุทธิ</span>
+              <span className="text-xl font-bold text-primary">
+                ฿{Number(assessmentData.total_price).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
+              </span>
+            </div>
+          </div>
+        )}
+
       </div>
     </Modal>
   );

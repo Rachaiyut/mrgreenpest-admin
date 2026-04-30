@@ -93,8 +93,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
       {
         label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
         module: 'ISSUE_SUMMARY',
-        // ปิด APPROVE + NOTIFY ที่ parent row — ย้ายไปอยู่ใน sub-row 2 หมวดแทน (STOCK + EXPENSE)
-        skipActions: ['APPROVE', 'NOTIFY'],
+        skipActions: ['NOTIFY'],
       },
       {
         // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_SUMMARY

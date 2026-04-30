@@ -133,7 +133,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
         <div className="relative">
           <Input
             type="search"
-            placeholder="ค้นหาด้วยชื่อ หรือ รหัสสินค้า..."
+            placeholder="ค้นหารหัสสินค้า, ชื่อสินค้า"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -152,6 +152,9 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
               <tr>
                 <th scope="col" className="w-12 px-4 py-3">
                   <span className="sr-only">Select</span>
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase w-16">
+                  ลำดับ
                 </th>
                 <th
                   scope="col"

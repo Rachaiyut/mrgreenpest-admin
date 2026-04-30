@@ -74,7 +74,9 @@ const IssueSummaryPage: React.FC = () => {
   const canApproveStock =
     hasPermission('APPROVE_ISSUE_SUMMARY') ||
     hasPermission('APPROVE_STOCK_ISSUE_SUMMARY');
-  const canApproveExpense = hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
+  const canApproveExpense =
+    hasPermission('APPROVE_ISSUE_SUMMARY') ||
+    hasPermission('APPROVE_EXPENSE_ISSUE_SUMMARY');
   const isTechRole = isFieldRole(currentUser?.roleType);
 
   const {
@@ -211,6 +213,8 @@ const IssueSummaryPage: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         ...(searchDebounced.trim() ? { search: searchDebounced.trim() } : {}),
+        ...(startDate ? { start_date: startDate } : {}),
+        ...(endDate ? { end_date: endDate } : {}),
       });
       if (res?.data) setStockIssueSummaries(res.data);
       if (res?.meta?.total !== undefined) {
@@ -223,7 +227,7 @@ const IssueSummaryPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchDebounced]);
+  }, [currentPage, itemsPerPage, searchDebounced, startDate, endDate]);
 
   useEffect(() => {
     fetchList();
@@ -231,7 +235,7 @@ const IssueSummaryPage: React.FC = () => {
 
   // Load warehouses / users once
   useEffect(() => {
-    fetchData(['warehouses', 'users']).catch((e) => console.error(e));
+    fetchData(['warehouses', 'users', 'jobs']).catch((e) => console.error(e));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -267,6 +271,28 @@ const IssueSummaryPage: React.FC = () => {
         })
       ),
     [users]
+  );
+
+  const jobMap = useMemo(
+    () =>
+      new Map(
+        jobs.map((j) => {
+          const jExt = j as unknown as Record<string, unknown>;
+          const c = jExt.customer as Record<string, string> | undefined;
+          const customerName = c
+            ? `${c.first_name || ''} ${c.last_name || ''}`.trim()
+            : '';
+          const workDate = (jExt.start_date || jExt.appointment_date || j.created_at) as string;
+          const formattedDate = workDate
+            ? new Date(workDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '';
+          const label = customerName
+            ? `${customerName}${formattedDate ? ` (${formattedDate})` : ''}`
+            : formattedDate || j.id.substring(0, 8);
+          return [j.id, label];
+        })
+      ),
+    [jobs]
   );
 
   const uniqueCreators = useMemo(
@@ -314,19 +340,8 @@ const IssueSummaryPage: React.FC = () => {
       filtered = filtered.filter((s) => s.status === statusFilter);
     }
 
-    if (startDate || endDate) {
-      const startMs = startDate ? new Date(`${startDate}T00:00:00`).getTime() : -Infinity;
-      const endMs = endDate ? new Date(`${endDate}T23:59:59.999`).getTime() : Infinity;
-      filtered = filtered.filter((s) => {
-        const dateStr = s.issue_date || s.created_at;
-        if (!dateStr) return false;
-        const t = new Date(dateStr).getTime();
-        return t >= startMs && t <= endMs;
-      });
-    }
-
     return filtered;
-  }, [stockIssueSummaries, creatorFilter, statusFilter, isTechRole, currentUser?.id, startDate, endDate]);
+  }, [stockIssueSummaries, creatorFilter, statusFilter, isTechRole, currentUser?.id]);
 
   // Option B — flatten แต่ละใบเบิกเป็นหลายแถวตาม approval category
   // - ไม่มี approval records → 1 แถว (category = null)
@@ -390,9 +405,7 @@ const IssueSummaryPage: React.FC = () => {
   const hasClientFilter = !!(
     creatorFilter !== 'all' ||
     statusFilter !== 'all' ||
-    activeTab !== 'all' ||
-    startDate ||
-    endDate
+    activeTab !== 'all'
   );
   const totalItems = hasClientFilter ? flattenedRows.length : totalItemsServer;
   const paginatedRows = hasClientFilter
@@ -772,7 +785,7 @@ const IssueSummaryPage: React.FC = () => {
                 <DatePicker
                   selected={startDate ? new Date(startDate) : null}
                   onChange={(date: Date | null) => {
-                    setStartDate(date ? date.toISOString().substring(0, 10) : '');
+                    setStartDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
                     setCurrentPage(1);
                   }}
                   dateFormat="dd/MM/yyyy"
@@ -786,7 +799,7 @@ const IssueSummaryPage: React.FC = () => {
                 <DatePicker
                   selected={endDate ? new Date(endDate) : null}
                   onChange={(date: Date | null) => {
-                    setEndDate(date ? date.toISOString().substring(0, 10) : '');
+                    setEndDate(date ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` : '');
                     setCurrentPage(1);
                   }}
                   dateFormat="dd/MM/yyyy"
@@ -839,6 +852,8 @@ const IssueSummaryPage: React.FC = () => {
                   )}
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">คลัง</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ผู้เบิก</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">เอกสารอ้างอิง</th>
+                  <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">หมายเหตุ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">ประเภท</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">สถานะ</th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap w-20">จัดการ</th>
@@ -979,6 +994,24 @@ const IssueSummaryPage: React.FC = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                           {requesterName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[200px]">
+                          {summary.job_id ? (
+                            <span className="truncate block" title={jobMap.get(summary.job_id) || summary.job_id}>
+                              {jobMap.get(summary.job_id) || `#${summary.job_id.substring(0, 8)}`}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 text-center max-w-[180px]">
+                          {summary.notes ? (
+                            <span className="truncate block" title={summary.notes}>
+                              {summary.notes}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full border ${typeClass}`}>

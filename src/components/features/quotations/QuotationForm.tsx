@@ -18,6 +18,7 @@ import {
   Textarea,
 } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
+import { SearchableMultiSelect } from '../../common/SearchableMultiSelect';
 import InstallmentSection, { InstallmentItem } from '../../common/InstallmentSection';
 import ItemsSection from '../../common/ItemsSection';
 import WorkAreasSection from '../../common/WorkAreasSection';
@@ -374,7 +375,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
   // Attachments
-  const [procedureTemplateId, setProcedureTemplateId] = useState(initialValues?.service_procedure_template_id || '');
+  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(initialValues?.service_procedure_template_ids || (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : []));
   const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
   const [procedureTemplates, setProcedureTemplates] = useState<IServiceProcedureTemplate[]>([]);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
@@ -874,8 +875,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             const others = prev.filter(a => a.id !== fullData.id);
             return [fullData, ...others];
           });
-          // Re-initialize areas if they were initialized from partial list data (no package)
-          if (hasInitializedAreas && fullData.package) {
+          // Re-initialize areas from full assessment data (includes site_image_url, package, etc.)
+          if (hasInitializedAreas) {
             setHasInitializedAreas(false);
           }
         }
@@ -1339,7 +1340,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       quotation_areas: quotationAreas as unknown as QuotationArea[],
       installments: paymentCondition === PaymentMethod.INSTALLMENT ? installments.map((inst) => ({ ...inst, percentage: inst.percentage || 0 })) : [],
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
-      service_procedure_template_id: procedureTemplateId || undefined,
+      service_procedure_template_ids: procedureTemplateIds.length > 0 ? procedureTemplateIds : undefined,
       service_schedule_id: scheduleId || undefined,
     };
 
@@ -1358,16 +1359,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     </div>
   );
 
-  const getBuildingTypeName = (type: string) => {
-    const t = (type || '').toUpperCase();
-    if (t === 'HOUSE') return 'บ้าน';
-    if (t === 'OFFICE') return 'ออฟฟิศ';
-    if (t === 'CONDO') return 'คอนโด';
-    if (t === 'TOWNHOUSE') return 'ทาวน์โฮม/ทาวน์เฮาส์';
-    if (t === 'FACTORY') return 'โรงงาน';
-    if (t === 'RESTAURANT') return 'ร้านอาหาร';
-    return type || '-';
-  };
 
   return (
     <div className="flex flex-col relative">
@@ -1440,7 +1431,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
               <h4 className="text-sm font-semibold text-yellow-800 mb-2">Google Map</h4>
               {selectedCustomer?.google_map_link ? (
-                <a href={selectedCustomer.google_map_link} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline text-sm flex items-center gap-1"><MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า</a>
+                <a href={selectedCustomer.google_map_link} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"><MapPinIcon className="w-4 h-4 text-primary shrink-0" /><span className="font-medium underline truncate">{selectedCustomer.google_map_link}</span></a>
               ) : (<span className="text-sm text-slate-500">ไม่พบลิงก์แผนที่ในข้อมูลลูกค้า</span>)}
             </div>
           </div>
@@ -1488,31 +1479,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           errors={areaErrors}
         />
 
-        <InstallmentSection
-          installments={installments.map(i => ({
-            id: i.id,
-            no: i.installment_no,
-            description: i.notes || '',
-            percentage: i.percentage,
-            amount: i.amount,
-          }))}
-          onChange={(items) => {
-            setInstallments(items.map(i => ({
-              ...i,
-              installment_no: i.no,
-              notes: i.description,
-            } as Record<string, unknown>)));
-          }}
-          totalAmount={netTotal}
-          isReadOnly={isReadOnly}
-          showPaymentMethodToggle
-          paymentMethod={paymentCondition === PaymentMethod.INSTALLMENT ? 'INSTALLMENT' : 'TRANSFER'}
-          onPaymentMethodChange={(m) => setPaymentCondition(m === 'INSTALLMENT' ? PaymentMethod.INSTALLMENT : PaymentMethod.TRANSFER)}
-          disableInstallmentOption={isOneTimePackage}
-          disabledReason="แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน"
-        />
-
-        {!selectedAssessmentId && (
+        {!selectedAssessmentId && selectedCustomerId && selectedPackageId && (
           <ItemsSection
             items={items.map((item) => ({
               ...item,
@@ -1545,10 +1512,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="รายละเอียดงานโดยสังเขป">
-                <SearchableSelect
-                  options={[{ value: '', label: 'ไม่แนบ' }, ...procedureTemplates.map((t) => ({ value: t.id, label: t.name }))]}
-                  value={procedureTemplateId}
-                  onChange={(val) => setProcedureTemplateId(val)}
+                <SearchableMultiSelect
+                  options={procedureTemplates.map((t) => ({ value: t.id, label: t.name }))}
+                  value={procedureTemplateIds}
+                  onChange={(val) => setProcedureTemplateIds(val)}
                   placeholder="เลือกรายละเอียดขั้นตอนบริการ..."
                 />
               </FormField>
@@ -1563,6 +1530,30 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             </div>
           </Card>
         )}
+
+        <InstallmentSection
+          installments={installments.map(i => ({
+            id: i.id,
+            no: i.installment_no,
+            description: i.notes || '',
+            percentage: i.percentage,
+            amount: i.amount,
+          }))}
+          onChange={(items) => {
+            setInstallments(items.map(i => ({
+              ...i,
+              installment_no: i.no,
+              notes: i.description,
+            } as Record<string, unknown>)));
+          }}
+          totalAmount={netTotal}
+          isReadOnly={isReadOnly}
+          showPaymentMethodToggle
+          paymentMethod={paymentCondition === PaymentMethod.INSTALLMENT ? 'INSTALLMENT' : 'TRANSFER'}
+          onPaymentMethodChange={(m) => setPaymentCondition(m === 'INSTALLMENT' ? PaymentMethod.INSTALLMENT : PaymentMethod.TRANSFER)}
+          disableInstallmentOption={isOneTimePackage}
+          disabledReason="แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน"
+        />
 
         <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
           <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">

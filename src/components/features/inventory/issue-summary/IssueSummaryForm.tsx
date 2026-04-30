@@ -854,24 +854,14 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                 isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'
               }`}
             >
-              <div className="p-5 border-b border-slate-100 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-600">
-                    <BanknotesIcon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800">การเงินและค่าใช้จ่าย</h3>
-                    <p className="text-sm text-slate-500 mt-0.5">รายการเบิกเงินสด (ไม่ต้องระบุก็ได้ หากต้องการเบิกเฉพาะสินค้า)</p>
-                  </div>
+              <div className="p-5 border-b border-slate-100 flex items-center gap-2">
+                <div className="p-2.5 bg-emerald-50 rounded-lg text-emerald-600">
+                  <BanknotesIcon className="w-6 h-6" />
                 </div>
-                <Button
-                  type="button"
-                  onClick={handleAddExpense}
-                  variant="outline"
-                  className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 text-sm font-bold px-4 py-2"
-                >
-                  <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มรายการเบิกเงิน
-                </Button>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">การเงินและค่าใช้จ่าย</h3>
+                  <p className="text-sm text-slate-500 mt-0.5">รายการเบิกเงินสด (ไม่ต้องระบุก็ได้ หากต้องการเบิกเฉพาะสินค้า)</p>
+                </div>
               </div>
               <div className="p-5">
 
@@ -940,45 +930,63 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   expenseItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
+                      className="bg-white rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
                     >
-                      <div className="p-2 bg-slate-100 rounded-md text-slate-400">
-                        <BanknotesIcon className="w-5 h-5" />
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="p-2 bg-slate-100 rounded-md text-slate-400 flex-shrink-0">
+                          <BanknotesIcon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                            placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น ค่าทางด่วน, ค่าน้ำมัน)..."
+                            className={`w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white ${
+                              isDefaultExpense(item.id) ? 'text-slate-700 bg-slate-50' : ''
+                            }`}
+                            readOnly={isDefaultExpense(item.id)}
+                          />
+                        </div>
+                        <div className="flex-shrink-0 w-[200px]">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.amount}
+                              onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                              placeholder="0.00"
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-base font-bold text-right pr-12 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 pointer-events-none">บาท</span>
+                          </div>
+                        </div>
+                        {isDefaultExpense(item.id) ? (
+                          <div className="w-10 flex-shrink-0" />
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded-xl transition-all duration-200 focus:outline-none flex-shrink-0"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                        )}
                       </div>
-                      <input
-                        type="text"
-                        value={item.description}
-                        onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
-                        placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น ค่าทางด่วน, ค่าน้ำมัน)..."
-                        className={`flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2 ${
-                          isDefaultExpense(item.id) ? 'text-slate-700' : ''
-                        }`}
-                        readOnly={isDefaultExpense(item.id)}
-                      />
-                      <div className="relative flex items-center max-w-[150px]">
-                        <input
-                          type="number"
-                          value={item.amount}
-                          onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
-                          placeholder="0.00"
-                          className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
-                        />
-                        <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
-                      </div>
-                      {isDefaultExpense(item.id) ? (
-                        <div className="ml-2 p-1 w-8" />
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveExpenseItem(item.id)}
-                          className="text-slate-300 hover:text-red-500 ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                          <XCircleIcon className="w-6 h-6" />
-                        </button>
-                      )}
                     </div>
                   ))
                 )}
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    type="button"
+                    onClick={handleAddExpense}
+                    className="flex items-center gap-2 px-6 py-2.5 border border-green-600 text-green-600 bg-white rounded-lg hover:bg-green-50 hover:shadow-sm transition-all font-medium"
+                  >
+                    <PlusIcon className="h-5 w-5" />
+                    เพิ่มรายการเบิกเงิน
+                  </button>
+                </div>
 
                 {expenseItems.length > 0 && (
                   <div className="flex justify-between items-center pt-4 border-t border-slate-200 mt-4">
@@ -1063,8 +1071,8 @@ export const IssueSummaryForm: React.FC<IssueSummaryFormProps> = ({
                   rows={4}
                   className={`w-full border rounded-xl p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none shadow-sm transition-colors ${
                     (isOverLimit || isAnyItemOverLimit) && !notes.trim()
-                      ? 'border-amber-300 bg-amber-50 placeholder:text-amber-400/70'
-                      : 'border-slate-300 bg-slate-50 placeholder:text-slate-400'
+                      ? 'border-amber-300 bg-white placeholder:text-amber-400/70'
+                      : 'border-slate-300 bg-white placeholder:text-slate-400'
                   }`}
                   placeholder="ระบุเหตุผลการเบิกเพิ่มเติม (เช่น นำไปใช้กับงานซ่อมแซม, ซื้อของเข้าสต๊อก...)"
                 />

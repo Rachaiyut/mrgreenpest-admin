@@ -90,6 +90,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
   const [paymentCondition, setPaymentCondition] = useState<PaymentMethod>(PaymentMethod.TRANSFER);
   const [installments, setInstallments] = useState<Partial<AssessmentInstallment>[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [focusedInstallmentIdx, setFocusedInstallmentIdx] = useState<number | null>(null);
   // Site image moved to per-area in WorkAreaForm
 
   useEffect(() => {
@@ -172,12 +173,17 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
             let packagePrice = wa.package_price !== undefined && wa.package_price !== null ? Number(wa.package_price) : 0;
             const itemsTotal = enrichedItems.reduce((sum: number, item: any) => sum + (Number(item.total_price) || 0), 0);
 
+            const siteImageUrls = wa.site_image_urls || (wa.site_image_url ? [wa.site_image_url] : []);
+            const siteImageIds = wa.site_image_ids || (wa.site_image_id ? [wa.site_image_id] : []);
+
             return {
               ...wa,
               items: enrichedItems,
               category_services: wa.category_services || [],
               package_price: packagePrice,
               total_price: (wa.total_price !== undefined && wa.total_price !== null) ? Number(wa.total_price) : (packagePrice + itemsTotal),
+              site_image_urls: siteImageUrls,
+              site_image_ids: siteImageIds,
             };
           });
 
@@ -470,7 +476,22 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         if (!area.package_price_id) { newErrors[`area_${index}_package`] = 'กรุณาเลือกแพ็คเกจ'; isValid = false; }
       });
       setErrors(newErrors);
-      return isValid;
+      if (!isValid) return false;
+
+      if (workAreas.length > 1) {
+        const units = workAreas
+          .map((area) => (area as unknown as Record<string, string>).measurement_unit || 'sqm')
+        const uniqueUnits = [...new Set(units)];
+        if (uniqueUnits.length > 1) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'หน่วยวัดพื้นที่ไม่ตรงกัน',
+            text: 'กรุณาเปลี่ยนแพ็กเกจให้ใช้หน่วยวัดพื้นที่เดียวกันทุกพื้นที่ก่อนดำเนินการต่อ',
+          });
+          return false;
+        }
+      }
+      return true;
     }
 
     if (currentStep === 2) {
@@ -585,17 +606,26 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           for (let i = 0; i < workAreas.length; i++) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const area = workAreas[i] as Record<string, any>;
-            const savedArea = savedAreas[i]; // match by index (same order)
+            const savedArea = savedAreas[i];
             if (!savedArea) continue;
             const areaId = savedArea.id;
 
-            if (area.siteImageFile) {
-              // Delete old image if exists
-              if (savedArea.site_image_id) {
-                await StorageApi.remove(savedArea.site_image_id).catch(() => {});
+            const newFiles: File[] = Array.isArray(area.siteImageFiles) ? area.siteImageFiles : (area.siteImageFile ? [area.siteImageFile] : []);
+            const keepIds: string[] = Array.isArray(area.site_image_ids) ? area.site_image_ids : (area.site_image_id ? [area.site_image_id] : []);
+            const savedImageIds: string[] = Array.isArray(savedArea.site_image_ids) ? savedArea.site_image_ids : (savedArea.site_image_id ? [savedArea.site_image_id] : []);
+
+            // Remove images that user deleted
+            for (const oldId of savedImageIds) {
+              if (!keepIds.includes(oldId)) {
+                await StorageApi.remove(oldId).catch(() => {});
               }
+            }
+
+            // Upload new files
+            const uploadedIds = [...keepIds];
+            for (const file of newFiles) {
               const uploadResult = await StorageApi.upload({
-                file: area.siteImageFile,
+                file,
                 path: `assessments/${assessmentId}/areas/${areaId}`,
                 entity_type: 'assessment_area',
                 entity_id: areaId,
@@ -605,13 +635,15 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const uploadObj = uploadResult as unknown as Record<string, any>;
               const storageId = uploadObj?.data?.id || uploadObj?.id;
-              if (storageId) {
-                await AssessmentApi.updateArea(areaId, { site_image_id: storageId }).catch(() => {});
-              }
-            } else if (!area.siteImagePreview && !area.site_image_url && savedArea.site_image_id) {
-              // User removed image
-              await StorageApi.remove(savedArea.site_image_id).catch(() => {});
-              await AssessmentApi.updateArea(areaId, { site_image_id: null }).catch(() => {});
+              if (storageId) uploadedIds.push(storageId);
+            }
+
+            // Update area with all image IDs
+            if (uploadedIds.length > 0 || savedImageIds.length > 0) {
+              await AssessmentApi.updateArea(areaId, {
+                site_image_id: uploadedIds[0] || null,
+                site_image_ids: uploadedIds,
+              } as any).catch(() => {});
             }
           }
         } catch (uploadErr) {
@@ -803,10 +835,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 <h3 className="font-semibold text-slate-800 text-lg">พื้นที่ให้บริการ</h3>
               </div>
               <div className="p-6 space-y-4">
-                {workAreas
-                  .map((area, originalIndex) => ({ area, originalIndex }))
-                  .sort((a, b) => new Date(a.area.created_at || 0).getTime() - new Date(b.area.created_at || 0).getTime())
-                  .map(({ area, originalIndex }) => (
+                {workAreas.map((area, originalIndex) => (
                   <WorkAreaForm
                     key={area.id || originalIndex}
                     area={area}
@@ -867,17 +896,17 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                               <tr key={inst.id || idx}>
                                 <td className="px-4 py-2 text-center text-sm font-medium text-slate-700"><div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-xs font-bold text-slate-600">{inst.installment_no}</div></td>
                                 <td className="px-4 py-2"><Input value={inst.note || ''} onChange={(e) => handleInstallmentChange(idx, 'note', e.target.value)} placeholder="รายละเอียด..." className="h-9 text-sm border-slate-200 focus:border-primary" /></td>
-                                <td className="px-4 py-2"><Input type="number" value={inst.amount} onChange={(e) => handleInstallmentChange(idx, 'amount', Number(e.target.value))} className="h-9 text-right text-sm font-mono font-medium border-slate-200 focus:border-primary" /></td>
+                                <td className="px-4 py-2"><Input type="text" inputMode="decimal" value={focusedInstallmentIdx === idx ? (inst.amount ?? '') : (inst.amount ? Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')} onChange={(e) => { const raw = e.target.value.replace(/,/g, ''); if (raw === '' || /^\d*\.?\d*$/.test(raw)) { handleInstallmentChange(idx, 'amount', raw === '' ? 0 : parseFloat(raw)); } }} onFocus={() => setFocusedInstallmentIdx(idx)} onBlur={() => setFocusedInstallmentIdx(null)} className="h-9 text-right text-sm font-mono font-medium border-slate-200 focus:border-primary" /></td>
                                 <td className="px-2 py-2 text-center"><button type="button" onClick={() => handleRemoveInstallment(idx)} className="text-slate-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-colors" disabled={installments.length <= 1}><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clipRule="evenodd" /></svg></button></td>
                               </tr>
                             ))}
                           </tbody>
                           <tfoot className="bg-slate-50">
-                            <tr><td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td><td className={`px-4 py-2 text-right text-sm font-bold ${Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 ? 'text-green-600' : 'text-red-600'}`}>{installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString()}</td><td colSpan={2}></td></tr>
+                            <tr><td colSpan={2} className="px-4 py-2 text-right text-xs font-bold text-slate-600">รวม</td><td className={`px-4 py-2 text-right text-sm font-bold ${Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) < 1 ? 'text-green-600' : 'text-red-600'}`}>{installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td><td colSpan={2}></td></tr>
                           </tfoot>
                         </table>
                       </div>
-                      {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) >= 1 && <p className="text-xs text-red-500 text-right">* ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({totalEstimatedCost.toLocaleString()} บาท)</p>}
+                      {Math.abs(installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0) - totalEstimatedCost) >= 1 && <p className="text-xs text-red-500 text-right">* ยอดรวมงวดงานต้องเท่ากับยอดรวมสุทธิ ({totalEstimatedCost.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)</p>}
                     </div>
                   )}
                 </div>

@@ -430,7 +430,7 @@ const Users: React.FC<UsersProps> = ({
                     <thead className="bg-slate-50">
                       <tr>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ลำดับ</th>
-                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อ - นามสกุล</th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อจริง - นามสกุล</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">ชื่อเล่น</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>

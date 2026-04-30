@@ -825,6 +825,10 @@ export const ContractForm: FC<ContractFormProps> = ({
         const existingAreas = fullData?.contract_areas || fullData?.areas || fullData?.area || [];
         console.log('[ContractForm] existingAreas from API:', JSON.stringify(existingAreas.map((a: any) => ({ building_type: a.building_type, building_type_other: a.building_type_other, service_system: a.service_system, service_system_other: a.service_system_other }))));
 
+        if (fullData.is_separate_contract != null) {
+          setIsSeparateContract(fullData.is_separate_contract);
+        }
+
         if (existingAreas.length > 0) {
           // Init customAreas (legacy)
           setCustomAreas(existingAreas.map((a: any, index: number) => {
@@ -1409,9 +1413,10 @@ export const ContractForm: FC<ContractFormProps> = ({
                   href={selectedCustomer.google_map_link}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-blue-600 hover:underline text-sm flex items-center gap-1"
+                  className="flex items-center gap-2 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 hover:bg-primary/10 transition-colors"
                 >
-                  <MapPinIcon className="w-4 h-4" /> เปิดแผนที่ลูกค้า
+                  <MapPinIcon className="w-4 h-4 text-primary shrink-0" />
+                  <span className="font-medium underline truncate">{selectedCustomer.google_map_link}</span>
                 </a>
               ) : (
                 <span className="text-sm text-slate-500">
@@ -1507,8 +1512,6 @@ export const ContractForm: FC<ContractFormProps> = ({
           }}
           showDueDate
           showStatus
-          showTotalAmountInput
-          onTotalAmountChange={setTotalAmount}
           includeVat={includeVat}
           onIncludeVatChange={setIncludeVat}
           vatAmount={vatAmount}

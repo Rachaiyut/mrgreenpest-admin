@@ -754,10 +754,17 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           }
                         </td>
                         <td className="px-4 py-3 text-sm text-center">
-                          {(q as unknown as Record<string, unknown>).service_procedure_template
-                            ? <span className="text-xs text-blue-700 font-medium">{((q as unknown as Record<string, unknown>).service_procedure_template as Record<string, string>)?.name}</span>
-                            : <span className="text-slate-400">-</span>
-                          }
+                          {(() => {
+                            const templates = (q as unknown as Record<string, unknown>).service_procedure_templates as Array<Record<string, string>> | undefined;
+                            const singleTemplate = (q as unknown as Record<string, unknown>).service_procedure_template as Record<string, string> | undefined;
+                            if (templates && templates.length > 0) {
+                              return <div className="flex flex-col gap-0.5">{templates.map((t, i) => <span key={i} className="text-xs text-blue-700 font-medium">{t?.name}</span>)}</div>;
+                            }
+                            if (singleTemplate) {
+                              return <span className="text-xs text-blue-700 font-medium">{singleTemplate?.name}</span>;
+                            }
+                            return <span className="text-slate-400">-</span>;
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatThaiDate(q.created_at)}
