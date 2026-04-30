@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
+import { DocumentTextIcon, CurrencyDollarIcon, EyeIcon } from '../../../assets/icons/Icons';
 import ItemsSection from '../../common/ItemsSection';
 import { useData } from '../../../contexts/DataContext';
 import { CustomerApi } from '../../../api/customer';
@@ -1050,18 +1050,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                               type="button"
                               onClick={() => setSlipPreviewUrl(resolveFileUrl(slipUrl))}
                               style={{ pointerEvents: 'auto' }}
-                              className="inline-block border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-slate-50"
-                              title="คลิกเพื่อดูสลิปขนาดเต็ม"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-medium transition-colors"
+                              title="คลิกเพื่อดูสลิป"
                             >
-                              <img
-                                src={resolveFileUrl(slipUrl)}
-                                alt="Payment Slip"
-                                className="h-16 w-auto object-contain"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    'https://placehold.co/120x160/f8fafc/94a3b8?text=No+Image';
-                                }}
-                              />
+                              <EyeIcon className="w-4 h-4" />
+                              <span>ดูสลิป</span>
                             </button>
                           ) : (
                             <span className="text-slate-400">-</span>
