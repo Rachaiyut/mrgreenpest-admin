@@ -684,7 +684,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -791,7 +791,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           }
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <div className="hidden md:block">
                             <button
                               type="button"

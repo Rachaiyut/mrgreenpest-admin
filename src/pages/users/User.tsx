@@ -435,7 +435,7 @@ const Users: React.FC<UsersProps> = ({
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">อีเมล</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">โทรศัพท์</th>
                         <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">บทบาท</th>
-                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">จัดการ</span></th>
+                        <th scope="col" className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
@@ -565,8 +565,11 @@ const Users: React.FC<UsersProps> = ({
                       >
                         จำนวนผู้ใช้งาน
                       </th>
-                      <th scope="col" className="relative px-6 py-3">
-                        <span className="sr-only">จัดการ</span>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-center text-sm font-semibold text-slate-600 uppercase whitespace-nowrap"
+                      >
+                        จัดการ
                       </th>
                     </tr>
                   </thead>
