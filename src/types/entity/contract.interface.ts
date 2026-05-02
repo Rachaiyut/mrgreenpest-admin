@@ -31,6 +31,7 @@ export interface Contract {
   start_date: string;
   end_date: string;
   notes?: string;
+  signature?: string;
   service_schedule_id?: string;
   created_by?: string;
   updated_by?: string;
