@@ -351,7 +351,16 @@ const Assessments: React.FC = () => {
     }
     if (!target) return;
     if (target.status !== AsessmentStatus.PENDING) {
-      Swal.fire('ใบประเมินไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      const assessmentStatusLabel: Record<string, string> = {
+        DRAFT: 'ฉบับร่าง',
+        PENDING: 'รออนุมัติ',
+        IN_PROGRESS: 'กำลังดำเนินการ',
+        APPOINTMENT: 'นัดหมาย',
+        COMPLETE: 'เสร็จสิ้น',
+        CANCELLED: 'ยกเลิก',
+      };
+      const statusText = assessmentStatusLabel[String(target.status).toUpperCase()] || target.status;
+      Swal.fire('ใบประเมินไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusText}`, 'info');
       return;
     }
     approveAssessmentWithDetails(target);

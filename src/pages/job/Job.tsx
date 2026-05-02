@@ -613,7 +613,8 @@ const Job: React.FC<JobProps> = ({
     const rawStatus = String(target.api_status || target.status || '');
     const normalized = rawStatus.toUpperCase().replace(/_/g, '');
     if (normalized !== 'PENDINGAPPROVAL') {
-      Swal.fire('งานนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${rawStatus}`, 'info');
+      const statusLabel = JobStatusLabel[String(rawStatus).toUpperCase()] || rawStatus;
+      Swal.fire('งานนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusLabel}`, 'info');
       return;
     }
 

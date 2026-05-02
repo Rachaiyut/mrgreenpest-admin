@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
+import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
@@ -595,6 +596,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   }
 
   return (
+    <>
     <form id="invoice-form" onSubmit={submitForm} className="space-y-8">
       <fieldset
         disabled={mode === 'detail'}
@@ -1046,16 +1048,27 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-600">{paidAt}</td>
                         <td className="px-4 py-3 text-sm">
                           {slipUrl ? (
-                            <button
-                              type="button"
-                              onClick={() => setSlipPreviewUrl(resolveFileUrl(slipUrl))}
-                              style={{ pointerEvents: 'auto' }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-medium transition-colors"
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSlipPreviewUrl(resolveFileUrl(slipUrl));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSlipPreviewUrl(resolveFileUrl(slipUrl));
+                                }
+                              }}
+                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-medium transition-colors select-none"
                               title="คลิกเพื่อดูสลิป"
                             >
                               <EyeIcon className="w-4 h-4" />
                               <span>ดูสลิป</span>
-                            </button>
+                            </span>
                           ) : (
                             <span className="text-slate-400">-</span>
                           )}
@@ -1072,8 +1085,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
       </div>
       </fieldset>
 
-      {/* Slip lightbox — แสดง popup ภาพเต็มเมื่อคลิก thumbnail */}
-      {slipPreviewUrl && (
+    </form>
+    {/* Slip lightbox — render via portal to document.body to escape the
+        form's pointer-events-none wrapper in detail mode */}
+    {slipPreviewUrl &&
+      createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
           style={{ pointerEvents: 'auto' }}
@@ -1101,8 +1117,9 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
               }}
             />
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
-    </form>
+    </>
   );
 };

@@ -443,7 +443,7 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     } else if (target.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW) {
       handleAccountingApprove(target);
     } else {
-      Swal.fire('ใบแจ้งหนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      Swal.fire('ใบแจ้งหนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${InvoiceStatusLabel[target.status as InvoiceStatus] || target.status}`, 'info');
     }
   });
 

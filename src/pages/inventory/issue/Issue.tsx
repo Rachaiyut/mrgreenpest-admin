@@ -688,7 +688,17 @@ const Issue: FC = () => {
     }
     if (!target) return;
     if (target.status !== WithdrawalStatus.PENDING) {
-      Swal.fire('ใบเบิกไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      const withdrawalStatusLabel: Record<string, string> = {
+        DRAFT: 'ฉบับร่าง',
+        PENDING: 'รออนุมัติ',
+        APPROVED: 'อนุมัติแล้ว',
+        REJECTED: 'ไม่อนุมัติ',
+        PARTIALLY_APPROVED: 'อนุมัติบางส่วน',
+        COMPLETED: 'เสร็จสิ้น',
+        CANCELLED: 'ยกเลิก',
+      };
+      const statusText = withdrawalStatusLabel[String(target.status).toUpperCase()] || target.status;
+      Swal.fire('ใบเบิกไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusText}`, 'info');
       return;
     }
     // give React a tick to update state if we just injected the record

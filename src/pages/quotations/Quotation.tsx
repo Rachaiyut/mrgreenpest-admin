@@ -321,7 +321,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     }
     if (!target) return;
     if (target.status !== QuotationStatus.PENDING_APPROVAL) {
-      Swal.fire('ใบเสนอราคาไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${target.status}`, 'info');
+      Swal.fire('ใบเสนอราคาไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusLabels[target.status as QuotationStatus] || target.status}`, 'info');
       return;
     }
     approveQuotationWithDetails(target);
