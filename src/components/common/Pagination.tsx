@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeftIcon, ChevronRightIcon } from '../../assets/icons/Icons';
 import { Button } from './FormControls';
 
@@ -10,6 +11,155 @@ interface PaginationProps {
   onItemsPerPageChange: (size: number) => void;
   className?: string;
 }
+
+interface ItemsPerPageDropdownProps {
+  value: number;
+  totalItems: number;
+  onChange: (size: number) => void;
+}
+
+const ItemsPerPageDropdown: React.FC<ItemsPerPageDropdownProps> = ({
+  value,
+  totalItems,
+  onChange,
+}) => {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    direction: 'down' | 'up';
+  } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const options: { label: string; value: number }[] = [
+    { label: '10', value: 10 },
+    { label: '20', value: 20 },
+    { label: '50', value: 50 },
+    { label: '100', value: 100 },
+    { label: 'ทั้งหมด', value: totalItems },
+  ];
+
+  const computePosition = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const menuHeight = 220; // ประมาณความสูงของ menu
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const direction: 'down' | 'up' = spaceBelow >= menuHeight + 8 ? 'down' : 'up';
+    const top = direction === 'down' ? rect.bottom + 4 : rect.top - 4;
+    setPos({
+      left: rect.left,
+      top,
+      width: Math.max(rect.width, 96),
+      direction,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    computePosition();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    const handleReposition = () => computePosition();
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKey);
+    window.addEventListener('resize', handleReposition);
+    window.addEventListener('scroll', handleReposition, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKey);
+      window.removeEventListener('resize', handleReposition);
+      window.removeEventListener('scroll', handleReposition, true);
+    };
+  }, [open]);
+
+  const currentLabel =
+    options.find((o) => o.value === value)?.label || String(value);
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center justify-between gap-1.5 pl-2.5 pr-2 py-1 text-sm bg-white text-slate-900 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary min-w-[64px]"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span>{currentLabel}</span>
+        <svg
+          className={`h-3.5 w-3.5 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </button>
+
+      {open && pos &&
+        createPortal(
+          <div
+            ref={menuRef}
+            role="listbox"
+            style={{
+              position: 'fixed',
+              left: pos.left,
+              top: pos.direction === 'down' ? pos.top : undefined,
+              bottom:
+                pos.direction === 'up'
+                  ? window.innerHeight - pos.top
+                  : undefined,
+              minWidth: pos.width,
+              zIndex: 9999,
+            }}
+            className="rounded-md border border-slate-200 bg-white shadow-lg py-1 max-h-[260px] overflow-auto"
+          >
+            {options.map((opt) => {
+              const selected = opt.value === value;
+              return (
+                <button
+                  key={`${opt.label}-${opt.value}`}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-1.5 text-sm hover:bg-slate-100 ${
+                    selected ? 'text-primary font-semibold bg-primary/5' : 'text-slate-700'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>,
+          document.body
+        )}
+    </>
+  );
+};
 
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
@@ -38,12 +188,6 @@ export const Pagination: React.FC<PaginationProps> = ({
     }
   };
 
-  const handleItemsPerPageChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    onItemsPerPageChange(Number(e.target.value));
-  };
-
   const startItem = totalItems > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
@@ -56,15 +200,12 @@ export const Pagination: React.FC<PaginationProps> = ({
       return pageNumbers;
     }
 
-    // Always show first page
     pageNumbers.push(1);
 
-    // Ellipsis logic
     if (currentPage > 3) {
       pageNumbers.push('...');
     }
 
-    // Pages around current page
     let startPage = Math.max(2, currentPage - 1);
     let endPage = Math.min(totalPages - 1, currentPage + 1);
 
@@ -72,12 +213,10 @@ export const Pagination: React.FC<PaginationProps> = ({
       pageNumbers.push(i);
     }
 
-    // Ellipsis logic
     if (currentPage < totalPages - 2) {
       pageNumbers.push('...');
     }
 
-    // Always show last page
     pageNumbers.push(totalPages);
 
     return pageNumbers;
@@ -108,21 +247,12 @@ export const Pagination: React.FC<PaginationProps> = ({
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div className="flex items-center gap-x-4">
           <div className="flex items-center gap-x-2">
-            <label htmlFor="items-per-page" className="text-sm text-slate-700">
-              แสดง:
-            </label>
-            <select
-              id="items-per-page"
+            <span className="text-sm text-slate-700">แสดง:</span>
+            <ItemsPerPageDropdown
               value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              className="block w-auto pl-2 pr-7 py-1 text-sm bg-white text-slate-900 border border-slate-300 focus:outline-none focus:ring-primary focus:border-primary rounded-md"
-            >
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-              <option value={totalItems}>ทั้งหมด</option>
-            </select>
+              totalItems={totalItems}
+              onChange={onItemsPerPageChange}
+            />
           </div>
           {totalItems > 0 && (
             <p className="text-sm text-slate-700">

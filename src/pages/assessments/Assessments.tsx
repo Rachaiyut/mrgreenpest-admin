@@ -917,19 +917,6 @@ const Assessments: React.FC = () => {
                       );
                     })}
                   </tbody>
-                  {paginatedAssessments.length > 0 && (
-                    <tfoot>
-                      <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-t-2 border-slate-300">
-                        <td colSpan={8} className="px-4 py-3 text-right text-sm font-semibold text-slate-700">
-                          ยอดรวมทั้งหมด
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-bold text-slate-900">
-                          ฿{paginatedAssessments.reduce((sum, a) => sum + (a.total_price || 0), 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td colSpan={2}></td>
-                      </tr>
-                    </tfoot>
-                  )}
                 </table>
               </div>
               {paginatedAssessments.length > 0 && (
