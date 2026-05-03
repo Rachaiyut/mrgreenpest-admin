@@ -152,8 +152,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Cancellation reason state
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [cancellationReason, setCancellationReason] = useState('');
 
   // Signature modal state
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -372,11 +370,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const handleStatusConfirm = async () => {
     if (!selectedQuotation) return;
 
-    // If target is CANCELLED, open cancellation reason modal instead
+    // If target is CANCELLED, open Swal cancellation flow instead
     if (targetStatus === QuotationStatus.CANCELLED) {
       setIsStatusModalOpen(false);
-      setCancellationReason('');
-      setIsCancelModalOpen(true);
+      await openCancellationSwal(selectedQuotation);
       return;
     }
 
@@ -405,41 +402,48 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setIsStatusModalOpen(false);
   };
 
-  // Handle cancellation with reason
-  const handleCancelConfirm = async () => {
-    if (!selectedQuotation) return;
+  // Handle cancellation with reason via Swal
+  const openCancellationSwal = async (quotation: Quotation) => {
+    const result = await Swal.fire({
+      title: 'ยกเลิกใบเสนอราคา',
+      html: `<div class="text-sm text-slate-700 text-left">ยืนยันการยกเลิกใบเสนอราคา <strong>${quotation.code || ''}</strong></div>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
+      inputPlaceholder: 'กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น...',
+      inputAttributes: { 'aria-label': 'เหตุผลการยกเลิก' },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันยกเลิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+      inputValidator: (value) =>
+        !value || !value.trim() ? 'กรุณาระบุเหตุผลการยกเลิก' : null,
+    });
 
-    if (!cancellationReason.trim()) {
-      Swal.fire({
-        title: 'กรุณากรอกเหตุผล',
-        text: 'กรุณาระบุเหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
-        icon: 'warning',
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#3085d6',
-      });
-      return;
-    }
+    if (!result.isConfirmed) return;
 
+    const reason = (result.value || '').trim();
     try {
       const updatePayload = {
         status: QuotationStatus.CANCELLED,
-        cancellation_reason: cancellationReason.trim(),
+        cancellation_reason: reason,
       };
-
       if (onUpdateQuotation) {
-        await onUpdateQuotation({
-          ...selectedQuotation,
-          ...updatePayload,
-        });
+        await onUpdateQuotation({ ...quotation, ...updatePayload });
       } else {
-        await QuotationApi.update(selectedQuotation.id, updatePayload);
+        await QuotationApi.update(quotation.id, updatePayload);
       }
       fetchQuotations();
+      Swal.fire({
+        icon: 'success',
+        title: 'ยกเลิกสำเร็จ',
+        timer: 1500,
+        showConfirmButton: false,
+      });
     } catch (error) {
       console.error('Failed to cancel quotation:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถยกเลิกใบเสนอราคาได้' });
     }
-    setIsCancelModalOpen(false);
-    setCancellationReason('');
   };
 
   // Handle signature submit (support both draw + upload image)
@@ -1018,13 +1022,12 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             )}
             <hr className="my-1 border-slate-100" />
             <button
-              onClick={() => {
-                if (selectedQuotation) {
-                  setTargetStatus(QuotationStatus.CANCELLED);
-                  setCancellationReason('');
-                  setIsCancelModalOpen(true);
-                }
+              onClick={async () => {
+                const q = selectedQuotation;
                 setOpenDropdownId(null);
+                if (q) {
+                  await openCancellationSwal(q);
+                }
               }}
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
@@ -1103,39 +1106,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         }
         confirmButtonText="บันทึก"
         confirmButtonClass="bg-primary hover:bg-primary/90"
-      />
-
-      {/* Cancellation Reason Modal */}
-      <ConfirmationModal
-        isOpen={isCancelModalOpen}
-        onClose={() => {
-          setIsCancelModalOpen(false);
-          setCancellationReason('');
-        }}
-        onConfirm={handleCancelConfirm}
-        title="ยกเลิกใบเสนอราคา"
-        message={
-          <div className="space-y-4 text-left">
-            <p>
-              ยืนยันการยกเลิกใบเสนอราคา{' '}
-              <strong>{selectedQuotation?.code}</strong>
-            </p>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-                rows={4}
-              />
-            </div>
-          </div>
-        }
-        confirmButtonText="ยืนยันยกเลิก"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
       {/* Signature Modal */}
