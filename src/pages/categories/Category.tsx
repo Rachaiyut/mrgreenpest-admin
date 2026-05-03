@@ -22,6 +22,7 @@ import {
   TrashIcon,
   ManageIcon,
   EyeIcon,
+  ArchiveBoxIcon,
 } from '../../assets/icons/Icons';
 
 // Component
@@ -312,8 +313,12 @@ const Categories: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {categories.length === 0 && !loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
-                      ไม่มีข้อมูล
+                    <td colSpan={7} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบหมวดหมู่</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างหมวดหมู่ใหม่</p>
+                      </div>
                     </td>
                   </tr>
                 ) : categories.map((category, index) => (

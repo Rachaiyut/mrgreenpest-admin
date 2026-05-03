@@ -23,6 +23,7 @@ import {
   PencilIcon,
   TrashIcon,
   EyeIcon,
+  PackageIcon,
 } from '../../assets/icons/Icons';
 
 import {
@@ -339,7 +340,17 @@ const Packages: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {packages.map((pkg, index) => (
+                {packages.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <PackageIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบแพ็กเกจ</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างแพ็กเกจใหม่</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : packages.map((pkg, index) => (
                   <tr key={pkg.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}

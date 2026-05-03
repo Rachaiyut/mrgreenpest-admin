@@ -23,6 +23,7 @@ import {
   PencilIcon,
   TrashIcon,
   ManageIcon,
+  TruckIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { SupplierModal } from '../../components/features/suppliers/SupplierModal';
@@ -306,7 +307,13 @@ const Suppliers: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {suppliers.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-slate-500">ไม่มีข้อมูล</td>
+                    <td colSpan={9} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <TruckIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบผู้จัดจำหน่าย</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างผู้จัดจำหน่ายใหม่</p>
+                      </div>
+                    </td>
                   </tr>
                 ) : suppliers.map((supplier, index) => (
                   <tr key={supplier.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">

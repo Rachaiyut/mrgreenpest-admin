@@ -32,6 +32,7 @@ import {
   PencilIcon,
   PlusIcon,
   TrashIcon,
+  ArchiveBoxIcon,
 } from '../../../assets/icons/Icons';
 
 const Product: React.FC = () => {
@@ -444,7 +445,21 @@ const Product: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {products.map((product, index) => (
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">
+                          {selectedType === 'PRODUCT' ? 'ไม่พบสินค้า' : 'ไม่พบบริการ'}
+                        </p>
+                        <p className="text-sm mt-1">
+                          ลองปรับตัวกรองหรือสร้าง{selectedType === 'PRODUCT' ? 'สินค้า' : 'บริการ'}ใหม่
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : products.map((product, index) => (
                   <tr key={product.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {(currentPage - 1) * itemsPerPage + index + 1}
