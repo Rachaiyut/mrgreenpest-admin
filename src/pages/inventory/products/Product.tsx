@@ -18,7 +18,6 @@ import { StorageApi } from '@/src/api/storage';
 
 // ===== Components (Absolute) =====
 import { ProductModal } from '@/src/components/features/products/ProductModal';
-import { ConfirmationModal } from '@/src/components/common/ConfirmationModal';
 
 // ===== Components (Relative) =====
 import { Card } from '../../../components/common/Card';
@@ -44,6 +43,7 @@ const Product: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedType, setSelectedType] = useState<'PRODUCT' | 'SERVICE'>('PRODUCT');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,8 +59,6 @@ const Product: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<IProduct | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -92,6 +90,7 @@ const Product: React.FC = () => {
         ...(selectedCategoryId ? { category_id: selectedCategoryId } : {}),
         ...(minPrice ? { minPrice: Number(minPrice) } : {}),
         ...(maxPrice ? { maxPrice: Number(maxPrice) } : {}),
+        ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
       };
 
       if (selectedType === 'SERVICE') {
@@ -117,7 +116,7 @@ const Product: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, selectedType, minPrice, maxPrice]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, selectedType, minPrice, maxPrice, statusFilter]);
 
   useEffect(() => {
     fetchCategories();
@@ -192,30 +191,26 @@ const Product: React.FC = () => {
     }
   };
 
-  const onDeleteProduct = async (id: string) => {
-    try {
-      const item = products.find((p) => p.id === id);
-      if ((item as unknown as Record<string, string>)?._type === 'SERVICE') {
-        await ProductServiceApi.remove(id);
-      } else {
-        await ProductApi.deleteProduct(id);
-      }
-      fetchProducts();
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบได้' });
-    }
-  };
-
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
     setCurrentPage(1);
   };
 
-  const actions = [
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
-  ];
+  const handleToggleStatus = async (product: IProduct) => {
+    try {
+      const isService = (product as unknown as Record<string, string>)?._type === 'SERVICE';
+      if (isService) {
+        await ProductServiceApi.update(product.id, { is_active: !product.is_active } as any);
+      } else {
+        await ProductApi.updateProduct(product.id, { is_active: !product.is_active } as any);
+      }
+      fetchProducts();
+    } catch (error) {
+      console.error('Error toggling product status:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปลี่ยนสถานะได้' });
+    }
+    setOpenDropdownId(null);
+  };
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -260,20 +255,6 @@ const Product: React.FC = () => {
     setModalMode('edit');
     setIsModalOpen(true);
     setOpenDropdownId(null);
-  };
-
-  const handleDelete = (product: IProduct) => {
-    setProductToDelete(product);
-    setIsDeleteModalOpen(true);
-    setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (productToDelete) {
-      onDeleteProduct(productToDelete.id);
-    }
-    setIsDeleteModalOpen(false);
-    setProductToDelete(null);
   };
 
   return (
@@ -360,6 +341,20 @@ const Product: React.FC = () => {
                 />
               </div>
             )}
+            <div className="w-full sm:w-44 flex-shrink-0">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="true">ใช้งาน</option>
+                <option value="false">ไม่ใช้งาน</option>
+              </select>
+            </div>
           </div>
         </Card>
 
@@ -440,6 +435,12 @@ const Product: React.FC = () => {
                     scope="col"
                     className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
                   >
+                    สถานะ
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
                     จัดการ
                   </th>
                 </tr>
@@ -447,7 +448,7 @@ const Product: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                    <td colSpan={11} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
                         <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
                         <p className="text-base font-medium text-slate-500">
@@ -500,7 +501,18 @@ const Product: React.FC = () => {
                     </td>
                     </>
                     )}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.is_active !== false
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {product.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button
                           data-product-id={product.id}
@@ -545,31 +557,44 @@ const Product: React.FC = () => {
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
-              <button
-                key={action.label}
-                onClick={(e) => {
-                  e.preventDefault();
-                  const product = products.find((p) => p.id === openDropdownId);
-                  if (!product) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-                  if (action.label === 'แก้ไข') {
-                    handleEdit(product);
-                  } else if (action.label === 'ลบ') {
-                    handleDelete(product);
-                  } else {
-                    setOpenDropdownId(null);
-                  }
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </button>
-            ))}
+            <button
+              onClick={() => {
+                const product = products.find((p) => p.id === openDropdownId);
+                if (product) handleEdit(product);
+              }}
+              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              role="menuitem"
+            >
+              <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+              <span>แก้ไข</span>
+            </button>
+            {(() => {
+              const product = products.find((p) => p.id === openDropdownId);
+              if (!product) return null;
+              return (
+                <button
+                  onClick={() => handleToggleStatus(product)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                  role="menuitem"
+                >
+                  {product.is_active !== false ? (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                      <span>ปิดใช้งาน</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                      <span>เปิดใช้งาน</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -582,21 +607,6 @@ const Product: React.FC = () => {
         onSubmit={onSubmitProduct}
         categories={categories}
         units={units}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบสินค้า/บริการ{' '}
-            <strong>{productToDelete?.code}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );
