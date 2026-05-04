@@ -71,7 +71,7 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
         setExtraSuppliers([]);
         return;
       }
-      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1 });
+      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1, is_active: true });
       if (res?.data) setExtraSuppliers(res.data);
     } catch (e) {
       console.error('Failed to search suppliers', e);
@@ -149,8 +149,8 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
       try {
         const [warehousesRes, suppliersRes, productsRes] = await Promise.all([
           WarehouseApi.getWarehouses({ limit: 1000 }),
-          SupplierApi.getSuppliers({ limit: 1000 }),
-          ProductApi.getProducts({ limit: 1000 }),
+          SupplierApi.getSuppliers({ limit: 1000, is_active: true }),
+          ProductApi.getProducts({ limit: 1000, is_active: true }),
         ]);
         setWarehouses(warehousesRes.data || []);
         setSuppliers(suppliersRes.data || []);

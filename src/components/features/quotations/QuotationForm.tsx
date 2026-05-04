@@ -106,7 +106,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           CustomerApi.getCustomers({ limit: 10 }),
           AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE  }),
-          PackageApi.getPackages({ limit: 10 }),
+          PackageApi.getPackages({ limit: 10, is_active: true }),
           ServiceProcedureTemplateApi.getAll({ limit: 10 }),
           ServiceScheduleApi.getAll(),
         ]);
@@ -522,7 +522,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return (
       products
         // @ts-ignore
-        .filter((p) => p.type !== 'PACKAGE')
+        .filter((p) => p.type !== 'PACKAGE' && (p as any).is_active !== false)
         .map((p) => ({
           value: p.id,
           label: `${p.code} - ${p.name}`,

@@ -395,7 +395,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const productOptions = useMemo(() => {
     return products
-      .filter((p: any) => p.type !== 'PACKAGE')
+      .filter((p: any) => p.type !== 'PACKAGE' && p.is_active !== false)
       .map((p) => ({
         value: p.id,
         label: `${p.code} - ${p.name}`,

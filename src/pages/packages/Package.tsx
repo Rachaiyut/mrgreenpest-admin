@@ -65,7 +65,7 @@ const Packages: React.FC = () => {
 
   const fetchUnits = async () => {
     try {
-      const response = await UnitApi.getUnit({ limit: 100 });
+      const response = await UnitApi.getUnit({ limit: 100, is_active: true });
       setUnits(response.data);
     } catch (error) {
       console.error('Failed to fetch units:', error);

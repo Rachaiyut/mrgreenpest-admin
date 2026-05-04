@@ -83,7 +83,7 @@ export const AddGoodsReceiptModal: FC<AddGoodsReceiptModalProps> = ({
         setExtraSuppliers([]);
         return;
       }
-      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1 });
+      const res = await SupplierApi.getSuppliers({ search: q, limit: 10, page: 1, is_active: true });
       if (res?.data) setExtraSuppliers(res.data as SupplierType[]);
     } catch (e) {
       console.error('Failed to search suppliers', e);

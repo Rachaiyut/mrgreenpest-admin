@@ -42,7 +42,7 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({
 
     setIsLoading(true);
     try {
-      const res = await ProductApi.getProducts({ search: term, limit: 10 });
+      const res = await ProductApi.getProducts({ search: term, limit: 10, is_active: true });
       if (res && res.data) {
         setFetchedProducts(res.data);
       }

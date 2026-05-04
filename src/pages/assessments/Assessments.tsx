@@ -138,8 +138,8 @@ const Assessments: React.FC = () => {
       ] = await Promise.all([
         AssessmentApi.getAll(filter),
         CustomerApi.getCustomers({ limit: 10 }),
-        ProductApi.getProducts({ limit: 10 }),
-        PackageApi.getPackages({ limit: 10 }),
+        ProductApi.getProducts({ limit: 10, is_active: true }),
+        PackageApi.getPackages({ limit: 10, is_active: true }),
         CategoryApi.getCategories({ type: CategoryType.SERVICE }),
       ]);
       setAssessments(assessmentsRes.data);

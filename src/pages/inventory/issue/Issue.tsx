@@ -132,7 +132,7 @@ const Issue: FC = () => {
         UserApi.getAll(),
         WarehouseApi.getWarehouses(),
         CustomerApi.getCustomers(),
-        ProductApi.getProducts(),
+        ProductApi.getProducts({ is_active: true }),
       ]);
 
       if (withdrawalsRes?.data) setWithdrawals(withdrawalsRes.data);

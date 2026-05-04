@@ -460,7 +460,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       try {
         const [catRes, pkgRes] = await Promise.all([
           CategoryApi.getCategories({ type: CategoryType.SERVICE }),
-          PackageApi.getPackages({ limit: 50 }),
+          PackageApi.getPackages({ limit: 50, is_active: true }),
         ]);
         if (catRes?.data) setFetchedCategories(catRes.data);
         if (pkgRes?.data) setFetchedPackages(pkgRes.data);

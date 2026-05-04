@@ -162,8 +162,8 @@ export const JobForm: React.FC<JobFormProps> = ({
       try {
         const [catRes, prodRes, pkgRes] = await Promise.all([
           CategoryApi.getCategories({ type: CategoryType.SERVICE }),
-          ProductApi.getProducts({ limit: 100 }),
-          PackageApi.getPackages({ limit: 100 }),
+          ProductApi.getProducts({ limit: 100, is_active: true }),
+          PackageApi.getPackages({ limit: 100, is_active: true }),
         ]);
         setCategories(catRes.data || []);
         setProducts(prodRes.data || []);
