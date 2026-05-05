@@ -24,99 +24,104 @@ export interface PermissionGroup {
 
 export const PERMISSION_MATRIX: PermissionGroup[] = [
   {
-    groupName: 'ภาพรวมและลูกค้า',
+    groupName: 'ภาพรวมและการแจ้งเตือนนัดหมาย',
     items: [
-      { label: 'Dashboard', module: 'DASHBOARD' },
-      { label: 'การแจ้งเตือนและนัดหมาย', module: 'NOTIFICATION' },
-      { label: 'ลูกค้า', module: 'CUSTOMER' },
-      { label: 'สัญญา', module: 'CONTRACT' },
-      { label: 'การต่ออายุสัญญา', module: 'CONTRACT' },
+      { label: 'แดชบอร์ด', module: 'DASHBOARD', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'การแจ้งเตือนและนัดหมาย', module: 'NOTIFICATION', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'สรุปงานรายวัน', module: 'DAILY_CLOSURE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
-    groupName: 'ภาคสนาม',
+    groupName: 'ลูกค้าและสัญญา',
+    items: [
+      { label: 'ลูกค้า', module: 'CUSTOMER', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'สัญญา', module: 'CONTRACT', skipActions: ['DELETE', 'APPROVE'] },
+      { label: 'การต่ออายุสัญญา', module: 'CONTRACT', skipActions: ['DELETE', 'APPROVE'] },
+    ],
+  },
+  {
+    groupName: 'การปฏิบัติงานและภาคสนาม',
     items: [
       { label: 'ใบประเมิน', module: 'ASSESSMENT' },
       { label: 'ภาคสนาม', module: 'OPERATION' },
-      { label: 'รายงานบริการ', module: 'SERVICE_REPORT' },
-      { label: 'ยานพาหนะ', module: 'VEHICLE' },
-      { label: 'สรุปงานรายวัน', module: 'DAILY_CLOSURE' },
+      { label: 'รายงานบริการ', module: 'SERVICE_REPORT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ยานพาหนะ', module: 'VEHICLE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+    ],
+  },
+  {
+    groupName: 'เอกสารการขายและการเงิน',
+    items: [
+      { label: 'ใบเสนอราคา', module: 'QUOTATION', skipActions: ['DELETE'] },
+      { label: 'ใบสัญญา', module: 'CONTRACT', skipActions: ['DELETE', 'NOTIFY'] },
+      { label: 'ใบแจ้งหนี้', module: 'INVOICE', skipActions: ['DELETE', 'NOTIFY'] },
+      { label: 'ใบกำกับภาษี / ใบเสร็จรับเงิน', module: 'RECEIPT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
     groupName: 'แผนการเข้าปฏิบัติงาน',
     items: [
-      { label: 'ตารางปฏิบัติงาน', module: 'SERVICE_SCHEDULE' },
-      { label: 'รายละเอียดขั้นตอนบริการ', module: 'SERVICE_PROCEDURE_TEMPLATE' },
-    ],
-  },
-  {
-    groupName: 'กลุ่มเอกสารการจัดซื้อและบัญชี',
-    items: [
-      { label: 'ใบเสนอราคา', module: 'QUOTATION' },
-      { label: 'ใบแจ้งหนี้/ใบวางบิล', module: 'INVOICE' },
-      { label: 'ใบกำกับภาษี/ใบเสร็จรับเงิน', module: 'RECEIPT' },
+      { label: 'ตารางปฏิบัติงาน', module: 'SERVICE_SCHEDULE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'รายละเอียดขั้นตอนบริการ', module: 'SERVICE_PROCEDURE_TEMPLATE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ตัวอย่าง Catalog สารเคมี', module: 'PRODUCT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
     groupName: 'ระบบเงินสดภายใน',
     items: [
-      { label: 'บัญชี', module: 'ACCOUNT' },
+      { label: 'จัดการบัญชีธนาคาร', module: 'ACCOUNT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
-    groupName: 'กลุ่ม คลังสินค้า',
+    groupName: 'คลังสินค้า',
     items: [
-      { label: 'หมวดหมู่', module: 'CATEGORY' },
-      { label: 'แพ็กเกจ', module: 'PACKAGES' },
-      { label: 'สินค้า/บริการ', module: 'PRODUCT' },
-      { label: 'คลังสินค้า', module: 'WAREHOUSE' },
-      { label: 'ผู้จัดจำหน่าย', module: 'SUPPLIER' },
-      { label: 'หน่วยนับ', module: 'UNIT' },
-      { label: 'รับสินค้าเข้า', module: 'RECEIVE_NOTE' },
+      { label: 'คลังสินค้า', module: 'WAREHOUSE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'จำกัดการเบิก', module: 'WAREHOUSE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'รับสินค้าเข้า', module: 'RECEIVE_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'โอนย้ายสินค้า', module: 'TRANSFER_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ปรับปรุงสต็อก', module: 'ADJUSTMENT_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+    ],
+  },
+  {
+    groupName: 'จัดการสินค้าภายใน',
+    items: [
       {
         label: 'เบิกสินค้าเข้าคลังย่อย',
         module: 'ISSUE_NOTE',
         // ปิด APPROVE + NOTIFY ที่ parent row — ย้ายไปอยู่ใน sub-row 2 หมวดแทน (STOCK + EXPENSE)
-        skipActions: ['APPROVE', 'NOTIFY'],
+        skipActions: ['DELETE', 'APPROVE', 'NOTIFY'],
       },
+      { label: '- อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต', module: 'STOCK_ISSUE_NOTE' },
+      { label: '- อนุมัติค่าใช้จ่ายเกินลิมิต', module: 'EXPENSE_ISSUE_NOTE' },
+      { label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย', module: 'ISSUE_SUMMARY' },
       {
-        // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_NOTE / NOTIFY_STOCK_ISSUE_NOTE
-        label: '- อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
-        module: 'STOCK_ISSUE_NOTE',
-      },
-      {
-        // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_NOTE / NOTIFY_EXPENSE_ISSUE_NOTE
-        label: '- อนุมัติค่าใช้จ่ายเกินลิมิต',
-        module: 'EXPENSE_ISSUE_NOTE',
-      },
-      {
-        label: 'สรุปการเบิกสินค้า/อุปกรณ์ และค่าใช้จ่าย',
-        module: 'ISSUE_SUMMARY',
-        skipActions: ['NOTIFY'],
-      },
-      {
-        // Sub-row STOCK — มีเฉพาะ permission APPROVE_STOCK_ISSUE_SUMMARY
         label: '- อนุมัติเบิกสินค้า/สารเคมีเกินลิมิต',
         module: 'STOCK_ISSUE_SUMMARY',
+        skipActions: ['CREATE', 'UPDATE', 'CANCEL'],
       },
       {
-        // Sub-row EXPENSE — มีเฉพาะ permission APPROVE_EXPENSE_ISSUE_SUMMARY (SUPERADMIN เท่านั้น)
-        label: '- อนุมัติค่าใช้จ่ายเกินลิมิต',
+        label: '- อนุมัติค่าใช้จ่ายเกินลิมิตเปลี่ยน ',
         module: 'EXPENSE_ISSUE_SUMMARY',
+        skipActions: ['CREATE', 'UPDATE', 'CANCEL'],
       },
-      { label: 'โอนย้าย', module: 'TRANSFER_NOTE' },
-      { label: 'ปรับปรุงสต็อก', module: 'ADJUSTMENT_NOTE' },
-      { label: 'คืนสินค้า', module: 'RETURN_NOTE' },
-      { label: 'จำกัดการเบิก', module: 'WAREHOUSE' },
+      { label: 'คืนสินค้า', module: 'RETURN_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'เบิกสินค้าคืนผู้จำหน่าย', module: 'RETURN_NOTE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
-    groupName: 'ตั้งค่าระบบ',
+    groupName: 'แพ็กเกจ และ สินค้า/บริการ',
     items: [
-      { label: 'ผู้ใช้งาน', module: 'USER' },
-      { label: 'จัดการบทบาท', module: 'ROLE' },
-      { label: 'รายงาน', module: 'REPORT_MASTER' },
+      { label: 'แพ็กเกจ', module: 'PACKAGES', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'หมวดหมู่สินค้า', module: 'CATEGORY', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'หน่วยนับ', module: 'UNIT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'สินค้า/บริการ', module: 'PRODUCT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ผู้จัดจำหน่าย', module: 'SUPPLIER', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+    ],
+  },
+  {
+    groupName: 'ตั้งค่าบทบาทและผู้ใช้งาน',
+    items: [
+      { label: 'จัดการบทบาท', module: 'ROLE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'จัดการผู้ใช้งาน', module: 'USER', skipActions: ['APPROVE', 'NOTIFY'] },
     ],
   },
 ];
