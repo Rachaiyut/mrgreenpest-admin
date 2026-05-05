@@ -1,5 +1,7 @@
 import { isFieldRole, isManagementRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
+import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import { useLocation } from 'react-router-dom';
@@ -132,8 +134,8 @@ const Assessments: React.FC = () => {
       ] = await Promise.all([
         AssessmentApi.getAll(filter),
         CustomerApi.getCustomers({ limit: 10 }),
-        ProductApi.getProducts({ limit: 10 }),
-        PackageApi.getPackages({ limit: 10 }),
+        ProductApi.getProducts({ limit: 10, is_active: true }),
+        PackageApi.getPackages({ limit: 10, is_active: true }),
         CategoryApi.getCategories({ type: CategoryType.SERVICE }),
       ]);
       setAssessments(assessmentsRes.data);
@@ -295,6 +297,75 @@ const Assessments: React.FC = () => {
       Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถยกเลิกใบประเมินได้', 'error');
     }
   };
+
+  const approveAssessmentWithDetails = async (assessment: Assessment) => {
+    const aAny: any = assessment;
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === aAny.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const total = Number(aAny.total || aAny.grand_total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const date = aAny.assessment_date
+      ? new Date(aAny.assessment_date).toLocaleDateString('th-TH')
+      : '-';
+
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันอนุมัติใบประเมิน',
+      width: 560,
+      html: renderApprovalDetails([
+        { label: 'เลขที่ใบประเมิน', value: aAny.code || null },
+        { label: 'ลูกค้า', value: customerName },
+        { label: 'วันที่ประเมิน', value: date },
+        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+      ]),
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await AssessmentApi.approveById(assessment.id, { status: 'APPROVED' } as unknown as AssessmentAction);
+      Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
+      fetchData();
+    } catch (error) {
+      console.error('Approve assessment error:', error);
+      Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถอนุมัติได้', 'error');
+    }
+  };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Assessment | undefined = assessments.find((a) => a.id === focusId);
+    if (!target) {
+      try {
+        target = await AssessmentApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบประเมิน', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status !== AsessmentStatus.PENDING) {
+      const assessmentStatusLabel: Record<string, string> = {
+        DRAFT: 'ฉบับร่าง',
+        PENDING: 'รออนุมัติ',
+        IN_PROGRESS: 'กำลังดำเนินการ',
+        APPOINTMENT: 'นัดหมาย',
+        COMPLETE: 'เสร็จสิ้น',
+        CANCELLED: 'ยกเลิก',
+      };
+      const statusText = assessmentStatusLabel[String(target.status).toUpperCase()] || target.status;
+      Swal.fire('ใบประเมินไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusText}`, 'info');
+      return;
+    }
+    approveAssessmentWithDetails(target);
+  });
 
   const handleViewDetails = (assessment: Assessment) => {
     setSelectedAssessment(assessment);
@@ -800,17 +871,35 @@ const Assessments: React.FC = () => {
                                   try {
                                     if (assessment.id) {
                                       setLoadingPdfId(assessment.id);
-                                      const blob =
-                                        await AssessmentApi.exportPdf(
-                                          assessment.id
-                                        );
-                                      const url =
-                                        window.URL.createObjectURL(blob);
-                                      window.open(url, '_blank');
-                                      setTimeout(
-                                        () => window.URL.revokeObjectURL(url),
-                                        100
-                                      );
+                                      const blob = await AssessmentApi.exportPdf(assessment.id);
+
+                                      // Build filename: <รหัสใบประเมิน>_<ชื่อ>_<นามสกุล>.pdf
+                                      const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                                      const c = (assessment as any).customer ||
+                                        customers?.find((x) => x.id === (assessment as any).customer_id);
+                                      const firstName = (c?.first_name || '').trim();
+                                      const lastName = c?.last_name && c.last_name !== '-' ? c.last_name.trim() : '';
+                                      const parts: string[] = [];
+                                      if (firstName || lastName) {
+                                        if (firstName) parts.push(safe(firstName));
+                                        if (lastName) parts.push(safe(lastName));
+                                      } else {
+                                        parts.push('ลูกค้า');
+                                      }
+                                      const filename = [safe((assessment as any).code || assessment.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                                      const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                                      const url = window.URL.createObjectURL(namedFile);
+                                      const win = window.open(url, '_blank');
+                                      if (!win) {
+                                        const a = document.createElement('a');
+                                        a.href = url;
+                                        a.download = filename;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                      }
+                                      setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                                     }
                                   } catch (error) {
                                     console.error('Error fetching PDF:', error);

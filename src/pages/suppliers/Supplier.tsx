@@ -2,7 +2,6 @@ import React, {
   useState,
   useRef,
   useEffect,
-  useMemo,
   useCallback,
 } from 'react';
 import Swal from 'sweetalert2';
@@ -21,14 +20,13 @@ import {
   PlusIcon,
   EyeIcon,
   PencilIcon,
-  TrashIcon,
   ManageIcon,
+  TruckIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { SupplierModal } from '../../components/features/suppliers/SupplierModal';
 import { SupplierDetailsModal } from '../../components/features/suppliers/SupplierDetailsModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { SupplierType } from '@/src/types';
 
 const Suppliers: React.FC = () => {
@@ -55,20 +53,7 @@ const Suppliers: React.FC = () => {
   );
 
   const [typeFilter, setTypeFilter] = useState<SupplierType>();
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(
-    null
-  );
-
-  const onDeleteSupplier = async (id: string) => {
-    try {
-      await SupplierApi.deleteSupplier(id);
-      fetchSupplier();
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete product' });
-    }
-  };
+  const [statusFilter, setStatusFilter] = useState<string>('');
 
   const handleItemsPerPageChange = (size: number) => {
     setItemsPerPage(size);
@@ -88,25 +73,16 @@ const Suppliers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (supplier: Supplier) => {
-    setSupplierToDelete(supplier);
-    setIsDeleteModalOpen(true);
+  const handleToggleStatus = async (supplier: Supplier) => {
+    try {
+      await SupplierApi.updateSupplier(supplier.id, { is_active: !supplier.is_active } as Partial<Supplier>);
+      fetchSupplier();
+    } catch (error) {
+      console.error('Error toggling supplier status:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปลี่ยนสถานะได้' });
+    }
     setOpenDropdownId(null);
   };
-
-  const handleConfirmDelete = async () => {
-    if (supplierToDelete) {
-      onDeleteSupplier(supplierToDelete.id);
-    }
-    setIsDeleteModalOpen(false);
-    setSupplierToDelete(null);
-  };
-
-  const actions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon },
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true },
-  ];
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -135,6 +111,7 @@ const Suppliers: React.FC = () => {
         type: typeFilter,
         sort_by: 'created_at',
         sort_order: 'desc',
+        ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
       });
       setSuppliers(response.data);
       setTotalItems(response.meta?.total || response.data.length);
@@ -143,7 +120,7 @@ const Suppliers: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, typeFilter]);
+  }, [currentPage, itemsPerPage, searchQuery, typeFilter, statusFilter]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -234,6 +211,20 @@ const Suppliers: React.FC = () => {
                 <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
               </Select>
             </div>
+            <div className="w-full sm:w-44 flex-shrink-0">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="true">ใช้งาน</option>
+                <option value="false">ไม่ใช้งาน</option>
+              </Select>
+            </div>
           </div>
         </Card>
 
@@ -298,6 +289,12 @@ const Suppliers: React.FC = () => {
                   >
                     อีเมล
                   </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    สถานะ
+                  </th>
                   <th scope="col" className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                     จัดการ
                   </th>
@@ -306,7 +303,13 @@ const Suppliers: React.FC = () => {
               <tbody className="bg-white divide-y divide-slate-200">
                 {suppliers.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-slate-500">ไม่มีข้อมูล</td>
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <TruckIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบผู้จัดจำหน่าย</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างผู้จัดจำหน่ายใหม่</p>
+                      </div>
+                    </td>
                   </tr>
                 ) : suppliers.map((supplier, index) => (
                   <tr key={supplier.id} className="hover:bg-slate-50 [&>td]:text-center [&>td]:align-middle">
@@ -341,7 +344,18 @@ const Suppliers: React.FC = () => {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                       {supplier.email || '-'}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          supplier.is_active !== false
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {supplier.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-center text-sm font-medium">
                       <div className="inline-block text-left">
                         <Button
                           data-supplier-id={supplier.id}
@@ -387,36 +401,55 @@ const Suppliers: React.FC = () => {
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
-              <button
-                key={action.label}
-                onClick={(e) => {
-                  e.preventDefault();
-                  const supplier = suppliers.find(
-                    (s) => s.id === openDropdownId
-                  );
-                  if (!supplier) {
-                    setOpenDropdownId(null);
-                    return;
-                  }
-
-                  if (action.label === 'ดูรายละเอียด') {
-                    handleViewDetails(supplier);
-                  } else if (action.label === 'แก้ไข') {
-                    handleEdit(supplier);
-                  } else if (action.label === 'ลบ') {
-                    handleDelete(supplier);
-                  } else {
-                    setOpenDropdownId(null);
-                  }
-                }}
-                className={`flex items-center w-full text-left px-4 py-2 text-sm ${action.isDanger ? 'text-red-700 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
-                role="menuitem"
-              >
-                <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
-                <span>{action.label}</span>
-              </button>
-            ))}
+            <button
+              onClick={() => {
+                const supplier = suppliers.find((s) => s.id === openDropdownId);
+                if (supplier) handleViewDetails(supplier);
+              }}
+              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              role="menuitem"
+            >
+              <EyeIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+              <span>ดูรายละเอียด</span>
+            </button>
+            <button
+              onClick={() => {
+                const supplier = suppliers.find((s) => s.id === openDropdownId);
+                if (supplier) handleEdit(supplier);
+              }}
+              className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+              role="menuitem"
+            >
+              <PencilIcon className="mr-3 h-5 w-5" aria-hidden="true" />
+              <span>แก้ไข</span>
+            </button>
+            {(() => {
+              const supplier = suppliers.find((s) => s.id === openDropdownId);
+              if (!supplier) return null;
+              return (
+                <button
+                  onClick={() => handleToggleStatus(supplier)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                  role="menuitem"
+                >
+                  {supplier.is_active !== false ? (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                      <span>ปิดใช้งาน</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                      <span>เปิดใช้งาน</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -432,21 +465,6 @@ const Suppliers: React.FC = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         supplier={selectedSupplier}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบผู้จัดจำหน่าย{' '}
-            <strong>{supplierToDelete?.id}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );

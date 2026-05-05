@@ -1,5 +1,7 @@
 import { isFieldRole } from '@/src/utils/role';
 import { usePermissions } from '@/src/hooks/usePermissions';
+import { useNotificationFocus } from '@/src/hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '@/src/utils/approvalSwal';
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
@@ -150,8 +152,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Cancellation reason state
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  const [cancellationReason, setCancellationReason] = useState('');
 
   // Signature modal state
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -259,13 +259,30 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setOpenDropdownId(null);
   };
 
-  const handleApprove = async () => {
-    if (!selectedQuotation) return;
-    setOpenDropdownId(null);
+  const approveQuotationWithDetails = async (quotation: Quotation) => {
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === (quotation as any).customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const total = Number((quotation as any).total || (quotation as any).grand_total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const issueDate = (quotation as any).issue_date
+      ? new Date((quotation as any).issue_date).toLocaleDateString('th-TH')
+      : '-';
+
     const result = await Swal.fire({
-      title: 'ยืนยันอนุมัติ',
-      text: `อนุมัติใบเสนอราคา ${selectedQuotation.code} ?`,
+      title: 'ยืนยันอนุมัติใบเสนอราคา',
       icon: 'question',
+      width: 560,
+      html: renderApprovalDetails([
+        { label: 'เลขที่ใบเสนอราคา', value: quotation.code || null },
+        { label: 'ลูกค้า', value: customerName },
+        { label: 'วันที่ออก', value: issueDate },
+        { label: 'ยอดรวม', value: `฿${total}`, accent: 'money' },
+      ]),
       showCancelButton: true,
       confirmButtonColor: '#16a34a',
       confirmButtonText: 'อนุมัติ',
@@ -273,7 +290,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     });
     if (result.isConfirmed) {
       try {
-        await QuotationApi.approve(selectedQuotation.id);
+        await QuotationApi.approve(quotation.id);
         Swal.fire({ icon: 'success', title: 'อนุมัติสำเร็จ', timer: 1500, showConfirmButton: false });
         fetchQuotations();
       } catch (error) {
@@ -282,6 +299,31 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       }
     }
   };
+
+  const handleApprove = async () => {
+    if (!selectedQuotation) return;
+    setOpenDropdownId(null);
+    await approveQuotationWithDetails(selectedQuotation);
+  };
+
+  // Auto-trigger approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Quotation | undefined = quotations.find((q) => q.id === focusId);
+    if (!target) {
+      try {
+        target = await QuotationApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบเสนอราคา', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status !== QuotationStatus.PENDING_APPROVAL) {
+      Swal.fire('ใบเสนอราคาไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${statusLabels[target.status as QuotationStatus] || target.status}`, 'info');
+      return;
+    }
+    approveQuotationWithDetails(target);
+  });
 
   const handleRevise = () => {
     if (selectedQuotation) {
@@ -328,11 +370,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
   const handleStatusConfirm = async () => {
     if (!selectedQuotation) return;
 
-    // If target is CANCELLED, open cancellation reason modal instead
+    // If target is CANCELLED, open Swal cancellation flow instead
     if (targetStatus === QuotationStatus.CANCELLED) {
       setIsStatusModalOpen(false);
-      setCancellationReason('');
-      setIsCancelModalOpen(true);
+      await openCancellationSwal(selectedQuotation);
       return;
     }
 
@@ -361,41 +402,48 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
     setIsStatusModalOpen(false);
   };
 
-  // Handle cancellation with reason
-  const handleCancelConfirm = async () => {
-    if (!selectedQuotation) return;
+  // Handle cancellation with reason via Swal
+  const openCancellationSwal = async (quotation: Quotation) => {
+    const result = await Swal.fire({
+      title: 'ยกเลิกใบเสนอราคา',
+      html: `<div class="text-sm text-slate-700 text-left">ยืนยันการยกเลิกใบเสนอราคา <strong>${quotation.code || ''}</strong></div>`,
+      input: 'textarea',
+      inputLabel: 'เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
+      inputPlaceholder: 'กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น...',
+      inputAttributes: { 'aria-label': 'เหตุผลการยกเลิก' },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันยกเลิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      reverseButtons: true,
+      inputValidator: (value) =>
+        !value || !value.trim() ? 'กรุณาระบุเหตุผลการยกเลิก' : null,
+    });
 
-    if (!cancellationReason.trim()) {
-      Swal.fire({
-        title: 'กรุณากรอกเหตุผล',
-        text: 'กรุณาระบุเหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
-        icon: 'warning',
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: '#3085d6',
-      });
-      return;
-    }
+    if (!result.isConfirmed) return;
 
+    const reason = (result.value || '').trim();
     try {
       const updatePayload = {
         status: QuotationStatus.CANCELLED,
-        cancellation_reason: cancellationReason.trim(),
+        cancellation_reason: reason,
       };
-
       if (onUpdateQuotation) {
-        await onUpdateQuotation({
-          ...selectedQuotation,
-          ...updatePayload,
-        });
+        await onUpdateQuotation({ ...quotation, ...updatePayload });
       } else {
-        await QuotationApi.update(selectedQuotation.id, updatePayload);
+        await QuotationApi.update(quotation.id, updatePayload);
       }
       fetchQuotations();
+      Swal.fire({
+        icon: 'success',
+        title: 'ยกเลิกสำเร็จ',
+        timer: 1500,
+        showConfirmButton: false,
+      });
     } catch (error) {
       console.error('Failed to cancel quotation:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถยกเลิกใบเสนอราคาได้' });
     }
-    setIsCancelModalOpen(false);
-    setCancellationReason('');
   };
 
   // Handle signature submit (support both draw + upload image)
@@ -640,7 +688,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
                   </th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     จัดการ
                   </th>
                 </tr>
@@ -681,7 +729,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           {(currentPage - 1) * itemsPerPage + index + 1}
                         </td>
                         <td
-                          className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer text-center"
+                          className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer text-center"
                           onClick={() => {
                             setSelectedQuotation(q);
                             setModalMode('detail');
@@ -746,7 +794,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                           }
                         </td>
                         <td className="px-4 py-3 text-center whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <div className="hidden md:block">
                             <button
                               type="button"
@@ -762,7 +810,34 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                                 setLoadingPdfId(q.id);
                                 try {
                                   const blob = await PrintApi.getById(q.id);
-                                  window.open(window.URL.createObjectURL(blob), '_blank');
+                                  // Build filename: <เลขที่ใบเสนอราคา>_<ชื่อ>_<นามสกุล>.pdf
+                                  const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                                  const customer = customers?.find((c) => c.id === (q as any).customer_id);
+                                  const firstName = (customer?.first_name || '').trim();
+                                  const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
+                                  const parts: string[] = [];
+                                  if (firstName || lastName) {
+                                    if (firstName) parts.push(safe(firstName));
+                                    if (lastName) parts.push(safe(lastName));
+                                  } else {
+                                    const cn = ((q as any).customer_name || '').replace(/\s*-\s*$/, '').trim();
+                                    if (cn) cn.split(/\s+/).forEach((p: string) => parts.push(safe(p)));
+                                    else parts.push('ลูกค้า');
+                                  }
+                                  const filename = [safe(q.code || q.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                                  const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                                  const url = window.URL.createObjectURL(namedFile);
+                                  const win = window.open(url, '_blank');
+                                  if (!win) {
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                  }
+                                  setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                                 } catch (error) {
                                   console.error('Error viewing PDF:', error);
                                   Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
@@ -825,7 +900,33 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                 (async () => {
                   try {
                     const blob = await PrintApi.getById(selectedQuotation.id);
-                    window.open(window.URL.createObjectURL(blob), '_blank');
+                    const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, '').trim().replace(/\s+/g, '_');
+                    const customer = customers?.find((c) => c.id === (selectedQuotation as any).customer_id);
+                    const firstName = (customer?.first_name || '').trim();
+                    const lastName = customer?.last_name && customer.last_name !== '-' ? customer.last_name.trim() : '';
+                    const parts: string[] = [];
+                    if (firstName || lastName) {
+                      if (firstName) parts.push(safe(firstName));
+                      if (lastName) parts.push(safe(lastName));
+                    } else {
+                      const cn = ((selectedQuotation as any).customer_name || '').replace(/\s*-\s*$/, '').trim();
+                      if (cn) cn.split(/\s+/).forEach((p: string) => parts.push(safe(p)));
+                      else parts.push('ลูกค้า');
+                    }
+                    const filename = [safe(selectedQuotation.code || selectedQuotation.id), ...parts].filter(Boolean).join('_') + '.pdf';
+
+                    const namedFile = new File([blob], filename, { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(namedFile);
+                    const win = window.open(url, '_blank');
+                    if (!win) {
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                    }
+                    setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
                   } catch (error) {
                     console.error('Error viewing PDF:', error);
                     Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปิด PDF ได้' });
@@ -920,13 +1021,12 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
             )}
             <hr className="my-1 border-slate-100" />
             <button
-              onClick={() => {
-                if (selectedQuotation) {
-                  setTargetStatus(QuotationStatus.CANCELLED);
-                  setCancellationReason('');
-                  setIsCancelModalOpen(true);
-                }
+              onClick={async () => {
+                const q = selectedQuotation;
                 setOpenDropdownId(null);
+                if (q) {
+                  await openCancellationSwal(q);
+                }
               }}
               className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
             >
@@ -1005,39 +1105,6 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         }
         confirmButtonText="บันทึก"
         confirmButtonClass="bg-primary hover:bg-primary/90"
-      />
-
-      {/* Cancellation Reason Modal */}
-      <ConfirmationModal
-        isOpen={isCancelModalOpen}
-        onClose={() => {
-          setIsCancelModalOpen(false);
-          setCancellationReason('');
-        }}
-        onConfirm={handleCancelConfirm}
-        title="ยกเลิกใบเสนอราคา"
-        message={
-          <div className="space-y-4 text-left">
-            <p>
-              ยืนยันการยกเลิกใบเสนอราคา{' '}
-              <strong>{selectedQuotation?.code}</strong>
-            </p>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น..."
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
-                rows={4}
-              />
-            </div>
-          </div>
-        }
-        confirmButtonText="ยืนยันยกเลิก"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
 
       {/* Signature Modal */}

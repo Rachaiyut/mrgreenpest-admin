@@ -53,7 +53,7 @@ const Transfers: React.FC = () => {
       try {
         const [whRes, prodRes] = await Promise.all([
           WarehouseApi.getWarehouses({ limit: 1000 }),
-          ProductApi.getProducts({ limit: 1000 }),
+          ProductApi.getProducts({ limit: 1000, is_active: true }),
         ]);
         setWarehouses(whRes.data || []);
         setProducts(prodRes.data || []);

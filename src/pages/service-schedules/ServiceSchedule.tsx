@@ -98,7 +98,7 @@ const ServiceSchedulePage: FC = () => {
   useEffect(() => {
     const loadPackages = async () => {
       try {
-        const res = await PackageApi.getPackages({ page: 1, limit: 10 });
+        const res = await PackageApi.getPackages({ page: 1, limit: 10, is_active: true });
         setPackages(res?.data || []);
       } catch (err) {
         console.error('Failed to load packages:', err);

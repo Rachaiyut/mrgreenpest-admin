@@ -119,8 +119,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
           const [categoriesRes, customerRes, packageRes, productsRes] = await Promise.all([
             CategoryApi.getCategories({ type: CategoryType.SERVICE }),
             loadedAssessment.customer_id ? CustomerApi.getCustomerById(loadedAssessment.customer_id).catch(() => null) : Promise.resolve(null),
-            loadedAssessment.package_id ? PackageApi.getPackages() : Promise.resolve(null),
-            ProductApi.getProducts({ limit: 200 }),
+            loadedAssessment.package_id ? PackageApi.getPackages({ is_active: true }) : Promise.resolve(null),
+            ProductApi.getProducts({ limit: 200, is_active: true }),
           ]);
 
           const fetchedCategories = categoriesRes?.data || [];
@@ -195,8 +195,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
         } else {
           const [customersRes, packagesRes, productsRes, categoriesRes] = await Promise.all([
             CustomerApi.getCustomers({ limit: 50 }),
-            PackageApi.getPackages(),
-            ProductApi.getProducts({ limit: 50 }),
+            PackageApi.getPackages({ is_active: true }),
+            ProductApi.getProducts({ limit: 50, is_active: true }),
             CategoryApi.getCategories({ type: CategoryType.SERVICE }),
           ]);
 

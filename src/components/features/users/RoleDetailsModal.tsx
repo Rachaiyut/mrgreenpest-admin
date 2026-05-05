@@ -137,7 +137,7 @@ export const RoleDetailsModal: FC<RoleDetailsModalProps> = ({
                         </td>
                       </tr>
                       {group.items.map((item) => (
-                        <tr key={item.label} className="hover:bg-slate-50">
+                        <tr key={item.module} className="hover:bg-slate-50">
                           <td className="px-4 py-3 font-medium text-slate-800 sticky left-0 bg-white z-10 border-r border-slate-100">
                             {item.label}
                           </td>

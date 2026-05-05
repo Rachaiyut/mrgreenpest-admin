@@ -40,12 +40,20 @@ const App: FC = () => {
         console.log('Socket disconnected!');
       }
 
+      function onPermissionsUpdated(payload: { permissions?: string[] }) {
+        const next = Array.isArray(payload?.permissions) ? payload.permissions : [];
+        localStorage.setItem('permissions', JSON.stringify(next));
+        window.dispatchEvent(new Event('permissions-updated'));
+      }
+
       socket.on('connect', onConnect);
       socket.on('disconnect', onDisconnect);
+      socket.on('permissions:updated', onPermissionsUpdated);
 
       return () => {
         socket.off('connect', onConnect);
         socket.off('disconnect', onDisconnect);
+        socket.off('permissions:updated', onPermissionsUpdated);
         socket.disconnect();
       };
     } else {

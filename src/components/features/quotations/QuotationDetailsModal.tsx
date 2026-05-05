@@ -260,7 +260,7 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
                     colSpan={4}
                     className="px-6 py-3 text-right text-sm font-medium text-slate-600"
                   >
-                    รวมเป็นเงิน (Subtotal)
+                    รวมเป็นเงิน
                   </td>
                   <td className="px-6 py-3 text-right text-sm font-bold text-slate-800">
                     {quotation.subtotal

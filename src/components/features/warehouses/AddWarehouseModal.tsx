@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal } from '../../common/Modal';
 import { Button } from '../../common/FormControls';
 import { Warehouse } from '@/src/types/entity/app.interface';
@@ -15,47 +15,106 @@ interface AddWarehouseModalProps {
   onCreateWarehouse: (warehouse: Omit<Warehouse, 'id'>) => void;
 }
 
+type FormErrors = {
+  name?: string;
+  location?: string;
+  license_plate?: string;
+  brand?: string;
+  model?: string;
+  color?: string;
+};
+
+const initialState = {
+  name: '',
+  location: '',
+  license_plate: '',
+  brand: '',
+  model: '',
+  color: '',
+};
+
 export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
   isOpen,
   onClose,
   onCreateWarehouse,
 }) => {
   const [warehouseType, setWarehouseType] = useState<'คลัง' | 'รถ'>('คลัง');
-  const formRef = useRef<HTMLFormElement>(null);
+  const [form, setForm] = useState(initialState);
+  const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
     if (isOpen) {
       setWarehouseType('คลัง');
-      formRef.current?.reset();
+      setForm(initialState);
+      setErrors({});
     }
   }, [isOpen]);
 
+  const updateField = (key: keyof typeof initialState) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setForm((prev) => ({ ...prev, [key]: value }));
+      setErrors((prev) => {
+        if (!prev[key as keyof FormErrors]) return prev;
+        if (value.trim()) {
+          const next = { ...prev };
+          delete next[key as keyof FormErrors];
+          return next;
+        }
+        return prev;
+      });
+    };
+
+  const validate = (): FormErrors => {
+    const next: FormErrors = {};
+    if (!form.name.trim()) {
+      next.name =
+        warehouseType === 'คลัง'
+          ? 'กรุณากรอกชื่อคลัง'
+          : 'กรุณากรอกชื่อรถ';
+    }
+
+    if (warehouseType === 'คลัง') {
+      if (!form.location.trim()) next.location = 'กรุณากรอกที่ตั้ง';
+    } else {
+      if (!form.license_plate.trim()) next.license_plate = 'กรุณากรอกทะเบียนรถ';
+      if (!form.brand.trim()) next.brand = 'กรุณากรอกยี่ห้อ';
+      if (!form.model.trim()) next.model = 'กรุณากรอกรุ่น';
+      if (!form.color.trim()) next.color = 'กรุณากรอกสี';
+    }
+    return next;
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
 
-    const name = formData.get('warehouse-name') as string;
-    const location = formData.get('warehouse-location') as string;
-
-    const payload: any = {
-      name,
+    const payload: Record<string, unknown> = {
+      name: form.name.trim(),
       type: warehouseType === 'รถ' ? 'VEHICLE' : 'MAIN',
-      // Backend validates `address` as required
-      address: location || (warehouseType === 'รถ' ? 'เคลื่อนที่' : '-'),
+      address:
+        (warehouseType === 'คลัง' ? form.location.trim() : 'เคลื่อนที่') || '-',
     };
 
     if (warehouseType === 'รถ') {
-      // Backend vehicle DTO expects flattened fields (based on validation keys).
-      payload.vehicle_registration =
-        (formData.get('license-plate') as string) || '';
-      payload.brand = (formData.get('brand') as string) || '';
-      payload.model = (formData.get('model') as string) || '';
-      payload.color = (formData.get('color') as string) || '';
+      payload.vehicle_registration = form.license_plate.trim();
+      payload.brand = form.brand.trim();
+      payload.model = form.model.trim();
+      payload.color = form.color.trim();
     }
 
-    onCreateWarehouse(payload);
+    onCreateWarehouse(payload as Omit<Warehouse, 'id'>);
     onClose();
   };
+
+  const inputClass = (hasError: boolean, withIcon = false) =>
+    `w-full border rounded-lg ${withIcon ? 'pl-9 ' : ''}p-2.5 text-sm focus:outline-none focus:ring-2 transition-all placeholder:text-slate-300 ${
+      hasError
+        ? 'border-red-400 focus:ring-red-200 focus:border-red-500'
+        : 'border-slate-300 focus:ring-primary/20 focus:border-primary'
+    }`;
 
   return (
     <Modal
@@ -86,15 +145,18 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
     >
       <form
         id="add-warehouse-form"
-        ref={formRef}
         onSubmit={handleSubmit}
+        noValidate
         className="space-y-6"
       >
         {/* Type Selection */}
         <div className="bg-slate-100 p-1 rounded-lg flex">
           <button
             type="button"
-            onClick={() => setWarehouseType('คลัง')}
+            onClick={() => {
+              setWarehouseType('คลัง');
+              setErrors({});
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
               warehouseType === 'คลัง'
                 ? 'bg-primary text-white shadow-sm'
@@ -108,7 +170,10 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => setWarehouseType('รถ')}
+            onClick={() => {
+              setWarehouseType('รถ');
+              setErrors({});
+            }}
             className={`flex-1 py-2 px-4 rounded-md text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
               warehouseType === 'รถ'
                 ? 'bg-primary text-white shadow-sm'
@@ -144,14 +209,18 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                 name="warehouse-name"
                 id="warehouse-name"
                 type="text"
-                required
-                className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                value={form.name}
+                onChange={updateField('name')}
+                className={inputClass(!!errors.name)}
                 placeholder={
                   warehouseType === 'คลัง'
                     ? 'เช่น คลังหลัก, คลังย่อย 01'
                     : 'เช่น รถบริการหน่วย 01'
                 }
               />
+              {errors.name && (
+                <p className="mt-1 ml-1 text-xs text-red-500">{errors.name}</p>
+              )}
             </div>
 
             {warehouseType === 'คลัง' ? (
@@ -170,11 +239,17 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                     name="warehouse-location"
                     id="warehouse-location"
                     type="text"
-                    required
-                    className="w-full border border-slate-300 rounded-lg pl-9 p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                    value={form.location}
+                    onChange={updateField('location')}
+                    className={inputClass(!!errors.location, true)}
                     placeholder="เช่น สำนักงานใหญ่, สาขาลาดพร้าว"
                   />
                 </div>
+                {errors.location && (
+                  <p className="mt-1 ml-1 text-xs text-red-500">
+                    {errors.location}
+                  </p>
+                )}
               </div>
             ) : (
               <div>
@@ -185,11 +260,6 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   <MapPinIcon className="h-4 w-4 text-slate-400" />
                   เคลื่อนที่
                 </div>
-                <input
-                  type="hidden"
-                  name="warehouse-location"
-                  value="เคลื่อนที่"
-                />
               </div>
             )}
           </div>
@@ -217,11 +287,17 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   name="license-plate"
                   id="license-plate"
                   type="text"
-                  required
                   maxLength={20}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                  value={form.license_plate}
+                  onChange={updateField('license_plate')}
+                  className={inputClass(!!errors.license_plate)}
                   placeholder="เช่น 1กข 1234"
                 />
+                {errors.license_plate && (
+                  <p className="mt-1 ml-1 text-xs text-red-500">
+                    {errors.license_plate}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -235,11 +311,17 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   name="brand"
                   id="brand"
                   type="text"
-                  required
                   maxLength={50}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                  value={form.brand}
+                  onChange={updateField('brand')}
+                  className={inputClass(!!errors.brand)}
                   placeholder="เช่น Toyota"
                 />
+                {errors.brand && (
+                  <p className="mt-1 ml-1 text-xs text-red-500">
+                    {errors.brand}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -253,11 +335,17 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   name="model"
                   id="model"
                   type="text"
-                  required
                   maxLength={100}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                  value={form.model}
+                  onChange={updateField('model')}
+                  className={inputClass(!!errors.model)}
                   placeholder="เช่น Hilux Revo"
                 />
+                {errors.model && (
+                  <p className="mt-1 ml-1 text-xs text-red-500">
+                    {errors.model}
+                  </p>
+                )}
               </div>
 
               <div className="col-span-1 md:col-span-2">
@@ -271,11 +359,17 @@ export const AddWarehouseModal: React.FC<AddWarehouseModalProps> = ({
                   name="color"
                   id="color"
                   type="text"
-                  required
                   maxLength={30}
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                  value={form.color}
+                  onChange={updateField('color')}
+                  className={inputClass(!!errors.color)}
                   placeholder="เช่น ขาว"
                 />
+                {errors.color && (
+                  <p className="mt-1 ml-1 text-xs text-red-500">
+                    {errors.color}
+                  </p>
+                )}
               </div>
             </div>
           </div>

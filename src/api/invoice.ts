@@ -45,6 +45,35 @@ class InvoiceService extends AuthService {
     });
     return res.data;
   }
+
+  // ===== Approval flow (new) =====
+
+  /** Step 1: Admin reviews on-site collection + selects bank account. */
+  async adminApprove(id: string, accountId: string): Promise<Invoice> {
+    const res = await this.http.post<Invoice>(
+      `${this.path}/${id}/admin-approve`,
+      { account_id: accountId },
+    );
+    return res.data;
+  }
+
+  /** Step 2: Accounting/CFO finalizes — issues receipt + records DEPOSIT. */
+  async accountingApprove(id: string): Promise<Invoice> {
+    const res = await this.http.post<Invoice>(
+      `${this.path}/${id}/accounting-approve`,
+      {},
+    );
+    return res.data;
+  }
+
+  /** Reject during the approval flow (admin or CFO step). */
+  async reject(id: string, reason: string): Promise<Invoice> {
+    const res = await this.http.post<Invoice>(
+      `${this.path}/${id}/reject`,
+      { reason },
+    );
+    return res.data;
+  }
 }
 
 export const InvoiceApi = new InvoiceService();

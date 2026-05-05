@@ -125,10 +125,108 @@ const Customers: React.FC = () => {
     setIsCustomerModalOpen(true);
   };
 
-  const handleDelete = (customer: Customer) => {
-    setCustomerToDelete(customer);
-    setIsDeleteModalOpen(true);
+  const handleReactivate = async (customer: Customer) => {
     setOpenDropdownId(null);
+    const fullName = [customer.first_name, customer.last_name]
+      .map((p) => (typeof p === 'string' ? p.trim() : ''))
+      .filter((p) => p && p !== '-')
+      .join(' ') || (customer as any).nickname || customer.code || '-';
+
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันการเปิดใช้งาน',
+      html: `
+        <div style="text-align:left;">
+          <div style="background:#ffffff;border:1px solid #e2e8f0;padding:14px 18px;box-shadow:0 1px 2px rgba(15,23,42,0.04);">
+            <div style="display:flex;gap:8px;align-items:baseline;padding:6px 0;font-size:15px;line-height:1.5;">
+              <span style="color:#64748b;font-weight:500;">รหัสลูกค้า:</span>
+              <span style="color:#0f172a;font-weight:600;">${customer.code || '-'}</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid #eef2f7;font-size:15px;line-height:1.5;">
+              <span style="color:#64748b;font-weight:500;">ลูกค้า:</span>
+              <span style="color:#0f172a;font-weight:600;">${fullName}</span>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:12px 16px;background:#ecfdf5;border-left:4px solid #10b981;font-size:14px;color:#065f46;line-height:1.55;">
+            เมื่อเปิดใช้งานแล้ว ลูกค้านี้จะกลับมาแสดงในรายการที่ใช้งาน
+          </div>
+        </div>
+      `,
+      width: 520,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการเปิดใช้งาน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+
+    try {
+      await CustomerApi.updateCustomer(customer.id, { status: 'ACTIVE' as any });
+      Swal.fire({
+        icon: 'success',
+        title: 'เปิดใช้งานแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      fetchCustomers();
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'เกิดข้อผิดพลาดในการเปิดใช้งาน';
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: message });
+    }
+  };
+
+  const handleDelete = async (customer: Customer) => {
+    setOpenDropdownId(null);
+    const fullName = [customer.first_name, customer.last_name]
+      .map((p) => (typeof p === 'string' ? p.trim() : ''))
+      .filter((p) => p && p !== '-')
+      .join(' ') || (customer as any).nickname || customer.code || '-';
+
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการปิดใช้งาน',
+      html: `
+        <div style="text-align:left;">
+          <div style="background:#ffffff;border:1px solid #e2e8f0;padding:14px 18px;box-shadow:0 1px 2px rgba(15,23,42,0.04);">
+            <div style="display:flex;gap:8px;align-items:baseline;padding:6px 0;font-size:15px;line-height:1.5;">
+              <span style="color:#64748b;font-weight:500;">รหัสลูกค้า:</span>
+              <span style="color:#0f172a;font-weight:600;">${customer.code || '-'}</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid #eef2f7;font-size:15px;line-height:1.5;">
+              <span style="color:#64748b;font-weight:500;">ลูกค้า:</span>
+              <span style="color:#0f172a;font-weight:600;">${fullName}</span>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:12px 16px;background:#fef2f2;border-left:4px solid #ef4444;font-size:14px;color:#991b1b;line-height:1.55;">
+            เมื่อปิดใช้งานแล้ว ลูกค้านี้จะไม่แสดงในรายการที่ใช้งาน สามารถเปิดใช้งานใหม่ได้ภายหลัง
+          </div>
+        </div>
+      `,
+      width: 520,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการปิดใช้งาน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!r.isConfirmed) return;
+
+    try {
+      await CustomerApi.deleteCustomer(customer.id);
+      Swal.fire({
+        icon: 'success',
+        title: 'ปิดใช้งานแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      fetchCustomers();
+    } catch (error: any) {
+      const message = error?.response?.data?.message || 'เกิดข้อผิดพลาดในการลบลูกค้า';
+      Swal.fire({
+        icon: 'warning',
+        title: 'ลูกค้าอยู่ระหว่างสัญญา',
+        text: message,
+      });
+    }
   };
 
   // 🟢 5. ฟังก์ชันสำหรับ Submit ข้อมูล (รวบ Create กับ Update ไว้ที่เดียวกัน)
@@ -181,16 +279,21 @@ const Customers: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const actions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon },
-    { label: 'แก้ไข', icon: PencilIcon },
-    { label: 'คัดลอก Link Portal', icon: DocumentCheckIcon },
-    { label: 'สัญญา', icon: DocumentTextIcon },
-    { label: 'ต่อสัญญา', icon: RenewIcon },
-    { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
-    { label: 'ติดตาม', icon: DocumentCheckIcon },
-    { label: 'ปิดใช้งาน', icon: TrashIcon, isDanger: true },
-  ];
+  const getActions = (customer?: Customer | null) => {
+    const isInactive = customer?.status === 'INACTIVE';
+    return [
+      { label: 'ดูรายละเอียด', icon: EyeIcon },
+      { label: 'แก้ไข', icon: PencilIcon },
+      { label: 'คัดลอก Link Portal', icon: DocumentCheckIcon },
+      { label: 'สัญญา', icon: DocumentTextIcon },
+      { label: 'ต่อสัญญา', icon: RenewIcon },
+      { label: 'ประวัติ', icon: ClipboardDocumentListIcon },
+      { label: 'ติดตาม', icon: DocumentCheckIcon },
+      isInactive
+        ? { label: 'เปิดใช้งาน', icon: RenewIcon, isPrimary: true }
+        : { label: 'ปิดใช้งาน', icon: TrashIcon, isDanger: true },
+    ];
+  };
 
   const handleDropdownToggle = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -368,7 +471,7 @@ const Customers: React.FC = () => {
           aria-orientation="vertical"
         >
           <div className="py-1" role="none">
-            {actions.map((action) => (
+            {getActions(customers.find((c) => c.id === openDropdownId)).map((action) => (
               <a
                 key={action.label}
                 href="#"
@@ -406,11 +509,13 @@ const Customers: React.FC = () => {
                     setOpenDropdownId(null);
                   } else if (action.label === 'ปิดใช้งาน') {
                     handleDelete(customer);
+                  } else if (action.label === 'เปิดใช้งาน') {
+                    handleReactivate(customer);
                   } else {
                     setOpenDropdownId(null);
                   }
                 }}
-                className={`flex items-center w-full text-left px-4 py-2.5 text-sm transition-colors ${action.isDanger ? 'text-red-600 hover:bg-red-50' : 'text-slate-700 hover:bg-slate-100'}`}
+                className={`flex items-center w-full text-left px-4 py-2.5 text-sm transition-colors ${(action as any).isDanger ? 'text-red-600 hover:bg-red-50' : (action as any).isPrimary ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-700 hover:bg-slate-100'}`}
                 role="menuitem"
               >
                 <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
@@ -456,20 +561,6 @@ const Customers: React.FC = () => {
         isOpen={isFollowUpModalOpen}
         onClose={() => setIsFollowUpModalOpen(false)}
         customer={selectedCustomer}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการปิดใช้งาน"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการปิดใช้งานลูกค้า{' '}
-            <strong>{customerToDelete ? `${customerToDelete.first_name} ${customerToDelete.last_name || ''}`.trim() : ''}</strong>?
-          </p>
-        }
-        confirmButtonText="ยืนยันการปิดใช้งาน"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
       />
     </div>
   );

@@ -240,7 +240,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
 
     if (shouldFetch('users')) {
       promises.push(
-        safeFetch(() => UserApi.getAll({ limit: 10 })).then((data: any) =>
+        safeFetch(() => UserApi.getAll({ limit: 100 })).then((data: any) =>
           setUsers(data)
         )
       );
@@ -296,7 +296,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     }
     if (shouldFetch('products')) {
       promises.push(
-        safeFetch(() => ProductApi.getProducts({ limit: 10 })).then(
+        safeFetch(() => ProductApi.getProducts({ limit: 10, is_active: true })).then(
           (data: any) => setProducts(data)
         )
       );
@@ -310,7 +310,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({
     }
     if (shouldFetch('suppliers')) {
       promises.push(
-        safeFetch(() => SupplierApi.getSuppliers({ limit: 10 })).then(
+        safeFetch(() => SupplierApi.getSuppliers({ limit: 10, is_active: true })).then(
           (data: any) => setSuppliers(data)
         )
       );

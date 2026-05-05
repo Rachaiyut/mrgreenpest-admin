@@ -31,6 +31,13 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
   OTHER: 'อื่นๆ',
 };
 
+const ACCOUNT_TYPE_COLOR: Record<string, string> = {
+  SAVINGS: 'bg-emerald-100 text-emerald-700',
+  CURRENT: 'bg-blue-100 text-blue-700',
+  FIXED: 'bg-amber-100 text-amber-700',
+  OTHER: 'bg-slate-100 text-slate-700',
+};
+
 const AccountPage: FC = () => {
   const [accounts, setAccounts] = useState<AccountType[]>([]);
   const [total, setTotal] = useState(0);
@@ -320,7 +327,7 @@ const AccountPage: FC = () => {
                         {a.branch_name || <span className="text-slate-300">-</span>}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ACCOUNT_TYPE_COLOR[a.account_type] || 'bg-slate-100 text-slate-700'}`}>
                           {ACCOUNT_TYPE_LABEL[a.account_type] || a.account_type}
                         </span>
                       </td>

@@ -162,8 +162,8 @@ export const JobForm: React.FC<JobFormProps> = ({
       try {
         const [catRes, prodRes, pkgRes] = await Promise.all([
           CategoryApi.getCategories({ type: CategoryType.SERVICE }),
-          ProductApi.getProducts({ limit: 100 }),
-          PackageApi.getPackages({ limit: 100 }),
+          ProductApi.getProducts({ limit: 100, is_active: true }),
+          PackageApi.getPackages({ limit: 100, is_active: true }),
         ]);
         setCategories(catRes.data || []);
         setProducts(prodRes.data || []);
@@ -1100,10 +1100,15 @@ export const JobForm: React.FC<JobFormProps> = ({
                         <span className="leading-relaxed">{[selectedCustomerData.address_house_no, selectedCustomerData.sub_district, selectedCustomerData.district, selectedCustomerData.province, selectedCustomerData.postal_code].filter(Boolean).join(' ') || '-'}</span>
                       </div>
                       {selectedCustomerData.google_map_link && (
-                        <div className="flex items-center gap-3 text-sm text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100 shadow-sm">
-                          <GoogleMapIcon className="w-4 h-4 text-slate-400 shrink-0" />
-                          <a href={selectedCustomerData.google_map_link} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline truncate">เปิดแผนที่นำทาง</a>
-                        </div>
+                        <a
+                          href={selectedCustomerData.google_map_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 text-sm text-primary bg-primary/5 p-2.5 rounded-lg border border-primary/20 shadow-sm hover:bg-primary/10 transition-colors"
+                        >
+                          <MapPinIcon className="w-4 h-4 text-primary" />
+                          <span className="font-medium underline truncate">{selectedCustomerData.google_map_link}</span>
+                        </a>
                       )}
                     </div>
                   </div>
@@ -1146,14 +1151,14 @@ export const JobForm: React.FC<JobFormProps> = ({
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาเริ่มต้น *" htmlFor="start-time" className="mb-0">
                       <div className="relative">
-                        <Input id="start-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
+                        <Input id="start-time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden" />
                       </div>
                     </FormField>
                   </div>
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาสิ้นสุด *" htmlFor="end-time" className="mb-0">
                       <div className="relative">
-                        <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className={`pl-10 h-12 text-center font-medium [&::-webkit-datetime-edit-ampm-field]:hidden ${startTime && endTime && endTime <= startTime ? 'border-red-500 focus:ring-red-500' : ''}`} />
+                        <Input id="end-time" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required className={`pl-3 h-12 text-left font-medium [&::-webkit-datetime-edit-ampm-field]:hidden ${startTime && endTime && endTime <= startTime ? 'border-red-500 focus:ring-red-500' : ''}`} />
                       </div>
                       {startTime && endTime && endTime <= startTime && (
                         <p className="text-xs text-red-500 mt-1">เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น</p>

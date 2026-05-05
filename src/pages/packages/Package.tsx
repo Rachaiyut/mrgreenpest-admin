@@ -9,7 +9,6 @@ import React, {
 import {
   Card,
   Pagination,
-  ConfirmationModal,
   Input,
   Button,
 } from '../../components/common';
@@ -21,8 +20,8 @@ import {
   PlusIcon,
   ManageIcon,
   PencilIcon,
-  TrashIcon,
   EyeIcon,
+  PackageIcon,
 } from '../../assets/icons/Icons';
 
 import {
@@ -47,10 +46,9 @@ const Packages: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [packageToDelete, setPackageToDelete] = useState<Package | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchCategories = async () => {
@@ -67,7 +65,7 @@ const Packages: React.FC = () => {
 
   const fetchUnits = async () => {
     try {
-      const response = await UnitApi.getUnit({ limit: 100 });
+      const response = await UnitApi.getUnit({ limit: 100, is_active: true });
       setUnits(response.data);
     } catch (error) {
       console.error('Failed to fetch units:', error);
@@ -82,6 +80,7 @@ const Packages: React.FC = () => {
         limit: itemsPerPage,
         search: searchQuery,
         ...(selectedCategoryId ? { category_id: selectedCategoryId } : {}),
+        ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
       });
 
       setPackages(response.data);
@@ -91,7 +90,7 @@ const Packages: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId]);
+  }, [currentPage, itemsPerPage, searchQuery, selectedCategoryId, statusFilter]);
 
   useEffect(() => {
     fetchCategories();
@@ -131,9 +130,14 @@ const Packages: React.FC = () => {
     }
   };
 
-  const handleDelete = (pkg: Package) => {
-    setPackageToDelete(pkg);
-    setIsDeleteModalOpen(true);
+  const handleToggleStatus = async (pkg: Package) => {
+    try {
+      await PackageApi.updatePackage(pkg.id, { is_active: !pkg.is_active });
+      fetchPackages();
+    } catch (error) {
+      console.error('Error toggling package status:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปลี่ยนสถานะได้' });
+    }
     setOpenDropdownId(null);
   };
 
@@ -166,24 +170,6 @@ const Packages: React.FC = () => {
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: errMsg });
       return false;
     }
-  };
-
-  const onDeletePackage = async (id: string) => {
-    try {
-      await PackageApi.deletePackage(id);
-      fetchPackages();
-    } catch (error) {
-      console.error('Failed to delete package:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'Failed to delete package' });
-    }
-  };
-
-  const handleConfirmDelete = () => {
-    if (packageToDelete) {
-      onDeletePackage(packageToDelete.id);
-    }
-    setIsDeleteModalOpen(false);
-    setPackageToDelete(null);
   };
 
   const handleDropdownToggle = (
@@ -266,6 +252,20 @@ const Packages: React.FC = () => {
                 ))}
               </select>
             </div>
+            <div className="w-full sm:w-44 flex-shrink-0">
+              <select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="true">ใช้งาน</option>
+                <option value="false">ไม่ใช้งาน</option>
+              </select>
+            </div>
           </div>
         </Card>
 
@@ -320,15 +320,21 @@ const Packages: React.FC = () => {
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (มีปลวก)
                   </th>
                   <th
                     scope="col"
-                    className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
                   >
                     ราคาแพ็กเกจ (ไม่มีปลวก)
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider"
+                  >
+                    สถานะ
                   </th>
                   <th
                     scope="col"
@@ -339,7 +345,17 @@ const Packages: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {packages.map((pkg, index) => (
+                {packages.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <PackageIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบแพ็กเกจ</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างแพ็กเกจใหม่</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : packages.map((pkg, index) => (
                   <tr key={pkg.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-center">
                       {(currentPage - 1) * itemsPerPage + index + 1}
@@ -373,6 +389,17 @@ const Packages: React.FC = () => {
                       {pkg.package_prices && pkg.package_prices.length > 0
                         ? `เริ่มต้น ${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : 'ตามเงื่อนไข'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-center">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          pkg.is_active !== false
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {pkg.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
                       <div className="inline-block text-left">
@@ -440,17 +467,32 @@ const Packages: React.FC = () => {
               <PencilIcon className="mr-3 h-5 w-5" />
               <span>แก้ไข</span>
             </button>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                const pkg = packages.find((p) => p.id === openDropdownId);
-                if (pkg) handleDelete(pkg);
-              }}
-              className="flex items-center w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50"
-            >
-              <TrashIcon className="mr-3 h-5 w-5" />
-              <span>ลบ</span>
-            </button>
+            {(() => {
+              const pkg = packages.find((p) => p.id === openDropdownId);
+              if (!pkg) return null;
+              return (
+                <button
+                  onClick={() => handleToggleStatus(pkg)}
+                  className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  {pkg.is_active !== false ? (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                      <span>ปิดใช้งาน</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="mr-3 h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                      </svg>
+                      <span>เปิดใช้งาน</span>
+                    </>
+                  )}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -476,21 +518,6 @@ const Packages: React.FC = () => {
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
         pkg={selectedPackage}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบแพ็กเกจ{' '}
-            <strong>{packageToDelete?.name}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );

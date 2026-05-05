@@ -14,6 +14,7 @@ export interface Product extends IBase {
   fda_number?: string;
   image_id?: string;
   image_url?: string;
+  is_active?: boolean;
   created_by?: string;
   updated_by?: string;
 

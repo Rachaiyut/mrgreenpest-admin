@@ -7,19 +7,18 @@ import {
   LoadingIcon,
   PlusIcon,
   PencilIcon,
-  TrashIcon,
   ManageIcon,
+  ArchiveBoxIcon,
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { UnitModal } from '../../components/features/units/UnitModal';
-import { Input, Button } from '../../components/common/FormControls';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { formatThaiDate } from '@/src/utils/date';
+import { Input, Button, Select } from '../../components/common/FormControls';
 
 const Units: React.FC = () => {
   const [units, setUnits] = useState<IUnit[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
@@ -27,9 +26,6 @@ const Units: React.FC = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [formModalMode, setFormModalMode] = useState<'create' | 'edit'>('create');
   const [unitToEdit, setUnitToEdit] = useState<IUnit | null>(null);
-
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [unitToDelete, setUnitToDelete] = useState<IUnit | null>(null);
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
@@ -44,6 +40,7 @@ const Units: React.FC = () => {
         search: searchQuery || undefined,
         sort_by: 'created_at',
         sort_order: 'desc',
+        ...(statusFilter !== '' ? { is_active: statusFilter === 'true' } : {}),
       });
       setUnits(res.data || []);
       setTotalItems(res.meta?.total || (res.data || []).length);
@@ -52,7 +49,7 @@ const Units: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [currentPage, itemsPerPage, searchQuery, statusFilter]);
 
   useEffect(() => {
     fetchUnits();
@@ -88,25 +85,15 @@ const Units: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (unit: IUnit) => {
-    setUnitToDelete(unit);
-    setIsDeleteModalOpen(true);
-    setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!unitToDelete) return;
+  const handleToggleStatus = async (unit: IUnit) => {
     try {
-      await UnitApi.deleteUnit(unitToDelete.id);
-      Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1500, showConfirmButton: false });
+      await UnitApi.updateUnit(unit.id, { is_active: !unit.is_active });
       fetchUnits();
     } catch (error) {
-      console.error('Failed to delete unit:', error);
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถลบหน่วยนับได้' });
-    } finally {
-      setIsDeleteModalOpen(false);
-      setUnitToDelete(null);
+      console.error('Error toggling unit status:', error);
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถเปลี่ยนสถานะได้' });
     }
+    setOpenDropdownId(null);
   };
 
   const handleSubmitUnit = async (data: Partial<IUnit>) => {
@@ -168,6 +155,20 @@ const Units: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+            <div className="w-full sm:w-44 flex-shrink-0">
+              <Select
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="true">ใช้งาน</option>
+                <option value="false">ไม่ใช้งาน</option>
+              </Select>
+            </div>
           </div>
         </Card>
 
@@ -187,7 +188,7 @@ const Units: React.FC = () => {
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อหน่วยนับ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สัญลักษณ์</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">สถานะ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-24">จัดการ</th>
                 </tr>
               </thead>
@@ -200,7 +201,17 @@ const Units: React.FC = () => {
                       <td className="px-4 py-3 text-sm text-slate-600">
                         <span className="inline-flex px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-xs font-medium">{unit.symbol}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-500">{formatThaiDate(unit.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            unit.is_active !== false
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {unit.is_active !== false ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <button data-unit-id={unit.id} onClick={(e) => handleDropdownToggle(unit.id, e)} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
                           <ManageIcon className="w-5 h-5" />
@@ -210,7 +221,13 @@ const Units: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-12 text-center text-slate-400">ไม่พบหน่วยนับ</td>
+                    <td colSpan={5} className="p-0 border-b-0 h-0">
+                      <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
+                        <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
+                        <p className="text-base font-medium text-slate-500">ไม่พบหน่วยนับ</p>
+                        <p className="text-sm mt-1">ลองปรับตัวกรองหรือสร้างหน่วยนับใหม่</p>
+                      </div>
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -235,7 +252,7 @@ const Units: React.FC = () => {
         <div
           ref={dropdownRef}
           style={{ position: 'fixed', top: dropdownPosition.top, left: dropdownPosition.left, zIndex: 50 }}
-          className="bg-white rounded-lg shadow-lg border border-slate-200 py-1 w-40"
+          className="bg-white rounded-lg shadow-lg border border-slate-200 py-1 w-44"
         >
           <button
             onClick={() => { const unit = units.find((u) => u.id === openDropdownId); if (unit) handleEdit(unit); }}
@@ -244,13 +261,32 @@ const Units: React.FC = () => {
             <PencilIcon className="w-4 h-4 text-slate-400" />
             แก้ไข
           </button>
-          <button
-            onClick={() => { const unit = units.find((u) => u.id === openDropdownId); if (unit) handleDelete(unit); }}
-            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-          >
-            <TrashIcon className="w-4 h-4 text-red-400" />
-            ลบ
-          </button>
+          {(() => {
+            const unit = units.find((u) => u.id === openDropdownId);
+            if (!unit) return null;
+            return (
+              <button
+                onClick={() => handleToggleStatus(unit)}
+                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+              >
+                {unit.is_active !== false ? (
+                  <>
+                    <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    ปิดใช้งาน
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                    เปิดใช้งาน
+                  </>
+                )}
+              </button>
+            );
+          })()}
         </div>
       )}
 
@@ -260,18 +296,6 @@ const Units: React.FC = () => {
         mode={formModalMode}
         initialValues={unitToEdit}
         onSubmit={handleSubmitUnit}
-      />
-
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => { setIsDeleteModalOpen(false); setUnitToDelete(null); }}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <div className="text-slate-600">
-            คุณแน่ใจหรือไม่ว่าต้องการลบหน่วยนับ <strong>"{unitToDelete?.name}"</strong> การกระทำนี้ไม่สามารถย้อนกลับได้
-          </div>
-        }
       />
     </div>
   );

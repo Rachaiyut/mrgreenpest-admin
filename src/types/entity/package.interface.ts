@@ -22,6 +22,7 @@ export interface Package extends IBase {
   remark?: string;
   code: string;
   name: string;
+  is_active?: boolean;
   package_prices?: PackagePrice[];
   category?: Category;
 }
@@ -41,4 +42,5 @@ export interface PackageQuery extends IBaseQuery {
   code?: string;
   name?: string;
   visit_limit?: number;
+  is_active?: boolean;
 }

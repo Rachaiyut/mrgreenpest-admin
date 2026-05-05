@@ -460,7 +460,7 @@ export const ContractForm: FC<ContractFormProps> = ({
       try {
         const [catRes, pkgRes] = await Promise.all([
           CategoryApi.getCategories({ type: CategoryType.SERVICE }),
-          PackageApi.getPackages({ limit: 50 }),
+          PackageApi.getPackages({ limit: 50, is_active: true }),
         ]);
         if (catRes?.data) setFetchedCategories(catRes.data);
         if (pkgRes?.data) setFetchedPackages(pkgRes.data);
@@ -1528,7 +1528,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
           </div>
           <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{(includeVat ? totalAmount - vatAmount : totalAmount).toLocaleString()} บาท</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{(includeVat ? totalAmount - vatAmount : totalAmount).toLocaleString()} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
               <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
               <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>

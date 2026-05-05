@@ -27,6 +27,11 @@ import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Input, Select, Button } from '../../components/common/FormControls';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
+import { AccountApi } from '../../api/account';
+import { Account } from '@/src/types/entity/account.interface';
+import { usePermissions } from '../../hooks/usePermissions';
+import { useNotificationFocus } from '../../hooks/useNotificationFocus';
+import { renderApprovalDetails, joinName, pickName } from '../../utils/approvalSwal';
 import { InvoiceModal } from '@/src/components/features/invoices/InvoiceModal';
 
 interface InvoicesPageProps {
@@ -34,12 +39,6 @@ interface InvoicesPageProps {
   onUpdateInvoice?: (updated: Invoice) => void | Promise<void>;
   onDeleteInvoice?: (id: string) => void | Promise<void>;
 }
-
-const invoiceStatusLabels = InvoiceStatusLabel as Record<string, string>;
-
-const getInvoiceStatusLabel = (status: string): string => {
-  return invoiceStatusLabels[status] || status;
-};
 
 const InvoicesPage: React.FC<InvoicesPageProps> = ({
   onCreateInvoice,
@@ -80,8 +79,6 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
   const [isInvoiceDeleteModalOpen, setIsInvoiceDeleteModalOpen] =
     useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<Invoice | null>(null);
-  const [isInvoiceStatusModalOpen, setIsInvoiceStatusModalOpen] = useState(false);
-  const [targetInvoiceStatus, setTargetInvoiceStatus] = useState<InvoiceStatus>(InvoiceStatus.PENDING);
   const [invoiceInitialValues, setInvoiceInitialValues] = useState<
     Partial<Invoice> | undefined
   >(undefined);
@@ -94,6 +91,21 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     left: number;
   } | null>(null);
   const invoiceDropdownRef = useRef<HTMLDivElement>(null);
+
+  // ===== New approval-flow state =====
+  const { hasPermission } = usePermissions();
+  const [activeAccounts, setActiveAccounts] = useState<Account[]>([]);
+
+  // Fetch active accounts on mount (used in admin-approve Swal dropdown)
+  // ใช้ pattern เดียวกับหน้ารายการเบิก (Issue.tsx) — fetch ทั้งหมดแล้ว filter ฝั่งหน้าบ้าน
+  useEffect(() => {
+    AccountApi.getAll({ limit: 100, page: 1 })
+      .then((res) => {
+        const accounts = (res?.data || []).filter((a) => a.is_active);
+        setActiveAccounts(accounts);
+      })
+      .catch(() => setActiveAccounts([]));
+  }, []);
 
   const invoiceData = invoices || [];
 
@@ -262,6 +274,179 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
     setInvoiceToDelete(null);
   };
 
+  // ===== Approval flow handlers =====
+
+  const handleAdminApprove = async (invoice: Invoice) => {
+    setOpenInvoiceDropdownId(null);
+
+    if (activeAccounts.length === 0) {
+      Swal.fire('ไม่พบบัญชี', 'ยังไม่มีบัญชีที่เปิดใช้งานในระบบ', 'warning');
+      return;
+    }
+
+    const inputOptions: Record<string, string> = {};
+    for (const acc of activeAccounts) {
+      inputOptions[acc.id] = `${acc.bank_name} ${acc.account_number} (${acc.account_name})`;
+    }
+
+    const amount = Number(invoice.total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === invoice.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const issueDate = invoice.issued_at
+      ? new Date(invoice.issued_at).toLocaleDateString('th-TH')
+      : '-';
+    const dueDate = invoice.due_at
+      ? new Date(invoice.due_at).toLocaleDateString('th-TH')
+      : '-';
+
+    const detailsHtml = renderApprovalDetails([
+      { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
+      { label: 'ลูกค้า', value: customerName },
+      { label: 'วันที่ออก', value: issueDate },
+      { label: 'ครบกำหนด', value: dueDate },
+      { label: 'ยอดรวม', value: `฿${amount}`, accent: 'money' },
+    ]);
+
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ตรวจสอบรายรับ',
+      width: 560,
+      html: `
+        ${detailsHtml}
+        <div style="font-size:13px; color:#64748b; text-align:center; margin-top:14px; line-height:1.6;">
+          เลือกบัญชีที่ลูกค้าโอนเงินเข้าหรือรับเงินสด
+        </div>
+      `,
+      input: 'select',
+      inputOptions,
+      inputPlaceholder: '-- เลือกบัญชี --',
+      showCancelButton: true,
+      confirmButtonText: 'ส่งฝ่ายบัญชี',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+      inputValidator: (v) => (!v ? 'กรุณาเลือกบัญชีรับเข้า' : null),
+    });
+
+    if (!r.isConfirmed || !r.value) return;
+
+    try {
+      await InvoiceApi.adminApprove(invoice.id, r.value as string);
+      await fetchData(['invoices']);
+      Swal.fire({
+        icon: 'success',
+        title: 'ส่งฝ่ายบัญชีแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถส่งฝ่ายบัญชีได้', 'error');
+    }
+  };
+
+  const handleAccountingApprove = async (invoice: Invoice) => {
+    setOpenInvoiceDropdownId(null);
+    const amountStr = Number(invoice.total || 0).toLocaleString('th-TH', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    const customerName = (() => {
+      const c = customers?.find((x) => x.id === invoice.customer_id);
+      if (!c) return '-';
+      return pickName(joinName(c.first_name, c.last_name), (c as any).nickname, (c as any).code) || '-';
+    })();
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันอนุมัติรายรับ',
+      width: 560,
+      html: `
+        ${renderApprovalDetails([
+          { label: 'เลขที่ใบแจ้งหนี้', value: invoice.code || null },
+          { label: 'ลูกค้า', value: customerName },
+          { label: 'ยอดรวม', value: `฿${amountStr}`, accent: 'money' },
+        ])}
+        <div style="margin-top:12px;font-size:13px;color:#64748b;text-align:center;">
+          ระบบจะออกใบเสร็จและบันทึกเงินเข้าบัญชีอัตโนมัติ
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'อนุมัติรายรับ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await InvoiceApi.accountingApprove(invoice.id);
+      await fetchData(['invoices']);
+      Swal.fire({
+        icon: 'success',
+        title: 'อนุมัติรายรับแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถอนุมัติได้', 'error');
+    }
+  };
+
+  const handleRejectApproval = async (invoice: Invoice) => {
+    setOpenInvoiceDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ปฏิเสธรายรับ',
+      input: 'textarea',
+      inputLabel: 'เหตุผลการปฏิเสธ',
+      inputPlaceholder: 'ระบุเหตุผล...',
+      showCancelButton: true,
+      confirmButtonText: 'ปฏิเสธ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+    });
+    if (!r.isConfirmed || !r.value) return;
+    try {
+      await InvoiceApi.reject(invoice.id, r.value.trim());
+      await fetchData(['invoices']);
+      Swal.fire({
+        icon: 'success',
+        title: 'ปฏิเสธแล้ว',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปฏิเสธได้', 'error');
+    }
+  };
+
+  // Auto-open approval flow when navigating from a notification click
+  useNotificationFocus('approve', true, async (focusId) => {
+    let target: Invoice | undefined = invoices.find((inv) => inv.id === focusId);
+    if (!target) {
+      try {
+        target = await InvoiceApi.getById(focusId);
+      } catch {
+        Swal.fire('ไม่พบใบแจ้งหนี้', 'อาจถูกลบหรือคุณไม่มีสิทธิ์เข้าถึง', 'error');
+        return;
+      }
+    }
+    if (!target) return;
+    if (target.status === InvoiceStatus.PENDING_REVIEW) {
+      handleAdminApprove(target);
+    } else if (target.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW) {
+      handleAccountingApprove(target);
+    } else {
+      Swal.fire('ใบแจ้งหนี้ไม่ได้อยู่ในสถานะรออนุมัติ', `สถานะปัจจุบัน: ${InvoiceStatusLabel[target.status as InvoiceStatus] || target.status}`, 'info');
+    }
+  });
+
   return (
     <div className="flex-1 flex flex-col">
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
@@ -386,6 +571,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
               <option value="DRAFT">ร่าง</option>
               <option value="PENDING">รอชำระ</option>
               <option value="SENT">ส่งแล้ว</option>
+              <option value="PENDING_REVIEW">รอตรวจสอบ</option>
+              <option value="PENDING_ACCOUNTING_REVIEW">รอบัญชีอนุมัติ</option>
               <option value="PAID">ชำระแล้ว</option>
               <option value="PARTIAL">ชำระบางส่วน</option>
               <option value="OVERDUE">เกินกำหนด</option>
@@ -401,10 +588,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
           <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่ใบแจ้งหนี้
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
@@ -413,22 +600,22 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครั้งที่
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ชื่อลูกค้า
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทรศัพท์
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ครบกำหนดชำระ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ยอดรวม
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   สถานะ
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
                 </th>
               </tr>
@@ -460,12 +647,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                   const customer =
                     i.customer || customers?.find((c) => c.id === i.customer_id);
                   return (
-                    <tr key={i.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={i.id} className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(invoicePage - 1) * invoiceItemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm font-bold text-primary cursor-pointer"
                         onClick={() => {
                           setSelectedInvoice(i);
                           setIsInvoiceModalOpen(true);
@@ -483,8 +670,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">{(i as unknown as Record<string, number>).billing_count}</span>
                         ) : '-'}
                       </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                        <TruncateText text={customer ? `${customer.first_name} ${customer.last_name || ''}`.trim() : i.customer_name || 'Unknown'} maxWidth={150} />
+                      <td className="px-4 py-3 text-sm font-semibold text-slate-800 whitespace-nowrap">
+                        {customer
+                          ? `${customer.first_name || ''}${customer.last_name && customer.last_name !== '-' ? ` ${customer.last_name}` : ''}`.trim()
+                          : i.customer_name || 'Unknown'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone)}
@@ -501,8 +690,8 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                           <Button
                             variant="primary"
                             className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white flex flex-row items-center justify-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-md transition-all whitespace-nowrap min-w-[100px]"
@@ -574,22 +763,45 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             >
               <EyeIcon className="w-4 h-4 text-slate-400" /> ดูรายละเอียด
             </button>
+
+            {/* ===== Approval flow actions ===== */}
+            {selectedInvoice?.status === InvoiceStatus.PENDING_REVIEW &&
+              hasPermission('APPROVE_INVOICE') && (
+                <button
+                  className="w-full px-4 py-2.5 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
+                  onClick={() => handleAdminApprove(selectedInvoice)}
+                >
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-500" /> ตรวจสอบรายรับ
+                </button>
+              )}
+
+            {selectedInvoice?.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW &&
+              hasPermission('APPROVE_RECEIPT') && (
+                <button
+                  className="w-full px-4 py-2.5 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center gap-3 transition-colors"
+                  onClick={() => handleAccountingApprove(selectedInvoice)}
+                >
+                  <CheckCircleIcon className="w-4 h-4 text-emerald-500" /> อนุมัติรายรับ
+                </button>
+              )}
+
+            {selectedInvoice &&
+              (selectedInvoice.status === InvoiceStatus.PENDING_REVIEW ||
+                selectedInvoice.status === InvoiceStatus.PENDING_ACCOUNTING_REVIEW) &&
+              (hasPermission('APPROVE_INVOICE') || hasPermission('APPROVE_RECEIPT')) && (
+                <button
+                  className="w-full px-4 py-2.5 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
+                  onClick={() => handleRejectApproval(selectedInvoice)}
+                >
+                  <TrashIcon className="w-4 h-4 text-orange-500" /> ปฏิเสธรายรับ
+                </button>
+              )}
+
             <button
               className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
               onClick={() => handleEditInvoice(selectedInvoice!)}
             >
               <PencilIcon className="w-4 h-4 text-slate-400" /> แก้ไข
-            </button>
-            <button
-              className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3 transition-colors"
-              onClick={() => {
-                if (!selectedInvoice) return;
-                setTargetInvoiceStatus((selectedInvoice.status as InvoiceStatus) || InvoiceStatus.PENDING);
-                setIsInvoiceStatusModalOpen(true);
-                setOpenInvoiceDropdownId(null);
-              }}
-            >
-              <CheckCircleIcon className="w-4 h-4 text-slate-400" /> เปลี่ยนสถานะ
             </button>
             <button
               className="w-full px-4 py-2.5 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-3 transition-colors"
@@ -669,54 +881,6 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
         }}
       />
 
-      {/* Status Update Modal */}
-      <ConfirmationModal
-        isOpen={isInvoiceStatusModalOpen}
-        onClose={() => setIsInvoiceStatusModalOpen(false)}
-        onConfirm={async () => {
-          if (selectedInvoice) {
-            try {
-              if (onUpdateInvoice) {
-                await onUpdateInvoice({ ...selectedInvoice, status: targetInvoiceStatus });
-              } else {
-                await InvoiceApi.update(selectedInvoice.id, { status: targetInvoiceStatus } as Partial<Invoice>);
-              }
-              await fetchData(['invoices']);
-            } catch (error) {
-              console.error('Failed to update invoice status:', error);
-            }
-          }
-          setIsInvoiceStatusModalOpen(false);
-          setSelectedInvoice(null);
-        }}
-        title="อัปเดตสถานะ"
-        message={
-          <div className="space-y-4 text-left">
-            <p>
-              กรุณาเลือกสถานะใหม่สำหรับใบแจ้งหนี้{' '}
-              <strong>{selectedInvoice?.code || selectedInvoice?.id}</strong>
-            </p>
-            <div className="mt-2">
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                สถานะ
-              </label>
-              <Select
-                value={targetInvoiceStatus}
-                onChange={(e) => setTargetInvoiceStatus(e.target.value as InvoiceStatus)}
-                className="w-full"
-              >
-                {Object.values(InvoiceStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {invoiceStatusLabels[status] || status}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </div>
-        }
-        confirmButtonText="บันทึก"
-        confirmButtonClass="bg-primary hover:bg-primary/90"
-      />
     </div>
     </div>
   );

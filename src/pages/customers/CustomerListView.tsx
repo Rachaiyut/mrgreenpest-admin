@@ -57,7 +57,7 @@ const CustomerListView: React.FC<{
         <tr>
           {TH('ลำดับ')}
           {TH('รหัสลูกค้า')}
-          {TH('ชื่อ-นามสกุล')}
+          {TH('ชื่อ')}
           {TH('ชื่อเล่น')}
           {TH('เบอร์โทรศัพท์')}
           {TH('ประเภท')}
@@ -96,8 +96,13 @@ const CustomerListView: React.FC<{
               <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-primary">
                 {customer.code}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <TruncateText text={`${customer.first_name} ${customer.last_name || ''}`.trim()} maxWidth={160} className="font-medium text-slate-900" />
+              <td className="px-4 py-3">
+                <span className="font-medium text-slate-900 whitespace-normal break-words">
+                  {[customer.first_name, customer.last_name]
+                    .map((p: string | undefined) => (typeof p === 'string' ? p.trim() : ''))
+                    .filter((p: string) => p && p !== '-')
+                    .join(' ') || '-'}
+                </span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                 {customer.nickname || '-'}

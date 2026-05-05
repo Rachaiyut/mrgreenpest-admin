@@ -79,8 +79,8 @@ const ReturnToSupplierPage: React.FC = () => {
       try {
         const [whRes, supRes, prodRes] = await Promise.all([
           WarehouseApi.getWarehouses({ limit: 1000 }),
-          SupplierApi.getSuppliers({ limit: 1000 }),
-          ProductApi.getProducts({ limit: 1000 }),
+          SupplierApi.getSuppliers({ limit: 1000, is_active: true }),
+          ProductApi.getProducts({ limit: 1000, is_active: true }),
         ]);
         setWarehouses((whRes.data || []) as WarehouseType[]);
         setSuppliers((supRes.data || []) as Supplier[]);

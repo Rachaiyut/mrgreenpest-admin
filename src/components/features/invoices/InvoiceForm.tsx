@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 'react';
+import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
-import { DocumentTextIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
+import { DocumentTextIcon, CurrencyDollarIcon, EyeIcon } from '../../../assets/icons/Icons';
 import ItemsSection from '../../common/ItemsSection';
 import { useData } from '../../../contexts/DataContext';
 import { CustomerApi } from '../../../api/customer';
@@ -18,6 +19,18 @@ import { ContractStatus } from '../../../types/enums/contract';
 import { Quotation } from '@/src/types';
 import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { formatPhoneNumber } from '../../../utils/format';
+
+const resolveFileUrl = (path: string | null | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('blob:') || path.startsWith('data:')) {
+    return path;
+  }
+  const backendBaseUrl = (import.meta as any).env?.VITE_API_URL
+    ? String((import.meta as any).env.VITE_API_URL).replace(/\/api\/?$/, '')
+    : 'http://localhost:3000';
+  const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+  return `${backendBaseUrl}/${cleanPath}`;
+};
 
 const INVOICE_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'ร่าง',
@@ -66,6 +79,11 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const [invoiceSchedules, setInvoiceSchedules] = useState<any[]>([]);
   const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+
+  // Payments fetched from backend (only populated for non-create modes)
+  const [paymentsInfo, setPaymentsInfo] = useState<any[]>([]);
+  // Slip image lightbox URL (null = closed)
+  const [slipPreviewUrl, setSlipPreviewUrl] = useState<string | null>(null);
 
   // 🌟 FIX: Initialize isAdhocMode based on initialValues if editing
   const [isAdhocMode, setIsAdhocMode] = useState<boolean>(() => {
@@ -173,6 +191,23 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
           // fallback — no items but has a total (legacy data)
           setIsAdhocMode(true);
           setAdhocData({ description: full.notes || 'ใบแจ้งหนี้', amount: Number(full.total) });
+        }
+
+        // Capture payments for the detail-view payment section
+        if (Array.isArray(full.payments)) setPaymentsInfo(full.payments);
+
+        // Seed contracts/quotations dropdowns with the linked records so the
+        // detail view can display the reference even when the contract is not
+        // ACTIVE / the quotation isn't SIGNED (which the loaders filter out).
+        if (full.contract) {
+          setContracts((prev) =>
+            prev.some((c) => c.id === full.contract.id) ? prev : [full.contract as Contract, ...prev],
+          );
+        }
+        if (full.quotation) {
+          setQuotations((prev) =>
+            prev.some((q) => q.id === full.quotation.id) ? prev : [full.quotation as Quotation, ...prev],
+          );
         }
       })
       .catch((err) => console.error('Failed to load full invoice:', err))
@@ -360,7 +395,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
 
   const productOptions = useMemo(() => {
     return products
-      .filter((p: any) => p.type !== 'PACKAGE')
+      .filter((p: any) => p.type !== 'PACKAGE' && p.is_active !== false)
       .map((p) => ({
         value: p.id,
         label: `${p.code} - ${p.name}`,
@@ -561,6 +596,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
   }
 
   return (
+    <>
     <form id="invoice-form" onSubmit={submitForm} className="space-y-8">
       <fieldset
         disabled={mode === 'detail'}
@@ -754,47 +790,52 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 <thead className="bg-slate-50">
                   <tr>
                     <th className="px-4 py-3 text-center w-16 text-sm font-semibold text-slate-600 uppercase">เลือก</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">งวดที่</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">รายละเอียด</th>
                     {availableInstallments.some(i => i.percentage > 0) && (
-                      <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">เปอร์เซ็น</th>
                     )}
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">ยอดชำระ (รวม VAT)</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {availableInstallments.map((inst: any) => (
+                  {availableInstallments.map((inst: any) => {
+                    const isSelected =
+                      formData.selectedScheduleId === inst.id ||
+                      (!!initialValues?.id && initialValues?.term === inst.term);
+                    return (
                     <tr
                       key={inst.id}
                       onClick={() => !inst.disabled && handleSelectInstallment(inst)}
-                      className={`transition-colors ${inst.disabled ? 'opacity-40 cursor-not-allowed' : formData.selectedScheduleId === inst.id ? (inst.is_pay_all ? 'bg-amber-50 cursor-pointer' : 'bg-indigo-50/50 cursor-pointer') : 'hover:bg-slate-50 cursor-pointer'}`}
+                      className={`transition-colors ${inst.disabled ? 'opacity-40 cursor-not-allowed' : isSelected ? (inst.is_pay_all ? 'bg-amber-50 cursor-pointer' : 'bg-indigo-50/50 cursor-pointer') : 'hover:bg-slate-50 cursor-pointer'}`}
                     >
                       <td className="px-4 py-4 text-center">
                         <input
                           type="radio"
                           name="selected_installment"
-                          checked={formData.selectedScheduleId === inst.id}
+                          checked={isSelected}
                           onChange={() => !inst.disabled && handleSelectInstallment(inst)}
                           disabled={inst.disabled}
                           className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
                         />
                       </td>
-                      <td className="px-4 py-4 text-sm font-medium text-slate-900">
-                        {inst.is_pay_all ? '⭐ รวบยอด' : `งวดที่ ${inst.term}`}
+                      <td className="px-4 py-4 text-sm font-medium text-slate-900 text-center">
+                        {inst.is_pay_all ? 'รวบยอด' : `งวดที่ ${inst.term}`}
                       </td>
-                      <td className={`px-4 py-4 text-sm ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
+                      <td className={`px-4 py-4 text-sm text-center ${inst.is_pay_all ? 'text-amber-700 font-medium' : 'text-slate-600'}`}>
                         {inst.description}
                       </td>
                       {availableInstallments.some(i => i.percentage > 0) && (
-                        <td className="px-4 py-4 text-sm text-right text-slate-600">
+                        <td className="px-4 py-4 text-sm text-center text-slate-600">
                           {!inst.is_pay_all && inst.percentage > 0 ? `${inst.percentage}%` : '-'}
                         </td>
                       )}
-                      <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">
-                        {Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                      <td className="px-4 py-4 text-sm text-center font-bold text-slate-900">
+                        ฿{Number(inst.amount).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -931,7 +972,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
             {/* กล่องสรุปยอด */}
             <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span>
+                <span className="text-slate-600">รวมเป็นเงิน</span>
                 <span className="font-medium text-slate-900">
                   {totals.subtotal.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                 </span>
@@ -959,12 +1000,126 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </span>
               </div>
             </div>
-            
+
           </div>
         </div>
 
+        {/* ข้อมูลการชำระเงิน — แสดงเฉพาะ detail mode ที่มี payments */}
+        {mode === 'detail' && paymentsInfo.length > 0 && (
+          <div className="mt-8 bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+              <div className="p-1.5 bg-emerald-50 rounded-lg text-emerald-600">
+                <CurrencyDollarIcon className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-800">ข้อมูลการชำระเงิน</h3>
+            </div>
+            <div className="overflow-hidden rounded-lg border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase">ช่องทางการชำระเงิน</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">จำนวนเงินที่รับ (บาท)</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">วันที่ชำระ</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase">หลักฐานการชำระเงิน</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {paymentsInfo.map((p: any) => {
+                    const methodLabel: Record<string, string> = {
+                      CASH: 'เงินสด',
+                      TRANSFER: 'โอนเงิน',
+                      CREDIT_CARD: 'บัตรเครดิต',
+                      CHEQUE: 'เช็ค',
+                      QR_PAYMENT: 'QR Code',
+                      DIVIDED: 'แบ่งชำระ',
+                      INSTALLMENT: 'ผ่อนชำระ',
+                    };
+                    const method = methodLabel[p.payment_method] || p.payment_method || '-';
+                    const slipUrl: string | undefined = p.payment_slip_url;
+                    const paidAt = p.paid_at
+                      ? new Date(p.paid_at).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' })
+                      : '-';
+                    return (
+                      <tr key={p.id} className="[&>td]:text-center [&>td]:align-middle">
+                        <td className="px-4 py-3 text-sm text-slate-700 !text-left">{method}</td>
+                        <td className="px-4 py-3 text-sm font-bold text-emerald-600">
+                          ฿{Number(p.amount || 0).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{paidAt}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {slipUrl ? (
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSlipPreviewUrl(resolveFileUrl(slipUrl));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSlipPreviewUrl(resolveFileUrl(slipUrl));
+                                }
+                              }}
+                              style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-sm font-medium transition-colors select-none"
+                              title="คลิกเพื่อดูสลิป"
+                            >
+                              <EyeIcon className="w-4 h-4" />
+                              <span>ดูสลิป</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
       </div>
       </fieldset>
+
     </form>
+    {/* Slip lightbox — render via portal to document.body to escape the
+        form's pointer-events-none wrapper in detail mode */}
+    {slipPreviewUrl &&
+      createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 p-4"
+          style={{ pointerEvents: 'auto' }}
+          onClick={() => setSlipPreviewUrl(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSlipPreviewUrl(null)}
+              className="absolute -top-3 -right-3 z-10 w-9 h-9 rounded-full bg-white shadow-lg text-slate-700 hover:bg-slate-100 flex items-center justify-center text-lg font-bold"
+              aria-label="ปิด"
+            >
+              ×
+            </button>
+            <img
+              src={slipPreviewUrl}
+              alt="Payment Slip"
+              className="max-w-full max-h-[90vh] object-contain bg-white rounded-lg shadow-2xl"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  'https://placehold.co/400x600/f8fafc/94a3b8?text=Image+Not+Found';
+              }}
+            />
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 };

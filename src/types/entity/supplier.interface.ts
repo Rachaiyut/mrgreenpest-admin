@@ -12,8 +12,10 @@ export interface Supplier extends IBase {
   phone: string;
   phone_2?: string;
   phone_3?: string;
+  is_active?: boolean;
 }
 
 export interface SupplierQuery extends IBaseQuery {
   type?: SupplierType;
+  is_active?: boolean;
 }

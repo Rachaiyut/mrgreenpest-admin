@@ -106,7 +106,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           CustomerApi.getCustomers({ limit: 10 }),
           AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE  }),
-          PackageApi.getPackages({ limit: 10 }),
+          PackageApi.getPackages({ limit: 10, is_active: true }),
           ServiceProcedureTemplateApi.getAll({ limit: 10 }),
           ServiceScheduleApi.getAll(),
         ]);
@@ -522,7 +522,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return (
       products
         // @ts-ignore
-        .filter((p) => p.type !== 'PACKAGE')
+        .filter((p) => p.type !== 'PACKAGE' && (p as any).is_active !== false)
         .map((p) => ({
           value: p.id,
           label: `${p.code} - ${p.name}`,
@@ -1370,7 +1370,11 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </p>
         </div>
       )}
-    <form id="quotation-form" onSubmit={handleSubmit} className="space-y-6">
+    <form
+      id="quotation-form"
+      onSubmit={handleSubmit}
+      className={`space-y-6 ${isReadOnly ? 'pointer-events-none select-none' : ''}`}
+    >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
           <SectionHeader icon={DocumentTextIcon} title="ข้อมูลทั่วไป" />
@@ -1557,7 +1561,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
           </div>
           <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน (Subtotal)</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
             <div className="flex justify-between items-center text-sm">
               <label className={`flex items-center gap-2 ${isReadOnly ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer text-slate-600'}`}><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600'}`} />ภาษีมูลค่ารวม 7% (VAT)</label>
               <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>

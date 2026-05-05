@@ -15,9 +15,11 @@ import {
   LimitIcon,
   NewWarehouseIcon,
   TruckIcon,
+  CheckCircleIcon,
+  ChartPieIcon,
   LoadingIcon, // Added LoadingIcon
 } from '../../assets/icons/Icons';
-import { Button, Input } from '../../components/common/FormControls';
+import { Button, Input, Select } from '../../components/common/FormControls';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
 import { WarehouseDetailsModal } from '../../components/features/warehouses/WarehouseDetailsModal';
 import {
@@ -28,6 +30,7 @@ import {
 } from '@/src/types/entity/app.interface';
 import { Pagination } from '../../components/common/Pagination';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import Swal from 'sweetalert2';
 import { EditWarehouseModal } from '../../components/features/warehouses/EditWarehouseModal';
 import { SetWithdrawalLimitModal } from '../../components/features/warehouses/SetWithdrawalLimitModal';
 import { ReturnToMainWarehouseModal } from '../../components/features/warehouses/ReturnToMainWarehouseModal';
@@ -48,9 +51,9 @@ const Warehouse: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   // State
-  const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>(
-    'all'
-  );
+  const [typeFilter, setTypeFilter] = useState<'all' | 'main' | 'sub'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ACTIVE' | 'INACTIVE'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'warehouse' | 'vehicle'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -110,9 +113,17 @@ const Warehouse: React.FC = () => {
 
       if (searchQuery) query.search = searchQuery;
 
-      // Filter by Type based on activeTab
-      if (activeTab === 'warehouse') query.type = WarehouseTypeEnum.MAIN;
-      if (activeTab === 'vehicle') query.type = WarehouseTypeEnum.VEHICLE;
+      // Tab filter (คลังสินค้า / รถบริการ) — overrides type dropdown when active
+      if (activeTab === 'warehouse') {
+        query.type = WarehouseTypeEnum.MAIN;
+      } else if (activeTab === 'vehicle') {
+        query.type = WarehouseTypeEnum.VEHICLE;
+      } else {
+        if (typeFilter === 'main') query.type = WarehouseTypeEnum.MAIN;
+        if (typeFilter === 'sub') query.type = WarehouseTypeEnum.SUB;
+      }
+
+      if (statusFilter !== 'all') query.status = statusFilter;
 
       const res = await WarehouseApi.getWarehouses(query);
       setWarehouses(res.data);
@@ -122,11 +133,11 @@ const Warehouse: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchQuery, activeTab]);
+  }, [currentPage, itemsPerPage, searchQuery, typeFilter, statusFilter, activeTab]);
 
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await ProductApi.getProducts({ page: 1, limit: 10 });
+      const res = await ProductApi.getProducts({ page: 1, limit: 10, is_active: true });
       setProducts(res.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
@@ -147,6 +158,9 @@ const Warehouse: React.FC = () => {
       fetchWarehousesStats();
     } catch (error) {
       console.error('Failed to create warehouse:', error);
+      const msg = (error as { response?: { data?: { message?: string } } })
+        ?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถสร้างคลังสินค้าได้', 'error');
     }
   };
 
@@ -199,13 +213,14 @@ const Warehouse: React.FC = () => {
 
   const onDeleteWarehouse = async (id: string) => {
     try {
-      await WarehouseApi.delete(id);
+      // ปิดใช้งานคลัง — ปรับ status เป็น INACTIVE แทนการลบจริง
+      await WarehouseApi.update(id, { status: 'INACTIVE' as unknown as Status });
       setIsDeleteModalOpen(false);
       setWarehouseToDelete(null);
       fetchWarehouses();
       fetchWarehousesStats();
     } catch (error) {
-      console.error('Failed to delete warehouse:', error);
+      console.error('Failed to deactivate warehouse:', error);
     }
   };
 
@@ -340,10 +355,58 @@ const Warehouse: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (warehouse: WarehouseType) => {
-    setWarehouseToDelete(warehouse);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (warehouse: WarehouseType) => {
     setOpenDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการปิดใช้งาน',
+      html: `
+        <div class="text-sm text-slate-600">
+          ต้องการปิดใช้งานคลัง
+          <span class="block mt-1 text-base font-semibold text-slate-800">${warehouse.name}</span>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'ปิดใช้งาน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#ef4444',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await onDeleteWarehouse(warehouse.id);
+      Swal.fire({ icon: 'success', title: 'ปิดใช้งานแล้ว', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถปิดใช้งานได้', 'error');
+    }
+  };
+
+  const handleActivate = async (warehouse: WarehouseType) => {
+    setOpenDropdownId(null);
+    const r = await Swal.fire({
+      icon: 'question',
+      title: 'ยืนยันการเปิดใช้งาน',
+      html: `
+        <div class="text-sm text-slate-600">
+          ต้องการเปิดใช้งานคลัง
+          <span class="block mt-1 text-base font-semibold text-slate-800">${warehouse.name}</span>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'เปิดใช้งาน',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#10b981',
+    });
+    if (!r.isConfirmed) return;
+    try {
+      await WarehouseApi.update(warehouse.id, { status: 'ACTIVE' as unknown as Status });
+      fetchWarehouses();
+      fetchWarehousesStats();
+      Swal.fire({ icon: 'success', title: 'เปิดใช้งานแล้ว', timer: 1200, showConfirmButton: false });
+    } catch (err) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถเปิดใช้งานได้', 'error');
+    }
   };
 
   const handleSetLimits = async (warehouse: WarehouseType) => {
@@ -402,12 +465,29 @@ const Warehouse: React.FC = () => {
   };
 
   const actions = [
-    { label: 'ดูรายละเอียด', icon: EyeIcon, action: handleViewDetails },
-    { label: 'แก้ไข', icon: PencilIcon, action: handleEdit },
+    {
+      label: 'ดูรายละเอียด',
+      icon: EyeIcon,
+      action: handleViewDetails,
+      color: 'text-slate-700',
+      iconColor: 'text-slate-400',
+      hoverBg: 'hover:bg-slate-50',
+    },
+    {
+      label: 'แก้ไข',
+      icon: PencilIcon,
+      action: handleEdit,
+      color: 'text-blue-600',
+      iconColor: 'text-blue-500',
+      hoverBg: 'hover:bg-blue-50',
+    },
     {
       label: 'จำกัดการเบิก',
-      icon: LimitIcon,
+      icon: ChartPieIcon,
       action: handleSetLimits,
+      color: 'text-amber-600',
+      iconColor: 'text-amber-500',
+      hoverBg: 'hover:bg-amber-50',
       // Limits apply to vehicle warehouses (บาง backend ส่งเป็น SUB แต่มี vehicle)
       condition: (w: WarehouseType) =>
         !!w.vehicle ||
@@ -418,11 +498,32 @@ const Warehouse: React.FC = () => {
       label: 'คืนสินค้าเข้าคลังหลัก',
       icon: NewWarehouseIcon,
       action: handleReturnStock,
+      color: 'text-sky-600',
+      iconColor: 'text-sky-500',
+      hoverBg: 'hover:bg-sky-50',
       // Only for Vehicle Warehouses
       condition: (w: WarehouseType) =>
         !!w.vehicle || w.type === WarehouseTypeEnum.VEHICLE,
     },
-    { label: 'ลบ', icon: TrashIcon, isDanger: true, action: handleDelete },
+    {
+      label: 'เปิดใช้งาน',
+      icon: CheckCircleIcon,
+      action: handleActivate,
+      color: 'text-emerald-600',
+      iconColor: 'text-emerald-500',
+      hoverBg: 'hover:bg-emerald-50',
+      condition: (w: WarehouseType) => (w.status as unknown as string) === 'INACTIVE',
+    },
+    {
+      label: 'ปิดใช้งาน',
+      icon: LimitIcon,
+      isDanger: true,
+      action: handleDelete,
+      color: 'text-red-600',
+      iconColor: 'text-red-500',
+      hoverBg: 'hover:bg-red-50',
+      condition: (w: WarehouseType) => (w.status as unknown as string) !== 'INACTIVE',
+    },
   ];
 
   return (
@@ -492,11 +593,12 @@ const Warehouse: React.FC = () => {
 
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="relative w-full sm:w-64 flex-shrink-0">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1 min-w-0">
+            <div className="relative w-full sm:w-80 flex-shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา..."
+                placeholder="ค้นหารหัสคลัง, ชื่อคลัง, ที่ตั้ง, ทะเบียน"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -508,14 +610,40 @@ const Warehouse: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
+            <Select
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value as 'all' | 'main' | 'sub');
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-48 flex-shrink-0"
+            >
+              <option value="all">ประเภททั้งหมด</option>
+              <option value="main">คลังหลัก</option>
+              <option value="sub">คลังย่อย</option>
+            </Select>
+            <Select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value as 'all' | 'ACTIVE' | 'INACTIVE');
+                setCurrentPage(1);
+              }}
+              className="w-full sm:w-48 flex-shrink-0"
+            >
+              <option value="all">สถานะทั้งหมด</option>
+              <option value="ACTIVE">ใช้งาน</option>
+              <option value="INACTIVE">ไม่ใช้งาน</option>
+            </Select>
+            </div>
+
             {/* Tabs */}
-            <div className="flex bg-slate-100 p-1 rounded-lg">
+            <div className="flex bg-slate-100 p-1 rounded-lg flex-shrink-0">
               <button
                 onClick={() => {
                   setActiveTab('all');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'all'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
@@ -528,7 +656,7 @@ const Warehouse: React.FC = () => {
                   setActiveTab('warehouse');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'warehouse'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
@@ -541,7 +669,7 @@ const Warehouse: React.FC = () => {
                   setActiveTab('vehicle');
                   setCurrentPage(1);
                 }}
-                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'vehicle'
                     ? 'bg-white text-slate-800 shadow-sm'
                     : 'text-slate-500 hover:text-slate-700'
@@ -687,13 +815,12 @@ const Warehouse: React.FC = () => {
                   <button
                     key={action.label}
                     onClick={() => action.action(warehouse)}
-                    className={`flex w-full items-center px-4 py-2 text-sm ${
-                      action.isDanger
-                        ? 'text-red-600 hover:bg-red-50'
-                        : 'text-slate-700 hover:bg-slate-100'
-                    }`}
+                    className={`flex w-full items-center px-4 py-2.5 text-sm transition-colors ${action.color} ${action.hoverBg}`}
                   >
-                    <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+                    <action.icon
+                      className={`mr-3 h-5 w-5 ${action.iconColor}`}
+                      aria-hidden="true"
+                    />
                     {action.label}
                   </button>
                 );
@@ -734,21 +861,6 @@ const Warehouse: React.FC = () => {
           </p>
         }
         confirmButtonText="ยืนยัน"
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบคลัง{' '}
-            <strong>{warehouseToDelete?.name}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-red-600 hover:bg-red-700 text-white"
       />
       <SetWithdrawalLimitModal
         isOpen={isLimitModalOpen}

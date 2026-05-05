@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Card } from '../../components/common/Card';
-import { TruncateText } from '../../components/common/TruncateText';
 import { formatThaiDate } from '../../utils/date';
 import { formatPhoneNumber } from '../../utils/format';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
@@ -50,6 +49,19 @@ const paymentMethodLabels: Record<string, string> = {
 const getPaymentMethodLabel = (method: string): string => {
   return paymentMethodLabels[method] || method;
 };
+
+const paymentMethodBadgeClass: Record<string, string> = {
+  TRANSFER: 'bg-blue-100 text-blue-700 border border-blue-200',
+  CASH: 'bg-green-100 text-green-700 border border-green-200',
+  CHEQUE: 'bg-amber-100 text-amber-700 border border-amber-200',
+  CREDIT_CARD: 'bg-purple-100 text-purple-700 border border-purple-200',
+  QR_PAYMENT: 'bg-teal-100 text-teal-700 border border-teal-200',
+  INSTALLMENT: 'bg-orange-100 text-orange-700 border border-orange-200',
+  DIVIDED: 'bg-indigo-100 text-indigo-700 border border-indigo-200',
+};
+
+const getPaymentMethodBadgeClass = (method: string): string =>
+  paymentMethodBadgeClass[method] || 'bg-slate-100 text-slate-700 border border-slate-200';
 
 const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
   onUpdateReceipt,
@@ -395,33 +407,33 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
           <table className="min-w-[900px] w-full divide-y divide-slate-200 border-b border-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลำดับ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เลขที่เอกสาร
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   อ้างอิงใบแจ้งหนี้
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   ลูกค้า
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   เบอร์โทร
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วันที่ชำระ
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วิธีชำระเงิน
                 </th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จำนวนเงิน
                 </th>
-                <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   จัดการ
-                </th>                
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -451,12 +463,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   const customer =
                     r.customer || customers?.find((c) => c.id === r.customer_id);
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={r.id} className="hover:bg-slate-50 transition-colors [&>td]:text-center [&>td]:align-middle">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(receiptPage - 1) * receiptItemsPerPage + index + 1}
                       </td>
                       <td
-                        className="px-4 py-3 text-sm font-medium text-primary hover:underline cursor-pointer"
+                        className="px-4 py-3 text-sm font-bold text-primary hover:underline cursor-pointer"
                         onClick={() => {
                           setSelectedReceipt(r);
                           setIsReceiptModalOpen(true);
@@ -468,7 +480,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         {invoices?.find((i) => i.id === r.invoice_id)?.code || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm font-semibold text-slate-800">
-                        <TruncateText text={r.customer_name || '-'} maxWidth={160} />
+                        {r.customer_name || '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone || '-')}
@@ -476,8 +488,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(r.received_at || r.paid_at)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-slate-700">
-                        {getPaymentMethodLabel(r.payment_method)}
+                      <td className="px-4 py-3 text-sm">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getPaymentMethodBadgeClass(r.payment_method)}`}
+                        >
+                          {getPaymentMethodLabel(r.payment_method)}
+                        </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {r.amount.toLocaleString('th-TH', {
@@ -485,8 +501,8 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                           maximumFractionDigits: 2,
                         })}{' '}บาท
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        <div className="flex items-center justify-center gap-2">
                           <Button
                             variant="primary"
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
