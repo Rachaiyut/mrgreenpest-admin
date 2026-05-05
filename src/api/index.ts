@@ -2,6 +2,7 @@ export * from './assessment';
 export * from './auth';
 export * from './base';
 export * from './category';
+export * from './chemical-catalog';
 export * from './contract';
 export * from './customer';
 export * from './expense';

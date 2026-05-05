@@ -45,6 +45,7 @@ export interface Quotation extends IBase {
   service_procedure_template_id?: string;
   service_procedure_template_ids?: string[];
   service_schedule_id?: string;
+  chemical_catalog_ids?: string[];
   created_by?: string;
   updated_by?: string;
 

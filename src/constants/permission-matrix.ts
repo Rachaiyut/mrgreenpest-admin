@@ -62,7 +62,7 @@ export const PERMISSION_MATRIX: PermissionGroup[] = [
     items: [
       { label: 'ตารางปฏิบัติงาน', module: 'SERVICE_SCHEDULE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
       { label: 'รายละเอียดขั้นตอนบริการ', module: 'SERVICE_PROCEDURE_TEMPLATE', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
-      { label: 'ตัวอย่าง Catalog สารเคมี', module: 'PRODUCT', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
+      { label: 'ตัวอย่าง Catalog สารเคมี', module: 'CHEMICAL_CATALOG', skipActions: ['DELETE', 'APPROVE', 'NOTIFY'] },
     ],
   },
   {
