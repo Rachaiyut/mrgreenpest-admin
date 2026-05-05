@@ -1348,7 +1348,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
       service_procedure_template_ids: procedureTemplateIds.length > 0 ? procedureTemplateIds : undefined,
       service_schedule_id: scheduleId || undefined,
-      chemical_catalog_ids: chemicalCatalogIds.length > 0 ? chemicalCatalogIds : undefined,
+      chemical_catalog_ids: (() => {
+        const cleaned = chemicalCatalogIds.filter((id) => typeof id === 'string' && id.trim().length > 0);
+        return cleaned.length > 0 ? cleaned : undefined;
+      })(),
     };
 
     setIsSubmitting(true);
