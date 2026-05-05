@@ -106,6 +106,8 @@ export const NotificationMenu: React.FC = () => {
       navigate(buildPath('/assessments'));
     } else if (notification.related_entity_type === 'QUOTATION') {
       navigate(buildPath('/quotations'));
+    } else if (notification.related_entity_type === 'JOB_VISIT_SUMMARY') {
+      navigate('/notifications?tab=upcoming-visits');
     } else if (notification.related_entity_type === 'JOB') {
       navigate(buildPath('/field-operations'));
     } else if (notification.related_entity_type === 'INVOICE') {

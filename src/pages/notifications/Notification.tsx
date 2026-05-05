@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { Select, Input } from '../../components/common/FormControls';
@@ -10,11 +10,25 @@ import { ContractApi } from '../../api/contract';
 import { ServiceReportApi } from '../../api/service-report';
 import { Pagination } from '../../components/common/Pagination';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
+import UpcomingVisitsTab from './UpcomingVisitsTab';
+
+type TabKey = 'contracts' | 'upcoming-visits';
 
 interface NotificationsProps {}
 
 const Notifications: React.FC<NotificationsProps> = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab: TabKey = searchParams.get('tab') === 'upcoming-visits' ? 'upcoming-visits' : 'contracts';
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
+
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (activeTab === 'upcoming-visits') next.set('tab', 'upcoming-visits');
+    else next.delete('tab');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -173,6 +187,29 @@ const Notifications: React.FC<NotificationsProps> = () => {
         </p>
       </div>
 
+      <div className="flex border-b border-slate-200">
+        {([
+          { key: 'contracts', label: 'สัญญา / การชำระเงิน' },
+          { key: 'upcoming-visits', label: 'นัดหมายเข้าบริการ' },
+        ] as { key: TabKey; label: string }[]).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              activeTab === t.key
+                ? 'border-primary text-primary'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'upcoming-visits' ? (
+        <UpcomingVisitsTab />
+      ) : (
+      <>
       <Card className="!p-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
@@ -454,6 +491,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
         </>
         )}
       </div>
+      </>
+      )}
     </div>
     </div>
   );
