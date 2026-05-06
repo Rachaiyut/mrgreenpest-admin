@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { FormField, Input, Textarea } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Category } from '@/src/types/entity/app.interface';
 import { CategoryType } from '@/src/types/enums/category';
 
@@ -73,17 +74,17 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
           {errors.code && <p className="text-sm text-red-500 mt-1">{errors.code}</p>}
         </FormField>
         <FormField label="ประเภทหมวดหมู่ *" htmlFor="type">
-          <Select
-            name="type"
+          <DropdownSelect
             value={formData.type || ''}
-            onChange={handleChange}
+            onChange={(v) => handleChange({ target: { name: 'type', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+            placeholder="-- เลือกประเภท --"
+            options={[
+              { value: CategoryType.PRODUCT, label: 'สินค้า' },
+              { value: CategoryType.SERVICE, label: 'บริการ' },
+            ]}
             disabled={mode === 'edit' && !!(((initialValues as unknown as Record<string, number>)?.product_count) > 0)}
-            className={errors.type ? 'border-red-500' : ''}
-          >
-            <option value="" disabled>-- เลือกประเภท --</option>
-            <option value={CategoryType.PRODUCT}>สินค้า</option>
-            <option value={CategoryType.SERVICE}>บริการ</option>
-          </Select>
+            error={!!errors.type}
+          />
           {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
         </FormField>
       </div>

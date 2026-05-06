@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 
 import { Card } from '../../components/common/Card';
-import { Input, Button, Select } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
 import { AccountApi } from '../../api/account';
 import { Account as AccountType } from '../../types/entity/account.interface';
@@ -257,18 +258,20 @@ const AccountPage: FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <Select
+            <DropdownSelect
               value={activeFilter}
-              onChange={(e) => {
-                setActiveFilter(e.target.value as 'all' | 'active' | 'inactive');
+              onChange={(val) => {
+                setActiveFilter(val as 'all' | 'active' | 'inactive');
                 setPage(1);
               }}
-              className="w-fit text-sm !pr-8"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="active">ใช้งาน</option>
-              <option value="inactive">ไม่ใช้งาน</option>
-            </Select>
+              className="w-fit text-sm"
+              placeholder="สถานะทั้งหมด"
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'active', label: 'ใช้งาน' },
+                { value: 'inactive', label: 'ไม่ใช้งาน' },
+              ]}
+            />
           </div>
         </Card>
 

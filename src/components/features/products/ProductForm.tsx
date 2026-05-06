@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import { FormField, Input, Textarea, Select } from '../../common/FormControls';
+import { FormField, Input, Textarea } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { PhotoIcon } from '../../../assets/icons/Icons';
 import { CategoryType } from '@/src/types/enums/category';
 import { Product } from '@/src/types/entity/product.interface';
@@ -193,12 +194,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
           </FormField>
 
           <FormField label="หมวดหมู่ *" htmlFor="category_id">
-            <Select name="category_id" value={formData.category_id || ''} onChange={handleChange} required disabled={mode === 'edit'} className={mode === 'edit' ? 'bg-slate-50' : ''}>
-              <option value="">-- เลือกหมวดหมู่ --</option>
-              {filteredCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </Select>
+            <DropdownSelect
+              value={formData.category_id || ''}
+              onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+              placeholder="-- เลือกหมวดหมู่ --"
+              options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
+              disabled={mode === 'edit'}
+              className={mode === 'edit' ? 'bg-slate-50' : ''}
+            />
           </FormField>
 
           <FormField label="รายละเอียด" htmlFor="remark">
@@ -207,12 +210,12 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="หน่วย *" htmlFor="unit_id">
-              <Select name="unit_id" value={formData.unit_id || ''} onChange={handleChange} required>
-                <option value="">-- เลือกหน่วย --</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </Select>
+              <DropdownSelect
+                value={formData.unit_id || ''}
+                onChange={(v) => handleChange({ target: { name: 'unit_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                placeholder="-- เลือกหน่วย --"
+                options={units.map((u) => ({ value: u.id, label: u.name }))}
+              />
             </FormField>
             <FormField label="ราคาขาย/หน่วย *" htmlFor="price">
               <Input name="price" type="number" value={formData.price ?? ''} onChange={handleChange} onFocus={handleNumberFocus} required step="0.01" min="0" placeholder="0.00" />
@@ -239,12 +242,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
               <Input name="name" type="text" value={formData.name || ''} onChange={handleChange} required />
             </FormField>
             <FormField label="หมวดหมู่ *" htmlFor="category_id">
-              <Select name="category_id" value={formData.category_id || ''} onChange={handleChange} required disabled={mode === 'edit'} className={mode === 'edit' ? 'bg-slate-50' : ''}>
-                <option value="">-- เลือกหมวดหมู่ --</option>
-                {filteredCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </Select>
+              <DropdownSelect
+                value={formData.category_id || ''}
+                onChange={(v) => handleChange({ target: { name: 'category_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                placeholder="-- เลือกหมวดหมู่ --"
+                options={filteredCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                disabled={mode === 'edit'}
+                className={mode === 'edit' ? 'bg-slate-50' : ''}
+              />
             </FormField>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -23,7 +23,8 @@ import { renderApprovalDetails, renderItemList, joinName, pickName } from '../..
 import { IssueSummaryModal } from '../../../components/features/inventory/issue-summary/IssueSummaryModal';
 import { StockIssueSummaryDetailsModal } from '../../../components/features/inventory/issue-summary/StockIssueSummaryDetailsModal';
 import { Card } from '../../../components/common/Card';
-import { Input, Select, Button } from '../../../components/common/FormControls';
+import { Input, Button } from '../../../components/common/FormControls';
+import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Pagination } from '../../../components/common/Pagination';
 
@@ -766,21 +767,22 @@ const IssueSummaryPage: React.FC = () => {
                   />
                 </div>
               )}
-              <Select
+              <DropdownSelect
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onChange={(val) => {
+                  setStatusFilter(val);
                   setCurrentPage(1);
                 }}
-                className="w-fit text-sm !pr-8"
-              >
-                <option value="all">สถานะทั้งหมด</option>
-                <option value="DRAFT">ฉบับร่าง</option>
-                <option value="PENDING">รออนุมัติ</option>
-                <option value="APPROVED">อนุมัติแล้ว</option>
-                <option value="COMPLETED">เสร็จสิ้น</option>
-                <option value="CANCELLED">ยกเลิก</option>
-              </Select>
+                className="w-fit text-sm"
+                options={[
+                  { value: 'all', label: 'สถานะทั้งหมด' },
+                  { value: 'DRAFT', label: 'ฉบับร่าง' },
+                  { value: 'PENDING', label: 'รออนุมัติ' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                  { value: 'CANCELLED', label: 'ยกเลิก' },
+                ]}
+              />
               <div className="flex items-center gap-2">
                 <DatePicker
                   selected={startDate ? new Date(startDate) : null}
@@ -1156,16 +1158,17 @@ const IssueSummaryPage: React.FC = () => {
             </p>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">สถานะ</label>
-              <Select
+              <DropdownSelect
                 value={targetStatus}
-                onChange={(e) => setTargetStatus(e.target.value)}
-              >
-                <option value="DRAFT">ฉบับร่าง</option>
-                <option value="PENDING">รออนุมัติ</option>
-                <option value="APPROVED">อนุมัติแล้ว</option>
-                <option value="COMPLETED">เสร็จสิ้น</option>
-                <option value="CANCELLED">ยกเลิก</option>
-              </Select>
+                onChange={(val) => setTargetStatus(val)}
+                options={[
+                  { value: 'DRAFT', label: 'ฉบับร่าง' },
+                  { value: 'PENDING', label: 'รออนุมัติ' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                  { value: 'CANCELLED', label: 'ยกเลิก' },
+                ]}
+              />
             </div>
           </div>
         }

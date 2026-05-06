@@ -2,7 +2,8 @@ import { FC, FormEvent, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { Modal } from '../../common/Modal';
-import { Input, Select, Button } from '../../common/FormControls';
+import { Input, Button } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { AccountApi } from '../../../api/account';
 import { Account, AccountTransactionType } from '../../../types/entity/account.interface';
 
@@ -103,11 +104,15 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">ประเภทรายการ <span className="text-red-500">*</span></label>
-            <Select value={type} onChange={(e) => setType(e.target.value as AccountTransactionType)}>
-              <option value="DEPOSIT">เงินเข้า (Deposit)</option>
-              <option value="WITHDRAW">เงินออก (Withdraw)</option>
-              <option value="ADJUSTMENT">ปรับปรุงยอด (Adjustment)</option>
-            </Select>
+            <DropdownSelect
+              value={type}
+              onChange={(v) => setType(v as AccountTransactionType)}
+              options={[
+                { value: 'DEPOSIT', label: 'เงินเข้า (Deposit)' },
+                { value: 'WITHDRAW', label: 'เงินออก (Withdraw)' },
+                { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด (Adjustment)' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">วันที่รายการ <span className="text-red-500">*</span></label>

@@ -21,7 +21,7 @@ import { Contract } from '../../types/entity/financial.interface';
 import { Job as JobEntity } from '../../types/entity/job.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
-import { Warehouse } from '../../types/entity/inventory.interface';
+import { Warehouse, WarehouseQuery } from '../../types/entity/inventory.interface';
 import { isFieldRole, isManagementRole, isExecutiveRole } from '../../utils/role';
 import { Role } from '../../types/enums/role';
 
@@ -46,7 +46,8 @@ import { IssueSummaryModal } from '../../components/features/inventory/issue-sum
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { JobStatusLabel } from '@/src/types/enums/job';
-import { Select, Input, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 // ===== Local Components =====
@@ -61,6 +62,7 @@ import {
   StorageApi,
   VehicleApi,
 } from '@/src/api';
+import { WarehouseApi } from '@/src/api/warehouse';
 import { DailyClosureApi } from '@/src/api/daily-closure';
 import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
 
@@ -1404,7 +1406,7 @@ const Job: React.FC<JobProps> = ({
 
   // Fetch all vehicles for dropdown (once)
   useEffect(() => {
-    VehicleApi.getVehicles({ limit: 10, sort_by: 'vehicle_registration', sort_order: 'asc' } as Record<string, unknown>).then((res) => {
+    WarehouseApi.getWarehouses({ type: 'VEHICLE' } as WarehouseQuery).then((res) => {
       setAllVehicles((res.data || []) as Warehouse[]);
     }).catch(() => {});
   }, []);
@@ -1495,20 +1497,50 @@ const Job: React.FC<JobProps> = ({
       icon: React.FC<any>;
       onClick: () => void;
       isDanger?: boolean;
-    }[] = [
+    }[] = [];
+
+    if (isReportTabDropdown) {
+      actions.push(
         {
           label: 'ดูรายละเอียด',
           icon: EyeIcon,
           onClick: () => {
-            if (isReportTabDropdown) {
-              setReportReadOnly(true);
-              handleWriteReport(selectedJob);
-            } else {
-              handleViewDetails(selectedJob);
-            }
+            setReportReadOnly(true);
+            handleWriteReport(selectedJob);
           },
         },
-      ];
+        {
+          label: 'แก้ไขใบรายงานบริการ',
+          icon: DocumentCheckIcon,
+          onClick: () => {
+            setReportReadOnly(false);
+            handleWriteReport(selectedJob);
+          },
+        },
+      );
+
+      return actions.map((action) => (
+        <a
+          key={action.label}
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            action.onClick();
+          }}
+          className="flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          role="menuitem"
+        >
+          <action.icon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
+          <span>{action.label}</span>
+        </a>
+      ));
+    }
+
+    actions.push({
+      label: 'ดูรายละเอียด',
+      icon: EyeIcon,
+      onClick: () => handleViewDetails(selectedJob),
+    });
 
     const isRejectedStatus = status === JobStatus.Rejected;
     const isCreatorOfSelected =
@@ -1741,177 +1773,184 @@ const Job: React.FC<JobProps> = ({
         </div>
 
         <Card className="!p-3 sm:!p-4 flex-shrink-0">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
-              <div className="relative w-full sm:w-56">
-                  <Input
-                    type="search"
-                    placeholder="ค้นหารหัสลูกค้า, ชื่อลูกค้า"
-                    value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
-                    onChange={(e) => {
-                      if (activeTab === 'unassigned') {
-                        setUnassignedSearch(e.target.value);
+          <div className="flex flex-col gap-3 min-w-0">
+            {/* Row 1: Filters + View Toggle + Tabs */}
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              {/* Search */}
+              <div className="relative w-full sm:w-56 lg:w-64">
+                <Input
+                  type="search"
+                  placeholder="ค้นหารหัสลูกค้า, ชื่อลูกค้า"
+                  value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
+                  onChange={(e) => {
+                    if (activeTab === 'unassigned') {
+                      setUnassignedSearch(e.target.value);
+                      setUnassignedPage(1);
+                    } else {
+                      setSearchQuery(e.target.value);
+                      fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
+                    }
+                  }}
+                  className="w-full pl-10"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* Unassigned tab filters */}
+              {activeTab === 'unassigned' && (
+                <div className="relative w-full sm:w-auto">
+                  <DatePicker
+                    selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(date.getDate()).padStart(2, '0');
+                        const formatted = `${yyyy}-${mm}-${dd}`;
+                        setUnassignedDateFilter(formatted);
                         setUnassignedPage(1);
+                        fetchUnassigned(1, formatted, unassignedSearch);
                       } else {
-                        setSearchQuery(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
+                        setUnassignedDateFilter('');
+                        setUnassignedPage(1);
+                        fetchUnassigned(1, '', unassignedSearch);
                       }
                     }}
-                    className="w-full pl-10"
+                    placeholderText="เลือกวันที่นัดหมาย"
+                    dateFormat="dd/MM/yyyy"
+                    locale="th"
+                    isClearable
+                    className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    wrapperClassName="w-full sm:w-auto"
                   />
-                  <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+                  <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
-                {activeTab === 'unassigned' && (
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-full sm:w-auto">
-                      <DatePicker
-                        selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
-                        onChange={(date: Date | null) => {
-                          if (date) {
-                            const yyyy = date.getFullYear();
-                            const mm = String(date.getMonth() + 1).padStart(2, '0');
-                            const dd = String(date.getDate()).padStart(2, '0');
-                            const formatted = `${yyyy}-${mm}-${dd}`;
-                            setUnassignedDateFilter(formatted);
-                            setUnassignedPage(1);
-                            fetchUnassigned(1, formatted, unassignedSearch);
-                          } else {
-                            setUnassignedDateFilter('');
-                            setUnassignedPage(1);
-                            fetchUnassigned(1, '', unassignedSearch);
-                          }
-                        }}
-                        placeholderText="เลือกวันที่นัดหมาย"
-                        dateFormat="dd/MM/yyyy"
-                        locale="th"
-                        isClearable
-                        className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                        wrapperClassName="w-full sm:w-auto"
-                      />
-                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
+              )}
+
+              {/* Schedule tab filters */}
+              {activeTab === 'schedule' && (
+                <>
+                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
+                    <DatePicker
+                      selected={filterDate ? new Date(filterDate) : null}
+                      onChange={(date: Date | null) => {
+                        if (date) {
+                          const yyyy = date.getFullYear();
+                          const mm = String(date.getMonth() + 1).padStart(2, '0');
+                          const dd = String(date.getDate()).padStart(2, '0');
+                          const formattedDate = `${yyyy}-${mm}-${dd}`;
+                          setFilterDate(formattedDate);
+                          fetchData(formattedDate, selectedTechnicianId);
+                        } else {
+                          setFilterDate('');
+                          fetchData('', selectedTechnicianId);
+                        }
+                      }}
+                      placeholderText="เลือกวันที่"
+                      dateFormat="dd/MM/yyyy"
+                      locale="th"
+                      isClearable
+                      className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                      wrapperClassName="w-full sm:w-auto"
+                    />
+                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
-                )}
-                {activeTab === 'schedule' && (
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-auto">
-                      <DatePicker
-                        selected={filterDate ? new Date(filterDate) : null}
-                        onChange={(date: Date | null) => {
-                          if (date) {
-                            const yyyy = date.getFullYear();
-                            const mm = String(date.getMonth() + 1).padStart(2, '0');
-                            const dd = String(date.getDate()).padStart(2, '0');
-                            const formattedDate = `${yyyy}-${mm}-${dd}`;
-                            setFilterDate(formattedDate);
-                            fetchData(formattedDate, selectedTechnicianId);
-                          } else {
-                            setFilterDate('');
-                            fetchData('', selectedTechnicianId);
-                          }
-                        }}
-                        placeholderText="เลือกวันที่"
-                        dateFormat="dd/MM/yyyy"
-                        locale="th"
-                        isClearable
-                        className="w-full sm:w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                        wrapperClassName="w-full sm:w-auto"
-                      />
-                    </div>
-                    <Select
-                      id="technician-filter"
-                      value={selectedTechnicianId}
-                      onChange={(e) => {
-                        const newTech = e.target.value;
-                        setSelectedTechnicianId(newTech);
-                        fetchData(filterDate, newTech);
-                      }}
-                      className="w-[calc(50%-0.25rem)] sm:w-40 text-sm"
-                    >
-                      <option value="all">ช่างทั้งหมด</option>
-                      {technicians.map((tech) => (
-                        <option key={tech.id} value={tech.id}>
-                          {tech.name}
-                        </option>
-                      ))}
-                    </Select>
-                    <Select
-                      id="vehicle-filter"
-                      value={selectedVehicleId}
-                      onChange={(e) => {
-                        setSelectedVehicleId(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, e.target.value);
-                      }}
-                      className="w-[calc(50%-0.25rem)] sm:w-fit text-sm !pr-8"
-                    >
-                      <option value="all">รถทั้งหมด</option>
-                      {allVehicles.map((v: any) => (
-                        <option key={v.id} value={v.warehouse_id || v.id}>
-                          {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
-                        </option>
-                      ))}
-                    </Select>
-                    <Select
-                      id="status-filter"
-                      value={selectedStatusFilter}
-                      onChange={(e) => {
-                        setSelectedStatusFilter(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, e.target.value);
-                      }}
-                      className="w-full sm:w-fit text-sm !pr-8"
-                    >
-                      <option value="all">สถานะทั้งหมด</option>
-                      {Object.values(JobMainStatus).map((status) => (
-                        <option key={status} value={status}>
-                          {JobStatusLabel[status] || status}
-                        </option>
-                      ))}
-                    </Select>
+                  <DropdownSelect
+                    value={selectedTechnicianId}
+                    onChange={(val) => {
+                      setSelectedTechnicianId(val);
+                      fetchData(filterDate, val);
+                    }}
+                    placeholder="ช่างทั้งหมด"
+                    options={[
+                      { value: 'all', label: 'ช่างทั้งหมด' },
+                      ...technicians.map((tech) => ({ value: tech.id, label: tech.name })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                  <SearchableSelect
+                    value={selectedVehicleId}
+                    onChange={(val) => {
+                      setSelectedVehicleId(val);
+                      fetchSchedule(filterDate, selectedTechnicianId, searchQuery, val);
+                    }}
+                    placeholder="รถทั้งหมด"
+                    searchPlaceholder="ค้นหารถ..."
+                    options={[
+                      { value: 'all', label: 'รถทั้งหมด' },
+                      ...allVehicles.map((v: any) => ({
+                        value: v.warehouse_id || v.id,
+                        label: `${v.name} (${v.vehicle?.vehicle_registration || ''})`,
+                      })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                  <DropdownSelect
+                    value={selectedStatusFilter}
+                    onChange={(val) => {
+                      setSelectedStatusFilter(val);
+                      fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, val);
+                    }}
+                    placeholder="สถานะทั้งหมด"
+                    options={[
+                      { value: 'all', label: 'สถานะทั้งหมด' },
+                      ...Object.values(JobMainStatus).map((status) => ({
+                        value: status,
+                        label: JobStatusLabel[status] || status,
+                      })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                </>
+              )}
+
+              {/* Work-schedule tab filters */}
+              {activeTab === 'work-schedule' && (
+                <>
+                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
-                )}
-                {activeTab === 'work-schedule' && (
-                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                    <div className="relative w-full sm:w-auto">
-                      <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
-                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                    <Select
-                      value={scheduleVehicleId}
-                      onChange={(e) => setScheduleVehicleId(e.target.value)}
-                      className="w-full sm:w-48 bg-white border-slate-300 shadow-sm text-sm h-10"
-                    >
-                      <option value="">เลือกทะเบียนรถ</option>
-                      {warehouses
+                  <SearchableSelect
+                    value={scheduleVehicleId}
+                    onChange={(val) => setScheduleVehicleId(val)}
+                    placeholder="เลือกทะเบียนรถ"
+                    searchPlaceholder="ค้นหารถ..."
+                    options={[
+                      { value: '', label: 'เลือกทะเบียนรถ' },
+                      ...warehouses
                         .filter(
                           (w) =>
                             (w as unknown as Record<string, string>).type === 'รถ' ||
                             (w as unknown as Record<string, string>).type === 'VEHICLE'
                         )
-                        .map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {(w as unknown as Record<string, string>).license_plate} ({w.name})
-                          </option>
-                        ))}
-                    </Select>
-                  </div>
-                )}
-            </div>
+                        .map((w) => ({
+                          value: w.id,
+                          label: `${w.name} (${(w as unknown as Record<string, { vehicle_registration?: string }>).vehicle?.vehicle_registration || ''})`,
+                        })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-44"
+                  />
+                </>
+              )}
 
-            {/* Tabs + View Toggle */}
-            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+              {/* Spacer to push tabs right */}
+              <div className="flex-1" />
+
+              {/* View Toggle + Tabs */}
+              <div className="flex items-center gap-2 min-w-0 max-w-full overflow-hidden">
                 {(activeTab === 'schedule' || activeTab === 'approval') && (
                   <div className="flex items-center rounded-lg bg-slate-100 p-1">
                     <Button
@@ -1946,10 +1985,10 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto w-full sm:w-auto scrollbar-hide">
+                <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-slate-100 rounded-lg overflow-x-auto min-w-0 w-full sm:w-auto scrollbar-hide">
                   <button
                     onClick={() => setActiveTab('schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1960,12 +1999,12 @@ const Job: React.FC<JobProps> = ({
                   {!isFieldRole(authUser?.roleType) && (
                     <button
                       onClick={() => setActiveTab('unassigned')}
-                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                       รอจัดคิว
                       {unassignedCount > 0 && (
-                        <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
+                        <span className="ml-1 sm:ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1 sm:px-1.5 rounded-full text-[10px] sm:text-xs">
                           {unassignedCount}
                         </span>
                       )}
@@ -1975,12 +2014,12 @@ const Job: React.FC<JobProps> = ({
                   {!isFieldRole(authUser?.roleType) && (
                     <button
                       onClick={() => setActiveTab('approval')}
-                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'approval' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'approval' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                       รออนุมัติ
                       {approvalCount > 0 && (
-                        <span className="ml-1.5 bg-orange-100 text-orange-700 py-0.5 px-1.5 rounded-full text-xs">
+                        <span className="ml-1 sm:ml-1.5 bg-orange-100 text-orange-700 py-0.5 px-1 sm:px-1.5 rounded-full text-[10px] sm:text-xs">
                           {approvalCount}
                         </span>
                       )}
@@ -1989,7 +2028,7 @@ const Job: React.FC<JobProps> = ({
 
                   <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1999,7 +2038,7 @@ const Job: React.FC<JobProps> = ({
 
                   <button
                     onClick={() => setActiveTab('work-schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -2008,6 +2047,7 @@ const Job: React.FC<JobProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
           </div>
         </Card>
 
@@ -2560,7 +2600,7 @@ const Job: React.FC<JobProps> = ({
                                   )}
                                 </Button>
                                 <Button
-                                  onClick={() => {
+                                  onClick={(e) => {
                                     const reportJob = rData.job;
                                     const techList: any[] = [];
                                     if (reportJob?.primary_technician) {
@@ -2582,7 +2622,20 @@ const Job: React.FC<JobProps> = ({
                                       assessment_id: reportJob?.assessment_id,
                                       contract_id: reportJob?.contract_id,
                                     } as unknown as FieldJob;
-                                    handleWriteReport(targetJob);
+
+                                    const jId = targetJob.id;
+                                    if (openDropdownId === jId) {
+                                      setOpenDropdownId(null);
+                                      setSelectedJob(null);
+                                    } else {
+                                      const buttonRect = e.currentTarget.getBoundingClientRect();
+                                      setSelectedJob(targetJob as any);
+                                      setOpenDropdownId(jId);
+                                      setIsReportTabDropdown(true);
+                                      const threshold = 220;
+                                      const isBottom = buttonRect.bottom > window.innerHeight - threshold;
+                                      setDropdownPosition({ top: buttonRect.bottom, left: buttonRect.right, isBottom });
+                                    }
                                   }}
                                   variant="ghost"
                                   className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
@@ -2850,6 +2903,7 @@ const Job: React.FC<JobProps> = ({
         onClose={() => {
           setIsReportModalOpen(false);
           setJobForReport(null);
+          setReportReadOnly(false);
         }}
         job={jobForReport}
         finalStatus={reportFinalStatus}
@@ -2858,6 +2912,7 @@ const Job: React.FC<JobProps> = ({
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}
+        readOnly={reportReadOnly}
       />
 
       <DailyClosureCloseModal

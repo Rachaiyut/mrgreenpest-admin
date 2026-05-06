@@ -2,7 +2,8 @@ import { isFieldRole } from '@/src/utils/role';
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { formatThaiDate, formatThaiDateTime } from '../../utils/date';
@@ -1400,21 +1401,21 @@ const Reports: React.FC<ReportsProps> = () => {
             <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => { setEndDate(date ? date.toISOString().substring(0, 10) : ''); setCurrentPage(1); }} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
           </div>
           <div className="w-full sm:w-56">
-            <Select
+            <DropdownSelect
               value={warehouseFilter}
-              onChange={(e) => {
-                setWarehouseFilter(e.target.value);
+              onChange={(val) => {
+                setWarehouseFilter(val);
                 setCurrentPage(1);
               }}
-              title="กรองคลัง"
-            >
-              <option value="">ทุกคลัง</option>
-              {warehouses.map((wh) => (
-                <option key={wh.id} value={wh.id}>
-                  {wh.name}
-                </option>
-              ))}
-            </Select>
+              placeholder="กรองคลัง"
+              options={[
+                { value: '', label: 'ทุกคลัง' },
+                ...warehouses.map((wh) => ({
+                  value: wh.id,
+                  label: wh.name,
+                })),
+              ]}
+            />
           </div>
           <Button
             onClick={exportCsv}

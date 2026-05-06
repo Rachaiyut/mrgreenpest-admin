@@ -12,7 +12,8 @@ import {
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { UnitModal } from '../../components/features/units/UnitModal';
-import { Input, Button, Select } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 
 const Units: React.FC = () => {
   const [units, setUnits] = useState<IUnit[]>([]);
@@ -156,18 +157,20 @@ const Units: React.FC = () => {
               </svg>
             </div>
             <div className="w-full sm:w-44 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onChange={(val) => {
+                  setStatusFilter(val);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">สถานะทั้งหมด</option>
-                <option value="true">ใช้งาน</option>
-                <option value="false">ไม่ใช้งาน</option>
-              </Select>
+                placeholder="สถานะทั้งหมด"
+                options={[
+                  { value: '', label: 'สถานะทั้งหมด' },
+                  { value: 'true', label: 'ใช้งาน' },
+                  { value: 'false', label: 'ไม่ใช้งาน' },
+                ]}
+              />
             </div>
           </div>
         </Card>

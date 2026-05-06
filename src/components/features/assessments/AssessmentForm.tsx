@@ -938,27 +938,23 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       </div>
 
       {/* FOOTER: BUTTONS */}
-      <div className="mt-8 pt-4 border-t border-slate-200 flex justify-between items-center w-full px-2">
-        <div className="text-slate-500 font-medium">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
-        <div className="flex items-center gap-3">
+      <div className="mt-8 pt-4 border-t border-slate-200 flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 w-full px-2">
+        <div className="text-slate-500 font-medium text-sm sm:text-base text-center sm:text-left whitespace-nowrap">ขั้นตอนที่ {currentStep + 1} จาก {STEPS.length}</div>
+        <div className="flex items-center justify-end gap-2 sm:gap-3">
           {currentStep > 0 && (
-            <Button type="button" onClick={handleBack} variant="outline" className="px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-2 text-base font-bold rounded-lg" disabled={isSubmitting}>
+            <Button type="button" onClick={handleBack} variant="outline" className="px-4 sm:px-6 !h-10 border-slate-300 text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 sm:gap-2 text-sm sm:text-base font-bold rounded-lg" disabled={isSubmitting}>
               <ArrowLeftIcon className="w-4 h-4" />ย้อนกลับ
             </Button>
           )}
 
           {currentStep < STEPS.length - 1 ? (
-            <Button type="button" onClick={handleNext} variant="primary" className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl" disabled={isSubmitting}>
+            <Button type="button" onClick={handleNext} variant="primary" className="px-6 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-base sm:text-lg font-bold rounded-xl" disabled={isSubmitting}>
               ถัดไป<ArrowRightIcon className="w-4 h-4 stroke-[2] mt-0.5" />
             </Button>
           ) : (
             <Button
               type="button"
               onClick={(e) => {
-                // 🌟 แก้ไข: 
-                // 1. ถ้าสร้างใหม่ (!isEdit) -> ให้ส่งเป็น DRAFT
-                // 2. ถ้าแก้ไขและสถานะเป็น DRAFT อยู่ -> ให้ดันเป็น PENDING (ส่งประเมิน)
-                // 3. สถานะอื่นๆ ให้คงเดิม
                 const targetStatus = !isEdit
                   ? AsessmentStatus.DRAFT
                   : (formData.status === AsessmentStatus.DRAFT
@@ -968,7 +964,7 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 handleSubmitData(e, targetStatus);
               }}
               variant="primary"
-              className="px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-2 shadow-md text-lg font-bold rounded-xl"
+              className="px-4 sm:px-8 !h-10 bg-green-600 hover:bg-green-700 text-white border-transparent flex items-center justify-center gap-1.5 sm:gap-2 shadow-md text-sm sm:text-lg font-bold rounded-xl"
               disabled={isSubmitting}
             >
               {getSubmitButtonText()}<CheckCircleIcon className="w-4 h-4 stroke-[2] mt-0.5" />

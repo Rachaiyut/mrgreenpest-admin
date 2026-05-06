@@ -16,7 +16,8 @@ import {
 
 // ===== Components =====
 import { Card } from '../../../components/common/Card';
-import { Input, Button, Select } from '../../../components/common/FormControls';
+import { Input, Button } from '../../../components/common/FormControls';
+import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
@@ -535,20 +536,21 @@ const GoodsReceive: React.FC<GoodsReceiveProps> = ({
                 placeholder="ผู้จัดจำหน่ายทั้งหมด"
               />
             </div>
-            <Select
+            <DropdownSelect
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onChange={(val) => {
+                setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-fit text-sm !pr-8"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="DRAFT">ฉบับร่าง</option>
-              <option value="PENDING">รออนุมัติ</option>
-              <option value="RECEIVED">อนุมัติแล้ว</option>
-              <option value="CANCELLED">ยกเลิก</option>
-            </Select>
+              className="w-full sm:w-fit text-sm"
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'DRAFT', label: 'ฉบับร่าง' },
+                { value: 'PENDING', label: 'รออนุมัติ' },
+                { value: 'RECEIVED', label: 'อนุมัติแล้ว' },
+                { value: 'CANCELLED', label: 'ยกเลิก' },
+              ]}
+            />
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}

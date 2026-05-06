@@ -17,7 +17,8 @@ import {
 } from '../../assets/icons/Icons';
 import { Pagination } from '../../components/common/Pagination';
 import { Receipt, ReceiptStatus } from '../../types';
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { Modal } from '../../components/common/Modal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useData } from '../../contexts/DataContext';
@@ -270,58 +271,58 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
 
   return (
     <div className="flex-1 flex flex-col">
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
-      <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 flex flex-col flex-1">
+      <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">
+          <h1 className="text-xl sm:text-3xl font-bold text-slate-800">
             ใบกำกับภาษี / ใบเสร็จรับเงิน
           </h1>
-          <p className="mt-1 text-slate-600">
+          <p className="mt-0.5 sm:mt-1 text-xs sm:text-base text-slate-600">
             จัดการใบกำกับภาษีและใบเสร็จรับเงิน
           </p>
         </div>
         <Button onClick={() => setIsAddReceiptModalOpen(true)}>
           <PlusIcon className="h-5 w-5" />
-          สร้างเอกสาร
+          สร้างใบกำกับภาษี / ใบเสร็จรับเงิน
         </Button>
       </div>
 
       {/* Receipt Stats Cards */}
-      <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500 rounded-lg">
-              <DocumentTextIcon className="h-5 w-5 text-white" />
+      <div className="flex-shrink-0 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+        <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+              <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-              <p className="text-2xl font-bold text-blue-800">
+              <p className="text-xs sm:text-sm text-blue-600 font-medium">ทั้งหมด</p>
+              <p className="text-lg sm:text-2xl font-bold text-blue-800">
                 {receiptStats.total}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-500 rounded-lg">
-              <CheckCircleIcon className="h-5 w-5 text-white" />
+        <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+              <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm text-green-600 font-medium">วันนี้</p>
-              <p className="text-2xl font-bold text-green-800">
+              <p className="text-xs sm:text-sm text-green-600 font-medium">วันนี้</p>
+              <p className="text-lg sm:text-2xl font-bold text-green-800">
                 {receiptStats.todayCount}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500 rounded-lg">
-              <CurrencyDollarIcon className="h-5 w-5 text-white" />
+        <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-emerald-500 rounded-lg">
+              <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm text-emerald-600 font-medium">รับวันนี้</p>
-              <p className="text-lg font-bold text-emerald-800">
+              <p className="text-xs sm:text-sm text-emerald-600 font-medium">รับวันนี้</p>
+              <p className="text-base sm:text-lg font-bold text-emerald-800">
                 {receiptStats.todayAmount.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
                 })}{' '}บาท
@@ -329,14 +330,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             </div>
           </div>
         </Card>
-        <Card className="!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500 rounded-lg">
-              <CurrencyDollarIcon className="h-5 w-5 text-white" />
+        <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 bg-purple-500 rounded-lg">
+              <CurrencyDollarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
-              <p className="text-sm text-purple-600 font-medium">รับทั้งหมด</p>
-              <p className="text-lg font-bold text-purple-800">
+              <p className="text-xs sm:text-sm text-purple-600 font-medium">รับทั้งหมด</p>
+              <p className="text-base sm:text-lg font-bold text-purple-800">
                 {receiptStats.totalAmount.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
                 })}{' '}บาท
@@ -347,12 +348,12 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
       </div>
 
       {/* Toolbar */}
-      <Card className="!p-4 flex-shrink-0">
+      <Card className="!p-3 sm:!p-4 flex-shrink-0">
         <div className="flex flex-col sm:flex-row gap-3 items-center">
-          <div className="relative w-full sm:w-80 flex-shrink-0">
+          <div className="relative w-full sm:w-[480px] flex-shrink-0">
             <Input
               type="search"
-              placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+              placeholder="ค้นหาเลขที่ใบกำกับภาษี / ใบเสร็จรับเงิน, อ้างอิงใบแจ้งหนี้, ชื่อลูกค้า"
               value={receiptSearchQuery}
               onChange={(e) => {
                 setReceiptSearchQuery(e.target.value);
@@ -374,31 +375,34 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               />
             </svg>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
-            <span className="text-slate-400">-</span>
-            <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <DatePicker selected={receiptStartDate ? new Date(receiptStartDate) : null} onChange={(date: Date | null) => setReceiptStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+              <span className="text-slate-400">-</span>
+              <DatePicker selected={receiptEndDate ? new Date(receiptEndDate) : null} onChange={(date: Date | null) => setReceiptEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
+            </div>
+            <div className="w-full sm:w-56">
+              <DropdownSelect
+                value={receiptPaymentMethodFilter}
+                onChange={(val) => {
+                  setReceiptPaymentMethodFilter(
+                    val as 'ทั้งหมด' | string
+                  );
+                  setReceiptPage(1);
+                }}
+                className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
+                options={[
+                  { value: 'ทั้งหมด', label: 'วิธีชำระเงินทั้งหมด' },
+                  { value: 'TRANSFER', label: 'โอนเงิน' },
+                  { value: 'CASH', label: 'เงินสด' },
+                  { value: 'CHEQUE', label: 'เช็ค' },
+                  { value: 'CREDIT_CARD', label: 'บัตรเครดิต' },
+                  { value: 'QR_PAYMENT', label: 'QR Payment' },
+                  { value: 'INSTALLMENT', label: 'ผ่อนชำระ' },
+                  { value: 'DIVIDED', label: 'แบ่งชำระ' },
+                ]}
+              />
+            </div>
           </div>
-          <div className="w-full sm:w-48">
-            <Select
-              value={receiptPaymentMethodFilter}
-              onChange={(e) => {
-                setReceiptPaymentMethodFilter(
-                  e.target.value as 'ทั้งหมด' | string
-                );
-                setReceiptPage(1);
-              }}
-              className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-            >
-              <option value="ทั้งหมด">ทั้งหมด</option>
-              {receiptPaymentMethods.map((m) => (
-                <option key={m} value={m}>
-                  {getPaymentMethodLabel(m)}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
       </Card>
 
       {/* Table */}
@@ -411,16 +415,19 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                   ลำดับ
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  เลขที่เอกสาร
+                  เลขที่ใบกำกับภาษี / ใบเสร็จรับเงิน
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   อ้างอิงใบแจ้งหนี้
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  ลูกค้า
+                  ชื่อลูกค้า
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
-                  เบอร์โทร
+                  เบอร์โทรศัพท์
+                </th>
+                <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
+                  ประเภทลูกค้า
                 </th>
                 <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider whitespace-nowrap">
                   วันที่ชำระ
@@ -439,7 +446,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
             <tbody className="bg-white divide-y divide-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="p-0 border-b-0 h-0">
+                  <td colSpan={10} className="p-0 border-b-0 h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                       <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                       <p className="text-base font-medium">กำลังโหลดข้อมูลใบเสร็จรับเงิน...</p>
@@ -448,7 +455,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 </tr>
               ) : paginatedReceipts.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-0 border-b-0 text-center h-0">
+                  <td colSpan={10} className="p-0 border-b-0 text-center h-0">
                     <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                       <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                       <p className="text-lg font-medium">ไม่พบข้อมูลใบเสร็จรับเงิน</p>
@@ -484,6 +491,9 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatPhoneNumber(customer?.primary_phone || '-')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-700">
+                        {customer?.type === 'CORPORATE' ? 'นิติบุคคล' : customer?.type === 'INDIVIDUAL' ? 'บุคคลธรรมดา' : '-'}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {formatThaiDate(r.received_at || r.paid_at)}
@@ -708,10 +718,10 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       ใบแจ้งหนี้ที่อ้างอิง (Reference Invoice)
                     </label>
-                    <Select
+                    <DropdownSelect
                       value={receiptFormInvoiceId}
-                      onChange={(e) => {
-                        const id = e.target.value;
+                      onChange={(val) => {
+                        const id = val;
                         setReceiptFormInvoiceId(id);
                         const inv = (invoices || []).find((x) => x.id === id);
                         if (inv) {
@@ -721,28 +731,27 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                         }
                       }}
                       className="w-full"
-                    >
-                      <option value="">-- เลือกใบแจ้งหนี้ (ถ้ามี) --</option>
-                      {(invoices || []).map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.code || i.id} — {i.customer_name} (
-                          {(i.total || 0).toLocaleString()} บาท)
-                        </option>
-                      ))}
-                    </Select>
+                      options={[
+                        { value: '', label: '-- เลือกใบแจ้งหนี้ (ถ้ามี) --' },
+                        ...(invoices || []).map((i) => ({
+                          value: i.id,
+                          label: `${i.code || i.id} — ${i.customer_name} (${(i.total || 0).toLocaleString()} บาท)`,
+                        })),
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       ลูกค้า (Customer) <span className="text-red-500">*</span>
                     </label>
-                    <Select
+                    <DropdownSelect
                       value={receiptFormCustomerId}
-                      onChange={(e) => {
+                      onChange={(val) => {
                         const cust = customers?.find(
-                          (c) => c.id === e.target.value
+                          (c) => c.id === val
                         );
-                        setReceiptFormCustomerId(e.target.value);
+                        setReceiptFormCustomerId(val);
                         if (cust) {
                           setReceiptFormCustomerName(
                             `${cust.first_name} ${cust.last_name}`
@@ -751,14 +760,14 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       }}
                       className="w-full"
                       disabled={!!receiptFormInvoiceId}
-                    >
-                      <option value="">-- เลือกลูกค้า --</option>
-                      {(customers || []).map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.code} - {c.first_name} {c.last_name}
-                        </option>
-                      ))}
-                    </Select>
+                      options={[
+                        { value: '', label: '-- เลือกลูกค้า --' },
+                        ...(customers || []).map((c) => ({
+                          value: c.id,
+                          label: `${c.code} - ${c.first_name} ${c.last_name}`,
+                        })),
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
@@ -779,19 +788,20 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                       <label className="block text-sm font-medium text-slate-700 mb-1">
                         วิธีชำระเงิน
                       </label>
-                      <Select
+                      <DropdownSelect
                         value={receiptFormPaymentMethod}
-                        onChange={(e) =>
-                          setReceiptFormPaymentMethod(e.target.value)
+                        onChange={(val) =>
+                          setReceiptFormPaymentMethod(val)
                         }
                         className="w-full"
-                      >
-                        <option value="TRANSFER">โอนเงิน</option>
-                        <option value="CASH">เงินสด</option>
-                        <option value="CHEQUE">เช็ค</option>
-                        <option value="CREDIT_CARD">บัตรเครดิต</option>
-                        <option value="QR_PAYMENT">QR Payment</option>
-                      </Select>
+                        options={[
+                          { value: 'TRANSFER', label: 'โอนเงิน' },
+                          { value: 'CASH', label: 'เงินสด' },
+                          { value: 'CHEQUE', label: 'เช็ค' },
+                          { value: 'CREDIT_CARD', label: 'บัตรเครดิต' },
+                          { value: 'QR_PAYMENT', label: 'QR Payment' },
+                        ]}
+                      />
                     </div>
                   </div>
 
@@ -952,19 +962,17 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 สถานะ
               </label>
-              <Select
+              <DropdownSelect
                 value={targetStatus}
-                onChange={(e) =>
-                  setTargetStatus(e.target.value as ReceiptStatus)
+                onChange={(val) =>
+                  setTargetStatus(val as ReceiptStatus)
                 }
                 className="w-full"
-              >
-                {Object.values(ReceiptStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </Select>
+                options={Object.values(ReceiptStatus).map((status) => ({
+                  value: status,
+                  label: statusLabels[status],
+                }))}
+              />
             </div>
           </div>
         }

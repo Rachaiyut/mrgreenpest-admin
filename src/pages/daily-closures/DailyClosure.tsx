@@ -13,10 +13,12 @@ import {
   TruckIcon,
   DocumentCheckIcon,
   ClockIcon,
+  CalendarDaysIcon,
 } from '../../assets/icons/Icons';
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
-import { Input, Select } from '../../components/common/FormControls';
+import { Input } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { DailyClosureDetailsModal } from '../../components/features/daily-closures/DailyClosureDetailsModal';
 import BuddhistDatePicker from '@/src/components/common/BuddhistDatePicker';
 import { formatThaiDate } from '@/src/utils/date';
@@ -282,47 +284,57 @@ const DailyClosure: React.FC = () => {
         })()}
 
         {/* Search & Filter Bar */}
-        <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-sm">
-              <Input
-                type="search"
-                placeholder="ค้นหารถ, ชื่อช่าง..."
-                value={searchQuery || ''}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value || undefined);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+        <Card className="!p-3 sm:!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center">
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto flex-1 items-center">
+              <div className="relative w-full sm:w-80 sm:shrink-0">
+                <Input
+                  type="search"
+                  placeholder="ค้นหารถ, ชื่อช่าง..."
+                  value={searchQuery || ''}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value || undefined);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none relative">
+                <BuddhistDatePicker
+                  selected={filterDate}
+                  onChange={(date: Date | null) => {
+                    setFilterDate(date);
+                    setCurrentPage(1);
+                  }}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText="เลือกวันที่"
+                  isClearable
+                  className="w-full pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                  wrapperClassName="w-full"
+                />
+                <CalendarDaysIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+              </div>
+              <div className="flex-1 min-w-[120px] sm:w-40 sm:flex-none">
+                <DropdownSelect
+                  value={filterStatus}
+                  onChange={(val) => {
+                    setFilterStatus(val as JobStatusFilter);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="สถานะทั้งหมด"
+                  options={[
+                    { value: '', label: 'สถานะทั้งหมด' },
+                    ...Object.entries(JobStatusLabel).map(([key, label]) => ({
+                      value: key,
+                      label: label,
+                    })),
+                  ]}
+                />
+              </div>
             </div>
-            <BuddhistDatePicker
-              selected={filterDate}
-              onChange={(date: Date | null) => {
-                setFilterDate(date);
-                setCurrentPage(1);
-              }}
-              dateFormat="dd/MM/yyyy"
-              placeholderText="เลือกวันที่"
-              isClearable
-              className="w-36 rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-primary focus:ring-1 focus:ring-primary h-10"
-            />
-            <Select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value as JobStatusFilter);
-                setCurrentPage(1);
-              }}
-              className="w-auto"
-            >
-              <option value="">สถานะทั้งหมด</option>
-              {Object.entries(JobStatusLabel).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </Select>
           </div>
         </Card>
 

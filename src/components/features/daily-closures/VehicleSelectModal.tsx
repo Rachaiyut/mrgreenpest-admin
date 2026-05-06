@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal } from '../../common/Modal';
-import { Button, Select } from '../../common/FormControls';
+import { Button } from '../../common/FormControls';
 import { TruckIcon } from '../../../assets/icons/Icons';
 
 interface VehicleOption {

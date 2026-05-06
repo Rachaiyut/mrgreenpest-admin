@@ -32,7 +32,8 @@ import { WithdrawalModal } from '../../../components/features/inventory/withdraw
 import { WithdrawalDetailsModal } from '../../../components/features/inventory/withdrawal/WithdrawalDetailsModal';
 
 import { Card } from '../../../components/common/Card';
-import { Input, Button, Select } from '../../../components/common/FormControls';
+import { Input, Button } from '../../../components/common/FormControls';
+import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
@@ -874,23 +875,24 @@ const Issue: FC = () => {
               </div>
             )}
 
-            <Select
+            <DropdownSelect
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onChange={(val) => {
+                setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              className="w-fit text-sm !pr-8"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="DRAFT">ฉบับร่าง</option>
-              <option value="PENDING">รออนุมัติ</option>
-              <option value="APPROVED">อนุมัติแล้ว</option>
-              <option value="PARTIALLY_APPROVED">อนุมัติบางส่วน</option>
-              <option value="REJECTED">ไม่อนุมัติ</option>
-              <option value="COMPLETED">เสร็จสิ้น</option>
-              <option value="CANCELLED">ยกเลิก</option>
-            </Select>
+              className="w-fit text-sm"
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'DRAFT', label: 'ฉบับร่าง' },
+                { value: 'PENDING', label: 'รออนุมัติ' },
+                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                { value: 'PARTIALLY_APPROVED', label: 'อนุมัติบางส่วน' },
+                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                { value: 'COMPLETED', label: 'เสร็จสิ้น' },
+                { value: 'CANCELLED', label: 'ยกเลิก' },
+              ]}
+            />
 
             <div className="flex items-center gap-2">
               <DatePicker

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, FC, ChangeEvent } from 'react';
 import { BUILDING_TYPE_LABELS } from '@/src/constants';
-import { FormField, Input, Select } from '../../common/FormControls';
+import { FormField, Input } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import {
   PlusIcon,
@@ -600,19 +601,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   label="ประเภทสิ่งปลูกสร้าง"
                   htmlFor={`buildingType-${index}`}
                 >
-                  <Select
-                    name="building_type"
+                  <DropdownSelect
                     value={area.building_type || ''}
-                    onChange={handleFieldChange}
-                    className={errors?.[`area_${index}_building_type`] ? 'border-red-500 bg-red-50/50' : ''}
-                    required
+                    onChange={(val) => onAreaChange(index, { ...area, building_type: val || undefined })}
+                    placeholder="เลือกประเภท"
+                    options={Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => ({ value: key, label: label as string }))}
+                    error={!!errors?.[`area_${index}_building_type`]}
                     disabled={readOnly}
-                  >
-                    <option value="">เลือกประเภท</option>
-                    {Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </Select>
+                  />
                   {errors?.[`area_${index}_building_type`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_building_type`]}</p>
                   )}
@@ -635,21 +631,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   label="ระบบใช้บริการ"
                   htmlFor={`serviceSystem-${index}`}
                 >
-                  <Select
-                    name="service_system"
+                  <DropdownSelect
                     value={area.service_system || ''}
-                    onChange={handleFieldChange}
-                    className={errors?.[`area_${index}_service_system`] ? 'border-red-500 bg-red-50/50' : ''}
-                    required
+                    onChange={(val) => onAreaChange(index, { ...area, service_system: val || undefined })}
+                    placeholder="เลือกระบบ"
+                    options={Object.values(ServiceSystem).map((type) => ({ value: type, label: serviceLabels[type] }))}
+                    error={!!errors?.[`area_${index}_service_system`]}
                     disabled={readOnly}
-                  >
-                    <option value="">เลือกระบบ</option>
-                    {Object.values(ServiceSystem).map((type) => (
-                      <option key={type} value={type}>
-                        {serviceLabels[type]}
-                      </option>
-                    ))}
-                  </Select>
+                  />
                   {errors?.[`area_${index}_service_system`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_service_system`]}</p>
                   )}
@@ -671,19 +660,19 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
               <div className="bg-white p-3 rounded-lg border border-slate-200">
                 <FormField label="ประเภทบริการ *">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
                     {categories.map((cat) => {
                       const isOther = cat.name === 'อื่นๆ';
                       const isChecked = (area.category_services || []).some(
                         (s) => s.category_id === cat.id
                       );
                       return (
-                        <div key={cat.id} className={isOther ? 'col-span-2 md:col-span-2' : ''}>
+                        <div key={cat.id}>
                           <div className="flex items-center gap-2">
-                            <label className={`flex items-center space-x-2 shrink-0 ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+                            <label className={`flex items-center space-x-2 ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               <input
                                 type="checkbox"
-                                className={`h-4 w-4 rounded ${readOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed' : `border-gray-300 text-primary focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}`}
+                                className={`h-4 w-4 rounded border-gray-300 text-primary ${readOnly ? 'cursor-not-allowed' : `focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}`}
                                 checked={isChecked}
                                 onChange={() => handleServiceTypeChange(cat.id)}
                                 disabled={readOnly}
@@ -720,32 +709,32 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </label>
                 <div className="flex space-x-4 mb-4">
                   <label
-                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${measurementType === 'sqm' ? (readOnly ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'bg-primary/5 border-primary ring-1 ring-primary') : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
+                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${measurementType === 'sqm' ? 'bg-primary/5 border-primary ring-1 ring-primary' : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
                   >
                     <input
                       type="radio"
                       name={`measurementType-${index}`}
                       checked={measurementType === 'sqm'}
                       onChange={() => handleMeasurementTypeChange('sqm')}
-                      className={`h-4 w-4 ${readOnly ? 'text-slate-400 border-slate-200 cursor-not-allowed' : 'text-primary focus:ring-primary'}`}
+                      className={`h-4 w-4 text-primary ${readOnly ? 'cursor-not-allowed' : 'focus:ring-primary'}`}
                       disabled={readOnly}
                     />
-                    <span className={`ml-2 text-sm font-medium ${readOnly ? 'text-slate-400' : 'text-slate-700'}`}>
+                    <span className="ml-2 text-sm font-medium text-slate-700">
                       พื้นที่ (ตร.ม.)
                     </span>
                   </label>
                   <label
-                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${measurementType === 'meter' ? (readOnly ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'bg-primary/5 border-primary ring-1 ring-primary') : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
+                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${measurementType === 'meter' ? 'bg-primary/5 border-primary ring-1 ring-primary' : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
                   >
                     <input
                       type="radio"
                       name={`measurementType-${index}`}
                       checked={measurementType === 'meter'}
                       onChange={() => handleMeasurementTypeChange('meter')}
-                      className={`h-4 w-4 ${readOnly ? 'text-slate-400 border-slate-200 cursor-not-allowed' : 'text-primary focus:ring-primary'}`}
+                      className={`h-4 w-4 text-primary ${readOnly ? 'cursor-not-allowed' : 'focus:ring-primary'}`}
                       disabled={readOnly}
                     />
-                    <span className={`ml-2 text-sm font-medium ${readOnly ? 'text-slate-400' : 'text-slate-700'}`}>
+                    <span className="ml-2 text-sm font-medium text-slate-700">
                       พื้นที่ (เมตร)
                     </span>
                   </label>
@@ -783,8 +772,8 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                           {sortedConditions.map((condition, idx) => (
                             <label
                               key={condition.id || idx}
-                              className={`relative block p-3 border rounded-lg ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${selectedCondition?.id === condition.id
-                                  ? (readOnly ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-primary ring-2 ring-primary bg-primary/5')
+                              className={`relative block p-3 border rounded-lg ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${selectedCondition?.id === condition.id
+                                  ? 'border-primary ring-2 ring-primary bg-primary/5'
                                   : (readOnly ? 'bg-slate-50' : 'bg-white hover:border-slate-400')
                                 }`}
                             >
@@ -832,12 +821,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder={`ระบุขนาดพื้นที่ (${selectedUnitName})`}
+                        placeholder="ระบุขนาดพื้นที่"
+                        className="pr-20"
                         required
                         disabled={readOnly}
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">{selectedUnitName}</span>
+                        <span className="text-gray-500 text-xs sm:text-sm">{selectedUnitName}</span>
                       </div>
                     </div>
 
@@ -899,12 +889,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="ระบุขนาดพื้นที่ (เมตร)"
+                        placeholder="ระบุขนาดพื้นที่"
+                        className="pr-16"
                         required
                         disabled={readOnly}
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">เมตร</span>
+                        <span className="text-gray-500 text-xs sm:text-sm">เมตร</span>
                       </div>
                     </div>
                   </div>

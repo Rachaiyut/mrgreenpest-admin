@@ -108,6 +108,7 @@ const WorkAreasSection: FC<WorkAreasSectionProps> = ({
             availablePackages={packages}
             onSelectPackage={onSelectPackage ? (pkgId) => onSelectPackage(pkgId, originalIndex) : () => {}}
             isEditing={isEditing}
+            readOnly={isReadOnly}
           />
         ))}
 

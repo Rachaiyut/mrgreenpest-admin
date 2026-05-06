@@ -1,7 +1,7 @@
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Modal } from '../../common/Modal';
-import { Select } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Pagination } from '../../common/Pagination';
 import { AccountApi } from '../../../api/account';
 import {
@@ -154,20 +154,21 @@ export const AccountTransactionHistoryModal: FC<Props> = ({ isOpen, account, onC
 
       {/* Filter bar */}
       <div className="flex items-center gap-3 mb-3">
-        <Select
+        <DropdownSelect
           value={typeFilter}
-          onChange={(e) => {
-            setTypeFilter(e.target.value as typeof typeFilter);
+          onChange={(v) => {
+            setTypeFilter(v as typeof typeFilter);
             setPage(1);
           }}
-          className="w-fit text-sm !pr-8"
-        >
-          <option value="all">ทุกประเภทรายการ</option>
-          <option value="DEPOSIT">เงินเข้า</option>
-          <option value="WITHDRAW">เงินออก</option>
-          <option value="TRANSFER">โอน</option>
-          <option value="ADJUSTMENT">ปรับปรุงยอด</option>
-        </Select>
+          className="w-fit text-sm"
+          options={[
+            { value: 'all', label: 'ทุกประเภทรายการ' },
+            { value: 'DEPOSIT', label: 'เงินเข้า' },
+            { value: 'WITHDRAW', label: 'เงินออก' },
+            { value: 'TRANSFER', label: 'โอน' },
+            { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด' },
+          ]}
+        />
         <span className="text-sm text-slate-500">ทั้งหมด {total.toLocaleString('th-TH')} รายการ</span>
       </div>
 

@@ -12,7 +12,8 @@ import {
   TrashIcon,
   XCircleIcon,
 } from '../../../assets/icons/Icons';
-import { Button, Select } from '../../../components/common/FormControls';
+import { Button } from '../../../components/common/FormControls';
+import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { formatThaiDate } from '../../../utils/date';
 import { AdjustmentModal } from '../../../components/features/inventory/adjustment/AdjustmentModal';
 import { StockAdjustment as StockAdjustmentType } from '@/src/types/entity/app.interface';
@@ -369,21 +370,22 @@ const StockAdjustment: React.FC = () => {
                 placeholder="คลังทั้งหมด"
               />
             </div>
-            <Select
+            <DropdownSelect
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onChange={(val) => {
+                setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-fit text-sm !pr-8"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="DRAFT">ฉบับร่าง</option>
-              <option value="PENDING">รออนุมัติ</option>
-              <option value="APPROVED">อนุมัติแล้ว</option>
-              <option value="REJECTED">ไม่อนุมัติ</option>
-              <option value="CANCELLED">ยกเลิก</option>
-            </Select>
+              className="w-full sm:w-fit text-sm"
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'DRAFT', label: 'ฉบับร่าง' },
+                { value: 'PENDING', label: 'รออนุมัติ' },
+                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                { value: 'CANCELLED', label: 'ยกเลิก' },
+              ]}
+            />
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}

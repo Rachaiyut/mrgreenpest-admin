@@ -5,9 +5,9 @@ import {
   FormField,
   Input,
   Textarea,
-  Select,
   Button,
 } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 
 import { Category, CategoryType } from '@/src/types';
 
@@ -25,20 +25,23 @@ const EditCategoryModal: React.FC<EditProductModalProps> = ({
   onUpdateCategory,
 }) => {
   const [formData, setFormData] = useState<Partial<Category>>({});
+  const [typeValue, setTypeValue] = useState('');
 
   useEffect(() => {
     if (category) {
       setFormData(category);
+      setTypeValue(category.type || '');
     }
   }, [category]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (category) {
-      onUpdateCategory(category.id, { ...formData } as Category);
+      onUpdateCategory(category.id, { ...formData, type: typeValue as CategoryType } as Category);
     }
     onClose();
     setFormData({});
+    setTypeValue('');
   };
 
   if (!category) return null;
@@ -97,18 +100,16 @@ const EditCategoryModal: React.FC<EditProductModalProps> = ({
             />
           </FormField>
           <FormField label="ประเภทหมวดหมู่" htmlFor="type">
-            <Select
-              name="type"
-              id="type"
-              defaultValue={category.type}
+            <DropdownSelect
+              value={typeValue}
+              onChange={(v) => setTypeValue(v)}
+              placeholder="-- เลือกประเภท --"
+              options={[
+                { value: CategoryType.PRODUCT, label: 'สินค้า' },
+                { value: CategoryType.SERVICE, label: 'บริการ' },
+              ]}
               disabled={!!((category as unknown as Record<string, number>).product_count > 0)}
-            >
-              <option value="" disabled>
-                -- เลือกประเภท --
-              </option>
-              <option value={CategoryType.PRODUCT}>สินค้า</option>
-              <option value={CategoryType.SERVICE}>บริการ</option>
-            </Select>
+            />
           </FormField>
         </div>
         <FormField label="รายละเอียด" htmlFor="description">

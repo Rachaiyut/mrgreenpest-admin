@@ -19,7 +19,8 @@ import { AssessmentAction } from '@/src/types/entity/assessment.interface';
 
 // Component
 import AssessmentCard from './AssessmentCard';
-import { Button, Input, Select } from '@/src/components/common/FormControls';
+import { Button, Input } from '@/src/components/common/FormControls';
+import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import {
   PlusIcon,
   ViewColumnsIcon,
@@ -518,12 +519,12 @@ const Assessments: React.FC = () => {
         </div>
       )}
 
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 flex flex-col flex-1">
         {/* Header Section */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">ใบประเมิน</h1>
-            <p className="mt-1 text-slate-600">
+            <h1 className="text-xl sm:text-3xl font-bold text-slate-800">ใบประเมิน</h1>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-base text-slate-600">
               จัดการและติดตามใบประเมินทั้งหมด
             </p>
           </div>
@@ -541,56 +542,56 @@ const Assessments: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <DocumentTextIcon className="h-5 w-5 text-white" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+                <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-                <p className="text-2xl font-bold text-blue-800">
+                <p className="text-xs sm:text-sm text-blue-600 font-medium">ทั้งหมด</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-800">
                   {stats.total}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-500 rounded-lg">
-                <PencilIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-slate-500 rounded-lg">
+                <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 font-medium">แบบร่าง</p>
-                <p className="text-2xl font-bold text-slate-800">
+                <p className="text-xs sm:text-sm text-slate-600 font-medium">แบบร่าง</p>
+                <p className="text-lg sm:text-2xl font-bold text-slate-800">
                   {stats.draft}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500 rounded-lg">
-                <ClockIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-amber-500 rounded-lg">
+                <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-amber-600 font-medium">
+                <p className="text-xs sm:text-sm text-amber-600 font-medium">
                   รอดำเนินการ
                 </p>
-                <p className="text-2xl font-bold text-amber-800">
+                <p className="text-lg sm:text-2xl font-bold text-amber-800">
                   {stats.pending}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <CheckCircleIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-green-600 font-medium">เสร็จสิ้น</p>
-                <p className="text-2xl font-bold text-green-800">
+                <p className="text-xs sm:text-sm text-green-600 font-medium">เสร็จสิ้น</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-800">
                   {stats.completed}
                 </p>
               </div>
@@ -599,12 +600,12 @@ const Assessments: React.FC = () => {
         </div>
 
         {/* Toolbar */}
-        <Card className="!p-4">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 items-center">
-              
+        <Card className="!p-3 sm:!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto flex-1 items-center">
+
               {/* ช่องค้นหา */}
-              <div className="relative w-full sm:w-80 flex-shrink-0">
+              <div className="relative w-full sm:w-80 sm:shrink-0">
                 <Input
                   type="search"
                   placeholder="ค้นหารหัสใบประเมิน, ชื่อลูกค้า, รหัสลูกค้า"
@@ -631,7 +632,7 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* DatePicker กรองวันที่ */}
-              <div className="w-full sm:w-48 flex-shrink-0 relative">
+              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none relative">
                  <DatePicker
                     selected={filterDate ? new Date(filterDate) : null}
                     onChange={(date: Date | null) => {
@@ -657,21 +658,22 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* Dropdown สถานะ */}
-              <div className="w-full sm:w-40 flex-shrink-0">
-                <Select
+              <div className="flex-1 min-w-[120px] sm:w-40 sm:flex-none">
+                <DropdownSelect
                   value={filterStatus}
-                  onChange={(e) => {
-                    setFilterStatus(e.target.value);
+                  onChange={(val) => {
+                    setFilterStatus(val);
                     setCurrentPage(1);
                   }}
-                  className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-                >
-                  <option value="">สถานะทั้งหมด</option>
-                  <option value={AsessmentStatus.DRAFT}>แบบร่าง</option>
-                  <option value={AsessmentStatus.APPOINTMENT}>นัดหมายแล้ว</option>
-                  <option value={AsessmentStatus.PENDING}>รอดำเนินการ</option>
-                  <option value={AsessmentStatus.COMPLETE}>เสร็จสิ้น</option>
-                </Select>
+                  placeholder="สถานะทั้งหมด"
+                  options={[
+                    { value: '', label: 'สถานะทั้งหมด' },
+                    { value: AsessmentStatus.DRAFT, label: 'แบบร่าง' },
+                    { value: AsessmentStatus.APPOINTMENT, label: 'นัดหมายแล้ว' },
+                    { value: AsessmentStatus.PENDING, label: 'รอดำเนินการ' },
+                    { value: AsessmentStatus.COMPLETE, label: 'เสร็จสิ้น' },
+                  ]}
+                />
               </div>
             </div>
 

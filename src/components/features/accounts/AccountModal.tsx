@@ -1,7 +1,8 @@
 import { FC, FormEvent, useEffect, useState } from 'react';
 
 import { Modal } from '../../common/Modal';
-import { Input, Select, Button } from '../../common/FormControls';
+import { Input, Button } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Account, AccountType } from '../../../types/entity/account.interface';
 
 interface AccountModalProps {
@@ -115,12 +116,16 @@ export const AccountModal: FC<AccountModalProps> = ({
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">ประเภทบัญชี</label>
-          <Select value={form.account_type} onChange={(e) => setForm({ ...form, account_type: e.target.value as AccountType })}>
-            <option value="SAVINGS">ออมทรัพย์</option>
-            <option value="CURRENT">กระแสรายวัน</option>
-            <option value="FIXED">เงินฝากประจำ</option>
-            <option value="OTHER">อื่นๆ</option>
-          </Select>
+          <DropdownSelect
+            value={form.account_type}
+            onChange={(v) => setForm({ ...form, account_type: v as AccountType })}
+            options={[
+              { value: 'SAVINGS', label: 'ออมทรัพย์' },
+              { value: 'CURRENT', label: 'กระแสรายวัน' },
+              { value: 'FIXED', label: 'เงินฝากประจำ' },
+              { value: 'OTHER', label: 'อื่นๆ' },
+            ]}
+          />
         </div>
         <div className="md:col-span-1">
           <label className="block text-sm font-medium text-slate-700 mb-1">สกุลเงิน</label>
