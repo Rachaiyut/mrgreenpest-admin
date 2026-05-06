@@ -29,6 +29,9 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
   >(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+
+  const nameError = attemptedSubmit && !roleName.trim();
 
   // Fetch permissions when modal opens
   useEffect(() => {
@@ -38,6 +41,7 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
       setRoleType('');
       setDescription('');
       setSelectedPermissionIds(new Set());
+      setAttemptedSubmit(false);
     }
   }, [isOpen]);
 
@@ -67,6 +71,8 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setAttemptedSubmit(true);
+    if (!roleName.trim()) return;
     setIsSaving(true);
     try {
       // 1. Create Role
@@ -133,19 +139,19 @@ export const AddRoleModal: FC<AddRoleModalProps> = ({
             <Input
               id="role-name"
               type="text"
-              required
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="เช่น ผู้จัดการฝ่ายขาย"
+              className={nameError ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}
             />
+            {nameError && <p className="text-xs text-red-500 mt-1">กรุณากรอกชื่อบทบาท</p>}
           </div>
           <div>
             <label htmlFor="role-type" className="block text-sm font-medium text-slate-700 mb-1">
-              ประเภทบทบาท<span className="text-red-500">*</span>
+              ประเภทบทบาท
             </label>
             <select
               id="role-type"
-              required
               value={roleType}
               onChange={(e) => setRoleType(e.target.value)}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"

@@ -689,16 +689,15 @@ const ServiceDetailPage: FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ใบเสนอราคาที่ใช้</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-0 border-b-0 h-0">
+                    <td colSpan={5} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังโหลดข้อมูล...</p>
@@ -707,7 +706,7 @@ const ServiceDetailPage: FC = () => {
                   </tr>
                 ) : paginatedDetails.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-0 border-b-0 h-0">
+                    <td colSpan={5} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                         <DocumentTextIcon className="h-12 w-12 mb-3 opacity-50" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลรายละเอียดขั้นตอนบริการ</p>
@@ -722,20 +721,14 @@ const ServiceDetailPage: FC = () => {
                     <tr key={detail.id} className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                       <td className="px-4 py-3 text-sm text-slate-700">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td className="px-4 py-3 text-sm text-slate-800 font-medium text-center">{detail.name}</td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        {detail.quotations && detail.quotations.length > 0
-                          ? <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{detail.quotations.length} รายการ</span>
-                          : <span className="text-slate-400">-</span>
-                        }
-                      </td>
                       <td className="px-4 py-3 text-center text-sm text-slate-500">
                         {formatThaiDate(detail.created_at)}
                       </td>
                       <td className="px-4 py-3 text-center text-sm text-slate-500">
                         {detail.creator ? `${detail.creator.first_name} ${detail.creator.last_name}` : '-'}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             disabled={loadingPdfId === detail.id}
                             onClick={async () => {

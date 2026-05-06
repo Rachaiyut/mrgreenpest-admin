@@ -19,12 +19,12 @@ interface NotificationsProps {}
 const Notifications: React.FC<NotificationsProps> = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab: TabKey = searchParams.get('tab') === 'upcoming-visits' ? 'upcoming-visits' : 'contracts';
+  const initialTab: TabKey = searchParams.get('tab') === 'contracts' ? 'contracts' : 'upcoming-visits';
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
 
   useEffect(() => {
     const next = new URLSearchParams(searchParams);
-    if (activeTab === 'upcoming-visits') next.set('tab', 'upcoming-visits');
+    if (activeTab === 'contracts') next.set('tab', 'contracts');
     else next.delete('tab');
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -189,8 +189,8 @@ const Notifications: React.FC<NotificationsProps> = () => {
 
       <div className="flex border-b border-slate-200">
         {([
-          { key: 'contracts', label: 'สัญญา / การชำระเงิน' },
           { key: 'upcoming-visits', label: 'นัดหมายเข้าบริการ' },
+          { key: 'contracts', label: 'สัญญา / การชำระเงิน' },
         ] as { key: TabKey; label: string }[]).map((t) => (
           <button
             key={t.key}
