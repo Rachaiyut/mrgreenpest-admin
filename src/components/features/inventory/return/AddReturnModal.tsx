@@ -343,8 +343,8 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">
-                  <CalendarDaysIcon className="w-4 h-4 text-slate-400" />
+                <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer whitespace-nowrap">
+                  <CalendarDaysIcon className="w-4 h-4 text-slate-400 shrink-0" />
                   <span className="text-xs text-slate-500 font-medium">
                     วันที่คืน:
                   </span>

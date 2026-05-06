@@ -321,14 +321,14 @@ const Product: React.FC = () => {
               </select>
             </div>
             {selectedType === 'PRODUCT' && (
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 w-full sm:w-44 shrink-0">
                 <input
                   type="number"
                   placeholder="ราคาต่ำสุด"
                   value={minPrice}
                   onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
                   min="0"
-                  className="w-24 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="flex-1 min-w-0 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
                 />
                 <span className="text-slate-400 text-sm">-</span>
                 <input
@@ -337,7 +337,7 @@ const Product: React.FC = () => {
                   value={maxPrice}
                   onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
                   min="0"
-                  className="w-24 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="flex-1 min-w-0 h-10 rounded-lg border border-slate-300 bg-white px-2 text-sm text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             )}

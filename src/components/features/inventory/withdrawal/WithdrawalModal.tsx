@@ -23,7 +23,6 @@ import {
   UserIcon,
   TruckIcon,
   DocumentCheckIcon,
-  CalendarDaysIcon,
   BanknotesIcon,
 } from '../../../../assets/icons/Icons';
 import { ProductSelectionModal } from '../../products/ProductSelectionModal';
@@ -91,8 +90,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
   const [toWarehouseId, setToWarehouseId] = useState('');
   const [requesterId, setRequesterId] = useState('');
   const [recipientId, setRecipientId] = useState('');
-  const [withdrawalDate, setWithdrawalDate] = useState('');
-
   // UI state
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -299,9 +296,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
       setToWarehouseId(w.to_warehouse_id || '');
       setRequesterId(w.requester_id || wAny.requester?.id || '');
       setRecipientId(w.recipient_id || wAny.recipient?.id || '');
-      setWithdrawalDate(
-        w.created_at ? new Date(w.created_at).toISOString().substring(0, 10) : '',
-      );
 
       setGoodsItems(
         (w.items || []).map((item, idx) => ({
@@ -356,7 +350,6 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
       setToWarehouseId('');
       setRequesterId(loggedInUser.id);
       setRecipientId(enableExpense ? loggedInUser.id : '');
-      setWithdrawalDate(''); // user enters manually
       setErrors({});
       setIsSubmitting(false);
       setUserOptionsExtra([]);
@@ -553,11 +546,11 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         title={title}
         size="5xl"
         footer={
-          <div className="flex w-full justify-between items-center">
+          <div className="flex flex-col sm:flex-row w-full sm:justify-between sm:items-center gap-3">
             <div className="flex items-center gap-4 text-sm text-slate-500">
               <span>* จำเป็นต้องกรอกข้อมูลที่มีเครื่องหมายดอกจัน</span>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-end">
               <Button
                 variant="outline"
                 type="button"
@@ -602,25 +595,10 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
         <form ref={goodsFormRef} id="withdrawal-form" onSubmit={handleSubmit}>
           <div className="flex flex-col gap-6">
             {/* Card 1: Logistics Header */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2.5 bg-blue-50 rounded-lg text-blue-600">
-                  <TruckIcon className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800">การเคลื่อนย้ายสินค้า</h3>
-                <div className="ml-auto flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
-                  <CalendarDaysIcon className="w-5 h-5 text-slate-400" />
-                  <span className="text-sm text-slate-500 font-medium">วันที่เบิก:</span>
-                  <input
-                    type="date"
-                    className="bg-transparent border-none p-0 text-slate-800 font-bold focus:ring-0 text-sm w-32 cursor-pointer"
-                    value={withdrawalDate}
-                    onChange={(e) => setWithdrawalDate(e.target.value)}
-                  />
-                </div>
-              </div>
+            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-50">
+              <h3 className="text-lg font-bold text-slate-800 mb-4">การเคลื่อนย้ายสินค้า</h3>
 
-              <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-5 rounded-lg border border-slate-100 relative z-50">
+              <div className="flex flex-col md:flex-row items-center gap-4 bg-slate-50/50 p-3 sm:p-5 rounded-lg border border-slate-100 relative z-50">
                 <div className="flex-1 w-full relative z-50">
                   <label className="block text-sm font-semibold text-slate-600 mb-2 ml-1">เบิกจากคลัง (ต้นทาง)</label>
                   <SearchableSelect
@@ -658,7 +636,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             </div>
 
             {/* Card 2: Requester / Recipient */}
-            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative z-40">
+            <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200 shadow-sm relative z-40">
               <div className="flex items-center gap-2 mb-5">
                 <div className="p-2.5 bg-green-50 rounded-lg text-green-600">
                   <UserIcon className="w-6 h-6" />
@@ -735,7 +713,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Card 3: Items */}
             {enableGoods && (
               <div className="bg-white border border-slate-200 rounded-xl shadow-sm flex flex-col min-h-[250px] relative z-20">
-                <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                <div className="p-4 sm:p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                   <div className="flex items-center gap-2">
                     <div className="p-2.5 bg-indigo-50 rounded-lg text-indigo-600">
                       <DocumentCheckIcon className="w-6 h-6" />
@@ -749,7 +727,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     type="button"
                     onClick={() => setIsProductModalOpen(true)}
                     variant="outline"
-                    className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 text-sm font-bold px-4 py-2"
+                    className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 text-sm font-bold px-4 py-2 w-full sm:w-auto"
                     disabled={!fromWarehouseId}
                   >
                     <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มสินค้า
@@ -767,7 +745,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     </div>
                   ) : (
                     <div className="space-y-3 mt-2">
-                      <div className="grid grid-cols-12 gap-4 px-5 py-3 text-sm font-semibold text-slate-500 items-center">
+                      <div className="hidden md:grid grid-cols-12 gap-4 px-5 py-3 text-sm font-semibold text-slate-500 items-center">
                         <div className="col-span-1">รหัส</div>
                         <div className="col-span-3">สินค้า</div>
                         <div className="col-span-2 text-center">คงเหลือ</div>
@@ -790,11 +768,12 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         return (
                           <div
                             key={item.id}
-                            className={`px-5 py-4 rounded-xl border transition-all duration-200 bg-white ${
+                            className={`px-4 sm:px-5 py-4 rounded-xl border transition-all duration-200 bg-white ${
                               hasWarning ? 'border-red-300 bg-red-50/30' : 'border-slate-200'
                             }`}
                           >
-                            <div className="grid grid-cols-12 gap-4 items-center w-full">
+                            {/* Desktop: grid layout */}
+                            <div className="hidden md:grid grid-cols-12 gap-4 items-center w-full">
                               <div className="col-span-1">
                                 <span className="font-mono text-sm font-bold text-green-600">
                                   {product?.code || item.productId.substring(0, 8)}
@@ -844,6 +823,60 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                               </div>
                             </div>
 
+                            {/* Mobile: stacked layout */}
+                            <div className="md:hidden flex flex-col gap-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-mono text-xs font-bold text-green-600 block">
+                                    {product?.code || item.productId.substring(0, 8)}
+                                  </span>
+                                  <span className="font-bold text-slate-800 text-sm block mt-0.5">{product?.name || 'Unknown Product'}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveGoodsItem(item.id)}
+                                  className="text-red-400 hover:text-red-600 p-1.5 rounded-lg transition-colors -mr-1.5 -mt-1.5"
+                                >
+                                  <TrashIcon className="w-5 h-5" />
+                                </button>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-500">คงเหลือ:</span>
+                                  <span className={`font-bold ${available === 0 ? 'text-red-500' : 'text-slate-700'}`}>
+                                    {available.toLocaleString()}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-500">จำกัด:</span>
+                                  <span className="font-bold text-blue-600">
+                                    {limit !== undefined ? limit.toLocaleString() : '-'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-slate-500 shrink-0">จำนวน:</span>
+                                <div className="relative flex items-center w-full max-w-[150px]">
+                                  <Input
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) =>
+                                      handleGoodsItemChange(item.id, 'quantity', Number(e.target.value))
+                                    }
+                                    className={`w-full text-center h-10 text-base font-bold rounded-lg pr-12 ${
+                                      hasWarning
+                                        ? 'border-red-400 text-red-600 bg-red-50'
+                                        : 'border-slate-300 text-slate-800 bg-white'
+                                    }`}
+                                  />
+                                  <span className="absolute right-3 text-xs font-semibold text-slate-400 pointer-events-none">
+                                    {unitName}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
                             {hasWarning && (
                               <div className="mt-3 flex flex-col gap-1.5">
                                 {isOverStock && (
@@ -886,27 +919,27 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
             {/* Card 4: Finance */}
             {enableExpense && (
               <div
-                className={`p-6 rounded-xl border shadow-sm transition-all relative z-10 ${
+                className={`p-4 sm:p-6 rounded-xl border shadow-sm transition-all relative z-10 ${
                   isOverLimit ? 'bg-red-50/50 border-red-200 ring-1 ring-red-100' : 'bg-white border-slate-200'
                 }`}
               >
-                <div className="flex justify-between items-center mb-5 border-b border-slate-100 pb-3">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 border-b border-slate-100 pb-3">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 uppercase tracking-wide">
-                    <span className="bg-emerald-100 text-emerald-700 p-1 rounded-md text-xs px-2 border border-emerald-200 font-black">บาท</span>
+                    <span className="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-lg flex items-center justify-center text-base font-black border border-emerald-200">฿</span>
                     การเงิน & ค่าใช้จ่าย
                   </h3>
                   <Button
                     type="button"
                     onClick={handleAddExpense}
                     variant="outline"
-                    className="text-primary border-primary/20 bg-primary/5 text-sm font-bold px-4 py-2"
+                    className="text-primary border-primary/20 bg-primary/5 text-sm font-bold px-4 py-2 w-full sm:w-auto"
                   >
                     <PlusIcon className="w-5 h-5 mr-1.5" /> เพิ่มรายการเบิกเงิน
                   </Button>
                 </div>
 
                 {walletInfo && (
-                  <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                  <div className="mb-6 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
                     <div className="flex justify-between items-center text-sm font-bold text-slate-500 mb-3 border-b border-slate-100 pb-2">
                       <span>สถานะวงเงินเบิกจ่าย</span>
                       <span
@@ -917,25 +950,25 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                         {isOverLimit ? 'เกินวงเงิน' : 'ปกติ'}
                       </span>
                     </div>
-                    <div className="flex items-end justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-500">วงเงินที่ได้รับ</span>
-                      <span className="text-base font-semibold text-slate-700">
+                    <div className="flex items-end justify-between mb-2 gap-2">
+                      <span className="text-sm font-medium text-slate-500 shrink-0">วงเงินที่ได้รับ</span>
+                      <span className="text-sm sm:text-base font-semibold text-slate-700 text-right">
                         {walletInfo.expense_limit.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </span>
                     </div>
-                    <div className="flex items-end justify-between mb-2">
-                      <span className="text-sm font-medium text-slate-500">คงเหลือปัจจุบัน</span>
-                      <span className="text-base font-semibold text-slate-700">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                    <div className="flex items-end justify-between mb-2 gap-2">
+                      <span className="text-sm font-medium text-slate-500 shrink-0">คงเหลือปัจจุบัน</span>
+                      <span className="text-sm sm:text-base font-semibold text-slate-700 text-right">{walletInfo.balance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                     </div>
                     {totalExpenses > 0 && (
-                      <div className="flex items-end justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-500">รวมที่ต้องการเบิกครั้งนี้</span>
-                        <span className="text-base font-bold text-amber-600">+{totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
+                      <div className="flex items-end justify-between mb-2 gap-2">
+                        <span className="text-sm font-medium text-slate-500 shrink-0">รวมที่ต้องการเบิกครั้งนี้</span>
+                        <span className="text-sm sm:text-base font-bold text-amber-600 text-right">+{totalExpenses.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท</span>
                       </div>
                     )}
-                    <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 mb-2">
-                      <span className="text-sm font-bold text-slate-600">ยอดเงินรวม</span>
-                      <span className={`text-xl font-black ${isOverLimit ? 'text-red-600' : 'text-emerald-600'}`}>
+                    <div className="flex items-end justify-between mt-3 pt-3 border-t border-slate-100 mb-2 gap-2">
+                      <span className="text-sm font-bold text-slate-600 shrink-0">ยอดเงินรวม</span>
+                      <span className={`text-lg sm:text-xl font-black text-right ${isOverLimit ? 'text-red-600' : 'text-emerald-600'}`}>
                         {(walletInfo.balance + totalExpenses).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                       </span>
                     </div>
@@ -963,35 +996,39 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({
                     expenseItems.map((item) => (
                       <div
                         key={item.id}
-                        className="flex gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
+                        className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm group hover:border-primary/30 transition-colors"
                       >
-                        <div className="p-2 bg-slate-100 rounded-md text-slate-400">
-                          <BanknotesIcon className="w-5 h-5" />
-                        </div>
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
-                          placeholder="ระบุรายละเอียดค่าใช้จ่าย (เช่น เติมเงินมือถือ, เติมน้ำมัน)..."
-                          className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2"
-                        />
-                        <div className="relative flex items-center max-w-[150px]">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                          <div className="p-2 bg-slate-100 rounded-md text-slate-400 shrink-0">
+                            <BanknotesIcon className="w-5 h-5" />
+                          </div>
                           <input
-                            type="number"
-                            value={item.amount}
-                            onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
-                            placeholder="0.00"
-                            className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
+                            type="text"
+                            value={item.description}
+                            onChange={(e) => handleExpenseItemChange(item.id, 'description', e.target.value)}
+                            placeholder="ระบุรายละเอียดค่าใช้จ่าย..."
+                            className="flex-grow border-0 border-b border-transparent focus:border-primary focus:ring-0 text-sm font-medium bg-transparent px-2 min-w-0"
                           />
-                          <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveExpenseItem(item.id)}
-                          className="text-slate-300 hover:text-red-500 ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors"
-                        >
-                          <XCircleIcon className="w-6 h-6" />
-                        </button>
+                        <div className="flex items-center gap-2 pl-11 sm:pl-0">
+                          <div className="relative flex items-center w-full sm:w-auto max-w-[150px]">
+                            <input
+                              type="number"
+                              value={item.amount}
+                              onChange={(e) => handleExpenseItemChange(item.id, 'amount', e.target.value)}
+                              placeholder="0.00"
+                              className="w-full border-0 border-b border-transparent focus:border-primary focus:ring-0 text-base font-bold text-right pr-8 bg-transparent"
+                            />
+                            <span className="absolute right-0 text-sm font-semibold text-slate-400">บาท</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveExpenseItem(item.id)}
+                            className="text-slate-300 hover:text-red-500 ml-auto sm:ml-2 p-1 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+                          >
+                            <XCircleIcon className="w-6 h-6" />
+                          </button>
+                        </div>
                       </div>
                     ))
                   )}

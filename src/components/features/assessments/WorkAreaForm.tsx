@@ -209,7 +209,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
     return (
       <div className="pt-4 border-t mt-4">
         <div className="p-4 border rounded-xl bg-primary/5 border-primary/20">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
             <div>
               <div className="font-semibold text-slate-800">
                 ราคาบริการหลัก
@@ -221,7 +221,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-end">
+            <div className="flex flex-col items-start sm:items-end">
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
