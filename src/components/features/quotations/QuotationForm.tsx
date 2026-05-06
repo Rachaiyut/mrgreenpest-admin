@@ -379,9 +379,18 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
   // Attachments
-  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(initialValues?.service_procedure_template_ids || (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : []));
+  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(
+    Array.isArray(initialValues?.service_procedure_template_ids)
+      ? (initialValues!.service_procedure_template_ids as string[])
+      : (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : [])
+  );
   const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
-  const [chemicalCatalogIds, setChemicalCatalogIds] = useState<string[]>(initialValues?.chemical_catalog_ids || []);
+  const [chemicalCatalogIds, setChemicalCatalogIds] = useState<string[]>(
+    // กัน data ที่ JSON column เคยถูก stringify ซ้อน — ถ้าเจอ element ที่ไม่ใช่ UUID-like ก็ทิ้ง
+    Array.isArray(initialValues?.chemical_catalog_ids)
+      ? (initialValues!.chemical_catalog_ids as string[]).filter((s) => typeof s === 'string' && s.length === 36)
+      : []
+  );
   const [procedureTemplates, setProcedureTemplates] = useState<IServiceProcedureTemplate[]>([]);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
   const [chemicalCatalogs, setChemicalCatalogs] = useState<ChemicalCatalog[]>([]);

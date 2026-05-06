@@ -1135,13 +1135,12 @@ export const JobForm: React.FC<JobFormProps> = ({
                         selected={workDate ? new Date(workDate) : null}
                         onChange={(date: Date | null) => { if (date) { const yyyy = date.getFullYear(); const mm = String(date.getMonth() + 1).padStart(2, '0'); const dd = String(date.getDate()).padStart(2, '0'); setWorkDate(`${yyyy}-${mm}-${dd}`); } else { setWorkDate(''); } }}
                         minDate={mode === 'add' ? new Date() : undefined}
-                        disabled={mode === 'edit'}
                         required
                         wrapperClassName="w-full"
                         placeholderText="dd/mm/yyyy"
                         dateFormat="dd/MM/yyyy"
                         locale="th"
-                        className={`w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm ${mode === 'edit' ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : ''}`}
+                        className="w-full h-12 pl-3 pr-10 rounded-md border-slate-300 focus:border-primary focus:ring-primary text-slate-700 shadow-sm"
                       />
                       <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none z-10" />
                     </div>
