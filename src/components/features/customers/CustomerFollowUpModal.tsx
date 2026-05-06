@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
-import { Button, FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { Button, FormField, Input, Textarea } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { Contract } from '@/src/types/entity/financial.interface';
 import {
@@ -159,19 +160,12 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField label="สัญญา" htmlFor="fu-contract">
-                <Select
-                  id="fu-contract"
+                <DropdownSelect
                   value={formData.contract_id}
-                  onChange={(e) => setFormData({ ...formData, contract_id: e.target.value })}
-                  required
-                >
-                  <option value="">เลือกสัญญา</option>
-                  {contracts.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.code || c.id.substring(0, 8)} — {c.status}
-                    </option>
-                  ))}
-                </Select>
+                  onChange={(v) => setFormData({ ...formData, contract_id: v })}
+                  placeholder="เลือกสัญญา"
+                  options={contracts.map((c) => ({ value: c.id, label: `${c.code || c.id.substring(0, 8)} — ${c.status}` }))}
+                />
               </FormField>
               <FormField label="วันที่ติดตาม" htmlFor="fu-date">
                 <Input
@@ -183,30 +177,20 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
                 />
               </FormField>
               <FormField label="ช่องทางติดต่อ" htmlFor="fu-method">
-                <Select
-                  id="fu-method"
+                <DropdownSelect
                   value={formData.contact_method}
-                  onChange={(e) => setFormData({ ...formData, contact_method: e.target.value })}
-                  required
-                >
-                  <option value="">เลือกช่องทาง</option>
-                  {Object.values(ContactMethod).map((m) => (
-                    <option key={m} value={m}>{ContactMethodLabels[m]}</option>
-                  ))}
-                </Select>
+                  onChange={(v) => setFormData({ ...formData, contact_method: v })}
+                  placeholder="เลือกช่องทาง"
+                  options={Object.values(ContactMethod).map((m) => ({ value: m, label: ContactMethodLabels[m] }))}
+                />
               </FormField>
               <FormField label="ผลการติดตาม" htmlFor="fu-result">
-                <Select
-                  id="fu-result"
+                <DropdownSelect
                   value={formData.result}
-                  onChange={(e) => setFormData({ ...formData, result: e.target.value })}
-                  required
-                >
-                  <option value="">เลือกผล</option>
-                  {Object.values(FollowUpResult).map((r) => (
-                    <option key={r} value={r}>{FollowUpResultLabels[r]}</option>
-                  ))}
-                </Select>
+                  onChange={(v) => setFormData({ ...formData, result: v })}
+                  placeholder="เลือกผล"
+                  options={Object.values(FollowUpResult).map((r) => ({ value: r, label: FollowUpResultLabels[r] }))}
+                />
               </FormField>
             </div>
             <FormField label="หมายเหตุ / เหตุผล" htmlFor="fu-notes">

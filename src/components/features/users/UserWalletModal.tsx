@@ -131,11 +131,10 @@ export const UserWalletModal: React.FC<UserWalletModalProps> = ({
         <div className="p-4 bg-primary/10 rounded-lg text-center relative">
           <p className="text-sm font-medium text-primary/80">วงเงินการเบิก</p>
           <p className="text-4xl font-bold text-primary">
-            ฿
             {balance.toLocaleString('th-TH', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })}
+            })}{' '}บาท
           </p>
           <button
             onClick={() => setShowLimitForm(!showLimitForm)}

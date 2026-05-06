@@ -22,7 +22,8 @@ import { AddUserModal } from '../../components/features/users/AddUserModal';
 import { Pagination } from '../../components/common/Pagination';
 import { UserDetailsModal } from '../../components/features/users/UserDetailsModal';
 import { RoleDetailsModal } from '../../components/features/users/RoleDetailsModal'; // Keep for now or remove?
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { EditUserModal } from '../../components/features/users/EditUserModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { UserWalletModal } from '../../components/features/users/UserWalletModal';
@@ -388,30 +389,28 @@ const Users: React.FC<UsersProps> = ({
                   </svg>
                 </div>
                 <div className="w-full sm:w-44 flex-shrink-0">
-                  <Select
+                  <DropdownSelect
                     value={roleFilter}
-                    onChange={(e) => {
-                      setRoleFilter(e.target.value);
+                    onChange={(val) => {
+                      setRoleFilter(val);
                       setCurrentPage(1);
                     }}
                     className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-                  >
-                    <option value="all">ทุกประเภทบทบาท</option>
-                    {[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
-                      const rt = role.role_type || role.name;
-                      const labels: Record<string, string> = {
-                        MANAGEMENT: 'ผู้บริหาร/จัดการ',
-                        EXECUTIVE: 'ผู้บริหารระดับสูง',
-                        FIELD_LEAD: 'หัวหน้าทีมช่าง',
-                        FIELD_TECH: 'ช่างปฏิบัติงาน',
-                      };
-                      return (
-                        <option key={rt} value={rt}>
-                          {labels[rt] || rt}
-                        </option>
-                      );
-                    })}
-                  </Select>
+                    placeholder="ทุกประเภทบทบาท"
+                    options={[
+                      { value: 'all', label: 'ทุกประเภทบทบาท' },
+                      ...[...new Map(roles.map((r) => [r.role_type || r.name, r])).values()].map((role) => {
+                        const rt = role.role_type || role.name;
+                        const labels: Record<string, string> = {
+                          MANAGEMENT: 'ผู้บริหาร/จัดการ',
+                          EXECUTIVE: 'ผู้บริหารระดับสูง',
+                          FIELD_LEAD: 'หัวหน้าทีมช่าง',
+                          FIELD_TECH: 'ช่างปฏิบัติงาน',
+                        };
+                        return { value: rt, label: labels[rt] || rt };
+                      }),
+                    ]}
+                  />
                 </div>
               </div>
             </Card>

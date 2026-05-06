@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, FC } from 'react';
-import { FormField, Input, Textarea, Select } from '../../common/FormControls';
+import { FormField, Input, Textarea } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { PlusIcon, TrashIcon, CurrencyDollarIcon } from '../../../assets/icons/Icons';
 import { Package, PackagePrice, Category, CategoryType, Unit } from '@/src/types';
 import { ContractDuration, ContractDurationLabel } from '@/src/types/enums/package';
@@ -220,19 +221,16 @@ const PackageForm: FC<PackageFormProps> = ({
               {errorText(errors.code)}
             </FormField>
             <FormField label="หมวดหมู่ *">
-              <Select
+              <DropdownSelect
                 value={categoryId}
-                onChange={(e) => {
-                  setCategoryId(e.target.value);
+                onChange={(v) => {
+                  setCategoryId(v);
                   if (errors.categoryId) setErrors((p) => ({ ...p, categoryId: undefined }));
                 }}
-                className={inputErrCls(!!errors.categoryId)}
-              >
-                <option value="">เลือกหมวดหมู่</option>
-                {availableCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </Select>
+                placeholder="เลือกหมวดหมู่"
+                options={availableCategories.map((cat) => ({ value: cat.id, label: cat.name }))}
+                error={!!errors.categoryId}
+              />
               {errorText(errors.categoryId)}
             </FormField>
           </div>
@@ -266,14 +264,12 @@ const PackageForm: FC<PackageFormProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <FormField label="อายุสัญญา *">
-              <Select
+              <DropdownSelect
                 value={contractDuration}
-                onChange={(e) => setContractDuration(e.target.value as ContractDuration)}
-              >
-                {Object.values(ContractDuration).map((d) => (
-                  <option key={d} value={d}>{ContractDurationLabel[d]}</option>
-                ))}
-              </Select>
+                onChange={(v) => setContractDuration(v as ContractDuration)}
+                placeholder="เลือกอายุสัญญา"
+                options={Object.values(ContractDuration).map((d) => ({ value: d, label: ContractDurationLabel[d] }))}
+              />
             </FormField>
           </div>
           <FormField label="หมายเหตุ">
@@ -343,10 +339,14 @@ const PackageForm: FC<PackageFormProps> = ({
                           <Input type="number" value={cond.area_range || ''} onChange={(e) => handleConditionChange(idx, 'area_range', e.target.value)} placeholder="150" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'area_range'))}`} />
                         </td>
                         <td className="px-4 py-3">
-                          <Select value={cond.unit_id || ''} onChange={(e) => handleConditionChange(idx, 'unit_id', e.target.value)} className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'unit_id'))}`}>
-                            <option value="">เลือก</option>
-                            {availableUnits.map((u) => (<option key={u.id} value={u.id}>{u.name}</option>))}
-                          </Select>
+                          <DropdownSelect
+                            value={cond.unit_id || ''}
+                            onChange={(v) => handleConditionChange(idx, 'unit_id', v)}
+                            placeholder="เลือก"
+                            options={availableUnits.map((u) => ({ value: u.id, label: u.name }))}
+                            error={priceFieldHasError(idx, 'unit_id')}
+                            className="h-9 w-full"
+                          />
                         </td>
                         <td className="px-4 py-3">
                           <Input type="number" value={cond.price_with_termite ?? ''} onChange={(e) => handleConditionChange(idx, 'price_with_termite', e.target.value)} onFocus={handlePriceFocus(idx, 'price_with_termite')} placeholder="0.00" step="0.01" className={`h-9 w-full ${inputErrCls(priceFieldHasError(idx, 'price_with_termite'))}`} style={{ textAlign: 'right' }} />

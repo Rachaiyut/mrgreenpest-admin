@@ -21,7 +21,7 @@ import { Contract } from '../../types/entity/financial.interface';
 import { Job as JobEntity } from '../../types/entity/job.interface';
 import { Product } from '../../types/entity/product.interface';
 import { Customer } from '../../types/entity/customer.interface';
-import { Warehouse } from '../../types/entity/inventory.interface';
+import { Warehouse, WarehouseQuery } from '../../types/entity/inventory.interface';
 import { isFieldRole, isManagementRole, isExecutiveRole } from '../../utils/role';
 import { Role } from '../../types/enums/role';
 
@@ -46,7 +46,8 @@ import { IssueSummaryModal } from '../../components/features/inventory/issue-sum
 import { Card } from '../../components/common/Card';
 import { Pagination } from '../../components/common/Pagination';
 import { JobStatusLabel } from '@/src/types/enums/job';
-import { Select, Input, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 // ===== Local Components =====
@@ -61,6 +62,7 @@ import {
   StorageApi,
   VehicleApi,
 } from '@/src/api';
+import { WarehouseApi } from '@/src/api/warehouse';
 import { DailyClosureApi } from '@/src/api/daily-closure';
 import { StockIssueSummaryApi } from '@/src/api/stock-issue-summary';
 
@@ -577,7 +579,7 @@ const Job: React.FC<JobProps> = ({
       Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถอนุมัติงานได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถอนุมัติงานได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -588,7 +590,7 @@ const Job: React.FC<JobProps> = ({
       Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1500, showConfirmButton: false });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถปฏิเสธงานได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถปฏิเสธงานได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -665,7 +667,7 @@ const Job: React.FC<JobProps> = ({
     try {
       const history = await JobApi.getRejectionHistory(jobId);
       if (!history.length) {
-        Swal.fire('ไม่มีประวัติ', 'ยังไม่มีประวัติการปฏิเสธสำหรับงานนี้', 'info');
+        Swal.fire({ title: 'ไม่มีประวัติ', text: 'ยังไม่มีประวัติการปฏิเสธสำหรับงานนี้', icon: 'info', confirmButtonText: 'ตกลง' });
         return;
       }
       const rows = history
@@ -691,11 +693,11 @@ const Job: React.FC<JobProps> = ({
         title: 'ประวัติการปฏิเสธ',
         html: `<div class="max-h-80 overflow-y-auto">${rows}</div>`,
         width: 600,
-        confirmButtonText: 'ปิด',
+        confirmButtonText: 'ตกลง',
       });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถโหลดประวัติได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถโหลดประวัติได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -755,6 +757,8 @@ const Job: React.FC<JobProps> = ({
   const [jobToEdit, setJobToEdit] = useState<any | null>(null);
   const [jobForReport, setJobForReport] = useState<any | null>(null);
   const [reportFinalStatus, setReportFinalStatus] = useState<JobStatus>(JobStatus.Completed);
+  const [reportReadOnly, setReportReadOnly] = useState(false);
+  const [isReportTabDropdown, setIsReportTabDropdown] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1381,10 +1385,13 @@ const Job: React.FC<JobProps> = ({
     if (openDropdownId === jobId) {
       setOpenDropdownId(null);
       setSelectedJob(null);
+
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
       setSelectedJob(jobs.find((j) => j.id === jobId) || null);
       setOpenDropdownId(jobId);
+      setIsReportTabDropdown(false);
+
 
       const threshold = 220;
       const isBottom = buttonRect.bottom > window.innerHeight - threshold;
@@ -1399,7 +1406,7 @@ const Job: React.FC<JobProps> = ({
 
   // Fetch all vehicles for dropdown (once)
   useEffect(() => {
-    VehicleApi.getVehicles({ limit: 10, sort_by: 'vehicle_registration', sort_order: 'asc' } as Record<string, unknown>).then((res) => {
+    WarehouseApi.getWarehouses({ type: 'VEHICLE' } as WarehouseQuery).then((res) => {
       setAllVehicles((res.data || []) as Warehouse[]);
     }).catch(() => {});
   }, []);
@@ -1461,12 +1468,14 @@ const Job: React.FC<JobProps> = ({
       if ((event.target as HTMLElement).closest('button[data-job-id]')) return;
       setOpenDropdownId(null);
       setSelectedJob(null);
+
     };
 
     const handleScroll = () => {
       if (openDropdownId) {
         setOpenDropdownId(null);
         setSelectedJob(null);
+  
       }
     };
 
@@ -1488,9 +1497,50 @@ const Job: React.FC<JobProps> = ({
       icon: React.FC<any>;
       onClick: () => void;
       isDanger?: boolean;
-    }[] = [
-        { label: 'ดูรายละเอียด', icon: EyeIcon, onClick: () => handleViewDetails(selectedJob) },
-      ];
+    }[] = [];
+
+    if (isReportTabDropdown) {
+      actions.push(
+        {
+          label: 'ดูรายละเอียด',
+          icon: EyeIcon,
+          onClick: () => {
+            setReportReadOnly(true);
+            handleWriteReport(selectedJob);
+          },
+        },
+        {
+          label: 'แก้ไขใบรายงานบริการ',
+          icon: DocumentCheckIcon,
+          onClick: () => {
+            setReportReadOnly(false);
+            handleWriteReport(selectedJob);
+          },
+        },
+      );
+
+      return actions.map((action) => (
+        <a
+          key={action.label}
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            action.onClick();
+          }}
+          className="flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+          role="menuitem"
+        >
+          <action.icon className="mr-3 h-5 w-5 text-slate-400" aria-hidden="true" />
+          <span>{action.label}</span>
+        </a>
+      ));
+    }
+
+    actions.push({
+      label: 'ดูรายละเอียด',
+      icon: EyeIcon,
+      onClick: () => handleViewDetails(selectedJob),
+    });
 
     const isRejectedStatus = status === JobStatus.Rejected;
     const isCreatorOfSelected =
@@ -1521,9 +1571,12 @@ const Job: React.FC<JobProps> = ({
       (status as unknown as string) === 'IN_PROGRESS'
     ) {
       actions.push({
-        label: 'แก้ไขใบรายงานบริการ',
+        label: 'แก้ไข',
         icon: DocumentCheckIcon,
-        onClick: () => handleWriteReport(selectedJob),
+        onClick: () => {
+          setReportReadOnly(false);
+          handleWriteReport(selectedJob);
+        },
       });
     }
 
@@ -1622,36 +1675,38 @@ const Job: React.FC<JobProps> = ({
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6 flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
-            <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
+            <h1 className="text-xl sm:text-3xl font-bold text-slate-800">ภาคสนาม</h1>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-base text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {isFieldRole(authUser?.roleType) && (
               <>
                 <Button
                   onClick={() => setIsIssueSummaryModalOpen(true)}
                   variant="primary"
-                  className="!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
+                  className="!text-xs sm:!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
                 >
-                  <DocumentCheckIcon className="w-4 h-4 mr-1.5" />
-                  สรุปเบิกสินค้า/ค่าใช้จ่าย
+                  <DocumentCheckIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                  <span className="hidden sm:inline">สรุปเบิกสินค้า/ค่าใช้จ่าย</span>
+                  <span className="sm:hidden">สรุปเบิก</span>
                 </Button>
                 {todayClosure?.status === 'CLOSED' ? (
                   <Button
                     variant="primary"
                     disabled
-                    className="!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
+                    className="!text-xs sm:!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
                   >
-                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
-                    จบงานรายวันแล้ว
+                    <CheckCircleIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                    <span className="hidden sm:inline">จบงานรายวันแล้ว</span>
+                    <span className="sm:hidden">จบงานแล้ว</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleOpenDailyClosure}
                     variant="primary"
-                    className="!text-sm !font-medium !bg-red-600 !text-white hover:!bg-red-700 !border-red-600 !shadow-md"
+                    className="!text-xs sm:!text-sm !font-medium !bg-red-600 !text-white hover:!bg-red-700 !border-red-600 !shadow-md"
                   >
-                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                    <CheckCircleIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
                     จบงานรายวัน
                   </Button>
                 )}
@@ -1661,9 +1716,9 @@ const Job: React.FC<JobProps> = ({
                 <Button
                   onClick={() => setIsAddModalOpen(true)}
                   variant="primary"
-                  className="shadow-md shadow-primary/20"
+                  className="shadow-md shadow-primary/20 !text-xs sm:!text-sm"
                 >
-                  <PlusIcon className="h-5 w-5 mr-2" />
+                  <PlusIcon className="h-5 w-5 mr-1 sm:mr-2" />
                   สร้างนัดหมาย
                 </Button>
               )}
@@ -1717,73 +1772,77 @@ const Job: React.FC<JobProps> = ({
           </Card>
         </div>
 
-        <Card className="!p-4 flex-shrink-0">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
-              <div className="relative w-full sm:w-56">
-                  <Input
-                    type="search"
-                    placeholder="ค้นหารหัสลูกค้า, ชื่อลูกค้า"
-                    value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
-                    onChange={(e) => {
-                      if (activeTab === 'unassigned') {
-                        setUnassignedSearch(e.target.value);
+        <Card className="!p-3 sm:!p-4 flex-shrink-0">
+          <div className="flex flex-col gap-3 min-w-0">
+            {/* Row 1: Filters + View Toggle + Tabs */}
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
+              {/* Search */}
+              <div className="relative w-full sm:w-56 lg:w-64">
+                <Input
+                  type="search"
+                  placeholder="ค้นหารหัสลูกค้า, ชื่อลูกค้า"
+                  value={activeTab === 'unassigned' ? unassignedSearch : searchQuery}
+                  onChange={(e) => {
+                    if (activeTab === 'unassigned') {
+                      setUnassignedSearch(e.target.value);
+                      setUnassignedPage(1);
+                    } else {
+                      setSearchQuery(e.target.value);
+                      fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
+                    }
+                  }}
+                  className="w-full pl-10"
+                />
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+
+              {/* Unassigned tab filters */}
+              {activeTab === 'unassigned' && (
+                <div className="relative w-full sm:w-auto">
+                  <DatePicker
+                    selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
+                    onChange={(date: Date | null) => {
+                      if (date) {
+                        const yyyy = date.getFullYear();
+                        const mm = String(date.getMonth() + 1).padStart(2, '0');
+                        const dd = String(date.getDate()).padStart(2, '0');
+                        const formatted = `${yyyy}-${mm}-${dd}`;
+                        setUnassignedDateFilter(formatted);
                         setUnassignedPage(1);
+                        fetchUnassigned(1, formatted, unassignedSearch);
                       } else {
-                        setSearchQuery(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, e.target.value);
+                        setUnassignedDateFilter('');
+                        setUnassignedPage(1);
+                        fetchUnassigned(1, '', unassignedSearch);
                       }
                     }}
-                    className="w-full pl-10"
+                    placeholderText="เลือกวันที่นัดหมาย"
+                    dateFormat="dd/MM/yyyy"
+                    locale="th"
+                    isClearable
+                    className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    wrapperClassName="w-full sm:w-auto"
                   />
-                  <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+                  <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                 </div>
-                {activeTab === 'unassigned' && (
-                  <div className="flex items-center gap-2">
-                    <div className="relative w-full sm:w-auto">
-                      <DatePicker
-                        selected={unassignedDateFilter ? new Date(unassignedDateFilter) : null}
-                        onChange={(date: Date | null) => {
-                          if (date) {
-                            const yyyy = date.getFullYear();
-                            const mm = String(date.getMonth() + 1).padStart(2, '0');
-                            const dd = String(date.getDate()).padStart(2, '0');
-                            const formatted = `${yyyy}-${mm}-${dd}`;
-                            setUnassignedDateFilter(formatted);
-                            setUnassignedPage(1);
-                            fetchUnassigned(1, formatted, unassignedSearch);
-                          } else {
-                            setUnassignedDateFilter('');
-                            setUnassignedPage(1);
-                            fetchUnassigned(1, '', unassignedSearch);
-                          }
-                        }}
-                        placeholderText="เลือกวันที่นัดหมาย"
-                        dateFormat="dd/MM/yyyy"
-                        locale="th"
-                        isClearable
-                        className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                        wrapperClassName="w-full sm:w-auto"
-                      />
-                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-                )}
-                {activeTab === 'schedule' && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+              )}
+
+              {/* Schedule tab filters */}
+              {activeTab === 'schedule' && (
+                <>
+                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
                     <DatePicker
                       selected={filterDate ? new Date(filterDate) : null}
                       onChange={(date: Date | null) => {
@@ -1803,105 +1862,95 @@ const Job: React.FC<JobProps> = ({
                       dateFormat="dd/MM/yyyy"
                       locale="th"
                       isClearable
-                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                      className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
                       wrapperClassName="w-full sm:w-auto"
                     />
-                    <div className="w-40">
-                      <SearchableSelect
-                        value={selectedTechnicianId}
-                        onChange={(newTech) => {
-                          setSelectedTechnicianId(newTech || 'all');
-                          fetchData(filterDate, newTech || 'all');
-                        }}
-                        placeholder="ช่างทั้งหมด"
-                        searchPlaceholder="ค้นหาช่าง..."
-                        options={[
-                          { value: 'all', label: 'ช่างทั้งหมด' },
-                          ...technicians.map((tech: any) => {
-                            const fullName = [tech.first_name, tech.last_name]
-                              .filter((p: string | undefined) => p && p !== '-')
-                              .join(' ')
-                              .trim();
-                            return {
-                              value: tech.id,
-                              label: fullName || tech.name || tech.nick_name || tech.id,
-                            };
-                          }),
-                        ]}
-                      />
-                    </div>
-                    <div className="w-40">
-                      <SearchableSelect
-                        value={selectedVehicleId || 'all'}
-                        onChange={(newId) => {
-                          const next = newId || 'all';
-                          setSelectedVehicleId(next);
-                          fetchSchedule(filterDate, selectedTechnicianId, searchQuery, next);
-                        }}
-                        placeholder="รถทั้งหมด"
-                        searchPlaceholder="ค้นหารถ..."
-                        options={[
-                          { value: 'all', label: 'รถทั้งหมด' },
-                          ...allVehicles.map((v: any) => ({
-                            value: v.warehouse_id || v.id,
-                            label:
-                              v.license_plate ||
-                              v.vehicle_registration ||
-                              v.vehicle?.vehicle_registration ||
-                              v.name ||
-                              v.id,
-                          })),
-                        ]}
-                      />
-                    </div>
-                    <Select
-                      id="status-filter"
-                      value={selectedStatusFilter}
-                      onChange={(e) => {
-                        setSelectedStatusFilter(e.target.value);
-                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, e.target.value);
-                      }}
-                      className="w-fit text-sm !pr-8"
-                    >
-                      <option value="all">สถานะทั้งหมด</option>
-                      {Object.values(JobMainStatus).map((status) => (
-                        <option key={status} value={status}>
-                          {JobStatusLabel[status] || status}
-                        </option>
-                      ))}
-                    </Select>
+                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   </div>
-                )}
-                {activeTab === 'work-schedule' && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="relative">
-                      <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
-                      <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                    <Select
-                      value={scheduleVehicleId}
-                      onChange={(e) => setScheduleVehicleId(e.target.value)}
-                      className="w-48 bg-white border-slate-300 shadow-sm text-sm h-10"
-                    >
-                      <option value="">เลือกทะเบียนรถ</option>
-                      {warehouses
+                  <DropdownSelect
+                    value={selectedTechnicianId}
+                    onChange={(val) => {
+                      setSelectedTechnicianId(val);
+                      fetchData(filterDate, val);
+                    }}
+                    placeholder="ช่างทั้งหมด"
+                    options={[
+                      { value: 'all', label: 'ช่างทั้งหมด' },
+                      ...technicians.map((tech) => ({ value: tech.id, label: tech.name })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                  <SearchableSelect
+                    value={selectedVehicleId}
+                    onChange={(val) => {
+                      setSelectedVehicleId(val);
+                      fetchSchedule(filterDate, selectedTechnicianId, searchQuery, val);
+                    }}
+                    placeholder="รถทั้งหมด"
+                    searchPlaceholder="ค้นหารถ..."
+                    options={[
+                      { value: 'all', label: 'รถทั้งหมด' },
+                      ...allVehicles.map((v: any) => ({
+                        value: v.warehouse_id || v.id,
+                        label: `${v.name} (${v.vehicle?.vehicle_registration || ''})`,
+                      })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                  <DropdownSelect
+                    value={selectedStatusFilter}
+                    onChange={(val) => {
+                      setSelectedStatusFilter(val);
+                      fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, val);
+                    }}
+                    placeholder="สถานะทั้งหมด"
+                    options={[
+                      { value: 'all', label: 'สถานะทั้งหมด' },
+                      ...Object.values(JobMainStatus).map((status) => ({
+                        value: status,
+                        label: JobStatusLabel[status] || status,
+                      })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-32 lg:w-36"
+                  />
+                </>
+              )}
+
+              {/* Work-schedule tab filters */}
+              {activeTab === 'work-schedule' && (
+                <>
+                  <div className="relative w-[calc(50%-0.25rem)] sm:w-auto">
+                    <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-36 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                    <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                  <SearchableSelect
+                    value={scheduleVehicleId}
+                    onChange={(val) => setScheduleVehicleId(val)}
+                    placeholder="เลือกทะเบียนรถ"
+                    searchPlaceholder="ค้นหารถ..."
+                    options={[
+                      { value: '', label: 'เลือกทะเบียนรถ' },
+                      ...warehouses
                         .filter(
                           (w) =>
                             (w as unknown as Record<string, string>).type === 'รถ' ||
                             (w as unknown as Record<string, string>).type === 'VEHICLE'
                         )
-                        .map((w) => (
-                          <option key={w.id} value={w.id}>
-                            {(w as unknown as Record<string, string>).license_plate} ({w.name})
-                          </option>
-                        ))}
-                    </Select>
-                  </div>
-                )}
-            </div>
+                        .map((w) => ({
+                          value: w.id,
+                          label: `${w.name} (${(w as unknown as Record<string, { vehicle_registration?: string }>).vehicle?.vehicle_registration || ''})`,
+                        })),
+                    ]}
+                    className="w-[calc(50%-0.25rem)] sm:w-44"
+                  />
+                </>
+              )}
 
-            {/* Tabs + View Toggle */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Spacer to push tabs right */}
+              <div className="flex-1" />
+
+              {/* View Toggle + Tabs */}
+              <div className="flex items-center gap-2 min-w-0 max-w-full overflow-hidden">
                 {(activeTab === 'schedule' || activeTab === 'approval') && (
                   <div className="flex items-center rounded-lg bg-slate-100 p-1">
                     <Button
@@ -1936,10 +1985,10 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
+                <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-slate-100 rounded-lg overflow-x-auto min-w-0 w-full sm:w-auto scrollbar-hide">
                   <button
                     onClick={() => setActiveTab('schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1950,12 +1999,12 @@ const Job: React.FC<JobProps> = ({
                   {!isFieldRole(authUser?.roleType) && (
                     <button
                       onClick={() => setActiveTab('unassigned')}
-                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'unassigned' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                       รอจัดคิว
                       {unassignedCount > 0 && (
-                        <span className="ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1.5 rounded-full text-xs">
+                        <span className="ml-1 sm:ml-1.5 bg-amber-100 text-amber-700 py-0.5 px-1 sm:px-1.5 rounded-full text-[10px] sm:text-xs">
                           {unassignedCount}
                         </span>
                       )}
@@ -1965,12 +2014,12 @@ const Job: React.FC<JobProps> = ({
                   {!isFieldRole(authUser?.roleType) && (
                     <button
                       onClick={() => setActiveTab('approval')}
-                      className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'approval' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'approval' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
                       รออนุมัติ
                       {approvalCount > 0 && (
-                        <span className="ml-1.5 bg-orange-100 text-orange-700 py-0.5 px-1.5 rounded-full text-xs">
+                        <span className="ml-1 sm:ml-1.5 bg-orange-100 text-orange-700 py-0.5 px-1 sm:px-1.5 rounded-full text-[10px] sm:text-xs">
                           {approvalCount}
                         </span>
                       )}
@@ -1979,7 +2028,7 @@ const Job: React.FC<JobProps> = ({
 
                   <button
                     onClick={() => setActiveTab('reports')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'reports'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1989,7 +2038,7 @@ const Job: React.FC<JobProps> = ({
 
                   <button
                     onClick={() => setActiveTab('work-schedule')}
-                    className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
+                    className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'work-schedule'
                       ? 'bg-white text-primary shadow-sm'
                       : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1998,6 +2047,7 @@ const Job: React.FC<JobProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
           </div>
         </Card>
 
@@ -2163,6 +2213,7 @@ const Job: React.FC<JobProps> = ({
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">รหัสงาน</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
@@ -2185,6 +2236,9 @@ const Job: React.FC<JobProps> = ({
                             className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                           >
                             <td className="px-4 py-3 text-sm text-slate-700">{idx + 1}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="text-primary font-bold">{job.code || '-'}</span>
+                            </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <p className="text-sm font-semibold text-slate-800">
                                 {job.customerName || '-'}
@@ -2252,7 +2306,7 @@ const Job: React.FC<JobProps> = ({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-0 border-b-0 h-0">
+                        <td colSpan={7} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่มีงานรออนุมัติ / ถูกปฏิเสธ</p>
@@ -2434,9 +2488,10 @@ const Job: React.FC<JobProps> = ({
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">รหัสลูกค้า</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วัน</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลา</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อลูกค้า</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันที่บันทึกรายงาน</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลาเช็คอิน</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">เวลาเช็คเอ้าท์</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">บริการ</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">จัดการ</th>
@@ -2486,9 +2541,10 @@ const Job: React.FC<JobProps> = ({
                               {formatThaiDate(reportDate)}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
-                              {report.time_in && report.time_out
-                                ? `${report.time_in} - ${report.time_out}`
-                                : '-'}
+                              {report.time_in || '-'}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                              {report.time_out || '-'}
                             </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <div className="flex flex-wrap justify-center gap-1">
@@ -2524,99 +2580,76 @@ const Job: React.FC<JobProps> = ({
                                   : rData.technician_sign_name || '-'}
                               </span>
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                              {(() => {
-                                const reportJob = rData.job;
-                                const buildTargetJob = () => {
-                                  const techList: any[] = [];
-                                  if (reportJob?.primary_technician) {
-                                    techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
-                                  }
-                                  if (reportJob?.job_team_members) {
-                                    reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
-                                      techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
-                                    });
-                                  }
-                                  return job || {
-                                    id: report.job_id,
-                                    customer_id: report.customer_id,
-                                    customerName: report.customer_name || '-',
-                                    service_report: report,
-                                    technicians: techList,
-                                    work_areas: [],
-                                    status: report.status,
-                                    assessment_id: reportJob?.assessment_id,
-                                    contract_id: reportJob?.contract_id,
-                                  } as unknown as FieldJob;
-                                };
-                                return (
-                                  <div className="flex items-center justify-center gap-1">
-                                    <Button
-                                      onClick={() => handleViewPdf(report.id)}
-                                      className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
-                                      disabled={loadingPdfId === report.id}
-                                    >
-                                      {loadingPdfId === report.id ? (
-                                        <span className="flex items-center gap-2">
-                                          <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
-                                          <span>กำลังโหลด...</span>
-                                        </span>
-                                      ) : (
-                                        <span className="flex items-center gap-2">
-                                          <EyeIcon className="w-3.5 h-3.5 shrink-0" />
-                                          <span>ดู PDF</span>
-                                        </span>
-                                      )}
-                                    </Button>
-                                    <div className="relative">
-                                      <Button
-                                        onClick={() => setOpenReportDropdownId((prev) => prev === report.id ? null : report.id)}
-                                        variant="ghost"
-                                        className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-                                        title="ตัวเลือก"
-                                      >
-                                        <ManageIcon className="h-5 w-5" />
-                                      </Button>
-                                      {openReportDropdownId === report.id && (
-                                        <>
-                                          <div className="fixed inset-0 z-40" onClick={() => setOpenReportDropdownId(null)} />
-                                          <div className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl shadow-xl bg-white ring-1 ring-black/5 overflow-hidden py-2" role="menu">
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setOpenReportDropdownId(null);
-                                                handleViewReport(buildTargetJob());
-                                              }}
-                                              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50"
-                                            >
-                                              <EyeIcon className="w-4 h-4 text-blue-500" />
-                                              <span>ดูรายละเอียด</span>
-                                            </button>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setOpenReportDropdownId(null);
-                                                handleWriteReport(buildTargetJob());
-                                              }}
-                                              className="flex w-full items-center gap-2 px-4 py-2 text-sm text-amber-600 hover:bg-amber-50"
-                                            >
-                                              <PencilIcon className="w-4 h-4 text-amber-500" />
-                                              <span>แก้ไขรายงาน</span>
-                                            </button>
-                                          </div>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })()}
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  onClick={() => handleViewPdf(report.id)}
+                                  className="px-3 py-1.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 h-auto"
+                                  disabled={loadingPdfId === report.id}
+                                >
+                                  {loadingPdfId === report.id ? (
+                                    <span className="flex items-center gap-2">
+                                      <LoadingIcon className="w-3.5 h-3.5 animate-spin shrink-0 text-white" />
+                                      <span>กำลังโหลด...</span>
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center gap-2">
+                                      <EyeIcon className="w-3.5 h-3.5 shrink-0" />
+                                      <span>ดู PDF</span>
+                                    </span>
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={(e) => {
+                                    const reportJob = rData.job;
+                                    const techList: any[] = [];
+                                    if (reportJob?.primary_technician) {
+                                      techList.push({ ...reportJob.primary_technician, name: `${reportJob.primary_technician.first_name || ''} ${reportJob.primary_technician.last_name || ''}`.trim() });
+                                    }
+                                    if (reportJob?.job_team_members) {
+                                      reportJob.job_team_members.filter((m: any) => m.id !== reportJob?.primary_technician?.id).forEach((m: any) => {
+                                        techList.push({ ...m, name: `${m.first_name || ''} ${m.last_name || ''}`.trim() });
+                                      });
+                                    }
+                                    const targetJob = job || {
+                                      id: report.job_id,
+                                      customer_id: report.customer_id,
+                                      customerName: report.customer_name || '-',
+                                      service_report: report,
+                                      technicians: techList,
+                                      work_areas: [],
+                                      status: report.status,
+                                      assessment_id: reportJob?.assessment_id,
+                                      contract_id: reportJob?.contract_id,
+                                    } as unknown as FieldJob;
+
+                                    const jId = targetJob.id;
+                                    if (openDropdownId === jId) {
+                                      setOpenDropdownId(null);
+                                      setSelectedJob(null);
+                                    } else {
+                                      const buttonRect = e.currentTarget.getBoundingClientRect();
+                                      setSelectedJob(targetJob as any);
+                                      setOpenDropdownId(jId);
+                                      setIsReportTabDropdown(true);
+                                      const threshold = 220;
+                                      const isBottom = buttonRect.bottom > window.innerHeight - threshold;
+                                      setDropdownPosition({ top: buttonRect.bottom, left: buttonRect.right, isBottom });
+                                    }
+                                  }}
+                                  variant="ghost"
+                                  className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                                >
+                                  <ManageIcon className="h-5 w-5" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={8} className="p-0 border-b-0 h-0">
+                        <td colSpan={9} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่พบรายงานบริการ</p>
@@ -2870,7 +2903,7 @@ const Job: React.FC<JobProps> = ({
         onClose={() => {
           setIsReportModalOpen(false);
           setJobForReport(null);
-          setIsReportReadOnly(false);
+          setReportReadOnly(false);
         }}
         job={jobForReport}
         finalStatus={reportFinalStatus}
@@ -2879,7 +2912,7 @@ const Job: React.FC<JobProps> = ({
         currentUser={currentUser}
         products={initialProducts}
         jobs={jobs}
-        readOnly={isReportReadOnly}
+        readOnly={reportReadOnly}
       />
 
       <DailyClosureCloseModal

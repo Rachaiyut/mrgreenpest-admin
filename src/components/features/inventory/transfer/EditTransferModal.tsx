@@ -5,10 +5,10 @@ import { Modal } from '../../../common/Modal';
 import {
   FormField,
   Input,
-  Select,
   Textarea,
   Button,
 } from '../../../common/FormControls';
+import { DropdownSelect } from '../../../common';
 import {
   Warehouse as WarehouseType,
   Product,
@@ -200,39 +200,28 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="p-3 bg-amber-50/50 rounded-md border border-amber-100">
                 <FormField label="คลังต้นทาง" htmlFor="from_warehouse_id">
-                  <Select
-                    id="from_warehouse_id"
-                    name="from_warehouse_id"
+                  <DropdownSelect
                     value={formData.from_warehouse_id || ''}
+                    onChange={() => {}}
+                    placeholder=""
+                    options={warehouses
+                      .filter((w) => w.id === formData.from_warehouse_id)
+                      .map((w) => ({ value: w.id, label: w.name }))}
                     disabled
                     className="bg-slate-100"
-                  >
-                    <option value={formData.from_warehouse_id}>
-                      {warehouses.find(
-                        (w) => w.id === formData.from_warehouse_id
-                      )?.name || ''}
-                    </option>
-                  </Select>
+                  />
                 </FormField>
               </div>
               <div className="p-3 bg-blue-50/50 rounded-md border border-blue-100">
                 <FormField label="คลังปลายทาง" htmlFor="to_warehouse_id">
-                  <Select
-                    id="to_warehouse_id"
-                    name="to_warehouse_id"
+                  <DropdownSelect
                     value={formData.to_warehouse_id || ''}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">เลือกคลังปลายทาง</option>
-                    {warehouses
+                    onChange={(v) => handleChange({ target: { name: 'to_warehouse_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                    placeholder="เลือกคลังปลายทาง"
+                    options={warehouses
                       .filter((w) => w.id !== formData.from_warehouse_id)
-                      .map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name}
-                        </option>
-                      ))}
-                  </Select>
+                      .map((w) => ({ value: w.id, label: w.name }))}
+                  />
                 </FormField>
               </div>
             </div>

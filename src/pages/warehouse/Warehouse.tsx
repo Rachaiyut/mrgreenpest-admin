@@ -19,7 +19,8 @@ import {
   ChartPieIcon,
   LoadingIcon, // Added LoadingIcon
 } from '../../assets/icons/Icons';
-import { Button, Input, Select } from '../../components/common/FormControls';
+import { Button, Input } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { AddWarehouseModal } from '../../components/features/warehouses/AddWarehouseModal';
 import { WarehouseDetailsModal } from '../../components/features/warehouses/WarehouseDetailsModal';
 import {
@@ -610,30 +611,32 @@ const Warehouse: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <Select
+            <DropdownSelect
               value={typeFilter}
-              onChange={(e) => {
-                setTypeFilter(e.target.value as 'all' | 'main' | 'sub');
+              onChange={(val) => {
+                setTypeFilter(val as 'all' | 'main' | 'sub');
                 setCurrentPage(1);
               }}
               className="w-full sm:w-48 flex-shrink-0"
-            >
-              <option value="all">ประเภททั้งหมด</option>
-              <option value="main">คลังหลัก</option>
-              <option value="sub">คลังย่อย</option>
-            </Select>
-            <Select
+              options={[
+                { value: 'all', label: 'ประเภททั้งหมด' },
+                { value: 'main', label: 'คลังหลัก' },
+                { value: 'sub', label: 'คลังย่อย' },
+              ]}
+            />
+            <DropdownSelect
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as 'all' | 'ACTIVE' | 'INACTIVE');
+              onChange={(val) => {
+                setStatusFilter(val as 'all' | 'ACTIVE' | 'INACTIVE');
                 setCurrentPage(1);
               }}
               className="w-full sm:w-48 flex-shrink-0"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="ACTIVE">ใช้งาน</option>
-              <option value="INACTIVE">ไม่ใช้งาน</option>
-            </Select>
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'ACTIVE', label: 'ใช้งาน' },
+                { value: 'INACTIVE', label: 'ไม่ใช้งาน' },
+              ]}
+            />
             </div>
 
             {/* Tabs */}

@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../../common/Modal';
-import { FormField, Input, Select, Button } from '../../../common/FormControls';
+import { FormField, Input, Button } from '../../../common/FormControls';
+import { DropdownSelect } from '../../../common';
 import {
   Warehouse as WarehouseType,
   Product,
@@ -183,30 +184,28 @@ export const EditReturnModal: React.FC<EditReturnModalProps> = ({
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="คืนจากคลัง (รถ)" htmlFor="fromWarehouseId">
-              <Select
-                id="fromWarehouseId"
+              <DropdownSelect
                 value={formData.warehouse_id || ''}
+                onChange={() => {}}
+                placeholder=""
+                options={warehouses
+                  .filter((w) => w.id === formData.warehouse_id)
+                  .map((w) => ({ value: w.id, label: w.name }))}
                 disabled
                 className="bg-slate-100"
-              >
-                <option value={formData.warehouse_id}>
-                  {warehouses.find((w) => w.id === formData.warehouse_id)
-                    ?.name || ''}
-                </option>
-              </Select>
+              />
             </FormField>
             <FormField label="คืนเข้าคลัง" htmlFor="toWarehouseId">
-              <Select
-                id="toWarehouseId"
+              <DropdownSelect
                 value={formData.warehouse_id || ''}
+                onChange={() => {}}
+                placeholder=""
+                options={warehouses
+                  .filter((w) => w.id === formData.warehouse_id)
+                  .map((w) => ({ value: w.id, label: w.name }))}
                 disabled
                 className="bg-slate-100"
-              >
-                <option value={formData.warehouse_id}>
-                  {warehouses.find((w) => w.id === formData.warehouse_id)
-                    ?.name || ''}
-                </option>
-              </Select>
+              />
             </FormField>
           </div>
           <div>

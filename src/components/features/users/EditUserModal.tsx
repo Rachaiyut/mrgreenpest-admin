@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User } from '@/src/types/entity/app.interface';
-import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { FormField, Input, Button } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
@@ -362,21 +363,13 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                     )}
                   </FormField>
                   <FormField label="เลือกบทบาท*" htmlFor="role_id">
-                    <Select
-                      id="role_id"
-                      name="role_id"
+                    <DropdownSelect
                       value={formData.role_id || ''}
-                      onChange={handleChange}
-                      className="h-11"
+                      onChange={(v) => handleChange({ target: { name: 'role_id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                      placeholder="เลือกบทบาท"
+                      options={roles.map((role) => ({ value: role.id, label: getRoleNameTh(role.name) }))}
                       disabled={isUploading}
-                    >
-                      <option value="">เลือกบทบาท</option>
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {getRoleNameTh(role.name)}
-                        </option>
-                      ))}
-                    </Select>
+                    />
                     {errors.role_id && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors.role_id}
@@ -385,7 +378,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   </FormField>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="รหัสผ่านใหม่" htmlFor="edit-password">
                     <div className="relative">
                       <Input

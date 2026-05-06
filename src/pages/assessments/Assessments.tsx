@@ -19,7 +19,8 @@ import { AssessmentAction } from '@/src/types/entity/assessment.interface';
 
 // Component
 import AssessmentCard from './AssessmentCard';
-import { Button, Input, Select } from '@/src/components/common/FormControls';
+import { Button, Input } from '@/src/components/common/FormControls';
+import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import {
   PlusIcon,
   ViewColumnsIcon,
@@ -44,7 +45,6 @@ import { AssessmentDetailsModal } from '@/src/components/features/assessments/As
 import { AssessmentModal } from '@/src/components/features/assessments/AssessmentModal'; // 🔴 นำเข้า AssessmentModal ที่รวมแล้ว
 import { StatusBadge } from '@/src/components/common/StatusBadge';
 import { Card } from '@/src/components/common/Card';
-import { ConfirmationModal } from '@/src/components/common';
 import {
   AssessmentApi,
   CustomerApi,
@@ -85,9 +85,6 @@ const Assessments: React.FC = () => {
   const [selectedAssessment, setSelectedAssessment] =
     useState<Assessment | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [assessmentToDelete, setAssessmentToDelete] =
-    useState<Assessment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDate, setFilterDate] = useState<string>(() => {
     const now = new Date();
@@ -288,12 +285,17 @@ const Assessments: React.FC = () => {
     }
   };
 
-  const handleDeleteAssessment = async (assessmentId: string) => {
+  const handleDeleteAssessment = async (assessmentId: string, reason?: string) => {
     try {
-      await AssessmentApi.update(assessmentId, { status: 'CANCELLED' } as Partial<Assessment>);
+      await AssessmentApi.update(assessmentId, {
+        status: 'CANCELLED',
+        ...(reason ? { cancel_reason: reason } : {}),
+      } as Partial<Assessment>);
+      Swal.fire({ icon: 'success', title: 'ยกเลิกใบประเมินแล้ว', timer: 1500, showConfirmButton: false });
       fetchData();
     } catch (error) {
-      console.error('Error cancelling assessment:', error);
+      const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถยกเลิกใบประเมินได้', 'error');
     }
   };
 
@@ -378,18 +380,20 @@ const Assessments: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (assessment: Assessment) => {
-    setAssessmentToDelete(assessment);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (assessment: Assessment) => {
     setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (assessmentToDelete) {
-      await handleDeleteAssessment(assessmentToDelete.id);
-    }
-    setIsDeleteModalOpen(false);
-    setAssessmentToDelete(null);
+    const result = await Swal.fire({
+      icon: 'warning',
+      title: 'ยืนยันการลบ',
+      html: `คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมิน <b>${assessment.code || assessment.id}</b> นี้?<br/><br/><small style="color:#94a3b8;">หมายเหตุ: การกระทำนี้ไม่สามารถย้อนกลับได้</small>`,
+      width: 400,
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการลบ',
+      cancelButtonText: 'ปิด',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!result.isConfirmed) return;
+    await handleDeleteAssessment(assessment.id);
   };
 
   const handleDropdownToggle = (
@@ -440,6 +444,7 @@ const Assessments: React.FC = () => {
     if (!selectedAssessment) return null;
 
     const isPending = String(selectedAssessment.status).toUpperCase() === 'PENDING';
+    const isCancelled = String(selectedAssessment.status).toUpperCase() === 'CANCELLED';
     const canApprove = hasPermission('APPROVE_ASSESSMENT');
 
     const actions: {
@@ -454,6 +459,23 @@ const Assessments: React.FC = () => {
           onClick: () => handleViewDetails(selectedAssessment),
         },
       ];
+
+    if (isCancelled) return actions.map((action) => (
+      <a
+        key={action.label}
+        href="#"
+        onClick={(e) => {
+          e.preventDefault();
+          action.onClick();
+          setOpenDropdownId(null);
+        }}
+        className="flex items-center w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100"
+        role="menuitem"
+      >
+        <action.icon className="mr-3 h-5 w-5" aria-hidden="true" />
+        <span>{action.label}</span>
+      </a>
+    ));
 
     if (!isPending || canApprove) {
       actions.push({
@@ -497,12 +519,12 @@ const Assessments: React.FC = () => {
         </div>
       )}
 
-      <div className="p-4 sm:p-6 lg:p-8 space-y-6 flex flex-col flex-1">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 flex flex-col flex-1">
         {/* Header Section */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">ใบประเมิน</h1>
-            <p className="mt-1 text-slate-600">
+            <h1 className="text-xl sm:text-3xl font-bold text-slate-800">ใบประเมิน</h1>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-base text-slate-600">
               จัดการและติดตามใบประเมินทั้งหมด
             </p>
           </div>
@@ -520,56 +542,56 @@ const Assessments: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500 rounded-lg">
-                <DocumentTextIcon className="h-5 w-5 text-white" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-blue-500 rounded-lg">
+                <DocumentTextIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-blue-600 font-medium">ทั้งหมด</p>
-                <p className="text-2xl font-bold text-blue-800">
+                <p className="text-xs sm:text-sm text-blue-600 font-medium">ทั้งหมด</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-800">
                   {stats.total}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-slate-500 rounded-lg">
-                <PencilIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-slate-500 rounded-lg">
+                <PencilIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-slate-600 font-medium">แบบร่าง</p>
-                <p className="text-2xl font-bold text-slate-800">
+                <p className="text-xs sm:text-sm text-slate-600 font-medium">แบบร่าง</p>
+                <p className="text-lg sm:text-2xl font-bold text-slate-800">
                   {stats.draft}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-500 rounded-lg">
-                <ClockIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-amber-500 rounded-lg">
+                <ClockIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-amber-600 font-medium">
+                <p className="text-xs sm:text-sm text-amber-600 font-medium">
                   รอดำเนินการ
                 </p>
-                <p className="text-2xl font-bold text-amber-800">
+                <p className="text-lg sm:text-2xl font-bold text-amber-800">
                   {stats.pending}
                 </p>
               </div>
             </div>
           </Card>
-          <Card className="!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-500 rounded-lg">
-                <CheckCircleIcon className="h-5 w-5 text-white" />
+          <Card className="!p-2.5 sm:!p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-green-500 rounded-lg">
+                <CheckCircleIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
-                <p className="text-sm text-green-600 font-medium">เสร็จสิ้น</p>
-                <p className="text-2xl font-bold text-green-800">
+                <p className="text-xs sm:text-sm text-green-600 font-medium">เสร็จสิ้น</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-800">
                   {stats.completed}
                 </p>
               </div>
@@ -578,12 +600,12 @@ const Assessments: React.FC = () => {
         </div>
 
         {/* Toolbar */}
-        <Card className="!p-4">
-          <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto flex-1 items-center">
-              
+        <Card className="!p-3 sm:!p-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-between items-center">
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto flex-1 items-center">
+
               {/* ช่องค้นหา */}
-              <div className="relative w-full sm:w-80 flex-shrink-0">
+              <div className="relative w-full sm:w-80 sm:shrink-0">
                 <Input
                   type="search"
                   placeholder="ค้นหารหัสใบประเมิน, ชื่อลูกค้า, รหัสลูกค้า"
@@ -610,7 +632,7 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* DatePicker กรองวันที่ */}
-              <div className="w-full sm:w-48 flex-shrink-0 relative">
+              <div className="flex-1 min-w-[120px] sm:w-48 sm:flex-none relative">
                  <DatePicker
                     selected={filterDate ? new Date(filterDate) : null}
                     onChange={(date: Date | null) => {
@@ -636,21 +658,22 @@ const Assessments: React.FC = () => {
               </div>
 
               {/* Dropdown สถานะ */}
-              <div className="w-full sm:w-40 flex-shrink-0">
-                <Select
+              <div className="flex-1 min-w-[120px] sm:w-40 sm:flex-none">
+                <DropdownSelect
                   value={filterStatus}
-                  onChange={(e) => {
-                    setFilterStatus(e.target.value);
+                  onChange={(val) => {
+                    setFilterStatus(val);
                     setCurrentPage(1);
                   }}
-                  className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-                >
-                  <option value="">สถานะทั้งหมด</option>
-                  <option value={AsessmentStatus.DRAFT}>แบบร่าง</option>
-                  <option value={AsessmentStatus.APPOINTMENT}>นัดหมายแล้ว</option>
-                  <option value={AsessmentStatus.PENDING}>รอดำเนินการ</option>
-                  <option value={AsessmentStatus.COMPLETE}>เสร็จสิ้น</option>
-                </Select>
+                  placeholder="สถานะทั้งหมด"
+                  options={[
+                    { value: '', label: 'สถานะทั้งหมด' },
+                    { value: AsessmentStatus.DRAFT, label: 'แบบร่าง' },
+                    { value: AsessmentStatus.APPOINTMENT, label: 'นัดหมายแล้ว' },
+                    { value: AsessmentStatus.PENDING, label: 'รอดำเนินการ' },
+                    { value: AsessmentStatus.COMPLETE, label: 'เสร็จสิ้น' },
+                  ]}
+                />
               </div>
             </div>
 
@@ -835,11 +858,10 @@ const Assessments: React.FC = () => {
                             <StatusBadge status={assessment.status} />
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700 text-right text-sm font-medium text-slate-900">
-                            ฿
-                            {assessment.total_price.toLocaleString('th-TH', {
+                            {Number(assessment.total_price || 0).toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
-                            })}
+                            })} บาท
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                             {(() => { const creator = (assessment as unknown as Record<string, Record<string, string>>).creator; return creator ? `${creator.first_name} ${creator.last_name || ''}`.trim() : '-'; })()}
@@ -974,30 +996,11 @@ const Assessments: React.FC = () => {
           assessment={selectedAssessment}
           products={products}
           customers={customers}
+          packages={packages}
+          categories={categories}
         />
       )}
 
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <div className="text-slate-600">
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบประเมินนี้?
-            <br />
-            {assessmentToDelete && (
-              <span className="font-semibold text-slate-800 mt-2 block">
-                รหัส: {assessmentToDelete.code || assessmentToDelete.id}
-              </span>
-            )}
-            <br />
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </div>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-red-600 hover:bg-red-700"
-      />
     </div>
   );
 };

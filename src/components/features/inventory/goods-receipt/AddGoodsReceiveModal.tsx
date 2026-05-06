@@ -18,7 +18,7 @@ import {
 
 // ===== Components =====
 import { Modal } from '../../../common/Modal';
-import { FormField, Input, Select, Button } from '../../../common/FormControls';
+import { FormField, Input, Button } from '../../../common/FormControls';
 import { SearchableSelect } from '../../../common/SearchableSelect';
 import { ProductSelectionModal } from '../../products/ProductSelectionModal';
 

@@ -26,7 +26,8 @@ import {
 import { Pagination } from '../../components/common/Pagination';
 import { SupplierModal } from '../../components/features/suppliers/SupplierModal';
 import { SupplierDetailsModal } from '../../components/features/suppliers/SupplierDetailsModal';
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { SupplierType } from '@/src/types';
 
 const Suppliers: React.FC = () => {
@@ -198,32 +199,36 @@ const Suppliers: React.FC = () => {
               </svg>
             </div>
             <div className="w-full sm:w-44 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value as SupplierType);
+                onChange={(val) => {
+                  setTypeFilter(val as SupplierType);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">ทุกประเภท</option>
-                <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
-                <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
-              </Select>
+                placeholder="ทุกประเภท"
+                options={[
+                  { value: '', label: 'ทุกประเภท' },
+                  { value: SupplierType.CORPORATE, label: 'นิติบุคคล' },
+                  { value: SupplierType.INDIVIDUAL, label: 'บุคคลธรรมดา' },
+                ]}
+              />
             </div>
             <div className="w-full sm:w-44 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onChange={(val) => {
+                  setStatusFilter(val);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">สถานะทั้งหมด</option>
-                <option value="true">ใช้งาน</option>
-                <option value="false">ไม่ใช้งาน</option>
-              </Select>
+                placeholder="สถานะทั้งหมด"
+                options={[
+                  { value: '', label: 'สถานะทั้งหมด' },
+                  { value: 'true', label: 'ใช้งาน' },
+                  { value: 'false', label: 'ไม่ใช้งาน' },
+                ]}
+              />
             </div>
           </div>
         </Card>

@@ -4,8 +4,8 @@ import {
   FormField,
   Input,
   Textarea,
-  Select,
 } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Customer } from '@/src/types/entity/customer.interface';
 import { PlusIcon, TrashIcon } from '@/src/assets/icons/Icons';
 import { CustomerType } from '@/src/types';
@@ -467,11 +467,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   <Input id="nickname" name="nickname" type="text" value={formData.nickname || ''} onChange={handleChange} />
                 </FormField>
                 <FormField label="เพศ" htmlFor="gender">
-                  <Select id="gender" name="gender" value={formData.gender || 'ไม่ระบุ'} onChange={handleChange}>
-                    <option>ไม่ระบุ</option>
-                    <option>ชาย</option>
-                    <option>หญิง</option>
-                  </Select>
+                  <DropdownSelect
+                    value={formData.gender || 'ไม่ระบุ'}
+                    onChange={(v) => handleChange({ target: { name: 'gender', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                    placeholder="เลือกเพศ"
+                    options={[
+                      { value: 'ไม่ระบุ', label: 'ไม่ระบุ' },
+                      { value: 'ชาย', label: 'ชาย' },
+                      { value: 'หญิง', label: 'หญิง' },
+                    ]}
+                  />
                 </FormField>
                 <FormField label="เลขประจำตัวผู้เสียภาษี" htmlFor="taxId">
                   <Input name="taxId" type="text" value={formData.taxId || ''} onChange={handleChange} className="font-mono" />

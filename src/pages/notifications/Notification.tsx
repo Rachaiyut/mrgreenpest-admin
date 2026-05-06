@@ -2,7 +2,8 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card } from '../../components/common/Card';
 import { StatusBadge } from '../../components/common/StatusBadge';
-import { Select, Input } from '../../components/common/FormControls';
+import { Input } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { formatThaiDate } from '../../utils/date';
 import { MagnifyingGlassIcon, CalendarIcon, LoadingIcon } from '../../assets/icons/Icons';
 import { NotificationApi } from '../../api/notification';
@@ -224,33 +225,35 @@ const Notifications: React.FC<NotificationsProps> = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <Select
+          <DropdownSelect
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value as typeof filterType)}
+            onChange={(val) => setFilterType(val as typeof filterType)}
             className="w-auto"
-          >
-            <option value="ทั้งหมด">ประเภท: ทั้งหมด</option>
-            <option value="ใกล้หมดสัญญา">ใกล้หมดสัญญา</option>
-            <option value="ใกล้กำหนดตรวจ">ใกล้กำหนดตรวจ</option>
-            <option value="ค้างชำระ">ค้างชำระ</option>
-          </Select>
+            options={[
+              { value: 'ทั้งหมด', label: 'ประเภท: ทั้งหมด' },
+              { value: 'ใกล้หมดสัญญา', label: 'ใกล้หมดสัญญา' },
+              { value: 'ใกล้กำหนดตรวจ', label: 'ใกล้กำหนดตรวจ' },
+              { value: 'ค้างชำระ', label: 'ค้างชำระ' },
+            ]}
+          />
           <div className="flex items-center gap-2">
             <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
             <span className="text-slate-400">-</span>
             <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-32 sm:w-36" />
           </div>
-          <Select
+          <DropdownSelect
             value={invoiceStatus}
-            onChange={(e) => setInvoiceStatus(e.target.value)}
+            onChange={(val) => setInvoiceStatus(val)}
             className="w-auto"
-          >
-            <option value="ทั้งหมด">Invoice: ทั้งหมด</option>
-            <option value="PAID">ชำระแล้ว</option>
-            <option value="PENDING">รอชำระ</option>
-            <option value="OVERDUE">เกินกำหนด</option>
-            <option value="DRAFT">ร่าง</option>
-            <option value="SENT">ส่งแล้ว</option>
-          </Select>
+            options={[
+              { value: 'ทั้งหมด', label: 'Invoice: ทั้งหมด' },
+              { value: 'PAID', label: 'ชำระแล้ว' },
+              { value: 'PENDING', label: 'รอชำระ' },
+              { value: 'OVERDUE', label: 'เกินกำหนด' },
+              { value: 'DRAFT', label: 'ร่าง' },
+              { value: 'SENT', label: 'ส่งแล้ว' },
+            ]}
+          />
         </div>
       </Card>
 

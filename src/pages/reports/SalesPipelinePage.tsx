@@ -99,7 +99,7 @@ const SalesPipelinePage: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col">
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in flex flex-col flex-1">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">
@@ -300,13 +300,13 @@ const SalesPipelinePage: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่ารวม</span>
                     <span className="font-medium text-slate-700">
-                      {formatNumber(data.quotations.total_value)} ฿
+                      {formatNumber(data.quotations.total_value)} บาท
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่าเซ็น</span>
                     <span className="font-medium text-emerald-600">
-                      {formatNumber(data.quotations.signed_value)} ฿
+                      {formatNumber(data.quotations.signed_value)} บาท
                     </span>
                   </div>
                 </div>
@@ -368,13 +368,13 @@ const SalesPipelinePage: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่ารวม</span>
                     <span className="font-medium text-slate-700">
-                      {formatNumber(data.contracts.total_value)} ฿
+                      {formatNumber(data.contracts.total_value)} บาท
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">มูลค่าใช้งาน</span>
                     <span className="font-medium text-emerald-600">
-                      {formatNumber(data.contracts.active_value)} ฿
+                      {formatNumber(data.contracts.active_value)} บาท
                     </span>
                   </div>
                 </div>
@@ -448,7 +448,7 @@ const SalesPipelinePage: React.FC = () => {
                       เซ็นสำเร็จ
                     </th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                      มูลค่า (฿)
+                      มูลค่า (บาท)
                     </th>
                     <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                       Conversion Rate (%)

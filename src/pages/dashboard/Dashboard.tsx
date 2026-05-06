@@ -97,19 +97,19 @@ const Dashboard: React.FC<DashboardProps> = () => {
   const maxRevenue = Math.max(...revenueByMonth.map(r => Number(r.revenue)), 1);
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">แดชบอร์ด</h1>
           <p className="text-base text-slate-500 mt-1">ภาพรวมธุรกิจ Mr. Green Pest Control</p>
         </div>
-        <div className="flex gap-1 bg-slate-100 rounded-xl p-1.5">
+        <div className="flex gap-1 flex-wrap bg-slate-100 rounded-xl p-1.5">
           {(Object.keys(RANGE_LABELS) as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`px-4 py-2 text-sm rounded-lg transition-all ${
+              className={`px-3 sm:px-4 py-2 text-sm rounded-lg transition-all ${
                 range === r ? 'bg-white text-blue-600 font-semibold shadow-sm' : 'text-slate-600 hover:text-slate-800'
               }`}
             >
@@ -173,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Pending Actions + Month Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Pending Actions */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold text-slate-800">รอดำเนินการ</h3>
             {pendingActions.total > 0 && (
@@ -208,11 +208,11 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Month-over-Month Comparison */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">เปรียบเทียบเดือนนี้ vs เดือนก่อน</h3>
           <div className="space-y-3">
             {comparison && [
-              { label: 'รายได้', data: comparison.revenue, prefix: '฿' },
+              { label: 'รายได้', data: comparison.revenue, suffix: ' บาท' },
               { label: 'งานทั้งหมด', data: comparison.jobs },
               { label: 'งานเสร็จสิ้น', data: comparison.completed_jobs },
               { label: 'ลูกค้าใหม่', data: comparison.new_customers },
@@ -222,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
                 <span className="text-sm text-slate-600">{item.label}</span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-semibold text-slate-800">
-                    {item.prefix === '฿' ? fmt(item.data.current) : fmtInt(item.data.current)}
+                    {item.suffix === ' บาท' ? fmt(item.data.current) : fmtInt(item.data.current)}
                   </span>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                     item.data.change > 0 ? 'bg-green-50 text-green-600' :
@@ -241,7 +241,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Row 2: Revenue Chart + Sales Pipeline */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">รายได้รายเดือน (6 เดือนล่าสุด)</h3>
           {revenueByMonth.length > 0 ? (
             <RevenueChart data={revenueByMonth} />
@@ -251,7 +251,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Sales Pipeline */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">Sales Pipeline</h3>
           <div className="space-y-4">
             <PipelineRow label="ใบประเมิน" total={pipeline.assessments.total} done={pipeline.assessments.completed} color="bg-slate-500" />
@@ -274,7 +274,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Row 3: Today Jobs + Job Status */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {/* Today's Jobs */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold text-slate-800">งานวันนี้</h3>
             <span className="text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">{todayJobs.length} งาน</span>
@@ -300,7 +300,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Job Status Breakdown */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-4">สถานะงาน ({RANGE_LABELS[range]})</h3>
           <div className="space-y-3">
             {jobsByStatus.map((item: any, i: number) => (
@@ -317,7 +317,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Row 4: Alerts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Overdue Invoices */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">ใบแจ้งหนี้ค้างชำระ</h3>
           <div className="grid grid-cols-2 gap-2 mb-3">
             {Object.entries(overdueInvoices.aging).map(([label, amount]) => (
@@ -343,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Expiring Contracts */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">สัญญาใกล้หมดอายุ (30 วัน)</h3>
           {expiringContracts.length > 0 ? (
             <div className="space-y-2 max-h-52 overflow-y-auto">
@@ -367,7 +367,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Low Stock Items */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">สินค้าใกล้หมดสต็อก</h3>
           {lowStockItems.length > 0 ? (
             <div className="space-y-2 max-h-52 overflow-y-auto">
@@ -392,7 +392,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         {/* Withdrawal Summary */}
         <div
           onClick={() => navigate('/inventory/issue-summaries')}
-          className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm cursor-pointer hover:border-blue-300 transition-colors"
+          className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm cursor-pointer hover:border-blue-300 transition-colors"
         >
           <h3 className="text-base font-semibold text-slate-800 mb-3">สรุปการเบิก</h3>
           <div className="space-y-3">
@@ -415,7 +415,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
       {/* Row 5: Upcoming + Recent */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {/* Upcoming Jobs */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">งานที่จะมาถึง (7 วัน)</h3>
           {upcomingJobs.length > 0 ? (
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -438,7 +438,7 @@ const Dashboard: React.FC<DashboardProps> = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
           <h3 className="text-base font-semibold text-slate-800 mb-3">กิจกรรมล่าสุด</h3>
           {recentActivities.length > 0 ? (
             <div className="space-y-2 max-h-48 overflow-y-auto">

@@ -1,6 +1,7 @@
 export * from './ApprovalModal';
 export * from './Card';
 export * from './ConfirmationModal';
+export * from './DropdownSelect';
 export * from './FormControls';
 export * from './Modal';
 export * from './Pagination';

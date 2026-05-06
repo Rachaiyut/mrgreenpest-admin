@@ -565,7 +565,7 @@ export const ContractForm: FC<ContractFormProps> = ({
     const options = quotations.map((q) => ({
       value: q.id,
       label: `${q.code || `QT-${q.id.slice(0, 8)}`} - ${q.customer_name}`,
-      description: `฿${Number(q.total).toLocaleString('th-TH')}`,
+      description: `${Number(q.total).toLocaleString('th-TH')} บาท`,
     }));
 
     // Add currently selected fullQuotation if not in the list
@@ -575,7 +575,7 @@ export const ContractForm: FC<ContractFormProps> = ({
         options.unshift({
           value: fullQuotation.id,
           label: `${fullQuotation.code || `QT-${fullQuotation.id.slice(0, 8)}`} - ${fullQuotation.customer_name}`,
-          description: `฿${Number(fullQuotation.total).toLocaleString('th-TH')}`,
+          description: `${Number(fullQuotation.total).toLocaleString('th-TH')} บาท`,
         });
       }
     }
@@ -1372,7 +1372,7 @@ export const ContractForm: FC<ContractFormProps> = ({
             </FormField>
 
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField label="วันที่เริ่มสัญญา" htmlFor="startDate">
                 <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
               </FormField>

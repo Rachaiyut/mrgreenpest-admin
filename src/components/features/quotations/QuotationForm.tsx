@@ -1383,7 +1383,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     <form
       id="quotation-form"
       onSubmit={handleSubmit}
-      className={`space-y-6 ${isReadOnly ? 'pointer-events-none select-none' : ''}`}
+      className={`space-y-6 ${isReadOnly ? 'pointer-events-none opacity-70 [&_input:not([type=checkbox]):not([type=radio])]:!bg-slate-100 [&_input:not([type=checkbox]):not([type=radio])]:!text-slate-500 [&_input:not([type=checkbox]):not([type=radio])]:!border-slate-300 [&_textarea]:!bg-slate-100 [&_textarea]:!text-slate-500 [&_textarea]:!border-slate-300 [&_select]:!bg-slate-100 [&_select]:!text-slate-500 [&_select]:!border-slate-300 [&_.relative>div[class*=ring]]:!bg-slate-100 [&_.relative>div[class*=ring]]:!text-slate-500 [&_.relative>div[class*=ring]]:!ring-slate-300' : ''}`}
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
@@ -1549,6 +1549,21 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           </Card>
         )}
 
+        <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
+          <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
+          </div>
+          <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
+            <div className="flex justify-between items-center text-sm">
+              <label className={`flex items-center gap-2 ${isReadOnly ? 'cursor-not-allowed text-slate-400' : 'cursor-pointer text-slate-600'}`}><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className={`rounded h-4 w-4 ${isReadOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-green-600'}`} />ภาษีมูลค่ารวม 7% (VAT)</label>
+              <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
+            </div>
+            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
+          </div>
+        </div>
+
         <InstallmentSection
           installments={installments.map(i => ({
             id: i.id,
@@ -1572,21 +1587,6 @@ export const QuotationForm: FC<QuotationFormProps> = ({
           disableInstallmentOption={isOneTimePackage}
           disabledReason="แพ็กเกจแบบครั้งเดียวต้องชำระเต็มจำนวน"
         />
-
-        <div className="flex flex-col lg:flex-row items-stretch gap-6 w-full lg:col-span-2">
-          <div className="w-full lg:flex-1 min-w-0 flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-            <label className="block text-sm font-semibold text-slate-700 mb-2">หมายเหตุ</label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} disabled={isReadOnly} placeholder="หมายเหตุเพิ่มเติม..." className="!w-full !max-w-none resize-none flex-1" />
-          </div>
-          <div className="w-full lg:w-96 shrink-0 space-y-3 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between text-sm"><span className="text-slate-600">รวมเป็นเงิน</span><span className="font-medium text-slate-900">{subtotal.toLocaleString()} บาท</span></div>
-            <div className="flex justify-between items-center text-sm">
-              <label className="flex items-center gap-2 cursor-pointer text-slate-600"><input type="checkbox" checked={includeVat} onChange={(e) => setIncludeVat(e.target.checked)} disabled={isReadOnly} className="rounded border-slate-300 text-green-600 h-4 w-4" />ภาษีมูลค่ารวม 7% (VAT)</label>
-              <span className="font-medium text-slate-900">{vatAmount.toLocaleString()} บาท</span>
-            </div>
-            <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-base font-bold text-slate-800">จำนวนเงินรวมทั้งสิ้น</span><span className="text-xl font-bold text-green-600">{netTotal.toLocaleString()} บาท</span></div>
-          </div>
-        </div>
       </div>
     </form>
     </div>

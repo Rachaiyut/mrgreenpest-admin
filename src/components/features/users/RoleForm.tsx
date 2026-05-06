@@ -147,7 +147,7 @@ export const RoleForm: FC<RoleFormProps> = ({
                                   checked={isChecked}
                                   disabled={readOnly}
                                   onChange={() => perm && onTogglePermission(perm.id)}
-                                  className="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer"
+                                  className={`rounded h-4 w-4 ${readOnly ? 'border-slate-200 text-slate-400 cursor-not-allowed opacity-60' : 'border-slate-300 text-primary focus:ring-primary cursor-pointer'}`}
                                 />
                               ) : (
                                 <span className="block w-4 h-4 mx-auto bg-slate-100 rounded-sm" />

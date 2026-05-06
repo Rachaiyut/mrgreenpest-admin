@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 import { Modal } from '../../common/Modal';
 import { User, UserRole } from '@/src/types/entity/app.interface';
-import { FormField, Input, Select, Button } from '../../common/FormControls';
+import { FormField, Input, Button } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { PhotoIcon, EyeIcon, EyeSlashIcon } from '../../../assets/icons/Icons';
 import { getRoleNameTh } from '@/src/utils/role';
 import { StorageApi } from '@/src/api/storage';
@@ -369,20 +370,12 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
                     )}
                   </FormField>
                   <FormField label="เลือกบทบาท*" htmlFor="user-role-id">
-                    <Select
-                      id="user-role-id"
-                      name="user-role-id"
-                      className="h-11"
+                    <DropdownSelect
                       value={formData['user-role-id']}
-                      onChange={handleChange}
-                    >
-                      <option value="">เลือกบทบาท</option>
-                      {roles.map((role) => (
-                        <option key={role.id} value={role.id}>
-                          {getRoleNameTh(role.name)}
-                        </option>
-                      ))}
-                    </Select>
+                      onChange={(v) => handleChange({ target: { name: 'user-role-id', value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                      placeholder="เลือกบทบาท"
+                      options={roles.map((role) => ({ value: role.id, label: getRoleNameTh(role.name) }))}
+                    />
                     {errors['user-role-id'] && (
                       <p className="text-red-500 text-sm mt-1">
                         {errors['user-role-id']}

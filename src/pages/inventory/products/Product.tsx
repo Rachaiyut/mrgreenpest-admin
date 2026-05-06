@@ -489,7 +489,7 @@ const Product: React.FC = () => {
                     </td>
                     {/* DF-10: show price not cost_price */}
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
-                      ฿{Number(product.price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                      {Number(product.price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
                     </td>
                     {selectedType === 'PRODUCT' && (
                     <>

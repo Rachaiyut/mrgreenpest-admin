@@ -91,11 +91,10 @@ export const WithdrawalDetailsModal: React.FC<WithdrawalDetailsModalProps> = ({
           <p className="text-lg font-semibold text-slate-800">
             ยอดรวมทั้งหมด:{' '}
             <span className="text-primary">
-              ฿
               {grandTotal.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
-              })}
+              })}{' '}บาท
             </span>
           </p>
           <Button variant="primary" type="button" onClick={onClose}>

@@ -33,7 +33,8 @@ import { CustomerDetailsModal } from '../../components/features/customers/Custom
 import { CustomerContractsListModal } from '../../components/features/customers/CustomerContractsListModal';
 import { CustomerHistoryModal } from '../../components/features/customers/CustomerHistoryModal';
 import { CustomerFollowUpModal } from '../../components/features/customers/CustomerFollowUpModal';
-import { Input, Button, Select } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { SupplierType } from '@/src/types';
 
@@ -374,18 +375,20 @@ const Customers: React.FC = () => {
               </svg>
             </div>
             <div className="w-full sm:w-48 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={typeFilter || ''}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value as SupplierType);
+                onChange={(val) => {
+                  setTypeFilter(val as SupplierType);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">ทุกประเภท</option>
-                <option value={SupplierType.CORPORATE}>นิติบุคคล</option>
-                <option value={SupplierType.INDIVIDUAL}>บุคคลธรรมดา</option>
-              </Select>
+                placeholder="ทุกประเภท"
+                options={[
+                  { value: '', label: 'ทุกประเภท' },
+                  { value: SupplierType.CORPORATE, label: 'นิติบุคคล' },
+                  { value: SupplierType.INDIVIDUAL, label: 'บุคคลธรรมดา' },
+                ]}
+              />
             </div>
             <div className="ml-auto flex items-center rounded-lg bg-slate-200 p-1 shrink-0">
               <Button

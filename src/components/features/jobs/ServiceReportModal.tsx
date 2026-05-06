@@ -3,7 +3,8 @@ import Swal from 'sweetalert2';
 import SignatureCanvas from 'react-signature-canvas';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
 import { Modal } from '../../common/Modal';
-import { Textarea, Input, Select } from '../../common/FormControls';
+import { Textarea, Input } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import {
   FieldJob,
   ServiceReport,
@@ -788,7 +789,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const hasExistingReport = !!job?.service_report;
   const title = readOnly
-    ? 'รายงานบริการ'
+    ? 'รายละเอียดใบรายงานบริการ'
     : finalStatus === JobStatus.Cancelled
       ? 'บันทึกเหตุผลการยกเลิก'
       : hasExistingReport
@@ -803,7 +804,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
   const renderTermiteForm = (): React.ReactElement => (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-4 mb-4 p-4 bg-yellow-50 rounded-xl border border-yellow-100">
+      <div className="flex flex-wrap gap-3 sm:gap-4 mb-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-100">
         <span className="text-sm font-semibold text-yellow-800 w-full">
           สถานะปลวก:
         </span>
@@ -847,9 +848,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       </div>
 
       {reportState.termite?.status !== 'absent' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 animate-fadeIn">
           {/* Station Section */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">
               ระบบสถานี/เหยื่อ
             </h6>
@@ -1101,11 +1102,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
 
           {/* Box Placement */}
-          <div className="col-span-1 md:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="col-span-1 md:col-span-2 bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
             <h6 className="font-semibold text-slate-700 mb-3 border-b pb-2">
               การวางกล่อง (Termite Box)
             </h6>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               <label className="flex items-center gap-2 shrink-0 h-9">
                 <input
                   type="checkbox"
@@ -1137,7 +1138,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   }
                 />
               </div>
-              <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:flex-1 min-w-0">
                 <span className="text-sm text-slate-600 shrink-0">บริเวณ:</span>
                 <input
                   type="text"
@@ -1172,7 +1173,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
 
   const renderAntForm = (): React.ReactElement => (
-    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+    <div className="space-y-4 p-3 sm:p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
@@ -1311,7 +1312,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   );
 
   const renderMosquitoForm = (): React.ReactElement => (
-    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+    <div className="space-y-4 p-3 sm:p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
@@ -1340,7 +1341,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
   );
 
   const renderRatForm = (): React.ReactElement => (
-    <div className="space-y-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+    <div className="space-y-4 p-3 sm:p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <label className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer hover:bg-slate-100 transition-colors">
           <input
@@ -1447,8 +1448,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
             </button>
           </div>
         ) : (
-          <div className="flex justify-between w-full">
-            <div className="text-sm text-slate-500 flex items-center">
+          <div className="flex justify-between items-center gap-4 w-full">
+            <div className="text-sm text-slate-500">
               * กรุณาตรวจสอบข้อมูลก่อนบันทึก
             </div>
             <div className="flex gap-2">
@@ -1483,18 +1484,18 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
       <form
         id="service-report-form"
         onSubmit={handleSubmit}
-        className={`space-y-6 ${readOnly ? 'pointer-events-none opacity-80' : ''}`}
+        className={`space-y-6 ${readOnly ? 'pointer-events-none opacity-70 [&_input[type=text]]:!bg-slate-100 [&_input[type=text]]:!text-slate-500 [&_input[type=text]]:!border-slate-300 [&_input[type=number]]:!bg-slate-100 [&_input[type=number]]:!text-slate-500 [&_input[type=number]]:!border-slate-300 [&_input[type=search]]:!bg-slate-100 [&_input[type=search]]:!text-slate-500 [&_input[type=search]]:!border-slate-300 [&_textarea]:!bg-slate-100 [&_textarea]:!text-slate-500 [&_textarea]:!border-slate-300 [&_select]:!bg-slate-100 [&_select]:!text-slate-500 [&_select]:!border-slate-300 [&_[ring-1]]:!bg-slate-100 [&_[ring-1]]:!text-slate-500 [&_.relative>div[class*=ring]]:!bg-slate-100 [&_.relative>div[class*=ring]]:!text-slate-500' : ''}`}
       >
         {/* Header Card */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <DocumentIcon className="w-5 h-5 text-primary" />
+          <div className="bg-slate-50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm sm:text-base">
+              <DocumentIcon className="w-5 h-5 text-primary shrink-0" />
               ข้อมูลงานบริการ
             </h3>
             <StatusBadge status={reportState.status || JobStatus.Draft} />
           </div>
-          <div className="p-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+          <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 text-sm">
             <div>
               <dt className="text-slate-500 mb-1">ลูกค้า</dt>
               <dd className="font-semibold text-slate-900 text-base">
@@ -1540,10 +1541,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </div>
 
         {/* Global Service Checkboxes (Types & Actions) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการ</h4>
-            <div className="grid grid-cols-2 gap-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2">
               {ALL_SERVICE_TYPES.map((type) => (
                 <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
@@ -1566,9 +1567,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               />
             )}
           </div>
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-800 mb-3">การบริการ</h4>
-            <div className="grid grid-cols-2 gap-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2">
               {ALL_SERVICE_ACTIONS.map((action) => (
                 <label key={action} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
@@ -1586,9 +1587,9 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Pest Detail Tabs */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 border-b border-slate-200 px-6 py-4">
-            <h3 className="text-md font-bold text-slate-800 flex items-center gap-2">
-              <CheckCircleIcon className="w-5 h-5 text-primary" />
+          <div className="bg-slate-50 border-b border-slate-200 px-4 sm:px-6 py-3 sm:py-4">
+            <h3 className="text-sm sm:text-md font-bold text-slate-800 flex items-center gap-2">
+              <CheckCircleIcon className="w-5 h-5 text-primary shrink-0" />
               การปฏิบัติงาน การบริการ ปัญหาที่พบ และข้อเสนอแนะ
             </h3>
           </div>
@@ -1607,18 +1608,18 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               </button>
             ))}
           </div>
-          <div className="p-6 bg-slate-50/50">
+          <div className="p-4 sm:p-6 bg-slate-50/50">
             {pestRenderConfig[activePestTab]?.render?.() || <div className="text-slate-400 text-center py-8">เลือก tab ด้านบนเพื่อดูรายละเอียด</div>}
           </div>
         </div>
 
         {/* Next Appointment */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-primary" />
             นัดหมายครั้งต่อไป
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">นัดหมายครั้งต่อไป</label>
               <div className="flex gap-2">
@@ -1640,10 +1641,11 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     placeholderText="dd/mm/yyyy"
                     portalId="root"
                     popperClassName="!z-[9999]"
-                    className="w-full pl-10 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                    disabled={readOnly}
+                    className={`w-full pl-10 pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-slate-300 focus:ring-primary focus:border-primary'}`}
                     wrapperClassName="w-full"
                   />
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <CalendarIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${readOnly ? 'text-slate-300' : 'text-slate-400'}`} />
                 </div>
                 {addDaysSelection === 'custom' ? (
                   <div className="w-1/3 relative flex items-center">
@@ -1667,18 +1669,24 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <Select value={addDaysSelection} onChange={handleAddDaysSelect} className="w-1/3 text-sm">
-                    <option value="" disabled>+ เพิ่มวัน</option>
-                    <option value="3">3 วัน</option>
-                    <option value="5">5 วัน</option>
-                    <option value="7">7 วัน</option>
-                    <option value="15">15 วัน</option>
-                    <option value="20">20 วัน</option>
-                    <option value="30">30 วัน</option>
-                    <option value="60">60 วัน</option>
-                    <option value="90">90 วัน</option>
-                    <option value="custom">อื่นๆ</option>
-                  </Select>
+                  <DropdownSelect
+                    value={addDaysSelection}
+                    onChange={(v) => handleAddDaysSelect({ target: { value: v } } as React.ChangeEvent<HTMLSelectElement>)}
+                    placeholder="+ เพิ่มวัน"
+                    disabled={readOnly}
+                    options={[
+                      { value: '3', label: '3 วัน' },
+                      { value: '5', label: '5 วัน' },
+                      { value: '7', label: '7 วัน' },
+                      { value: '15', label: '15 วัน' },
+                      { value: '20', label: '20 วัน' },
+                      { value: '30', label: '30 วัน' },
+                      { value: '60', label: '60 วัน' },
+                      { value: '90', label: '90 วัน' },
+                      { value: 'custom', label: 'อื่นๆ' },
+                    ]}
+                    className="w-1/3 text-sm"
+                  />
                 )}
               </div>
               <div className="mt-5">
@@ -1703,13 +1711,14 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                     dateFormat="dd/MM/yyyy"
                     locale="th"
                     placeholderText="dd/mm/yyyy"
-                    isClearable
+                    isClearable={!readOnly}
                     portalId="root"
                     popperClassName="!z-[9999]"
-                    className="w-full pl-10 pr-3 py-2 bg-white border border-emerald-300 rounded-md shadow-sm focus:outline-none focus:ring-emerald-400 focus:border-emerald-400 text-sm h-10"
+                    disabled={readOnly}
+                    className={`w-full pl-10 pr-3 py-2 rounded-md shadow-sm focus:outline-none text-sm h-10 ${readOnly ? 'bg-slate-100 border border-slate-300 text-slate-500 cursor-not-allowed' : 'bg-white border border-emerald-300 focus:ring-emerald-400 focus:border-emerald-400'}`}
                     wrapperClassName="w-full"
                   />
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500 pointer-events-none" />
+                  <CalendarIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none ${readOnly ? 'text-slate-300' : 'text-emerald-500'}`} />
                 </div>
               </div>
             </div>
@@ -1752,7 +1761,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </div>
 
         {/* Blueprint Images */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
             <DocumentIcon className="w-5 h-5 text-primary" />
             รูปการปฎิบัติงาน เเละ Station
@@ -1841,7 +1850,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         </div>
 
         {/* Additional Notes */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
           <h3 className="text-md font-bold text-slate-800 mb-4">หมายเหตุเพิ่มเติม</h3>
           <Textarea
             rows={3}
@@ -1853,7 +1862,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Payment Info Section */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+          <div className="bg-slate-50/50 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
               <div className="p-1.5 bg-white border border-slate-200 rounded-md text-green-600 shadow-sm">
                 <CreditCardIcon className="w-4 h-4" />
@@ -1861,8 +1870,8 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
               ข้อมูลการชำระเงิน
             </h3>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
               <div className="flex flex-col">
                 {job.invoice ? (
                   <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50/30 rounded-2xl border border-green-200/60 p-6 shadow-sm h-full flex flex-col justify-center">
@@ -1901,10 +1910,10 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">(รับเงินหน้างาน)</span>
                 </div>
                 <div className="flex flex-col gap-5">
-                  <Select
+                  <DropdownSelect
                     value={reportState.payment_condition || ''}
-                    onChange={(e) => {
-                      const condition = e.target.value;
+                    onChange={(v) => {
+                      const condition = v;
                       setReportState((prev) => ({
                         ...prev,
                         payment_condition: condition as ServiceReport['payment_condition'],
@@ -1912,14 +1921,16 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                         payment_installment_count: job.invoice?.term || prev.payment_installment_count,
                       }));
                     }}
-                    className="w-full text-sm border-slate-200 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500/20"
-                  >
-                    <option value="">-- ยังไม่ได้รับชำระ / วางบิล --</option>
-                    <option value="CASH">เงินสด</option>
-                    <option value="TRANSFER">โอนเงิน</option>
-                    <option value="CREDIT_CARD">บัตรเครดิต</option>
-                    <option value="CHEQUE">เช็ค</option>
-                  </Select>
+                    placeholder="-- ยังไม่ได้รับชำระ / วางบิล --"
+                    disabled={readOnly}
+                    options={[
+                      { value: 'CASH', label: 'เงินสด' },
+                      { value: 'TRANSFER', label: 'โอนเงิน' },
+                      { value: 'CREDIT_CARD', label: 'บัตรเครดิต' },
+                      { value: 'CHEQUE', label: 'เช็ค' },
+                    ]}
+                    className="w-full text-sm"
+                  />
 
                   {reportState.payment_condition && (
                     <div className="flex flex-col gap-5 animate-in fade-in duration-300">
@@ -2009,7 +2020,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
 
         {/* Reference Document Section */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50/50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+          <div className="bg-slate-50/50 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-semibold text-slate-800 flex items-center gap-2.5">
               <div className="p-1.5 bg-white border border-slate-200 rounded-md text-blue-600 shadow-sm">
                 <DocumentIcon className="w-4 h-4" />
@@ -2033,6 +2044,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   label: `${q.code} ${q.customer_name ? `- ${q.customer_name}` : ''} (${formatThaiDate(q.created_at)})`,
                 }))}
                 placeholder="ค้นหาใบเสนอราคา (พิมพ์เพื่อค้นหา)"
+                disabled={readOnly}
                 className="w-full"
               />
             </div>
@@ -2060,6 +2072,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   onChange={(e) => setReportState(prev => ({ ...prev, customer_sign_name: e.target.value }))}
                   placeholder="ชื่อผู้เซ็น (ลูกค้า)"
                   className="flex-1 mr-2"
+                  disabled={readOnly}
                 />
                 <button
                   type="button"
@@ -2098,6 +2111,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
                   onChange={(e) => setReportState(prev => ({ ...prev, technician_sign_name: e.target.value }))}
                   placeholder="ชื่อผู้เซ็น (ช่างเทคนิค)"
                   className="flex-1 mr-2"
+                  disabled={readOnly}
                 />
                 <button
                   type="button"

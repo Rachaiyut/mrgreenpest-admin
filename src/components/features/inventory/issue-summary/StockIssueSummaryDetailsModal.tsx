@@ -206,10 +206,10 @@ const StockIssueSummaryDetailsModal: React.FC<StockIssueSummaryDetailsModalProps
   );
   const shortId = (summary.id as string)?.slice(0, 8) || '-';
   const fmtMoney = (v: number) =>
-    `฿${v.toLocaleString('th-TH', {
+    `${v.toLocaleString('th-TH', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })}`;
+    })} บาท`;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="รายละเอียดใบเบิก">

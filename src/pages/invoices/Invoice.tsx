@@ -24,7 +24,8 @@ import { Pagination } from '../../components/common/Pagination';
 import { Invoice } from '../../types';
 import { InvoiceStatus, InvoiceStatusLabel, InvoiceStatusColor } from '../../types/enums/invoice';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '../../components/common/DropdownSelect';
 import { useData } from '../../contexts/DataContext';
 import { InvoiceApi } from '../../api/invoice';
 import { AccountApi } from '../../api/account';
@@ -515,10 +516,9 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <div>
               <p className="text-sm text-purple-600 font-medium">ยอดค้างชำระ</p>
               <p className="text-lg font-bold text-purple-800">
-                ฿
                 {invoiceStats.pendingValue.toLocaleString('th-TH', {
                   minimumFractionDigits: 0,
-                })}
+                })}{' '}บาท
               </p>
             </div>
           </div>
@@ -559,26 +559,28 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
             <DatePicker selected={invoiceEndDate ? new Date(invoiceEndDate) : null} onChange={(date: Date | null) => setInvoiceEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-40" />
           </div>
           <div className="w-full sm:w-48">
-            <Select
+            <DropdownSelect
               value={invoiceStatusFilter}
-              onChange={(e) => {
-                const v = e.target.value as 'ทั้งหมด' | InvoiceStatus;
+              onChange={(val) => {
+                const v = val as 'ทั้งหมด' | InvoiceStatus;
                 setInvoiceStatusFilter(v);
                 setInvoicePage(1);
               }}
               className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-            >
-              <option value="ทั้งหมด">สถานะทั้งหมด</option>
-              <option value="DRAFT">ร่าง</option>
-              <option value="PENDING">รอชำระ</option>
-              <option value="SENT">ส่งแล้ว</option>
-              <option value="PENDING_REVIEW">รอตรวจสอบ</option>
-              <option value="PENDING_ACCOUNTING_REVIEW">รอบัญชีอนุมัติ</option>
-              <option value="PAID">ชำระแล้ว</option>
-              <option value="PARTIAL">ชำระบางส่วน</option>
-              <option value="OVERDUE">เกินกำหนด</option>
-              <option value="CANCELLED">ยกเลิก</option>
-            </Select>
+              placeholder="สถานะทั้งหมด"
+              options={[
+                { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
+                { value: 'DRAFT', label: 'ร่าง' },
+                { value: 'PENDING', label: 'รอชำระ' },
+                { value: 'SENT', label: 'ส่งแล้ว' },
+                { value: 'PENDING_REVIEW', label: 'รอตรวจสอบ' },
+                { value: 'PENDING_ACCOUNTING_REVIEW', label: 'รอบัญชีอนุมัติ' },
+                { value: 'PAID', label: 'ชำระแล้ว' },
+                { value: 'PARTIAL', label: 'ชำระบางส่วน' },
+                { value: 'OVERDUE', label: 'เกินกำหนด' },
+                { value: 'CANCELLED', label: 'ยกเลิก' },
+              ]}
+            />
           </div>
         </div>
       </Card>
@@ -683,11 +685,10 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
                         {formatThaiDate(i.due_at)}
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
-                        ฿
                         {Number(i.total).toLocaleString('th-TH', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
-                        })}
+                        })}{' '}บาท
                       </td>
                       <td className="px-4 py-3 text-sm">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${InvoiceStatusColor[i.status as InvoiceStatus] || 'bg-slate-100 text-slate-600'}`}>{InvoiceStatusLabel[i.status as InvoiceStatus] || i.status}</span>

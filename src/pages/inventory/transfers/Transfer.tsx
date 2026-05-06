@@ -23,7 +23,8 @@ import { AddTransferModal } from '../../../components/features/inventory/transfe
 
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Card } from '../../../components/common/Card';
-import { Input, Button, Select } from '../../../components/common/FormControls';
+import { Input, Button } from '../../../components/common/FormControls';
+import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { Pagination } from '../../../components/common/Pagination';
 import { StatusBadge } from '../../../components/common/StatusBadge';
@@ -482,21 +483,22 @@ const Transfers: React.FC = () => {
                 placeholder="คลังปลายทางทั้งหมด"
               />
             </div>
-            <Select
+            <DropdownSelect
               value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              onChange={(val) => {
+                setStatusFilter(val);
                 setCurrentPage(1);
               }}
-              className="w-full sm:w-fit text-sm !pr-8"
-            >
-              <option value="all">สถานะทั้งหมด</option>
-              <option value="DRAFT">ฉบับร่าง</option>
-              <option value="PENDING">รออนุมัติ</option>
-              <option value="APPROVED">อนุมัติแล้ว</option>
-              <option value="REJECTED">ไม่อนุมัติ</option>
-              <option value="CANCELLED">ยกเลิก</option>
-            </Select>
+              className="w-full sm:w-fit text-sm"
+              options={[
+                { value: 'all', label: 'สถานะทั้งหมด' },
+                { value: 'DRAFT', label: 'ฉบับร่าง' },
+                { value: 'PENDING', label: 'รออนุมัติ' },
+                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                { value: 'CANCELLED', label: 'ยกเลิก' },
+              ]}
+            />
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate ? new Date(startDate) : null}

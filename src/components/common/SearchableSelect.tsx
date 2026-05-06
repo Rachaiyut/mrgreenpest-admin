@@ -140,15 +140,16 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
       )}
       <div ref={triggerRef} className="relative" onClick={handleToggle}>
         <div
-          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm leading-6 min-h-[38px] transition-colors
-            ${disabled ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white cursor-pointer'} 
+          className={`block w-full rounded-md border-0 py-2 pl-3 pr-10 ring-1 ring-inset placeholder:text-slate-400 text-sm leading-6 h-[38px] truncate transition-colors
+            ${disabled ? 'bg-slate-100 text-slate-500 ring-slate-300 cursor-not-allowed' : 'text-slate-900 ring-slate-300 bg-white cursor-pointer focus:ring-2 focus:ring-inset focus:ring-primary'}
             ${!selectedOption && !value && !disabled ? 'text-slate-400' : ''}`}
+          title={displayLabel}
         >
           {displayLabel}
         </div>
         <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
           <svg
-            className={`h-5 w-5 ${disabled ? 'text-slate-300' : 'text-gray-400'}`}
+            className={`h-5 w-5 ${disabled ? 'text-slate-400' : 'text-gray-400'}`}
             viewBox="0 0 20 20"
             fill="currentColor"
             aria-hidden="true"

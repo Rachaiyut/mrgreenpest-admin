@@ -2,7 +2,8 @@ import { FC, FormEvent, useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 
 import { Modal } from '../../common/Modal';
-import { Input, Select, Button } from '../../common/FormControls';
+import { Input, Button } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { AccountApi } from '../../../api/account';
 import { Account, AccountTransactionType } from '../../../types/entity/account.interface';
 
@@ -86,7 +87,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
       }
     >
       <form id="account-trx-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-md bg-slate-50 border border-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-md bg-slate-50 border border-slate-200">
           <div>
             <p className="text-xs text-slate-500">บัญชี</p>
             <p className="text-sm font-semibold text-slate-800">{account.account_name}</p>
@@ -95,7 +96,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
           <div className="text-right">
             <p className="text-xs text-slate-500">ยอดคงเหลือปัจจุบัน</p>
             <p className="text-lg font-bold text-slate-800 tabular-nums">
-              ฿{Number(account.current_balance || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              {Number(account.current_balance || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
             </p>
           </div>
         </div>
@@ -103,11 +104,15 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">ประเภทรายการ <span className="text-red-500">*</span></label>
-            <Select value={type} onChange={(e) => setType(e.target.value as AccountTransactionType)}>
-              <option value="DEPOSIT">เงินเข้า (Deposit)</option>
-              <option value="WITHDRAW">เงินออก (Withdraw)</option>
-              <option value="ADJUSTMENT">ปรับปรุงยอด (Adjustment)</option>
-            </Select>
+            <DropdownSelect
+              value={type}
+              onChange={(v) => setType(v as AccountTransactionType)}
+              options={[
+                { value: 'DEPOSIT', label: 'เงินเข้า (Deposit)' },
+                { value: 'WITHDRAW', label: 'เงินออก (Withdraw)' },
+                { value: 'ADJUSTMENT', label: 'ปรับปรุงยอด (Adjustment)' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">วันที่รายการ <span className="text-red-500">*</span></label>
@@ -140,7 +145,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
           <p className="text-slate-600">
             ยอดคงเหลือหลังรายการนี้จะเป็น:{' '}
             <span className="font-bold text-emerald-700 tabular-nums">
-              ฿{previewBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              {previewBalance.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
             </span>
           </p>
         </div>

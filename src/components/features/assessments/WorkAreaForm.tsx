@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, FC, ChangeEvent } from 'react';
 import { BUILDING_TYPE_LABELS } from '@/src/constants';
-import { FormField, Input, Select } from '../../common/FormControls';
+import { FormField, Input } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
 import {
   PlusIcon,
@@ -37,6 +38,7 @@ interface WorkAreaFormProps {
   originalArea?: Partial<AssessmentWorkArea>;
   isEditing?: boolean;
   onApprove?: (index: number) => void;
+  readOnly?: boolean;
 }
 
 export const WorkAreaForm: FC<WorkAreaFormProps> = ({
@@ -54,6 +56,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
   originalArea,
   isEditing = false,
   onApprove,
+  readOnly = false,
 }) => {
   const isInitialLoad = useRef(true);
   const prevAreaSizeRef = useRef(area.area_size);
@@ -196,6 +199,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               }}
               step="0.01"
               placeholder="0.00"
+              disabled={readOnly}
             />
           </FormField>
         </div>
@@ -212,21 +216,21 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
               </div>
               {selectedCondition && (
                 <div className="text-xs text-slate-500 mt-1">
-                  สามารถปรับราคาเองได้ (ขั้นต่ำ ฿
-                  {effectiveMinPrice.toLocaleString('th-TH')}
-                  )
+                  สามารถปรับราคาเองได้ (ขั้นต่ำ{' '}
+                  {Number(effectiveMinPrice).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท)
                 </div>
               )}
             </div>
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-slate-700">฿</span>
                 <Input
                   type="number"
                   className={`w-28 text-right font-bold text-sm h-10 !py-1 ${
-                    isPriceInvalid
-                      ? 'text-red-600 border-red-500 focus:ring-red-500 bg-red-50'
-                      : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
+                    readOnly
+                      ? ''
+                      : isPriceInvalid
+                        ? 'text-red-600 border-red-500 focus:ring-red-500 bg-red-50'
+                        : 'text-primary border-slate-300 focus:ring-primary focus:border-primary bg-white'
                   }`}
                   value={
                     area.package_price === undefined ? '' : area.package_price
@@ -245,14 +249,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   step="0.01"
                   placeholder="0.00"
                   required
+                  disabled={readOnly}
                 />
+                <span className="font-semibold text-slate-700">บาท</span>
               </div>
               {isPriceInvalid && selectedCondition && (
                 <div className="flex items-center justify-end mt-2 text-xs text-red-600 font-medium">
                   <p>
-                    ⚠️ ต่ำกว่าเกณฑ์ (ส่วนต่าง ฿
-                    {(effectiveMinPrice - (area.package_price || 0)).toLocaleString('th-TH')}
-                    )
+                    ⚠️ ต่ำกว่าเกณฑ์ (ส่วนต่าง{' '}
+                    {(effectiveMinPrice - (area.package_price || 0)).toLocaleString('th-TH')}{' '}
+                    บาท)
                   </p>
                   {onApprove && (
                     <button
@@ -525,7 +531,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 พื้นที่ {displayIndex}
                 {(area.total_price || 0) > 0 && isCollapsed && (
                   <span className="text-sm font-normal text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    ฿{area.total_price?.toLocaleString()}
+                    {area.total_price?.toLocaleString()} บาท
                   </span>
                 )}
               </h3>
@@ -542,29 +548,31 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             </div>
           </div>
 
-          <div
-            className="flex items-center gap-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={() => onClearArea(index)}
-              className="flex items-center gap-1 text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-200 transition-colors"
-              title="ล้างค่าในพื้นที่นี้"
+          {!readOnly && (
+            <div
+              className="flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()}
             >
-              <RefreshIcon className="h-4 w-4" />
-            </button>
-            {onRemoveArea && (
               <button
                 type="button"
-                onClick={() => onRemoveArea(index)}
-                className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
-                title="ลบพื้นที่นี้"
+                onClick={() => onClearArea(index)}
+                className="flex items-center gap-1 text-slate-500 hover:text-slate-700 p-2 rounded-md hover:bg-slate-200 transition-colors"
+                title="ล้างค่าในพื้นที่นี้"
               >
-                <TrashIcon className="h-5 w-5" />
+                <RefreshIcon className="h-4 w-4" />
               </button>
-            )}
-          </div>
+              {onRemoveArea && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveArea(index)}
+                  className="text-red-400 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-colors"
+                  title="ลบพื้นที่นี้"
+                >
+                  <TrashIcon className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {!isCollapsed && (
@@ -579,8 +587,9 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   value={area.area_name || ''}
                   onChange={handleFieldChange}
                   placeholder="เช่น บ้าน A-1, อาคาร Lobby"
-                  className={errors?.[`area_${index}_area_name`] ? 'border-red-500 bg-red-50/50' : ''}
+                  className={!readOnly && errors?.[`area_${index}_area_name`] ? 'border-red-500 bg-red-50/50' : ''}
                   required
+                  disabled={readOnly}
                 />
                 {errors?.[`area_${index}_area_name`] && (
                   <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_area_name`]}</p>
@@ -592,18 +601,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   label="ประเภทสิ่งปลูกสร้าง"
                   htmlFor={`buildingType-${index}`}
                 >
-                  <Select
-                    name="building_type"
+                  <DropdownSelect
                     value={area.building_type || ''}
-                    onChange={handleFieldChange}
-                    className={errors?.[`area_${index}_building_type`] ? 'border-red-500 bg-red-50/50' : ''}
-                    required
-                  >
-                    <option value="">เลือกประเภท</option>
-                    {Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => (
-                      <option key={key} value={key}>{label}</option>
-                    ))}
-                  </Select>
+                    onChange={(val) => onAreaChange(index, { ...area, building_type: val || undefined })}
+                    placeholder="เลือกประเภท"
+                    options={Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => ({ value: key, label: label as string }))}
+                    error={!!errors?.[`area_${index}_building_type`]}
+                    disabled={readOnly}
+                  />
                   {errors?.[`area_${index}_building_type`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_building_type`]}</p>
                   )}
@@ -617,6 +622,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       onChange={handleFieldChange}
                       placeholder="ระบุประเภทสิ่งปลูกสร้าง"
                       required
+                      disabled={readOnly}
                     />
                   </FormField>
                 )}
@@ -625,20 +631,14 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   label="ระบบใช้บริการ"
                   htmlFor={`serviceSystem-${index}`}
                 >
-                  <Select
-                    name="service_system"
+                  <DropdownSelect
                     value={area.service_system || ''}
-                    onChange={handleFieldChange}
-                    className={errors?.[`area_${index}_service_system`] ? 'border-red-500 bg-red-50/50' : ''}
-                    required
-                  >
-                    <option value="">เลือกระบบ</option>
-                    {Object.values(ServiceSystem).map((type) => (
-                      <option key={type} value={type}>
-                        {serviceLabels[type]}
-                      </option>
-                    ))}
-                  </Select>
+                    onChange={(val) => onAreaChange(index, { ...area, service_system: val || undefined })}
+                    placeholder="เลือกระบบ"
+                    options={Object.values(ServiceSystem).map((type) => ({ value: type, label: serviceLabels[type] }))}
+                    error={!!errors?.[`area_${index}_service_system`]}
+                    disabled={readOnly}
+                  />
                   {errors?.[`area_${index}_service_system`] && (
                     <p className="text-red-500 text-xs mt-1">{errors[`area_${index}_service_system`]}</p>
                   )}
@@ -652,6 +652,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       onChange={handleFieldChange}
                       placeholder="ระบุระบบที่ใช้บริการ"
                       required
+                      disabled={readOnly}
                     />
                   </FormField>
                 )}
@@ -659,21 +660,22 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
               <div className="bg-white p-3 rounded-lg border border-slate-200">
                 <FormField label="ประเภทบริการ *">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
                     {categories.map((cat) => {
                       const isOther = cat.name === 'อื่นๆ';
                       const isChecked = (area.category_services || []).some(
                         (s) => s.category_id === cat.id
                       );
                       return (
-                        <div key={cat.id} className={isOther ? 'col-span-2 md:col-span-2' : ''}>
+                        <div key={cat.id}>
                           <div className="flex items-center gap-2">
-                            <label className="flex items-center space-x-2 shrink-0">
+                            <label className={`flex items-center space-x-2 ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               <input
                                 type="checkbox"
-                                className={`h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}
+                                className={`h-4 w-4 rounded border-gray-300 text-primary ${readOnly ? 'cursor-not-allowed' : `focus:ring-primary ${errors?.[`area_${index}_category_services`] ? 'border-red-500' : ''}`}`}
                                 checked={isChecked}
                                 onChange={() => handleServiceTypeChange(cat.id)}
+                                disabled={readOnly}
                               />
                               <span className="text-slate-700">{cat.name}</span>
                             </label>
@@ -686,6 +688,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   onAreaChange(index, { ...area, category_other: e.target.value } as typeof area)
                                 }
                                 className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm text-slate-900"
+                                disabled={readOnly}
                               />
                             )}
                           </div>
@@ -706,28 +709,30 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </label>
                 <div className="flex space-x-4 mb-4">
                   <label
-                    className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'sqm' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
+                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${measurementType === 'sqm' ? 'bg-primary/5 border-primary ring-1 ring-primary' : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
                   >
                     <input
                       type="radio"
                       name={`measurementType-${index}`}
                       checked={measurementType === 'sqm'}
                       onChange={() => handleMeasurementTypeChange('sqm')}
-                      className="text-primary focus:ring-primary h-4 w-4"
+                      className={`h-4 w-4 text-primary ${readOnly ? 'cursor-not-allowed' : 'focus:ring-primary'}`}
+                      disabled={readOnly}
                     />
                     <span className="ml-2 text-sm font-medium text-slate-700">
                       พื้นที่ (ตร.ม.)
                     </span>
                   </label>
                   <label
-                    className={`flex items-center p-2 rounded-md cursor-pointer border ${measurementType === 'meter' ? 'bg-primary/5 border-primary ring-1 ring-primary' : 'hover:bg-slate-50 border-slate-200'}`}
+                    className={`flex items-center p-2 rounded-md border ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${measurementType === 'meter' ? 'bg-primary/5 border-primary ring-1 ring-primary' : (readOnly ? 'border-slate-200' : 'hover:bg-slate-50 border-slate-200')}`}
                   >
                     <input
                       type="radio"
                       name={`measurementType-${index}`}
                       checked={measurementType === 'meter'}
                       onChange={() => handleMeasurementTypeChange('meter')}
-                      className="text-primary focus:ring-primary h-4 w-4"
+                      className={`h-4 w-4 text-primary ${readOnly ? 'cursor-not-allowed' : 'focus:ring-primary'}`}
+                      disabled={readOnly}
                     />
                     <span className="ml-2 text-sm font-medium text-slate-700">
                       พื้นที่ (เมตร)
@@ -754,6 +759,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }
                       }}
                       onPriceOptionChange={handlePriceOptionChange}
+                      readOnly={readOnly}
                     />
 
                     {/* Standard Size Options */}
@@ -762,13 +768,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         <p className="text-sm font-medium text-slate-800 mb-2">
                           เลือกจากขนาดมาตรฐาน:
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {sortedConditions.map((condition, idx) => (
                             <label
                               key={condition.id || idx}
-                              className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id
+                              className={`relative block p-3 border rounded-lg ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'} ${selectedCondition?.id === condition.id
                                   ? 'border-primary ring-2 ring-primary bg-primary/5'
-                                  : 'bg-white hover:border-slate-400'
+                                  : (readOnly ? 'bg-slate-50' : 'bg-white hover:border-slate-400')
                                 }`}
                             >
                               <input
@@ -784,6 +790,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                 checked={
                                   area.area_size === condition.area_range
                                 }
+                                disabled={readOnly}
                               />
                               <div className="font-semibold text-slate-800 text-sm">
                                 {condition.area_range.toLocaleString()} {(condition as unknown as Record<string, Record<string, string>>).unit?.name || selectedUnitName}
@@ -814,11 +821,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder={`ระบุขนาดพื้นที่ (${selectedUnitName})`}
+                        placeholder="ระบุขนาดพื้นที่"
+                        className="pr-20"
                         required
+                        disabled={readOnly}
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">{selectedUnitName}</span>
+                        <span className="text-gray-500 text-xs sm:text-sm">{selectedUnitName}</span>
                       </div>
                     </div>
 
@@ -845,16 +854,17 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }
                       }}
                       onPriceOptionChange={handlePriceOptionChange}
+                      readOnly={readOnly}
                     />
 
                     {/* Standard Size Options for meter */}
                     {activePackage && sortedConditions.length > 0 && (
                       <div className="mb-4">
                         <p className="text-sm font-medium text-slate-800 mb-2">เลือกจากขนาดมาตรฐาน:</p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {sortedConditions.map((condition, idx) => (
-                            <label key={condition.id || idx} className={`relative block p-3 border rounded-lg cursor-pointer ${selectedCondition?.id === condition.id ? 'border-primary ring-2 ring-primary bg-primary/5' : 'bg-white hover:border-slate-400'}`}>
-                              <input type="radio" name={`areaSize-${index}`} value={condition.area_range} className="sr-only" onChange={() => handleAreaSizeRadioChange(condition.area_range)} checked={area.area_size === condition.area_range} />
+                            <label key={condition.id || idx} className={`relative block p-3 border rounded-lg ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${selectedCondition?.id === condition.id ? (readOnly ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-primary ring-2 ring-primary bg-primary/5') : (readOnly ? 'bg-slate-50' : 'bg-white hover:border-slate-400')}`}>
+                              <input type="radio" name={`areaSize-${index}`} value={condition.area_range} className="sr-only" onChange={() => handleAreaSizeRadioChange(condition.area_range)} checked={area.area_size === condition.area_range} disabled={readOnly} />
                               <div className="font-semibold text-slate-800 text-sm">{condition.area_range.toLocaleString()} {(condition as unknown as Record<string, Record<string, string>>).unit?.name || 'เมตร'}</div>
                             </label>
                           ))}
@@ -879,11 +889,13 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="ระบุขนาดพื้นที่ (เมตร)"
+                        placeholder="ระบุขนาดพื้นที่"
+                        className="pr-16"
                         required
+                        disabled={readOnly}
                       />
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <span className="text-gray-500 sm:text-sm">เมตร</span>
+                        <span className="text-gray-500 text-xs sm:text-sm">เมตร</span>
                       </div>
                     </div>
                   </div>
@@ -897,14 +909,16 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                   <h3 className="font-semibold text-slate-800">
                     รายการสินค้า/บริการ (เพิ่มเติม)
                   </h3>
-                  <button
-                    type="button"
-                    onClick={() => setIsProductModalOpen(true)}
-                    className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
-                  >
-                    <PlusIcon className="h-4 w-4" />
-                    เพิ่ม
-                  </button>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => setIsProductModalOpen(true)}
+                      className="flex items-center gap-1 bg-primary/10 text-primary font-semibold py-1 px-2 rounded-md text-sm"
+                    >
+                      <PlusIcon className="h-4 w-4" />
+                      เพิ่ม
+                    </button>
+                  )}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
@@ -928,7 +942,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         <th className="p-2 text-right font-medium text-slate-600">
                           ราคารวม
                         </th>
-                        <th className="p-2 w-10"></th>
+                        {!readOnly && <th className="p-2 w-10"></th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -959,30 +973,33 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                                   }
                                   className="h-8 text-center"
                                   min="1"
+                                  disabled={readOnly}
                                 />
                               </td>
                               <td className="p-1 text-slate-600">
                                 {(item as unknown as Record<string, string>).unit || product?.unit?.name || '-'}
                               </td>
                               <td className="p-1 w-32 text-right text-slate-800">
-                                ฿
                                 {(
                                   (item.product_price || 0) *
                                   (item.quantity || 0)
                                 ).toLocaleString('th-TH', {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
-                                })}
+                                })}{' '}
+                                บาท
                               </td>
-                              <td className="p-1 w-10 text-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveItem(itemIndex)}
-                                  className="text-red-500"
-                                >
-                                  <TrashIcon className="h-4 w-4" />
-                                </button>
-                              </td>
+                              {!readOnly && (
+                                <td className="p-1 w-10 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveItem(itemIndex)}
+                                    className="text-red-500"
+                                  >
+                                    <TrashIcon className="h-4 w-4" />
+                                  </button>
+                                </td>
+                              )}
                             </tr>
                           );
                         })
@@ -1020,11 +1037,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       <div>
                         <span className="text-amber-600">ราคาบริการ:</span>{' '}
                         <span className="font-medium text-amber-900">
-                          ฿
                           {originalArea.package_price.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })}{' '}
+                          บาท
                         </span>
                       </div>
                     )}
@@ -1032,11 +1049,11 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                       <div>
                         <span className="text-amber-600">ยอดรวม:</span>{' '}
                         <span className="font-medium text-amber-900">
-                          ฿
                           {originalArea.total_price.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}
+                          })}{' '}
+                          บาท
                         </span>
                       </div>
                     )}
@@ -1062,6 +1079,10 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
             ];
             const totalCount = allImages.length;
             const canAddMore = totalCount < 5;
+
+            if (totalCount === 0 && readOnly) {
+              return <p className="text-sm text-slate-400">ไม่มีรูปภาพ</p>;
+            }
 
             if (totalCount === 0) {
               return (
@@ -1098,41 +1119,44 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     <img
                       src={img.src}
                       alt={`${area.area_name} ${imgIdx + 1}`}
-                      className="w-full h-full rounded-lg border border-slate-200 object-cover"
+                      className={`w-full h-full rounded-lg border border-slate-200 object-cover ${readOnly ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                      onClick={readOnly ? () => window.open(img.src, '_blank') : undefined}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (img.type === 'existing') {
-                          const newUrls = existingUrls.filter((_, i) => i !== img.idx);
-                          const newIds = existingIds.filter((_, i) => i !== img.idx);
-                          onAreaChange(index, {
-                            ...area,
-                            site_image_urls: newUrls,
-                            site_image_ids: newIds,
-                            site_image_url: newUrls[0] || null,
-                            site_image_id: newIds[0] || null,
-                          } as Partial<AssessmentWorkArea>);
-                        } else {
-                          const newPreviews = previewUrls.filter((_, i) => i !== img.idx);
-                          const newFiles = files.filter((_, i) => i !== img.idx);
-                          onAreaChange(index, {
-                            ...area,
-                            siteImagePreviews: newPreviews,
-                            siteImageFiles: newFiles,
-                            siteImagePreview: newPreviews[0] || null,
-                            siteImageFile: newFiles[0] || null,
-                          } as Partial<AssessmentWorkArea>);
-                        }
-                      }}
-                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="ลบรูป"
-                    >
-                      <TrashIcon className="w-3 h-3" />
-                    </button>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (img.type === 'existing') {
+                            const newUrls = existingUrls.filter((_, i) => i !== img.idx);
+                            const newIds = existingIds.filter((_, i) => i !== img.idx);
+                            onAreaChange(index, {
+                              ...area,
+                              site_image_urls: newUrls,
+                              site_image_ids: newIds,
+                              site_image_url: newUrls[0] || null,
+                              site_image_id: newIds[0] || null,
+                            } as Partial<AssessmentWorkArea>);
+                          } else {
+                            const newPreviews = previewUrls.filter((_, i) => i !== img.idx);
+                            const newFiles = files.filter((_, i) => i !== img.idx);
+                            onAreaChange(index, {
+                              ...area,
+                              siteImagePreviews: newPreviews,
+                              siteImageFiles: newFiles,
+                              siteImagePreview: newPreviews[0] || null,
+                              siteImageFile: newFiles[0] || null,
+                            } as Partial<AssessmentWorkArea>);
+                          }
+                        }}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="ลบรูป"
+                      >
+                        <TrashIcon className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 ))}
-                {canAddMore && (
+                {canAddMore && !readOnly && (
                   <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-lg bg-slate-50 cursor-pointer hover:border-primary/30 transition-colors">
                     <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0 0 22.5 18.75V5.25A2.25 2.25 0 0 0 20.25 3H3.75A2.25 2.25 0 0 0 1.5 5.25v13.5A2.25 2.25 0 0 0 3.75 21Z" /></svg>
                     <span className="text-xs text-primary font-medium mt-1">เพิ่มรูป</span>
@@ -1163,11 +1187,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
         </div>
 
         <div className="text-right font-semibold text-slate-800 pt-2 pb-3 border-t mx-2">
-          ยอดรวมพื้นที่นี้: ฿
-          {(area.total_price || 0).toLocaleString('th-TH', {
+          ยอดรวมพื้นที่นี้:{' '}
+          {Number(area.total_price || 0).toLocaleString('th-TH', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })}
+          })}{' '}
+          บาท
         </div>
       </div>
       <ProductSelectionModal

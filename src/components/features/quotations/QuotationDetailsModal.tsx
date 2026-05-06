@@ -79,10 +79,9 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
           <div className="mt-4 md:mt-0 text-right">
             <p className="text-sm text-slate-500 mb-1">ยอดสุทธิ (Net Total)</p>
             <p className="text-3xl font-bold text-primary">
-              ฿
               {quotation.total.toLocaleString('th-TH', {
                 minimumFractionDigits: 2,
-              })}
+              })}{' บาท'}
             </p>
           </div>
         </div>
@@ -138,7 +137,7 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
               <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider border-b pb-2">
                 ข้อมูลงาน
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-slate-500 mb-1">ประเภทบริการ</p>
                   <p className="text-sm font-medium text-slate-800">
@@ -375,10 +374,9 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
                             {inst.percentage}%
                           </td>
                           <td className="px-4 py-3 text-sm text-right font-semibold text-slate-900">
-                            ฿
                             {inst.amount.toLocaleString('th-TH', {
                               minimumFractionDigits: 2,
-                            })}
+                            })}{' บาท'}
                           </td>
                         </tr>
                       ))}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Modal } from '../../common/Modal';
-import { FormField, Input, Select, Textarea } from '../../common/FormControls';
+import { FormField, Input, Textarea } from '../../common/FormControls';
+import { DropdownSelect } from '../../common';
 import { Category } from '@/src/types/entity/app.interface';
 import { CategoryType } from '@/src/types/enums/category';
 
@@ -17,11 +18,13 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [typeValue, setTypeValue] = useState('');
 
   useEffect(() => {
     if (isOpen) {
       formRef.current?.reset();
       setErrors({});
+      setTypeValue('');
     }
   }, [isOpen]);
 
@@ -29,7 +32,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
     const errs: Record<string, string> = {};
     if (!data['name'] || !(data['name'] as string).trim()) errs.name = 'กรุณาระบุชื่อหมวดหมู่';
     if (!data['code'] || !(data['code'] as string).trim()) errs.code = 'กรุณาระบุอักษรย่อหมวดหมู่';
-    if (!data['type'] || !(data['type'] as string).trim()) errs.type = 'กรุณาเลือกประเภทหมวดหมู่';
+    if (!typeValue.trim()) errs.type = 'กรุณาเลือกประเภทหมวดหมู่';
     return errs;
   };
 
@@ -48,7 +51,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       code: data['code'] as string,
       name: data['name'] as string,
       description: data['description'] as string | undefined,
-      type: data['type'] as CategoryType,
+      type: typeValue as CategoryType,
     };
 
     onCreateCategory(newCategory);
@@ -98,7 +101,7 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
           {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
         </FormField>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField label="อักษรย่อหมวดหมู่ *" htmlFor="code">
             <Input
               name="code"
@@ -112,19 +115,16 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             {errors.code && <p className="text-sm text-red-500 mt-1">{errors.code}</p>}
           </FormField>
           <FormField label="ประเภทหมวดหมู่ *" htmlFor="type">
-            <Select
-              name="type"
-              id="type"
-              defaultValue=""
-              className={errors.type ? 'border-red-500' : ''}
-              onChange={() => setErrors(prev => { const { type, ...rest } = prev; return rest; })}
-            >
-              <option value="" disabled>
-                -- เลือกประเภท --
-              </option>
-              <option value={CategoryType.PRODUCT}>สินค้า</option>
-              <option value={CategoryType.SERVICE}>บริการ</option>
-            </Select>
+            <DropdownSelect
+              value={typeValue}
+              onChange={(v) => { setTypeValue(v); setErrors(prev => { const { type, ...rest } = prev; return rest; }); }}
+              placeholder="-- เลือกประเภท --"
+              options={[
+                { value: CategoryType.PRODUCT, label: 'สินค้า' },
+                { value: CategoryType.SERVICE, label: 'บริการ' },
+              ]}
+              error={!!errors.type}
+            />
             {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
           </FormField>
         </div>

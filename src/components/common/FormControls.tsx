@@ -115,7 +115,9 @@ export const Select: FC<SelectHTMLAttributes<HTMLSelectElement>> = ({ className,
     <select
       {...props}
       {...controlledProps}
-      className={`px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-slate-900 ${className || 'w-full'}`}
+      className={`px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 ${
+        props.disabled ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' : 'bg-white text-slate-900 border-slate-300'
+      } ${className || 'w-full'}`}
     />
   );
 };

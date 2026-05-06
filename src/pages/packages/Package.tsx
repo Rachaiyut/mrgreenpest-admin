@@ -382,12 +382,12 @@ const Packages: React.FC = () => {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
                       {pkg.package_prices && pkg.package_prices.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        ? `เริ่มต้น ${Math.min(...pkg.package_prices.map((c) => c.min_price_with_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-800 text-center">
                       {pkg.package_prices && pkg.package_prices.length > 0
-                        ? `เริ่มต้น ฿${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        ? `เริ่มต้น ${Math.min(...pkg.package_prices.map((c) => c.min_price_without_termite)).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
                         : 'ตามเงื่อนไข'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-center">

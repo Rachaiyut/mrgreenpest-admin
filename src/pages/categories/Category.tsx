@@ -27,7 +27,8 @@ import {
 
 // Component
 import { Card } from '../../components/common/Card';
-import { Input, Button, Select } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import { Pagination } from '../../components/common/Pagination';
 import { CategoryModal } from '../../components/features/category/CategoryModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
@@ -223,32 +224,34 @@ const Categories: React.FC = () => {
               </svg>
             </div>
             <div className="w-full sm:w-44 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value);
+                onChange={(val) => {
+                  setTypeFilter(val);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">ประเภททั้งหมด</option>
-                <option value={CategoryType.PRODUCT}>สินค้า</option>
-                <option value={CategoryType.SERVICE}>บริการ</option>
-              </Select>
+                options={[
+                  { value: '', label: 'ประเภททั้งหมด' },
+                  { value: CategoryType.PRODUCT, label: 'สินค้า' },
+                  { value: CategoryType.SERVICE, label: 'บริการ' },
+                ]}
+              />
             </div>
             <div className="w-full sm:w-44 flex-shrink-0">
-              <Select
+              <DropdownSelect
                 value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                onChange={(val) => {
+                  setStatusFilter(val);
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="">สถานะทั้งหมด</option>
-                <option value="true">ใช้งาน</option>
-                <option value="false">ไม่ใช้งาน</option>
-              </Select>
+                options={[
+                  { value: '', label: 'สถานะทั้งหมด' },
+                  { value: 'true', label: 'ใช้งาน' },
+                  { value: 'false', label: 'ไม่ใช้งาน' },
+                ]}
+              />
             </div>
           </div>
         </Card>

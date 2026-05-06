@@ -1,5 +1,6 @@
 import React, { forwardRef } from 'react';
 import DatePicker, { type ReactDatePickerProps } from 'react-datepicker';
+import { offset, shift } from '@floating-ui/react';
 import 'react-datepicker/dist/react-datepicker.css';
 
 /**
@@ -38,6 +39,8 @@ const BuddhistDatePicker: React.FC<ReactDatePickerProps> = (props) => {
   return (
     <DatePicker
       {...props}
+      popperPlacement="bottom-start"
+      popperProps={{ middleware: [offset(5), shift({ padding: 8 })] }}
       renderCustomHeader={({
         date,
         changeYear,

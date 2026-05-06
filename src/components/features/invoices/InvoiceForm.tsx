@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback, FC } from 're
 import { createPortal } from 'react-dom';
 import Swal from 'sweetalert2';
 import DatePicker from '@/src/components/common/BuddhistDatePicker';
-import { FormField, Input, Select, Button, Textarea } from '../../common/FormControls';
+import { FormField, Input, Button, Textarea } from '../../common/FormControls';
 import { SearchableSelect } from '../../common/SearchableSelect';
 import { DocumentTextIcon, CurrencyDollarIcon, EyeIcon } from '../../../assets/icons/Icons';
 import ItemsSection from '../../common/ItemsSection';
@@ -933,7 +933,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                       placeholder="0.00"
                       required
                     />
-                    <div className="absolute right-4 top-2.5 text-slate-400 font-bold">฿</div>
+                    <div className="absolute right-4 top-2.5 text-slate-400 font-bold">บาท</div>
                   </div>
                 </FormField>
               </div>

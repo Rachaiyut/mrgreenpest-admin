@@ -54,7 +54,8 @@ const getStatusLabel = (q: Quotation): string => {
 import { QuotationModal } from '../../components/features/quotations/QuotationModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { Modal } from '../../components/common/Modal';
-import { Input, Select, Button } from '../../components/common/FormControls';
+import { Input, Button } from '../../components/common/FormControls';
+import { DropdownSelect } from '@/src/components/common/DropdownSelect';
 import { useData } from '../../contexts/DataContext';
 import { QuotationApi } from '../../api/quotation';
 import { PrintApi } from '@/src/api/print';
@@ -591,7 +592,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <div className="min-w-0">
                 <p className="text-xs sm:text-sm text-purple-600 font-medium truncate">มูลค่ารวม</p>
                 <p className="text-base sm:text-xl font-bold text-purple-800 truncate">
-                  ฿{stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
+                  {stats.totalValue.toLocaleString('th-TH', { minimumFractionDigits: 0 })} บาท
                 </p>
               </div>
             </div>
@@ -601,10 +602,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
         {/* Toolbar */}
         <Card className="!p-4 flex-shrink-0">
           <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 sm:gap-3 w-full">
-            <div className="relative w-full sm:w-64 sm:flex-shrink-0">
+            <div className="relative w-full sm:w-96 sm:shrink-0">
               <Input
                 type="search"
-                placeholder="ค้นหา (เลขที่, ชื่อลูกค้า, เบอร์โทร)..."
+                placeholder="ค้นหาเลขที่ใบเสนอราคา, ชื่อลูกค้า, อ้างอิงใบประเมิน"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -617,28 +618,28 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               </svg>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="เริ่มต้น" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+              <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date) => setStartDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วันที่เสนอราคา" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
               <span className="text-slate-400">-</span>
-              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="สิ้นสุด" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
+              <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date) => setEndDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ใช้ได้ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="flex-1 sm:w-36" />
             </div>
             <div className="w-full sm:w-40">
-              <Select
+              <DropdownSelect
                 value={statusFilter}
-                onChange={(e) => {
+                onChange={(val) => {
                   setStatusFilter(
-                    e.target.value as 'ทั้งหมด' | QuotationStatus
+                    val as 'ทั้งหมด' | QuotationStatus
                   );
                   setCurrentPage(1);
                 }}
                 className="w-full bg-white border-slate-300 shadow-sm text-sm h-10"
-              >
-                <option value="ทั้งหมด">ทั้งหมด</option>
-                {Object.values(QuotationStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </Select>
+                options={[
+                  { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
+                  ...Object.values(QuotationStatus).map((status) => ({
+                    value: status,
+                    label: statusLabels[status],
+                  })),
+                ]}
+              />
             </div>
           </div>
         </Card>
@@ -659,10 +660,10 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     เวอร์ชั่น
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    ลูกค้า
+                    ชื่อลูกค้า
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    เบอร์โทร
+                    เบอร์โทรศัพท์
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     อ้างอิงใบประเมิน
@@ -674,16 +675,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                     อ้างอิงรายละเอียดงาน
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    วันที่สร้าง
+                    วันที่เสนอราคา
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    หมดอายุ
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
-                    สถานะ
+                    ใช้ได้ถึงวันที่
                   </th>
                   <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ยอดรวม
+                  </th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                    สถานะ
                   </th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">
                     ผู้สร้าง
@@ -696,7 +697,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <tbody className="bg-white divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={13} className="p-0 border-b-0 h-0">
+                    <td colSpan={14} className="p-0 border-b-0 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-500">
                         <LoadingIcon className="w-10 h-10 animate-spin mb-4 text-primary" />
                         <p className="text-base font-medium">กำลังดึงข้อมูลใบเสนอราคา...</p>
@@ -705,7 +706,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                   </tr>
                 ) : paginatedQuotations.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="p-0 border-b-0 text-slate-500 h-0">
+                    <td colSpan={14} className="p-0 border-b-0 text-slate-500 h-0">
                       <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center">
                         <DocumentTextIcon className="h-12 w-12 text-slate-300 mb-3" />
                         <p className="text-lg font-medium">ไม่พบข้อมูลใบเสนอราคา</p>
@@ -776,17 +777,16 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {formatThaiDate(q.expires_at)}
                         </td>
+                        <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
+                          {(Number(q.total) || 0).toLocaleString('th-TH', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{' บาท'}
+                        </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           <StatusBadge
                             status={q.status}
                           />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-slate-700 text-right font-semibold">
-                          ฿
-                          {(Number(q.total) || 0).toLocaleString('th-TH', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
                         </td>
                         <td className="px-4 py-3 text-sm text-slate-700 text-center">
                           {((q as unknown as Record<string, Record<string, string>>).creator)
@@ -1064,19 +1064,17 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 สถานะ
               </label>
-              <Select
+              <DropdownSelect
                 value={targetStatus}
-                onChange={(e) =>
-                  setTargetStatus(e.target.value as QuotationStatus)
+                onChange={(val) =>
+                  setTargetStatus(val as QuotationStatus)
                 }
                 className="w-full"
-              >
-                {Object.values(QuotationStatus).map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </Select>
+                options={Object.values(QuotationStatus).map((status) => ({
+                  value: status,
+                  label: statusLabels[status],
+                }))}
+              />
             </div>
             {/* Show existing signature if already signed */}
             {selectedQuotation?.signature && (
