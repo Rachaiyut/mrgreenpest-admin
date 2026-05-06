@@ -52,6 +52,8 @@ import { QuotationStatus } from '@/src/types/enums/quotaton';
 import { formatThaiDate } from '@/src/utils/date';
 import { ServiceProcedureTemplateApi, IServiceProcedureTemplate } from '../../../api/service-procedure-template';
 import { ServiceScheduleApi } from '../../../api/service-schedule';
+import { ChemicalCatalogApi } from '../../../api/chemical-catalog';
+import { ChemicalCatalog } from '../../../types/entity/chemical-catalog.interface';
 import type { ServiceSchedule } from '../../../api/service-schedule';
 import { QuotationApi } from '@/src/api/quotation';
 import { JobApi } from '@/src/api/job';
@@ -102,17 +104,19 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   useEffect(() => {
     const initData = async () => {
       try {
-        const [custRes, assessRes, catRes, pkgRes, templatesRes, schedulesRes] = await Promise.all([
+        const [custRes, assessRes, catRes, pkgRes, templatesRes, schedulesRes, catalogsRes] = await Promise.all([
           CustomerApi.getCustomers({ limit: 10 }),
           AssessmentApi.getAll({ limit: 10, status: 'COMPLETE' }),
           CategoryApi.getCategories({ type: CategoryType.SERVICE  }),
           PackageApi.getPackages({ limit: 10, is_active: true }),
           ServiceProcedureTemplateApi.getAll({ limit: 10 }),
           ServiceScheduleApi.getAll(),
+          ChemicalCatalogApi.getAll({ limit: 100 }),
         ]);
 
         if (templatesRes?.data) setProcedureTemplates(templatesRes.data);
         if (schedulesRes) setSchedules(schedulesRes);
+        if (catalogsRes?.data) setChemicalCatalogs(catalogsRes.data);
 
         // 🟢 ใช้เทคนิค Merge ข้อมูล ป้องกันการเตะลูกค้าของบิลนี้ทิ้ง
         if (custRes) {
@@ -375,10 +379,21 @@ export const QuotationForm: FC<QuotationFormProps> = ({
   const [notes, setNotes] = useState(initialValues?.notes || '');
 
   // Attachments
-  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(initialValues?.service_procedure_template_ids || (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : []));
+  const [procedureTemplateIds, setProcedureTemplateIds] = useState<string[]>(
+    Array.isArray(initialValues?.service_procedure_template_ids)
+      ? (initialValues!.service_procedure_template_ids as string[])
+      : (initialValues?.service_procedure_template_id ? [initialValues.service_procedure_template_id] : [])
+  );
   const [scheduleId, setScheduleId] = useState(initialValues?.service_schedule_id || '');
+  const [chemicalCatalogIds, setChemicalCatalogIds] = useState<string[]>(
+    // กัน data ที่ JSON column เคยถูก stringify ซ้อน — ถ้าเจอ element ที่ไม่ใช่ UUID-like ก็ทิ้ง
+    Array.isArray(initialValues?.chemical_catalog_ids)
+      ? (initialValues!.chemical_catalog_ids as string[]).filter((s) => typeof s === 'string' && s.length === 36)
+      : []
+  );
   const [procedureTemplates, setProcedureTemplates] = useState<IServiceProcedureTemplate[]>([]);
   const [schedules, setSchedules] = useState<ServiceSchedule[]>([]);
+  const [chemicalCatalogs, setChemicalCatalogs] = useState<ChemicalCatalog[]>([]);
   const [contractDuration, setContractDuration] = useState(initialValues?.contract_duration || '1 ปี');
   const [serviceCount, setServiceCount] = useState(initialValues?.service_count || '7 ครั้ง');
 
@@ -1342,6 +1357,10 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       is_installment: paymentCondition === PaymentMethod.INSTALLMENT,
       service_procedure_template_ids: procedureTemplateIds.length > 0 ? procedureTemplateIds : undefined,
       service_schedule_id: scheduleId || undefined,
+      chemical_catalog_ids: (() => {
+        const cleaned = chemicalCatalogIds.filter((id) => typeof id === 'string' && id.trim().length > 0);
+        return cleaned.length > 0 ? cleaned : undefined;
+      })(),
     };
 
     setIsSubmitting(true);
@@ -1525,6 +1544,14 @@ export const QuotationForm: FC<QuotationFormProps> = ({
                   value={scheduleId}
                   onChange={(val) => setScheduleId(val)}
                   placeholder="เลือกตารางปฏิบัติงาน..."
+                />
+              </FormField>
+              <FormField label="ตัวอย่าง Catalog สารเคมี">
+                <SearchableMultiSelect
+                  options={chemicalCatalogs.map((c) => ({ value: c.id, label: c.name }))}
+                  value={chemicalCatalogIds}
+                  onChange={(val) => setChemicalCatalogIds(val)}
+                  placeholder="เลือกตัวอย่าง Catalog สารเคมี..."
                 />
               </FormField>
             </div>

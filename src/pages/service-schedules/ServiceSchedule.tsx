@@ -355,12 +355,12 @@ const ServiceSchedulePage: FC = () => {
               <thead className="bg-gradient-to-r from-slate-50 to-slate-100/50 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                 <tr>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-16">ลำดับ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ชื่อ</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">แพ็กเกจ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">ชื่อ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-1/4">แพ็กเกจ</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-28">จำนวนครั้ง</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">วันที่สร้าง</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">ผู้สร้าง</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-40">ผู้สร้าง</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider w-32">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -404,8 +404,8 @@ const ServiceSchedulePage: FC = () => {
                       <td className="px-4 py-3 text-sm text-slate-600 text-center">
                         {schedule.creator ? `${schedule.creator.first_name} ${schedule.creator.last_name || ''}`.trim() : '-'}
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Button
                             variant="outline"
                             onClick={async () => {

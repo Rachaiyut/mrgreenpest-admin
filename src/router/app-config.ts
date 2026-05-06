@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { DataContextType } from '../contexts/DataContext';
 import { NavigationItem } from '@/src/types/nav';
+import { Role } from '@/src/types/enums/role';
 import {
   NewDashboardIcon,
   NewCustomerIcon,
@@ -101,6 +102,7 @@ const Return = React.lazy(() => import('../pages/inventory/returns/Return'));
 const DailyClosure = React.lazy(() => import('../pages/daily-closures/DailyClosure'));
 const ServiceSchedulePage = React.lazy(() => import('../pages/service-schedules/ServiceSchedule'));
 const ServiceDetailPage = React.lazy(() => import('../pages/service-schedules/ServiceDetail'));
+const ChemicalCatalogPage = React.lazy(() => import('../pages/chemical-catalogs/ChemicalCatalog'));
 const Account = React.lazy(() => import('../pages/accounts/Account'));
 
 // Report Pages
@@ -200,6 +202,13 @@ const UNIFIED_CONFIG: UnifiedConfig[] = [
         icon: DocumentTextIcon,
         access: 'ACCESS_SERVICE_PROCEDURE_TEMPLATE',
         component: ServiceDetailPage,
+      },
+      {
+        name: 'ตัวอย่าง Catalog สารเคมี',
+        path: 'chemical-catalogs',
+        icon: DocumentTextIcon,
+        access: 'ACCESS_CHEMICAL_CATALOG',
+        component: ChemicalCatalogPage,
       },
     ],
   },

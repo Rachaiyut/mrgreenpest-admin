@@ -682,7 +682,14 @@ export const ContractForm: FC<ContractFormProps> = ({
             }
 
             // Init WorkAreaForm areas from quotation_areas
-            const areasSource = fullQuotationData.quotation_areas || fullQuotationData.assessment?.assessment_areas || [];
+            // เรียงตาม sequence ที่ตอนสร้าง (backend อาจ return เรียงตามอื่นได้ เช่น created_at)
+            const areasSource = [
+              ...(fullQuotationData.quotation_areas || fullQuotationData.assessment?.assessment_areas || []),
+            ].sort((a: any, b: any) => {
+              const sa = Number(a.sequence ?? Number.MAX_SAFE_INTEGER);
+              const sb = Number(b.sequence ?? Number.MAX_SAFE_INTEGER);
+              return sa - sb;
+            });
             if (areasSource.length > 0) {
               setWorkAreaAreas(areasSource.map((a: any) => ({
                 id: a.id || crypto.randomUUID(),
@@ -1512,9 +1519,6 @@ export const ContractForm: FC<ContractFormProps> = ({
           }}
           showDueDate
           showStatus
-          includeVat={includeVat}
-          onIncludeVatChange={setIncludeVat}
-          vatAmount={vatAmount}
           contractInfo={{
             duration: contractDuration,
             startDate: startDate,
@@ -1549,32 +1553,47 @@ export const ContractForm: FC<ContractFormProps> = ({
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${isSeparateContract === false ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-              <input
-                type="radio"
-                name="contract_type"
-                checked={isSeparateContract === false}
-                onChange={() => setIsSeparateContract(false)}
-                className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500"
-              />
-              <div className="ml-3">
-                <span className="block text-base font-bold text-slate-800">รวมเป็น 1 สัญญา</span>
-                <span className="block text-xs text-slate-500">รวมทุกพื้นที่ไว้ในสัญญาเดียว</span>
-              </div>
-            </label>
-            <label className={`relative flex items-center p-4 cursor-pointer rounded-xl border-2 transition-all ${isSeparateContract === true ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
-              <input
-                type="radio"
-                name="contract_type"
-                checked={isSeparateContract === true}
-                onChange={() => setIsSeparateContract(true)}
-                className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500"
-              />
-              <div className="ml-3">
-                <span className="block text-base font-bold text-slate-800">แยกสัญญาตามพื้นที่</span>
-                <span className="block text-xs text-slate-500">สร้าง 1 สัญญาต่อ 1 พื้นที่</span>
-              </div>
-            </label>
+            {(() => {
+              const lockType = mode !== 'create' && isSeparateContract !== null;
+              const baseLabel = (active: boolean) =>
+                `relative flex items-center p-4 rounded-xl border-2 transition-all ${
+                  active ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-slate-200 bg-white'
+                } ${
+                  lockType ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-slate-300'
+                }`;
+              return (
+                <>
+                  <label className={baseLabel(isSeparateContract === false)}>
+                    <input
+                      type="radio"
+                      name="contract_type"
+                      checked={isSeparateContract === false}
+                      onChange={() => setIsSeparateContract(false)}
+                      disabled={lockType}
+                      className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500 disabled:cursor-not-allowed"
+                    />
+                    <div className="ml-3">
+                      <span className="block text-base font-bold text-slate-800">รวมเป็น 1 สัญญา</span>
+                      <span className="block text-xs text-slate-500">รวมทุกพื้นที่ไว้ในสัญญาเดียว</span>
+                    </div>
+                  </label>
+                  <label className={baseLabel(isSeparateContract === true)}>
+                    <input
+                      type="radio"
+                      name="contract_type"
+                      checked={isSeparateContract === true}
+                      onChange={() => setIsSeparateContract(true)}
+                      disabled={lockType}
+                      className="w-5 h-5 text-blue-600 border-slate-300 focus:ring-blue-500 disabled:cursor-not-allowed"
+                    />
+                    <div className="ml-3">
+                      <span className="block text-base font-bold text-slate-800">แยกสัญญาตามพื้นที่</span>
+                      <span className="block text-xs text-slate-500">สร้าง 1 สัญญาต่อ 1 พื้นที่</span>
+                    </div>
+                  </label>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

@@ -1,5 +1,12 @@
 import { useState, useEffect, useMemo, useRef, FC, ChangeEvent } from 'react';
 import { BUILDING_TYPE_LABELS } from '@/src/constants';
+
+// Override label เฉพาะใน WorkAreaForm — สั้นกว่าค่ากลาง (ที่ใช้ใน PDF อื่น ๆ)
+const WORKAREA_BUILDING_LABELS: Record<string, string> = {
+  ...BUILDING_TYPE_LABELS,
+  OFFICE: 'ออฟฟิศ',
+  HOUSE: 'บ้าน',
+};
 import { FormField, Input } from '../../common/FormControls';
 import { DropdownSelect } from '../../common';
 import { ProductSelectionModal } from '../../features/products/ProductSelectionModal';
@@ -605,7 +612,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     value={area.building_type || ''}
                     onChange={(val) => onAreaChange(index, { ...area, building_type: val || undefined })}
                     placeholder="เลือกประเภท"
-                    options={Object.entries(BUILDING_TYPE_LABELS).map(([key, label]) => ({ value: key, label: label as string }))}
+                    options={Object.entries(WORKAREA_BUILDING_LABELS).map(([key, label]) => ({ value: key, label: label as string }))}
                     error={!!errors?.[`area_${index}_building_type`]}
                     disabled={readOnly}
                   />

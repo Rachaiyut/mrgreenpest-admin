@@ -1388,7 +1388,12 @@ const Job: React.FC<JobProps> = ({
 
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
-      setSelectedJob(jobs.find((j) => j.id === jobId) || null);
+      // หา job จากทั้ง jobs ปกติและ unassignedJobs (tab รอจัดคิว)
+      const found =
+        jobs.find((j) => j.id === jobId) ||
+        unassignedJobs.find((j) => j.id === jobId) ||
+        null;
+      setSelectedJob(found);
       setOpenDropdownId(jobId);
       setIsReportTabDropdown(false);
 
@@ -1536,6 +1541,50 @@ const Job: React.FC<JobProps> = ({
       ));
     }
 
+    // UNASSIGNED (รอจัดคิว) — เฉพาะ tab ภาคสนาม > รอจัดคิว
+    // Actions: จัดคิวงาน / ยกเลิก / ลบ
+    if ((status as unknown as string) === 'UNASSIGNED') {
+      actions.push({
+        label: 'จัดคิวงาน',
+        icon: PencilIcon,
+        onClick: () => handleEdit(selectedJob),
+      });
+      actions.push({
+        label: 'ยกเลิกงาน',
+        icon: XCircleIcon,
+        onClick: () => handleCancel(selectedJob),
+        isDanger: true,
+      });
+      if (hasPermission('DELETE_OPERATION')) {
+        actions.push({
+          label: 'ลบงาน',
+          icon: TrashIcon,
+          onClick: () => handleDelete(selectedJob),
+          isDanger: true,
+        });
+      }
+
+      return actions.map((action) => (
+        <a
+          key={action.label}
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            action.onClick();
+          }}
+          className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium transition-colors ${
+            action.isDanger
+              ? 'text-red-600 hover:bg-red-50'
+              : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+          }`}
+          role="menuitem"
+        >
+          <action.icon className={`mr-3 h-5 w-5 ${action.isDanger ? 'text-red-400' : 'text-slate-400'}`} aria-hidden="true" />
+          <span>{action.label}</span>
+        </a>
+      ));
+    }
+
     actions.push({
       label: 'ดูรายละเอียด',
       icon: EyeIcon,
@@ -1558,7 +1607,7 @@ const Job: React.FC<JobProps> = ({
       canEditRejectedDropdown
     ) {
       actions.push({
-        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'แก้ไขงานและใบประเมิน',
+        label: isRejectedStatus ? 'แก้ไขและส่งอนุมัติใหม่' : 'จัดคิวงาน',
         icon: PencilIcon,
         onClick: () => handleEdit(selectedJob),
       });
@@ -1601,7 +1650,12 @@ const Job: React.FC<JobProps> = ({
       });
     }
 
-    if (status === JobStatus.Pending && hasPermission('DELETE_OPERATION')) {
+    if (
+      (status === JobStatus.Pending ||
+        status === JobStatus.Planned ||
+        status === JobStatus.InProgress) &&
+      hasPermission('DELETE_OPERATION')
+    ) {
       actions.push({
         label: 'ลบงาน',
         icon: TrashIcon,
@@ -2118,13 +2172,16 @@ const Job: React.FC<JobProps> = ({
                             <span className="px-2 py-1 bg-amber-100 text-slate-600 text-xs font-bold rounded-full">รอจัดคิว</span>
                           </td>
                           <td className="px-4 py-3">
-                            <Button
-                              variant="primary"
-                              className="text-xs py-1.5 px-3"
-                              onClick={() => handleEdit(job)}
-                            >
-                              จัดคิวงาน
-                            </Button>
+                            <div className="flex items-center justify-center">
+                              <Button
+                                data-job-id={job.id}
+                                onClick={(e) => handleDropdownToggle(e, job.id)}
+                                variant="ghost"
+                                className="p-2 h-auto rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                              >
+                                <ManageIcon className="h-5 w-5" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))

@@ -699,7 +699,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
                 <div className="space-y-6 flex-1 flex flex-col">
                   <div>
                     <SearchableSelect
-                      label="ค้นหาลูกค้า *"
+                      label="ค้นหาลูกค้า"
+                      required
                       options={(customers || []).map((c) => ({
                         value: c.id,
                         label: `${c.code} : ${c.first_name} ${c.last_name} ${c.nickname ? `(${c.nickname})` : ''} - ${c.primary_phone}`,

@@ -77,11 +77,21 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
     u[idx] = c; onChange(recalc(u));
   };
 
+  // ใช้ local components แทน toISOString — กัน timezone shift (UTC ทำให้ลดไป 1 วัน)
+  const formatLocalDate = (d: Date): string => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
   const handleAdd = () => {
     const n = installments.length + 1;
     let dd = '';
     if (showDueDate && installments.length > 0 && installments[installments.length - 1].due_date) {
-      const d = new Date(installments[installments.length - 1].due_date!); d.setMonth(d.getMonth() + 1); dd = d.toISOString().split('T')[0];
+      const d = new Date(installments[installments.length - 1].due_date!);
+      d.setMonth(d.getMonth() + 1);
+      dd = formatLocalDate(d);
     }
     onChange(recalc([...installments, { id: crypto.randomUUID(), no: n, description: `งวดที่ ${n}`, percentage: 0, amount: 0, due_date: dd, status: 'PENDING' }]));
   };
@@ -211,7 +221,7 @@ const InstallmentSection: FC<InstallmentSectionProps> = ({
                       {showDueDate && (
                         <div className="col-span-12 sm:col-span-2">
                           <label className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block text-center">วันครบกำหนด</label>
-                          <DatePicker selected={inst.due_date ? new Date(inst.due_date) : null} onChange={(date: Date | null) => handleChange(idx, 'due_date', date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วว/ดด/ปปปป" disabled={isReadOnly} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-center" wrapperClassName="w-full" />
+                          <DatePicker selected={inst.due_date ? new Date(inst.due_date) : null} onChange={(date: Date | null) => handleChange(idx, 'due_date', date ? formatLocalDate(date) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="วว/ดด/ปปปป" disabled={isReadOnly} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10 text-center" wrapperClassName="w-full" />
                         </div>
                       )}
                     </div>
