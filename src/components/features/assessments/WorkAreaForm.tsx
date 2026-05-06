@@ -779,7 +779,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         <p className="text-sm font-medium text-slate-800 mb-2">
                           เลือกจากขนาดมาตรฐาน:
                         </p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {sortedConditions.map((condition, idx) => (
                             <label
                               key={condition.id || idx}
@@ -871,7 +871,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     {activePackage && sortedConditions.length > 0 && (
                       <div className="mb-4">
                         <p className="text-sm font-medium text-slate-800 mb-2">เลือกจากขนาดมาตรฐาน:</p>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {sortedConditions.map((condition, idx) => (
                             <label key={condition.id || idx} className={`relative block p-3 border rounded-lg ${readOnly ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'} ${selectedCondition?.id === condition.id ? (readOnly ? 'border-primary ring-2 ring-primary bg-primary/5' : 'border-primary ring-2 ring-primary bg-primary/5') : (readOnly ? 'bg-slate-50' : 'bg-white hover:border-slate-400')}`}>
                               <input type="radio" name={`areaSize-${index}`} value={condition.area_range} className="sr-only" onChange={() => handleAreaSizeRadioChange(condition.area_range)} checked={area.area_size === condition.area_range} disabled={readOnly} />

@@ -148,7 +148,7 @@ const SalesSummaryPage: React.FC<SalesSummaryPageProps> = () => {
   }, [filteredQuotations, filteredJobs, searchTerm]);
 
   return (
-    <div className="p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="flex items-center gap-4">

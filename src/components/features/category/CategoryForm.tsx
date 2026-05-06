@@ -58,7 +58,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
       </FormField>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="อักษรย่อหมวดหมู่ *" htmlFor="code">
           <Input
             name="code"

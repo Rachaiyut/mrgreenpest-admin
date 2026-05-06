@@ -1543,7 +1543,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-800 mb-3">ประเภทบริการ</h4>
-            <div className="grid grid-cols-2 gap-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2">
               {ALL_SERVICE_TYPES.map((type) => (
                 <label key={type} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input
@@ -1568,7 +1568,7 @@ export const ServiceReportModal: React.FC<ServiceReportModalProps> = ({
           </div>
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <h4 className="font-semibold text-slate-800 mb-3">การบริการ</h4>
-            <div className="grid grid-cols-2 gap-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2">
               {ALL_SERVICE_ACTIONS.map((action) => (
                 <label key={action} className="flex items-center gap-2 cursor-pointer text-slate-700 hover:text-primary transition-colors">
                   <input

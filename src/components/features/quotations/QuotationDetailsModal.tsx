@@ -137,7 +137,7 @@ export const QuotationDetailsModal: FC<QuotationDetailsModalProps> = ({
               <h3 className="text-sm font-semibold text-slate-900 uppercase tracking-wider border-b pb-2">
                 ข้อมูลงาน
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-slate-500 mb-1">ประเภทบริการ</p>
                   <p className="text-sm font-medium text-slate-800">

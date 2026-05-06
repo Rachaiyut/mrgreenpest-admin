@@ -301,7 +301,7 @@ export const DailyClosureCloseModal: React.FC<DailyClosureCloseModalProps> = ({
             รายละเอียดการปิดงาน
           </h4>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">วันที่ปิดงาน</label>
               <div className="flex items-center gap-2 bg-white px-3 py-2.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer">

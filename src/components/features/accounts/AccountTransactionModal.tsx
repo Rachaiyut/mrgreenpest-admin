@@ -86,7 +86,7 @@ export const AccountTransactionModal: FC<Props> = ({ isOpen, account, onClose, o
       }
     >
       <form id="account-trx-form" onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3 p-3 rounded-md bg-slate-50 border border-slate-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-md bg-slate-50 border border-slate-200">
           <div>
             <p className="text-xs text-slate-500">บัญชี</p>
             <p className="text-sm font-semibold text-slate-800">{account.account_name}</p>

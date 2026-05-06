@@ -577,7 +577,7 @@ const Job: React.FC<JobProps> = ({
       Swal.fire({ icon: 'success', title: 'อนุมัติแล้ว', timer: 1500, showConfirmButton: false });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถอนุมัติงานได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถอนุมัติงานได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -588,7 +588,7 @@ const Job: React.FC<JobProps> = ({
       Swal.fire({ icon: 'success', title: 'ปฏิเสธแล้ว', timer: 1500, showConfirmButton: false });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถปฏิเสธงานได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถปฏิเสธงานได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -665,7 +665,7 @@ const Job: React.FC<JobProps> = ({
     try {
       const history = await JobApi.getRejectionHistory(jobId);
       if (!history.length) {
-        Swal.fire('ไม่มีประวัติ', 'ยังไม่มีประวัติการปฏิเสธสำหรับงานนี้', 'info');
+        Swal.fire({ title: 'ไม่มีประวัติ', text: 'ยังไม่มีประวัติการปฏิเสธสำหรับงานนี้', icon: 'info', confirmButtonText: 'ตกลง' });
         return;
       }
       const rows = history
@@ -691,11 +691,11 @@ const Job: React.FC<JobProps> = ({
         title: 'ประวัติการปฏิเสธ',
         html: `<div class="max-h-80 overflow-y-auto">${rows}</div>`,
         width: 600,
-        confirmButtonText: 'ปิด',
+        confirmButtonText: 'ตกลง',
       });
     } catch (error) {
       const errMsg = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', errMsg || 'ไม่สามารถโหลดประวัติได้', 'error');
+      Swal.fire({ title: 'เกิดข้อผิดพลาด', text: errMsg || 'ไม่สามารถโหลดประวัติได้', icon: 'error', confirmButtonText: 'ตกลง' });
     }
   };
 
@@ -1643,36 +1643,38 @@ const Job: React.FC<JobProps> = ({
       <div className="p-4 sm:p-6 lg:p-8 flex flex-col space-y-6 flex-1">
         <div className="flex-shrink-0 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">ภาคสนาม</h1>
-            <p className="mt-1 text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
+            <h1 className="text-xl sm:text-3xl font-bold text-slate-800">ภาคสนาม</h1>
+            <p className="mt-0.5 sm:mt-1 text-xs sm:text-base text-slate-600">จัดการและติดตามงานภาคสนามทั้งหมด</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {isFieldRole(authUser?.roleType) && (
               <>
                 <Button
                   onClick={() => setIsIssueSummaryModalOpen(true)}
                   variant="primary"
-                  className="!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
+                  className="!text-xs sm:!text-sm !font-medium !bg-amber-500 !text-white hover:!bg-amber-600 !border-amber-500 !shadow-md"
                 >
-                  <DocumentCheckIcon className="w-4 h-4 mr-1.5" />
-                  สรุปเบิกสินค้า/ค่าใช้จ่าย
+                  <DocumentCheckIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                  <span className="hidden sm:inline">สรุปเบิกสินค้า/ค่าใช้จ่าย</span>
+                  <span className="sm:hidden">สรุปเบิก</span>
                 </Button>
                 {todayClosure?.status === 'CLOSED' ? (
                   <Button
                     variant="primary"
                     disabled
-                    className="!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
+                    className="!text-xs sm:!text-sm !font-medium !bg-gray-400 !text-white !border-gray-400 !shadow-md !cursor-not-allowed !opacity-70"
                   >
-                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
-                    จบงานรายวันแล้ว
+                    <CheckCircleIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
+                    <span className="hidden sm:inline">จบงานรายวันแล้ว</span>
+                    <span className="sm:hidden">จบงานแล้ว</span>
                   </Button>
                 ) : (
                   <Button
                     onClick={handleOpenDailyClosure}
                     variant="primary"
-                    className="!text-sm !font-medium !bg-red-600 !text-white hover:!bg-red-700 !border-red-600 !shadow-md"
+                    className="!text-xs sm:!text-sm !font-medium !bg-red-600 !text-white hover:!bg-red-700 !border-red-600 !shadow-md"
                   >
-                    <CheckCircleIcon className="w-4 h-4 mr-1.5" />
+                    <CheckCircleIcon className="w-4 h-4 mr-1 sm:mr-1.5" />
                     จบงานรายวัน
                   </Button>
                 )}
@@ -1682,9 +1684,9 @@ const Job: React.FC<JobProps> = ({
                 <Button
                   onClick={() => setIsAddModalOpen(true)}
                   variant="primary"
-                  className="shadow-md shadow-primary/20"
+                  className="shadow-md shadow-primary/20 !text-xs sm:!text-sm"
                 >
-                  <PlusIcon className="h-5 w-5 mr-2" />
+                  <PlusIcon className="h-5 w-5 mr-1 sm:mr-2" />
                   สร้างนัดหมาย
                 </Button>
               )}
@@ -1738,7 +1740,7 @@ const Job: React.FC<JobProps> = ({
           </Card>
         </div>
 
-        <Card className="!p-4 flex-shrink-0">
+        <Card className="!p-3 sm:!p-4 flex-shrink-0">
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center flex-1 min-w-0">
@@ -1804,77 +1806,64 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
                 {activeTab === 'schedule' && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <DatePicker
-                      selected={filterDate ? new Date(filterDate) : null}
-                      onChange={(date: Date | null) => {
-                        if (date) {
-                          const yyyy = date.getFullYear();
-                          const mm = String(date.getMonth() + 1).padStart(2, '0');
-                          const dd = String(date.getDate()).padStart(2, '0');
-                          const formattedDate = `${yyyy}-${mm}-${dd}`;
-                          setFilterDate(formattedDate);
-                          fetchData(formattedDate, selectedTechnicianId);
-                        } else {
-                          setFilterDate('');
-                          fetchData('', selectedTechnicianId);
-                        }
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
+                      <DatePicker
+                        selected={filterDate ? new Date(filterDate) : null}
+                        onChange={(date: Date | null) => {
+                          if (date) {
+                            const yyyy = date.getFullYear();
+                            const mm = String(date.getMonth() + 1).padStart(2, '0');
+                            const dd = String(date.getDate()).padStart(2, '0');
+                            const formattedDate = `${yyyy}-${mm}-${dd}`;
+                            setFilterDate(formattedDate);
+                            fetchData(formattedDate, selectedTechnicianId);
+                          } else {
+                            setFilterDate('');
+                            fetchData('', selectedTechnicianId);
+                          }
+                        }}
+                        placeholderText="เลือกวันที่"
+                        dateFormat="dd/MM/yyyy"
+                        locale="th"
+                        isClearable
+                        className="w-full sm:w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
+                        wrapperClassName="w-full sm:w-auto"
+                      />
+                    </div>
+                    <Select
+                      id="technician-filter"
+                      value={selectedTechnicianId}
+                      onChange={(e) => {
+                        const newTech = e.target.value;
+                        setSelectedTechnicianId(newTech);
+                        fetchData(filterDate, newTech);
                       }}
-                      placeholderText="เลือกวันที่"
-                      dateFormat="dd/MM/yyyy"
-                      locale="th"
-                      isClearable
-                      className="w-36 px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10"
-                      wrapperClassName="w-full sm:w-auto"
-                    />
-                    <div className="w-40">
-                      <SearchableSelect
-                        value={selectedTechnicianId}
-                        onChange={(newTech) => {
-                          setSelectedTechnicianId(newTech || 'all');
-                          fetchData(filterDate, newTech || 'all');
-                        }}
-                        placeholder="ช่างทั้งหมด"
-                        searchPlaceholder="ค้นหาช่าง..."
-                        options={[
-                          { value: 'all', label: 'ช่างทั้งหมด' },
-                          ...technicians.map((tech: any) => {
-                            const fullName = [tech.first_name, tech.last_name]
-                              .filter((p: string | undefined) => p && p !== '-')
-                              .join(' ')
-                              .trim();
-                            return {
-                              value: tech.id,
-                              label: fullName || tech.name || tech.nick_name || tech.id,
-                            };
-                          }),
-                        ]}
-                      />
-                    </div>
-                    <div className="w-40">
-                      <SearchableSelect
-                        value={selectedVehicleId || 'all'}
-                        onChange={(newId) => {
-                          const next = newId || 'all';
-                          setSelectedVehicleId(next);
-                          fetchSchedule(filterDate, selectedTechnicianId, searchQuery, next);
-                        }}
-                        placeholder="รถทั้งหมด"
-                        searchPlaceholder="ค้นหารถ..."
-                        options={[
-                          { value: 'all', label: 'รถทั้งหมด' },
-                          ...allVehicles.map((v: any) => ({
-                            value: v.warehouse_id || v.id,
-                            label:
-                              v.license_plate ||
-                              v.vehicle_registration ||
-                              v.vehicle?.vehicle_registration ||
-                              v.name ||
-                              v.id,
-                          })),
-                        ]}
-                      />
-                    </div>
+                      className="w-[calc(50%-0.25rem)] sm:w-40 text-sm"
+                    >
+                      <option value="all">ช่างทั้งหมด</option>
+                      {technicians.map((tech) => (
+                        <option key={tech.id} value={tech.id}>
+                          {tech.name}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      id="vehicle-filter"
+                      value={selectedVehicleId}
+                      onChange={(e) => {
+                        setSelectedVehicleId(e.target.value);
+                        fetchSchedule(filterDate, selectedTechnicianId, searchQuery, e.target.value);
+                      }}
+                      className="w-[calc(50%-0.25rem)] sm:w-fit text-sm !pr-8"
+                    >
+                      <option value="all">รถทั้งหมด</option>
+                      {allVehicles.map((v: any) => (
+                        <option key={v.id} value={v.warehouse_id || v.id}>
+                          {v.license_plate || v.vehicle_registration || v.vehicle?.vehicle_registration || v.name || v.id}
+                        </option>
+                      ))}
+                    </Select>
                     <Select
                       id="status-filter"
                       value={selectedStatusFilter}
@@ -1882,7 +1871,7 @@ const Job: React.FC<JobProps> = ({
                         setSelectedStatusFilter(e.target.value);
                         fetchSchedule(filterDate, selectedTechnicianId, searchQuery, selectedVehicleId, e.target.value);
                       }}
-                      className="w-fit text-sm !pr-8"
+                      className="w-full sm:w-fit text-sm !pr-8"
                     >
                       <option value="all">สถานะทั้งหมด</option>
                       {Object.values(JobMainStatus).map((status) => (
@@ -1894,15 +1883,15 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
                 {activeTab === 'work-schedule' && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <div className="relative">
-                      <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
+                  <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-auto">
+                      <DatePicker selected={scheduleDate ? new Date(scheduleDate) : null} onChange={(date: Date | null) => setScheduleDate(date ? date.toISOString().substring(0, 10) : '')} dateFormat="dd/MM/yyyy" locale="th" placeholderText="dd/mm/yyyy" isClearable className="w-full sm:w-44 pl-9 pr-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full sm:w-auto" />
                       <CalendarDaysIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                     </div>
                     <Select
                       value={scheduleVehicleId}
                       onChange={(e) => setScheduleVehicleId(e.target.value)}
-                      className="w-48 bg-white border-slate-300 shadow-sm text-sm h-10"
+                      className="w-full sm:w-48 bg-white border-slate-300 shadow-sm text-sm h-10"
                     >
                       <option value="">เลือกทะเบียนรถ</option>
                       {warehouses
@@ -1922,7 +1911,7 @@ const Job: React.FC<JobProps> = ({
             </div>
 
             {/* Tabs + View Toggle */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
                 {(activeTab === 'schedule' || activeTab === 'approval') && (
                   <div className="flex items-center rounded-lg bg-slate-100 p-1">
                     <Button
@@ -1957,7 +1946,7 @@ const Job: React.FC<JobProps> = ({
                   </div>
                 )}
 
-                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto max-w-full scrollbar-hide">
+                <div className="flex gap-1 p-1 bg-slate-100 rounded-lg overflow-x-auto w-full sm:w-auto scrollbar-hide">
                   <button
                     onClick={() => setActiveTab('schedule')}
                     className={`px-3 py-1.5 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${activeTab === 'schedule'
@@ -2184,6 +2173,7 @@ const Job: React.FC<JobProps> = ({
                   <thead className="bg-white">
                     <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b border-slate-200">
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลำดับ</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">รหัสงาน</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ลูกค้า</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">วันนัดหมาย</th>
                       <th className="px-4 py-3 text-center text-sm font-semibold text-slate-600 uppercase tracking-wider">ช่าง</th>
@@ -2206,6 +2196,9 @@ const Job: React.FC<JobProps> = ({
                             className={`hover:bg-slate-50/50 transition-colors [&>td]:text-center [&>td]:align-middle ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
                           >
                             <td className="px-4 py-3 text-sm text-slate-700">{idx + 1}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="text-primary font-bold">{job.code || '-'}</span>
+                            </td>
                             <td className="px-4 py-3 text-sm text-slate-700">
                               <p className="text-sm font-semibold text-slate-800">
                                 {job.customerName || '-'}
@@ -2273,7 +2266,7 @@ const Job: React.FC<JobProps> = ({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-0 border-b-0 h-0">
+                        <td colSpan={7} className="p-0 border-b-0 h-0">
                           <div className="absolute inset-0 top-[41px] flex flex-col items-center justify-center text-slate-400">
                             <ClipboardDocumentListIcon className="h-12 w-12 mb-3 opacity-50" />
                             <p className="text-lg font-medium">ไม่มีงานรออนุมัติ / ถูกปฏิเสธ</p>

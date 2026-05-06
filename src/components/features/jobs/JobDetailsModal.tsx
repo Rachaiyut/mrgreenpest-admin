@@ -38,11 +38,11 @@ interface JobDetailsModalProps {
 }
 
 const InfoLabel: FC<{ children: ReactNode }> = ({ children }) => (
-  <dt className="text-xs text-slate-400 uppercase tracking-wide">{children}</dt>
+  <dt className="text-[10px] sm:text-xs text-slate-400 uppercase tracking-wide">{children}</dt>
 );
 
 const InfoValue: FC<{ children: ReactNode }> = ({ children }) => (
-  <dd className="text-sm font-medium text-slate-800 mt-0.5">{children || '-'}</dd>
+  <dd className="text-xs sm:text-sm font-medium text-slate-800 mt-0.5">{children || '-'}</dd>
 );
 
 const DetailItem: FC<{
@@ -60,11 +60,11 @@ const SectionHeader: FC<{ icon: ReactNode; title: string }> = ({
   icon,
   title,
 }) => (
-  <div className="flex items-center gap-2.5 mb-4 pb-2 border-b border-slate-100">
-    <div className="p-1.5 bg-primary/10 rounded-lg text-primary shrink-0">
-      {cloneElement(icon as ReactElement<any>, { className: 'w-4 h-4' })}
+  <div className="flex items-center gap-2 sm:gap-2.5 mb-3 sm:mb-4 pb-2 border-b border-slate-100">
+    <div className="p-1 sm:p-1.5 bg-primary/10 rounded-lg text-primary shrink-0">
+      {cloneElement(icon as ReactElement<any>, { className: 'w-3.5 h-3.5 sm:w-4 sm:h-4' })}
     </div>
-    <h4 className="font-semibold text-slate-800 text-sm">{title}</h4>
+    <h4 className="font-semibold text-slate-800 text-xs sm:text-sm">{title}</h4>
   </div>
 );
 
@@ -89,18 +89,18 @@ const WorkAreaDetails: FC<{ area: AssessmentWorkArea }> = ({ area }) => {
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-      <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex justify-between items-center">
-        <h5 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
+      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 flex justify-between items-center gap-2">
+        <h5 className="font-bold text-slate-800 flex items-center gap-2 text-xs sm:text-sm min-w-0">
           <span className="w-1.5 h-5 bg-primary rounded-full shrink-0"></span>
-          {area.area_name}
+          <span className="truncate">{area.area_name}</span>
         </h5>
-        <span className="text-sm font-bold text-primary">
+        <span className="text-xs sm:text-sm font-bold text-primary whitespace-nowrap">
           {Number(area.total_price || 0).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
         </span>
       </div>
 
-      <div className="p-4">
-        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="p-3 sm:p-4">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <DetailItem
             label="ประเภทสิ่งปลูกสร้าง"
             value={
@@ -236,7 +236,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
   if (!isOpen || !job) return null;
 
-  const jobCode = job.code || job.id?.substring(0, 8) || '-';
+  const jobCode = job.code || '-';
   const customerName = job.customerName || '-';
   const customerCode = job.customer?.code || (job as unknown as Record<string, string>).customer_code || '-';
 
@@ -261,13 +261,13 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
       title={`รายละเอียดงาน: ${customerName}`}
       size="5xl"
     >
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5">
         {/* Top Section: Info & Address */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* General Info */}
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="รหัสงาน" value={<span className="text-primary font-bold">{jobCode}</span>} />
               <DetailItem label="สถานะ" value={(() => {
                 const key = String(job.api_status || job.status || '').toUpperCase();
@@ -275,6 +275,8 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
                 const colorMap: Record<string, string> = {
                   UNASSIGNED: 'bg-amber-100 text-amber-700',
                   PENDING: 'bg-yellow-100 text-yellow-700',
+                  PENDING_APPROVAL: 'bg-orange-100 text-orange-700',
+                  REJECTED: 'bg-red-100 text-red-700',
                   IN_PROGRESS: 'bg-blue-100 text-blue-700',
                   COMPLETE: 'bg-green-100 text-green-700',
                   CANCELLED: 'bg-red-100 text-red-700',
@@ -308,9 +310,9 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
           </div>
 
           {/* Address Info */}
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="ที่อยู่" value={job.address || assessmentData?.address} fullWidth />
               <DetailItem label="แขวง/ตำบล" value={assessmentData?.sub_district || job.customer?.sub_district || '-'} />
               <DetailItem label="เขต/อำเภอ" value={assessmentData?.district || job.customer?.district || '-'} />
@@ -334,9 +336,9 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         </div>
 
         {/* Route/Zone Info (from assessment or job) */}
-        <div className="rounded-xl border border-slate-200 p-5">
+        <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
           <SectionHeader icon={<MapPinIcon />} title="กลุ่มเส้นทาง/พื้นที่บริการ" />
-          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <DetailItem label="เขต (พื้นที่บริการ)" value={assessmentData?.zone || job.zone || job.customer?.service_area || '-'} />
             <DetailItem label="กลุ่มบริการ" value={assessmentData?.route_group || job.group || job.customer?.service_group || '-'} />
             <DetailItem label="สายถนนที่" value={assessmentData?.road_line || job.road_line || job.customer?.road_line || '-'} />
@@ -345,9 +347,9 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         </div>
 
         {/* Team & Vehicle Section */}
-        <div className="rounded-xl border border-slate-200 p-5">
+        <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
           <SectionHeader icon={<TruckIcon />} title="ทีมงานและพาหนะ" />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Vehicle */}
             <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
               <h5 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -428,16 +430,16 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         </div>
 
         {/* รายละเอียดงาน + หมายเหตุ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-slate-200 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="รายละเอียดงาน" />
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 text-sm text-slate-700 whitespace-pre-wrap">
+            <div className="bg-blue-50 p-2.5 sm:p-3 rounded-lg border border-blue-100 text-xs sm:text-sm text-slate-700 whitespace-pre-wrap">
               {job.operation_details || '-'}
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<ClipboardDocumentListIcon />} title="หมายเหตุ หรือข้อควรระวัง" />
-            <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 text-sm text-slate-700 whitespace-pre-wrap">
+            <div className="bg-orange-50 p-2.5 sm:p-3 rounded-lg border border-orange-100 text-xs sm:text-sm text-slate-700 whitespace-pre-wrap">
               {job.remarks || '-'}
             </div>
           </div>
@@ -445,7 +447,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
         {/* Assessment Work Areas (detailed) */}
         {assessmentData?.assessment_areas && assessmentData.assessment_areas.length > 0 && (
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<ClipboardDocumentListIcon />} title="รายละเอียดพื้นที่ประเมิน" />
             <div className="space-y-3">
               {assessmentData.assessment_areas.map((area, index) => (
@@ -457,7 +459,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
         {/* Fallback: basic work_areas from job (when no assessment) */}
         {!assessmentData?.assessment_areas?.length && job.work_areas && job.work_areas.length > 0 && (
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<ClipboardDocumentListIcon />} title="พื้นที่และบริการ" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {job.work_areas.map((area, idx) => (
@@ -479,7 +481,7 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
         {assessmentData?.payment_condition === PaymentMethod.INSTALLMENT &&
           assessmentData.installments &&
           assessmentData.installments.length > 0 && (
-            <div className="rounded-xl border border-slate-200 p-5">
+            <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
               <SectionHeader icon={<CreditCardIcon />} title="รายละเอียดงวดชำระ" />
               <div className="overflow-x-auto border border-slate-100 rounded-lg">
                 <table className="min-w-full text-sm">
@@ -516,11 +518,11 @@ export const JobDetailsModal: FC<JobDetailsModalProps> = ({
 
         {/* Total price summary (from assessment) */}
         {assessmentData && assessmentData.total_price > 0 && assessmentData.payment_condition !== PaymentMethod.INSTALLMENT && (
-          <div className="rounded-xl border border-slate-200 p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             <SectionHeader icon={<CreditCardIcon />} title="สรุปค่าบริการ" />
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-slate-600">ยอดรวมทั้งหมดสุทธิ</span>
-              <span className="text-xl font-bold text-primary">
+              <span className="text-xs sm:text-sm font-medium text-slate-600">ยอดรวมทั้งหมดสุทธิ</span>
+              <span className="text-lg sm:text-xl font-bold text-primary">
                 {Number(assessmentData.total_price).toLocaleString('th-TH', { minimumFractionDigits: 2 })} บาท
               </span>
             </div>

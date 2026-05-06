@@ -63,7 +63,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         {/* ข้อมูลทั่วไป */}
         <div>
           <h4 className="text-sm font-bold text-primary border-b border-slate-200 pb-2 mb-3">ข้อมูลทั่วไป</h4>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div>
               <span className="text-slate-400">ชื่อ-นามสกุล</span>
               <p className="font-semibold text-slate-800">{user.name || '-'}</p>
@@ -97,7 +97,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
         {/* ข้อมูลการติดต่อ */}
         <div>
           <h4 className="text-sm font-bold text-primary border-b border-slate-200 pb-2 mb-3">ข้อมูลการติดต่อ</h4>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <div>
               <span className="text-slate-400">เบอร์โทรศัพท์</span>
               <div className="flex items-center gap-1">

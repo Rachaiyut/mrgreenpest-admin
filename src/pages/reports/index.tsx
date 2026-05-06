@@ -1381,8 +1381,8 @@ const Reports: React.FC<ReportsProps> = () => {
             แยกรายงานตามหมวดหมู่และแสดงในรูปแบบตาราง
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="w-80">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-80">
             <Input
               type="search"
               placeholder="ค้นหา..."
@@ -1393,13 +1393,13 @@ const Reports: React.FC<ReportsProps> = () => {
               }}
             />
           </div>
-          <div className="w-44">
+          <div className="w-[calc(50%-6px)] sm:w-44">
             <DatePicker selected={startDate ? new Date(startDate) : null} onChange={(date: Date | null) => { setStartDate(date ? date.toISOString().substring(0, 10) : ''); setCurrentPage(1); }} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ตั้งแต่วันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
           </div>
-          <div className="w-44">
+          <div className="w-[calc(50%-6px)] sm:w-44">
             <DatePicker selected={endDate ? new Date(endDate) : null} onChange={(date: Date | null) => { setEndDate(date ? date.toISOString().substring(0, 10) : ''); setCurrentPage(1); }} dateFormat="dd/MM/yyyy" locale="th" placeholderText="ถึงวันที่" isClearable className="w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm h-10" wrapperClassName="w-full" />
           </div>
-          <div className="w-56">
+          <div className="w-full sm:w-56">
             <Select
               value={warehouseFilter}
               onChange={(e) => {
@@ -1418,7 +1418,7 @@ const Reports: React.FC<ReportsProps> = () => {
           </div>
           <Button
             onClick={exportCsv}
-            className="px-3 py-2 rounded-lg bg-primary text-white font-semibold"
+            className="w-full sm:w-auto px-3 py-2 rounded-lg bg-primary text-white font-semibold"
           >
             ส่งออก CSV
           </Button>

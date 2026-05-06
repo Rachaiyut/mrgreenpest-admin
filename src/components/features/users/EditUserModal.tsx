@@ -385,7 +385,7 @@ export const EditUserModal: React.FC<EditUserModalProps> = ({
                   </FormField>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField label="รหัสผ่านใหม่" htmlFor="edit-password">
                     <div className="relative">
                       <Input

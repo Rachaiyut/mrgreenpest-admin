@@ -136,7 +136,7 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
           {/* General Info */}
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<DocumentTextIcon />} title="ข้อมูลทั่วไป" />
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="รหัสใบประเมิน" value={<span className="text-primary font-bold">{data.code || data.id}</span>} />
               <DetailItem label="สถานะ" value={<StatusBadge status={data.status} />} />
               <DetailItem label="ลูกค้า" value={customerName} />
@@ -154,7 +154,7 @@ export const AssessmentDetailsModal: FC<AssessmentDetailsModalProps> = ({
           {/* Address Info */}
           <div className="rounded-xl border border-slate-200 p-5">
             <SectionHeader icon={<HomeIcon />} title="ข้อมูลที่อยู่" />
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
               <DetailItem label="ที่อยู่" value={data.address} fullWidth />
               <DetailItem label="แขวง/ตำบล" value={data.sub_district} />
               <DetailItem label="เขต/อำเภอ" value={data.district} />

@@ -1147,7 +1147,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                     </div>
                   </FormField>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-200/60">
                     <FormField label="เวลาเริ่มต้น *" htmlFor="start-time" className="mb-0">
                       <div className="relative">

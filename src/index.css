@@ -168,6 +168,16 @@
   }
 }
 
+/* Responsive: mobile adjustments */
+@media (max-width: 639px) {
+  th, td {
+    font-size: 0.875rem;
+  }
+  h1 {
+    font-size: 1.5rem;
+  }
+}
+
 /* DatePicker portal z-index — ป้องกัน popup ตกขอบ Modal */
 .react-datepicker-popper {
   z-index: 9999 !important;
