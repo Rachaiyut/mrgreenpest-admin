@@ -241,7 +241,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องเลือกคลังต้นทาง, คลังปลายทาง, และมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมระบุจำนวนและเหตุผล' });
+      Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกข้อมูลให้ครบถ้วน: ต้องเลือกคลังต้นทาง, คลังปลายทาง, และมีสินค้าที่คืนอย่างน้อย 1 รายการพร้อมกรอกจำนวนและเหตุผล' });
       return;
     }
     const newReturn: any = {
@@ -405,7 +405,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
               <Input
                 value={withdrawalRefId}
                 onChange={(e) => setWithdrawalRefId(e.target.value)}
-                placeholder="ระบุเลขที่ใบเบิก"
+                placeholder="กรอกเลขที่ใบเบิก"
                 className="w-full bg-white shadow-sm border-slate-200"
               />
             </div>
@@ -538,7 +538,7 @@ export const AddReturnModal: React.FC<AddReturnModalProps> = ({
                           <div className="sm:col-span-4">
                             <Input
                               type="text"
-                              placeholder="ระบุเหตุผลการคืน..."
+                              placeholder="กรอกเหตุผลการคืน..."
                               value={item.reason}
                               onChange={(e) =>
                                 handleItemChange(

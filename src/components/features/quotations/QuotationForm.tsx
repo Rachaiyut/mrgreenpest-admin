@@ -550,7 +550,7 @@ export const QuotationForm: FC<QuotationFormProps> = ({
     return (fetchedAssessments || []).map((a) => {
       const customerName = a.customer
         ? `${a.customer.first_name || ''} ${a.customer.last_name || ''}`.trim()
-        : 'ไม่ระบุลูกค้า';
+        : 'ไม่กรอกลูกค้า';
       return {
         value: a.id,
         label: `${a.code || 'No Code'} - ${customerName} [${a.status}]`,
@@ -1254,8 +1254,8 @@ export const QuotationForm: FC<QuotationFormProps> = ({
       let hasAreaError = false;
       for (let i = 0; i < editableAreas.length; i++) {
         const area = editableAreas[i];
-        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุชื่อพื้นที่ ${i + 1}` }); setAreaErrors(newAreaErrors); return; }
-        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณาระบุประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); setAreaErrors(newAreaErrors); return; }
+        if (!area.area_name?.trim()) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณากรอกชื่อพื้นที่ ${i + 1}` }); setAreaErrors(newAreaErrors); return; }
+        if (!area.building_type) { Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: `กรุณากรอกประเภทสิ่งปลูกสร้างในพื้นที่ "${area.area_name}"` }); setAreaErrors(newAreaErrors); return; }
         if (!area.package_price_id) { newAreaErrors[`area_${i}_package`] = 'กรุณาเลือกแพ็คเกจ'; hasAreaError = true; }
       }
       if (hasAreaError) {

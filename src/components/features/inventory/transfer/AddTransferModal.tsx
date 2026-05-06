@@ -430,7 +430,7 @@ export const AddTransferModal: React.FC<AddTransferModalProps> = ({
                   rows={2}
                   disabled={isViewMode}
                   className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  placeholder="ระบุสาเหตุการโอนย้าย..."
+                  placeholder="กรอกสาเหตุการโอนย้าย..."
                 />
                 {reasonError && (
                   <p className="mt-1 text-xs text-red-600">{reasonError}</p>

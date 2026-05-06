@@ -410,7 +410,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       html: `<div class="text-sm text-slate-700 text-left">ยืนยันการยกเลิกใบเสนอราคา <strong>${quotation.code || ''}</strong></div>`,
       input: 'textarea',
       inputLabel: 'เหตุผลที่ลูกค้าไม่เซ็นรับใบเสนอราคา',
-      inputPlaceholder: 'กรุณาระบุเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น...',
+      inputPlaceholder: 'กรุณากรอกเหตุผล เช่น ลูกค้าเปรียบเทียบราคา, ราคาสูงเกินไป, เลือกบริษัทอื่น...',
       inputAttributes: { 'aria-label': 'เหตุผลการยกเลิก' },
       showCancelButton: true,
       confirmButtonText: 'ยืนยันยกเลิก',
@@ -418,7 +418,7 @@ const QuotationsPage: React.FC<QuotationsPageProps> = ({
       confirmButtonColor: '#dc2626',
       reverseButtons: true,
       inputValidator: (value) =>
-        !value || !value.trim() ? 'กรุณาระบุเหตุผลการยกเลิก' : null,
+        !value || !value.trim() ? 'กรุณากรอกเหตุผลการยกเลิก' : null,
     });
 
     if (!result.isConfirmed) return;

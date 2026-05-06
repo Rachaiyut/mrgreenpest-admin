@@ -213,7 +213,7 @@ const ChemicalCatalogPage: React.FC = () => {
                       <td colSpan={5} className="p-0 border-b-0 h-0">
                         <div className="absolute inset-0 top-[49px] flex flex-col items-center justify-center text-slate-400">
                           <ArchiveBoxIcon className="h-12 w-12 mb-3 opacity-50" />
-                          <p className="text-base font-medium text-slate-500">ไม่พบตัวอย่างสารเคมี</p>
+                          <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลตัวอย่างสารเคมี</p>
                           <p className="text-sm mt-1">ลองเพิ่มตัวอย่างสารเคมีใหม่</p>
                         </div>
                       </td>

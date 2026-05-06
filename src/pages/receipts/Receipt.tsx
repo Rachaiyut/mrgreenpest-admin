@@ -868,7 +868,7 @@ const ReceiptsPage: React.FC<ReceiptsPageProps> = ({
                 <textarea
                   value={receiptFormNotes}
                   onChange={(e) => setReceiptFormNotes(e.target.value)}
-                  placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)..."
+                  placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)..."
                   rows={4}
                   className="w-full rounded-lg border-slate-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 transition-all text-sm resize-none p-3"
                 />

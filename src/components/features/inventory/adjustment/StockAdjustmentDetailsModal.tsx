@@ -40,9 +40,9 @@ export const StockAdjustmentDetailsModal: React.FC<
     created_by_user?: { first_name?: string; last_name?: string; nick_name?: string };
   }).created_by_user;
   const creatorName = (() => {
-    if (!creator) return 'ไม่ระบุ';
+    if (!creator) return 'ไม่กรอก';
     const fullName = `${creator.first_name || ''} ${creator.last_name || ''}`.trim();
-    return fullName || creator.nick_name || 'ไม่ระบุ';
+    return fullName || creator.nick_name || 'ไม่กรอก';
   })();
 
   return (

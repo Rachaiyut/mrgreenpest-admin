@@ -102,7 +102,7 @@ export const CustomerFollowUpModal: React.FC<CustomerFollowUpModalProps> = ({
     }
 
     if (formData.result === FollowUpResult.CALL_BACK && !formData.next_follow_up_date) {
-      Swal.fire({ icon: 'warning', title: 'กรุณาระบุวันนัดถัดไป', text: 'กรณีผลเป็น "ขอให้โทรกลับ" ต้องระบุวันนัดติดตามครั้งถัดไป' });
+      Swal.fire({ icon: 'warning', title: 'กรุณากรอกวันนัดถัดไป', text: 'กรณีผลเป็น "ขอให้โทรกลับ" ต้องกรอกวันนัดติดตามครั้งถัดไป' });
       return;
     }
 

@@ -261,7 +261,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
 
   const handleCancelConfirm = async () => {
     if (!selectedContract || !cancellationReason.trim()) {
-      Swal.fire({ title: 'กรุณากรอกเหตุผล', text: 'กรุณาระบุเหตุผลการยกเลิกสัญญา', icon: 'warning', confirmButtonText: 'ตกลง' });
+      Swal.fire({ title: 'กรุณากรอกเหตุผล', text: 'กรุณากรอกเหตุผลการยกเลิกสัญญา', icon: 'warning', confirmButtonText: 'ตกลง' });
       return;
     }
     try {
@@ -852,7 +852,7 @@ const ContractsPage: React.FC<ContractsPageProps> = ({
               <textarea
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="กรุณาระบุเหตุผล เช่น ลูกค้าขอยกเลิก, หมดอายุ, เปลี่ยนเงื่อนไข..."
+                placeholder="กรุณากรอกเหตุผล เช่น ลูกค้าขอยกเลิก, หมดอายุ, เปลี่ยนเงื่อนไข..."
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary resize-none"
                 rows={4}
               />

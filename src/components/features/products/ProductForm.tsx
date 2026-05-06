@@ -69,6 +69,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    const nonNegativeFields = ['price', 'cost_price', 'min_stock'];
+    if (nonNegativeFields.includes(name) && value !== '' && Number(value) < 0) return;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -95,7 +97,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
     if (isProduct) {
       const price = Number(formData.price);
       if (!price || price <= 0) {
-        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณาระบุราคาขาย/หน่วย' });
+        Swal.fire({ icon: 'warning', title: 'กรุณาตรวจสอบ', text: 'กรุณากรอกราคาขาย/หน่วย' });
         return;
       }
     }

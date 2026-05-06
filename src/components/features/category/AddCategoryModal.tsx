@@ -30,8 +30,8 @@ export const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
 
   const validate = (data: Record<string, FormDataEntryValue>): Record<string, string> => {
     const errs: Record<string, string> = {};
-    if (!data['name'] || !(data['name'] as string).trim()) errs.name = 'กรุณาระบุชื่อหมวดหมู่';
-    if (!data['code'] || !(data['code'] as string).trim()) errs.code = 'กรุณาระบุอักษรย่อหมวดหมู่';
+    if (!data['name'] || !(data['name'] as string).trim()) errs.name = 'กรุณากรอกชื่อหมวดหมู่';
+    if (!data['code'] || !(data['code'] as string).trim()) errs.code = 'กรุณากรอกอักษรย่อหมวดหมู่';
     if (!typeValue.trim()) errs.type = 'กรุณาเลือกประเภทหมวดหมู่';
     return errs;
   };

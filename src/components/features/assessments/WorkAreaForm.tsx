@@ -546,7 +546,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 <div className="text-xs text-slate-500 mt-1 flex gap-3">
                   <span>{area.area_name || `พื้นที่ #${displayIndex}`}</span>
                   <span>
-                    {area.area_size ? `${area.area_size} ${selectedUnitName}` : 'ไม่ระบุขนาด'}
+                    {area.area_size ? `${area.area_size} ${selectedUnitName}` : 'ไม่กรอกขนาด'}
                   </span>
                   {area.building_type && <span>• {area.building_type}</span>}
                   {activePackage && <span>• {activePackage.name}</span>}
@@ -622,12 +622,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </FormField>
 
                 {area.building_type === 'OTHER' && (
-                  <FormField label="ระบุประเภท" htmlFor={`buildingTypeOther-${index}`}>
+                  <FormField label="กรอกประเภท" htmlFor={`buildingTypeOther-${index}`}>
                     <Input
                       name="building_type_other"
                       value={area.building_type_other || ''}
                       onChange={handleFieldChange}
-                      placeholder="ระบุประเภทสิ่งปลูกสร้าง"
+                      placeholder="กรอกประเภทสิ่งปลูกสร้าง"
                       required
                       disabled={readOnly}
                     />
@@ -652,12 +652,12 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                 </FormField>
 
                 {area.service_system === 'OTHER' && (
-                  <FormField label="ระบุระบบ" htmlFor={`serviceSystemOther-${index}`}>
+                  <FormField label="กรอกระบบ" htmlFor={`serviceSystemOther-${index}`}>
                     <Input
                       name="service_system_other"
                       value={(area as unknown as Record<string, string>).service_system_other || ''}
                       onChange={handleFieldChange}
-                      placeholder="ระบุระบบที่ใช้บริการ"
+                      placeholder="กรอกระบบที่ใช้บริการ"
                       required
                       disabled={readOnly}
                     />
@@ -689,7 +689,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                             {isOther && isChecked && (
                               <input
                                 type="text"
-                                placeholder="ระบุประเภทบริการอื่นๆ..."
+                                placeholder="กรอกประเภทบริการอื่นๆ..."
                                 value={(area as Record<string, unknown>).category_other as string || ''}
                                 onChange={(e) =>
                                   onAreaChange(index, { ...area, category_other: e.target.value } as typeof area)
@@ -810,7 +810,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
 
                     {area.area_size && area.area_size > 0 && (
                       <p className="text-xs text-slate-500 mb-2">
-                        หรือระบุขนาดเอง:
+                        หรือกรอกขนาดเอง:
                       </p>
                     )}
                     {/* Always show input for custom area size */}
@@ -828,7 +828,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="ระบุขนาดพื้นที่"
+                        placeholder="กรอกขนาดพื้นที่"
                         className="pr-20"
                         required
                         disabled={readOnly}
@@ -880,7 +880,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                     )}
 
                     {area.area_size && area.area_size > 0 && (
-                      <p className="text-xs text-slate-500 mb-2">หรือระบุขนาดเอง:</p>
+                      <p className="text-xs text-slate-500 mb-2">หรือกรอกขนาดเอง:</p>
                     )}
                     <div className="relative mb-3">
                       <Input
@@ -896,7 +896,7 @@ export const WorkAreaForm: FC<WorkAreaFormProps> = ({
                         }}
                         onFocus={() => setIsAreaSizeFocused(true)}
                         onBlur={() => setIsAreaSizeFocused(false)}
-                        placeholder="ระบุขนาดพื้นที่"
+                        placeholder="กรอกขนาดพื้นที่"
                         className="pr-16"
                         required
                         disabled={readOnly}

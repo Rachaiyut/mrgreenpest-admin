@@ -34,7 +34,7 @@ const ItemsSection: FC<ItemsSectionProps> = ({
   onProductSelect,
   isReadOnly = false,
   title = 'รายการสินค้าและบริการ',
-  subtitle = 'ระบุรายการสินค้า จำนวน และราคาต่อหน่วย',
+  subtitle = 'กรอกรายการสินค้า จำนวน และราคาต่อหน่วย',
   disableProductSelect = false,
   hideAddRemove = false,
 }) => {

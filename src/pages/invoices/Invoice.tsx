@@ -404,12 +404,12 @@ const InvoicesPage: React.FC<InvoicesPageProps> = ({
       title: 'ปฏิเสธรายรับ',
       input: 'textarea',
       inputLabel: 'เหตุผลการปฏิเสธ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ปฏิเสธ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     try {

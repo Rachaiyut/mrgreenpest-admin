@@ -356,7 +356,7 @@ export const AdjustmentModal: React.FC<AdjustmentModalProps> = ({
                   rows={2}
                   disabled={isViewMode}
                   className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  placeholder="ระบุเหตุผลการปรับปรุง..."
+                  placeholder="กรอกเหตุผลการปรับปรุง..."
                 />
                 {reasonError && (
                   <p className="mt-1 text-xs text-red-600">{reasonError}</p>

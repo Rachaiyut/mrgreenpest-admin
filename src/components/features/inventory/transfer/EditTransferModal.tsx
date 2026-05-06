@@ -234,7 +234,7 @@ export const EditTransferModal: React.FC<EditTransferModalProps> = ({
                   onChange={handleChange}
                   required
                   rows={2}
-                  placeholder="ระบุสาเหตุการโอนย้าย..."
+                  placeholder="กรอกสาเหตุการโอนย้าย..."
                 />
               </FormField>
             </div>

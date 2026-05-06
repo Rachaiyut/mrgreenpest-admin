@@ -144,7 +144,7 @@ const DailyCashPage: React.FC = () => {
             </label>
             <input
               type="text"
-              placeholder="ระบุรายการ, หมวดหมู่, หรือกระเป๋าเงิน..."
+              placeholder="กรอกรายการ, หมวดหมู่, หรือกระเป๋าเงิน..."
               className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm bg-slate-50/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}

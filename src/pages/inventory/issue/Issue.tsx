@@ -631,12 +631,12 @@ const Issue: FC = () => {
         html: `ไม่อนุมัติใบเบิก <strong>${withdrawal.code || withdrawal.id}</strong>`,
         input: 'textarea',
         inputLabel: 'เหตุผลการไม่อนุมัติ',
-        inputPlaceholder: 'ระบุเหตุผล...',
+        inputPlaceholder: 'กรอกเหตุผล...',
         showCancelButton: true,
         confirmButtonText: 'ไม่อนุมัติ',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#ef4444',
-        inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+        inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
       });
       if (!r.isConfirmed || !r.value) return;
       await submitApproval(withdrawal.id, 'REJECTED', r.value.trim());
@@ -828,7 +828,7 @@ const Issue: FC = () => {
           </div>
           <Button onClick={() => setIsAddModalOpen(true)}>
             <PlusIcon className="h-5 w-5" />
-            สร้างใบเบิกสินค้า/อุปกรณ์
+            สร้างใบเบิกสินค้า
           </Button>
         </div>
 
@@ -1146,7 +1146,7 @@ const Issue: FC = () => {
                               const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(
                                 withdrawal.created_by || '',
                               );
-                              return looksLikeUuid ? 'ไม่ระบุ' : withdrawal.created_by || '-';
+                              return looksLikeUuid ? 'ไม่กรอก' : withdrawal.created_by || '-';
                             })()}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">

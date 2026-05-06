@@ -894,7 +894,7 @@ export const InvoiceForm: FC<InvoiceFormProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-slate-800">สร้างบิลพิเศษ</h3>
-                  <p className="text-sm text-slate-500 mt-0.5 font-medium">ระบุรายละเอียดและยอดเงินที่ต้องการเรียกเก็บ</p>
+                  <p className="text-sm text-slate-500 mt-0.5 font-medium">กรอกรายละเอียดและยอดเงินที่ต้องการเรียกเก็บ</p>
                 </div>
               </div>
               

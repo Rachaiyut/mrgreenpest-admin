@@ -78,7 +78,7 @@ export const CancelJobModal: React.FC<CancelJobModalProps> = ({
             id="cancel-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="ระบุเหตุผลที่ต้องยกเลิกงาน เช่น ลูกค้าขอเลื่อน, ไม่สามารถเข้าพื้นที่ได้"
+            placeholder="กรอกเหตุผลที่ต้องยกเลิกงาน เช่น ลูกค้าขอเลื่อน, ไม่สามารถเข้าพื้นที่ได้"
             required
           />
         </FormField>

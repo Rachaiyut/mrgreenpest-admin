@@ -321,7 +321,7 @@ const Product: React.FC = () => {
               </select>
             </div>
             {selectedType === 'PRODUCT' && (
-              <div className="flex items-center gap-1 w-full sm:w-44 shrink-0">
+              <div className="flex items-center gap-1 w-full sm:w-56 lg:w-64 shrink-0">
                 <input
                   type="number"
                   placeholder="ราคาต่ำสุด"

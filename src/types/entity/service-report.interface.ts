@@ -127,7 +127,7 @@ export interface ServiceReport {
     notes: string;
     reasons: string[];
     scheduled_at?: string;
-    /** วันที่ลูกค้านัดหมาย (Confirm) — กรณีลูกค้าระบุวันที่ชัดเจน (YYYY-MM-DD) */
+    /** วันที่ลูกค้านัดหมาย (Confirm) — กรณีลูกค้ากรอกวันที่ชัดเจน (YYYY-MM-DD) */
     customer_confirmed_at?: string | null;
   };
   notes?: string;

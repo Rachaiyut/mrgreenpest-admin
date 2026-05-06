@@ -211,12 +211,12 @@ const ReturnToSupplierPage: React.FC = () => {
       html: `ไม่อนุมัติใบเบิกคืน <strong>${(target as { code?: string }).code || target.id}</strong>`,
       input: 'textarea',
       inputLabel: 'เหตุผลการไม่อนุมัติ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ไม่อนุมัติ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     await handleUpdateStatus(target, 'REJECTED', r.value.trim());
@@ -230,12 +230,12 @@ const ReturnToSupplierPage: React.FC = () => {
       html: `ยกเลิกใบเบิกคืน <strong>${(target as { code?: string }).code || target.id}</strong>`,
       input: 'textarea',
       inputLabel: 'เหตุผลการยกเลิก',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ยกเลิกใบนี้',
       cancelButtonText: 'ปิด',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     await handleUpdateStatus(target, 'CANCELLED', r.value.trim());
@@ -541,9 +541,9 @@ const ReturnToSupplierPage: React.FC = () => {
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-700">
                         {(() => {
                           const u = (r as { creator?: { first_name?: string; last_name?: string; nick_name?: string } }).creator;
-                          if (!u) return 'ไม่ระบุ';
+                          if (!u) return 'ไม่กรอก';
                           const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                          return full || u.nick_name || 'ไม่ระบุ';
+                          return full || u.nick_name || 'ไม่กรอก';
                         })()}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">

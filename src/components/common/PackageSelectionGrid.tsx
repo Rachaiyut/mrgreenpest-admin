@@ -143,7 +143,7 @@ const PackageSelectionGrid: FC<PackageSelectionGridProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-2 text-xs text-slate-400">ระบุขนาดเพื่อคำนวณราคา</div>
+                  <div className="mt-2 text-xs text-slate-400">กรอกขนาดเพื่อคำนวณราคา</div>
                 )}
                 <div className="text-[10px] text-slate-400 mt-3">
                   {fit ? `สำหรับพื้นที่ไม่เกิน ${fit.area_range} ${unitName}` : 'ดูเงื่อนไขราคาตามขนาดพื้นที่'}

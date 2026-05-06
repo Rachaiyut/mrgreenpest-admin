@@ -495,9 +495,9 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                   value={(() => {
                     if (!editingReturn) return 'ระบบจะกำหนดอัตโนมัติ';
                     const u = (editingReturn as { creator?: { first_name?: string; last_name?: string; nick_name?: string } }).creator;
-                    if (!u) return 'ไม่ระบุ';
+                    if (!u) return 'ไม่กรอก';
                     const full = `${u.first_name || ''} ${u.last_name || ''}`.trim();
-                    return full || u.nick_name || 'ไม่ระบุ';
+                    return full || u.nick_name || 'ไม่กรอก';
                   })()}
                   readOnly
                   className="bg-white text-slate-500 cursor-not-allowed"
@@ -559,7 +559,7 @@ export const AddReturnToSupplierModal: FC<AddReturnToSupplierModalProps> = ({
                   id="remarks"
                   name="remarks"
                   rows={2}
-                  placeholder="ระบุเหตุผลในการคืนสินค้า..."
+                  placeholder="กรอกเหตุผลในการคืนสินค้า..."
                   disabled={isViewMode}
                   className="bg-white disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
                   value={remarks}

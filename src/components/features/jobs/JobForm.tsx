@@ -1318,7 +1318,7 @@ export const JobForm: React.FC<JobFormProps> = ({
                       )}
 
                       {selectedReference && workAreas.length === 0 && (
-                        <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่ระบุไว้</div>
+                        <div className="text-center p-4 text-slate-500">กำลังดึงข้อมูลพื้นที่จากเอกสารอ้างอิง... หรือเอกสารนี้ไม่มีพื้นที่กรอกไว้</div>
                       )}
                     </div>
 

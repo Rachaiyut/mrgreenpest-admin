@@ -520,12 +520,12 @@ const IssueSummaryPage: React.FC = () => {
       text: 'การไม่อนุมัติจะยกเลิกใบเบิกทั้งใบ',
       input: 'textarea',
       inputLabel: 'เหตุผลการไม่อนุมัติ',
-      inputPlaceholder: 'ระบุเหตุผล...',
+      inputPlaceholder: 'กรอกเหตุผล...',
       showCancelButton: true,
       confirmButtonText: 'ไม่อนุมัติ',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: '#ef4444',
-      inputValidator: (v) => (!v || !v.trim() ? 'กรุณาระบุเหตุผล' : null),
+      inputValidator: (v) => (!v || !v.trim() ? 'กรุณากรอกเหตุผล' : null),
     });
     if (!r.isConfirmed || !r.value) return;
     try {
@@ -878,7 +878,7 @@ const IssueSummaryPage: React.FC = () => {
                         0,
                       ) || 0;
 
-                    // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่ระบุ
+                    // ถ้า row นี้แยกตาม category → แสดงเฉพาะฝั่งที่กรอก
                     const showStockOnly = row.category === 'STOCK';
                     const showExpenseOnly = row.category === 'EXPENSE';
 

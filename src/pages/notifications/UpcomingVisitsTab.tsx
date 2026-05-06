@@ -137,7 +137,7 @@ const UpcomingVisitsTab: React.FC = () => {
         ) : rows.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-400 py-12">
             <CalendarIcon className="h-12 w-12 mb-3" />
-            <p className="text-base font-medium text-slate-500">ไม่พบนัดหมายเข้าบริการ</p>
+            <p className="text-base font-medium text-slate-500">ไม่พบข้อมูลนัดหมายเข้าบริการ</p>
             <p className="text-sm mt-1">ลองเปลี่ยนตัวกรองหรือคำค้นหา</p>
           </div>
         ) : (

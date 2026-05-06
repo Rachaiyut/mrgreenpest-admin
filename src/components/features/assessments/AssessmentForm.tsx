@@ -456,8 +456,8 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
     if (currentStep === 0) {
       const newErrors: Record<string, string> = {};
       if (!formData.customer_id) newErrors.customer_id = 'กรุณาเลือกลูกค้า';
-      if (!formData.created_at) newErrors.created_at = 'กรุณาระบุวันที่สร้าง';
-      if (!formData.appointment_date) newErrors.appointment_date = 'กรุณาระบุวันที่นัดหมาย';
+      if (!formData.created_at) newErrors.created_at = 'กรุณากรอกวันที่สร้าง';
+      if (!formData.appointment_date) newErrors.appointment_date = 'กรุณากรอกวันที่นัดหมาย';
       if (!formData.address?.trim()) newErrors.address = 'กรุณากรอกที่อยู่';
       if (!formData.google_map_link?.trim()) newErrors.google_map_link = 'กรุณากรอก Link Google Map';
       setErrors(newErrors);
@@ -469,10 +469,10 @@ export const AssessmentForm: FC<AssessmentFormProps> = ({
       let isValid = true;
       const newErrors: Record<string, string> = {};
       workAreas.forEach((area, index) => {
-        if (!area.area_name?.trim()) { newErrors[`area_${index}_area_name`] = 'กรุณาระบุชื่อพื้นที่'; isValid = false; }
-        if (!area.building_type) { newErrors[`area_${index}_building_type`] = 'กรุณาระบุประเภทสิ่งปลูกสร้าง'; isValid = false; }
-        if (!area.service_system) { newErrors[`area_${index}_service_system`] = 'กรุณาระบุระบบใช้บริการ'; isValid = false; }
-        if (!area.category_services || area.category_services.length === 0) { newErrors[`area_${index}_category_services`] = 'กรุณาระบุประเภทบริการ'; isValid = false; }
+        if (!area.area_name?.trim()) { newErrors[`area_${index}_area_name`] = 'กรุณากรอกชื่อพื้นที่'; isValid = false; }
+        if (!area.building_type) { newErrors[`area_${index}_building_type`] = 'กรุณากรอกประเภทสิ่งปลูกสร้าง'; isValid = false; }
+        if (!area.service_system) { newErrors[`area_${index}_service_system`] = 'กรุณากรอกระบบใช้บริการ'; isValid = false; }
+        if (!area.category_services || area.category_services.length === 0) { newErrors[`area_${index}_category_services`] = 'กรุณากรอกประเภทบริการ'; isValid = false; }
         if (!area.package_price_id) { newErrors[`area_${index}_package`] = 'กรุณาเลือกแพ็คเกจ'; isValid = false; }
       });
       setErrors(newErrors);

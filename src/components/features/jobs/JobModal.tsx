@@ -31,7 +31,7 @@ export const JobModal: React.FC<JobModalProps> = ({
   const getTitle = () => {
     if (mode === 'add') return 'สร้างงานภาคสนามใหม่';
     if (mode === 'edit') {
-      const name = jobToEdit?.customer_name || jobToEdit?.customerName || 'ลูกค้าไม่ระบุ';
+      const name = jobToEdit?.customer_name || jobToEdit?.customerName || 'ลูกค้าไม่กรอก';
       const isUnassigned = String(jobToEdit?.api_status || '').toUpperCase() === 'UNASSIGNED';
       return isUnassigned ? `จัดคิว: ${name}` : `แก้ไขงาน: ${name}`;
     }
