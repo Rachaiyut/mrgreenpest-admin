@@ -17,7 +17,6 @@ import { DropdownSelect } from '../../../components/common/DropdownSelect';
 import { formatThaiDate } from '../../../utils/date';
 import { AdjustmentModal } from '../../../components/features/inventory/adjustment/AdjustmentModal';
 import { StockAdjustment as StockAdjustmentType } from '@/src/types/entity/app.interface';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { Input } from '../../../components/common/FormControls';
 import { SearchableSelect } from '../../../components/common/SearchableSelect';
 import { StatusBadge } from '../../../components/common/StatusBadge';
@@ -56,9 +55,6 @@ const StockAdjustment: React.FC = () => {
     left: number;
   } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [adjustmentToDelete, setAdjustmentToDelete] =
-    useState<StockAdjustmentType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
 
@@ -127,14 +123,14 @@ const StockAdjustment: React.FC = () => {
     }
   };
 
-  const onDeleteAdjustment = async (id: string) => {
+  const onDeleteAdjustment = async (id: string, reason?: string) => {
     try {
-      await StockAdjustmentApi.delete(id);
-      Swal.fire({ icon: 'success', title: 'ลบเรียบร้อย', timer: 1200, showConfirmButton: false });
+      await StockAdjustmentApi.delete(id, reason);
+      Swal.fire({ icon: 'success', title: 'ยกเลิกเรียบร้อย', timer: 1200, showConfirmButton: false });
       await fetchList();
     } catch (err) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถลบได้', 'error');
+      Swal.fire('เกิดข้อผิดพลาด', msg || 'ไม่สามารถยกเลิกได้', 'error');
     }
   };
 
@@ -160,18 +156,30 @@ const StockAdjustment: React.FC = () => {
     setOpenDropdownId(null);
   };
 
-  const handleDelete = (adjustment: StockAdjustmentType) => {
-    setAdjustmentToDelete(adjustment);
-    setIsDeleteModalOpen(true);
+  const handleDelete = async (adjustment: StockAdjustmentType) => {
     setOpenDropdownId(null);
-  };
-
-  const handleConfirmDelete = () => {
-    if (adjustmentToDelete) {
-      onDeleteAdjustment(adjustmentToDelete.id);
+    const code = (adjustment as { adjustment_code?: string }).adjustment_code || adjustment.id;
+    const r = await Swal.fire({
+      title: 'ยืนยันการยกเลิก',
+      html: `คุณแน่ใจหรือไม่ว่าต้องการยกเลิกใบปรับปรุงสต็อก <strong>${code}</strong>?`,
+      icon: 'warning',
+      input: 'textarea',
+      inputLabel: 'เหตุผลในการยกเลิก',
+      inputPlaceholder: 'กรุณาระบุเหตุผล...',
+      inputAttributes: { 'aria-label': 'เหตุผลในการยกเลิก' },
+      inputValidator: (value) => {
+        if (!value || !value.trim()) return 'กรุณาระบุเหตุผลในการยกเลิก';
+        return null;
+      },
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันการยกเลิก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+    });
+    if (r.isConfirmed) {
+      onDeleteAdjustment(adjustment.id, r.value);
     }
-    setIsDeleteModalOpen(false);
-    setAdjustmentToDelete(null);
   };
 
   const handleDropdownToggle = (
@@ -571,21 +579,6 @@ const StockAdjustment: React.FC = () => {
         warehouses={warehouses}
         products={products}
         stockMap={stockMap}
-      />
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="ยืนยันการลบ"
-        message={
-          <p>
-            คุณแน่ใจหรือไม่ว่าต้องการลบใบปรับปรุงสต็อก{' '}
-            <strong>{adjustmentToDelete?.id}</strong>?
-            การกระทำนี้ไม่สามารถย้อนกลับได้
-          </p>
-        }
-        confirmButtonText="ยืนยันการลบ"
-        confirmButtonClass="bg-danger hover:bg-danger/90"
       />
     </div>
   );

@@ -39,8 +39,10 @@ class StockAdjustmentService extends AuthService {
     return res.data;
   }
 
-  async delete(id: string): Promise<void> {
-    await this.http.delete(`${this.path}/${id}`);
+  async delete(id: string, reason?: string): Promise<void> {
+    await this.http.delete(`${this.path}/${id}`, {
+      data: reason ? { reason } : undefined,
+    });
   }
 
   async approve(id: string): Promise<StockAdjustment> {
