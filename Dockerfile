@@ -12,11 +12,11 @@ ENV VITE_APP_VERSION=$VITE_APP_VERSION
 
 WORKDIR /app
 
-COPY package.json ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm
-RUN pnpm install 
+RUN pnpm install --frozen-lockfile
 
 # Copy source code and deps
 COPY . .
